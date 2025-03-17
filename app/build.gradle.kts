@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt.android)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -40,7 +42,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -51,6 +52,19 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.youtube.extractor)
+    implementation(libs.hilt.android)
+    implementation(libs.media3.exoplayer)
+    ksp(libs.hilt.compiler)
+    ksp(libs.room.compiler)
+    implementation(libs.hilt.navigation.compose)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.serialization)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
