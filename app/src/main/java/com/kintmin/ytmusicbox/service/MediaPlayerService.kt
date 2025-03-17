@@ -5,8 +5,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
-import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.IBinder
 import androidx.annotation.OptIn
 import androidx.core.app.NotificationCompat
@@ -16,11 +14,26 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaStyleNotificationHelper
 import com.kintmin.ytmusicbox.R
+import com.kintmin.ytmusicbox.data.local.LocalFileDataSource
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MediaPlayerService : Service() {
+
+    @Inject
+    lateinit var localFileDataSource: LocalFileDataSource
 
     private lateinit var player: ExoPlayer
     private lateinit var mediaSession: MediaSession
+
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onCreate() {
         super.onCreate()
@@ -28,18 +41,14 @@ class MediaPlayerService : Service() {
         mediaSession = MediaSession.Builder(this, player).build()
 
         createNotificationChannel()
-
-//        val mediaItem = MediaItem.fromUri(Uri.parse("android.resource://$packageName/${R.raw.sample_sound}"))
-//        player.setMediaItems(listOf(mediaItem, mediaItem))
-//        player.prepare()
-//        player.playWhenReady = true
-//        mediaSession.setPlayer(player)
-
         startForeground(NOTIFICATION_ID, createNotification())
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        updateNotification()
+        val audioId = intent?.getStringExtra(EXTRA_AUDIO_ID)
+        if (audioId != null) {
+            playAudio(audioId)
+        }
         return START_STICKY
     }
 
@@ -48,32 +57,54 @@ class MediaPlayerService : Service() {
         player.release()
         mediaSession.release()
         stopSelf()
+        scope.cancel()
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun updateNotification() {
+    private fun playAudio(id: String) {
+        scope.launch {
+            val data = localFileDataSource.getYoutubeData(id).getOrNull() ?: return@launch
+            withContext(Dispatchers.Main) {
+                val mediaItem = MediaItem.fromUri(data.filePath)
+                player.setMediaItem(mediaItem)
+                player.prepare()
+                player.playWhenReady = true
+                mediaSession.setPlayer(player)
+                updateNotification(data.title, data.description)
+            }
+        }
+    }
+
+    private fun updateNotification(
+        title: String,
+        content: String,
+    ) {
         val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.notify(NOTIFICATION_ID, createNotification())
+        notificationManager.notify(NOTIFICATION_ID, createNotification(title, content))
     }
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW)
+        val channel =
+            NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW)
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(channel)
     }
 
     @OptIn(UnstableApi::class)
-    private fun createNotification(): Notification {
+    private fun createNotification(
+        title: String = "곡 제목",
+        content: String = "아티스트",
+    ): Notification {
         //val albumArt = BitmapFactory.decodeResource(resources, R.drawable.sample_art)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             //.setLargeIcon(albumArt)
-            .setContentTitle("곡 제목")
-            .setContentText("아티스트")
+            .setContentTitle(title)
+            .setContentText(content)
             .setStyle(
                 MediaStyleNotificationHelper.MediaStyle(mediaSession)
                     .setShowActionsInCompactView(1)
@@ -85,5 +116,6 @@ class MediaPlayerService : Service() {
         const val CHANNEL_ID = "music_channel"
         const val CHANNEL_NAME = "음악 채널"
         const val NOTIFICATION_ID = 1
+        const val EXTRA_AUDIO_ID = "EXTRA_AUDIO_ID"
     }
 }
