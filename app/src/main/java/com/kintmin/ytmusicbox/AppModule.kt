@@ -1,4 +1,4 @@
-package com.kintmin.ytmusicbox.di
+package com.kintmin.ytmusicbox
 
 import android.content.Context
 import dagger.Module

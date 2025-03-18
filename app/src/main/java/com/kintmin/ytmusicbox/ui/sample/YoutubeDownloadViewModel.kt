@@ -3,7 +3,7 @@ package com.kintmin.ytmusicbox.ui.sample
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.ytmusicbox.data.local.LocalFileDataSource
-import com.kintmin.ytmusicbox.data.remote.YoutubeDownloadDataSource
+import com.kintmin.ytmusicbox.data.local.YoutubeDownloadDataSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,12 +34,12 @@ class YoutubeDownloadViewModel @Inject constructor(
             if (isExistMediaFile) {
                 _state.update { YoutubeDownloadConstants.State.Success(videoId) }
             } else {
-                youtubeDownloadDataSource.download(youtubeUrl).onSuccess { dto ->
+                youtubeDownloadDataSource.download(youtubeUrl, videoId).onSuccess { dto ->
                     localFileDataSource.saveYoutubeData(
                         videoId,
                         dto.title,
-                        dto.description,
-                        dto.rawData,
+                        dto.audioFilePath,
+                        dto.imageFilePath,
                     )
                     _state.update { YoutubeDownloadConstants.State.Success(videoId) }
                 }.onFailure { error ->
