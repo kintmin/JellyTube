@@ -5,6 +5,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.IBinder
 import androidx.annotation.OptIn
 import androidx.core.app.NotificationCompat
@@ -64,15 +66,16 @@ class MediaPlayerService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun playAudio(id: String) {
+        if (!::localFileDataSource.isInitialized) return
         scope.launch {
             val data = localFileDataSource.getYoutubeData(id).getOrNull() ?: return@launch
             withContext(Dispatchers.Main) {
-                val mediaItem = MediaItem.fromUri(data.filePath)
+                val mediaItem = MediaItem.fromUri(data.audioFilePath)
                 player.setMediaItem(mediaItem)
                 player.prepare()
                 player.playWhenReady = true
                 mediaSession.setPlayer(player)
-                updateNotification(data.title, data.description)
+                updateNotification(data.title, data.description, data.imageFilePath)
             }
         }
     }
@@ -80,9 +83,14 @@ class MediaPlayerService : Service() {
     private fun updateNotification(
         title: String,
         content: String,
+        imageFilePath: String?,
     ) {
+        val thumbnail = imageFilePath?.let {
+            val bitmap = BitmapFactory.decodeFile(it)
+            Bitmap.createScaledBitmap(bitmap, 256, 256, false)
+        }
         val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.notify(NOTIFICATION_ID, createNotification(title, content))
+        notificationManager.notify(NOTIFICATION_ID, createNotification(title, content, thumbnail))
     }
 
     private fun createNotificationChannel() {
@@ -96,13 +104,12 @@ class MediaPlayerService : Service() {
     private fun createNotification(
         title: String = "곡 제목",
         content: String = "아티스트",
+        thumbnail: Bitmap? = null,
     ): Notification {
-        //val albumArt = BitmapFactory.decodeResource(resources, R.drawable.sample_art)
-
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            //.setLargeIcon(albumArt)
+            .setLargeIcon(thumbnail)
             .setContentTitle(title)
             .setContentText(content)
             .setStyle(

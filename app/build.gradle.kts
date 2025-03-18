@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.chaquopy)
 }
 
 android {
@@ -20,13 +21,30 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    flavorDimensions += "abi"
+    productFlavors {
+        create("development") {
+            dimension = "abi"
+            ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+        }
+        create("production") {
+            dimension = "abi"
+            ndk { abiFilters += listOf("arm64-v8a") }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            applicationIdSuffix = ".dev"
+            isMinifyEnabled = false
         }
     }
     compileOptions {
@@ -41,6 +59,15 @@ android {
     }
 }
 
+chaquopy {
+    defaultConfig {
+        version = "3.13"
+        pip {
+            install("yt_dlp")
+        }
+    }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -51,8 +78,6 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.media3.session)
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.youtube.extractor)
     implementation(libs.hilt.android)
     implementation(libs.media3.exoplayer)
     ksp(libs.hilt.compiler)
