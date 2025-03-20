@@ -1,6 +1,7 @@
 package com.kintmin.data.remote
 
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.kintmin.data.remote.datasource.HttpDataSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,32 +20,47 @@ import javax.inject.Singleton
 internal object RetrofitModule {
 
     private const val TIMEOUT = 30000L
-    private const val BASE_URL = "https://dummy.com/"
+    //private const val BASE_URL = "https://dummy.com/"
 
     @Provides
     @Singleton
-    fun provideRetrofit(): Retrofit {
-        return Retrofit.Builder()
-            .client(
-                OkHttpClient.Builder()
-                    .connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
-                    .readTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
-                    .writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
-                    .addInterceptor(Interceptor { chain ->
-                        return@Interceptor chain.proceed(
-                            chain.request()
-                                .newBuilder()
-                                //.addHeader("Authorization", "Bearer ${token}")
-                                .build()
-                        )
-                    })
-                    .addNetworkInterceptor(HttpLoggingInterceptor().apply {
-                        level = HttpLoggingInterceptor.Level.BODY
-                    })
-                    .build()
-            )
-            .baseUrl(BASE_URL)
-            .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
+    fun provideOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .connectTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
+            .readTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
+            .writeTimeout(TIMEOUT, TimeUnit.MILLISECONDS)
+            .addNetworkInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
             .build()
     }
+
+    @Provides
+    @Singleton
+    fun provideHttpDataSource(
+        defaultClient: OkHttpClient,
+    ): HttpDataSource {
+        return HttpDataSource(defaultClient)
+    }
+
+//    @Provides
+//    @Singleton
+//    fun provideRetrofit(
+//        defaultClient: OkHttpClient,
+//    ): Retrofit {
+//        return Retrofit.Builder()
+//            .client(
+//                defaultClient.newBuilder().addInterceptor(Interceptor { chain ->
+//                    return@Interceptor chain.proceed(
+//                        chain.request()
+//                            .newBuilder()
+//                            //.addHeader("Authorization", "Bearer ${token}")
+//                            .build()
+//                    )
+//                }).build()
+//            )
+//            .baseUrl(BASE_URL)
+//            .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
+//            .build()
+//    }
 }

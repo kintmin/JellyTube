@@ -8,5 +8,6 @@ data class AudioMediaEntity(
     @PrimaryKey val id: String,
     val title: String,
     val description: String,
-    val imageFileName: String?,
+    val audioFileNameWithExt: String,
+    val imageFileNameWithExt: String?,
 )

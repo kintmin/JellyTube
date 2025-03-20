@@ -23,7 +23,7 @@ class PythonExecutor @Inject constructor(
                 Python.start(AndroidPlatform(context))
             }
 
-            withTimeout(10000L) {
+            withTimeout(TIME_OUT) {
                 val module = Python.getInstance().getModule(PYTHON_FILE_NAME)
                 val pyResult =
                     module.callAttr(PYTHON_METHOD_NAME, youtubeUrl, audioDownloadPath).asList()
@@ -33,7 +33,7 @@ class PythonExecutor @Inject constructor(
                 } else {
                     YoutubeDownloadDto(
                         title = pyResult[0].toString(),
-                        thumbnailPath = pyResult[1].toString(),
+                        thumbnailDownloadUrl = pyResult[1].toString(),
                     )
                 }
             }
@@ -41,6 +41,7 @@ class PythonExecutor @Inject constructor(
     }
 
     companion object {
+        const val TIME_OUT = 30000L
         const val PYTHON_FILE_NAME = "download_youtube_audio"
         const val PYTHON_METHOD_NAME = "download_audio"
     }

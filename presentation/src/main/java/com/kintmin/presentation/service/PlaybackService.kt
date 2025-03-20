@@ -1,7 +1,5 @@
 package com.kintmin.presentation.service
 
-import android.app.Notification
-import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -13,18 +11,15 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
-import androidx.media3.ui.PlayerNotificationManager
 import com.google.common.util.concurrent.ListenableFuture
 import com.kintmin.domain.model.AudioMediaData
-import com.kintmin.presentation.notification.NotificationData
-import com.kintmin.presentation.ui.MainActivity
+import java.io.File
 
 @OptIn(UnstableApi::class)
 class PlaybackService : MediaSessionService() {
@@ -67,15 +62,6 @@ class PlaybackService : MediaSessionService() {
                 }
             })
             .build()
-
-        NotificationData.MusicForeground.channel.createChannelIfNotExist(this)
-        val notificationManager = PlayerNotificationManager.Builder(
-            this,
-            NotificationData.MusicForeground.id,
-            NotificationData.MusicForeground.channel.id,
-        ).build()
-
-        notificationManager.setPlayer(player)
     }
 
     fun uriToBitmap(uri: Uri): Bitmap? {
@@ -97,7 +83,6 @@ class PlaybackService : MediaSessionService() {
         }
         super.onDestroy()
     }
-
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val mediaData = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
@@ -159,7 +144,11 @@ class PlaybackService : MediaSessionService() {
             MediaMetadata.Builder()
                 .setTitle(mediaData.title)
                 .setDescription(mediaData.description)
-                //.setArtworkUri(Uri.parse(mediaData.imageFilePath))
+                .apply {
+                    mediaData.imageFilePath?.let {
+                        setArtworkUri(Uri.fromFile(File(it)))
+                    }
+                }
                 .build()
         )
         .build()

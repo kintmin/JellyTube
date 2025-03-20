@@ -9,18 +9,13 @@ class FetchYoutubeMediaUseCase @Inject constructor(
     suspend operator fun invoke(youtubeUrl: String) = runCatching {
         val videoId = extractVideoId(youtubeUrl) ?: throw Exception("유튜브 url 형식이 아닙니다.")
 
-        if (youtubeMediaRepository.isExistData(videoId).getOrDefault(false)) {
-            if (youtubeMediaRepository.isExistFile(videoId).getOrDefault(false)) {
-                return@runCatching youtubeMediaRepository.getCachedMediaData(videoId).getOrThrow()
-            } else {
-                youtubeMediaRepository.deleteData(videoId)
-            }
-        }
-
-        youtubeMediaRepository.getMediaData(videoId).onSuccess {
-            youtubeMediaRepository.downloadThumbnail(it.imageFilePath, it.videoId)
-            youtubeMediaRepository.saveData(it)
-        }.getOrThrow()
+        youtubeMediaRepository.getMediaDataFromMetaData(videoId).getOrNull()
+            ?: youtubeMediaRepository.getMediaData(youtubeUrl, videoId).onSuccess {
+                youtubeMediaRepository.saveMetaData(it).onFailure { exception ->
+                    youtubeMediaRepository.deleteCacheData(videoId)
+                    throw exception
+                }
+            }.getOrThrow()
     }
 
     private fun extractVideoId(youtubeUrl: String): String? {
