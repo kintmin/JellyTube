@@ -94,6 +94,20 @@ class PlaybackService : MediaSessionService() {
         if (mediaData != null) {
             playImmediately(mediaData)
         }
+
+        val mediaDataList = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
+            intent?.getParcelableArrayListExtra(EXTRA_MEDIA_DATA_LIST, AudioMediaData::class.java)
+        } else {
+            intent?.getParcelableArrayListExtra(EXTRA_MEDIA_DATA_LIST)
+        }
+
+        mediaDataList?.forEach {
+            addToPlaylist(it)
+        }
+        mediaDataList?.firstOrNull()?.let {
+            playImmediately(it)
+        }
+
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -155,5 +169,6 @@ class PlaybackService : MediaSessionService() {
 
     companion object {
         const val EXTRA_MEDIA_DATA = "EXTRA_MEDIA_DATA"
+        const val EXTRA_MEDIA_DATA_LIST = "EXTRA_MEDIA_DATA_LIST"
     }
 }

@@ -40,7 +40,8 @@ class YoutubeMediaRepositoryImpl @Inject constructor(
         runCatching {
             val entity = youtubeMediaDataSource.getYoutubeData(videoId).getOrNull()
 
-            val audioFilePath = fileManager.getFullPathWithExt(entity!!.audioFileNameWithExt).getOrThrow()
+            val audioFilePath =
+                fileManager.getFullPathWithExt(entity!!.audioFileNameWithExt).getOrThrow()
             val imageFilePath = entity.imageFileNameWithExt?.let {
                 fileManager.getFullPathWithExt(it).getOrNull()
             }
@@ -55,7 +56,8 @@ class YoutubeMediaRepositoryImpl @Inject constructor(
         }
 
     override suspend fun saveMetaData(mediaData: AudioMediaData): Result<Unit> = runCatching {
-        val audioFileNameWithExt = fileManager.getFileNameWithExt(mediaData.audioFilePath).getOrThrow()
+        val audioFileNameWithExt =
+            fileManager.getFileNameWithExt(mediaData.audioFilePath).getOrThrow()
         val imageFileNameWithExt = mediaData.imageFilePath?.let {
             fileManager.getFileNameWithExt(it).getOrNull()
         }
@@ -71,9 +73,13 @@ class YoutubeMediaRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun deleteCacheData(videoId: String): Result<Unit> = runCatching {
+    override suspend fun deleteMediaData(videoId: String): Result<Unit> = runCatching {
         fileManager.deleteFile(videoId, FileManager.Ext.MP3)
         fileManager.deleteFile(videoId, FileManager.Ext.WEBP)
         fileManager.deleteFile(videoId, FileManager.Ext.JPG)
+    }
+
+    override fun clearCacheData(): Result<Unit> {
+        return fileManager.clearCache()
     }
 }

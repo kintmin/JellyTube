@@ -1,25 +1,39 @@
 package com.kintmin.domain.usecase
 
+import com.kintmin.domain.model.AudioMediaData
 import com.kintmin.domain.repository.YoutubeMediaRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class FetchYoutubeMediaUseCase @Inject constructor(
     private val youtubeMediaRepository: YoutubeMediaRepository,
+    private val extractYoutubeVideoIdUseCase: ExtractYoutubeVideoIdUseCase,
 ) {
-    suspend operator fun invoke(youtubeUrl: String) = runCatching {
-        val videoId = extractVideoId(youtubeUrl) ?: throw Exception("유튜브 url 형식이 아닙니다.")
+    fun getDataStream(youtubeUrl: String): Flow<AudioMediaData> = flow {
+        val videoId = extractYoutubeVideoIdUseCase(youtubeUrl)
+        val mediaData = youtubeMediaRepository.getMediaDataFromMetaData(videoId).getOrNull()
+        if (mediaData != null) {
+            emit(mediaData)
+            return@flow
+        }
 
-        youtubeMediaRepository.getMediaDataFromMetaData(videoId).getOrNull()
-            ?: youtubeMediaRepository.getMediaData(youtubeUrl, videoId).onSuccess {
-                youtubeMediaRepository.saveMetaData(it).onFailure { exception ->
-                    youtubeMediaRepository.deleteCacheData(videoId)
-                    throw exception
-                }
-            }.getOrThrow()
+        youtubeMediaRepository.getMediaData(youtubeUrl, videoId)
+            .onSuccess { media ->
+                youtubeMediaRepository.clearCacheData()
+                youtubeMediaRepository.saveMetaData(media)
+                    .onFailure {
+                        youtubeMediaRepository.deleteMediaData(videoId)
+                        throw it
+                    }
+                emit(media)
+            }.onFailure {
+                throw it
+            }
     }
 
-    private fun extractVideoId(youtubeUrl: String): String? {
-        val regex = Regex("v=([a-zA-Z0-9_-]{11})")
-        return regex.find(youtubeUrl)?.groupValues?.get(1)
+    suspend fun getData(youtubeUrl: String): Result<AudioMediaData> = runCatching {
+        getDataStream(youtubeUrl).first()
     }
 }

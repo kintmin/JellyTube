@@ -34,6 +34,8 @@ class PythonExecutor @Inject constructor(
                     YoutubeDownloadDto(
                         title = pyResult[0].toString(),
                         thumbnailDownloadUrl = pyResult[1].toString(),
+                        duration = pyResult[2].toString(),
+                        uploader = pyResult[3].toString(),
                     )
                 }
             }

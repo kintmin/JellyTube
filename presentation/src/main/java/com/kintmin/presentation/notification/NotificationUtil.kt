@@ -2,6 +2,7 @@ package com.kintmin.presentation.notification
 
 import android.app.NotificationManager
 import android.content.Context
+import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -15,5 +16,9 @@ class NotificationUtil @Inject constructor(
         val notification = notificationData.getNotification(context)
         val notificationManager = context.getSystemService(NotificationManager::class.java)
         notificationManager.notify(notificationData.id, notification)
+    }
+
+    fun cancelNotification(notificationData: NotificationData) {
+        NotificationManagerCompat.from(context).cancel(notificationData.id)
     }
 }
