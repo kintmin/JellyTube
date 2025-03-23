@@ -1,6 +1,7 @@
 package com.kintmin.data.local.datasource
 
 import android.content.Context
+import android.util.Log
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.kintmin.data.local.dto.YoutubeDownloadDto
@@ -29,6 +30,7 @@ class PythonExecutor @Inject constructor(
                     module.callAttr(PYTHON_METHOD_NAME, youtubeUrl, audioDownloadPath).asList()
 
                 if (pyResult.size == 1) {
+                    Log.d("EXCEPTION", pyResult[0].toString())
                     throw Exception(pyResult[0].toString())
                 } else {
                     YoutubeDownloadDto(
