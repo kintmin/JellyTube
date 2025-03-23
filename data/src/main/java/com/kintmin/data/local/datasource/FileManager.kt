@@ -57,6 +57,11 @@ class FileManager @Inject constructor(
         }
     }
 
+    fun clearCache() : Result<Unit> = runCatching {
+        context.cacheDir.deleteRecursively()
+        File(context.cacheDir.parentFile, "app_webview").deleteRecursively()
+    }
+
     private fun extractExt(fileNameWithExt: String): Pair<String, Ext> {
         val lastDotIndex = fileNameWithExt.lastIndexOf(".")
         if (lastDotIndex <= 0 || lastDotIndex == fileNameWithExt.length - 1) {
