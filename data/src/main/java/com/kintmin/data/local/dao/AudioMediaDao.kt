@@ -11,8 +11,11 @@ interface AudioMediaDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMedia(video: AudioMediaEntity)
 
-    @Query("SELECT * FROM media WHERE id = :id")
-    suspend fun getMediaById(id: String): AudioMediaEntity?
+    @Query("SELECT * FROM media WHERE id = :id LIMIT 1")
+    suspend fun getMediaById(id: String): AudioMediaEntity
+
+    @Query("SELECT * FROM media")
+    suspend fun getMediaList(): List<AudioMediaEntity>
 
     @Query("DELETE FROM media WHERE id = :id")
     suspend fun deleteMediaById(id: String)

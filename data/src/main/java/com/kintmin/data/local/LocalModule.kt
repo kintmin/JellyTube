@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import com.kintmin.data.local.dao.AudioMediaDao
 import com.kintmin.data.local.datasource.FileManager
+import com.kintmin.data.local.datasource.LocalAudioDataSource
 import com.kintmin.data.local.datasource.PythonExecutor
-import com.kintmin.data.local.datasource.YoutubeMediaDataSource
 import com.kintmin.ytmusicbox.data.local.AppDatabase
 import dagger.Module
 import dagger.Provides
@@ -39,10 +39,10 @@ object LocalModule {
 
     @Provides
     @Singleton
-    fun provideYoutubeMediaDataSource(
+    fun provideLocalAudioDataSource(
         audioMediaDao: AudioMediaDao,
-    ): YoutubeMediaDataSource {
-        return YoutubeMediaDataSource(audioMediaDao)
+    ): LocalAudioDataSource {
+        return LocalAudioDataSource(audioMediaDao)
     }
 
     @Provides

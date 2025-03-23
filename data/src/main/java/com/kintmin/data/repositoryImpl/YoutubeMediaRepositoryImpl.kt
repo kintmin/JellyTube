@@ -1,7 +1,7 @@
 package com.kintmin.data.repositoryImpl
 
 import com.kintmin.data.local.datasource.FileManager
-import com.kintmin.data.local.datasource.YoutubeMediaDataSource
+import com.kintmin.data.local.datasource.LocalAudioDataSource
 import com.kintmin.data.local.datasource.PythonExecutor
 import com.kintmin.data.local.entity.AudioMediaEntity
 import com.kintmin.data.remote.datasource.HttpDataSource
@@ -10,7 +10,7 @@ import com.kintmin.domain.model.AudioMediaData
 import javax.inject.Inject
 
 class YoutubeMediaRepositoryImpl @Inject constructor(
-    private val youtubeMediaDataSource: YoutubeMediaDataSource,
+    private val localAudioDataSource: LocalAudioDataSource,
     private val fileManager: FileManager,
     private val pythonExecutor: PythonExecutor,
     private val httpDataSource: HttpDataSource,
@@ -29,8 +29,8 @@ class YoutubeMediaRepositoryImpl @Inject constructor(
 
             AudioMediaData(
                 videoId = videoId,
-                audioFilePath = audioDownloadPath,
-                imageFilePath = thumbnailPath,
+                audioFileFullPath = audioDownloadPath,
+                imageFileFullPath = thumbnailPath,
                 title = dto.title,
                 description = "",
             )
@@ -38,7 +38,7 @@ class YoutubeMediaRepositoryImpl @Inject constructor(
 
     override suspend fun getMediaDataFromMetaData(videoId: String): Result<AudioMediaData> =
         runCatching {
-            val entity = youtubeMediaDataSource.getYoutubeData(videoId).getOrNull()
+            val entity = localAudioDataSource.getEntity(videoId).getOrNull()
 
             val audioFilePath =
                 fileManager.getFullPathWithExt(entity!!.audioFileNameWithExt).getOrThrow()
@@ -48,8 +48,8 @@ class YoutubeMediaRepositoryImpl @Inject constructor(
 
             AudioMediaData(
                 videoId = entity.id,
-                audioFilePath = audioFilePath,
-                imageFilePath = imageFilePath,
+                audioFileFullPath = audioFilePath,
+                imageFileFullPath = imageFilePath,
                 title = entity.title,
                 description = entity.description,
             )
@@ -57,12 +57,12 @@ class YoutubeMediaRepositoryImpl @Inject constructor(
 
     override suspend fun saveMetaData(mediaData: AudioMediaData): Result<Unit> = runCatching {
         val audioFileNameWithExt =
-            fileManager.getFileNameWithExt(mediaData.audioFilePath).getOrThrow()
-        val imageFileNameWithExt = mediaData.imageFilePath?.let {
+            fileManager.getFileNameWithExt(mediaData.audioFileFullPath).getOrThrow()
+        val imageFileNameWithExt = mediaData.imageFileFullPath?.let {
             fileManager.getFileNameWithExt(it).getOrNull()
         }
 
-        youtubeMediaDataSource.saveYoutubeData(
+        localAudioDataSource.insertEntity(
             AudioMediaEntity(
                 id = mediaData.videoId,
                 title = mediaData.title,

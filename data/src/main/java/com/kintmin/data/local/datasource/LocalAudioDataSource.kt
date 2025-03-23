@@ -6,25 +6,28 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class YoutubeMediaDataSource @Inject constructor(
+class LocalAudioDataSource @Inject constructor(
     private val audioMediaDao: AudioMediaDao,
 ) {
+    suspend fun getEntityList() = runCatching {
+        withContext(Dispatchers.IO) {
+            audioMediaDao.getMediaList()
+        }
+    }
 
-    suspend fun getYoutubeData(videoId: String) = runCatching {
+    suspend fun getEntity(videoId: String) = runCatching {
         withContext(Dispatchers.IO) {
             audioMediaDao.getMediaById(videoId)
         }
     }
 
-    suspend fun saveYoutubeData(
-        entity: AudioMediaEntity,
-    ) = runCatching {
+    suspend fun insertEntity(entity: AudioMediaEntity) = runCatching {
         withContext(Dispatchers.IO) {
             audioMediaDao.insertMedia(entity)
         }
     }
 
-    suspend fun deleteYoutubeData(videoId: String) = runCatching {
+    suspend fun deleteEntity(videoId: String) = runCatching {
         withContext(Dispatchers.IO) {
             audioMediaDao.deleteMediaById(videoId)
         }

@@ -1,6 +1,8 @@
 package com.kintmin.data
 
+import com.kintmin.data.repositoryImpl.AudioMediaRepositoryImpl
 import com.kintmin.data.repositoryImpl.YoutubeMediaRepositoryImpl
+import com.kintmin.domain.repository.AudioMediaRepository
 import com.kintmin.domain.repository.YoutubeMediaRepository
 import dagger.Binds
 import dagger.Module
@@ -17,4 +19,10 @@ abstract class RepositoryModule {
     abstract fun bindYoutubeMediaRepository(
         repository: YoutubeMediaRepositoryImpl,
     ): YoutubeMediaRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAudioMediaRepository(
+        repository: AudioMediaRepositoryImpl,
+    ): AudioMediaRepository
 }
