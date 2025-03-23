@@ -8,7 +8,7 @@ sealed class NotificationData {
     abstract val id: Int
     abstract val channel: NotificationChannelData
 
-    abstract fun getNotification(context: Context): Notification
+    abstract fun getNotification(context: Context): Notification?
 
     data class Download(
         private val maxCount: Int = 0,

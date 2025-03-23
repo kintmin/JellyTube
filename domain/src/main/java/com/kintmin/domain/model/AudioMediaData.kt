@@ -6,8 +6,8 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class AudioMediaData(
     val videoId: String,
-    val audioFilePath: String,
-    val imageFilePath: String?,
+    val audioFileFullPath: String,
+    val imageFileFullPath: String?,
     val title: String,
     val description: String,
 ): Parcelable

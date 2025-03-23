@@ -45,6 +45,8 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
+    implementation(libs.androidx.paging.runtime.ktx)
+    implementation(libs.androidx.paging.compose)
     ksp(libs.androidx.hilt.compiler)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)

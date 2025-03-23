@@ -1,8 +1,6 @@
 package com.kintmin.presentation.service
 
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -20,7 +18,6 @@ import androidx.media3.session.SessionResult
 import com.google.common.util.concurrent.ListenableFuture
 import com.kintmin.domain.model.AudioMediaData
 import java.io.File
-
 @OptIn(UnstableApi::class)
 class PlaybackService : MediaSessionService() {
 
@@ -64,17 +61,6 @@ class PlaybackService : MediaSessionService() {
             .build()
     }
 
-    fun uriToBitmap(uri: Uri): Bitmap? {
-        val inputStream = contentResolver.openInputStream(uri)
-        return try {
-            BitmapFactory.decodeStream(inputStream)
-        } catch (e: Exception) {
-            null
-        } finally {
-            inputStream?.close()
-        }
-    }
-
     override fun onDestroy() {
         mediaSession?.run {
             player.release()
@@ -94,23 +80,8 @@ class PlaybackService : MediaSessionService() {
         if (mediaData != null) {
             playImmediately(mediaData)
         }
-
-        val mediaDataList = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
-            intent?.getParcelableArrayListExtra(EXTRA_MEDIA_DATA_LIST, AudioMediaData::class.java)
-        } else {
-            intent?.getParcelableArrayListExtra(EXTRA_MEDIA_DATA_LIST)
-        }
-
-        mediaDataList?.forEach {
-            addToPlaylist(it)
-        }
-        mediaDataList?.firstOrNull()?.let {
-            playImmediately(it)
-        }
-
         return super.onStartCommand(intent, flags, startId)
     }
-
 
     fun playImmediately(mediaData: AudioMediaData) {
         mediaSession?.apply {
@@ -153,13 +124,13 @@ class PlaybackService : MediaSessionService() {
     }
 
     private fun getMediaItem(mediaData: AudioMediaData) = MediaItem.Builder()
-        .setUri(mediaData.audioFilePath)
+        .setUri(mediaData.audioFileFullPath)
         .setMediaMetadata(
             MediaMetadata.Builder()
                 .setTitle(mediaData.title)
                 .setDescription(mediaData.description)
                 .apply {
-                    mediaData.imageFilePath?.let {
+                    mediaData.imageFileFullPath?.let {
                         setArtworkUri(Uri.fromFile(File(it)))
                     }
                 }
@@ -169,6 +140,5 @@ class PlaybackService : MediaSessionService() {
 
     companion object {
         const val EXTRA_MEDIA_DATA = "EXTRA_MEDIA_DATA"
-        const val EXTRA_MEDIA_DATA_LIST = "EXTRA_MEDIA_DATA_LIST"
     }
 }
