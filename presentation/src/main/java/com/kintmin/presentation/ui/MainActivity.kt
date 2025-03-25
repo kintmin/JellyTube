@@ -40,8 +40,8 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.kintmin.presentation.notification.NotificationUtil
-import com.kintmin.presentation.service.PlaybackService
+import com.kintmin.notification.PushNotificationUtil
+import com.kintmin.platformruntime.service.PlaybackService
 import com.kintmin.presentation.theme.YTMusicBoxTheme
 import com.kintmin.presentation.ui.audio_play.AudioPlayView
 import com.kintmin.presentation.ui.youtube_search.YoutubeDownloadViewModel
@@ -53,7 +53,7 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject
-    lateinit var notificationUtil: NotificationUtil
+    lateinit var pushNotificationUtil: PushNotificationUtil
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {

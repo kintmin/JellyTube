@@ -1,13 +1,16 @@
 package com.kintmin.domain.model
 
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
+import java.time.LocalDateTime
+import kotlin.time.Duration
 
-@Parcelize
 data class AudioMediaData(
-    val videoId: String,
+    val id: String,
+    val playlistId: Int?,
+    val mediaName: String,
+    val description: String,
+    val artist: String,
+    val audioDuration: Duration?,
+    val createdTime: LocalDateTime,
     val audioFileFullPath: String,
     val imageFileFullPath: String?,
-    val title: String,
-    val description: String,
-): Parcelable
+)
