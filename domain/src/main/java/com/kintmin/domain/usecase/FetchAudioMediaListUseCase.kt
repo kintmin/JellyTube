@@ -8,6 +8,6 @@ class FetchAudioMediaListUseCase @Inject constructor(
     private val audioMediaRepository: AudioMediaRepository,
 ){
     suspend operator fun invoke(): Result<List<AudioMediaData>> {
-        return audioMediaRepository.getAudioMediaList()
+        return audioMediaRepository.getListDataAll()
     }
 }

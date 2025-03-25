@@ -1,10 +1,10 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.parcelize)
-    alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.parcelize)
 }
 
 android {
@@ -24,9 +24,6 @@ android {
                 "proguard-rules.pro"
             )
         }
-        debug {
-            isMinifyEnabled = false
-        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -42,13 +39,13 @@ android {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":platform-runtime"))
+    implementation(project(":notification"))
     implementation(libs.hilt.android)
-    implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.paging.runtime.ktx)
     implementation(libs.androidx.paging.compose)
-    ksp(libs.androidx.hilt.compiler)
-    ksp(libs.hilt.compiler)
+    debugImplementation(libs.androidx.ui.tooling)
+    ksp(libs.hilt.android.compiler)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.material3.android)
     implementation(libs.androidx.core.ktx)
@@ -59,7 +56,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.io.coil.compose)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.session)
-    implementation(libs.androidx.media3.exoplayer)
 }

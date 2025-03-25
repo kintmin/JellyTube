@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="21" />
+    <bytecodeTargetLevel target="17">
+      <module name="YTMusicBox.data_legacy" target="21" />
+      <module name="YTMusicBox.domain_legacy" target="21" />
+      <module name="YTMusicBox.local" target="21" />
+      <module name="YTMusicBox.localFile" target="21" />
+      <module name="YTMusicBox.pythonBridge" target="21" />
+      <module name="YTMusicBox.remote" target="21" />
+    </bytecodeTargetLevel>
   </component>
 </project>

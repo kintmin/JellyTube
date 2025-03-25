@@ -1,39 +1,22 @@
 package com.kintmin.domain.usecase
 
 import com.kintmin.domain.model.AudioMediaData
-import com.kintmin.domain.repository.YoutubeMediaRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
+import com.kintmin.domain.repository.AudioMediaRepository
 import javax.inject.Inject
 
 class FetchYoutubeMediaUseCase @Inject constructor(
-    private val youtubeMediaRepository: YoutubeMediaRepository,
+    private val audioMediaRepository: AudioMediaRepository,
     private val extractYoutubeVideoIdUseCase: ExtractYoutubeVideoIdUseCase,
 ) {
-    fun getDataStream(youtubeUrl: String): Flow<AudioMediaData> = flow {
+    suspend operator fun invoke(youtubeUrl: String): Result<AudioMediaData> = runCatching {
         val videoId = extractYoutubeVideoIdUseCase(youtubeUrl)
-        val mediaData = youtubeMediaRepository.getMediaDataFromMetaData(videoId).getOrNull()
-        if (mediaData != null) {
-            emit(mediaData)
-            return@flow
-        }
-
-        youtubeMediaRepository.getMediaData(youtubeUrl, videoId)
-            .onSuccess { media ->
-                youtubeMediaRepository.clearCacheData()
-                youtubeMediaRepository.saveMetaData(media)
-                    .onFailure {
-                        youtubeMediaRepository.deleteMediaData(videoId)
-                        throw it
-                    }
-                emit(media)
-            }.onFailure {
-                throw it
+        audioMediaRepository.getLocalData(videoId).getOrNull() ?: audioMediaRepository.downloadData(
+            youtubeUrl,
+            videoId,
+        ).onSuccess { downloadData ->
+            audioMediaRepository.saveDataToLocal(downloadData).onFailure {
+                audioMediaRepository.deleteMediaFile(videoId)
             }
-    }
-
-    suspend fun getData(youtubeUrl: String): Result<AudioMediaData> = runCatching {
-        getDataStream(youtubeUrl).first()
+        }.getOrThrow()
     }
 }
