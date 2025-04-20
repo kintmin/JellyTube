@@ -1,7 +1,7 @@
 package com.kintmin.presentation.ui.youtube_search
 
 import androidx.lifecycle.ViewModel
-import com.kintmin.platformruntime.ExecuteYoutubeDownload
+import com.kintmin.platform.ExecuteYoutubeDownload
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 

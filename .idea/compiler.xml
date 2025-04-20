@@ -2,10 +2,21 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="17">
+      <module name="YTMusicBox.data.dataApi" target="21" />
+      <module name="YTMusicBox.data.localDatabase" target="21" />
+      <module name="YTMusicBox.data.localFile" target="21" />
+      <module name="YTMusicBox.data.network" target="21" />
+      <module name="YTMusicBox.data.pythonBridge" target="21" />
+      <module name="YTMusicBox.data2.dataApi" target="21" />
+      <module name="YTMusicBox.data2.localDatabase" target="21" />
+      <module name="YTMusicBox.data2.localFile" target="21" />
+      <module name="YTMusicBox.data2.network" target="21" />
+      <module name="YTMusicBox.data2.pythonBridge" target="21" />
       <module name="YTMusicBox.data_legacy" target="21" />
       <module name="YTMusicBox.domain_legacy" target="21" />
       <module name="YTMusicBox.local" target="21" />
       <module name="YTMusicBox.localFile" target="21" />
+      <module name="YTMusicBox.notification" target="21" />
       <module name="YTMusicBox.pythonBridge" target="21" />
       <module name="YTMusicBox.remote" target="21" />
     </bytecodeTargetLevel>

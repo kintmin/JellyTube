@@ -12,14 +12,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/data" />
-            <option value="$PROJECT_DIR$/data/dataApi" />
-            <option value="$PROJECT_DIR$/data/localDatabase" />
-            <option value="$PROJECT_DIR$/data/localFile" />
-            <option value="$PROJECT_DIR$/data/network" />
-            <option value="$PROJECT_DIR$/data/pythonBridge" />
             <option value="$PROJECT_DIR$/domain" />
-            <option value="$PROJECT_DIR$/notification" />
-            <option value="$PROJECT_DIR$/platform-runtime" />
+            <option value="$PROJECT_DIR$/platform" />
             <option value="$PROJECT_DIR$/presentation" />
           </set>
         </option>

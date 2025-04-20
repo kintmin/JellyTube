@@ -23,11 +23,6 @@ dependencyResolutionManagement {
 rootProject.name = "YTMusicBox"
 include(":app")
 include(":presentation")
-include(":platform-runtime")
-include(":notification")
+include(":platform")
 include(":domain")
-include(":data:network")
-include(":data:localDatabase")
-include(":data:pythonBridge")
-include(":data:localFile")
-include(":data:dataApi")
+include(":data")
