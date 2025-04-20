@@ -11,7 +11,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.navigation.compose.rememberNavController
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -62,9 +61,6 @@ fun YoutubeWebView(
         val backEnabled = webView?.canGoBack() ?: false
         if (backEnabled) {
             webView?.goBack()
-        } else {
-            val navController = rememberNavController()
-            navController.popBackStack()
         }
     }
 }

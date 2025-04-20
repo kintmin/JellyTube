@@ -3,9 +3,21 @@ package com.kintmin.presentation.ui
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.ui.graphics.vector.ImageVector
+import kotlinx.serialization.Serializable
 
-enum class MainTabItem(val label: String, val icon: ImageVector) {
-    Search("음원찾기", Icons.Default.Add),
-    Play("음원감상", Icons.Default.PlayArrow)
+@Serializable
+enum class MainTabItem {
+    Search,
+    Play,
+    ;
+
+    fun getLabel() = when (this) {
+        Search -> "음원찾기"
+        Play -> "음원감상"
+    }
+
+    fun getIcon() = when (this) {
+        Search -> Icons.Default.Add
+        Play -> Icons.Default.PlayArrow
+    }
 }
