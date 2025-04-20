@@ -29,17 +29,41 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.PagingData
+import com.kintmin.presentation.theme.YTMusicBoxTheme
 import com.kintmin.presentation.ui.audio_play.AudioPlayView
+import com.kintmin.presentation.ui.audio_play.AudioPlayViewModel
+import com.kintmin.presentation.ui.audio_play.model.AudioPlayUiState
 import com.kintmin.presentation.ui.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.youtube_search.YoutubeWebView
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlin.time.Duration.Companion.seconds
+
+@Composable
+fun MainScreen(
+    initTabItem: MainTabItem,
+) {
+    val downloadViewModel: YoutubeDownloadViewModel = hiltViewModel()
+    val playViewModel: AudioPlayViewModel = hiltViewModel()
+    MainScreen(
+        initTabItem,
+        downloadViewModel::startDownload,
+        playViewModel.audioPagingFlow,
+        playViewModel::refreshList,
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     initTabItem: MainTabItem,
+    onClickDownload: (String) -> Unit,
+    lazyPagingItems: Flow<PagingData<AudioPlayUiState>>,
+    onRefresh: () -> Unit,
 ) {
-    val youtubeDownloadViewModel: YoutubeDownloadViewModel = hiltViewModel()
     var currentUrl: String by remember { mutableStateOf("https://www.youtube.com/") }
     var selectedTab by remember { mutableStateOf(initTabItem) }
 
@@ -69,7 +93,7 @@ fun MainScreen(
             if (selectedTab == MainTabItem.Search) {
                 FloatingActionButton(
                     onClick = {
-                        youtubeDownloadViewModel.startDownload(currentUrl)
+                        onClickDownload(currentUrl)
                     },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White
@@ -109,6 +133,8 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
+                lazyPagingItems,
+                onRefresh,
             )
         }
     }
@@ -133,5 +159,40 @@ fun RequestNotificationPermission() {
                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainScreenPreview() {
+
+    val fakeItems = listOf(
+        AudioPlayUiState(
+            id = "1",
+            mediaName = "미디어1",
+            artist = "아티스트1",
+            audioDuration = 300.seconds,
+            description = "설명설명설명설명",
+            audioFileFullPath = "",
+            imageFileFullPath = "",
+        ),
+        AudioPlayUiState(
+            id = "2",
+            mediaName = "미디어2",
+            artist = "아티스트2",
+            audioDuration = 500.seconds,
+            description = "설명설명설명설명",
+            audioFileFullPath = "",
+            imageFileFullPath = "",
+        ),
+    )
+
+    YTMusicBoxTheme {
+        MainScreen(
+            MainTabItem.Play,
+            {},
+            flowOf(PagingData.from(fakeItems)),
+            {}
+        )
     }
 }
