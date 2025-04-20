@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -40,8 +41,9 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.kintmin.notification.PushNotificationUtil
-import com.kintmin.platformruntime.service.PlaybackService
+import androidx.navigation.compose.rememberNavController
+import com.kintmin.platform.notification.PushNotificationUtil
+import com.kintmin.platform.service.PlaybackService
 import com.kintmin.presentation.theme.YTMusicBoxTheme
 import com.kintmin.presentation.ui.audio_play.AudioPlayView
 import com.kintmin.presentation.ui.youtube_search.YoutubeDownloadViewModel
@@ -163,12 +165,5 @@ fun RequestNotificationPermission(activity: Activity) {
                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MusicControlsPreview() {
-    YTMusicBoxTheme {
     }
 }

@@ -1,7 +1,7 @@
 package com.kintmin.presentation.ui.audio_play.model
 
 import com.kintmin.domain.model.AudioMediaData
-import com.kintmin.platformruntime.model.AudioPlayData
+import com.kintmin.platform.model.AudioPlayData
 import kotlin.time.Duration
 
 data class AudioPlayUiState(

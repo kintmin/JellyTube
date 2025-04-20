@@ -58,20 +58,14 @@ android {
 
 dependencies {
     implementation(project(":presentation"))
-    implementation(project(":platform-runtime"))
-    implementation(project(":notification"))
-
+    implementation(project(":platform"))
     implementation(project(":domain"))
-
-    implementation(project(":data:dataApi"))
-    implementation(project(":data:localDatabase"))
-    implementation(project(":data:localFile"))
-    implementation(project(":data:network"))
-    implementation(project(":data:pythonBridge"))
+    implementation(project(":data"))
 
     implementation(libs.hilt.android)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
+    implementation(libs.androidx.navigation.compose)
     ksp(libs.androidx.hilt.compiler)
     ksp(libs.hilt.android.compiler)
     implementation(libs.androidx.core.ktx)

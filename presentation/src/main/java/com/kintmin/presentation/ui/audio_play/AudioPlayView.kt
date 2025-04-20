@@ -12,30 +12,49 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
+import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.kintmin.platformruntime.service.PlaybackService
+import com.kintmin.platform.service.PlaybackService
 import com.kintmin.presentation.theme.YTMusicBoxTheme
+import com.kintmin.presentation.ui.audio_play.model.AudioPlayUiState
 import com.kintmin.presentation.ui.audio_play.model.toParcelize
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AudioPlayView(
     modifier: Modifier,
     viewModel: AudioPlayViewModel = hiltViewModel(),
 ) {
+    AudioPlayView(
+        modifier,
+        viewModel.audioPagingFlow,
+        viewModel::refreshList,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AudioPlayView(
+    modifier: Modifier,
+    lazyPagingItems: Flow<PagingData<AudioPlayUiState>>,
+    onRefresh: () -> Unit,
+) {
     val context = LocalContext.current
-    val lazyPagingItems = viewModel.audioPagingFlow.collectAsLazyPagingItems()
-    val isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
+    val items = lazyPagingItems.collectAsLazyPagingItems()
+    val isRefreshing = items.loadState.refresh is LoadState.Loading
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
         onRefresh = {
-            viewModel.refreshList()
+            onRefresh()
         },
     ) {
         LazyColumn(modifier = modifier) {
-            items(lazyPagingItems.itemCount) { index ->
-                val item = lazyPagingItems[index]
+            items(items.itemCount) { index ->
+                val item = items[index]
                 item?.let {
                     AudioItemView(it, onClickPlay = { data ->
                         val intent = Intent(context, PlaybackService::class.java).apply {
@@ -46,7 +65,7 @@ fun AudioPlayView(
                 }
             }
 
-            lazyPagingItems.apply {
+            items.apply {
                 when {
                     loadState.refresh is LoadState.Loading -> {
                         item { Text("로딩 중...") }
@@ -69,7 +88,32 @@ fun AudioPlayView(
 @Preview(showBackground = true)
 @Composable
 fun MusicControlsPreview() {
+    val fakeItems = listOf(
+        AudioPlayUiState(
+            id = "1",
+            mediaName = "미디어1",
+            artist = "아티스트1",
+            audioDuration = 300.seconds,
+            description = "설명설명설명설명",
+            audioFileFullPath = "",
+            imageFileFullPath = "",
+        ),
+        AudioPlayUiState(
+            id = "2",
+            mediaName = "미디어2",
+            artist = "아티스트2",
+            audioDuration = 500.seconds,
+            description = "설명설명설명설명",
+            audioFileFullPath = "",
+            imageFileFullPath = "",
+        ),
+    )
+
     YTMusicBoxTheme {
-        AudioPlayView(Modifier.fillMaxWidth())
+        AudioPlayView(
+            Modifier.fillMaxWidth(),
+            flowOf(PagingData.from(fakeItems)),
+            {}
+        )
     }
 }
