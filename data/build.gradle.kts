@@ -58,7 +58,6 @@ dependencies {
     implementation(project(":domain"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
-    implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.core)
 
     implementation(libs.retrofit)

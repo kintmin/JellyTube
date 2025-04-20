@@ -23,7 +23,7 @@
             tools:node="remove" />
 
         <activity
-            android:name="com.kintmin.presentation.ui.MainActivity"
+            android:name="com.kintmin.ytmusicbox.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.YTMusicBox">
             <intent-filter>

@@ -23,21 +23,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-@Composable
-fun AudioPlayView(
-    modifier: Modifier,
-    viewModel: AudioPlayViewModel = hiltViewModel(),
-) {
-    AudioPlayView(
-        modifier,
-        viewModel.audioPagingFlow,
-        viewModel::refreshList,
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AudioPlayView(
+fun AudioPlayView(
     modifier: Modifier,
     lazyPagingItems: Flow<PagingData<AudioPlayUiState>>,
     onRefresh: () -> Unit,
