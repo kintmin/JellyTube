@@ -1,6 +1,7 @@
 package com.kintmin.presentation.ui
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
@@ -30,8 +31,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import androidx.paging.PagingData
+import com.kintmin.platform.service.PlaybackService
 import com.kintmin.presentation.theme.YTMusicBoxTheme
 import com.kintmin.presentation.ui.audio_play.AudioPlayView
 import com.kintmin.presentation.ui.audio_play.AudioPlayViewModel
@@ -40,7 +45,6 @@ import com.kintmin.presentation.ui.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.youtube_search.YoutubeWebView
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun MainScreen(
@@ -69,23 +73,27 @@ fun MainScreen(
 
     RequestNotificationPermission()
 
-//    val sessionToken =
-//        SessionToken(LocalContext.current, ComponentName(LocalContext.current, PlaybackService::class.java))
-//    val controllerFuture = MediaController.Builder(LocalContext.current, sessionToken).buildAsync()
-//
-//    controllerFuture.addListener({
-//        // Call controllerFuture.get() to retrieve the MediaController.
-//        // MediaController implements the Player interface, so it can be
-//        // attached to the PlayerView UI component.
-//
-//        //playerView.setPlayer(controllerFuture.get())
-//    }, ContextCompat.getMainExecutor(LocalContext.current))
+    val sessionToken =
+        SessionToken(LocalContext.current, ComponentName(LocalContext.current, PlaybackService::class.java))
+    val controllerFuture = MediaController.Builder(LocalContext.current, sessionToken).buildAsync()
+
+    controllerFuture.addListener({
+        // Call controllerFuture.get() to retrieve the MediaController.
+        // MediaController implements the Player interface, so it can be
+        // attached to the PlayerView UI component.
+
+        //playerView.setPlayer(controllerFuture.get())
+    }, ContextCompat.getMainExecutor(LocalContext.current))
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
+            val title = when (selectedTab) {
+                MainTabItem.Search -> "다운받을 유튜브 영상 검색하기"
+                MainTabItem.Play -> "음원 재생하기"
+            }
             TopAppBar(
-                title = { Text("다운받을 유튜브 영상 검색하기") },
+                title = { Text(title) },
                 colors = TopAppBarDefaults.topAppBarColors(),
             )
         },
@@ -165,33 +173,11 @@ fun RequestNotificationPermission() {
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
-
-    val fakeItems = listOf(
-        AudioPlayUiState(
-            id = "1",
-            mediaName = "미디어1",
-            artist = "아티스트1",
-            audioDuration = 300.seconds,
-            description = "설명설명설명설명",
-            audioFileFullPath = "",
-            imageFileFullPath = "",
-        ),
-        AudioPlayUiState(
-            id = "2",
-            mediaName = "미디어2",
-            artist = "아티스트2",
-            audioDuration = 500.seconds,
-            description = "설명설명설명설명",
-            audioFileFullPath = "",
-            imageFileFullPath = "",
-        ),
-    )
-
     YTMusicBoxTheme {
         MainScreen(
             MainTabItem.Play,
             {},
-            flowOf(PagingData.from(fakeItems)),
+            flowOf(PagingData.from(AudioPlayUiState.getMockList())),
             {}
         )
     }

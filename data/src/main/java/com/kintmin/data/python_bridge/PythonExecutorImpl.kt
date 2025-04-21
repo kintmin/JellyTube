@@ -26,21 +26,19 @@ internal class PythonExecutorImpl @Inject constructor(
 
             withTimeout(TIME_OUT) {
                 val module = Python.getInstance().getModule(PYTHON_FILE_NAME)
+                val version = module.callAttr("get_version").toString()
+                Log.d("DEBUG", "yt-dlp version: $version")
+
                 val pyResult =
                     module.callAttr(PYTHON_METHOD_NAME, youtubeUrl, audioDownloadPath).asList()
 
-                if (pyResult.size == 1) {
-                    Log.d("EXCEPTION", pyResult[0].toString())
-                    throw Exception(pyResult[0].toString())
-                } else {
-                    YoutubeDownloadDto(
-                        title = pyResult[0].toString(),
-                        thumbnailDownloadUrl = pyResult[1].toString(),
-                        duration = pyResult[2].toString(),
-                        uploader = pyResult[3].toString(),
-                        description = pyResult[4].toString(),
-                    )
-                }
+                YoutubeDownloadDto(
+                    title = pyResult[0].toString(),
+                    thumbnailDownloadUrl = pyResult[1].toString(),
+                    duration = pyResult[2].toString(),
+                    uploader = pyResult[3].toString(),
+                    description = pyResult[4].toString(),
+                )
             }
         }
     }
