@@ -9,4 +9,5 @@ interface AudioMediaRepository {
     suspend fun downloadAudioMedia(downloadUrl: String, id: String): Result<AudioMedia>
     suspend fun updateAudioMedia(id: String, newAudioMedia: AudioMedia): Result<Unit>
     suspend fun deleteAudioMediaInvalidCache(id: String): Result<Unit>
+    suspend fun deleteAudioMedia(id: String): Result<Unit>
 }

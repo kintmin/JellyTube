@@ -73,8 +73,8 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         TODO("Not yet implemented")
     }
 
-    override suspend fun addAudioMedia(newAudioMedia: AudioMedia): Result<Unit> = runCatching {
-        localAudioDataSource.insertEntity(
+    override suspend fun addAudioMedia(newAudioMedia: AudioMedia): Result<Unit> {
+        return localAudioDataSource.insertEntity(
             newAudioMedia.toEntity(fileManager)
         )
     }
@@ -88,5 +88,11 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
             }
         }
         fileManager.clearDiskCache()
+    }
+
+    override suspend fun deleteAudioMedia(id: String): Result<Unit> = runCatching {
+        localAudioDataSource.deleteEntity(id).onSuccess {
+            deleteAudioMediaInvalidCache(id).getOrThrow()
+        }.getOrThrow()
     }
 }
