@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -20,8 +19,6 @@ import com.kintmin.presentation.ui.audio_play.model.AudioPlayUiState
 import com.kintmin.presentation.ui.audio_play.model.toParcelize
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,31 +73,10 @@ fun AudioPlayView(
 @Preview(showBackground = true)
 @Composable
 fun MusicControlsPreview() {
-    val fakeItems = listOf(
-        AudioPlayUiState(
-            id = "1",
-            mediaName = "미디어1",
-            artist = "아티스트1",
-            audioDuration = 300.seconds,
-            description = "설명설명설명설명",
-            audioFileFullPath = "",
-            imageFileFullPath = "",
-        ),
-        AudioPlayUiState(
-            id = "2",
-            mediaName = "미디어2",
-            artist = "아티스트2",
-            audioDuration = 500.seconds,
-            description = "설명설명설명설명",
-            audioFileFullPath = "",
-            imageFileFullPath = "",
-        ),
-    )
-
     YTMusicBoxTheme {
         AudioPlayView(
             Modifier.fillMaxWidth(),
-            flowOf(PagingData.from(fakeItems)),
+            flowOf(PagingData.from(AudioPlayUiState.getMockList())),
             {}
         )
     }

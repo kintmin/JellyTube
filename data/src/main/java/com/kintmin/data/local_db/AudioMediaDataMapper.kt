@@ -3,13 +3,13 @@ package com.kintmin.data.local_db
 import com.kintmin.data.local_db.entity.AudioMediaEntity
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.python_bridge.model.YoutubeDownloadDto
-import com.kintmin.domain.model.AudioMediaData
+import com.kintmin.domain.model.AudioMedia
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlin.time.Duration.Companion.seconds
 
-internal fun AudioMediaData.toEntity(fileManager: FileManager): AudioMediaEntity {
+internal fun AudioMedia.toEntity(fileManager: FileManager): AudioMediaEntity {
     val zoneOffset = ZoneId.systemDefault().rules.getOffset(createdTime)
     val audioFileNameWithExt = fileManager.getFileNameWithExt(audioFileFullPath).getOrThrow()
     val imageFileNameWithExt = imageFileFullPath?.let {
@@ -29,7 +29,7 @@ internal fun AudioMediaData.toEntity(fileManager: FileManager): AudioMediaEntity
     )
 }
 
-internal fun AudioMediaEntity.toDomain(fileManager: FileManager): Result<AudioMediaData> = runCatching {
+internal fun AudioMediaEntity.toDomain(fileManager: FileManager): Result<AudioMedia> = runCatching {
     val audioFilePath = fileManager.getFullPathWithExt(
         fileNameWithExt = audioFileNameWithExt
     ).getOrThrow()
@@ -44,7 +44,7 @@ internal fun AudioMediaEntity.toDomain(fileManager: FileManager): Result<AudioMe
         .atZone(ZoneId.systemDefault())
         .toLocalDateTime()
 
-    AudioMediaData(
+    AudioMedia(
         id = id,
         playlistId = playlistId,
         mediaName = mediaName,
@@ -63,8 +63,8 @@ internal fun YoutubeDownloadDto.toDomain(
     createdTime: LocalDateTime,
     audioFileFullPath: String,
     imageFileFullPath: String?,
-): AudioMediaData {
-    return AudioMediaData(
+): AudioMedia {
+    return AudioMedia(
         id = id,
         playlistId = null,
         mediaName = title,

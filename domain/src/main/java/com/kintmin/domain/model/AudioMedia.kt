@@ -3,7 +3,7 @@ package com.kintmin.domain.model
 import java.time.LocalDateTime
 import kotlin.time.Duration
 
-data class AudioMediaData(
+data class AudioMedia(
     val id: String,
     val playlistId: Int?,
     val mediaName: String,

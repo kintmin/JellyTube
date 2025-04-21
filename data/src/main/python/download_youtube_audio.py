@@ -2,7 +2,8 @@ import yt_dlp
 def download_audio(url, audio_path):
     try:
         ydl_opts = {
-            'format': 'bestaudio',
+            'format': 'bestaudio/best',
+            'force_generic_extractor': True,
             'outtmpl': audio_path,
             'cachedir': False,
             'writeinfojson': False,
@@ -23,4 +24,7 @@ def download_audio(url, audio_path):
             
             return title, thumbnail_url, duration, uploader, description
     except Exception as e:
-        return f"Exception: {e}"
+        raise Exception(f"Download failed: {e}")
+
+def get_version():
+    return yt_dlp.version.__version__

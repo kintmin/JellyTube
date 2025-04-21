@@ -1,8 +1,9 @@
 package com.kintmin.presentation.ui.audio_play.model
 
-import com.kintmin.domain.model.AudioMediaData
+import com.kintmin.domain.model.AudioMedia
 import com.kintmin.platform.model.AudioPlayData
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 data class AudioPlayUiState(
     val id: String,
@@ -25,9 +26,23 @@ data class AudioPlayUiState(
                 "$minutes:${seconds.toString().padStart(2, '0')}"
             }
         } ?: "알 수 없음"
+
+    companion object {
+        fun getMock() = AudioPlayUiState(
+            id = "1",
+            mediaName = "미디어",
+            artist = "아티스트",
+            audioDuration = 500.seconds,
+            description = "설명설명설명설명",
+            audioFileFullPath = "",
+            imageFileFullPath = "",
+        )
+
+        fun getMockList() = List(20) { getMock() }
+    }
 }
 
-internal fun AudioMediaData.toUiModel() = AudioPlayUiState(
+internal fun AudioMedia.toUiModel() = AudioPlayUiState(
     id = id,
     mediaName = mediaName,
     artist = artist,

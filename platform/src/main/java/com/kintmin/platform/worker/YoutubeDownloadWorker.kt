@@ -18,8 +18,9 @@ class YoutubeDownloadWorker @AssistedInject constructor(
     private val pushNotificationUtil: PushNotificationUtil,
 ) : CoroutineWorker(appContext, workerParams) {
     override suspend fun doWork(): Result {
-        val url = inputData.getString(INPUT_DATA_URL) ?: return Result.failure()
+        setForegroundAsync(NotificationData.Download().getForegroundInfo(applicationContext))
 
+        val url = inputData.getString(INPUT_DATA_URL) ?: return Result.failure()
         pushNotificationUtil.sendNotification(NotificationData.Download(1, 0))
 
         fetchYoutubeMediaUseCase(url).onSuccess {

@@ -69,7 +69,6 @@ internal class FileManagerImpl @Inject constructor(
 
     override fun clearDiskCache(): Result<Unit> = runCatching {
         context.cacheDir.deleteRecursively()
-        File(context.cacheDir.parentFile, "app_webview").deleteRecursively()
     }
 
     private fun extractExt(fileNameWithExt: String): Pair<String, Ext> {

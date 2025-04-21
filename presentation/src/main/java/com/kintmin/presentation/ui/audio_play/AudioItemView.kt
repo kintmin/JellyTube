@@ -31,7 +31,6 @@ import coil.request.ImageRequest
 import com.kintmin.presentation.theme.YTMusicBoxTheme
 import com.kintmin.presentation.ui.audio_play.model.AudioPlayUiState
 import java.io.File
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun AudioItemView(
@@ -107,15 +106,7 @@ fun AudioItemView(
 fun AudioItemPreview() {
     YTMusicBoxTheme {
         AudioItemView(
-            AudioPlayUiState(
-                id = "",
-                mediaName = "Audio Title",
-                description = "Audio Description",
-                artist = "Artist",
-                audioDuration = 1234.seconds,
-                audioFileFullPath = "",
-                imageFileFullPath = "",
-            )
+            AudioPlayUiState.getMock()
         )
     }
 }
