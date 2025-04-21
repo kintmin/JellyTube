@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.audio_play
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -12,10 +13,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,8 +43,13 @@ import java.io.File
 fun AudioItemView(
     data: AudioPlayUiState,
     onClickPlay: (AudioPlayUiState) -> Unit = {},
-    onClickOpenEdit: (AudioPlayUiState) -> Unit = {},
+    isBasePlaylist: Boolean = true,
+    modifyAudioMedia: (AudioPlayUiState) -> Unit = {},
+    deleteAudioMediaFromPlaylist: (AudioPlayUiState) -> Unit = {},
+    deleteAudioMedia: (AudioPlayUiState) -> Unit = {},
 ) {
+    var expanded by remember { mutableStateOf(false) }
+
     val imageRequest = ImageRequest.Builder(LocalContext.current)
         .data(
             data.imageFileFullPath?.let { File(it) }
@@ -47,56 +59,93 @@ fun AudioItemView(
         .diskCachePolicy(coil.request.CachePolicy.DISABLED)
         .build()
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-    ) {
-        Row(modifier = Modifier
-            .weight(1f)
-            .clickable { onClickPlay(data) }
-        ) {
-            AsyncImage(
-                model = imageRequest,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .aspectRatio(1f)
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(16))
-                    .background(Color.Gray)
-            )
-            Column(
-                modifier = Modifier
-                    .align(Alignment.CenterVertically)
-            ) {
-                Text(
-                    text = data.mediaName,
-                    fontSize = 14.sp,
-                    lineHeight = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = data.extraString,
-                    fontSize = 10.sp,
-                    lineHeight = 10.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .height(56.dp)
+        .clickable {
+            onClickPlay(data)
         }
-        IconButton(
+    ) {
+        AsyncImage(
+            model = imageRequest,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxHeight()
+                .aspectRatio(1f)
+                .padding(8.dp)
+                .clip(RoundedCornerShape(16))
+                .background(Color.Gray)
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .align(Alignment.CenterVertically)
+        ) {
+            Text(
+                text = data.mediaName,
+                fontSize = 14.sp,
+                lineHeight = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = data.extraString,
+                fontSize = 10.sp,
+                lineHeight = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .align(Alignment.CenterVertically),
-            onClick = { onClickOpenEdit(data) }
         ) {
-            Icon(
-                imageVector = Icons.Default.MoreVert,
-                contentDescription = "More options"
-            )
+            IconButton(
+                onClick = { expanded = true }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "More options"
+                )
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("정보 수정") },
+                    onClick = {
+                        modifyAudioMedia(data)
+                        expanded = false
+                        // 타이틀 수정
+                        // 설명 수정
+                        // 아티스트 수정
+                        // 이미지 수정
+                        // 플레이리스트 수정 (다수 선택 가능)
+                        // 음원 제거
+                    }
+                )
+                if (!isBasePlaylist) {
+                    DropdownMenuItem(
+                        text = { Text("플레이리스트에서 제거") },
+                        onClick = {
+                            deleteAudioMediaFromPlaylist(data)
+                            expanded = false
+                        }
+                    )
+                }
+                DropdownMenuItem(
+                    text = { Text("음원 제거") },
+                    onClick = {
+                        deleteAudioMedia(data)
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }

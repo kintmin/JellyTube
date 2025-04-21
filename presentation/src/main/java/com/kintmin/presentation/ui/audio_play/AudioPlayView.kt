@@ -26,6 +26,10 @@ fun AudioPlayView(
     modifier: Modifier,
     lazyPagingItems: Flow<PagingData<AudioPlayUiState>>,
     onRefresh: () -> Unit,
+    isBasePlaylist: Boolean = true,
+    modifyAudioMedia: (AudioPlayUiState) -> Unit = {},
+    deleteAudioMediaFromPlaylist: (AudioPlayUiState) -> Unit = {},
+    deleteAudioMedia: (AudioPlayUiState) -> Unit = {},
 ) {
     val context = LocalContext.current
     val items = lazyPagingItems.collectAsLazyPagingItems()
@@ -41,12 +45,19 @@ fun AudioPlayView(
             items(items.itemCount) { index ->
                 val item = items[index]
                 item?.let {
-                    AudioItemView(it, onClickPlay = { data ->
-                        val intent = Intent(context, PlaybackService::class.java).apply {
-                            putExtra(PlaybackService.EXTRA_MEDIA_DATA, data.toParcelize())
-                        }
-                        context.startService(intent)
-                    })
+                    AudioItemView(
+                        data = it,
+                        onClickPlay = { data ->
+                            val intent = Intent(context, PlaybackService::class.java).apply {
+                                putExtra(PlaybackService.EXTRA_MEDIA_DATA, data.toParcelize())
+                            }
+                            context.startService(intent)
+                        },
+                        isBasePlaylist = isBasePlaylist,
+                        modifyAudioMedia = modifyAudioMedia,
+                        deleteAudioMediaFromPlaylist = deleteAudioMediaFromPlaylist,
+                        deleteAudioMedia = deleteAudioMedia,
+                    )
                 }
             }
 

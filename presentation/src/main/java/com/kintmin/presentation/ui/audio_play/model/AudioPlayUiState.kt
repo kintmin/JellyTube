@@ -38,7 +38,7 @@ data class AudioPlayUiState(
             imageFileFullPath = "",
         )
 
-        fun getMockList() = List(20) { getMock() }
+        fun getMockList() = List(5) { getMock() }
     }
 }
 

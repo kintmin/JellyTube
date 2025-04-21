@@ -38,12 +38,15 @@ import androidx.media3.session.SessionToken
 import androidx.paging.PagingData
 import com.kintmin.platform.service.PlaybackService
 import com.kintmin.presentation.theme.YTMusicBoxTheme
+import com.kintmin.presentation.ui.audio_play.AudioPlayEvent
 import com.kintmin.presentation.ui.audio_play.AudioPlayView
 import com.kintmin.presentation.ui.audio_play.AudioPlayViewModel
 import com.kintmin.presentation.ui.audio_play.model.AudioPlayUiState
 import com.kintmin.presentation.ui.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.youtube_search.YoutubeWebView
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOf
 
 @Composable
@@ -52,11 +55,24 @@ fun MainScreen(
 ) {
     val downloadViewModel: YoutubeDownloadViewModel = hiltViewModel()
     val playViewModel: AudioPlayViewModel = hiltViewModel()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        playViewModel.eventFlow.collect { event ->
+            when (event) {
+                is AudioPlayEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     MainScreen(
         initTabItem,
         downloadViewModel::startDownload,
         playViewModel.audioPagingFlow,
         playViewModel::refreshList,
+        deleteAudioMedia = { data ->
+            playViewModel.deleteAudioMedia(data.id)
+        }
     )
 }
 
@@ -67,6 +83,10 @@ fun MainScreen(
     onClickDownload: (String) -> Unit,
     lazyPagingItems: Flow<PagingData<AudioPlayUiState>>,
     onRefresh: () -> Unit,
+    isBasePlaylist: Boolean = true,
+    modifyAudioMedia: (AudioPlayUiState) -> Unit = {},
+    deleteAudioMediaFromPlaylist: (AudioPlayUiState) -> Unit = {},
+    deleteAudioMedia: (AudioPlayUiState) -> Unit = {},
 ) {
     var currentUrl: String by remember { mutableStateOf("https://www.youtube.com/") }
     var selectedTab by remember { mutableStateOf(initTabItem) }
@@ -143,6 +163,10 @@ fun MainScreen(
                     .padding(innerPadding),
                 lazyPagingItems,
                 onRefresh,
+                isBasePlaylist,
+                modifyAudioMedia,
+                deleteAudioMediaFromPlaylist,
+                deleteAudioMedia,
             )
         }
     }
