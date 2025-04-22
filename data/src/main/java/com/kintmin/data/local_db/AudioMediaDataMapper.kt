@@ -11,7 +11,7 @@ import kotlin.time.Duration.Companion.seconds
 
 internal fun AudioMedia.toEntity(fileManager: FileManager): AudioMediaEntity {
     val zoneOffset = ZoneId.systemDefault().rules.getOffset(createdTime)
-    val audioFileNameWithExt = fileManager.getFileNameWithExt(audioFileFullPath).getOrThrow()
+    val audioFileNameWithExt = fileManager.getFileNameWithExt(audioFileFullPath!!).getOrThrow()
     val imageFileNameWithExt = imageFileFullPath?.let {
         fileManager.getFileNameWithExt(it).getOrNull()
     }
@@ -29,10 +29,10 @@ internal fun AudioMedia.toEntity(fileManager: FileManager): AudioMediaEntity {
     )
 }
 
-internal fun AudioMediaEntity.toDomain(fileManager: FileManager): Result<AudioMedia> = runCatching {
+internal fun AudioMediaEntity.toDomain(fileManager: FileManager): AudioMedia {
     val audioFilePath = fileManager.getFullPathWithExt(
         fileNameWithExt = audioFileNameWithExt
-    ).getOrThrow()
+    ).getOrNull()
 
     val imageFilePath = imageFileNameWithExt?.let { imageFileNameWithExt ->
         fileManager.getFullPathWithExt(
@@ -44,7 +44,7 @@ internal fun AudioMediaEntity.toDomain(fileManager: FileManager): Result<AudioMe
         .atZone(ZoneId.systemDefault())
         .toLocalDateTime()
 
-    AudioMedia(
+    return AudioMedia(
         id = id,
         playlistId = playlistId,
         mediaName = mediaName,

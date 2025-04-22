@@ -1,5 +1,6 @@
 package com.kintmin.data.local_db.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -15,7 +16,7 @@ interface AudioMediaDao {
     suspend fun getDataById(id: String): AudioMediaEntity
 
     @Query("SELECT * FROM AUDIO_MEDIA")
-    suspend fun getDataListAll(): List<AudioMediaEntity>
+    fun getPagingDataList(): PagingSource<Int, AudioMediaEntity>
 
     @Query("SELECT * FROM AUDIO_MEDIA WHERE playlistId = :playlistId")
     suspend fun getDataListByPlaylistId(playlistId: Int): List<AudioMediaEntity>

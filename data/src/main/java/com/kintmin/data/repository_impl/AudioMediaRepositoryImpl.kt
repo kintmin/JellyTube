@@ -1,6 +1,7 @@
 package com.kintmin.data.repository_impl
 
-import android.util.Log
+import androidx.paging.PagingData
+import androidx.paging.map
 import com.kintmin.data.local_db.dataSource.LocalAudioDataSource
 import com.kintmin.data.local_db.toDomain
 import com.kintmin.data.local_db.toEntity
@@ -13,6 +14,8 @@ import com.kintmin.domain.repository.AudioMediaRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.time.Instant
@@ -26,15 +29,16 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
     private val pythonExecutor: PythonExecutor,
 ) : AudioMediaRepository {
 
-    override suspend fun getAudioMediaList(): Result<List<AudioMedia>> {
-        return localAudioDataSource.getEntityListAll().mapCatching { entityList ->
-            entityList.mapNotNull { entity -> entity.toDomain(fileManager).getOrNull() }
+    override fun getPagingAudioMediaFlow(): Flow<PagingData<AudioMedia>> {
+        return localAudioDataSource.getPagingEntityFlow().map { pagingData ->
+            pagingData.map { audioEntity ->
+                audioEntity.toDomain(fileManager)
+            }
         }
     }
 
-    override suspend fun getAudioMedia(id: String): Result<AudioMedia> = runCatching {
-        val entity = localAudioDataSource.getEntity(id).getOrThrow()
-        entity.toDomain(fileManager).getOrThrow()
+    override suspend fun getAudioMedia(id: String): Result<AudioMedia> {
+        return localAudioDataSource.getEntity(id).map { it.toDomain(fileManager) }
     }
 
     override suspend fun downloadAudioMedia(

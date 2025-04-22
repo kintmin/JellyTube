@@ -11,7 +11,7 @@ data class AudioPlayUiState(
     val artist: String,
     val audioDuration: Duration?,
     val description: String,
-    val audioFileFullPath: String,
+    val audioFileFullPath: String?,
     val imageFileFullPath: String?,
 ) {
     val extraString: String get() = "$artist | $audioDurationString | $description"
@@ -52,10 +52,12 @@ internal fun AudioMedia.toUiModel() = AudioPlayUiState(
     imageFileFullPath = imageFileFullPath,
 )
 
-fun AudioPlayUiState.toParcelize() = AudioPlayData(
-    mediaName = mediaName,
-    description = description,
-    artist = artist,
-    audioFileFullPath = audioFileFullPath,
-    imageFileFullPath = imageFileFullPath,
-)
+fun AudioPlayUiState.toTryParcelize() = runCatching {
+    AudioPlayData(
+        mediaName = mediaName,
+        description = description,
+        artist = artist,
+        audioFileFullPath = audioFileFullPath!!,
+        imageFileFullPath = imageFileFullPath,
+    )
+}

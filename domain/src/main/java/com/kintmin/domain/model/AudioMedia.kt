@@ -11,6 +11,6 @@ data class AudioMedia(
     val artist: String,
     val audioDuration: Duration?,
     val createdTime: LocalDateTime,
-    val audioFileFullPath: String,
+    val audioFileFullPath: String?, // null일 경우 오디오 파일에 문제
     val imageFileFullPath: String?,
 )

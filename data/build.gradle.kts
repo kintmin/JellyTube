@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.androidx.paging.runtime.ktx)
 
     implementation(libs.retrofit)
     implementation(libs.retrofit.serialization)
@@ -68,4 +69,5 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
+    implementation(libs.androidx.room.paging)
 }

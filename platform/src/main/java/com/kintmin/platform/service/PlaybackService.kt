@@ -72,15 +72,22 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val audioPlayData = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
             intent?.getParcelableExtra(EXTRA_MEDIA_DATA, AudioPlayData::class.java)
         } else {
             intent?.getParcelableExtra(EXTRA_MEDIA_DATA)
-        }
-
-        if (audioPlayData != null) {
+        }?.let { audioPlayData ->
             playImmediately(audioPlayData)
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent?.getParcelableArrayListExtra(EXTRA_PLAYLIST, AudioPlayData::class.java)
+        } else {
+            intent?.getParcelableArrayListExtra(EXTRA_PLAYLIST)
+        }?.let { playlist ->
+            setPlaylist(playlist)
+        }
+
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -124,6 +131,15 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
+    fun setPlaylist(playlist: List<AudioPlayData>, startIndex: Int = 0) {
+        mediaSession?.apply {
+            val mediaItems = playlist.map { getMediaItem(it) }
+            player.setMediaItems(mediaItems, startIndex, 0L)
+            player.prepare()
+            player.play()
+        }
+    }
+
     private fun getMediaItem(audioPlayData: AudioPlayData) = MediaItem.Builder()
         .setUri(audioPlayData.audioFileFullPath)
         .setMediaMetadata(
@@ -141,5 +157,6 @@ class PlaybackService : MediaSessionService() {
 
     companion object {
         const val EXTRA_MEDIA_DATA = "EXTRA_MEDIA_DATA"
+        const val EXTRA_PLAYLIST = "EXTRA_PLAYLIST"
     }
 }

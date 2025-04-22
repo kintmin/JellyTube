@@ -2,8 +2,6 @@ package com.kintmin.presentation.ui.audio_play
 
 import android.content.Intent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,24 +15,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Reorder
-import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -60,7 +49,7 @@ import coil.request.ImageRequest
 import com.kintmin.platform.service.PlaybackService
 import com.kintmin.presentation.theme.YTMusicBoxTheme
 import com.kintmin.presentation.ui.audio_play.model.AudioPlayUiState
-import com.kintmin.presentation.ui.audio_play.model.toParcelize
+import com.kintmin.presentation.ui.audio_play.model.toTryParcelize
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
@@ -238,10 +227,14 @@ fun AudioPlayView(
                     AudioItemView(
                         data = it,
                         onClickPlay = { data ->
-                            val intent = Intent(context, PlaybackService::class.java).apply {
-                                putExtra(PlaybackService.EXTRA_MEDIA_DATA, data.toParcelize())
+                            data.toTryParcelize().onSuccess {
+                                val intent = Intent(context, PlaybackService::class.java).apply {
+                                    putExtra(PlaybackService.EXTRA_MEDIA_DATA, data.toTryParcelize())
+                                }
+                                context.startService(intent)
+                            }.onFailure {
+                                // 오디오 파일에 문제
                             }
-                            context.startService(intent)
                         },
                         isBasePlaylist = isBasePlaylist,
                         modifyAudioMedia = modifyAudioMedia,
