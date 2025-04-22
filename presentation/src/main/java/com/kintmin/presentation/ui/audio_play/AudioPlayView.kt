@@ -2,23 +2,47 @@ package com.kintmin.presentation.ui.audio_play
 
 import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Reorder
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -39,7 +63,6 @@ import com.kintmin.presentation.ui.audio_play.model.AudioPlayUiState
 import com.kintmin.presentation.ui.audio_play.model.toParcelize
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,85 +95,143 @@ fun AudioPlayView(
     ) {
         LazyColumn(modifier = modifier) {
             item {
-                Box(
-                    modifier
+                Column(
+                    modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.LightGray)
-                        .padding(24.dp, 16.dp)
+                        .wrapContentHeight()
+                        .padding(16.dp)
                 ) {
-                    Column {
-                        AsyncImage(
-                            model = imageRequest,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
+                    AsyncImage(
+                        model = imageRequest,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(220.dp)
+                            .padding(bottom = 16.dp)
+                            .clip(RoundedCornerShape(4))
+                            .background(Color.Gray)
+                    )
+                    Text(
+                        modifier = Modifier.padding(bottom = 4.dp),
+                        text = "플레이리스트 이름",
+                        fontSize = 20.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        text = "플레이리스트 · 음원 123개 · 플레이타임 00:00:00",
+                        fontSize = 12.sp,
+                        lineHeight = 10.sp,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Row(
+                        modifier = Modifier.height(36.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        ElevatedButton(
+                            onClick = {
+
+                            },
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(180.dp)
-                                .padding(bottom = 16.dp)
-                                .clip(RoundedCornerShape(4))
-                                .background(Color.Gray)
-                        )
-                        Text(
-                            modifier = Modifier.padding(bottom = 4.dp),
-                            text = "플레이리스트",
-                            fontSize = 16.sp,
-                            lineHeight = 10.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = "음원 nnnn개",
-                            fontSize = 10.sp,
-                            lineHeight = 10.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = "플레이타임: hh:mm:ss",
-                            fontSize = 10.sp,
-                            lineHeight = 10.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Row {
-                            ElevatedButton(
-                                onClick = {
-
-                                },
-                                modifier = Modifier.wrapContentHeight().weight(1f),
-                                contentPadding = PaddingValues(0.dp),
-
+                                .defaultMinSize(minHeight = 1.dp)
+                                .padding(end = 8.dp)
+                                .fillMaxHeight()
+                                .weight(1f),
+                            contentPadding = PaddingValues(0.dp),
                             ) {
-                                Text(
-                                    modifier = Modifier.padding(vertical = 4.dp),
-                                    text = "모두 재생",
-                                    fontSize = 10.sp,
-                                    lineHeight = 10.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                            ElevatedButton(
-                                onClick = {
-
-                                },
-                                modifier = Modifier.wrapContentHeight().weight(1f),
-                                contentPadding = PaddingValues(0.dp),
-                            ) {
-                                Text(
-                                    modifier = Modifier.padding(vertical = 4.dp),
-                                    text = "셔플",
-                                    fontSize = 10.sp,
-                                    lineHeight = 10.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
+                            Text(
+                                text = "모두 재생",
+                                fontSize = 12.sp,
+                            )
+                            Icon(
+                                modifier = Modifier.size(20.dp),
+                                imageVector = Icons.Rounded.PlayArrow,
+                                contentDescription = "PlayArrow"
+                            )
                         }
+                        ElevatedButton(
+                            onClick = {
 
+                            },
+                            modifier = Modifier
+                                .defaultMinSize(minHeight = 1.dp)
+                                .padding(end = 8.dp)
+                                .fillMaxHeight()
+                                .weight(1f),
+                            contentPadding = PaddingValues(0.dp),
+                        ) {
+                            Text(
+                                text = "셔플",
+                                fontSize = 12.sp,
+                            )
+                            Icon(
+                                modifier = Modifier.size(20.dp),
+                                imageVector = Icons.Rounded.Shuffle,
+                                contentDescription = "Shuffle"
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                // 음원 전체 검색 & 다중선택 화면으로 전환
+                            },
+                            modifier = Modifier
+                                .background(
+                                    color = Color.White,
+                                    shape = CircleShape,
+                                )
+                                .fillMaxHeight()
+                                .aspectRatio(1f)
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(20.dp),
+                                imageVector = Icons.Rounded.Add,
+                                contentDescription = "Add"
+                            )
+                        }
+                        Box(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = {
+                                //
+                            },
+                            modifier = Modifier
+                                .background(
+                                    color = Color.White,
+                                    shape = CircleShape,
+                                )
+                                .fillMaxHeight()
+                                .aspectRatio(1f)
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(20.dp),
+                                imageVector = Icons.Rounded.Edit,
+                                contentDescription = "Edit"
+                            )
+                        }
+                        Box(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            onClick = {
+                                //
+                            },
+                            modifier = Modifier
+                                .background(
+                                    color = Color.White,
+                                    shape = CircleShape,
+                                )
+                                .fillMaxHeight()
+                                .aspectRatio(1f)
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(20.dp),
+                                imageVector = Icons.Rounded.Reorder,
+                                contentDescription = "Reorder"
+                            )
+                        }
                     }
                 }
             }
+
             items(items.itemCount) { index ->
                 val item = items[index]
                 item?.let {
