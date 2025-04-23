@@ -65,8 +65,8 @@ fun AudioPlayView(
     deleteAudioMedia: (AudioPlayUiState) -> Unit = {},
 ) {
     val context = LocalContext.current
-    val items = lazyPagingItems.collectAsLazyPagingItems()
-    val isRefreshing = items.loadState.refresh is LoadState.Loading
+    val audioMediaItems = lazyPagingItems.collectAsLazyPagingItems()
+    val isRefreshing = audioMediaItems.loadState.refresh is LoadState.Loading
 
     val imageRequest = ImageRequest.Builder(LocalContext.current)
         .data(
@@ -221,8 +221,11 @@ fun AudioPlayView(
                 }
             }
 
-            items(items.itemCount) { index ->
-                val item = items[index]
+            items(
+                count = audioMediaItems.itemCount,
+                key = { index -> audioMediaItems[index]?.id ?: "" }
+            ) { index ->
+                val item = audioMediaItems[index]
                 item?.let {
                     AudioItemView(
                         data = it,
@@ -244,7 +247,7 @@ fun AudioPlayView(
                 }
             }
 
-            items.apply {
+            audioMediaItems.apply {
                 when {
                     loadState.refresh is LoadState.Loading -> {
                         item { Text("로딩 중...") }
