@@ -52,7 +52,17 @@ internal fun AudioMedia.toUiModel() = AudioPlayUiState(
     imageFileFullPath = imageFileFullPath,
 )
 
-fun AudioPlayUiState.toTryParcelize() = runCatching {
+internal fun AudioMedia.toTryParcelize() = runCatching {
+    AudioPlayData(
+        mediaName = mediaName,
+        description = description,
+        artist = artist,
+        audioFileFullPath = audioFileFullPath!!,
+        imageFileFullPath = imageFileFullPath,
+    )
+}
+
+internal fun AudioPlayUiState.toTryParcelize() = runCatching {
     AudioPlayData(
         mediaName = mediaName,
         description = description,

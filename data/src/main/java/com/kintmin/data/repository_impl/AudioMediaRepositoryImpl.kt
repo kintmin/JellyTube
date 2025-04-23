@@ -37,6 +37,12 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getAudioMediaList(): Result<List<AudioMedia>> {
+        return localAudioDataSource.getEntityList().mapCatching { listData ->
+            listData.map { it.toDomain(fileManager) }
+        }
+    }
+
     override suspend fun getAudioMedia(id: String): Result<AudioMedia> {
         return localAudioDataSource.getEntity(id).mapCatching { it.toDomain(fileManager) }
     }

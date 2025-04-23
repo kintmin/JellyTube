@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 interface AudioMediaRepository {
     suspend fun addAudioMedia(newAudioMedia: AudioMedia): Result<Unit>
     fun getPagingAudioMediaFlow(): Flow<PagingData<AudioMedia>>
+    suspend fun getAudioMediaList(): Result<List<AudioMedia>>
     suspend fun getAudioMedia(id: String): Result<AudioMedia>
     suspend fun downloadAudioMedia(downloadUrl: String, id: String): Result<AudioMedia>
     suspend fun updateAudioMedia(id: String, newAudioMedia: AudioMedia): Result<Unit>

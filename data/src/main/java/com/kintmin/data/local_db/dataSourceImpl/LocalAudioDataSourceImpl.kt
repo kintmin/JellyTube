@@ -21,6 +21,12 @@ internal class LocalAudioDataSourceImpl @Inject constructor(
         ).flow
     }
 
+    override suspend fun getEntityList(): Result<List<AudioMediaEntity>> = runCatching {
+        withContext(Dispatchers.IO) {
+            audioMediaDao.getDataList()
+        }
+    }
+
     override suspend fun getEntityListByPlaylistId(playlistId: Int) = runCatching {
         withContext(Dispatchers.IO) {
             audioMediaDao.getDataListByPlaylistId(playlistId)

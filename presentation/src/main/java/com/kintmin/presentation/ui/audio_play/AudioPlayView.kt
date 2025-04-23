@@ -60,6 +60,7 @@ fun AudioPlayView(
     lazyPagingItems: Flow<PagingData<AudioPlayUiState>>,
     onRefresh: () -> Unit,
     isBasePlaylist: Boolean = true,
+    onStartSequentialPlayback: () -> Unit = {},
     modifyAudioMedia: (AudioPlayUiState) -> Unit = {},
     deleteAudioMediaFromPlaylist: (AudioPlayUiState) -> Unit = {},
     deleteAudioMedia: (AudioPlayUiState) -> Unit = {},
@@ -121,7 +122,7 @@ fun AudioPlayView(
                     ) {
                         ElevatedButton(
                             onClick = {
-
+                                onStartSequentialPlayback()
                             },
                             modifier = Modifier
                                 .defaultMinSize(minHeight = 1.dp)

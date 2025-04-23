@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui
 
 import android.Manifest
 import android.content.ComponentName
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
@@ -42,6 +43,7 @@ import com.kintmin.presentation.ui.audio_play.AudioPlayEvent
 import com.kintmin.presentation.ui.audio_play.AudioPlayView
 import com.kintmin.presentation.ui.audio_play.AudioPlayViewModel
 import com.kintmin.presentation.ui.audio_play.model.AudioPlayUiState
+import com.kintmin.presentation.ui.audio_play.model.toTryParcelize
 import com.kintmin.presentation.ui.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.youtube_search.YoutubeWebView
 import kotlinx.coroutines.flow.Flow
@@ -61,6 +63,12 @@ fun MainScreen(
         playViewModel.eventFlow.collect { event ->
             when (event) {
                 is AudioPlayEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                is AudioPlayEvent.RegisterPlaylist -> {
+                    val intent = Intent(context, PlaybackService::class.java).apply {
+                        putParcelableArrayListExtra(PlaybackService.EXTRA_PLAYLIST, event.playlist)
+                    }
+                    context.startService(intent)
+                }
             }
         }
     }
@@ -70,6 +78,7 @@ fun MainScreen(
         downloadViewModel::startDownload,
         playViewModel.audioPagingFlow,
         playViewModel::refreshList,
+        onStartSequentialPlayback = playViewModel::setPlaylist,
         deleteAudioMedia = { data ->
             playViewModel.deleteAudioMedia(data.id)
         }
@@ -84,6 +93,7 @@ fun MainScreen(
     lazyPagingItems: Flow<PagingData<AudioPlayUiState>>,
     onRefresh: () -> Unit,
     isBasePlaylist: Boolean = true,
+    onStartSequentialPlayback: () -> Unit = {},
     modifyAudioMedia: (AudioPlayUiState) -> Unit = {},
     deleteAudioMediaFromPlaylist: (AudioPlayUiState) -> Unit = {},
     deleteAudioMedia: (AudioPlayUiState) -> Unit = {},
@@ -164,6 +174,7 @@ fun MainScreen(
                 lazyPagingItems,
                 onRefresh,
                 isBasePlaylist,
+                onStartSequentialPlayback,
                 modifyAudioMedia,
                 deleteAudioMediaFromPlaylist,
                 deleteAudioMedia,

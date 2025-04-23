@@ -18,6 +18,9 @@ interface AudioMediaDao {
     @Query("SELECT * FROM AUDIO_MEDIA")
     fun getPagingDataList(): PagingSource<Int, AudioMediaEntity>
 
+    @Query("SELECT * FROM AUDIO_MEDIA")
+    suspend fun getDataList(): List<AudioMediaEntity>
+
     @Query("SELECT * FROM AUDIO_MEDIA WHERE playlistId = :playlistId")
     suspend fun getDataListByPlaylistId(playlistId: Int): List<AudioMediaEntity>
 
