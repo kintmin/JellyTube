@@ -186,7 +186,20 @@ fun MainScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun MainScreenPreview() {
+fun MainScreenSearchTabPreview() {
+    YTMusicBoxTheme {
+        MainScreen(
+            initTabItem = MainTabItem.Search,
+            lazyPagingItems = flowOf(PagingData.from(AudioPlayUiState.getMockList())),
+            sendAudioPlayIntent = {},
+            sendYoutubeDownloadIntent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainScreenPlayTabPreview() {
     YTMusicBoxTheme {
         MainScreen(
             initTabItem = MainTabItem.Play,
