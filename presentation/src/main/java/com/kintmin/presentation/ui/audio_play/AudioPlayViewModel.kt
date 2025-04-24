@@ -38,7 +38,7 @@ class AudioPlayViewModel @Inject constructor(
             is AudioPlayIntent.OnClickAudioItem -> playAudio(intent.data)
             is AudioPlayIntent.OnClickDeleteAudioMedia -> deleteAudioMedia(intent.data.id)
             AudioPlayIntent.OnClickPlayAll -> setPlaylist(0)
-            AudioPlayIntent.OnClickPlayShuffle -> {}
+            AudioPlayIntent.OnClickPlayShuffle -> setRandomPlaylist()
             AudioPlayIntent.OnClickAddAudioMediaInPlaylist -> {}
             AudioPlayIntent.OnClickEditPlaylist -> {}
             AudioPlayIntent.OnClickReorderAudioMediaList -> {}
@@ -56,7 +56,14 @@ class AudioPlayViewModel @Inject constructor(
     private fun setPlaylist(startIndex: Int) {
         viewModelScope.launch {
             val audioMediaList = ArrayList(audioList.value.mapNotNull { it.toTryParcelize().getOrNull() })
-            _eventFlow.emit(AudioPlayEvent.RegisterPlaylist(audioMediaList, startIndex))
+            _eventFlow.emit(AudioPlayEvent.RegisterPlaylist(audioMediaList, startIndex, false))
+        }
+    }
+
+    private fun setRandomPlaylist() {
+        viewModelScope.launch {
+            val randomAudioMediaList = ArrayList(audioList.value.mapNotNull { it.toTryParcelize().getOrNull() }.shuffled())
+            _eventFlow.emit(AudioPlayEvent.RegisterPlaylist(randomAudioMediaList, 0, true))
         }
     }
 

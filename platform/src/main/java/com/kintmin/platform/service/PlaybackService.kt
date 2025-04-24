@@ -73,13 +73,14 @@ class PlaybackService : MediaSessionService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val playlistIndex = intent?.getIntExtra(EXTRA_PLAYLIST_INDEX, 0) ?: 0
+        val clearFlag = intent?.getBooleanExtra(EXTRA_CLEAR_FLAG, false) ?: false
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent?.getParcelableArrayListExtra(EXTRA_PLAYLIST, AudioPlayData::class.java)
         } else {
             intent?.getParcelableArrayListExtra(EXTRA_PLAYLIST)
         }?.let { playlist ->
-            setPlaylist(playlist, playlistIndex)
+            setPlaylist(playlist, playlistIndex, clearFlag)
         }
 
         return super.onStartCommand(intent, flags, startId)
@@ -125,9 +126,9 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
-    private fun setPlaylist(playlist: ArrayList<AudioPlayData>, startIndex: Int = 0) {
+    private fun setPlaylist(playlist: ArrayList<AudioPlayData>, startIndex: Int = 0, clearFlag: Boolean = false) {
         mediaSession?.apply {
-            if (player.mediaItemCount == playlist.size) {
+            if (!clearFlag && player.mediaItemCount == playlist.size) {
                 player.seekTo(startIndex, 0L)
                 player.play()
             } else {
@@ -161,5 +162,6 @@ class PlaybackService : MediaSessionService() {
         //const val EXTRA_MEDIA_DATA = "EXTRA_MEDIA_DATA"
         const val EXTRA_PLAYLIST = "EXTRA_PLAYLIST"
         const val EXTRA_PLAYLIST_INDEX = "EXTRA_PLAYLIST_INDEX"
+        const val EXTRA_CLEAR_FLAG = "EXTRA_CLEAR_FLAG"
     }
 }

@@ -64,6 +64,7 @@ fun MainScreen(initTabItem: MainTabItem) {
                         Intent(context, PlaybackService::class.java).apply {
                             putParcelableArrayListExtra(PlaybackService.EXTRA_PLAYLIST, event.playlist)
                             putExtra(PlaybackService.EXTRA_PLAYLIST_INDEX, event.startIndex)
+                            putExtra(PlaybackService.EXTRA_CLEAR_FLAG, event.clearFlag)
                         }
                     )
                 }
