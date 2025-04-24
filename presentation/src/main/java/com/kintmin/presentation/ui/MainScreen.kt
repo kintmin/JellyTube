@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui
 
 import android.Manifest
 import android.content.ComponentName
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
@@ -35,67 +36,61 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import androidx.paging.PagingData
 import com.kintmin.platform.service.PlaybackService
 import com.kintmin.presentation.theme.YTMusicBoxTheme
 import com.kintmin.presentation.ui.audio_play.AudioPlayEvent
+import com.kintmin.presentation.ui.audio_play.AudioPlayIntent
 import com.kintmin.presentation.ui.audio_play.AudioPlayView
 import com.kintmin.presentation.ui.audio_play.AudioPlayViewModel
-import com.kintmin.presentation.ui.audio_play.model.AudioPlayUiState
+import com.kintmin.presentation.ui.audio_play.list_item.AudioPlayUiState
+import com.kintmin.presentation.ui.youtube_search.YoutubeDownloadIntent
 import com.kintmin.presentation.ui.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.youtube_search.YoutubeWebView
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flowOf
 
 @Composable
-fun MainScreen(
-    initTabItem: MainTabItem,
-) {
-    val downloadViewModel: YoutubeDownloadViewModel = hiltViewModel()
-    val playViewModel: AudioPlayViewModel = hiltViewModel()
+fun MainScreen(initTabItem: MainTabItem) {
     val context = LocalContext.current
+    val audioPlayViewModel = hiltViewModel<AudioPlayViewModel>()
+    val downloadViewModel = hiltViewModel<YoutubeDownloadViewModel>()
 
     LaunchedEffect(Unit) {
-        playViewModel.eventFlow.collect { event ->
+        audioPlayViewModel.eventFlow.collect { event ->
             when (event) {
                 is AudioPlayEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                is AudioPlayEvent.RegisterPlaylist -> {
+                    context.startService(
+                        Intent(context, PlaybackService::class.java).apply {
+                            putParcelableArrayListExtra(PlaybackService.EXTRA_PLAYLIST, event.playlist)
+                            putExtra(PlaybackService.EXTRA_PLAYLIST_INDEX, event.startIndex)
+                            putExtra(PlaybackService.EXTRA_CLEAR_FLAG, event.clearFlag)
+                        }
+                    )
+                }
             }
         }
     }
 
-    MainScreen(
-        initTabItem,
-        downloadViewModel::startDownload,
-        playViewModel.audioPagingFlow,
-        playViewModel::refreshList,
-        deleteAudioMedia = { data ->
-            playViewModel.deleteAudioMedia(data.id)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val permissionLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { granted ->
+                if (!granted) {
+                    Toast.makeText(context, "권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
+
+        LaunchedEffect(Unit) {
+            if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
-    )
-}
+    }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MainScreen(
-    initTabItem: MainTabItem,
-    onClickDownload: (String) -> Unit,
-    lazyPagingItems: Flow<PagingData<AudioPlayUiState>>,
-    onRefresh: () -> Unit,
-    isBasePlaylist: Boolean = true,
-    modifyAudioMedia: (AudioPlayUiState) -> Unit = {},
-    deleteAudioMediaFromPlaylist: (AudioPlayUiState) -> Unit = {},
-    deleteAudioMedia: (AudioPlayUiState) -> Unit = {},
-) {
-    var currentUrl: String by remember { mutableStateOf("https://www.youtube.com/") }
-    var selectedTab by remember { mutableStateOf(initTabItem) }
-
-    RequestNotificationPermission()
-
-    val sessionToken =
-        SessionToken(LocalContext.current, ComponentName(LocalContext.current, PlaybackService::class.java))
-    val controllerFuture = MediaController.Builder(LocalContext.current, sessionToken).buildAsync()
+    val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
+    val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
 
     controllerFuture.addListener({
         // Call controllerFuture.get() to retrieve the MediaController.
@@ -104,6 +99,25 @@ fun MainScreen(
 
         //playerView.setPlayer(controllerFuture.get())
     }, ContextCompat.getMainExecutor(LocalContext.current))
+
+    MainScreen(
+        initTabItem = initTabItem,
+        audioPlayDataListFlow = audioPlayViewModel.audioList,
+        sendAudioPlayIntent = audioPlayViewModel::sendIntent,
+        sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainScreen(
+    initTabItem: MainTabItem,
+    audioPlayDataListFlow: Flow<List<AudioPlayUiState>>,
+    sendAudioPlayIntent: (AudioPlayIntent) -> Unit,
+    sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
+) {
+    var currentUrl: String by remember { mutableStateOf("https://www.youtube.com/") }
+    var selectedTab by remember { mutableStateOf(initTabItem) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -121,7 +135,7 @@ fun MainScreen(
             if (selectedTab == MainTabItem.Search) {
                 FloatingActionButton(
                     onClick = {
-                        onClickDownload(currentUrl)
+                        sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnClickDownload(currentUrl))
                     },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White
@@ -151,7 +165,7 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                url = currentUrl,
+                currentUrl = currentUrl,
                 onChangeUrl = { newUrl ->
                     currentUrl = newUrl
                 }
@@ -161,48 +175,36 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                lazyPagingItems,
-                onRefresh,
-                isBasePlaylist,
-                modifyAudioMedia,
-                deleteAudioMediaFromPlaylist,
-                deleteAudioMedia,
+                audioPlayDataListFlow = audioPlayDataListFlow,
+                isBasePlaylist = true,
+                sendIntent = sendAudioPlayIntent,
             )
-        }
-    }
-}
-
-@Composable
-fun RequestNotificationPermission() {
-    val context = LocalContext.current
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { granted ->
-            if (!granted) {
-                Toast.makeText(context, "권한이 필요합니다.", Toast.LENGTH_SHORT).show()
-            }
-        }
-    )
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        LaunchedEffect(Unit) {
-            if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun MainScreenPreview() {
+fun MainScreenSearchTabPreview() {
     YTMusicBoxTheme {
         MainScreen(
-            MainTabItem.Play,
-            {},
-            flowOf(PagingData.from(AudioPlayUiState.getMockList())),
-            {}
+            initTabItem = MainTabItem.Search,
+            audioPlayDataListFlow = flowOf(AudioPlayUiState.getMockList()),
+            sendAudioPlayIntent = {},
+            sendYoutubeDownloadIntent = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainScreenPlayTabPreview() {
+    YTMusicBoxTheme {
+        MainScreen(
+            initTabItem = MainTabItem.Play,
+            audioPlayDataListFlow = flowOf(AudioPlayUiState.getMockList()),
+            sendAudioPlayIntent = {},
+            sendYoutubeDownloadIntent = {},
         )
     }
 }

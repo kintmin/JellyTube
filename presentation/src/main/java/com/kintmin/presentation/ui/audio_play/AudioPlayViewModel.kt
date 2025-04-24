@@ -2,60 +2,82 @@ package com.kintmin.presentation.ui.audio_play
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.cachedIn
 import com.kintmin.domain.usecase.DeleteAudioMediaUseCase
-import com.kintmin.domain.usecase.FetchAudioMediaListUseCase
+import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
+import com.kintmin.presentation.ui.audio_play.list_item.AudioPlayUiState
+import com.kintmin.presentation.ui.audio_play.list_item.toTryParcelize
+import com.kintmin.presentation.ui.audio_play.list_item.toUiModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class AudioPlayViewModel @Inject constructor(
-    private val fetchAudioMediaListUseCase: FetchAudioMediaListUseCase,
+    fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
     private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
 ) : ViewModel() {
 
     private val _eventFlow = MutableSharedFlow<AudioPlayEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
-    private val refreshTrigger = MutableSharedFlow<Unit>()
+    val audioList: StateFlow<List<AudioPlayUiState>> = fetchAudioMediaListFlowUseCase()
+        .map { list -> list.map { it.toUiModel() } }
+        .catch {
+            _eventFlow.emit(AudioPlayEvent.ShowToast("데이터 가져오기에 실패했습니다.\n다시 시도해주세요."))
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val audioPagingFlow = refreshTrigger
-        .onStart { emit(Unit) }
-        .flatMapLatest {
-            Pager(
-                config = PagingConfig(
-                    pageSize = 20,
-                    maxSize = 100,
-                ),
-                pagingSourceFactory = {
-                    AudioPagingSource(fetchAudioMediaListUseCase)
-                },
-                initialKey = null,
-            ).flow
-        }
-        .cachedIn(viewModelScope)
-
-    fun refreshList() {
-        viewModelScope.launch {
-            refreshTrigger.emit(Unit)
+    fun sendIntent(intent: AudioPlayIntent) {
+        when (intent) {
+            is AudioPlayIntent.OnClickAudioItem -> playAudio(intent.data)
+            is AudioPlayIntent.OnClickDeleteAudioMedia -> deleteAudioMedia(intent.data.id)
+            AudioPlayIntent.OnClickPlayAll -> setPlaylist(0)
+            AudioPlayIntent.OnClickPlayShuffle -> setRandomPlaylist()
+            AudioPlayIntent.OnClickAddAudioMediaInPlaylist -> {}
+            AudioPlayIntent.OnClickEditPlaylist -> {}
+            AudioPlayIntent.OnClickReorderAudioMediaList -> {}
         }
     }
 
-    fun deleteAudioMedia(id: String) {
+    private fun deleteAudioMedia(id: String) {
         viewModelScope.launch {
-            deleteAudioMediaUseCase(id).onSuccess {
-                refreshTrigger.emit(Unit)
-            }.onFailure { exception ->
+            deleteAudioMediaUseCase(id).onFailure { exception ->
                 _eventFlow.emit(AudioPlayEvent.ShowToast("삭제 실패: $exception"))
+            }
+        }
+    }
+
+    private fun setPlaylist(startIndex: Int) {
+        viewModelScope.launch {
+            val audioMediaList = ArrayList(audioList.value.mapNotNull { it.toTryParcelize().getOrNull() })
+            _eventFlow.emit(AudioPlayEvent.RegisterPlaylist(audioMediaList, startIndex, false))
+        }
+    }
+
+    private fun setRandomPlaylist() {
+        viewModelScope.launch {
+            val randomAudioMediaList = ArrayList(audioList.value.mapNotNull { it.toTryParcelize().getOrNull() }.shuffled())
+            _eventFlow.emit(AudioPlayEvent.RegisterPlaylist(randomAudioMediaList, 0, true))
+        }
+    }
+
+    private fun playAudio(audioItem: AudioPlayUiState) {
+        viewModelScope.launch {
+            audioItem.toTryParcelize().onSuccess { data ->
+                val targetIndex = audioList.value.indexOfFirst { it.audioFileFullPath == data.audioFileFullPath }
+                if (targetIndex == -1) {
+                    _eventFlow.emit(AudioPlayEvent.ShowToast("음원을 찾을 수 없습니다.\n새로고침해주세요."))
+                } else {
+                    setPlaylist(targetIndex)
+                }
+            }.onFailure {
+                _eventFlow.emit(AudioPlayEvent.ShowToast("음원을 찾을 수 없습니다.\n삭제 후 다시 다운해주세요."))
             }
         }
     }

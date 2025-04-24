@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.audio_play
+package com.kintmin.presentation.ui.audio_play.list_item
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,17 +36,14 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.YTMusicBoxTheme
-import com.kintmin.presentation.ui.audio_play.model.AudioPlayUiState
+import com.kintmin.presentation.ui.audio_play.AudioPlayIntent
 import java.io.File
 
 @Composable
 fun AudioItemView(
     data: AudioPlayUiState,
-    onClickPlay: (AudioPlayUiState) -> Unit = {},
-    isBasePlaylist: Boolean = true,
-    modifyAudioMedia: (AudioPlayUiState) -> Unit = {},
-    deleteAudioMediaFromPlaylist: (AudioPlayUiState) -> Unit = {},
-    deleteAudioMedia: (AudioPlayUiState) -> Unit = {},
+    isBasePlaylist: Boolean,
+    sendIntent: (AudioPlayIntent) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -63,7 +60,7 @@ fun AudioItemView(
         .fillMaxWidth()
         .height(56.dp)
         .clickable {
-            onClickPlay(data)
+            sendIntent(AudioPlayIntent.OnClickAudioItem(data))
         }
     ) {
         AsyncImage(
@@ -119,7 +116,6 @@ fun AudioItemView(
                 DropdownMenuItem(
                     text = { Text("정보 수정") },
                     onClick = {
-                        modifyAudioMedia(data)
                         expanded = false
                         // 타이틀 수정
                         // 설명 수정
@@ -133,7 +129,6 @@ fun AudioItemView(
                     DropdownMenuItem(
                         text = { Text("플레이리스트에서 제거") },
                         onClick = {
-                            deleteAudioMediaFromPlaylist(data)
                             expanded = false
                         }
                     )
@@ -141,7 +136,7 @@ fun AudioItemView(
                 DropdownMenuItem(
                     text = { Text("음원 제거") },
                     onClick = {
-                        deleteAudioMedia(data)
+                        sendIntent(AudioPlayIntent.OnClickDeleteAudioMedia(data))
                         expanded = false
                     }
                 )
@@ -155,7 +150,9 @@ fun AudioItemView(
 fun AudioItemPreview() {
     YTMusicBoxTheme {
         AudioItemView(
-            AudioPlayUiState.getMock()
+            data = AudioPlayUiState.getMock(),
+            isBasePlaylist = true,
+            sendIntent = {},
         )
     }
 }

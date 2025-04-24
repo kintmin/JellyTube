@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.kintmin.data.local_db.entity.AudioMediaEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AudioMediaDao {
@@ -15,7 +16,7 @@ interface AudioMediaDao {
     suspend fun getDataById(id: String): AudioMediaEntity
 
     @Query("SELECT * FROM AUDIO_MEDIA")
-    suspend fun getDataListAll(): List<AudioMediaEntity>
+    fun getDataListFlow(): Flow<List<AudioMediaEntity>>
 
     @Query("SELECT * FROM AUDIO_MEDIA WHERE playlistId = :playlistId")
     suspend fun getDataListByPlaylistId(playlistId: Int): List<AudioMediaEntity>

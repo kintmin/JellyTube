@@ -1,10 +1,11 @@
 package com.kintmin.domain.repository
 
 import com.kintmin.domain.model.AudioMedia
+import kotlinx.coroutines.flow.Flow
 
 interface AudioMediaRepository {
     suspend fun addAudioMedia(newAudioMedia: AudioMedia): Result<Unit>
-    suspend fun getAudioMediaList(): Result<List<AudioMedia>>
+    fun getAudioMediaListFlow(): Flow<List<AudioMedia>>
     suspend fun getAudioMedia(id: String): Result<AudioMedia>
     suspend fun downloadAudioMedia(downloadUrl: String, id: String): Result<AudioMedia>
     suspend fun updateAudioMedia(id: String, newAudioMedia: AudioMedia): Result<Unit>

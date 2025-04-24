@@ -4,16 +4,15 @@ import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dataSource.LocalAudioDataSource
 import com.kintmin.data.local_db.entity.AudioMediaEntity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 internal class LocalAudioDataSourceImpl @Inject constructor(
     private val audioMediaDao: AudioMediaDao,
 ): LocalAudioDataSource {
-    override suspend fun getEntityListAll() = runCatching {
-        withContext(Dispatchers.IO) {
-            audioMediaDao.getDataListAll()
-        }
+    override fun getEntityListFlow(): Flow<List<AudioMediaEntity>> {
+        return audioMediaDao.getDataListFlow()
     }
 
     override suspend fun getEntityListByPlaylistId(playlistId: Int) = runCatching {
