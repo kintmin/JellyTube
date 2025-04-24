@@ -7,5 +7,8 @@ sealed interface AudioPlayIntent {
     data class OnClickDeleteAudioMedia(val data: AudioPlayUiState): AudioPlayIntent
     data object PullToRefreshAudioList: AudioPlayIntent
     data object OnClickPlayAll: AudioPlayIntent
-
+    data object OnClickPlayShuffle: AudioPlayIntent
+    data object OnClickAddAudioMediaInPlaylist: AudioPlayIntent
+    data object OnClickEditPlaylist: AudioPlayIntent
+    data object OnClickReorderAudioMediaList: AudioPlayIntent
 }

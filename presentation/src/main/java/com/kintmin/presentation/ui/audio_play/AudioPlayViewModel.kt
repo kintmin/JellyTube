@@ -53,16 +53,20 @@ class AudioPlayViewModel @Inject constructor(
             is AudioPlayIntent.OnClickDeleteAudioMedia -> deleteAudioMedia(intent.data.id)
             AudioPlayIntent.PullToRefreshAudioList -> refreshList()
             AudioPlayIntent.OnClickPlayAll -> setPlaylist()
+            AudioPlayIntent.OnClickAddAudioMediaInPlaylist -> {}
+            AudioPlayIntent.OnClickEditPlaylist -> {}
+            AudioPlayIntent.OnClickPlayShuffle -> {}
+            AudioPlayIntent.OnClickReorderAudioMediaList -> {}
         }
     }
 
-    fun refreshList() {
+    private fun refreshList() {
         viewModelScope.launch {
             _refreshTrigger.emit(Unit)
         }
     }
 
-    fun deleteAudioMedia(id: String) {
+    private fun deleteAudioMedia(id: String) {
         viewModelScope.launch {
             deleteAudioMediaUseCase(id).onSuccess {
                 _refreshTrigger.emit(Unit)
@@ -72,7 +76,7 @@ class AudioPlayViewModel @Inject constructor(
         }
     }
 
-    fun setPlaylist() {
+    private fun setPlaylist() {
         viewModelScope.launch {
             val dataList = fetchAudioMediaList().getOrNull() ?: return@launch
             if (dataList.size != cachedAudioDataList.size) {
@@ -83,7 +87,7 @@ class AudioPlayViewModel @Inject constructor(
         }
     }
 
-    fun playAudio(audioItem: AudioPlayUiState) {
+    private fun playAudio(audioItem: AudioPlayUiState) {
         viewModelScope.launch {
             audioItem.toTryParcelize().onSuccess { data ->
                 var targetIndex = cachedAudioDataList.indexOfFirst { it.audioFileFullPath == data.audioFileFullPath }
