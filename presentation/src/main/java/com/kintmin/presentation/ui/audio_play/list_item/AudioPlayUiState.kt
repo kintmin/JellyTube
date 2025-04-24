@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.audio_play.model
+package com.kintmin.presentation.ui.audio_play.list_item
 
 import com.kintmin.domain.model.AudioMedia
 import com.kintmin.platform.model.AudioPlayData
@@ -28,8 +28,8 @@ data class AudioPlayUiState(
         } ?: "알 수 없음"
 
     companion object {
-        fun getMock() = AudioPlayUiState(
-            id = "1",
+        fun getMock(index: Int = 1) = AudioPlayUiState(
+            id = "$index",
             mediaName = "미디어",
             artist = "아티스트",
             audioDuration = 500.seconds,
@@ -38,7 +38,7 @@ data class AudioPlayUiState(
             imageFileFullPath = "",
         )
 
-        fun getMockList() = List(5) { getMock() }
+        fun getMockList() = List(5) { index -> getMock(index) }
     }
 }
 

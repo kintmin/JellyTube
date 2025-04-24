@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.audio_play
 
-import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,10 +45,9 @@ import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.kintmin.platform.service.PlaybackService
 import com.kintmin.presentation.theme.YTMusicBoxTheme
-import com.kintmin.presentation.ui.audio_play.model.AudioPlayUiState
-import com.kintmin.presentation.ui.audio_play.model.toTryParcelize
+import com.kintmin.presentation.ui.audio_play.list_item.AudioItemView
+import com.kintmin.presentation.ui.audio_play.list_item.AudioPlayUiState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
@@ -58,16 +56,10 @@ import kotlinx.coroutines.flow.flowOf
 fun AudioPlayView(
     modifier: Modifier,
     lazyPagingItems: Flow<PagingData<AudioPlayUiState>>,
-    onRefresh: () -> Unit,
-    isBasePlaylist: Boolean = true,
-    onStartSequentialPlayback: () -> Unit = {},
-    modifyAudioMedia: (AudioPlayUiState) -> Unit = {},
-    deleteAudioMediaFromPlaylist: (AudioPlayUiState) -> Unit = {},
-    deleteAudioMedia: (AudioPlayUiState) -> Unit = {},
+    isBasePlaylist: Boolean,
+    sendIntent: (AudioPlayIntent) -> Unit,
 ) {
-    val context = LocalContext.current
     val audioMediaItems = lazyPagingItems.collectAsLazyPagingItems()
-    val isRefreshing = audioMediaItems.loadState.refresh is LoadState.Loading
 
     val imageRequest = ImageRequest.Builder(LocalContext.current)
         .data(
@@ -78,9 +70,9 @@ fun AudioPlayView(
         .build()
 
     PullToRefreshBox(
-        isRefreshing = isRefreshing,
+        isRefreshing = audioMediaItems.loadState.refresh is LoadState.Loading,
         onRefresh = {
-            onRefresh()
+            sendIntent(AudioPlayIntent.PullToRefreshAudioList)
         },
     ) {
         LazyColumn(modifier = modifier) {
@@ -122,7 +114,7 @@ fun AudioPlayView(
                     ) {
                         ElevatedButton(
                             onClick = {
-                                onStartSequentialPlayback()
+                                sendIntent(AudioPlayIntent.OnClickPlayAll)
                             },
                             modifier = Modifier
                                 .defaultMinSize(minHeight = 1.dp)
@@ -130,7 +122,7 @@ fun AudioPlayView(
                                 .fillMaxHeight()
                                 .weight(1f),
                             contentPadding = PaddingValues(0.dp),
-                            ) {
+                        ) {
                             Text(
                                 text = "모두 재생",
                                 fontSize = 12.sp,
@@ -230,20 +222,8 @@ fun AudioPlayView(
                 item?.let {
                     AudioItemView(
                         data = it,
-                        onClickPlay = { data ->
-                            data.toTryParcelize().onSuccess {
-                                val intent = Intent(context, PlaybackService::class.java).apply {
-                                    putExtra(PlaybackService.EXTRA_MEDIA_DATA, data.toTryParcelize())
-                                }
-                                context.startService(intent)
-                            }.onFailure {
-                                // 오디오 파일에 문제
-                            }
-                        },
                         isBasePlaylist = isBasePlaylist,
-                        modifyAudioMedia = modifyAudioMedia,
-                        deleteAudioMediaFromPlaylist = deleteAudioMediaFromPlaylist,
-                        deleteAudioMedia = deleteAudioMedia,
+                        sendIntent = sendIntent,
                     )
                 }
             }
@@ -272,9 +252,10 @@ fun AudioPlayView(
 fun MusicControlsPreview() {
     YTMusicBoxTheme {
         AudioPlayView(
-            Modifier.fillMaxWidth(),
-            flowOf(PagingData.from(AudioPlayUiState.getMockList())),
-            {}
+            modifier = Modifier.fillMaxWidth(),
+            lazyPagingItems = flowOf(PagingData.from(AudioPlayUiState.getMockList())),
+            isBasePlaylist = true,
+            sendIntent = {},
         )
     }
 }

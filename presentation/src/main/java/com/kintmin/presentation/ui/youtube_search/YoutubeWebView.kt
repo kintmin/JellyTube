@@ -25,7 +25,7 @@ import com.kintmin.presentation.theme.YTMusicBoxTheme
 @Composable
 fun YoutubeWebView(
     modifier: Modifier = Modifier,
-    url: String,
+    currentUrl: String,
     onChangeUrl: (String) -> Unit,
 ) {
     if (LocalInspectionMode.current) {
@@ -72,7 +72,7 @@ fun YoutubeWebView(
                     }
                 }
 
-                loadUrl(url)
+                loadUrl(currentUrl)
             }
         }
     )
@@ -91,7 +91,7 @@ fun YoutubeWebViewPreview() {
     YTMusicBoxTheme {
         YoutubeWebView(
             modifier = Modifier.fillMaxSize(),
-            url = "",
+            currentUrl = "",
             onChangeUrl = {},
         )
     }

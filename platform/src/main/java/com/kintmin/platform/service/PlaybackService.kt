@@ -72,20 +72,14 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
-            intent?.getParcelableExtra(EXTRA_MEDIA_DATA, AudioPlayData::class.java)
-        } else {
-            intent?.getParcelableExtra(EXTRA_MEDIA_DATA)
-        }?.let { audioPlayData ->
-            playImmediately(audioPlayData)
-        }
+        val playlistIndex = intent?.getIntExtra(EXTRA_PLAYLIST_INDEX, 0) ?: 0
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent?.getParcelableArrayListExtra(EXTRA_PLAYLIST, AudioPlayData::class.java)
         } else {
             intent?.getParcelableArrayListExtra(EXTRA_PLAYLIST)
         }?.let { playlist ->
-            setPlaylist(playlist)
+            setPlaylist(playlist, playlistIndex)
         }
 
         return super.onStartCommand(intent, flags, startId)
@@ -131,12 +125,20 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
-    fun setPlaylist(playlist: List<AudioPlayData>, startIndex: Int = 0) {
+    private fun setPlaylist(playlist: ArrayList<AudioPlayData>, startIndex: Int = 0) {
         mediaSession?.apply {
-            val mediaItems = playlist.map { getMediaItem(it) }
-            player.setMediaItems(mediaItems, startIndex, 0L)
-            player.prepare()
-            player.play()
+            if (player.mediaItemCount == playlist.size) {
+                player.seekTo(startIndex, 0L)
+                player.play()
+            } else {
+                player.stop()
+                player.clearMediaItems()
+
+                val newMediaItems = playlist.map { getMediaItem(it) }
+                player.setMediaItems(newMediaItems, startIndex, 0L)
+                player.prepare()
+                player.play()
+            }
         }
     }
 
@@ -156,7 +158,8 @@ class PlaybackService : MediaSessionService() {
         .build()
 
     companion object {
-        const val EXTRA_MEDIA_DATA = "EXTRA_MEDIA_DATA"
+        //const val EXTRA_MEDIA_DATA = "EXTRA_MEDIA_DATA"
         const val EXTRA_PLAYLIST = "EXTRA_PLAYLIST"
+        const val EXTRA_PLAYLIST_INDEX = "EXTRA_PLAYLIST_INDEX"
     }
 }
