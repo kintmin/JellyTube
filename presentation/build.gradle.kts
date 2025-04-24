@@ -60,9 +60,6 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.navigation.compose)
 
-    implementation(libs.androidx.paging.runtime.ktx)
-    implementation(libs.androidx.paging.compose)
-
     implementation(libs.io.coil.compose)
 
     implementation(libs.androidx.media3.ui)

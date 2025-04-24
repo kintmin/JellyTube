@@ -1,8 +1,5 @@
 package com.kintmin.data.local_db.dataSourceImpl
 
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dataSource.LocalAudioDataSource
 import com.kintmin.data.local_db.entity.AudioMediaEntity
@@ -14,17 +11,8 @@ import javax.inject.Inject
 internal class LocalAudioDataSourceImpl @Inject constructor(
     private val audioMediaDao: AudioMediaDao,
 ): LocalAudioDataSource {
-    override fun getPagingEntityFlow(): Flow<PagingData<AudioMediaEntity>> {
-        return Pager(
-            config = PagingConfig(pageSize = 20),
-            pagingSourceFactory = { audioMediaDao.getPagingDataList() }
-        ).flow
-    }
-
-    override suspend fun getEntityList(): Result<List<AudioMediaEntity>> = runCatching {
-        withContext(Dispatchers.IO) {
-            audioMediaDao.getDataList()
-        }
+    override fun getEntityListFlow(): Flow<List<AudioMediaEntity>> {
+        return audioMediaDao.getDataListFlow()
     }
 
     override suspend fun getEntityListByPlaylistId(playlistId: Int) = runCatching {

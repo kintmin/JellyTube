@@ -2,7 +2,6 @@ package com.kintmin.presentation.ui
 
 import android.Manifest
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -37,7 +36,6 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import androidx.paging.PagingData
 import com.kintmin.platform.service.PlaybackService
 import com.kintmin.presentation.theme.YTMusicBoxTheme
 import com.kintmin.presentation.ui.audio_play.AudioPlayEvent
@@ -103,7 +101,7 @@ fun MainScreen(initTabItem: MainTabItem) {
 
     MainScreen(
         initTabItem = initTabItem,
-        lazyPagingItems = audioPlayViewModel.audioPagingFlow,
+        audioPlayDataListFlow = audioPlayViewModel.audioList,
         sendAudioPlayIntent = audioPlayViewModel::sendIntent,
         sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
     )
@@ -113,7 +111,7 @@ fun MainScreen(initTabItem: MainTabItem) {
 @Composable
 fun MainScreen(
     initTabItem: MainTabItem,
-    lazyPagingItems: Flow<PagingData<AudioPlayUiState>>,
+    audioPlayDataListFlow: Flow<List<AudioPlayUiState>>,
     sendAudioPlayIntent: (AudioPlayIntent) -> Unit,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
 ) {
@@ -176,7 +174,7 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                lazyPagingItems = lazyPagingItems,
+                audioPlayDataListFlow = audioPlayDataListFlow,
                 isBasePlaylist = true,
                 sendIntent = sendAudioPlayIntent,
             )
@@ -190,7 +188,7 @@ fun MainScreenSearchTabPreview() {
     YTMusicBoxTheme {
         MainScreen(
             initTabItem = MainTabItem.Search,
-            lazyPagingItems = flowOf(PagingData.from(AudioPlayUiState.getMockList())),
+            audioPlayDataListFlow = flowOf(AudioPlayUiState.getMockList()),
             sendAudioPlayIntent = {},
             sendYoutubeDownloadIntent = {},
         )
@@ -203,7 +201,7 @@ fun MainScreenPlayTabPreview() {
     YTMusicBoxTheme {
         MainScreen(
             initTabItem = MainTabItem.Play,
-            lazyPagingItems = flowOf(PagingData.from(AudioPlayUiState.getMockList())),
+            audioPlayDataListFlow = flowOf(AudioPlayUiState.getMockList()),
             sendAudioPlayIntent = {},
             sendYoutubeDownloadIntent = {},
         )

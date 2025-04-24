@@ -1,7 +1,5 @@
 package com.kintmin.data.repository_impl
 
-import androidx.paging.PagingData
-import androidx.paging.map
 import com.kintmin.data.local_db.dataSource.LocalAudioDataSource
 import com.kintmin.data.local_db.toDomain
 import com.kintmin.data.local_db.toEntity
@@ -29,16 +27,8 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
     private val pythonExecutor: PythonExecutor,
 ) : AudioMediaRepository {
 
-    override fun getPagingAudioMediaFlow(): Flow<PagingData<AudioMedia>> {
-        return localAudioDataSource.getPagingEntityFlow().map { pagingData ->
-            pagingData.map { audioEntity ->
-                audioEntity.toDomain(fileManager)
-            }
-        }
-    }
-
-    override suspend fun getAudioMediaList(): Result<List<AudioMedia>> {
-        return localAudioDataSource.getEntityList().mapCatching { listData ->
+    override fun getAudioMediaListFlow(): Flow<List<AudioMedia>> {
+        return localAudioDataSource.getEntityListFlow().map { listData ->
             listData.map { it.toDomain(fileManager) }
         }
     }

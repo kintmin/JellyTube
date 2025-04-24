@@ -18,7 +18,6 @@ chaquopy  = "16.0.0"
 material3Android = "1.3.1"
 workRuntimeKtx = "2.9.1"
 hiltWork = "1.2.0"
-pagingRuntimeKtx = "3.3.6"
 uiTooling = "1.7.8"
 coilCompose = "2.7.0"
 jetbrainsKotlinJvm = "2.0.0"
@@ -54,10 +53,6 @@ material3-android = { group = "androidx.compose.material3", name = "material3-an
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltWork" }
 androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltWork" }
-androidx-paging-runtime-ktx = { group = "androidx.paging", name = "paging-runtime-ktx", version.ref = "pagingRuntimeKtx" }
-androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "pagingRuntimeKtx" }
-androidx-paging-common = { group = "androidx.paging", name = "paging-common", version.ref = "pagingRuntimeKtx" }
-androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
 io-coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coilCompose" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
