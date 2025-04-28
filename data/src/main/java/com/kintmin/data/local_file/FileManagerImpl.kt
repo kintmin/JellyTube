@@ -22,12 +22,18 @@ internal class FileManagerImpl @Inject constructor(
         File(fullPath).name
     }
 
-    override fun getFullPathWithExt(fileName: String, ext: Ext) = runCatching {
-        getDirectory(ext.fileType).resolve("$fileName.$ext").absolutePath
+    override fun getFullPathWithExt(fileNameWithExt: String) = runCatching {
+        val (fileName, ext) = extractExtFromFileName(fileNameWithExt)
+        getFullPathWithExt(fileName, ext).getOrThrow()
     }
 
-    override fun getFullPathWithExt(fileNameWithExt: String) = runCatching {
-        val (_, ext) = extractExt(fileNameWithExt)
+    override fun getFullPathWithExt(fileName: String, extName: String) = runCatching {
+        val ext = extractExt(extName)
+        getFullPathWithExt(fileName, ext).getOrThrow()
+    }
+
+    override fun getFullPathWithExt(fileName: String, ext: Ext) = runCatching {
+        val fileNameWithExt = "$fileName.$ext"
         getDirectory(ext.fileType).resolve(fileNameWithExt).absolutePath
     }
 
@@ -35,26 +41,19 @@ internal class FileManagerImpl @Inject constructor(
         runCatching {
             withContext(Dispatchers.IO) {
                 val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
-                val outputFile =
-                    getDirectory(FileType.Image).resolve(
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            "$fileName.${Ext.WEBP}"
-                        } else {
-                            "$fileName.${Ext.JPG}"
-                        }
-                    )
 
-                val format = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    Bitmap.CompressFormat.WEBP_LOSSY
+                val (targetExt, format) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    Ext.WEBP to Bitmap.CompressFormat.WEBP_LOSSY
                 } else {
-                    Bitmap.CompressFormat.JPEG
+                    Ext.JPEG to Bitmap.CompressFormat.JPEG
                 }
 
+                val outputFile = getDirectory(FileType.Image).resolve("$fileName.$targetExt")
                 FileOutputStream(outputFile).use { outputStream ->
                     bitmap.compress(format, 60, outputStream)
                 }
 
-                outputFile.absolutePath
+                targetExt
             }
         }
 
@@ -71,18 +70,20 @@ internal class FileManagerImpl @Inject constructor(
         context.cacheDir.deleteRecursively()
     }
 
-    private fun extractExt(fileNameWithExt: String): Pair<String, Ext> {
+    private fun extractExtFromFileName(fileNameWithExt: String): Pair<String, Ext> {
         val lastDotIndex = fileNameWithExt.lastIndexOf(".")
-        if (lastDotIndex <= 0 || lastDotIndex == fileNameWithExt.length - 1) {
-            throw Exception("파일 확장자를 찾을 수 없습니다.")
+        if (lastDotIndex == -1) {
+            throw Exception("파일명에서 파일 확장자를 찾을 수 없습니다.")
         }
 
         val fileName = fileNameWithExt.substring(0, lastDotIndex)
         val extName = fileNameWithExt.substring(lastDotIndex + 1)
+        val ext = extractExt(extName)
+        return fileName to ext
+    }
 
-        return Ext.entries.find { it.name.equals(extName, ignoreCase = true) }?.let { ext ->
-            fileName to ext
-        } ?: throw Exception("올바르지 않은 확장자입니다.")
+    private fun extractExt(extName: String): Ext {
+        return Ext.entries.find { it.name.equals(extName, ignoreCase = true) } ?: throw Exception("올바르지 않은 확장자입니다.")
     }
 
     private fun getDirectory(fileType: FileType): File {
@@ -91,6 +92,6 @@ internal class FileManagerImpl @Inject constructor(
             FileType.Image -> context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         }
         return dir?.takeIf { it.exists() || it.mkdirs() }
-            ?: throw Exception("getDirectory: 디렉토리를 찾을 수 없습니다.")
+            ?: throw Exception("디렉토리를 찾을 수 없습니다.")
     }
 }

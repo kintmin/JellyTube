@@ -128,7 +128,7 @@ class PlaybackService : MediaSessionService() {
 
     private fun setPlaylist(playlist: ArrayList<AudioPlayData>, startIndex: Int = 0, clearFlag: Boolean = false) {
         mediaSession?.apply {
-            if (!clearFlag && player.mediaItemCount == playlist.size) {
+            if (!player.currentTracks.isEmpty && !clearFlag) {
                 player.seekTo(startIndex, 0L)
                 player.play()
             } else {

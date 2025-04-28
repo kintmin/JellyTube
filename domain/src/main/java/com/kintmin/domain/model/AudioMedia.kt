@@ -4,13 +4,15 @@ import java.time.LocalDateTime
 import kotlin.time.Duration
 
 data class AudioMedia(
-    val id: String,
-    val playlistId: Int?,
+    val id: Int,
+    val playlistId: Int,
+    val audioMediaSequence: Int,
+    val sourcePath: String,
     val mediaName: String,
-    val description: String,
     val artist: String,
+    val description: String,
     val audioDuration: Duration?,
     val createdTime: LocalDateTime,
-    val audioFileFullPath: String?, // null일 경우 오디오 파일에 문제
+    val audioFileFullPath: String,
     val imageFileFullPath: String?,
 )

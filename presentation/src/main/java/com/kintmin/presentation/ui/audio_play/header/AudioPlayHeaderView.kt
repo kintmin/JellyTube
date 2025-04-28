@@ -14,13 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Reorder
+import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
@@ -39,11 +40,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.kintmin.presentation.theme.YTMusicBoxTheme
+import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_play.AudioPlayIntent
+import com.kintmin.presentation.ui.playlist.PlaylistItemUiState
 
 @Composable
 fun AudioPlayHeaderView(
+    playlistData: PlaylistItemUiState,
     sendIntent: (AudioPlayIntent) -> Unit,
 ) {
     val imageRequest = ImageRequest.Builder(LocalContext.current)
@@ -71,66 +74,48 @@ fun AudioPlayHeaderView(
                 .clip(RoundedCornerShape(4))
                 .background(Color.Gray)
         )
-        Text(
-            modifier = Modifier.padding(bottom = 4.dp),
-            text = "플레이리스트 이름",
-            fontSize = 20.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            modifier = Modifier.padding(bottom = 16.dp),
-            text = "플레이리스트 · 음원 123개 · 플레이타임 00:00:00",
-            fontSize = 12.sp,
-            lineHeight = 10.sp,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(
+            modifier = Modifier
+                .wrapContentHeight()
+                .padding(bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier.wrapContentHeight(),
+            ) {
+                Text(
+                    modifier = Modifier.padding(bottom = 4.dp),
+                    text = playlistData.name,
+                    fontSize = 20.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = "플레이리스트 · 음원 ${playlistData.audioMediaCount}개 · 플레이타임 ${playlistData.durationString}",
+                    fontSize = 12.sp,
+                    lineHeight = 10.sp,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            IconButton(
+                onClick = {
+                    sendIntent(AudioPlayIntent.OnClickRepeatPlaylist)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentWidth(Alignment.End)
+            ) {
+                Icon(
+                    modifier = Modifier.size(20.dp),
+                    imageVector = Icons.Rounded.Repeat,
+                    contentDescription = "Repeat"
+                )
+            }
+        }
         Row(
             modifier = Modifier.height(36.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ElevatedButton(
-                onClick = {
-                    sendIntent(AudioPlayIntent.OnClickPlayAll)
-                },
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 1.dp)
-                    .padding(end = 8.dp)
-                    .fillMaxHeight()
-                    .weight(1f),
-                contentPadding = PaddingValues(0.dp),
-            ) {
-                Text(
-                    text = "모두 재생",
-                    fontSize = 12.sp,
-                )
-                Icon(
-                    modifier = Modifier.size(20.dp),
-                    imageVector = Icons.Rounded.PlayArrow,
-                    contentDescription = "PlayArrow"
-                )
-            }
-            ElevatedButton(
-                onClick = {
-                    sendIntent(AudioPlayIntent.OnClickPlayShuffle)
-                },
-                modifier = Modifier
-                    .defaultMinSize(minHeight = 1.dp)
-                    .padding(end = 8.dp)
-                    .fillMaxHeight()
-                    .weight(1f),
-                contentPadding = PaddingValues(0.dp),
-            ) {
-                Text(
-                    text = "셔플",
-                    fontSize = 12.sp,
-                )
-                Icon(
-                    modifier = Modifier.size(20.dp),
-                    imageVector = Icons.Rounded.Shuffle,
-                    contentDescription = "Shuffle"
-                )
-            }
             IconButton(
                 onClick = {
                     sendIntent(AudioPlayIntent.OnClickAddAudioMediaInPlaylist)
@@ -168,23 +153,46 @@ fun AudioPlayHeaderView(
                     contentDescription = "Edit"
                 )
             }
-            Box(modifier = Modifier.width(8.dp))
-            IconButton(
+            ElevatedButton(
                 onClick = {
-                    sendIntent(AudioPlayIntent.OnClickReorderAudioMediaList)
+                    sendIntent(AudioPlayIntent.OnClickPlayShuffle)
                 },
                 modifier = Modifier
-                    .background(
-                        color = Color.White,
-                        shape = CircleShape,
-                    )
+                    .defaultMinSize(minHeight = 1.dp)
+                    .padding(end = 8.dp)
                     .fillMaxHeight()
-                    .aspectRatio(1f)
+                    .weight(1f),
+                contentPadding = PaddingValues(0.dp),
             ) {
+                Text(
+                    text = "셔플",
+                    fontSize = 12.sp,
+                )
                 Icon(
                     modifier = Modifier.size(20.dp),
-                    imageVector = Icons.Rounded.Reorder,
-                    contentDescription = "Reorder"
+                    imageVector = Icons.Rounded.Shuffle,
+                    contentDescription = "Shuffle"
+                )
+            }
+            ElevatedButton(
+                onClick = {
+                    sendIntent(AudioPlayIntent.OnClickPlayAll)
+                },
+                modifier = Modifier
+                    .defaultMinSize(minHeight = 1.dp)
+                    .padding(end = 8.dp)
+                    .fillMaxHeight()
+                    .weight(1f),
+                contentPadding = PaddingValues(0.dp),
+            ) {
+                Text(
+                    text = "모두 재생",
+                    fontSize = 12.sp,
+                )
+                Icon(
+                    modifier = Modifier.size(20.dp),
+                    imageVector = Icons.Rounded.PlayArrow,
+                    contentDescription = "PlayArrow"
                 )
             }
         }
@@ -194,9 +202,10 @@ fun AudioPlayHeaderView(
 @Preview(showBackground = true)
 @Composable
 fun MusicControlsPreview() {
-    YTMusicBoxTheme {
+    JellyTubeTheme {
         AudioPlayHeaderView(
             sendIntent = {},
+            playlistData = PlaylistItemUiState.getMock(),
         )
     }
 }

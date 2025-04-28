@@ -8,6 +8,7 @@ sealed interface AudioPlayIntent {
     data object OnClickPlayAll: AudioPlayIntent
     data object OnClickPlayShuffle: AudioPlayIntent
     data object OnClickAddAudioMediaInPlaylist: AudioPlayIntent
+    data object OnClickRepeatPlaylist: AudioPlayIntent
     data object OnClickEditPlaylist: AudioPlayIntent
     data object OnClickReorderAudioMediaList: AudioPlayIntent
 }

@@ -1,7 +1,6 @@
-package com.kintmin.ytmusicbox
+package com.kintmin.jellytube
 
 import android.content.Context
-import android.os.Build
 import com.kintmin.domain.platform_api.Log
 import dagger.Module
 import dagger.Provides

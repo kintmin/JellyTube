@@ -25,12 +25,12 @@ internal class PythonExecutorImpl @Inject constructor(
             }
 
             withTimeout(TIME_OUT) {
-                val module = Python.getInstance().getModule(PYTHON_FILE_NAME)
-                val version = module.callAttr("get_version").toString()
+                val module = Python.getInstance().getModule(FILE_NAME)
+                val version = module.callAttr(METHOD_GET_VERSION).toString()
                 Log.d("DEBUG", "yt-dlp version: $version")
 
                 val pyResult =
-                    module.callAttr(PYTHON_METHOD_NAME, youtubeUrl, audioDownloadPath).asList()
+                    module.callAttr(METHOD_DOWNLOAD_AUDIO, youtubeUrl, audioDownloadPath).asList()
 
                 YoutubeDownloadDto(
                     title = pyResult[0].toString(),
@@ -45,7 +45,8 @@ internal class PythonExecutorImpl @Inject constructor(
 
     companion object {
         const val TIME_OUT = 60000L
-        const val PYTHON_FILE_NAME = "download_youtube_audio"
-        const val PYTHON_METHOD_NAME = "download_audio"
+        const val FILE_NAME = "download_youtube_audio"
+        const val METHOD_DOWNLOAD_AUDIO = "download_audio"
+        const val METHOD_GET_VERSION = "get_version"
     }
 }

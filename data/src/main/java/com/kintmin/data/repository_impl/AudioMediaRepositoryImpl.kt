@@ -1,13 +1,21 @@
 package com.kintmin.data.repository_impl
 
-import com.kintmin.data.local_db.dataSource.LocalAudioDataSource
-import com.kintmin.data.local_db.toDomain
-import com.kintmin.data.local_db.toEntity
+import com.kintmin.data.local_db.dao.AudioMediaDao
+import com.kintmin.data.local_db.dao.PlaylistDao
+import com.kintmin.data.local_db.dao.PlaylistTrackDao
+import com.kintmin.data.local_db.mapper.AudioMediaMapper
+import com.kintmin.data.local_db.model.AudioMediaEntity
+import com.kintmin.data.local_db.model.PlaylistEntity
+import com.kintmin.data.local_db.model.PlaylistTrackEntity
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.local_file.model.Ext
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
+import com.kintmin.data.python_bridge.mapper.toDomain
+import com.kintmin.domain.extension.toMillis
 import com.kintmin.domain.model.AudioMedia
+import com.kintmin.domain.model.DownloadedAudioMedia
+import com.kintmin.domain.model.Playlist
 import com.kintmin.domain.repository.AudioMediaRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -16,83 +24,137 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import java.time.Instant
-import java.time.ZoneId
 import javax.inject.Inject
 
 internal class AudioMediaRepositoryImpl @Inject constructor(
-    private val localAudioDataSource: LocalAudioDataSource,
+    private val audioMediaDao: AudioMediaDao,
+    private val playlistDao: PlaylistDao,
+    private val playlistTrackDao: PlaylistTrackDao,
     private val httpDataSource: HttpDataSource,
     private val fileManager: FileManager,
     private val pythonExecutor: PythonExecutor,
 ) : AudioMediaRepository {
 
-    override fun getAudioMediaListFlow(): Flow<List<AudioMedia>> {
-        return localAudioDataSource.getEntityListFlow().map { listData ->
-            listData.map { it.toDomain(fileManager) }
+    override fun getAudioMediaListFlow(playlistId: Int): Flow<List<AudioMedia>> {
+        return playlistTrackDao.getPlaylistTrackFullList(playlistId).map { playlistTrackFull ->
+            playlistTrackFull.mapNotNull {
+                AudioMediaMapper.toDomain(
+                    fileManager = fileManager,
+                    audioMediaEntity = it.audioMediaEntity,
+                    playlistTrackEntity = it.playlistTrackEntity,
+                ).getOrNull()
+            }.sortedBy { it.audioMediaSequence }
         }
     }
 
-    override suspend fun getAudioMedia(id: String): Result<AudioMedia> {
-        return localAudioDataSource.getEntity(id).mapCatching { it.toDomain(fileManager) }
+    override suspend fun isExistAudioMedia(source: String): Result<Boolean> = runCatching {
+        withContext(Dispatchers.IO) {
+            audioMediaDao.isExistAudioMedia(source)
+        }
     }
 
     override suspend fun downloadAudioMedia(
         downloadUrl: String,
-        id: String,
-    ): Result<AudioMedia> = runCatching {
-        val audioFileFullPath = fileManager.getFullPathWithExt(
-            fileName = id,
-            ext = Ext.MP3,
-        ).getOrThrow()
-
-        val downloadDto = pythonExecutor.downloadYoutubeMedia(
-            youtubeUrl = downloadUrl,
-            audioDownloadPath = audioFileFullPath,
-        ).getOrThrow()
-
-        val imageFileFullPath = httpDataSource.downloadImage(
-            imageUrl = downloadDto.thumbnailDownloadUrl
-        ).getOrNull()?.let { image ->
-            fileManager.saveImageWithCompression(image, id).getOrNull()
-        }
-
-        val createdTime = Instant.now()
-            .atZone(ZoneId.systemDefault())
-            .toLocalDateTime()
-
-        downloadDto.toDomain(
-            id = id,
-            createdTime = createdTime,
-            audioFileFullPath = audioFileFullPath,
-            imageFileFullPath = imageFileFullPath,
-        )
-    }
-
-    override suspend fun updateAudioMedia(id: String, newAudioMedia: AudioMedia): Result<Unit> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun addAudioMedia(newAudioMedia: AudioMedia): Result<Unit> {
-        return localAudioDataSource.insertEntity(
-            newAudioMedia.toEntity(fileManager)
-        )
-    }
-
-    override suspend fun deleteAudioMediaInvalidCache(id: String): Result<Unit> = runCatching {
+        source: String,
+    ): Result<DownloadedAudioMedia> = runCatching {
         withContext(Dispatchers.IO) {
-            withTimeout(5000L) {
-                listOf(Ext.MP3, Ext.WEBP, Ext.JPG).map { ext ->
-                    async { fileManager.deleteFile(id, ext) }
-                }.awaitAll()
+            val audioFileFullPath = fileManager.getFullPathWithExt(
+                fileName = source,
+                ext = Ext.MP3,
+            ).getOrThrow()
+
+            val downloadDto = pythonExecutor.downloadYoutubeMedia(
+                youtubeUrl = downloadUrl,
+                audioDownloadPath = audioFileFullPath,
+            ).getOrThrow()
+
+            val imageFileExt = httpDataSource.downloadImage(
+                imageUrl = downloadDto.thumbnailDownloadUrl
+            ).getOrNull()?.let { image ->
+                fileManager.saveImageWithCompression(image, source).getOrNull()
             }
+
+            downloadDto.toDomain(
+                source = source,
+                audioFileName = source,
+                audioFileExtName = Ext.MP3.toString(),
+                imageFileName = source,
+                imageFileExtName = imageFileExt?.toString(),
+            )
+        }
+    }
+
+    override suspend fun addAudioMedia(newAudioMedia: DownloadedAudioMedia): Result<Unit> = runCatching {
+        withContext(Dispatchers.IO) {
+            val audioMediaId = audioMediaDao.insert(
+                AudioMediaEntity(
+                    source = newAudioMedia.source,
+                    mediaName = newAudioMedia.title,
+                    artist = newAudioMedia.uploader,
+                    description = newAudioMedia.description,
+                    rawAudioDurationSeconds = newAudioMedia.duration,
+                    audioFileExt = newAudioMedia.audioFileExtName,
+                    imageFileExt = newAudioMedia.imageFileExtName,
+                    rawCreatedTime = newAudioMedia.createdTime.toMillis(),
+                )
+            ).toInt()
+
+            val totalNextSequence = playlistTrackDao.getNextSequence(Playlist.TOTAL)
+            val uncategorizedNextSequence = playlistTrackDao.getNextSequence(Playlist.UNCATEGORIZED)
+
+            playlistTrackDao.insertPlaylistTrack(
+                PlaylistTrackEntity(
+                    playlistId = Playlist.TOTAL,
+                    audioMediaId = audioMediaId,
+                    sequence = totalNextSequence,
+                    rawCreatedTime = newAudioMedia.createdTime.toMillis(),
+                )
+            )
+
+            playlistTrackDao.insertPlaylistTrack(
+                PlaylistTrackEntity(
+                    playlistId = Playlist.UNCATEGORIZED,
+                    audioMediaId = audioMediaId,
+                    sequence = uncategorizedNextSequence,
+                    rawCreatedTime = newAudioMedia.createdTime.toMillis(),
+                )
+            )
+
+            playlistDao.updateAfterTrackAdded(
+                id = Playlist.TOTAL,
+                rawPlayTimeDuration = newAudioMedia.duration ?: 0L,
+            )
+            playlistDao.updateAfterTrackAdded(
+                id = Playlist.UNCATEGORIZED,
+                rawPlayTimeDuration = newAudioMedia.duration ?: 0L,
+            )
+        }
+    }
+
+    override suspend fun deleteInvalidAudioMediaFile(fileName: String): Result<Unit> = runCatching {
+        withTimeout(3000L) {
+            Ext.entries.map { ext ->
+                async { fileManager.deleteFile(fileName, ext) }
+            }.awaitAll()
         }
         fileManager.clearDiskCache()
     }
 
-    override suspend fun deleteAudioMedia(id: String): Result<Unit> = runCatching {
-        localAudioDataSource.deleteEntity(id).onSuccess {
-            deleteAudioMediaInvalidCache(id).getOrThrow()
-        }.getOrThrow()
+    override suspend fun deleteAudioMedia(id: Int): Result<Unit> = runCatching {
+        withContext(Dispatchers.IO) {
+            val rawPlayTimeDuration = audioMediaDao.getDataById(id).rawAudioDurationSeconds ?: 0L
+
+            playlistTrackDao.deleteAudioMedia(id)
+            audioMediaDao.deleteById(id)
+
+            playlistDao.updateAfterTrackDeleted(
+                id = Playlist.TOTAL,
+                rawPlayTimeDuration = rawPlayTimeDuration,
+            )
+            playlistDao.updateAfterTrackDeleted(
+                id = Playlist.UNCATEGORIZED,
+                rawPlayTimeDuration = rawPlayTimeDuration,
+            )
+        }
     }
 }

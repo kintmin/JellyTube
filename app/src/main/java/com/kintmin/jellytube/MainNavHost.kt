@@ -1,25 +1,36 @@
-package com.kintmin.ytmusicbox
+package com.kintmin.jellytube
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
 import com.kintmin.presentation.ui.MainTabItem
+import com.kintmin.presentation.ui.audio_play.navigation.navigateToPlaylistDetailScreen
+import com.kintmin.presentation.ui.audio_play.navigation.playlistDetail
 import com.kintmin.presentation.ui.navigation.MainScreenRoute
 import com.kintmin.presentation.ui.navigation.mainScreen
+import com.kintmin.presentation.ui.navigation.navigateToMainScreen
 
 @Composable
 fun MainNavHost(
-    modifier: Modifier = Modifier,
+    navController: NavHostController,
 ) {
-    val navController: NavHostController = rememberNavController()
+    val navOptions = NavOptions.Builder().build()
+
     NavHost(
         navController = navController,
-        startDestination = MainScreenRoute(MainTabItem.Play),
-        modifier = modifier,
+        startDestination = MainScreenRoute(MainTabItem.Playlist),
     ) {
-        mainScreen()
+        mainScreen(
+            navigateToPlaylistDetail = { id ->
+                navController.navigateToPlaylistDetailScreen(id, navOptions)
+            }
+        )
+        playlistDetail(
+            navigateToBack = {
+                navController.popBackStack()
+            }
+        )
     }
 }
 

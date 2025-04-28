@@ -17,9 +17,12 @@ fun NavController.navigateToMainScreen(
     navOptions: NavOptions,
 ) = navigate(MainScreenRoute(tabItem), navOptions)
 
-fun NavGraphBuilder.mainScreen() {
+fun NavGraphBuilder.mainScreen(navigateToPlaylistDetail: (id: Int) -> Unit) {
     composable<MainScreenRoute> { backStackEntry ->
         val route = backStackEntry.toRoute<MainScreenRoute>()
-        MainScreen(route.tabItem)
+        MainScreen(
+            initTabItem = route.tabItem,
+            navigateToPlaylistDetail = navigateToPlaylistDetail,
+        )
     }
 }

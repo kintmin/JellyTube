@@ -1,23 +1,23 @@
 package com.kintmin.presentation.ui
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.VideoLibrary
 import kotlinx.serialization.Serializable
 
 @Serializable
 enum class MainTabItem {
     Search,
-    Play,
+    Playlist,
     ;
 
     fun getLabel() = when (this) {
-        Search -> "음원찾기"
-        Play -> "음원감상"
+        Search -> "음원추가"
+        Playlist -> "플레이리스트"
     }
 
     fun getIcon() = when (this) {
-        Search -> Icons.Default.Add
-        Play -> Icons.Default.PlayArrow
+        Search -> Icons.Rounded.Search
+        Playlist -> Icons.Rounded.VideoLibrary
     }
 }

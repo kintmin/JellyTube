@@ -1,23 +1,21 @@
-package com.kintmin.data.di
+package com.kintmin.data.python_bridge.di
 
 import android.content.Context
-import com.kintmin.data.local_file.FileManager
-import com.kintmin.data.local_file.FileManagerImpl
+import com.kintmin.data.python_bridge.PythonExecutor
+import com.kintmin.data.python_bridge.PythonExecutorImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object LocalFileModule {
+object PythonBridgeModule {
     @Provides
-    @Singleton
-    fun provideFileManager(
+    fun providePythonExecutor(
         @ApplicationContext context: Context,
-    ): FileManager {
-        return FileManagerImpl(context)
+    ): PythonExecutor {
+        return PythonExecutorImpl(context)
     }
 }

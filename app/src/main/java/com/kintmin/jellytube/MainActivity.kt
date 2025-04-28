@@ -1,25 +1,25 @@
-package com.kintmin.ytmusicbox
+package com.kintmin.jellytube
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Surface
-import com.kintmin.presentation.theme.YTMusicBoxTheme
+import androidx.navigation.compose.rememberNavController
+import com.kintmin.presentation.theme.JellyTubeTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity: ComponentActivity() {
+class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         enableEdgeToEdge()
         setContent {
-            //rememberNavController()
-            YTMusicBoxTheme {
+            val navController = rememberNavController()
+            JellyTubeTheme {
                 Surface {
-                    MainNavHost()
+                    MainNavHost(navController = navController)
                 }
             }
         }

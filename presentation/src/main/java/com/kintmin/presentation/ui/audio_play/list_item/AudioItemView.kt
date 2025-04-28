@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.kintmin.presentation.theme.YTMusicBoxTheme
+import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_play.AudioPlayIntent
 import java.io.File
 
@@ -148,7 +148,7 @@ fun AudioItemView(
 @Preview(showBackground = true)
 @Composable
 fun AudioItemPreview() {
-    YTMusicBoxTheme {
+    JellyTubeTheme {
         AudioItemView(
             data = AudioPlayUiState.getMock(),
             isBasePlaylist = true,

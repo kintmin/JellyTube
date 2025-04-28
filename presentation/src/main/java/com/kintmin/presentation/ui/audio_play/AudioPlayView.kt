@@ -3,36 +3,35 @@ package com.kintmin.presentation.ui.audio_play
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.kintmin.presentation.theme.YTMusicBoxTheme
+import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_play.header.AudioPlayHeaderView
 import com.kintmin.presentation.ui.audio_play.list_item.AudioItemView
 import com.kintmin.presentation.ui.audio_play.list_item.AudioPlayUiState
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import com.kintmin.presentation.ui.playlist.PlaylistItemUiState
 
 @Composable
 fun AudioPlayView(
     modifier: Modifier,
-    audioPlayDataListFlow: Flow<List<AudioPlayUiState>>,
+    playlistData: PlaylistItemUiState,
+    audioPlayList: List<AudioPlayUiState>,
     isBasePlaylist: Boolean,
     sendIntent: (AudioPlayIntent) -> Unit,
 ) {
-    val audioList by audioPlayDataListFlow.collectAsState(initial = emptyList())
-
     LazyColumn(modifier = modifier) {
         item {
-            AudioPlayHeaderView(sendIntent)
+            AudioPlayHeaderView(
+                playlistData = playlistData,
+                sendIntent = sendIntent,
+            )
         }
         items(
-            count = audioList.size,
-            key = { index -> audioList[index].id }
+            count = audioPlayList.size,
+            key = { index -> audioPlayList[index].id }
         ) { index ->
             AudioItemView(
-                data = audioList[index],
+                data = audioPlayList[index],
                 isBasePlaylist = isBasePlaylist,
                 sendIntent = sendIntent,
             )
@@ -43,10 +42,11 @@ fun AudioPlayView(
 @Preview(showBackground = true)
 @Composable
 fun MusicControlsPreview() {
-    YTMusicBoxTheme {
+    JellyTubeTheme {
         AudioPlayView(
             modifier = Modifier.fillMaxWidth(),
-            audioPlayDataListFlow = flowOf(AudioPlayUiState.getMockList()),
+            playlistData = PlaylistItemUiState.getMock(),
+            audioPlayList = AudioPlayUiState.getMockList(),
             isBasePlaylist = true,
             sendIntent = {},
         )

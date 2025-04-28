@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.kintmin.domain.usecase.FetchYoutubeMediaUseCase
+import com.kintmin.domain.usecase.DownloadYoutubeMediaUseCase
 import com.kintmin.platform.notification.NotificationData
 import com.kintmin.platform.notification.PushNotificationUtil
 import dagger.assisted.Assisted
@@ -14,7 +14,7 @@ import dagger.assisted.AssistedInject
 class YoutubeDownloadWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
-    private val fetchYoutubeMediaUseCase: FetchYoutubeMediaUseCase,
+    private val downloadYoutubeMediaUseCase: DownloadYoutubeMediaUseCase,
     private val pushNotificationUtil: PushNotificationUtil,
 ) : CoroutineWorker(appContext, workerParams) {
     override suspend fun doWork(): Result {
@@ -23,7 +23,7 @@ class YoutubeDownloadWorker @AssistedInject constructor(
         val url = inputData.getString(INPUT_DATA_URL) ?: return Result.failure()
         pushNotificationUtil.sendNotification(NotificationData.Download(1, 0))
 
-        fetchYoutubeMediaUseCase(url).onSuccess {
+        downloadYoutubeMediaUseCase(url).onSuccess {
             pushNotificationUtil.sendNotification(NotificationData.Download(1, 1))
             pushNotificationUtil.cancelNotification(NotificationData.Download())
             pushNotificationUtil.sendNotification(NotificationData.DownloadResult("완료되었습니다."))
