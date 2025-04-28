@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.audio_play.list_item
+package com.kintmin.presentation.ui.playlist_detail.list_item
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.ui.audio_play.AudioPlayIntent
+import com.kintmin.presentation.ui.playlist_detail.AudioPlayIntent
 import java.io.File
 
 @Composable

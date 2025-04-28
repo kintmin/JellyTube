@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.audio_play.list_item
+package com.kintmin.presentation.ui.playlist_detail.list_item
 
 import com.kintmin.domain.model.AudioMedia
 import com.kintmin.platform.model.AudioPlayData
@@ -48,12 +48,11 @@ internal fun AudioMedia.toUiModel() = AudioPlayUiState(
     sequence = audioMediaSequence,
 )
 
-internal fun AudioPlayUiState.toTryParcelize() = runCatching {
-    AudioPlayData(
-        mediaName = mediaName,
-        description = description,
-        artist = artist,
-        audioFileFullPath = audioFileFullPath,
-        imageFileFullPath = imageFileFullPath,
-    )
-}
+internal fun AudioPlayUiState.toParcelize() = AudioPlayData(
+    id = id,
+    mediaName = mediaName,
+    description = description,
+    artist = artist,
+    audioFileFullPath = audioFileFullPath,
+    imageFileFullPath = imageFileFullPath,
+)

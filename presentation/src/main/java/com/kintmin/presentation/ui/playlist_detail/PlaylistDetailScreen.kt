@@ -1,10 +1,17 @@
-package com.kintmin.presentation.ui.audio_play
+package com.kintmin.presentation.ui.playlist_detail
 
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -15,7 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.platform.service.PlaybackService
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.ui.audio_play.list_item.AudioPlayUiState
+import com.kintmin.presentation.ui.playlist_detail.list_item.AudioPlayUiState
 import com.kintmin.presentation.ui.playlist.PlaylistItemUiState
 
 @Composable
@@ -36,9 +43,9 @@ fun PlaylistDetailScreen(
                 is AudioPlayEvent.RegisterPlaylist -> {
                     context.startService(
                         Intent(context, PlaybackService::class.java).apply {
-                            putParcelableArrayListExtra(PlaybackService.EXTRA_PLAYLIST, event.playlist)
-                            putExtra(PlaybackService.EXTRA_PLAYLIST_INDEX, event.startIndex)
-                            putExtra(PlaybackService.EXTRA_CLEAR_FLAG, event.clearFlag)
+                            putParcelableArrayListExtra(PlaybackService.EXTRA_AUDIO_MEDIA_LIST, event.audioMediaList)
+                            putExtra(PlaybackService.EXTRA_AUDIO_START_INDEX, event.startIndex)
+                            putExtra(PlaybackService.EXTRA_SHOULD_CLEAR, event.shouldClear)
                         }
                     )
                 }
@@ -54,6 +61,7 @@ fun PlaylistDetailScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistDetailScreen(
     playlistData: PlaylistItemUiState,
@@ -63,12 +71,22 @@ fun PlaylistDetailScreen(
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-//        topBar = {
-//            TopAppBar(
-//                title = { Text(playlistInfo.name) },
-//                colors = TopAppBarDefaults.topAppBarColors(),
-//            )
-//        },
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = {
+                        sendIntent(AudioPlayIntent.OnClickNavigationBack)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Rounded.ArrowBackIosNew,
+                            contentDescription = "ArrowBackIosNew"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(),
+            )
+        },
     ) { innerPadding ->
         AudioPlayView(
             modifier = Modifier

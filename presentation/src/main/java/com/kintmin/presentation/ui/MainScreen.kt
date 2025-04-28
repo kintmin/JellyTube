@@ -180,8 +180,6 @@ fun MainScreen(
                 data = playlist,
                 sendIntent = sendPlaylistIntent,
             )
-
-
         }
     }
 }

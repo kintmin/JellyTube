@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.playlist
+package com.kintmin.presentation.ui.playlist.list_item
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.playlist.PlaylistIntent
 
 @Composable
 fun PlaylistItemAddView(

@@ -1,10 +1,10 @@
-package com.kintmin.presentation.ui.audio_play.navigation
+package com.kintmin.presentation.ui.playlist_detail.navigation
 
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
-import com.kintmin.presentation.ui.audio_play.PlaylistDetailScreen
+import com.kintmin.presentation.ui.playlist_detail.PlaylistDetailScreen
 import kotlinx.serialization.Serializable
 
 @Serializable

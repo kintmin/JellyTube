@@ -1,6 +1,6 @@
-package com.kintmin.presentation.ui.audio_play
+package com.kintmin.presentation.ui.playlist_detail
 
-import com.kintmin.presentation.ui.audio_play.list_item.AudioPlayUiState
+import com.kintmin.presentation.ui.playlist_detail.list_item.AudioPlayUiState
 
 sealed interface AudioPlayIntent {
     data class OnClickAudioItem(val data: AudioPlayUiState): AudioPlayIntent
@@ -11,4 +11,5 @@ sealed interface AudioPlayIntent {
     data object OnClickRepeatPlaylist: AudioPlayIntent
     data object OnClickEditPlaylist: AudioPlayIntent
     data object OnClickReorderAudioMediaList: AudioPlayIntent
+    data object OnClickNavigationBack: AudioPlayIntent
 }
