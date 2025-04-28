@@ -2,7 +2,6 @@ package com.kintmin.presentation.ui
 
 import android.Manifest
 import android.content.ComponentName
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
@@ -24,6 +23,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,12 +37,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.kintmin.platform.service.PlaybackService
-import com.kintmin.presentation.theme.YTMusicBoxTheme
-import com.kintmin.presentation.ui.audio_play.AudioPlayEvent
-import com.kintmin.presentation.ui.audio_play.AudioPlayIntent
-import com.kintmin.presentation.ui.audio_play.AudioPlayView
-import com.kintmin.presentation.ui.audio_play.AudioPlayViewModel
-import com.kintmin.presentation.ui.audio_play.list_item.AudioPlayUiState
+import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.playlist.PlaylistEvent
+import com.kintmin.presentation.ui.playlist.PlaylistIntent
+import com.kintmin.presentation.ui.playlist.PlaylistItemUiState
+import com.kintmin.presentation.ui.playlist.PlaylistView
+import com.kintmin.presentation.ui.playlist.PlaylistViewModel
 import com.kintmin.presentation.ui.youtube_search.YoutubeDownloadIntent
 import com.kintmin.presentation.ui.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.youtube_search.YoutubeWebView
@@ -50,23 +50,19 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 @Composable
-fun MainScreen(initTabItem: MainTabItem) {
+fun MainScreen(
+    initTabItem: MainTabItem,
+    navigateToPlaylistDetail: (id: Int) -> Unit,
+) {
     val context = LocalContext.current
-    val audioPlayViewModel = hiltViewModel<AudioPlayViewModel>()
     val downloadViewModel = hiltViewModel<YoutubeDownloadViewModel>()
+    val playlistViewModel = hiltViewModel<PlaylistViewModel>()
 
     LaunchedEffect(Unit) {
-        audioPlayViewModel.eventFlow.collect { event ->
+        playlistViewModel.eventFlow.collect { event ->
             when (event) {
-                is AudioPlayEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                is AudioPlayEvent.RegisterPlaylist -> {
-                    context.startService(
-                        Intent(context, PlaybackService::class.java).apply {
-                            putParcelableArrayListExtra(PlaybackService.EXTRA_PLAYLIST, event.playlist)
-                            putExtra(PlaybackService.EXTRA_PLAYLIST_INDEX, event.startIndex)
-                            putExtra(PlaybackService.EXTRA_CLEAR_FLAG, event.clearFlag)
-                        }
-                    )
+                is PlaylistEvent.NavigateToPlaylistDetailScreen -> {
+                    navigateToPlaylistDetail(event.playlistInfo.id)
                 }
             }
         }
@@ -102,9 +98,11 @@ fun MainScreen(initTabItem: MainTabItem) {
 
     MainScreen(
         initTabItem = initTabItem,
-        audioPlayDataListFlow = audioPlayViewModel.audioList,
-        sendAudioPlayIntent = audioPlayViewModel::sendIntent,
+//        audioPlayDataListFlow = audioPlayViewModel.audioList,
+//        sendAudioPlayIntent = audioPlayViewModel::sendIntent,
+        playlistFlow = playlistViewModel.playlistFlow,
         sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
+        sendPlaylistIntent = playlistViewModel::sendIntent,
     )
 }
 
@@ -112,19 +110,23 @@ fun MainScreen(initTabItem: MainTabItem) {
 @Composable
 fun MainScreen(
     initTabItem: MainTabItem,
-    audioPlayDataListFlow: Flow<List<AudioPlayUiState>>,
-    sendAudioPlayIntent: (AudioPlayIntent) -> Unit,
+//    audioPlayDataListFlow: Flow<List<AudioPlayUiState>>,
+//    sendAudioPlayIntent: (AudioPlayIntent) -> Unit,
+    playlistFlow: Flow<List<PlaylistItemUiState>>,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
+    sendPlaylistIntent: (PlaylistIntent) -> Unit,
 ) {
     var currentUrl: String by remember { mutableStateOf("https://www.youtube.com/") }
     var selectedTab by remember { mutableStateOf(initTabItem) }
+
+    val playlist by playlistFlow.collectAsState(initial = emptyList())
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             val title = when (selectedTab) {
                 MainTabItem.Search -> "다운받을 유튜브 영상 검색하기"
-                MainTabItem.Play -> "음원 재생하기"
+                MainTabItem.Playlist -> "플레이리스트"
             }
             TopAppBar(
                 title = { Text(title) },
@@ -171,13 +173,12 @@ fun MainScreen(
                 }
             )
 
-            MainTabItem.Play -> AudioPlayView(
+            MainTabItem.Playlist -> PlaylistView(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                audioPlayDataListFlow = audioPlayDataListFlow,
-                isBasePlaylist = true,
-                sendIntent = sendAudioPlayIntent,
+                data = playlist,
+                sendIntent = sendPlaylistIntent,
             )
         }
     }
@@ -186,12 +187,12 @@ fun MainScreen(
 @Preview(showBackground = true)
 @Composable
 fun MainScreenSearchTabPreview() {
-    YTMusicBoxTheme {
+    JellyTubeTheme {
         MainScreen(
             initTabItem = MainTabItem.Search,
-            audioPlayDataListFlow = flowOf(AudioPlayUiState.getMockList()),
-            sendAudioPlayIntent = {},
+            playlistFlow = flowOf(PlaylistItemUiState.getMockList()),
             sendYoutubeDownloadIntent = {},
+            sendPlaylistIntent = {},
         )
     }
 }
@@ -199,12 +200,12 @@ fun MainScreenSearchTabPreview() {
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPlayTabPreview() {
-    YTMusicBoxTheme {
+    JellyTubeTheme {
         MainScreen(
-            initTabItem = MainTabItem.Play,
-            audioPlayDataListFlow = flowOf(AudioPlayUiState.getMockList()),
-            sendAudioPlayIntent = {},
+            initTabItem = MainTabItem.Playlist,
+            playlistFlow = flowOf(PlaylistItemUiState.getMockList()),
             sendYoutubeDownloadIntent = {},
+            sendPlaylistIntent = {},
         )
     }
 }

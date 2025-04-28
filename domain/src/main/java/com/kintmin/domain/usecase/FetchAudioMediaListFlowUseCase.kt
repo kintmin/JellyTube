@@ -8,7 +8,7 @@ import javax.inject.Inject
 class FetchAudioMediaListFlowUseCase @Inject constructor(
     private val audioMediaRepository: AudioMediaRepository,
 ) {
-    operator fun invoke(): Flow<List<AudioMedia>> {
-        return audioMediaRepository.getAudioMediaListFlow()
+    operator fun invoke(playlistId: Int): Flow<List<AudioMedia>> {
+        return audioMediaRepository.getAudioMediaListFlow(playlistId)
     }
 }

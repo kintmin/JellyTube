@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.kintmin.ytmusicbox"
+    namespace = "com.kintmin.jellytube"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.kintmin.ytmusicbox"
+        applicationId = "com.kintmin.jellytube"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

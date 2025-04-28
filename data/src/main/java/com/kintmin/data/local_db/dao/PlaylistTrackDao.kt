@@ -1,0 +1,35 @@
+package com.kintmin.data.local_db.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import com.kintmin.data.local_db.model.PlaylistTrackEntity
+import com.kintmin.data.local_db.model.PlaylistTrackFullDto
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface PlaylistTrackDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlaylistTrack(entity: PlaylistTrackEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPlaylistTrackList(entities: List<PlaylistTrackEntity>)
+
+    @Transaction
+    @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
+    fun getPlaylistTrackFullList(playlistId: Int): Flow<List<PlaylistTrackFullDto>>
+
+    @Query("SELECT COUNT(*) FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
+    suspend fun getNextSequence(playlistId: Int): Int
+
+    @Query("UPDATE PLAYLIST_TRACK SET sequence = :newSequence WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
+    suspend fun updatePlaylistTrack(playlistId: Int, audioMediaId: Int, newSequence: Int)
+
+    @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
+    suspend fun deletePlaylistTrack(playlistId: Int, audioMediaId: Int)
+
+    @Query("DELETE FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
+    suspend fun deleteAudioMedia(audioMediaId: Int)
+}

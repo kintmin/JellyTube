@@ -72,74 +72,56 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val playlistIndex = intent?.getIntExtra(EXTRA_PLAYLIST_INDEX, 0) ?: 0
-        val clearFlag = intent?.getBooleanExtra(EXTRA_CLEAR_FLAG, false) ?: false
+        if (intent == null) return START_NOT_STICKY
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent?.getParcelableArrayListExtra(EXTRA_PLAYLIST, AudioPlayData::class.java)
-        } else {
-            intent?.getParcelableArrayListExtra(EXTRA_PLAYLIST)
-        }?.let { playlist ->
-            setPlaylist(playlist, playlistIndex, clearFlag)
+        val audioStartIndex = intent.getIntExtra(EXTRA_AUDIO_START_INDEX, -1)
+        if (audioStartIndex == -1) {
+            return START_NOT_STICKY
         }
 
+        val shouldClear = intent.getBooleanExtra(EXTRA_SHOULD_CLEAR, false)
+
+        val playlist = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableArrayListExtra(EXTRA_AUDIO_MEDIA_LIST, AudioPlayData::class.java)
+        } else {
+            intent.getParcelableArrayListExtra(EXTRA_AUDIO_MEDIA_LIST)
+        } ?: arrayListOf()
+
+        setPlaylist(playlist, audioStartIndex, shouldClear)
         return super.onStartCommand(intent, flags, startId)
     }
 
-    fun playImmediately(audioPlayData: AudioPlayData) {
+    private fun setPlaylist(
+        playlist: ArrayList<AudioPlayData>,
+        startIndex: Int = 0,
+        shouldClear: Boolean = false
+    ) {
+        if (shouldClear) {
+            resetAudioMediaList(playlist, startIndex)
+        } else {
+            seekAudioMedia(startIndex)
+        }
+    }
+
+    private fun seekAudioMedia(startIndex: Int = 0) {
         mediaSession?.apply {
-            player.setMediaItem(getMediaItem(audioPlayData))
-            player.prepare()
+            player.seekTo(startIndex, 0L)
             player.play()
         }
     }
 
-    fun addToPlaylist(audioPlayData: AudioPlayData) {
+    private fun resetAudioMediaList(
+        playlist: ArrayList<AudioPlayData>,
+        startIndex: Int = 0,
+    ) {
         mediaSession?.apply {
-            player.addMediaItem(getMediaItem(audioPlayData))
+            player.stop()
+            player.clearMediaItems()
+
+            val newMediaItems = playlist.map { getMediaItem(it) }
+            player.setMediaItems(newMediaItems, startIndex, 0L)
             player.prepare()
-        }
-    }
-
-    fun playSpecificTrack(index: Int) {
-        mediaSession?.apply {
-            if (index in 0 until player.mediaItemCount) {
-                player.seekTo(index, 0L)
-                player.play()
-            }
-        }
-    }
-
-    fun playNext() {
-        mediaSession?.apply {
-            if (player.hasNextMediaItem()) {
-                player.seekToNext()
-            }
-        }
-    }
-
-    fun playPrevious() {
-        mediaSession?.apply {
-            if (player.hasPreviousMediaItem()) {
-                player.seekToPrevious()
-            }
-        }
-    }
-
-    private fun setPlaylist(playlist: ArrayList<AudioPlayData>, startIndex: Int = 0, clearFlag: Boolean = false) {
-        mediaSession?.apply {
-            if (!clearFlag && player.mediaItemCount == playlist.size) {
-                player.seekTo(startIndex, 0L)
-                player.play()
-            } else {
-                player.stop()
-                player.clearMediaItems()
-
-                val newMediaItems = playlist.map { getMediaItem(it) }
-                player.setMediaItems(newMediaItems, startIndex, 0L)
-                player.prepare()
-                player.play()
-            }
+            player.play()
         }
     }
 
@@ -149,6 +131,7 @@ class PlaybackService : MediaSessionService() {
             MediaMetadata.Builder()
                 .setTitle(audioPlayData.mediaName)
                 .setDescription(audioPlayData.description)
+                .setArtist(audioPlayData.artist)
                 .apply {
                     audioPlayData.imageFileFullPath?.let {
                         setArtworkUri(Uri.fromFile(File(it)))
@@ -159,9 +142,8 @@ class PlaybackService : MediaSessionService() {
         .build()
 
     companion object {
-        //const val EXTRA_MEDIA_DATA = "EXTRA_MEDIA_DATA"
-        const val EXTRA_PLAYLIST = "EXTRA_PLAYLIST"
-        const val EXTRA_PLAYLIST_INDEX = "EXTRA_PLAYLIST_INDEX"
-        const val EXTRA_CLEAR_FLAG = "EXTRA_CLEAR_FLAG"
+        const val EXTRA_AUDIO_MEDIA_LIST = "EXTRA_AUDIO_MEDIA_LIST"
+        const val EXTRA_AUDIO_START_INDEX = "EXTRA_AUDIO_START_INDEX"
+        const val EXTRA_SHOULD_CLEAR = "EXTRA_SHOULD_CLEAR"
     }
 }

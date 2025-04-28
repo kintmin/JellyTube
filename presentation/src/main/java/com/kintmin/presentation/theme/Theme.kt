@@ -33,7 +33,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun YTMusicBoxTheme(
+fun JellyTubeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

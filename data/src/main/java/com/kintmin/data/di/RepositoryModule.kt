@@ -1,11 +1,15 @@
 package com.kintmin.data.di
 
-import com.kintmin.data.local_db.dataSource.LocalAudioDataSource
+import com.kintmin.data.local_db.dao.AudioMediaDao
+import com.kintmin.data.local_db.dao.PlaylistDao
+import com.kintmin.data.local_db.dao.PlaylistTrackDao
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.data.repository_impl.AudioMediaRepositoryImpl
+import com.kintmin.data.repository_impl.PlaylistRepositoryImpl
 import com.kintmin.domain.repository.AudioMediaRepository
+import com.kintmin.domain.repository.PlaylistRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,16 +22,30 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideDatabase(
-        localAudioDataSource: LocalAudioDataSource,
+        audioMediaDao: AudioMediaDao,
+        playlistDao: PlaylistDao,
+        playlistTrackDao: PlaylistTrackDao,
         httpDataSource: HttpDataSource,
         fileManager: FileManager,
         pythonExecutor: PythonExecutor,
     ): AudioMediaRepository {
         return AudioMediaRepositoryImpl(
-            localAudioDataSource,
-            httpDataSource,
-            fileManager,
-            pythonExecutor,
+            audioMediaDao = audioMediaDao,
+            playlistDao = playlistDao,
+            playlistTrackDao = playlistTrackDao,
+            httpDataSource = httpDataSource,
+            fileManager = fileManager,
+            pythonExecutor = pythonExecutor,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun providePlaylistRepository(
+        playlistDao: PlaylistDao,
+    ): PlaylistRepository {
+        return PlaylistRepositoryImpl(
+            playlistDao = playlistDao,
         )
     }
 }
