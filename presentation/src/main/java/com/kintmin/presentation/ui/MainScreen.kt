@@ -85,16 +85,7 @@ fun MainScreen(
         }
     }
 
-    val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
-    val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
 
-    controllerFuture.addListener({
-        // Call controllerFuture.get() to retrieve the MediaController.
-        // MediaController implements the Player interface, so it can be
-        // attached to the PlayerView UI component.
-
-        //playerView.setPlayer(controllerFuture.get())
-    }, ContextCompat.getMainExecutor(LocalContext.current))
 
     MainScreen(
         initTabItem = initTabItem,

@@ -7,9 +7,7 @@ import androidx.navigation.toRoute
 import com.kintmin.domain.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.usecase.FetchPlaylistFlowUseCase
-import com.kintmin.platform.model.AudioPlayData
 import com.kintmin.presentation.ui.playlist_detail.list_item.AudioPlayUiState
-import com.kintmin.presentation.ui.playlist_detail.list_item.toParcelize
 import com.kintmin.presentation.ui.playlist_detail.list_item.toUiModel
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.ui.playlist.PlaylistItemUiState
@@ -64,8 +62,6 @@ class AudioPlayViewModel @Inject constructor(
             _eventFlow.emit(AudioPlayEvent.ShowToast("데이터 가져오기에 실패했습니다.\n다시 시도해주세요."))
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private var currentPlayingAudioList: ArrayList<AudioPlayData> = arrayListOf()
-
     fun sendIntent(intent: AudioPlayIntent) {
         when (intent) {
             is AudioPlayIntent.OnClickAudioItem -> playAudio(intent.data)
@@ -99,31 +95,26 @@ class AudioPlayViewModel @Inject constructor(
                 isShuffled = false
             }
 
-            if (shouldClear) {
-                currentPlayingAudioList = ArrayList(audioListFlow.value.map { it.toParcelize() })
-            }
-
-            _eventFlow.emit(AudioPlayEvent.RegisterPlaylist(currentPlayingAudioList, startIndex, shouldClear))
+            _eventFlow.emit(AudioPlayEvent.RegisterPlaylist(audioListFlow.value, startIndex, shouldClear))
             shouldClear = false
         }
     }
 
     private fun setRandomPlaylist() {
         viewModelScope.launch {
-            currentPlayingAudioList = ArrayList(audioListFlow.value.map { it.toParcelize() }.shuffled())
             isShuffled = true
 
-            _eventFlow.emit(AudioPlayEvent.RegisterPlaylist(currentPlayingAudioList, 0, true))
+            _eventFlow.emit(AudioPlayEvent.RegisterPlaylist(audioListFlow.value, 0, true))
             shouldClear = false
         }
     }
 
     private fun playAudio(audioItem: AudioPlayUiState) {
         viewModelScope.launch {
-            val targetIndex = if (currentPlayingAudioList.isEmpty()) {
+            val targetIndex = if (audioListFlow.value.isEmpty()) {
                 audioListFlow.value.indexOfFirst { it.id == audioItem.id }
             } else {
-                currentPlayingAudioList.indexOfFirst { it.id == audioItem.id }
+                audioListFlow.value.indexOfFirst { it.id == audioItem.id }
             }
 
             if (targetIndex == -1) {
