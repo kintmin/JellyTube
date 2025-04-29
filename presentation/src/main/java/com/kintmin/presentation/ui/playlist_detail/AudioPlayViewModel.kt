@@ -7,11 +7,13 @@ import androidx.navigation.toRoute
 import com.kintmin.domain.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.usecase.FetchPlaylistFlowUseCase
+import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.ui.playlist_detail.list_item.AudioPlayUiState
 import com.kintmin.presentation.ui.playlist_detail.list_item.toUiModel
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.ui.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.playlist.toUiModel
+import com.kintmin.presentation.ui.playlist_detail.list_item.toMediaItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,7 +40,6 @@ class AudioPlayViewModel @Inject constructor(
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
     private var shouldClear = true
-    private var isShuffled = false
 
     val playlistFlow: StateFlow<PlaylistItemUiState> = fetchPlaylistFlowUseCase(playlistId)
         .map { it.toUiModel() }
@@ -90,22 +91,25 @@ class AudioPlayViewModel @Inject constructor(
 
     private fun setPlaylist(startIndex: Int) {
         viewModelScope.launch {
-            if (isShuffled) {
-                shouldClear = true
-                isShuffled = false
+            MediaControllerManager.setShuffleMode(false)
+            if (shouldClear) {
+                MediaControllerManager.clearMediaItems()
+                MediaControllerManager.addMedia(audioListFlow.value.map { it.toMediaItem() })
+                shouldClear = false
             }
-
-            _eventFlow.emit(AudioPlayEvent.RegisterPlaylist(audioListFlow.value, startIndex, shouldClear))
-            shouldClear = false
+            MediaControllerManager.play()
         }
     }
 
     private fun setRandomPlaylist() {
         viewModelScope.launch {
-            isShuffled = true
-
-            _eventFlow.emit(AudioPlayEvent.RegisterPlaylist(audioListFlow.value, 0, true))
-            shouldClear = false
+            MediaControllerManager.setShuffleMode(true)
+            if (shouldClear) {
+                MediaControllerManager.clearMediaItems()
+                MediaControllerManager.addMedia(audioListFlow.value.map { it.toMediaItem() })
+                shouldClear = false
+            }
+            MediaControllerManager.play()
         }
     }
 

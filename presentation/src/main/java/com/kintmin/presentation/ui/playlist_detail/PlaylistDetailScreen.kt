@@ -40,10 +40,6 @@ fun PlaylistDetailScreen(
             when (event) {
                 AudioPlayEvent.NavigateToBack -> navigateToBack()
                 is AudioPlayEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                is AudioPlayEvent.RegisterPlaylist -> {
-                    MediaControllerManager.addMedia(event.audioMediaList.map { it.toMediaItem() })
-                    MediaControllerManager.play()
-                }
             }
         }
     }
