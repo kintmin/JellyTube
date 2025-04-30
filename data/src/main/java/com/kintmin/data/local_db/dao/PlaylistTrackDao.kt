@@ -19,7 +19,11 @@ interface PlaylistTrackDao {
 
     @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
-    fun getPlaylistTrackFullList(playlistId: Int): Flow<List<PlaylistTrackFullDto>>
+    fun getPlaylistTrackFullListFlow(playlistId: Int): Flow<List<PlaylistTrackFullDto>>
+
+    @Transaction
+    @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
+    suspend fun getPlaylistTrackFull(playlistId: Int, audioMediaId: Int): PlaylistTrackFullDto
 
     @Query("SELECT COUNT(*) FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     suspend fun getNextSequence(playlistId: Int): Int

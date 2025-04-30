@@ -5,7 +5,6 @@ import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
 import com.kintmin.data.local_db.mapper.AudioMediaMapper
 import com.kintmin.data.local_db.model.AudioMediaEntity
-import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_db.model.PlaylistTrackEntity
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.local_file.model.Ext
@@ -36,7 +35,7 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
 ) : AudioMediaRepository {
 
     override fun getAudioMediaListFlow(playlistId: Int): Flow<List<AudioMedia>> {
-        return playlistTrackDao.getPlaylistTrackFullList(playlistId).map { playlistTrackFull ->
+        return playlistTrackDao.getPlaylistTrackFullListFlow(playlistId).map { playlistTrackFull ->
             playlistTrackFull.mapNotNull {
                 AudioMediaMapper.toDomain(
                     fileManager = fileManager,
@@ -47,9 +46,13 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun isExistAudioMedia(source: String): Result<Boolean> = runCatching {
+    override suspend fun getAudioMediaBySource(source: String): Result<AudioMedia> = runCatching {
         withContext(Dispatchers.IO) {
-            audioMediaDao.isExistAudioMedia(source)
+            val audioMediaEntity = audioMediaDao.getDataBySource(source)
+            AudioMediaMapper.toDomain(
+                fileManager = fileManager,
+                audioMediaEntity = audioMediaEntity,
+            ).getOrThrow()
         }
     }
 
@@ -84,20 +87,21 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun addAudioMedia(newAudioMedia: DownloadedAudioMedia): Result<Unit> = runCatching {
+    override suspend fun addAudioMedia(newAudioMedia: DownloadedAudioMedia): Result<AudioMedia> = runCatching {
         withContext(Dispatchers.IO) {
-            val audioMediaId = audioMediaDao.insert(
-                AudioMediaEntity(
-                    source = newAudioMedia.source,
-                    mediaName = newAudioMedia.title,
-                    artist = newAudioMedia.uploader,
-                    description = newAudioMedia.description,
-                    rawAudioDurationSeconds = newAudioMedia.duration,
-                    audioFileExt = newAudioMedia.audioFileExtName,
-                    imageFileExt = newAudioMedia.imageFileExtName,
-                    rawCreatedTime = newAudioMedia.createdTime.toMillis(),
-                )
-            ).toInt()
+            var audioMediaEntityToSave = AudioMediaEntity(
+                source = newAudioMedia.source,
+                mediaName = newAudioMedia.title,
+                artist = newAudioMedia.uploader,
+                description = newAudioMedia.description,
+                rawAudioDurationSeconds = newAudioMedia.duration,
+                audioFileExt = newAudioMedia.audioFileExtName,
+                imageFileExt = newAudioMedia.imageFileExtName,
+                rawCreatedTime = newAudioMedia.createdTime.toMillis(),
+            )
+
+            val audioMediaId = audioMediaDao.insert(audioMediaEntityToSave).toInt()
+            audioMediaEntityToSave = audioMediaEntityToSave.copy(id = audioMediaId)
 
             val totalNextSequence = playlistTrackDao.getNextSequence(Playlist.TOTAL)
             val uncategorizedNextSequence = playlistTrackDao.getNextSequence(Playlist.UNCATEGORIZED)
@@ -128,6 +132,11 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                 id = Playlist.UNCATEGORIZED,
                 rawPlayTimeDuration = newAudioMedia.duration ?: 0L,
             )
+
+            AudioMediaMapper.toDomain(
+                fileManager = fileManager,
+                audioMediaEntity = audioMediaEntityToSave,
+            ).getOrThrow()
         }
     }
 

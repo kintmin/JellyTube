@@ -91,7 +91,7 @@ fun AudioPlayHeaderView(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "플레이리스트 · 음원 ${playlistData.audioMediaCount}개 · 플레이타임 ${playlistData.durationString}",
+                    text = playlistData.detailText,
                     fontSize = 12.sp,
                     lineHeight = 10.sp,
                     overflow = TextOverflow.Ellipsis,

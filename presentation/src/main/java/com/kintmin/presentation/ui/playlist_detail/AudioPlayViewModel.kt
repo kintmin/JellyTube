@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -39,11 +38,9 @@ class AudioPlayViewModel @Inject constructor(
     val eventFlow = _eventFlow.asSharedFlow()
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
-    private var shouldClear = true
 
     val playlistFlow: StateFlow<PlaylistItemUiState> = fetchPlaylistFlowUseCase(playlistId)
         .map { it.toUiModel() }
-        .onEach { shouldClear = true }
         .catch {
             _eventFlow.emit(AudioPlayEvent.ShowToast("데이터 가져오기에 실패했습니다.\n다시 시도해주세요."))
         }.stateIn(
@@ -65,9 +62,9 @@ class AudioPlayViewModel @Inject constructor(
 
     fun sendIntent(intent: AudioPlayIntent) {
         when (intent) {
-            is AudioPlayIntent.OnClickAudioItem -> playAudio(intent.data)
+            is AudioPlayIntent.OnClickAudioItem -> MediaControllerManager.playFromPlaylist(playlistId, audioListFlow.value.map { it.toMediaItem() }, intent.data.id)
             is AudioPlayIntent.OnClickDeleteAudioMedia -> deleteAudioMedia(intent.data.id)
-            AudioPlayIntent.OnClickPlayAll -> setPlaylist(0)
+            AudioPlayIntent.OnClickPlayAll -> setPlaylist()
             AudioPlayIntent.OnClickPlayShuffle -> setRandomPlaylist()
             AudioPlayIntent.OnClickAddAudioMediaInPlaylist -> {}
             AudioPlayIntent.OnClickEditPlaylist -> {}
@@ -83,49 +80,24 @@ class AudioPlayViewModel @Inject constructor(
 
     private fun deleteAudioMedia(id: Int) {
         viewModelScope.launch {
+            MediaControllerManager.tryDeleteMediaItem(playlistId, id)
             deleteAudioMediaUseCase(id).onFailure { exception ->
-                _eventFlow.emit(AudioPlayEvent.ShowToast("삭제 실패: $exception"))
+                _eventFlow.emit(AudioPlayEvent.ShowToast("DB 데이터 삭제 실패: $exception"))
             }
         }
     }
 
-    private fun setPlaylist(startIndex: Int) {
+    private fun setPlaylist() {
         viewModelScope.launch {
             MediaControllerManager.setShuffleMode(false)
-            if (shouldClear) {
-                MediaControllerManager.clearMediaItems()
-                MediaControllerManager.addMedia(audioListFlow.value.map { it.toMediaItem() })
-                shouldClear = false
-            }
-            MediaControllerManager.play()
+            MediaControllerManager.playFromPlaylist(playlistId, audioListFlow.value.map { it.toMediaItem() } )
         }
     }
 
     private fun setRandomPlaylist() {
         viewModelScope.launch {
             MediaControllerManager.setShuffleMode(true)
-            if (shouldClear) {
-                MediaControllerManager.clearMediaItems()
-                MediaControllerManager.addMedia(audioListFlow.value.map { it.toMediaItem() })
-                shouldClear = false
-            }
-            MediaControllerManager.play()
-        }
-    }
-
-    private fun playAudio(audioItem: AudioPlayUiState) {
-        viewModelScope.launch {
-            val targetIndex = if (audioListFlow.value.isEmpty()) {
-                audioListFlow.value.indexOfFirst { it.id == audioItem.id }
-            } else {
-                audioListFlow.value.indexOfFirst { it.id == audioItem.id }
-            }
-
-            if (targetIndex == -1) {
-                _eventFlow.emit(AudioPlayEvent.ShowToast("음원을 찾을 수 없습니다.\n새로고침해주세요."))
-            } else {
-                setPlaylist(targetIndex)
-            }
+            MediaControllerManager.playFromPlaylist(playlistId, audioListFlow.value.map { it.toMediaItem() } )
         }
     }
 }
