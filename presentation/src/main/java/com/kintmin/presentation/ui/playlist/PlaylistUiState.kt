@@ -13,8 +13,10 @@ data class PlaylistItemUiState(
     val playlistDuration: Duration,
     val audioMediaCount: Int,
 ) {
-    val durationString: String get() = "플레이 시간: ${playlistDuration.to_hh_colon_mm_colon_ss()}"
+    val durationString: String get() = "재생시간: ${playlistDuration.to_hh_colon_mm_colon_ss()}"
     val audioMediaCountString: String get() = "음원수: $audioMediaCount"
+
+    val detailText get() = "플레이리스트 · 음원수 $audioMediaCount · 재생시간 ${playlistDuration.to_hh_colon_mm_colon_ss()}"
 
     companion object {
         fun getMock(id: Int = 0): PlaylistItemUiState {

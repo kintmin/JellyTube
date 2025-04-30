@@ -1,8 +1,11 @@
 package com.kintmin.presentation.ui.playlist_detail.list_item
 
+import android.net.Uri
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import com.kintmin.domain.model.AudioMedia
-import com.kintmin.platform.model.AudioPlayData
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
+import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -48,11 +51,19 @@ internal fun AudioMedia.toUiModel() = AudioPlayUiState(
     sequence = audioMediaSequence,
 )
 
-internal fun AudioPlayUiState.toParcelize() = AudioPlayData(
-    id = id,
-    mediaName = mediaName,
-    description = description,
-    artist = artist,
-    audioFileFullPath = audioFileFullPath,
-    imageFileFullPath = imageFileFullPath,
-)
+internal fun AudioPlayUiState.toMediaItem() = MediaItem.Builder()
+    .setMediaId(id.toString())
+    .setUri(audioFileFullPath)
+    .setMediaMetadata(
+        MediaMetadata.Builder()
+            .setTitle(mediaName)
+            .setDescription(description)
+            .setArtist(artist)
+            .apply {
+                imageFileFullPath?.let {
+                    setArtworkUri(Uri.fromFile(File(it)))
+                }
+            }
+            .build()
+    )
+    .build()

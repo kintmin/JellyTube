@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.playlist_detail
 
-import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -20,10 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.kintmin.platform.service.PlaybackService
+import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.playlist_detail.list_item.AudioPlayUiState
 import com.kintmin.presentation.ui.playlist.PlaylistItemUiState
+import com.kintmin.presentation.ui.playlist_detail.list_item.toMediaItem
 
 @Composable
 fun PlaylistDetailScreen(
@@ -40,15 +40,6 @@ fun PlaylistDetailScreen(
             when (event) {
                 AudioPlayEvent.NavigateToBack -> navigateToBack()
                 is AudioPlayEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
-                is AudioPlayEvent.RegisterPlaylist -> {
-                    context.startService(
-                        Intent(context, PlaybackService::class.java).apply {
-                            putParcelableArrayListExtra(PlaybackService.EXTRA_AUDIO_MEDIA_LIST, event.audioMediaList)
-                            putExtra(PlaybackService.EXTRA_AUDIO_START_INDEX, event.startIndex)
-                            putExtra(PlaybackService.EXTRA_SHOULD_CLEAR, event.shouldClear)
-                        }
-                    )
-                }
             }
         }
     }

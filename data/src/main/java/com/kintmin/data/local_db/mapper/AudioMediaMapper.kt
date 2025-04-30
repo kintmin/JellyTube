@@ -5,6 +5,7 @@ import com.kintmin.data.local_db.model.PlaylistTrackEntity
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.extension.toLocalDateTime
 import com.kintmin.domain.model.AudioMedia
+import com.kintmin.domain.model.Playlist
 import kotlin.time.Duration.Companion.seconds
 
 internal object AudioMediaMapper {
@@ -14,7 +15,7 @@ internal object AudioMediaMapper {
     fun toDomain(
         fileManager: FileManager,
         audioMediaEntity: AudioMediaEntity,
-        playlistTrackEntity: PlaylistTrackEntity,
+        playlistTrackEntity: PlaylistTrackEntity? = null,
     ): Result<AudioMedia> = runCatching {
         val audioFileFullPath = fileManager.getFullPathWithExt(
             fileName = audioMediaEntity.source,
@@ -30,8 +31,8 @@ internal object AudioMediaMapper {
 
         AudioMedia(
             id = audioMediaEntity.id,
-            playlistId = playlistTrackEntity.playlistId,
-            audioMediaSequence = playlistTrackEntity.sequence,
+            playlistId = playlistTrackEntity?.playlistId ?: Playlist.TOTAL,
+            audioMediaSequence = playlistTrackEntity?.sequence ?: 0,
             sourcePath = audioMediaEntity.source,
             mediaName = audioMediaEntity.mediaName,
             artist = audioMediaEntity.artist,

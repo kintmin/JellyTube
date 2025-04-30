@@ -14,8 +14,8 @@ interface AudioMediaDao {
     @Query("SELECT * FROM AUDIO_MEDIA WHERE id = :id")
     suspend fun getDataById(id: Int): AudioMediaEntity
 
-    @Query("SELECT EXISTS(SELECT 1 FROM AUDIO_MEDIA WHERE source = :source)")
-    suspend fun isExistAudioMedia(source: String): Boolean
+    @Query("SELECT * FROM AUDIO_MEDIA WHERE source = :source")
+    suspend fun getDataBySource(source: String): AudioMediaEntity
 
     @Query("SELECT * FROM AUDIO_MEDIA")
     fun getDataListFlow(): Flow<List<AudioMediaEntity>>

@@ -1,6 +1,7 @@
 package com.kintmin.platform.di
 
 import android.content.Context
+import com.kintmin.platform.notification.PushNotificationUtil
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,12 +11,12 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object NotificationModule {
+object PlatformModule {
     @Provides
     @Singleton
     fun providePushNotificationUtil(
         @ApplicationContext context: Context
-    ): com.kintmin.platform.notification.PushNotificationUtil {
-        return com.kintmin.platform.notification.PushNotificationUtil(context)
+    ): PushNotificationUtil {
+        return PushNotificationUtil(context)
     }
 }
