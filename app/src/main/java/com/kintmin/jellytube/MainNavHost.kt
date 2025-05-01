@@ -4,11 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
-import com.kintmin.presentation.ui.MainTabItem
+import com.kintmin.presentation.ui.main.MainTabItem
 import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylistDetailScreen
 import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
-import com.kintmin.presentation.ui.navigation.MainScreenRoute
-import com.kintmin.presentation.ui.navigation.mainScreen
+import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
+import com.kintmin.presentation.ui.main.navigation.mainScreen
 
 @Composable
 fun MainNavHost(

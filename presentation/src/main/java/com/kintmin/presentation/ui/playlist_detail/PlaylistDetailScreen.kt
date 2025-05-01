@@ -1,8 +1,8 @@
 package com.kintmin.presentation.ui.playlist_detail
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,49 +16,69 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.ui.playlist_detail.list_item.AudioPlayUiState
-import com.kintmin.presentation.ui.playlist.PlaylistItemUiState
-import com.kintmin.presentation.ui.playlist_detail.list_item.toMediaItem
+import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderEvent
+import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderIntent
+import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderView
+import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemUiState
+import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderUiState
+import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderViewModel
+import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListEvent
+import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListIntent
+import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemView
+import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewModel
 
 @Composable
 fun PlaylistDetailScreen(
     navigateToBack: () -> Unit,
+    navigateToAddAudioMediaScreen: () -> Unit,
+    navigateToEditPlaylistScreen: () -> Unit,
+    navigateToAudioDetailScreen: () -> Unit,
 ) {
-    val context = LocalContext.current
-    val audioPlayViewModel = hiltViewModel<AudioPlayViewModel>()
+    val headerViewModel = hiltViewModel<PlaylistDetailHeaderViewModel>()
+    val listViewModel = hiltViewModel<PlaylistDetailListViewModel>()
 
-    val playlistData by audioPlayViewModel.playlistFlow.collectAsState()
-    val audioList by audioPlayViewModel.audioListFlow.collectAsState()
+    val headerData by headerViewModel.headerDataFlow.collectAsState()
+    val audioList by listViewModel.audioListFlow.collectAsState()
 
     LaunchedEffect(Unit) {
-        audioPlayViewModel.eventFlow.collect { event ->
+        headerViewModel.eventFlow.collect { event ->
             when (event) {
-                AudioPlayEvent.NavigateToBack -> navigateToBack()
-                is AudioPlayEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen -> navigateToAddAudioMediaScreen()
+                PlaylistDetailHeaderEvent.NavigateToEditPlaylistScreen -> navigateToEditPlaylistScreen()
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        listViewModel.eventFlow.collect { event ->
+            when (event) {
+                PlaylistDetailListEvent.NavigateToAudioDetailScreen -> navigateToAudioDetailScreen()
             }
         }
     }
 
     PlaylistDetailScreen(
-        playlistData = playlistData,
+        navigateToBack = navigateToBack,
+        headerData = headerData,
         audioPlayDataList = audioList,
-        isBasePlaylist = true,
-        sendIntent = audioPlayViewModel::sendIntent,
+        isBasePlaylist = headerViewModel.isBasePlaylist,
+        sendPlaylistDetailListIntent = listViewModel::sendIntent,
+        sendPlaylistDetailHeaderIntent = headerViewModel::sendIntent
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistDetailScreen(
-    playlistData: PlaylistItemUiState,
-    audioPlayDataList: List<AudioPlayUiState>,
+    navigateToBack: () -> Unit,
+    headerData: PlaylistDetailHeaderUiState,
+    audioPlayDataList: List<PlaylistDetailListItemUiState>,
     isBasePlaylist: Boolean,
-    sendIntent: (AudioPlayIntent) -> Unit,
+    sendPlaylistDetailListIntent: (PlaylistDetailListIntent) -> Unit,
+    sendPlaylistDetailHeaderIntent: (PlaylistDetailHeaderIntent) -> Unit,
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -66,9 +86,7 @@ fun PlaylistDetailScreen(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = {
-                        sendIntent(AudioPlayIntent.OnClickNavigationBack)
-                    }) {
+                    IconButton(onClick = { navigateToBack() }) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             contentDescription = "ArrowBackIosNew"
@@ -79,15 +97,26 @@ fun PlaylistDetailScreen(
             )
         },
     ) { innerPadding ->
-        AudioPlayView(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            playlistData = playlistData,
-            audioPlayList = audioPlayDataList,
-            isBasePlaylist = isBasePlaylist,
-            sendIntent = sendIntent,
-        )
+        LazyColumn(modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)) {
+            item {
+                PlaylistDetailHeaderView(
+                    headerData = headerData,
+                    sendIntent = sendPlaylistDetailHeaderIntent,
+                )
+            }
+            items(
+                count = audioPlayDataList.size,
+                key = { index -> audioPlayDataList[index].id }
+            ) { index ->
+                PlaylistDetailListItemView(
+                    data = audioPlayDataList[index],
+                    isBasePlaylist = isBasePlaylist,
+                    sendIntent = sendPlaylistDetailListIntent,
+                )
+            }
+        }
     }
 }
 
@@ -96,10 +125,12 @@ fun PlaylistDetailScreen(
 fun PlaylistDetailScreenPreview() {
     JellyTubeTheme {
         PlaylistDetailScreen(
-            playlistData = PlaylistItemUiState.getMock(),
-            audioPlayDataList = AudioPlayUiState.getMockList(),
+            navigateToBack = {},
+            headerData = PlaylistDetailHeaderUiState.getMock(),
+            audioPlayDataList = PlaylistDetailListItemUiState.getMockList(),
             isBasePlaylist = true,
-            sendIntent = {},
+            sendPlaylistDetailListIntent = {},
+            sendPlaylistDetailHeaderIntent = {},
         )
     }
 }
