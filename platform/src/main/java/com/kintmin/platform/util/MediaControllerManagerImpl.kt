@@ -77,20 +77,14 @@ class MediaControllerManagerImpl @Inject constructor(
 
             fetchDataJob = mainScope.launch {
                 resetMediaItemList(playlistId)
+                playbackPlaylist(startMediaId)
             }
         }
 
         val isDataFetching = fetchDataJob?.isCompleted == false
         if (isDataFetching) return@runCatching
 
-        startMediaId?.let {
-            seekMediaItem(it).getOrThrow()
-        }
-
-        if (!mediaController.isPlaying) {
-            mediaController.prepare()
-            mediaController.play()
-        }
+        playbackPlaylist(startMediaId)
     }
 
     override fun tryDeleteMediaItem(
@@ -120,6 +114,17 @@ class MediaControllerManagerImpl @Inject constructor(
 
     override fun setRepeatMode(isRepeat: Boolean) {
         mediaController.repeatMode = if (isRepeat) REPEAT_MODE_ALL else REPEAT_MODE_OFF
+    }
+
+    private fun playbackPlaylist(startMediaId: Int?) {
+        startMediaId?.let {
+            seekMediaItem(it).getOrThrow()
+        }
+
+        if (!mediaController.isPlaying) {
+            mediaController.prepare()
+            mediaController.play()
+        }
     }
 
     private suspend fun resetMediaItemList(playlistId: Int) = runCatching {

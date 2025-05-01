@@ -46,8 +46,6 @@ class PlaybackService : MediaSessionService() {
                 }
             })
             .build()
-
-        mediaControllerManager.initialize(baseContext)
     }
 
     override fun onDestroy() {
