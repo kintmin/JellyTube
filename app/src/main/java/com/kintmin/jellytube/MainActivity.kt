@@ -9,14 +9,18 @@ import androidx.navigation.compose.rememberNavController
 import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.theme.JellyTubeTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    @Inject
+    lateinit var mediaControllerManager: MediaControllerManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        MediaControllerManager.initialize(baseContext)
+        mediaControllerManager.initialize(baseContext)
 
         enableEdgeToEdge()
         setContent {

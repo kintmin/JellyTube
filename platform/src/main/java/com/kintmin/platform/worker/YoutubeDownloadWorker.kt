@@ -1,7 +1,6 @@
 package com.kintmin.platform.worker
 
 import android.content.Context
-import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -22,6 +21,7 @@ class YoutubeDownloadWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val downloadYoutubeMediaUseCase: DownloadYoutubeMediaUseCase,
     private val pushNotificationUtil: PushNotificationUtil,
+    private val mediaControllerManager: MediaControllerManager,
 ) : CoroutineWorker(appContext, workerParams) {
     override suspend fun doWork(): Result {
         setForegroundAsync(NotificationData.Download().getForegroundInfo(applicationContext))
@@ -34,8 +34,8 @@ class YoutubeDownloadWorker @AssistedInject constructor(
             pushNotificationUtil.cancelNotification(NotificationData.Download())
             pushNotificationUtil.sendNotification(NotificationData.DownloadResult("완료되었습니다."))
             withContext(Dispatchers.Main) {
-                MediaControllerManager.tryAddLastMediaItem(Playlist.TOTAL, audioMedia.toMediaItem())
-                MediaControllerManager.tryAddLastMediaItem(Playlist.UNCATEGORIZED, audioMedia.toMediaItem())
+                mediaControllerManager.tryAddLastMediaItem(Playlist.TOTAL, audioMedia.toMediaItem())
+                mediaControllerManager.tryAddLastMediaItem(Playlist.UNCATEGORIZED, audioMedia.toMediaItem())
             }
             return Result.success()
         }.onFailure {
