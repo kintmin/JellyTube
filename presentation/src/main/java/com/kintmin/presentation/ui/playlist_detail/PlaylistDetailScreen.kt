@@ -101,7 +101,6 @@ fun PlaylistDetailScreen(
     sendPlaylistDetailListIntent: (PlaylistDetailListIntent) -> Unit,
     sendPlaylistDetailHeaderIntent: (PlaylistDetailHeaderIntent) -> Unit,
 ) {
-    val context = LocalContext.current
     val density = LocalDensity.current
     val audioPlayList = remember { mutableStateListOf<PlaylistDetailListItemUiState>() }
     var draggingItemId by remember { mutableStateOf<Int?>(null) }
@@ -187,12 +186,11 @@ fun PlaylistDetailScreen(
                                     }
                                 },
                                 onDragEnd = {
-                                    val fromIndex = audioPlayDataList.indexOfFirst { it.id == item.id }
-                                    val toIndex = audioPlayList.indexOfFirst { it.id == draggingItemId }
+                                    val targetIndex = audioPlayList.indexOfFirst { it.id == draggingItemId }
                                     sendPlaylistDetailListIntent(
                                         PlaylistDetailListIntent.ReorderAudioItem(
                                             reorderData = item,
-                                            targetData = audioPlayDataList[toIndex]
+                                            targetData = audioPlayDataList[targetIndex]
                                         ),
                                     )
                                     draggingItemId = null
