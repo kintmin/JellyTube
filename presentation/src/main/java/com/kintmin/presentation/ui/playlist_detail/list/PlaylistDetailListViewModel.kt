@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
+import com.kintmin.domain.usecase.UpdatePlaybackSequenceUseCase
 import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +24,7 @@ class PlaylistDetailListViewModel @Inject constructor(
     private val mediaControllerManager: MediaControllerManager,
     fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
     private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
+    private val updatePlaybackSequenceUseCase: UpdatePlaybackSequenceUseCase,
 ) : ViewModel() {
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
@@ -46,7 +48,12 @@ class PlaylistDetailListViewModel @Inject constructor(
                 // 플레이리스트 수정 (다수 선택 가능)
                 // 음원 제거
             }
+
             is PlaylistDetailListIntent.OnClickDeleteAudioMediaInPlaylist -> deleteAudioMediaInPlaylist(intent.data.id)
+            is PlaylistDetailListIntent.ReorderAudioItem -> updatePlaybackSequence(
+                intent.reorderData,
+                intent.targetData,
+            )
         }
     }
 
@@ -62,6 +69,24 @@ class PlaylistDetailListViewModel @Inject constructor(
     }
 
     private fun deleteAudioMediaInPlaylist(id: Int) {}
+
+    private fun updatePlaybackSequence(
+        reorderData: PlaylistDetailListItemUiState,
+        targetData: PlaylistDetailListItemUiState,
+    ) {
+        if (reorderData.id == targetData.id) return
+
+        val isForward = reorderData.sequence > targetData.sequence
+        val newSequence = if (isForward) {
+            targetData.sequence
+        } else {
+            targetData.sequence + 1
+        }
+
+        viewModelScope.launch {
+            updatePlaybackSequenceUseCase(playlistId, reorderData.id, newSequence)
+        }
+    }
 
     private fun triggerEvent(newEvent: PlaylistDetailListEvent) {
         viewModelScope.launch {

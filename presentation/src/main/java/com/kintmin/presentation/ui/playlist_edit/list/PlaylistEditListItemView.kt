@@ -1,8 +1,7 @@
-package com.kintmin.presentation.ui.playlist_detail.list
+package com.kintmin.presentation.ui.playlist_edit.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -12,20 +11,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.rounded.Reorder
+import androidx.compose.material.icons.sharp.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,16 +34,14 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListIntent
+import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemUiState
 import java.io.File
 
 @Composable
-fun PlaylistDetailListItemView(
+fun PlaylistEditListItemView(
     data: PlaylistDetailListItemUiState,
-    isBasePlaylist: Boolean,
-    sendIntent: (PlaylistDetailListIntent) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
     val imageRequest = ImageRequest.Builder(LocalContext.current)
         .data(
             data.imageFileFullPath?.let { File(it) }
@@ -62,7 +55,6 @@ fun PlaylistDetailListItemView(
         .fillMaxWidth()
         .height(56.dp)
         .clickable {
-            sendIntent(PlaylistDetailListIntent.OnClickAudioItem(data))
         }
     ) {
         IconButton(
@@ -72,8 +64,8 @@ fun PlaylistDetailListItemView(
             onClick = {  }
         ) {
             Icon(
-                imageVector = Icons.Rounded.Cancel,
-                contentDescription = "Cancel",
+                imageVector = Icons.Rounded.Delete,
+                contentDescription = "Delete",
                 tint = Color(0xFFEE1111)
             )
         }
@@ -89,6 +81,7 @@ fun PlaylistDetailListItemView(
                 .clip(RoundedCornerShape(16))
                 .background(Color.Gray)
         )
+
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -110,62 +103,27 @@ fun PlaylistDetailListItemView(
             )
         }
 
-        Box(
+        IconButton(
             modifier = Modifier
                 .fillMaxHeight()
                 .align(Alignment.CenterVertically),
+            onClick = {  }
         ) {
-            IconButton(
-                modifier = Modifier
-                    .fillMaxHeight(),
-                onClick = { expanded = true }
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.MoreVert,
-                    contentDescription = "More options"
-                )
-            }
-
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("정보 수정") },
-                    onClick = {
-                        expanded = false
-                        sendIntent(PlaylistDetailListIntent.OnClickShowDetailAudioMedia(data))
-                    }
-                )
-                if (!isBasePlaylist) {
-                    DropdownMenuItem(
-                        text = { Text("플레이리스트에서 제거") },
-                        onClick = {
-                            expanded = false
-                            sendIntent(PlaylistDetailListIntent.OnClickDeleteAudioMediaInPlaylist(data))
-                        }
-                    )
-                }
-                DropdownMenuItem(
-                    text = { Text("음원 제거") },
-                    onClick = {
-                        expanded = false
-                        sendIntent(PlaylistDetailListIntent.OnClickDeleteAudioMediaFile(data))
-                    }
-                )
-            }
+            Icon(
+                imageVector = Icons.Rounded.Reorder,
+                contentDescription = "Reorder"
+            )
         }
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
-fun AudioItemPreview() {
+fun PlaylistEditScreenPreview() {
     JellyTubeTheme {
-        PlaylistDetailListItemView(
-            data = PlaylistDetailListItemUiState.getMock(),
-            isBasePlaylist = true,
-            sendIntent = {},
+        PlaylistEditListItemView(
+            PlaylistDetailListItemUiState.getMock()
         )
     }
 }

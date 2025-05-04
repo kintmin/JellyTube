@@ -25,11 +25,21 @@ interface PlaylistTrackDao {
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
     suspend fun getPlaylistTrackFull(playlistId: Int, audioMediaId: Int): PlaylistTrackFullDto
 
-    @Query("SELECT COUNT(*) FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
+    @Query("SELECT COALESCE(MAX(sequence), 0) + 1 FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     suspend fun getNextSequence(playlistId: Int): Int
 
-    @Query("UPDATE PLAYLIST_TRACK SET sequence = :newSequence WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
-    suspend fun updatePlaylistTrack(playlistId: Int, audioMediaId: Int, newSequence: Int)
+    @Query(
+        """
+UPDATE PLAYLIST_TRACK
+SET sequence = (CASE
+    WHEN audioMediaId = :audioMediaId THEN :newSequence
+    WHEN sequence >= :newSequence THEN sequence + 1
+    ELSE sequence
+END)
+WHERE playlistId = :playlistId
+"""
+    )
+    suspend fun updateSequence(playlistId: Int, audioMediaId: Int, newSequence: Int)
 
     @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
     suspend fun deletePlaylistTrack(playlistId: Int, audioMediaId: Int)
