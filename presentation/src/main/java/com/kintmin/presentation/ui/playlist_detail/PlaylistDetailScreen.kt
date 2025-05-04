@@ -142,7 +142,7 @@ fun PlaylistDetailScreen(
             itemsIndexed(
                 items = audioPlayList,
                 key = { _, item -> item.id }
-            ) { index, item ->
+            ) { _, item ->
                 Box(
                     modifier =  Modifier
                         .animateItem()
@@ -178,6 +178,8 @@ fun PlaylistDetailScreen(
                                     val moved = (dragOffset / itemHeightPx).toInt()
 
                                     val fromIndex = audioPlayList.indexOfFirst { it.id == draggingItemId }
+                                    if (fromIndex == -1) return@detectDragGesturesAfterLongPress
+
                                     val toIndex = (fromIndex + moved).coerceIn(0, audioPlayList.lastIndex)
 
                                     if (fromIndex != toIndex) {
@@ -187,6 +189,8 @@ fun PlaylistDetailScreen(
                                 },
                                 onDragEnd = {
                                     val targetIndex = audioPlayList.indexOfFirst { it.id == draggingItemId }
+                                    if (targetIndex == -1) return@detectDragGesturesAfterLongPress
+
                                     sendPlaylistDetailListIntent(
                                         PlaylistDetailListIntent.ReorderAudioItem(
                                             reorderData = item,
