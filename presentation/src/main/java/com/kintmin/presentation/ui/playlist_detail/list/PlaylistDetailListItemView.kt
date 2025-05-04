@@ -34,6 +34,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -43,6 +44,7 @@ import java.io.File
 
 @Composable
 fun PlaylistDetailListItemView(
+    modifier: Modifier,
     data: PlaylistDetailListItemUiState,
     isBasePlaylist: Boolean,
     sendIntent: (PlaylistDetailListIntent) -> Unit,
@@ -58,9 +60,8 @@ fun PlaylistDetailListItemView(
         .diskCachePolicy(coil.request.CachePolicy.DISABLED)
         .build()
 
-    Row(modifier = Modifier
+    Row(modifier = modifier
         .fillMaxWidth()
-        .height(56.dp)
         .clickable {
             sendIntent(PlaylistDetailListIntent.OnClickAudioItem(data))
         }
@@ -164,6 +165,7 @@ fun AudioItemPreview() {
     JellyTubeTheme {
         PlaylistDetailListItemView(
             data = PlaylistDetailListItemUiState.getMock(),
+            modifier = Modifier.height(56.dp),
             isBasePlaylist = true,
             sendIntent = {},
         )

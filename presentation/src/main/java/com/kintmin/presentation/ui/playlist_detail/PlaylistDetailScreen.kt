@@ -2,9 +2,11 @@ package com.kintmin.presentation.ui.playlist_detail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,14 +28,17 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -50,6 +55,9 @@ import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListEvent
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListIntent
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemView
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json.Default.configuration
 
 @Composable
 fun PlaylistDetailScreen(
@@ -102,9 +110,20 @@ fun PlaylistDetailScreen(
     sendPlaylistDetailHeaderIntent: (PlaylistDetailHeaderIntent) -> Unit,
 ) {
     val density = LocalDensity.current
-    val audioPlayList = remember { mutableStateListOf<PlaylistDetailListItemUiState>() }
+
+    val audioPlayList = remember { mutableStateListOf(*audioPlayDataList.toTypedArray()) }
     var draggingItemId by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
+
+    var itemHeightPx by remember { mutableFloatStateOf(0f) }
+    var listOffsetOnScreen by remember { mutableFloatStateOf(0f) }
+
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val view = LocalView.current
+    val screenHeightPx = remember { view.height.toFloat() }
+    val autoScrollZone = with(density) { 80.dp.toPx() }
+    val scrollSpeed = with(density) { 10.dp.toPx() }
 
     LaunchedEffect(audioPlayDataList) {
         audioPlayList.clear()
@@ -131,7 +150,12 @@ fun PlaylistDetailScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .onGloballyPositioned {
+                    val position = it.localToWindow(Offset.Zero)
+                    listOffsetOnScreen = position.y
+                },
+            state = listState,
         ) {
             item {
                 PlaylistDetailHeaderView(
@@ -144,7 +168,7 @@ fun PlaylistDetailScreen(
                 key = { _, item -> item.id }
             ) { _, item ->
                 Box(
-                    modifier =  Modifier
+                    modifier = Modifier
                         .animateItem()
                         .zIndex(1f.takeIf { item.id == draggingItemId } ?: 0f)
                         //.background(Color(0xFFF7F7F7).takeIf { item.id == draggingItemId } ?: Color.White)
@@ -167,15 +191,18 @@ fun PlaylistDetailScreen(
                         .pointerInput(item.id, item.sequence) {
                             detectDragGesturesAfterLongPress(
                                 onDragStart = {
-                                    dragOffset = 0f
+                                    dragOffset = it.y
                                     draggingItemId = item.id
                                 },
                                 onDrag = { change, dragAmount ->
                                     change.consume()
                                     dragOffset += dragAmount.y
 
-                                    val itemHeightPx = with(density) { 56.dp.toPx() }
-                                    val moved = (dragOffset / itemHeightPx).toInt()
+                                    val moved = if (dragOffset > 0) {
+                                        (dragOffset / itemHeightPx)
+                                    } else {
+                                        ((dragOffset - itemHeightPx) / itemHeightPx)
+                                    }.toInt()
 
                                     val fromIndex = audioPlayList.indexOfFirst { it.id == draggingItemId }
                                     if (fromIndex == -1) return@detectDragGesturesAfterLongPress
@@ -204,6 +231,11 @@ fun PlaylistDetailScreen(
                 ) {
                     PlaylistDetailListItemView(
                         data = item,
+                        modifier = Modifier
+                            .onGloballyPositioned {
+                                itemHeightPx = it.size.height.toFloat()
+                            }
+                            .height(80.dp),
                         isBasePlaylist = isBasePlaylist,
                         sendIntent = sendPlaylistDetailListIntent,
                     )
