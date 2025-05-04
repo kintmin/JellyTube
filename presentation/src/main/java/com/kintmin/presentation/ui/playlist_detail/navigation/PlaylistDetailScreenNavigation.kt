@@ -20,7 +20,6 @@ fun NavGraphBuilder.playlistDetail(navigateToBack: () -> Unit) {
         PlaylistDetailScreen(
             navigateToBack = navigateToBack,
             navigateToAddAudioMediaScreen = {},
-            navigateToEditPlaylistScreen = {},
             navigateToAudioDetailScreen = {},
         )
     }

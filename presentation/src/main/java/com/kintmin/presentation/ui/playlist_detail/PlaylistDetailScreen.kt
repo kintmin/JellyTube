@@ -1,18 +1,12 @@
 package com.kintmin.presentation.ui.playlist_detail
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,27 +17,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -58,29 +42,25 @@ import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListEvent
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListIntent
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemView
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json.Default.configuration
+import com.kintmin.presentation.ui.playlist_detail.list.reorder.rememberReorderState
 
 @Composable
 fun PlaylistDetailScreen(
     navigateToBack: () -> Unit,
     navigateToAddAudioMediaScreen: () -> Unit,
-    navigateToEditPlaylistScreen: () -> Unit,
     navigateToAudioDetailScreen: () -> Unit,
 ) {
     val headerViewModel = hiltViewModel<PlaylistDetailHeaderViewModel>()
     val listViewModel = hiltViewModel<PlaylistDetailListViewModel>()
 
     val headerData by headerViewModel.headerDataFlow.collectAsState()
+    val isEditMode by headerViewModel.isEditMode.collectAsState()
     val audioList by listViewModel.audioListFlow.collectAsState()
 
     LaunchedEffect(Unit) {
         headerViewModel.eventFlow.collect { event ->
             when (event) {
                 PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen -> navigateToAddAudioMediaScreen()
-                PlaylistDetailHeaderEvent.NavigateToEditPlaylistScreen -> navigateToEditPlaylistScreen()
             }
         }
     }
@@ -98,6 +78,7 @@ fun PlaylistDetailScreen(
         headerData = headerData,
         audioPlayDataList = audioList,
         isBasePlaylist = headerViewModel.isBasePlaylist,
+        isEditMode = isEditMode,
         sendPlaylistDetailListIntent = listViewModel::sendIntent,
         sendPlaylistDetailHeaderIntent = headerViewModel::sendIntent
     )
@@ -110,24 +91,14 @@ fun PlaylistDetailScreen(
     headerData: PlaylistDetailHeaderUiState,
     audioPlayDataList: List<PlaylistDetailListItemUiState>,
     isBasePlaylist: Boolean,
+    isEditMode: Boolean,
     sendPlaylistDetailListIntent: (PlaylistDetailListIntent) -> Unit,
     sendPlaylistDetailHeaderIntent: (PlaylistDetailHeaderIntent) -> Unit,
 ) {
-    val density = LocalDensity.current
-    val audioPlayList = remember { mutableStateListOf(*audioPlayDataList.toTypedArray()) }
-    var draggingItemId by remember { mutableStateOf<Int?>(null) }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
-    var itemHeightPx by remember { mutableFloatStateOf(0f) }
-    var listOffsetOnScreen by remember { mutableFloatStateOf(0f) }
-    val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
-    var draggingItemOffset by remember { mutableIntStateOf(0) }
-    var overscrollJob by remember { mutableStateOf<Job?>(null) }
-
-    LaunchedEffect(audioPlayDataList) {
-        audioPlayList.clear()
-        audioPlayList.addAll(audioPlayDataList)
-    }
+    val reorderState = rememberReorderState(
+        audioPlayDataList = audioPlayDataList,
+        initializeItemHeightPx = 80.dp,
+    )
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -149,12 +120,8 @@ fun PlaylistDetailScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .onGloballyPositioned {
-                    val position = it.localToWindow(Offset.Zero)
-                    listOffsetOnScreen = position.y
-                },
-            state = listState,
+                .padding(innerPadding),
+            state = reorderState.listState,
         ) {
             item {
                 PlaylistDetailHeaderView(
@@ -163,122 +130,31 @@ fun PlaylistDetailScreen(
                 )
             }
             itemsIndexed(
-                items = audioPlayList,
+                items = reorderState.audioPlayList,
                 key = { _, item -> item.id }
-            ) { index, item ->
+            ) { _, item ->
                 Box(
-                    modifier = Modifier
-                        .animateItem()
-                        .zIndex(1f.takeIf { item.id == draggingItemId } ?: 0f)
-                        .drawBehind {
-                            if (item.id == draggingItemId) {
-                                drawLine(
-                                    color = Color(0xFFDADADA),
-                                    strokeWidth = 0.5.dp.toPx(),
-                                    start = Offset(0f, 0f),
-                                    end = Offset(size.width, 0f)
-                                )
-                                drawLine(
-                                    color = Color(0xFFDADADA),
-                                    strokeWidth = 0.5.dp.toPx(),
-                                    start = Offset(0f, size.height),
-                                    end = Offset(size.width, size.height)
-                                )
-                            }
-                        }
-                        .pointerInput(item.id, item.sequence) {
-                            detectDragGesturesAfterLongPress(
-                                onDragStart = {
-                                    dragOffset = it.y
-                                    draggingItemId = item.id
-
-                                    listState.layoutInfo.visibleItemsInfo.find { it.key == item.id }?.let { info ->
-                                        draggingItemOffset = info.offset
-                                    }
-                                },
-                                onDrag = { change, dragAmount ->
-                                    change.consume()
-                                    dragOffset += dragAmount.y
-
-                                    val moved = if (dragOffset > 0) {
-                                        (dragOffset / itemHeightPx)
-                                    } else {
-                                        ((dragOffset - itemHeightPx) / itemHeightPx)
-                                    }.toInt()
-
-                                    val fromIndex = audioPlayList.indexOfFirst { it.id == draggingItemId }
-                                    if (fromIndex == -1) return@detectDragGesturesAfterLongPress
-
-                                    val toIndex = (fromIndex + moved).coerceIn(0, audioPlayList.lastIndex)
-
-                                    if (fromIndex != toIndex) {
-                                        audioPlayList.add(toIndex, audioPlayList.removeAt(fromIndex))
-                                        dragOffset -= (moved * itemHeightPx)
-                                    }
-
-                                    // 오토 스크롤
-                                    val scrollZone = with(density) { 80.dp.toPx() }
-                                    val scrollSpeed = with(density) { 12.dp.toPx() }
-
-                                    val dragItemIndex = audioPlayList.indexOfFirst { it.id == draggingItemId }
-                                    val currentItem = listState.layoutInfo.visibleItemsInfo.find { it.key == draggingItemId }
-
-                                    val canScrollDown = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.let { lastItem ->
-                                        val isLastItemVisible = audioPlayList.lastOrNull()?.id == lastItem.key
-                                        val bottomReached = lastItem.offset + lastItem.size <= listState.layoutInfo.viewportEndOffset
-                                        !(bottomReached)
-                                    } ?: true
-
-                                    if (currentItem != null) {
-                                        val itemTop = currentItem.offset
-                                        val itemBottom = itemTop + currentItem.size
-
-                                        val viewStart = listState.layoutInfo.viewportStartOffset
-                                        val viewEnd = listState.layoutInfo.viewportEndOffset
-
-                                        when {
-                                            itemTop < viewStart + scrollZone -> {
-                                                if (overscrollJob?.isActive == true) return@detectDragGesturesAfterLongPress
-                                                overscrollJob = coroutineScope.launch {
-                                                    listState.scrollBy(-scrollSpeed)
-                                                    dragOffset -= scrollSpeed
-                                                }
-                                            }
-                                            itemBottom > viewEnd - scrollZone && canScrollDown -> {
-                                                if (overscrollJob?.isActive == true) return@detectDragGesturesAfterLongPress
-                                                overscrollJob = coroutineScope.launch {
-                                                    listState.scrollBy(scrollSpeed)
-                                                    dragOffset += scrollSpeed
-                                                }
-                                            }
-                                            else -> overscrollJob?.cancel()
-                                        }
-                                    }
-                                },
-                                onDragEnd = {
-                                    val targetIndex = audioPlayList.indexOfFirst { it.id == draggingItemId }
-                                    if (targetIndex == -1) return@detectDragGesturesAfterLongPress
-
-                                    sendPlaylistDetailListIntent(
-                                        PlaylistDetailListIntent.ReorderAudioItem(
-                                            reorderData = item,
-                                            targetData = audioPlayDataList[targetIndex]
-                                        ),
-                                    )
-                                    draggingItemId = null
-                                    overscrollJob?.cancel()
-                                },
-                            )
-                        }
+                    modifier = Modifier.animateItem()
                 ) {
                     PlaylistDetailListItemView(
                         data = item,
-                        modifier = Modifier
-                            .onGloballyPositioned {
-                                itemHeightPx = it.size.height.toFloat()
-                            }
-                            .height(80.dp),
+                        modifier = Modifier.height(80.dp),
+                        isEditMode = isEditMode,
                         isBasePlaylist = isBasePlaylist,
+                        draggingItemId = reorderState.draggingItemId,
+                        onDragStart = reorderState::onDragStart,
+                        onDrag = reorderState::onDrag,
+                        onDragEnd = {
+                            reorderState.getDraggingItemIndex()?.let {
+                                sendPlaylistDetailListIntent(
+                                    PlaylistDetailListIntent.ReorderAudioItem(
+                                        reorderData = item,
+                                        targetData = audioPlayDataList[it]
+                                    ),
+                                )
+                            }
+                            reorderState.onDragEnd()
+                        },
                         sendIntent = sendPlaylistDetailListIntent,
                     )
                 }
@@ -296,6 +172,7 @@ fun PlaylistDetailScreenPreview() {
             headerData = PlaylistDetailHeaderUiState.getMock(),
             audioPlayDataList = PlaylistDetailListItemUiState.getMockList(),
             isBasePlaylist = true,
+            isEditMode = false,
             sendPlaylistDetailListIntent = {},
             sendPlaylistDetailHeaderIntent = {},
         )
