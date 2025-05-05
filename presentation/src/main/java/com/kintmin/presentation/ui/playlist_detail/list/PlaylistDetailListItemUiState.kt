@@ -40,7 +40,7 @@ data class PlaylistDetailListItemUiState(
     }
 }
 
-internal fun AudioMedia.toUiModel() = PlaylistDetailListItemUiState(
+internal fun AudioMedia.toPlaylistDetailListItemUiState() = PlaylistDetailListItemUiState(
     id = id,
     mediaName = mediaName,
     artist = artist,

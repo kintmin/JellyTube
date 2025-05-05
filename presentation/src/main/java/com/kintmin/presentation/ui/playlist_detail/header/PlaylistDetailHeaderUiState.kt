@@ -16,7 +16,7 @@ data class PlaylistDetailHeaderUiState(
                 imageFileFullPath = null,
                 name = "새로운 플레이리스트",
                 playlistSubtitle = "플레이리스트 · 음원수 123 · 재생시간 999:99:99",
-                description = "플레이리스트 설명입니다. 플레이리스트 설명입니다. 플레이리스트 설명입니다. 플레이리스트 설명입니다. 플레이리스트 설명입니다. 플레이리스트 설명입니다.",
+                description = "설명은 최대 100자 설명은 최대 100자 설명은 최대 100자 설명은 최대 100자 ",
                 isRepeating = true,
                 isShuffling = false,
             )

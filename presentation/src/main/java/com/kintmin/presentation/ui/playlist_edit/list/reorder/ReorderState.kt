@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.playlist_detail.list.reorder
+package com.kintmin.presentation.ui.playlist_edit.list.reorder
 
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyListState
@@ -20,7 +20,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemUiState
+import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListItemUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -29,7 +29,7 @@ class ReorderState(
     private val density: Density,
     private val coroutineScope: CoroutineScope,
     val listState: LazyListState,
-    val audioPlayList: SnapshotStateList<PlaylistDetailListItemUiState>,
+    val audioPlayList: SnapshotStateList<PlaylistEditListItemUiState>,
     initializeItemHeightPx: Float,
 ) {
     private var itemHeightPx by mutableFloatStateOf(initializeItemHeightPx)
@@ -120,7 +120,7 @@ class ReorderState(
 
 @Composable
 fun rememberReorderState(
-    audioPlayDataList: List<PlaylistDetailListItemUiState>,
+    audioPlayDataList: List<PlaylistEditListItemUiState>,
     initializeItemHeightPx: Dp,
 ): ReorderState {
     val density = LocalDensity.current

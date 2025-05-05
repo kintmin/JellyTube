@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.playlist_edit.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -11,12 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.rounded.Cancel
-import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.CheckCircleOutline
 import androidx.compose.material.icons.rounded.Reorder
-import androidx.compose.material.icons.sharp.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -24,23 +22,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListIntent
-import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemUiState
 import java.io.File
 
 @Composable
 fun PlaylistEditListItemView(
-    data: PlaylistDetailListItemUiState,
+    modifier: Modifier,
+    data: PlaylistEditListItemUiState,
+    draggingItemId: Int?,
+    onDragStart: (Offset, Int) -> Unit,
+    onDrag: (PointerInputChange, Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    sendIntent: (PlaylistEditListIntent) -> Unit,
 ) {
     val imageRequest = ImageRequest.Builder(LocalContext.current)
         .data(
@@ -51,23 +58,44 @@ fun PlaylistEditListItemView(
         .diskCachePolicy(coil.request.CachePolicy.DISABLED)
         .build()
 
-    Row(modifier = Modifier
+    Row(modifier = modifier
         .fillMaxWidth()
-        .height(56.dp)
-        .clickable {
+        .zIndex(1f.takeIf { data.id == draggingItemId } ?: 0f)
+        .drawBehind {
+            if (data.id == draggingItemId) {
+                drawLine(
+                    color = Color(0xFFDADADA),
+                    strokeWidth = 0.5.dp.toPx(),
+                    start = Offset(0f, 0f),
+                    end = Offset(size.width, 0f)
+                )
+                drawLine(
+                    color = Color(0xFFDADADA),
+                    strokeWidth = 0.5.dp.toPx(),
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height)
+                )
+            }
         }
+        .clickable { sendIntent(PlaylistEditListIntent.OnClickEditCheck(data)) }
     ) {
         IconButton(
             modifier = Modifier
                 .fillMaxHeight()
                 .align(Alignment.CenterVertically),
-            onClick = {  }
+            onClick = { sendIntent(PlaylistEditListIntent.OnClickEditCheck(data)) }
         ) {
-            Icon(
-                imageVector = Icons.Rounded.Delete,
-                contentDescription = "Delete",
-                tint = Color(0xFFEE1111)
-            )
+            if (data.isChecked) {
+                Icon(
+                    imageVector = Icons.Rounded.CheckCircle,
+                    contentDescription = "CheckCircle",
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Rounded.CheckCircleOutline,
+                    contentDescription = "CheckCircleOutline",
+                )
+            }
         }
 
         AsyncImage(
@@ -81,7 +109,6 @@ fun PlaylistEditListItemView(
                 .clip(RoundedCornerShape(16))
                 .background(Color.Gray)
         )
-
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -106,12 +133,24 @@ fun PlaylistEditListItemView(
         IconButton(
             modifier = Modifier
                 .fillMaxHeight()
-                .align(Alignment.CenterVertically),
-            onClick = {  }
+                .pointerInput(data.id, data.sequence) {
+                    detectDragGestures(
+                        onDragStart = {
+                            onDragStart(it, data.id)
+                        },
+                        onDrag = { change, dragAmount ->
+                            onDrag(change, dragAmount)
+                        },
+                        onDragEnd = {
+                            onDragEnd()
+                        },
+                    )
+                },
+            onClick = {},
         ) {
             Icon(
                 imageVector = Icons.Rounded.Reorder,
-                contentDescription = "Reorder"
+                contentDescription = "Reorder",
             )
         }
     }
@@ -123,7 +162,13 @@ fun PlaylistEditListItemView(
 fun PlaylistEditScreenPreview() {
     JellyTubeTheme {
         PlaylistEditListItemView(
-            PlaylistDetailListItemUiState.getMock()
+            modifier = Modifier.height(56.dp),
+            data = PlaylistEditListItemUiState.getMock(),
+            draggingItemId = 1,
+            onDragStart = { _, _ -> },
+            onDrag = { _, _ -> },
+            onDragEnd = {},
+            sendIntent = {},
         )
     }
 }

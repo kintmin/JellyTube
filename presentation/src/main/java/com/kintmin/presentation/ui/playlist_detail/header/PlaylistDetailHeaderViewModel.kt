@@ -15,15 +15,12 @@ import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,13 +35,10 @@ class PlaylistDetailHeaderViewModel @Inject constructor(
     private val updateIsPlaybackShufflingUseCase: UpdateIsPlaybackShufflingUseCase,
 ) : ViewModel() {
 
-    private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
+    val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
 
     private val _eventFlow = MutableSharedFlow<PlaylistDetailHeaderEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
-
-    private val _isEditMode = MutableStateFlow(false)
-    val isEditMode = _isEditMode.asStateFlow()
 
     val isBasePlaylist get() = playlistId == Playlist.TOTAL || playlistId == Playlist.UNCATEGORIZED
 
@@ -81,8 +75,8 @@ class PlaylistDetailHeaderViewModel @Inject constructor(
 
     fun sendIntent(intent: PlaylistDetailHeaderIntent) {
         when (intent) {
-            PlaylistDetailHeaderIntent.OnClickAddAudioMediaInPlaylist -> triggerEvent(PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen)
-            PlaylistDetailHeaderIntent.OnClickEditPlaylist -> _isEditMode.update { !isEditMode.value }
+            PlaylistDetailHeaderIntent.OnClickAdd -> triggerEvent(PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen)
+            PlaylistDetailHeaderIntent.OnClickEdit -> triggerEvent(PlaylistDetailHeaderEvent.NavigateToEditPlaylistScreen)
             PlaylistDetailHeaderIntent.OnClickPlay -> playbackPlaylist()
             PlaylistDetailHeaderIntent.OnClickRepeat -> updatePlaybackRepeating()
             PlaylistDetailHeaderIntent.OnClickShuffle -> updateIsPlaybackShuffling()
