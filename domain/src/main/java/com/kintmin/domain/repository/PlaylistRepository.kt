@@ -4,7 +4,7 @@ import com.kintmin.domain.model.Playlist
 import kotlinx.coroutines.flow.Flow
 
 interface PlaylistRepository {
-    suspend fun addPlaylist(newValue: Playlist): Result<Unit>
+    suspend fun addPlaylist(title: String): Result<Unit>
     fun getPlaylistListFlow(): Flow<List<Playlist>>
     fun getPlaylistFlow(playlistId: Int): Flow<Playlist>
     suspend fun updatePlaylistName(id: Int, newName: String): Result<Unit>
