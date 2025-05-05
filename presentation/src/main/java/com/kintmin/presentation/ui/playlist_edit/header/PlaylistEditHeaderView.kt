@@ -12,6 +12,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -24,12 +30,17 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListIntent
 import java.io.File
 
 @Composable
 fun PlaylistEditHeaderView(
     data: PlaylistEditHeaderUiState,
+    sendIntent: (PlaylistEditListIntent) -> Unit,
 ) {
+    var titleText by remember { mutableStateOf(data.name) }
+    var descriptionText by remember { mutableStateOf(data.description) }
+
     val imageRequest = ImageRequest.Builder(LocalContext.current)
         .data(
             data.imageFileFullPath?.let { File(it) }
@@ -38,6 +49,11 @@ fun PlaylistEditHeaderView(
         .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
         .diskCachePolicy(coil.request.CachePolicy.DISABLED)
         .build()
+
+    LaunchedEffect(data.name.isEmpty()) {
+        titleText = data.name
+        descriptionText = data.description
+    }
 
     Column(
         modifier = Modifier
@@ -69,9 +85,10 @@ fun PlaylistEditHeaderView(
             ,
             maxLines = 1,
             textStyle = TextStyle(),
-            value = data.name,
+            value = titleText,
             onValueChange = { newText ->
-
+                titleText = newText
+                sendIntent(PlaylistEditListIntent.OnEditPlaylistTitle(newText))
             },
             label = {
                 Text(
@@ -85,13 +102,13 @@ fun PlaylistEditHeaderView(
         OutlinedTextField(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
             ,
             maxLines = 3,
             textStyle = TextStyle(),
-            value = data.description,
+            value = descriptionText,
             onValueChange = { newText ->
-
+                descriptionText = newText
+                sendIntent(PlaylistEditListIntent.OnEditPlaylistDescription(newText))
             },
             label = {
                 Text(
@@ -110,6 +127,7 @@ fun PlaylistEditHeaderPreview() {
     JellyTubeTheme {
         PlaylistEditHeaderView(
             data = PlaylistEditHeaderUiState.getMock(),
+            sendIntent = {},
         )
     }
 }

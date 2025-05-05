@@ -92,8 +92,9 @@ fun PlaylistEditListItemView(
                 )
             } else {
                 Icon(
-                    imageVector = Icons.Rounded.CheckCircleOutline,
-                    contentDescription = "CheckCircleOutline",
+                    imageVector = Icons.Rounded.CheckCircle,
+                    contentDescription = "CheckCircle",
+                    tint = Color(0xFFDADADA),
                 )
             }
         }

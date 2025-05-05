@@ -128,11 +128,6 @@ fun rememberReorderState(
     val coroutineScope = rememberCoroutineScope()
     val audioPlayList = remember { mutableStateListOf(*audioPlayDataList.toTypedArray()) }
 
-    LaunchedEffect(audioPlayDataList) {
-        audioPlayList.clear()
-        audioPlayList.addAll(audioPlayDataList)
-    }
-
     return remember {
         ReorderState(
             density = density,

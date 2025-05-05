@@ -1,13 +1,19 @@
 package com.kintmin.presentation.ui.playlist_edit
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,6 +27,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,11 +48,16 @@ import com.kintmin.presentation.ui.playlist_edit.list.reorder.rememberReorderSta
 fun PlaylistEditScreen(
     navigateToBack: () -> Unit,
 ) {
+    val context = LocalContext.current
     val mainViewModel = hiltViewModel<PlaylistEditListViewModel>()
 
     val audioMediaList by mainViewModel.audioMediaListFlow.collectAsState()
     val checkedItemCount by mainViewModel.checkedItemCountFlow.collectAsState()
     val headerData by mainViewModel.headerDataFlow.collectAsState()
+
+    LaunchedEffect(Unit) {
+        Toast.makeText(context, "모든 수정사항은 즉시 적용됩니다.", Toast.LENGTH_SHORT).show()
+    }
 
     LaunchedEffect(Unit) {
         mainViewModel.eventFlow.collect { event ->
@@ -75,6 +90,11 @@ fun PlaylistEditScreen(
         initializeItemHeightPx = 80.dp,
     )
 
+    LaunchedEffect(dataList) {
+        reorderState.audioPlayList.clear()
+        reorderState.audioPlayList.addAll(dataList)
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -95,7 +115,7 @@ fun PlaylistEditScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = {}) {
+                    TextButton(onClick = { sendIntent(PlaylistEditListIntent.OnClickClearCheckedItemList) }) {
                         Text(
                             text = "$checkedItemCount 선택 해제",
                             fontSize = 14.sp,
@@ -106,6 +126,51 @@ fun PlaylistEditScreen(
                 colors = TopAppBarDefaults.topAppBarColors(),
             )
         },
+        bottomBar = {
+            if (checkedItemCount > 0) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .drawBehind {
+                            val strokeWidth = 1.dp.toPx()
+                            drawLine(
+                                color = Color(0xFFDADADA),
+                                strokeWidth = strokeWidth,
+                                start = Offset(0f, 0f),
+                                end = Offset(size.width, 0f)
+                            )
+                            drawLine(
+                                color = Color(0xFFDADADA),
+                                strokeWidth = strokeWidth,
+                                start = Offset(size.width / 3, 0f),
+                                end = Offset(size.width / 3, size.height)
+                            )
+                        }
+                ) {
+                    TextButton(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize(),
+                        onClick = { sendIntent(PlaylistEditListIntent.OnClickFullDeleteAudioMediaList) }) {
+                        Text(
+                            text = "음원 삭제",
+                            fontSize = 14.sp,
+                        )
+                    }
+                    TextButton(
+                        modifier = Modifier
+                            .weight(2f)
+                            .fillMaxSize(),
+                        onClick = { sendIntent(PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist) }) {
+                        Text(
+                            text = "재생목록에서 삭제",
+                            fontSize = 14.sp,
+                        )
+                    }
+                }
+            }
+        }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -113,13 +178,18 @@ fun PlaylistEditScreen(
                 .padding(innerPadding),
             state = reorderState.listState,
         ) {
-            item {
-                PlaylistEditHeaderView(headerData)
+            item(
+                key = -headerData.id,
+            ) {
+                PlaylistEditHeaderView(
+                    data = headerData,
+                    sendIntent = sendIntent,
+                )
             }
 
             itemsIndexed(
                 items = reorderState.audioPlayList,
-                key = { _, item -> item.id }
+                key = { _, item -> item.id },
             ) { _, item ->
                 Box(modifier = Modifier.animateItem()) {
                     PlaylistEditListItemView(

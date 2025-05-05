@@ -2,7 +2,6 @@ package com.kintmin.presentation.ui.playlist_edit.list
 
 import com.kintmin.domain.model.AudioMedia
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
-import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemUiState
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -39,7 +38,7 @@ data class PlaylistEditListItemUiState(
     }
 }
 
-internal fun AudioMedia.toPlaylistEditListItemUiState() = PlaylistEditListItemUiState(
+internal fun AudioMedia.toPlaylistEditListItemUiState(isChecked: Boolean) = PlaylistEditListItemUiState(
     id = id,
     mediaName = mediaName,
     artist = artist,
@@ -48,5 +47,5 @@ internal fun AudioMedia.toPlaylistEditListItemUiState() = PlaylistEditListItemUi
     audioFileFullPath = audioFileFullPath,
     imageFileFullPath = imageFileFullPath,
     sequence = audioMediaSequence,
-    isChecked = false,
+    isChecked = isChecked,
 )

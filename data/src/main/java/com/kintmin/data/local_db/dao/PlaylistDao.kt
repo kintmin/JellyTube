@@ -45,4 +45,10 @@ WHERE id = :id
         id: Int,
         rawPlayTimeDuration: Long,
     )
+
+    @Query("UPDATE PLAYLIST SET name = :newName WHERE id = :id")
+    suspend fun updatePlaylistName(id: Int, newName: String)
+
+    @Query("UPDATE PLAYLIST SET description = :newDescription WHERE id = :id")
+    suspend fun updatePlaylistDescription(id: Int, newDescription: String)
 }

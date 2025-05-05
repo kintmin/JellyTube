@@ -6,4 +6,12 @@ sealed interface PlaylistEditListIntent {
         val reorderData: PlaylistEditListItemUiState,
         val targetData: PlaylistEditListItemUiState,
     ) : PlaylistEditListIntent
+
+    data object OnClickClearCheckedItemList: PlaylistEditListIntent
+
+    data object OnClickFullDeleteAudioMediaList: PlaylistEditListIntent
+    data object OnClickDeleteAudioMediaListInPlaylist: PlaylistEditListIntent
+
+    data class OnEditPlaylistTitle(val title: String): PlaylistEditListIntent
+    data class OnEditPlaylistDescription(val description: String): PlaylistEditListIntent
 }
