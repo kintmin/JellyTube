@@ -87,12 +87,16 @@ fun PlaylistEditHeaderView(
             textStyle = TextStyle(),
             value = titleText,
             onValueChange = { newText ->
+                if (newText.length > 20) return@TextField
                 titleText = newText
-                sendIntent(PlaylistEditListIntent.OnEditPlaylistTitle(newText))
+                if (newText.isNotEmpty()) {
+                    sendIntent(PlaylistEditListIntent.OnEditPlaylistTitle(newText))
+                }
             },
+            isError = titleText.isEmpty(),
             label = {
                 Text(
-                    text = "제목",
+                    text = "제목 (${titleText.length}/20)",
                     fontSize = 14.sp,
                     lineHeight = 14.sp,
                 )
@@ -100,19 +104,17 @@ fun PlaylistEditHeaderView(
         )
 
         OutlinedTextField(
-            modifier = Modifier
-                .fillMaxWidth()
-            ,
-            maxLines = 3,
+            modifier = Modifier.fillMaxWidth(),
             textStyle = TextStyle(),
             value = descriptionText,
             onValueChange = { newText ->
+                if (newText.length > 100) return@OutlinedTextField
                 descriptionText = newText
                 sendIntent(PlaylistEditListIntent.OnEditPlaylistDescription(newText))
             },
             label = {
                 Text(
-                    text = "설명",
+                    text = "설명 (${descriptionText.length}/100)",
                     fontSize = 14.sp,
                     lineHeight = 14.sp,
                 )
