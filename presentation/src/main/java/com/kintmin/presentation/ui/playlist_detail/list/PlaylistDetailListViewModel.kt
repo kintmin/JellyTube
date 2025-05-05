@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
+import com.kintmin.domain.usecase.UpdatePlaybackSequenceUseCase
 import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,8 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class PlaylistDetailListViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val mediaControllerManager: MediaControllerManager,
     fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
+    private val mediaControllerManager: MediaControllerManager,
     private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
 ) : ViewModel() {
 
@@ -30,7 +31,7 @@ class PlaylistDetailListViewModel @Inject constructor(
     private val _eventFlow = MutableSharedFlow<PlaylistDetailListEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
-    val audioListFlow = fetchAudioMediaListFlowUseCase(playlistId).map { list -> list.map { it.toUiModel() } }
+    val audioListFlow = fetchAudioMediaListFlowUseCase(playlistId).map { list -> list.map { it.toPlaylistDetailListItemUiState() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun sendIntent(intent: PlaylistDetailListIntent) {
@@ -46,7 +47,6 @@ class PlaylistDetailListViewModel @Inject constructor(
                 // 플레이리스트 수정 (다수 선택 가능)
                 // 음원 제거
             }
-            is PlaylistDetailListIntent.OnClickDeleteAudioMediaInPlaylist -> deleteAudioMediaInPlaylist(intent.data.id)
         }
     }
 
@@ -60,8 +60,6 @@ class PlaylistDetailListViewModel @Inject constructor(
             deleteAudioMediaUseCase(id)
         }
     }
-
-    private fun deleteAudioMediaInPlaylist(id: Int) {}
 
     private fun triggerEvent(newEvent: PlaylistDetailListEvent) {
         viewModelScope.launch {

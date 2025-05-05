@@ -1,15 +1,11 @@
-package com.kintmin.presentation.ui.playlist_detail.list
+package com.kintmin.presentation.ui.playlist_edit.list
 
-import android.net.Uri
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import com.kintmin.domain.model.AudioMedia
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
-import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-data class PlaylistDetailListItemUiState(
+data class PlaylistEditListItemUiState(
     val id: Int,
     val mediaName: String,
     val artist: String,
@@ -18,6 +14,7 @@ data class PlaylistDetailListItemUiState(
     val audioFileFullPath: String,
     val imageFileFullPath: String?,
     val sequence: Int,
+    val isChecked: Boolean,
 ) {
     val subTitle: String get() = "$artist | $audioDurationString | $description"
 
@@ -25,7 +22,7 @@ data class PlaylistDetailListItemUiState(
         get() = audioDuration?.to_hh_colon_mm_colon_ss() ?: "알 수 없음"
 
     companion object {
-        fun getMock(index: Int = 1) = PlaylistDetailListItemUiState(
+        fun getMock(index: Int = 1) = PlaylistEditListItemUiState(
             id = index,
             mediaName = "미디어",
             artist = "아티스트",
@@ -33,14 +30,15 @@ data class PlaylistDetailListItemUiState(
             description = "설명설명설명설명",
             audioFileFullPath = "",
             imageFileFullPath = "",
-            sequence = index
+            sequence = index,
+            isChecked = index % 2 == 0,
         )
 
         fun getMockList() = List(5) { index -> getMock(index) }
     }
 }
 
-internal fun AudioMedia.toPlaylistDetailListItemUiState() = PlaylistDetailListItemUiState(
+internal fun AudioMedia.toPlaylistEditListItemUiState(isChecked: Boolean) = PlaylistEditListItemUiState(
     id = id,
     mediaName = mediaName,
     artist = artist,
@@ -49,21 +47,5 @@ internal fun AudioMedia.toPlaylistDetailListItemUiState() = PlaylistDetailListIt
     audioFileFullPath = audioFileFullPath,
     imageFileFullPath = imageFileFullPath,
     sequence = audioMediaSequence,
+    isChecked = isChecked,
 )
-
-internal fun PlaylistDetailListItemUiState.toMediaItem() = MediaItem.Builder()
-    .setMediaId(id.toString())
-    .setUri(audioFileFullPath)
-    .setMediaMetadata(
-        MediaMetadata.Builder()
-            .setTitle(mediaName)
-            .setDescription(description)
-            .setArtist(artist)
-            .apply {
-                imageFileFullPath?.let {
-                    setArtworkUri(Uri.fromFile(File(it)))
-                }
-            }
-            .build()
-    )
-    .build()

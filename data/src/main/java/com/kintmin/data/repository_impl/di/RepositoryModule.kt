@@ -56,9 +56,11 @@ object RepositoryModule {
     @Singleton
     fun providePlaybackRepository(
         datastoreUtil: DatastoreUtil,
+        playlistTrackDao: PlaylistTrackDao,
     ): PlaybackRepository {
         return PlaybackRepositoryImpl(
             datastoreUtil = datastoreUtil,
+            playlistTrackDao = playlistTrackDao,
         )
     }
 }

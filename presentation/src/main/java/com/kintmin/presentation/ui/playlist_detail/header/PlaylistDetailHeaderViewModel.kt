@@ -35,7 +35,7 @@ class PlaylistDetailHeaderViewModel @Inject constructor(
     private val updateIsPlaybackShufflingUseCase: UpdateIsPlaybackShufflingUseCase,
 ) : ViewModel() {
 
-    private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
+    val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
 
     private val _eventFlow = MutableSharedFlow<PlaylistDetailHeaderEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
@@ -75,8 +75,8 @@ class PlaylistDetailHeaderViewModel @Inject constructor(
 
     fun sendIntent(intent: PlaylistDetailHeaderIntent) {
         when (intent) {
-            PlaylistDetailHeaderIntent.OnClickAddAudioMediaInPlaylist -> triggerEvent(PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen)
-            PlaylistDetailHeaderIntent.OnClickEditPlaylist -> triggerEvent(PlaylistDetailHeaderEvent.NavigateToEditPlaylistScreen)
+            PlaylistDetailHeaderIntent.OnClickAdd -> triggerEvent(PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen)
+            PlaylistDetailHeaderIntent.OnClickEdit -> triggerEvent(PlaylistDetailHeaderEvent.NavigateToEditPlaylistScreen)
             PlaylistDetailHeaderIntent.OnClickPlay -> playbackPlaylist()
             PlaylistDetailHeaderIntent.OnClickRepeat -> updatePlaybackRepeating()
             PlaylistDetailHeaderIntent.OnClickShuffle -> updateIsPlaybackShuffling()

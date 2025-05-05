@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -40,11 +40,12 @@ import java.io.File
 
 @Composable
 fun PlaylistDetailListItemView(
+    modifier: Modifier,
     data: PlaylistDetailListItemUiState,
     isBasePlaylist: Boolean,
     sendIntent: (PlaylistDetailListIntent) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var readModeDropdownExpanded by remember { mutableStateOf(false) }
 
     val imageRequest = ImageRequest.Builder(LocalContext.current)
         .data(
@@ -55,12 +56,9 @@ fun PlaylistDetailListItemView(
         .diskCachePolicy(coil.request.CachePolicy.DISABLED)
         .build()
 
-    Row(modifier = Modifier
+    Row(modifier = modifier
         .fillMaxWidth()
-        .height(56.dp)
-        .clickable {
-            sendIntent(PlaylistDetailListIntent.OnClickAudioItem(data))
-        }
+        .clickable { sendIntent(PlaylistDetailListIntent.OnClickAudioItem(data)) }
     ) {
         AsyncImage(
             model = imageRequest,
@@ -100,38 +98,30 @@ fun PlaylistDetailListItemView(
                 .align(Alignment.CenterVertically),
         ) {
             IconButton(
-                onClick = { expanded = true }
+                modifier = Modifier.fillMaxHeight(),
+                onClick = { readModeDropdownExpanded = true }
             ) {
                 Icon(
-                    imageVector = Icons.Default.MoreVert,
+                    imageVector = Icons.Rounded.MoreVert,
                     contentDescription = "More options"
                 )
             }
 
             DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+                expanded = readModeDropdownExpanded,
+                onDismissRequest = { readModeDropdownExpanded = false }
             ) {
                 DropdownMenuItem(
                     text = { Text("정보 수정") },
                     onClick = {
-                        expanded = false
+                        readModeDropdownExpanded = false
                         sendIntent(PlaylistDetailListIntent.OnClickShowDetailAudioMedia(data))
                     }
                 )
-                if (!isBasePlaylist) {
-                    DropdownMenuItem(
-                        text = { Text("플레이리스트에서 제거") },
-                        onClick = {
-                            expanded = false
-                            sendIntent(PlaylistDetailListIntent.OnClickDeleteAudioMediaInPlaylist(data))
-                        }
-                    )
-                }
                 DropdownMenuItem(
                     text = { Text("음원 제거") },
                     onClick = {
-                        expanded = false
+                        readModeDropdownExpanded = false
                         sendIntent(PlaylistDetailListIntent.OnClickDeleteAudioMediaFile(data))
                     }
                 )
@@ -142,10 +132,11 @@ fun PlaylistDetailListItemView(
 
 @Preview(showBackground = true)
 @Composable
-fun AudioItemPreview() {
+fun PlaylistDetailListItemPreview() {
     JellyTubeTheme {
         PlaylistDetailListItemView(
             data = PlaylistDetailListItemUiState.getMock(),
+            modifier = Modifier.height(56.dp),
             isBasePlaylist = true,
             sendIntent = {},
         )

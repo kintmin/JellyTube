@@ -1,14 +1,19 @@
 package com.kintmin.presentation.ui.playlist_detail
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -17,6 +22,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderEvent
@@ -34,7 +41,7 @@ import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewMo
 fun PlaylistDetailScreen(
     navigateToBack: () -> Unit,
     navigateToAddAudioMediaScreen: () -> Unit,
-    navigateToEditPlaylistScreen: () -> Unit,
+    navigateToPlaylistEditScreen: (playlistId: Int) -> Unit,
     navigateToAudioDetailScreen: () -> Unit,
 ) {
     val headerViewModel = hiltViewModel<PlaylistDetailHeaderViewModel>()
@@ -47,7 +54,7 @@ fun PlaylistDetailScreen(
         headerViewModel.eventFlow.collect { event ->
             when (event) {
                 PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen -> navigateToAddAudioMediaScreen()
-                PlaylistDetailHeaderEvent.NavigateToEditPlaylistScreen -> navigateToEditPlaylistScreen()
+                PlaylistDetailHeaderEvent.NavigateToEditPlaylistScreen -> navigateToPlaylistEditScreen(headerViewModel.playlistId)
             }
         }
     }
@@ -97,24 +104,29 @@ fun PlaylistDetailScreen(
             )
         },
     ) { innerPadding ->
-        LazyColumn(modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+        ) {
             item {
                 PlaylistDetailHeaderView(
                     headerData = headerData,
                     sendIntent = sendPlaylistDetailHeaderIntent,
                 )
             }
-            items(
-                count = audioPlayDataList.size,
-                key = { index -> audioPlayDataList[index].id }
-            ) { index ->
-                PlaylistDetailListItemView(
-                    data = audioPlayDataList[index],
-                    isBasePlaylist = isBasePlaylist,
-                    sendIntent = sendPlaylistDetailListIntent,
-                )
+            itemsIndexed(
+                items = audioPlayDataList,
+                key = { _, item -> item.id }
+            ) { _, item ->
+                Box(modifier = Modifier.animateItem()) {
+                    PlaylistDetailListItemView(
+                        data = item,
+                        modifier = Modifier.height(80.dp),
+                        isBasePlaylist = isBasePlaylist,
+                        sendIntent = sendPlaylistDetailListIntent,
+                    )
+                }
             }
         }
     }

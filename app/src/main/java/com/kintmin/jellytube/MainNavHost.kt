@@ -9,6 +9,8 @@ import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylist
 import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
 import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
 import com.kintmin.presentation.ui.main.navigation.mainScreen
+import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEditScreen
+import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
 
 @Composable
 fun MainNavHost(
@@ -21,14 +23,18 @@ fun MainNavHost(
         startDestination = MainScreenRoute(MainTabItem.Playlist),
     ) {
         mainScreen(
-            navigateToPlaylistDetail = { id ->
-                navController.navigateToPlaylistDetailScreen(id, navOptions)
+            navigateToPlaylistDetail = { playlistId ->
+                navController.navigateToPlaylistDetailScreen(playlistId, navOptions)
             }
         )
         playlistDetail(
-            navigateToBack = {
-                navController.popBackStack()
+            navigateToBack = { navController.popBackStack() },
+            navigateToPlaylistEditScreen = { playlistId ->
+                navController.navigateToPlaylistEditScreen(playlistId, navOptions)
             }
+        )
+        playlistEdit(
+            navigateToBack = { navController.popBackStack() }
         )
     }
 }
