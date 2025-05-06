@@ -7,4 +7,8 @@ interface PythonExecutor {
         youtubeUrl: String,
         audioDownloadPath: String,
     ): Result<YoutubeDownloadDto>
+
+    suspend fun extractYoutubeUrlsFromPlaylist(
+        playlistUrl: String,
+    ): Result<List<String>>
 }

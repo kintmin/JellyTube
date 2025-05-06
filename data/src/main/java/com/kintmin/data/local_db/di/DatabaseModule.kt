@@ -27,11 +27,11 @@ internal object DatabaseModule {
                 super.onCreate(db)
                 db.execSQL("""
 INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime, imageFileNameWithExt, isCustomImage) 
-VALUES (1, '전체', '', 0, 0, strftime('%s','now') * 1000, null, false)
+VALUES (1, '전체', '', 0, 0, strftime('%s','now') * 1000, null, 0)
                 """.trimIndent())
                 db.execSQL("""
 INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime, imageFileNameWithExt, isCustomImage)
-VALUES (2, '미분류', '', 0, 0, strftime('%s','now') * 1000, null, false)
+VALUES (2, '미분류', '', 0, 0, strftime('%s','now') * 1000, null, 0)
         """.trimIndent())
             }
         })

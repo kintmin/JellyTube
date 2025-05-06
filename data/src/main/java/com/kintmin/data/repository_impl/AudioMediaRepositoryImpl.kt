@@ -99,6 +99,10 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getDownloadUrlList(playlistUrl: String): Result<List<String>> {
+        return pythonExecutor.extractYoutubeUrlsFromPlaylist(playlistUrl)
+    }
+
     override suspend fun addAudioMedia(newAudioMedia: DownloadedAudioMedia): Result<AudioMedia> = runCatching {
         withContext(Dispatchers.IO) {
             var audioMediaEntityToSave = AudioMediaEntity(

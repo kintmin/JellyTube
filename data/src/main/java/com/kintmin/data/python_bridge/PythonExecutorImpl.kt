@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 internal class PythonExecutorImpl @Inject constructor(
     @ApplicationContext private val context: Context
-): PythonExecutor {
+) : PythonExecutor {
 
     override suspend fun downloadYoutubeMedia(
         youtubeUrl: String,
@@ -43,10 +43,25 @@ internal class PythonExecutorImpl @Inject constructor(
         }
     }
 
+    override suspend fun extractYoutubeUrlsFromPlaylist(playlistUrl: String): Result<List<String>> = withContext(Dispatchers.IO) {
+        runCatching {
+            if (!Python.isStarted()) {
+                Python.start(AndroidPlatform(context))
+            }
+
+            withTimeout(TIME_OUT) {
+                val module = Python.getInstance().getModule(FILE_NAME)
+                val pyList = module.callAttr(METHOD_EXTRACT_VIDEO_URLS_FROM_PLAYLIST, playlistUrl).asList()
+                pyList.mapNotNull { it?.toString() }
+            }
+        }
+    }
+
     companion object {
-        const val TIME_OUT = 60000L
+        const val TIME_OUT = 30000L
         const val FILE_NAME = "download_youtube_audio"
-        const val METHOD_DOWNLOAD_AUDIO = "download_audio"
         const val METHOD_GET_VERSION = "get_version"
+        const val METHOD_DOWNLOAD_AUDIO = "download_audio"
+        const val METHOD_EXTRACT_VIDEO_URLS_FROM_PLAYLIST = "extract_video_urls_from_playlist"
     }
 }

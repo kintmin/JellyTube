@@ -1,4 +1,8 @@
 import yt_dlp
+
+def get_version():
+    return yt_dlp.version.__version__
+
 def download_audio(url, audio_path):
     try:
         ydl_opts = {
@@ -30,5 +34,17 @@ def download_audio(url, audio_path):
     except Exception as e:
         raise Exception(f"Download failed: {e}")
 
-def get_version():
-    return yt_dlp.version.__version__
+def extract_video_urls_from_playlist(playlist_url):
+    ydl_opts = {
+        'quiet': True,
+        'extract_flat': True,
+        'skip_download': True,
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(playlist_url, download=False)
+
+        entries = info_dict.get("entries", [])
+        video_urls = [entry.get("url") for entry in entries if "url" in entry]
+
+        return video_urls
