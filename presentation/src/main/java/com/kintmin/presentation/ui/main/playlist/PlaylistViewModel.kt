@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.main.playlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kintmin.domain.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.domain.usecase.FetchPlaylistListFlowUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlaylistViewModel @Inject constructor(
-    val fetchPlaylistListFlowUseCase: FetchPlaylistListFlowUseCase,
+    fetchPlaylistListFlowUseCase: FetchPlaylistListFlowUseCase,
+    private val addNewPlaylistUseCase: AddNewPlaylistUseCase,
 ) : ViewModel() {
 
     private val _eventFlow = MutableSharedFlow<PlaylistEvent>()
@@ -25,18 +27,24 @@ class PlaylistViewModel @Inject constructor(
 
     val playlistFlow: StateFlow<List<PlaylistItemUiState>> = fetchPlaylistListFlowUseCase()
         .map { list -> list.map { it.toUiModel() } }
-        .catch {
-            // 에러처리
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun sendIntent(intent: PlaylistIntent) {
-        when(intent) {
-            PlaylistIntent.OnClickAddPlaylist -> TODO()
-            is PlaylistIntent.OnClickPlaylistItem -> {
-                viewModelScope.launch {
-                    _eventFlow.emit(PlaylistEvent.NavigateToPlaylistDetailScreen(intent.playlistInfo))
-                }
-            }
+        when (intent) {
+            is PlaylistIntent.OnClickPlaylistItem -> navigateToPlaylistDetailScreen(intent.playlistInfo)
+            is PlaylistIntent.MakeNewPlaylist -> makeNewPlaylist(intent.title)
+        }
+    }
+
+    private fun navigateToPlaylistDetailScreen(playlistInfo: PlaylistItemUiState) {
+        viewModelScope.launch {
+            _eventFlow.emit(PlaylistEvent.NavigateToPlaylistDetailScreen(playlistInfo))
+        }
+    }
+
+    private fun makeNewPlaylist(title: String) {
+        viewModelScope.launch {
+            addNewPlaylistUseCase(title)
         }
     }
 }

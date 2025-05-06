@@ -1,10 +1,12 @@
 package com.kintmin.presentation.ui.playlist_edit.list
 
-import androidx.collection.MutableIntSet
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.kintmin.domain.model.Playlist
+import com.kintmin.domain.usecase.DeleteAudioMediaListFromPlaylistUseCase
+import com.kintmin.domain.usecase.DeleteAudioMediaListUseCase
 import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.domain.usecase.UpdatePlaybackSequenceUseCase
@@ -15,11 +17,9 @@ import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderUiStat
 import com.kintmin.presentation.ui.playlist_edit.header.toPlaylistEditHeaderUiState
 import com.kintmin.presentation.util.Debounce
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
@@ -37,12 +37,12 @@ class PlaylistEditListViewModel @Inject constructor(
     private val updatePlaybackSequenceUseCase: UpdatePlaybackSequenceUseCase,
     private val updatePlaylistDescriptionUseCase: UpdatePlaylistDescriptionUseCase,
     private val updatePlaylistTitleUseCase: UpdatePlaylistTitleUseCase,
+    private val deleteAudioMediaListUseCase: DeleteAudioMediaListUseCase,
+    private val deleteAudioMediaListFromPlaylistUseCase: DeleteAudioMediaListFromPlaylistUseCase,
 ) : ViewModel() {
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
-
-    private val _eventFlow = MutableSharedFlow<PlaylistEditListEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    val isBasePlaylist = playlistId == Playlist.TOTAL || playlistId == Playlist.UNCATEGORIZED
 
     private val _checkedItemIdList = MutableStateFlow(listOf<Int>())
 
@@ -83,14 +83,26 @@ class PlaylistEditListViewModel @Inject constructor(
             is PlaylistEditListIntent.OnClickEditCheck -> checkItem(intent.data)
             is PlaylistEditListIntent.ReorderAudioItem -> updatePlaybackSequence(intent.reorderData, intent.targetData)
             PlaylistEditListIntent.OnClickClearCheckedItemList -> clearCheckedItemList()
-            PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist -> TODO()
-            PlaylistEditListIntent.OnClickFullDeleteAudioMediaList -> TODO()
+            PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist -> deleteAudioMediaListInPlaylist()
+            PlaylistEditListIntent.OnClickFullDeleteAudioMediaList -> deleteFullAudioMediaList()
             is PlaylistEditListIntent.OnEditPlaylistTitle -> updatePlaylistTitle(intent.title)
             is PlaylistEditListIntent.OnEditPlaylistDescription -> updatePlaylistDescription(intent.description)
         }
     }
 
-    private fun deleteAudioMediaInPlaylist(id: Int) {}
+    private fun deleteAudioMediaListInPlaylist() {
+        viewModelScope.launch {
+            deleteAudioMediaListFromPlaylistUseCase(playlistId, _checkedItemIdList.value)
+            _checkedItemIdList.update { emptyList() }
+        }
+    }
+
+    private fun deleteFullAudioMediaList() {
+        viewModelScope.launch {
+            deleteAudioMediaListUseCase(playlistId, _checkedItemIdList.value)
+            _checkedItemIdList.update { emptyList() }
+        }
+    }
 
     private fun checkItem(data: PlaylistEditListItemUiState) {
         _checkedItemIdList.update {
@@ -137,12 +149,6 @@ class PlaylistEditListViewModel @Inject constructor(
             updatePlaylistDescriptionDebounce(viewModelScope) {
                 updatePlaylistDescriptionUseCase(playlistId, newDescription)
             }
-        }
-    }
-
-    private fun triggerEvent(newEvent: PlaylistEditListEvent) {
-        viewModelScope.launch {
-            _eventFlow.emit(newEvent)
         }
     }
 }

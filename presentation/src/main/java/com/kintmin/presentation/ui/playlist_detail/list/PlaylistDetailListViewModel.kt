@@ -57,7 +57,7 @@ class PlaylistDetailListViewModel @Inject constructor(
     private fun deleteAudioMediaFile(id: Int) {
         viewModelScope.launch {
             mediaControllerManager.tryDeleteMediaItem(playlistId, id)
-            deleteAudioMediaUseCase(id)
+            deleteAudioMediaUseCase(playlistId, id)
         }
     }
 

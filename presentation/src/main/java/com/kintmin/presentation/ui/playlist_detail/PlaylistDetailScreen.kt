@@ -40,7 +40,7 @@ import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewMo
 @Composable
 fun PlaylistDetailScreen(
     navigateToBack: () -> Unit,
-    navigateToAddAudioMediaScreen: () -> Unit,
+    navigateToAddAudioMediaScreen: (playlistId: Int) -> Unit,
     navigateToPlaylistEditScreen: (playlistId: Int) -> Unit,
     navigateToAudioDetailScreen: () -> Unit,
 ) {
@@ -53,7 +53,7 @@ fun PlaylistDetailScreen(
     LaunchedEffect(Unit) {
         headerViewModel.eventFlow.collect { event ->
             when (event) {
-                PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen -> navigateToAddAudioMediaScreen()
+                PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen -> navigateToAddAudioMediaScreen(headerViewModel.playlistId)
                 PlaylistDetailHeaderEvent.NavigateToEditPlaylistScreen -> navigateToPlaylistEditScreen(headerViewModel.playlistId)
             }
         }
@@ -112,6 +112,7 @@ fun PlaylistDetailScreen(
             item {
                 PlaylistDetailHeaderView(
                     headerData = headerData,
+                    isBasePlaylist = isBasePlaylist,
                     sendIntent = sendPlaylistDetailHeaderIntent,
                 )
             }
@@ -140,7 +141,7 @@ fun PlaylistDetailScreenPreview() {
             navigateToBack = {},
             headerData = PlaylistDetailHeaderUiState.getMock(),
             audioPlayDataList = PlaylistDetailListItemUiState.getMockList(),
-            isBasePlaylist = true,
+            isBasePlaylist = false,
             sendPlaylistDetailListIntent = {},
             sendPlaylistDetailHeaderIntent = {},
         )

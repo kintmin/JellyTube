@@ -9,6 +9,8 @@ import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylist
 import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
 import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
 import com.kintmin.presentation.ui.main.navigation.mainScreen
+import com.kintmin.presentation.ui.playlist_add.navigation.navigateToPlaylistAddScreen
+import com.kintmin.presentation.ui.playlist_add.navigation.playlistAdd
 import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEditScreen
 import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
 
@@ -29,11 +31,17 @@ fun MainNavHost(
         )
         playlistDetail(
             navigateToBack = { navController.popBackStack() },
+            navigateToAddAudioMediaScreen = { playlistId ->
+                navController.navigateToPlaylistAddScreen(playlistId, navOptions)
+            },
             navigateToPlaylistEditScreen = { playlistId ->
                 navController.navigateToPlaylistEditScreen(playlistId, navOptions)
             }
         )
         playlistEdit(
+            navigateToBack = { navController.popBackStack() }
+        )
+        playlistAdd(
             navigateToBack = { navController.popBackStack() }
         )
     }
