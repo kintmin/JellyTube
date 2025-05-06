@@ -8,10 +8,8 @@ sealed interface PlaylistEditListIntent {
     ) : PlaylistEditListIntent
 
     data object OnClickClearCheckedItemList: PlaylistEditListIntent
-
     data object OnClickFullDeleteAudioMediaList: PlaylistEditListIntent
     data object OnClickDeleteAudioMediaListInPlaylist: PlaylistEditListIntent
-
     data class OnEditPlaylistTitle(val title: String): PlaylistEditListIntent
     data class OnEditPlaylistDescription(val description: String): PlaylistEditListIntent
 }

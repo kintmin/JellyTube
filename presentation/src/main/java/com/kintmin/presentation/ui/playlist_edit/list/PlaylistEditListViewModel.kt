@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.kintmin.domain.model.Playlist
 import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.domain.usecase.UpdatePlaybackSequenceUseCase
@@ -40,9 +41,7 @@ class PlaylistEditListViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
-
-    private val _eventFlow = MutableSharedFlow<PlaylistEditListEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    val isBasePlaylist = playlistId == Playlist.TOTAL || playlistId == Playlist.UNCATEGORIZED
 
     private val _checkedItemIdList = MutableStateFlow(listOf<Int>())
 
@@ -83,14 +82,21 @@ class PlaylistEditListViewModel @Inject constructor(
             is PlaylistEditListIntent.OnClickEditCheck -> checkItem(intent.data)
             is PlaylistEditListIntent.ReorderAudioItem -> updatePlaybackSequence(intent.reorderData, intent.targetData)
             PlaylistEditListIntent.OnClickClearCheckedItemList -> clearCheckedItemList()
-            PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist -> TODO()
-            PlaylistEditListIntent.OnClickFullDeleteAudioMediaList -> TODO()
+            PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist -> deleteAudioMediaListInPlaylist()
+            PlaylistEditListIntent.OnClickFullDeleteAudioMediaList -> deleteFullAudioMediaList()
             is PlaylistEditListIntent.OnEditPlaylistTitle -> updatePlaylistTitle(intent.title)
             is PlaylistEditListIntent.OnEditPlaylistDescription -> updatePlaylistDescription(intent.description)
         }
     }
 
-    private fun deleteAudioMediaInPlaylist(id: Int) {}
+    private fun deleteAudioMediaListInPlaylist() {
+        // 삭제 usecase
+    }
+
+    private fun deleteFullAudioMediaList() {
+        // 완전 삭제 usecase
+
+    }
 
     private fun checkItem(data: PlaylistEditListItemUiState) {
         _checkedItemIdList.update {
