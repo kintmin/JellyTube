@@ -1,4 +1,4 @@
-package com.kintmin.domain.usecase
+package com.kintmin.domain.internal_usecase
 
 import javax.inject.Inject
 

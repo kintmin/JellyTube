@@ -26,7 +26,6 @@ object RepositoryModule {
     @Singleton
     fun provideAudioMediaRepository(
         audioMediaDao: AudioMediaDao,
-        playlistDao: PlaylistDao,
         playlistTrackDao: PlaylistTrackDao,
         httpDataSource: HttpDataSource,
         fileManager: FileManager,
@@ -34,7 +33,6 @@ object RepositoryModule {
     ): AudioMediaRepository {
         return AudioMediaRepositoryImpl(
             audioMediaDao = audioMediaDao,
-            playlistDao = playlistDao,
             playlistTrackDao = playlistTrackDao,
             httpDataSource = httpDataSource,
             fileManager = fileManager,

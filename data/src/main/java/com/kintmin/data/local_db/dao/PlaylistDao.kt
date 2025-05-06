@@ -20,32 +20,6 @@ interface PlaylistDao {
     @Query("SELECT * FROM PLAYLIST WHERE id = :id")
     fun getPlaylistFlow(id: Int): Flow<PlaylistEntity>
 
-    @Query(
-        """
-UPDATE PLAYLIST
-SET audioMediaCount = audioMediaCount + 1,
-    rawPlayTimeDuration = rawPlayTimeDuration + :rawPlayTimeDuration
-WHERE id = :id
-"""
-    )
-    fun updateAfterTrackAdded(
-        id: Int,
-        rawPlayTimeDuration: Long,
-    )
-
-    @Query(
-        """
-UPDATE PLAYLIST
-SET audioMediaCount = audioMediaCount - 1,
-    rawPlayTimeDuration = rawPlayTimeDuration - :rawPlayTimeDuration
-WHERE id = :id
-"""
-    )
-    fun updateAfterTrackDeleted(
-        id: Int,
-        rawPlayTimeDuration: Long,
-    )
-
     @Query("UPDATE PLAYLIST SET name = :newName WHERE id = :id")
     suspend fun updatePlaylistName(id: Int, newName: String)
 

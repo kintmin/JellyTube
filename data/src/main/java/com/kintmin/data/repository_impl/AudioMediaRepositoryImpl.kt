@@ -1,7 +1,6 @@
 package com.kintmin.data.repository_impl
 
 import com.kintmin.data.local_db.dao.AudioMediaDao
-import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
 import com.kintmin.data.local_db.mapper.AudioMediaMapper
 import com.kintmin.data.local_db.model.AudioMediaEntity
@@ -27,7 +26,6 @@ import javax.inject.Inject
 
 internal class AudioMediaRepositoryImpl @Inject constructor(
     private val audioMediaDao: AudioMediaDao,
-    private val playlistDao: PlaylistDao,
     private val playlistTrackDao: PlaylistTrackDao,
     private val httpDataSource: HttpDataSource,
     private val fileManager: FileManager,
@@ -124,15 +122,6 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                 )
             )
 
-            playlistDao.updateAfterTrackAdded(
-                id = Playlist.TOTAL,
-                rawPlayTimeDuration = newAudioMedia.duration ?: 0L,
-            )
-            playlistDao.updateAfterTrackAdded(
-                id = Playlist.UNCATEGORIZED,
-                rawPlayTimeDuration = newAudioMedia.duration ?: 0L,
-            )
-
             AudioMediaMapper.toDomain(
                 fileManager = fileManager,
                 audioMediaEntity = audioMediaEntityToSave,
@@ -151,19 +140,12 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
 
     override suspend fun deleteAudioMedia(id: Int): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
-            val rawPlayTimeDuration = audioMediaDao.getDataById(id).rawAudioDurationSeconds ?: 0L
-
+            val fileName = audioMediaDao.getDataById(id).source
+            Ext.entries.map { ext ->
+                async { fileManager.deleteFile(fileName, ext) }
+            }.awaitAll()
             playlistTrackDao.deleteAudioMedia(id)
             audioMediaDao.deleteById(id)
-
-            playlistDao.updateAfterTrackDeleted(
-                id = Playlist.TOTAL,
-                rawPlayTimeDuration = rawPlayTimeDuration,
-            )
-            playlistDao.updateAfterTrackDeleted(
-                id = Playlist.UNCATEGORIZED,
-                rawPlayTimeDuration = rawPlayTimeDuration,
-            )
         }
     }
 }

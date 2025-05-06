@@ -1,32 +1,30 @@
 package com.kintmin.domain.usecase
 
+import com.kintmin.domain.internal_usecase.UpdatePlaylistAfterUpdatePlaybackUseCase
 import com.kintmin.domain.model.Playlist
-import com.kintmin.domain.repository.AudioMediaRepository
 import com.kintmin.domain.repository.PlaybackRepository
-import com.kintmin.domain.repository.PlaylistRepository
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
 
 class AddAudioMediaListToPlaylistUseCase @Inject constructor(
     private val playbackRepository: PlaybackRepository,
-    private val playlistRepository: PlaylistRepository,
-    private val audioMediaRepository: AudioMediaRepository,
+    private val updatePlaylistAfterUpdatePlaybackUseCase: UpdatePlaylistAfterUpdatePlaybackUseCase,
 ) {
     suspend operator fun invoke(playlistId: Int, audioMediaIdList: List<Int>): Result<Unit> {
         return runCatching {
-            playbackRepository.addAudioMediaListToPlaylist(playlistId, audioMediaIdList).onSuccess {
-                val currentAudioList = audioMediaRepository.getAudioMediaListFlow(playlistId).first()
-                val currentTotalCount = currentAudioList.count()
-                val currentTotalDuration = currentAudioList.sumOf { it.audioDuration?.inWholeSeconds ?: 0L }
-                playlistRepository.updatePlaylistPlayback(playlistId, currentTotalCount, currentTotalDuration).getOrThrow()
+            coroutineScope {
+                playbackRepository.addAudioMediaListToPlaylist(playlistId, audioMediaIdList).onSuccess {
+                    updatePlaylistAfterUpdatePlaybackUseCase(playlistId)
 
-                playbackRepository.deleteAudioMediaListInPlaylist(Playlist.UNCATEGORIZED, audioMediaIdList).onSuccess {
-                    val uncategorizedAudioList = audioMediaRepository.getAudioMediaListFlow(Playlist.UNCATEGORIZED).first()
-                    val uncategorizedCount = uncategorizedAudioList.count()
-                    val uncategorizedDuration = uncategorizedAudioList.sumOf { it.audioDuration?.inWholeSeconds ?: 0L }
-                    playlistRepository.updatePlaylistPlayback(Playlist.UNCATEGORIZED, uncategorizedCount, uncategorizedDuration).getOrThrow()
+                    audioMediaIdList.map { audioMediaId ->
+                        async { playbackRepository.deletePlaylistTrack(Playlist.UNCATEGORIZED, audioMediaId) }
+                    }.awaitAll()
+
+                    updatePlaylistAfterUpdatePlaybackUseCase(Playlist.UNCATEGORIZED)
                 }.getOrThrow()
-            }.getOrThrow()
+            }
         }
     }
 }

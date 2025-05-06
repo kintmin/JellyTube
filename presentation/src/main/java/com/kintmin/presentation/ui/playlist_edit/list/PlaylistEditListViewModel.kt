@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.model.Playlist
+import com.kintmin.domain.usecase.DeleteAudioMediaListFromPlaylistUseCase
+import com.kintmin.domain.usecase.DeleteAudioMediaListUseCase
 import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.domain.usecase.UpdatePlaybackSequenceUseCase
@@ -38,6 +40,8 @@ class PlaylistEditListViewModel @Inject constructor(
     private val updatePlaybackSequenceUseCase: UpdatePlaybackSequenceUseCase,
     private val updatePlaylistDescriptionUseCase: UpdatePlaylistDescriptionUseCase,
     private val updatePlaylistTitleUseCase: UpdatePlaylistTitleUseCase,
+    private val deleteAudioMediaListUseCase: DeleteAudioMediaListUseCase,
+    private val deleteAudioMediaListFromPlaylistUseCase: DeleteAudioMediaListFromPlaylistUseCase,
 ) : ViewModel() {
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
@@ -90,12 +94,17 @@ class PlaylistEditListViewModel @Inject constructor(
     }
 
     private fun deleteAudioMediaListInPlaylist() {
-        // 삭제 usecase
+        viewModelScope.launch {
+            deleteAudioMediaListFromPlaylistUseCase(playlistId, _checkedItemIdList.value)
+            _checkedItemIdList.update { emptyList() }
+        }
     }
 
     private fun deleteFullAudioMediaList() {
-        // 완전 삭제 usecase
-
+        viewModelScope.launch {
+            deleteAudioMediaListUseCase(playlistId, _checkedItemIdList.value)
+            _checkedItemIdList.update { emptyList() }
+        }
     }
 
     private fun checkItem(data: PlaylistEditListItemUiState) {
@@ -143,12 +152,6 @@ class PlaylistEditListViewModel @Inject constructor(
             updatePlaylistDescriptionDebounce(viewModelScope) {
                 updatePlaylistDescriptionUseCase(playlistId, newDescription)
             }
-        }
-    }
-
-    private fun triggerEvent(newEvent: PlaylistEditListEvent) {
-        viewModelScope.launch {
-            _eventFlow.emit(newEvent)
         }
     }
 }

@@ -45,6 +45,18 @@ class PlaybackRepositoryImpl @Inject constructor(
         return datastoreUtil.isPlaybackShufflingFlow
     }
 
+    override suspend fun getAudioMediaIdList(playlistId: Int): Result<List<Int>> = withContext(Dispatchers.IO) {
+        runCatching {
+            playlistTrackDao.getAudioMediaIdList(playlistId)
+        }
+    }
+
+    override suspend fun getPlaylistIdList(audioMediaId: Int): Result<List<Int>> = withContext(Dispatchers.IO) {
+        runCatching {
+            playlistTrackDao.getPlaylistIdList(audioMediaId)
+        }
+    }
+
     override suspend fun setIsPlaybackShuffling(isShuffling: Boolean): Result<Unit> {
         return datastoreUtil.updateBooleanData(BooleanPreferenceKey.IsPlaybackShuffling, isShuffling)
     }
@@ -63,14 +75,10 @@ class PlaybackRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteAudioMediaListInPlaylist(playlistId: Int, audioMediaIdList: List<Int>): Result<Unit> {
+    override suspend fun deletePlaylistTrack(playlistId: Int, audioMediaId: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching<Unit> {
-                audioMediaIdList.map { audioMediaId ->
-                    async {
-                        playlistTrackDao.deletePlaylistTrack(playlistId, audioMediaId)
-                    }
-                }.awaitAll()
+            runCatching {
+                playlistTrackDao.deletePlaylistTrack(playlistId, audioMediaId)
             }
         }
     }
