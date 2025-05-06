@@ -9,5 +9,6 @@ interface PlaylistRepository {
     fun getPlaylistFlow(playlistId: Int): Flow<Playlist>
     suspend fun updatePlaylistName(id: Int, newName: String): Result<Unit>
     suspend fun updatePlaylistDescription(id: Int, newDescription: String): Result<Unit>
+    suspend fun updatePlaylistPlayback(id: Int, mediaCount: Int, totalDuration: Long): Result<Unit>
     suspend fun deletePlaylist(id: Int): Result<Unit>
 }

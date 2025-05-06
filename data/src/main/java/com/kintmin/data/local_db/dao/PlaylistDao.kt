@@ -51,4 +51,7 @@ WHERE id = :id
 
     @Query("UPDATE PLAYLIST SET description = :newDescription WHERE id = :id")
     suspend fun updatePlaylistDescription(id: Int, newDescription: String)
+
+    @Query("UPDATE PLAYLIST SET audioMediaCount = :audioMediaCount, rawPlayTimeDuration = :totalPlayTime WHERE id = :id")
+    suspend fun updatePlaylistPlayback(id: Int, audioMediaCount: Int, totalPlayTime: Long)
 }

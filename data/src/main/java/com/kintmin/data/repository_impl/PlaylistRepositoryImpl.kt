@@ -61,6 +61,14 @@ class PlaylistRepositoryImpl @Inject constructor(
             }
         }
 
+    override suspend fun updatePlaylistPlayback(id: Int, mediaCount: Int, totalDuration: Long): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            kotlin.runCatching {
+                playlistDao.updatePlaylistPlayback(id, mediaCount, totalDuration)
+            }
+        }
+    }
+
     override suspend fun deletePlaylist(id: Int): Result<Unit> {
         TODO("Not yet implemented")
     }
