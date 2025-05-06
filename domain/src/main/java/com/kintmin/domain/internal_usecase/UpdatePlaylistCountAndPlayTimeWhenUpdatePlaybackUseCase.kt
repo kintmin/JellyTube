@@ -5,7 +5,7 @@ import com.kintmin.domain.repository.PlaylistRepository
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
-class UpdatePlaylistAfterUpdatePlaybackUseCase @Inject constructor(
+class UpdatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase  @Inject constructor(
     private val playlistRepository: PlaylistRepository,
     private val audioMediaRepository: AudioMediaRepository,
 ) {

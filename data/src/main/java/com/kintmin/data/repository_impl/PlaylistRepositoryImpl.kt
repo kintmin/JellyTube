@@ -3,6 +3,7 @@ package com.kintmin.data.repository_impl
 import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.PlaylistEntity
+import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.extension.toLocalDateTime
 import com.kintmin.domain.extension.toMillis
 import com.kintmin.domain.model.Playlist
@@ -15,7 +16,8 @@ import java.time.Instant
 import javax.inject.Inject
 
 class PlaylistRepositoryImpl @Inject constructor(
-    val playlistDao: PlaylistDao,
+    private val playlistDao: PlaylistDao,
+    private val fileManager: FileManager,
 ) : PlaylistRepository {
 
     override suspend fun addPlaylist(title: String): Result<Unit> = withContext(Dispatchers.IO) {
@@ -27,6 +29,7 @@ class PlaylistRepositoryImpl @Inject constructor(
                     audioMediaCount = 0,
                     rawPlayTimeDuration = 0,
                     rawCreatedTime = Instant.now().toEpochMilli(),
+                    isCustomImage = false,
                 )
             )
         }
@@ -35,14 +38,22 @@ class PlaylistRepositoryImpl @Inject constructor(
     override fun getPlaylistListFlow(): Flow<List<Playlist>> {
         return playlistDao.getPlaylistListFlow().map { playlistList ->
             playlistList.map {
-                it.toDomain()
+                it.toDomain(fileManager)
             }
         }
     }
 
     override fun getPlaylistFlow(playlistId: Int): Flow<Playlist> {
         return playlistDao.getPlaylistFlow(playlistId).map { playlist ->
-            playlist.toDomain()
+            playlist.toDomain(fileManager)
+        }
+    }
+
+    override suspend fun getPlaylistById(playlistId: Int): Result<Playlist> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                playlistDao.getPlaylistById(playlistId).toDomain(fileManager)
+            }
         }
     }
 
@@ -65,6 +76,14 @@ class PlaylistRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             kotlin.runCatching {
                 playlistDao.updatePlaylistPlayback(id, mediaCount, totalDuration)
+            }
+        }
+    }
+
+    override suspend fun updatePlaylistImage(id: Int, imageFileNameWithExt: String?): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            kotlin.runCatching {
+                playlistDao.updatePlaylistImage(id, imageFileNameWithExt)
             }
         }
     }

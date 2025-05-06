@@ -55,6 +55,19 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getFirstAudioMedia(playlistId: Int): Result<AudioMedia> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val audioFullData = playlistTrackDao.getFirstAudioMedia(playlistId)
+                AudioMediaMapper.toDomain(
+                    fileManager = fileManager,
+                    audioMediaEntity = audioFullData.audioMediaEntity,
+                    playlistTrackEntity = audioFullData.playlistTrackEntity,
+                ).getOrThrow()
+            }
+        }
+    }
+
     override suspend fun downloadAudioMedia(downloadUrl: String): Result<DownloadedAudioMedia> = runCatching {
         withContext(Dispatchers.IO) {
             val fileName = UUID.randomUUID().toString()
@@ -132,10 +145,13 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
 
     override suspend fun deleteAudioMedia(id: Int): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
-            val fileName = audioMediaDao.getDataById(id).source
-            Ext.entries.map { ext ->
-                async { fileManager.deleteFile(fileName, ext) }
-            }.awaitAll()
+            val data = audioMediaDao.getDataById(id)
+
+            listOf(
+                async { fileManager.deleteFile(data.audioFileNameWithExt) },
+                async { fileManager.deleteFile(data.audioFileNameWithExt) },
+            ).awaitAll()
+
             playlistTrackDao.deleteAudioMedia(id)
             audioMediaDao.deleteById(id)
         }

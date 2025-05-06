@@ -26,12 +26,12 @@ internal object DatabaseModule {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
                 db.execSQL("""
-INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime) 
-VALUES (1, '전체', '', 0, 0, strftime('%s','now') * 1000)
+INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime, imageFileNameWithExt, isCustomImage) 
+VALUES (1, '전체', '', 0, 0, strftime('%s','now') * 1000, null, false)
                 """.trimIndent())
                 db.execSQL("""
-INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime) 
-VALUES (2, '미분류', '', 0, 0, strftime('%s','now') * 1000)
+INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime, imageFileNameWithExt, isCustomImage)
+VALUES (2, '미분류', '', 0, 0, strftime('%s','now') * 1000, null, false)
         """.trimIndent())
             }
         })

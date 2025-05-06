@@ -25,6 +25,10 @@ interface PlaylistTrackDao {
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
     suspend fun getPlaylistTrackFull(playlistId: Int, audioMediaId: Int): PlaylistTrackFullDto
 
+    @Transaction
+    @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId ORDER BY sequence LIMIT 1")
+    suspend fun getFirstAudioMedia(playlistId: Int): PlaylistTrackFullDto
+
     @Query("SELECT audioMediaId FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     suspend fun getAudioMediaIdList(playlistId: Int): List<Int>
 

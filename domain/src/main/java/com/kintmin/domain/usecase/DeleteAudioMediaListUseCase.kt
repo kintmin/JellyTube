@@ -1,6 +1,7 @@
 package com.kintmin.domain.usecase
 
-import com.kintmin.domain.internal_usecase.UpdatePlaylistAfterUpdatePlaybackUseCase
+import com.kintmin.domain.internal_usecase.UpdatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase
+import com.kintmin.domain.internal_usecase.UpdatePlaylistImageWhenUpdatePlaybackUseCase
 import com.kintmin.domain.model.Playlist
 import com.kintmin.domain.repository.AudioMediaRepository
 import kotlinx.coroutines.async
@@ -10,7 +11,8 @@ import javax.inject.Inject
 
 class DeleteAudioMediaListUseCase @Inject constructor(
     private val audioMediaRepository: AudioMediaRepository,
-    private val updatePlaylistAfterUpdatePlaybackUseCase: UpdatePlaylistAfterUpdatePlaybackUseCase,
+    private val updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase: UpdatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase,
+    private val updatePlaylistImageWhenUpdatePlaybackUseCase: UpdatePlaylistImageWhenUpdatePlaybackUseCase,
 ) {
     suspend operator fun invoke(playlistId: Int, idList: List<Int>): Result<Unit> = runCatching {
         coroutineScope {
@@ -19,9 +21,12 @@ class DeleteAudioMediaListUseCase @Inject constructor(
             }.awaitAll()
 
             listOf(
-                async { updatePlaylistAfterUpdatePlaybackUseCase(playlistId) },
-                async { updatePlaylistAfterUpdatePlaybackUseCase(Playlist.TOTAL) },
-                async { updatePlaylistAfterUpdatePlaybackUseCase(Playlist.UNCATEGORIZED) },
+                async { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(playlistId) },
+                async { updatePlaylistImageWhenUpdatePlaybackUseCase(playlistId) },
+                async { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(Playlist.TOTAL) },
+                async { updatePlaylistImageWhenUpdatePlaybackUseCase(Playlist.TOTAL) },
+                async { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(Playlist.UNCATEGORIZED) },
+                async { updatePlaylistImageWhenUpdatePlaybackUseCase(Playlist.UNCATEGORIZED) },
             ).awaitAll()
         }
     }

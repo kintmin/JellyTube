@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import java.io.File
 
 @Composable
 fun PlaylistDetailHeaderView(
@@ -49,9 +50,8 @@ fun PlaylistDetailHeaderView(
     sendIntent: (PlaylistDetailHeaderIntent) -> Unit,
 ) {
     val imageRequest = ImageRequest.Builder(LocalContext.current)
-        .data(
-            androidx.media3.session.R.drawable.media3_icon_artist
-        )
+        .data(headerData.imageFileFullPath?.let { File(it) }
+            ?: androidx.media3.session.R.drawable.media3_icon_artist)
         .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
         .diskCachePolicy(coil.request.CachePolicy.DISABLED)
         .build()

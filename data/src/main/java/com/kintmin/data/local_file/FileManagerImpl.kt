@@ -57,8 +57,9 @@ internal class FileManagerImpl @Inject constructor(
             }
         }
 
-    override suspend fun deleteFile(fileName: String, ext: Ext): Result<Unit> = runCatching {
+    override suspend fun deleteFile(fileNameWithExt: String): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
+            val (fileName, ext) = extractExtFromFileName(fileNameWithExt)
             val file = getDirectory(ext.fileType).resolve("$fileName.$ext")
             if (file.exists()) {
                 file.delete()

@@ -10,6 +10,6 @@ interface FileManager {
 
     suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<Ext>
 
-    suspend fun deleteFile(fileName: String, ext: Ext): Result<Unit>
+    suspend fun deleteFile(fileNameWithExt: String): Result<Unit>
     fun clearDiskCache(): Result<Unit>
 }

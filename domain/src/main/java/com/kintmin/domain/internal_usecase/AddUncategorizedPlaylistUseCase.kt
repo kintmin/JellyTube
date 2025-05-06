@@ -9,7 +9,8 @@ import javax.inject.Inject
 
 class AddUncategorizedPlaylistUseCase @Inject constructor(
     private val playbackRepository: PlaybackRepository,
-    private val updatePlaylistAfterUpdatePlaybackUseCase: UpdatePlaylistAfterUpdatePlaybackUseCase,
+    private val updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase: UpdatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase,
+    private val updatePlaylistImageWhenUpdatePlaybackUseCase: UpdatePlaylistImageWhenUpdatePlaybackUseCase,
 ) {
     suspend operator fun invoke(audioMediaIdList: List<Int>): Result<Unit> = runCatching {
         coroutineScope {
@@ -22,7 +23,11 @@ class AddUncategorizedPlaylistUseCase @Inject constructor(
             }.awaitAll().filterNotNull()
 
             playbackRepository.addAudioMediaListToPlaylist(Playlist.UNCATEGORIZED, targetAudioMediaIdList).getOrThrow()
-            updatePlaylistAfterUpdatePlaybackUseCase(Playlist.UNCATEGORIZED)
+
+            listOf(
+                async { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(Playlist.UNCATEGORIZED) },
+                async { updatePlaylistImageWhenUpdatePlaybackUseCase(Playlist.UNCATEGORIZED) },
+            ).awaitAll()
         }
     }
 }

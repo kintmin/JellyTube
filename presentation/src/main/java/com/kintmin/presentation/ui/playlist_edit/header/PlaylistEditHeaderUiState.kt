@@ -26,7 +26,7 @@ data class PlaylistEditHeaderUiState(
 
 internal fun Playlist.toPlaylistEditHeaderUiState() = PlaylistEditHeaderUiState(
     id = id,
-    imageFileFullPath = null,
+    imageFileFullPath = imageFileFullPath,
     name = name,
     description = description,
     audioMediaCount = audioMediaCount,

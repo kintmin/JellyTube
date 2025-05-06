@@ -34,7 +34,7 @@ data class PlaylistItemUiState(
 
 fun Playlist.toUiModel() = PlaylistItemUiState(
     id = id,
-    imageFileFullPath = null,
+    imageFileFullPath = imageFileFullPath,
     name = name,
     description = description,
     audioMediaCount = audioMediaCount,

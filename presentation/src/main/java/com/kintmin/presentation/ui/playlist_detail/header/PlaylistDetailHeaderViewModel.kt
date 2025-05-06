@@ -50,7 +50,7 @@ class PlaylistDetailHeaderViewModel @Inject constructor(
         ) { playlist, isRepeating, isShuffling ->
             PlaylistDetailHeaderUiState(
                 id = playlist.id,
-                imageFileFullPath = null,
+                imageFileFullPath = playlist.imageFileFullPath,
                 name = playlist.name,
                 description = playlist.description,
                 playlistSubtitle = "플레이리스트 · 음원수 ${playlist.audioMediaCount} · 재생시간 ${playlist.playTimeDuration.to_hh_colon_mm_colon_ss()}",

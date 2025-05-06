@@ -26,6 +26,9 @@ interface PlaylistDao {
     @Query("UPDATE PLAYLIST SET description = :newDescription WHERE id = :id")
     suspend fun updatePlaylistDescription(id: Int, newDescription: String)
 
+    @Query("UPDATE PLAYLIST SET imageFileNameWithExt = :newImageFileNameWithExt WHERE id = :id")
+    suspend fun updatePlaylistImage(id: Int, newImageFileNameWithExt: String?)
+
     @Query("UPDATE PLAYLIST SET audioMediaCount = :audioMediaCount, rawPlayTimeDuration = :totalPlayTime WHERE id = :id")
     suspend fun updatePlaylistPlayback(id: Int, audioMediaCount: Int, totalPlayTime: Long)
 }

@@ -3,6 +3,9 @@ package com.kintmin.data.local_db.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+/**
+ * 수정 시 DatabaseModule 기본값 삽입값 필요
+ */
 @Entity(tableName = "PLAYLIST")
 data class PlaylistEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -11,4 +14,6 @@ data class PlaylistEntity(
     val audioMediaCount: Int,
     val rawPlayTimeDuration: Long,
     val rawCreatedTime: Long,
+    val imageFileNameWithExt: String? = null,
+    val isCustomImage: Boolean,
 )

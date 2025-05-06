@@ -10,6 +10,8 @@ data class Playlist(
     val audioMediaCount: Int,
     val playTimeDuration: Duration,
     val createdTime: LocalDateTime,
+    val imageFileFullPath: String?,
+    val isCustomImage: Boolean,
 ) {
     companion object {
         const val TOTAL = 1
