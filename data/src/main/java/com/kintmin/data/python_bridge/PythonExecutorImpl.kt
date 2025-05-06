@@ -33,11 +33,11 @@ internal class PythonExecutorImpl @Inject constructor(
                     module.callAttr(METHOD_DOWNLOAD_AUDIO, youtubeUrl, audioDownloadPath).asList()
 
                 YoutubeDownloadDto(
-                    title = pyResult[0].toString(),
-                    thumbnailDownloadUrl = pyResult[1].toString(),
-                    duration = pyResult[2].toString(),
-                    uploader = pyResult[3].toString(),
-                    description = pyResult[4].toString(),
+                    title = pyResult.getOrNull(0)?.toString() ?: "알 수 없음",
+                    thumbnailDownloadUrl = pyResult.getOrNull(1)?.toString() ?: "",
+                    duration = pyResult.getOrNull(2)?.toString() ?: "0",
+                    uploader = pyResult.getOrNull(3)?.toString() ?: "알 수 없음",
+                    description = pyResult.getOrNull(4)?.toString() ?: ""
                 )
             }
         }

@@ -11,10 +11,14 @@ def download_audio(url, audio_path):
             'writesubtitles': False,
             'writeautomaticsub': False,
             "quiet": True,
+            'noplaylist': True,
+            'playlist_items': '1',
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.cache.remove()
             info_dict = ydl.extract_info(url, download=True)
+            if info_dict is None:
+                raise Exception("No information extracted for URL")
             
             title = info_dict.get("title", "Unknown")
             thumbnail_url = info_dict.get("thumbnail", "")
