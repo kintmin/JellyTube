@@ -112,6 +112,7 @@ fun PlaylistDetailScreen(
             item {
                 PlaylistDetailHeaderView(
                     headerData = headerData,
+                    isBasePlaylist = isBasePlaylist,
                     sendIntent = sendPlaylistDetailHeaderIntent,
                 )
             }
@@ -140,7 +141,7 @@ fun PlaylistDetailScreenPreview() {
             navigateToBack = {},
             headerData = PlaylistDetailHeaderUiState.getMock(),
             audioPlayDataList = PlaylistDetailListItemUiState.getMockList(),
-            isBasePlaylist = true,
+            isBasePlaylist = false,
             sendPlaylistDetailListIntent = {},
             sendPlaylistDetailHeaderIntent = {},
         )

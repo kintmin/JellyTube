@@ -45,6 +45,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 @Composable
 fun PlaylistDetailHeaderView(
     headerData: PlaylistDetailHeaderUiState,
+    isBasePlaylist: Boolean,
     sendIntent: (PlaylistDetailHeaderIntent) -> Unit,
 ) {
     val imageRequest = ImageRequest.Builder(LocalContext.current)
@@ -141,29 +142,31 @@ fun PlaylistDetailHeaderView(
             modifier = Modifier.height(36.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            OutlinedButton(
-                onClick = {
-                    sendIntent(PlaylistDetailHeaderIntent.OnClickAdd)
-                },
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .wrapContentWidth()
-            ) {
-                Icon(
+            if (!isBasePlaylist) {
+                OutlinedButton(
+                    onClick = {
+                        sendIntent(PlaylistDetailHeaderIntent.OnClickAdd)
+                    },
+                    contentPadding = PaddingValues(horizontal = 16.dp),
                     modifier = Modifier
-                        .size(20.dp)
-                        .padding(0.dp),
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = "Add"
-                )
-                Text(
-                    modifier = Modifier.padding(0.dp),
-                    text = "추가",
-                    fontSize = 12.sp,
-                )
+                        .fillMaxHeight()
+                        .wrapContentWidth()
+                ) {
+                    Icon(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .padding(0.dp),
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "Add"
+                    )
+                    Text(
+                        modifier = Modifier.padding(0.dp),
+                        text = "추가",
+                        fontSize = 12.sp,
+                    )
+                }
+                Box(modifier = Modifier.width(8.dp))
             }
-            Box(modifier = Modifier.width(8.dp))
             OutlinedButton(
                 onClick = {
                     sendIntent(PlaylistDetailHeaderIntent.OnClickEdit)
@@ -213,6 +216,7 @@ fun MusicControlsPreview() {
     JellyTubeTheme {
         PlaylistDetailHeaderView(
             sendIntent = {},
+            isBasePlaylist = false,
             headerData = PlaylistDetailHeaderUiState.getMock(),
         )
     }
