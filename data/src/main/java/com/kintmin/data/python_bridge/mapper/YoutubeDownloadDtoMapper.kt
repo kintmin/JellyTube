@@ -7,10 +7,8 @@ import java.time.Instant
 
 internal fun YoutubeDownloadDto.toDomain(
     source: String,
-    audioFileName: String,
-    audioFileExtName: String,
-    imageFileName: String?,
-    imageFileExtName: String?,
+    audioFileNameWithExt: String,
+    imageFileNameWithExt: String?,
 ): DownloadedAudioMedia {
     return DownloadedAudioMedia(
         source = source,
@@ -19,9 +17,7 @@ internal fun YoutubeDownloadDto.toDomain(
         uploader = uploader,
         description = description,
         createdTime = Instant.now().toLocalDateTime(),
-        audioFileName = audioFileName,
-        audioFileExtName = audioFileExtName,
-        imageFileName = imageFileName,
-        imageFileExtName = imageFileExtName,
+        audioFileNameWithExt = audioFileNameWithExt,
+        imageFileNameWithExt = imageFileNameWithExt,
     )
 }

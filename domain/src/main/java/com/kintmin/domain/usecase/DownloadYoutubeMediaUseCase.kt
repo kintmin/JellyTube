@@ -1,6 +1,5 @@
 package com.kintmin.domain.usecase
 
-import com.kintmin.domain.internal_usecase.ExtractYoutubeVideoIdUseCase
 import com.kintmin.domain.internal_usecase.UpdatePlaylistAfterUpdatePlaybackUseCase
 import com.kintmin.domain.model.AudioMedia
 import com.kintmin.domain.model.Playlist
@@ -11,18 +10,13 @@ import javax.inject.Inject
 class DownloadYoutubeMediaUseCase @Inject constructor(
     private val log: Log,
     private val audioMediaRepository: AudioMediaRepository,
-    private val extractYoutubeVideoIdUseCase: ExtractYoutubeVideoIdUseCase,
     private val updatePlaylistAfterUpdatePlaybackUseCase: UpdatePlaylistAfterUpdatePlaybackUseCase,
 ) {
     suspend operator fun invoke(youtubeUrl: String): Result<AudioMedia> = runCatching {
-        val videoId = extractYoutubeVideoIdUseCase(youtubeUrl)
-
-        audioMediaRepository.getAudioMediaBySource(videoId).onFailure {
+        audioMediaRepository.getAudioMediaBySource(source = youtubeUrl).onFailure {
             log.d("DownloadYoutubeMediaUseCase", "로컬 음원 가져오기 실패 - ${it.message}: ${it.cause}")
         }.getOrElse {
-            audioMediaRepository.deleteInvalidAudioMediaFile(videoId)
-
-            val downloadData = audioMediaRepository.downloadAudioMedia(youtubeUrl, videoId).onFailure { exception ->
+            val downloadData = audioMediaRepository.downloadAudioMedia(youtubeUrl).onFailure { exception ->
                 log.d("DownloadYoutubeMediaUseCase", "음원 다운로드 실패 - ${exception.message}: ${exception.cause}")
             }.getOrThrow()
 

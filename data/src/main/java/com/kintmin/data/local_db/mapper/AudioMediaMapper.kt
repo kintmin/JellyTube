@@ -18,14 +18,12 @@ internal object AudioMediaMapper {
         playlistTrackEntity: PlaylistTrackEntity? = null,
     ): Result<AudioMedia> = runCatching {
         val audioFileFullPath = fileManager.getFullPathWithExt(
-            fileName = audioMediaEntity.source,
-            extName = audioMediaEntity.audioFileExt,
+            fileNameWithExt = audioMediaEntity.audioFileNameWithExt,
         ).getOrThrow()
 
-        val imageFileFullPath = audioMediaEntity.imageFileExt?.let { imageFileExtName ->
+        val imageFileFullPath = audioMediaEntity.imageFileNameWithExt?.let {
             fileManager.getFullPathWithExt(
-                fileName = audioMediaEntity.source,
-                extName = imageFileExtName,
+                fileNameWithExt = it,
             ).getOrNull()
         }
 
@@ -33,7 +31,7 @@ internal object AudioMediaMapper {
             id = audioMediaEntity.id,
             playlistId = playlistTrackEntity?.playlistId ?: Playlist.TOTAL,
             audioMediaSequence = playlistTrackEntity?.sequence ?: 0,
-            sourcePath = audioMediaEntity.source,
+            source = audioMediaEntity.source,
             mediaName = audioMediaEntity.mediaName,
             artist = audioMediaEntity.artist,
             description = audioMediaEntity.description,

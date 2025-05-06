@@ -9,8 +9,6 @@ data class DownloadedAudioMedia(
     val uploader: String,
     val description: String,
     val createdTime: LocalDateTime,
-    val audioFileName: String,
-    val audioFileExtName: String,
-    val imageFileName: String?,
-    val imageFileExtName: String?,
+    val audioFileNameWithExt: String,
+    val imageFileNameWithExt: String?,
 )

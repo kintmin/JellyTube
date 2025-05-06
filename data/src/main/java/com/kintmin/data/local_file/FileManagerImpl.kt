@@ -18,8 +18,8 @@ internal class FileManagerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : FileManager {
 
-    override fun getFileNameWithExt(fullPath: String) = runCatching {
-        File(fullPath).name
+    override fun getFileNameWithExt(fileNameWithExt: String) = runCatching {
+        File(fileNameWithExt).name
     }
 
     override fun getFullPathWithExt(fileNameWithExt: String) = runCatching {

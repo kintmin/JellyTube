@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import java.util.UUID
 import javax.inject.Inject
 
 internal class AudioMediaRepositoryImpl @Inject constructor(
@@ -54,13 +55,12 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun downloadAudioMedia(
-        downloadUrl: String,
-        source: String,
-    ): Result<DownloadedAudioMedia> = runCatching {
+    override suspend fun downloadAudioMedia(downloadUrl: String): Result<DownloadedAudioMedia> = runCatching {
         withContext(Dispatchers.IO) {
+            val fileName = UUID.randomUUID().toString()
+
             val audioFileFullPath = fileManager.getFullPathWithExt(
-                fileName = source,
+                fileName = fileName,
                 ext = Ext.MP3,
             ).getOrThrow()
 
@@ -72,15 +72,16 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
             val imageFileExt = httpDataSource.downloadImage(
                 imageUrl = downloadDto.thumbnailDownloadUrl
             ).getOrNull()?.let { image ->
-                fileManager.saveImageWithCompression(image, source).getOrNull()
+                fileManager.saveImageWithCompression(
+                    imageData = image,
+                    fileName = fileName,
+                ).getOrNull()
             }
 
             downloadDto.toDomain(
-                source = source,
-                audioFileName = source,
-                audioFileExtName = Ext.MP3.toString(),
-                imageFileName = source,
-                imageFileExtName = imageFileExt?.toString(),
+                source = downloadUrl,
+                audioFileNameWithExt = "${fileName}.${Ext.MP3}",
+                imageFileNameWithExt = imageFileExt?.let { "${fileName}.${it}" },
             )
         }
     }
@@ -93,8 +94,8 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                 artist = newAudioMedia.uploader,
                 description = newAudioMedia.description,
                 rawAudioDurationSeconds = newAudioMedia.duration,
-                audioFileExt = newAudioMedia.audioFileExtName,
-                imageFileExt = newAudioMedia.imageFileExtName,
+                audioFileNameWithExt = newAudioMedia.audioFileNameWithExt,
+                imageFileNameWithExt = newAudioMedia.imageFileNameWithExt,
                 rawCreatedTime = newAudioMedia.createdTime.toMillis(),
             )
 
@@ -127,15 +128,6 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                 audioMediaEntity = audioMediaEntityToSave,
             ).getOrThrow()
         }
-    }
-
-    override suspend fun deleteInvalidAudioMediaFile(fileName: String): Result<Unit> = runCatching {
-        withTimeout(3000L) {
-            Ext.entries.map { ext ->
-                async { fileManager.deleteFile(fileName, ext) }
-            }.awaitAll()
-        }
-        fileManager.clearDiskCache()
     }
 
     override suspend fun deleteAudioMedia(id: Int): Result<Unit> = runCatching {
