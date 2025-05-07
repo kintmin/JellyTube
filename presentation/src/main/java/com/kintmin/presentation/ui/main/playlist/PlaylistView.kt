@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.domain.model.Playlist
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemAddView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
@@ -27,9 +28,11 @@ fun PlaylistView(
             count = data.size,
             key = { index -> data[index].id }
         ) { index ->
+            val isBasePlaylist = data[index].id == Playlist.TOTAL || data[index].id == Playlist.UNCATEGORIZED
             PlaylistItemView(
                 modifier = Modifier,
                 data = data[index],
+                isBasePlaylist = isBasePlaylist,
                 sendIntent = sendIntent,
             )
         }

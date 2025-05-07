@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,13 +39,13 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistDeleteDialog
-import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListIntent
 import java.io.File
 
 @Composable
 fun PlaylistItemView(
     modifier: Modifier,
     data: PlaylistItemUiState,
+    isBasePlaylist: Boolean,
     sendIntent: (PlaylistIntent) -> Unit,
 ) {
     var isDropDownExpanded by remember { mutableStateOf(false) }
@@ -140,13 +139,15 @@ fun PlaylistItemView(
                             sendIntent(PlaylistIntent.OnClickModifyPlaylist(data))
                         }
                     )
-                    DropdownMenuItem(
-                        text = { Text("삭제하기") },
-                        onClick = {
-                            isDropDownExpanded = false
-                            isShowDialog = true
-                        }
-                    )
+                    if (!isBasePlaylist) {
+                        DropdownMenuItem(
+                            text = { Text("삭제하기") },
+                            onClick = {
+                                isDropDownExpanded = false
+                                isShowDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -160,6 +161,7 @@ fun PlaylistItemPreview() {
         PlaylistItemView(
             modifier = Modifier.width(180.dp),
             PlaylistItemUiState.getMock(),
+            isBasePlaylist = false,
             sendIntent = {},
         )
     }
