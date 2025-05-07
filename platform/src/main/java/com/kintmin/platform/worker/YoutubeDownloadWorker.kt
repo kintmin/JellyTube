@@ -38,7 +38,17 @@ class YoutubeDownloadWorker @AssistedInject constructor(
     }
 
     override suspend fun doWork(): Result {
-        setForegroundAsync(getForegroundInfo())
+        val foregroundResult = runCatching {
+            setForegroundAsync(getForegroundInfo())
+        }
+
+        if (foregroundResult.isFailure) {
+            val exception = foregroundResult.exceptionOrNull()
+            pushNotificationUtil.sendNotification(
+                NotificationData.DownloadResult("포그라운드 서비스 시작 실패: ${exception?.message ?: "알 수 없는 오류"}")
+            )
+            return Result.failure()
+        }
 
         val url = inputData.getString(INPUT_DATA_URL) ?: return Result.failure()
         pushNotificationUtil.sendNotification(NotificationData.Download(1, 0))
