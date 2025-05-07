@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
@@ -135,6 +136,7 @@ fun MainScreen(
         floatingActionButton = {
             if (selectedTab == MainTabItem.Search) {
                 FloatingActionButton(
+                    modifier = Modifier.padding(bottom = 48.dp),
                     onClick = {
                         sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnClickDownload(currentUrl))
                     },
