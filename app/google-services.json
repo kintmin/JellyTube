@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "138917462779",
+    "project_id": "jellytube-55b6b",
+    "storage_bucket": "jellytube-55b6b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:138917462779:android:97513995c5fd7c9bf0265e",
+        "android_client_info": {
+          "package_name": "com.kintmin.jellytube"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIbsYn0vZcyj5ISzLrg86H_j7G7j2Jk9E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:138917462779:android:0e16aea111719c5ef0265e",
+        "android_client_info": {
+          "package_name": "com.kintmin.jellytube.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIbsYn0vZcyj5ISzLrg86H_j7G7j2Jk9E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
