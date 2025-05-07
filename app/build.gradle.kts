@@ -26,6 +26,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
         debug {
             applicationIdSuffix = ".dev"
@@ -39,6 +40,7 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
     buildFeatures {
         compose = true
     }
@@ -47,11 +49,11 @@ android {
     productFlavors {
         create("development") {
             dimension = "abi"
-            ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+            ndk { abiFilters += listOf("arm64-v8a", "x86_64", "armeabi-v7a", "x86") }
         }
         create("production") {
             dimension = "abi"
-            ndk { abiFilters += listOf("arm64-v8a") }
+            ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         }
     }
 }

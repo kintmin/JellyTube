@@ -21,12 +21,12 @@ sealed class NotificationData {
         override val channel = NotificationChannelData.Download
 
         override fun getNotification(context: Context) =
-            NotificationCompat.Builder(context, NotificationChannelData.Download.id)
+            NotificationCompat.Builder(context, channel.id)
                 .setContentTitle("음원 다운로드 중...")
                 .setContentText("잠시만 기다려 주세요.")
                 .setSmallIcon(android.R.drawable.stat_sys_download)
                 .setOngoing(true)
-                .setGroup(NotificationChannelData.Download.id)
+                .setGroup(channel.id)
                 .setCategory(NotificationCompat.CATEGORY_PROGRESS)
                 .setProgress(maxCount, currentCount, true)
                 .build()
@@ -47,11 +47,11 @@ sealed class NotificationData {
         override val channel = NotificationChannelData.DownloadResult
 
         override fun getNotification(context: Context) =
-            NotificationCompat.Builder(context, NotificationChannelData.DownloadResult.id)
+            NotificationCompat.Builder(context, channel.id)
                 .setContentTitle("음원 다운로드 결과")
                 .setContentText(contentText)
                 .setSmallIcon(android.R.drawable.stat_sys_download_done)
-                .setGroup(NotificationChannelData.DownloadResult.id)
+                .setGroup(channel.id)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .build()
     }

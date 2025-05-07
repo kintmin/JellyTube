@@ -17,7 +17,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -36,18 +36,18 @@ android {
     productFlavors {
         create("development") {
             dimension = "abi"
-            ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+            ndk { abiFilters += listOf("arm64-v8a", "x86_64", "armeabi-v7a", "x86") }
         }
         create("production") {
             dimension = "abi"
-            ndk { abiFilters += listOf("arm64-v8a") }
+            ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         }
     }
 }
 
 chaquopy {
     defaultConfig {
-        version = "3.13"
+        version = "3.8"
         pip {
             install("yt_dlp")
         }
