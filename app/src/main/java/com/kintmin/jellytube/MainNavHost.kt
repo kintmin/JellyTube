@@ -4,11 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
+import androidx.navigation.navOptions
 import com.kintmin.presentation.ui.main.MainTabItem
 import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylistDetailScreen
 import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
 import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
 import com.kintmin.presentation.ui.main.navigation.mainScreen
+import com.kintmin.presentation.ui.main.navigation.navigateToMainScreen
 import com.kintmin.presentation.ui.playlist_add.navigation.navigateToPlaylistAddScreen
 import com.kintmin.presentation.ui.playlist_add.navigation.playlistAdd
 import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEditScreen
@@ -30,7 +32,10 @@ fun MainNavHost(
             },
             navigateToPlaylistEdit = { playlistId ->
                 navController.navigateToPlaylistEditScreen(playlistId, navOptions)
-            }
+            },
+            navigateToPlaylistAdd = { playlistId ->
+                navController.navigateToPlaylistAddScreen(playlistId, navOptions)
+            },
         )
         playlistDetail(
             navigateToBack = { navController.popBackStack() },

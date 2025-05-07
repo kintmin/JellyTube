@@ -20,6 +20,7 @@ fun NavController.navigateToMainScreen(
 fun NavGraphBuilder.mainScreen(
     navigateToPlaylistDetail: (playlistId: Int) -> Unit,
     navigateToPlaylistEdit: (playlistId: Int) -> Unit,
+    navigateToPlaylistAdd: (playlistId: Int) -> Unit,
 ) {
     composable<MainScreenRoute> { backStackEntry ->
         val route = backStackEntry.toRoute<MainScreenRoute>()
@@ -27,6 +28,7 @@ fun NavGraphBuilder.mainScreen(
             initTabItem = route.tabItem,
             navigateToPlaylistDetail = navigateToPlaylistDetail,
             navigateToPlaylistEdit = navigateToPlaylistEdit,
+            navigateToPlaylistAdd = navigateToPlaylistAdd,
         )
     }
 }

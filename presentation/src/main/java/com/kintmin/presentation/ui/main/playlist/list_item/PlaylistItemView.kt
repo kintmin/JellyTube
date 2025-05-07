@@ -139,6 +139,13 @@ fun PlaylistItemView(
                             sendIntent(PlaylistIntent.OnClickModifyPlaylist(data))
                         }
                     )
+                    DropdownMenuItem(
+                        text = { Text("추가하기") },
+                        onClick = {
+                            isDropDownExpanded = false
+                            sendIntent(PlaylistIntent.OnClickAddPlaylist(data, isBasePlaylist))
+                        }
+                    )
                     if (!isBasePlaylist) {
                         DropdownMenuItem(
                             text = { Text("삭제하기") },
