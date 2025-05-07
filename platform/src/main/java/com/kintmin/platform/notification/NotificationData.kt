@@ -2,10 +2,7 @@ package com.kintmin.platform.notification
 
 import android.app.Notification
 import android.content.Context
-import android.content.pm.ServiceInfo
-import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.work.ForegroundInfo
 
 sealed class NotificationData {
     abstract val id: Int
@@ -30,14 +27,6 @@ sealed class NotificationData {
                 .setCategory(NotificationCompat.CATEGORY_PROGRESS)
                 .setProgress(maxCount, currentCount, true)
                 .build()
-
-        fun getForegroundInfo(context: Context): ForegroundInfo {
-            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ForegroundInfo(id, getNotification(context), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-            } else {
-                ForegroundInfo(id, getNotification(context))
-            }
-        }
     }
 
     data class DownloadResult(

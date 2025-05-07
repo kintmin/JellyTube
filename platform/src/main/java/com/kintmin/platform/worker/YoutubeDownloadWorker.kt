@@ -1,8 +1,11 @@
 package com.kintmin.platform.worker
 
 import android.content.Context
+import android.content.pm.ServiceInfo
+import android.os.Build
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.kintmin.domain.model.Playlist
 import com.kintmin.domain.usecase.DownloadYoutubeMediaUseCase
@@ -17,14 +20,35 @@ import kotlinx.coroutines.withContext
 
 @HiltWorker
 class YoutubeDownloadWorker @AssistedInject constructor(
-    @Assisted appContext: Context,
+    @Assisted private val appContext: Context,
     @Assisted workerParams: WorkerParameters,
     private val downloadYoutubeMediaUseCase: DownloadYoutubeMediaUseCase,
     private val pushNotificationUtil: PushNotificationUtil,
     private val mediaControllerManager: MediaControllerManager,
 ) : CoroutineWorker(appContext, workerParams) {
+
+    override suspend fun getForegroundInfo(): ForegroundInfo {
+        val notificationData = NotificationData.Download()
+        val notification = notificationData.getNotification(appContext)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(notificationData.id, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            ForegroundInfo(notificationData.id, notification)
+        }
+    }
+
     override suspend fun doWork(): Result {
-        setForegroundAsync(NotificationData.Download().getForegroundInfo(applicationContext))
+        val foregroundResult = runCatching {
+            setForegroundAsync(getForegroundInfo())
+        }
+
+        if (foregroundResult.isFailure) {
+            val exception = foregroundResult.exceptionOrNull()
+            pushNotificationUtil.sendNotification(
+                NotificationData.DownloadResult("포그라운드 서비스 시작 실패: ${exception?.message ?: "알 수 없는 오류"}")
+            )
+            return Result.failure()
+        }
 
         val url = inputData.getString(INPUT_DATA_URL) ?: return Result.failure()
         pushNotificationUtil.sendNotification(NotificationData.Download(1, 0))
