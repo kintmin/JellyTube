@@ -31,4 +31,7 @@ interface PlaylistDao {
 
     @Query("UPDATE PLAYLIST SET audioMediaCount = :audioMediaCount, rawPlayTimeDuration = :totalPlayTime WHERE id = :id")
     suspend fun updatePlaylistPlayback(id: Int, audioMediaCount: Int, totalPlayTime: Long)
+
+    @Query("DELETE FROM PLAYLIST WHERE id = :id")
+    suspend fun deletePlaylistName(id: Int)
 }

@@ -49,9 +49,10 @@ fun PlaylistItemAddView(
     )
 
     Column(
-        modifier = modifier.padding(12.dp).clickable {
-            showDialog = true
-        },
+        modifier = modifier
+            .clip(RoundedCornerShape(4))
+            .clickable { showDialog = true }
+            .padding(12.dp),
     ) {
         Box {
             IconButton(
@@ -71,7 +72,7 @@ fun PlaylistItemAddView(
         }
         Text(
             modifier = Modifier.padding(bottom = 4.dp),
-            text = "재생목록 추가하기",
+            text = "플레이리스트 추가하기",
             fontSize = 16.sp,
             lineHeight = 16.sp,
             fontWeight = FontWeight.Bold,

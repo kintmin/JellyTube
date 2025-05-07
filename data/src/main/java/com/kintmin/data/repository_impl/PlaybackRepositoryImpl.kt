@@ -71,10 +71,10 @@ class PlaybackRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deletePlaylistTrack(playlistId: Int, audioMediaId: Int): Result<Unit> {
+    override suspend fun deletePlaylistTrackMedia(playlistId: Int, audioMediaId: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
             runCatching {
-                playlistTrackDao.deletePlaylistTrack(playlistId, audioMediaId)
+                playlistTrackDao.deletePlaylistTrackMedia(playlistId, audioMediaId)
             }
         }
     }

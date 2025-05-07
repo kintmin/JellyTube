@@ -3,14 +3,13 @@ package com.kintmin.presentation.ui.main.playlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.usecase.AddNewPlaylistUseCase
-import com.kintmin.domain.usecase.FetchPlaylistFlowUseCase
+import com.kintmin.domain.usecase.DeletePlaylistUseCase
 import com.kintmin.domain.usecase.FetchPlaylistListFlowUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -20,6 +19,7 @@ import javax.inject.Inject
 class PlaylistViewModel @Inject constructor(
     fetchPlaylistListFlowUseCase: FetchPlaylistListFlowUseCase,
     private val addNewPlaylistUseCase: AddNewPlaylistUseCase,
+    private val deletePlaylistUseCase: DeletePlaylistUseCase,
 ) : ViewModel() {
 
     private val _eventFlow = MutableSharedFlow<PlaylistEvent>()
@@ -33,6 +33,8 @@ class PlaylistViewModel @Inject constructor(
         when (intent) {
             is PlaylistIntent.OnClickPlaylistItem -> navigateToPlaylistDetailScreen(intent.playlistInfo)
             is PlaylistIntent.MakeNewPlaylist -> makeNewPlaylist(intent.title)
+            is PlaylistIntent.OnClickDeletePlaylist -> deletePlaylist(intent.data.id)
+            is PlaylistIntent.OnClickModifyPlaylist -> navigateToPlaylistEditScreen(intent.data)
         }
     }
 
@@ -42,9 +44,21 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
+    private fun navigateToPlaylistEditScreen(playlistInfo: PlaylistItemUiState) {
+        viewModelScope.launch {
+            _eventFlow.emit(PlaylistEvent.NavigateToPlaylistEditScreen(playlistInfo.id))
+        }
+    }
+
     private fun makeNewPlaylist(title: String) {
         viewModelScope.launch {
             addNewPlaylistUseCase(title)
+        }
+    }
+
+    private fun deletePlaylist(playlistId: Int) {
+        viewModelScope.launch {
+            deletePlaylistUseCase(playlistId)
         }
     }
 }

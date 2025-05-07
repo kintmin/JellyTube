@@ -48,6 +48,7 @@ import kotlinx.coroutines.flow.flowOf
 fun MainScreen(
     initTabItem: MainTabItem,
     navigateToPlaylistDetail: (id: Int) -> Unit,
+    navigateToPlaylistEdit: (id: Int) -> Unit,
 ) {
     val context = LocalContext.current
     val downloadViewModel = hiltViewModel<YoutubeDownloadViewModel>()
@@ -65,9 +66,8 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         playlistViewModel.eventFlow.collect { event ->
             when (event) {
-                is PlaylistEvent.NavigateToPlaylistDetailScreen -> {
-                    navigateToPlaylistDetail(event.playlistInfo.id)
-                }
+                is PlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistInfo.id)
+                is PlaylistEvent.NavigateToPlaylistEditScreen -> navigateToPlaylistEdit(event.playlistId)
             }
         }
     }

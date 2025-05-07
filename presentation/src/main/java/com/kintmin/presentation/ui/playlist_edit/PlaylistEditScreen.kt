@@ -171,7 +171,7 @@ fun PlaylistEditScreen(
                                 .fillMaxSize(),
                             onClick = { sendIntent(PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist) }) {
                             Text(
-                                text = "재생목록에서 삭제",
+                                text = "플레이리스트에서 삭제",
                                 fontSize = 14.sp,
                             )
                         }

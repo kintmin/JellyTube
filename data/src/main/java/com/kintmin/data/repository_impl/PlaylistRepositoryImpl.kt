@@ -1,6 +1,7 @@
 package com.kintmin.data.repository_impl
 
 import com.kintmin.data.local_db.dao.PlaylistDao
+import com.kintmin.data.local_db.dao.PlaylistTrackDao
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_file.FileManager
@@ -17,6 +18,7 @@ import javax.inject.Inject
 
 class PlaylistRepositoryImpl @Inject constructor(
     private val playlistDao: PlaylistDao,
+    private val playlistTrackDao: PlaylistTrackDao,
     private val fileManager: FileManager,
 ) : PlaylistRepository {
 
@@ -89,6 +91,12 @@ class PlaylistRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deletePlaylist(id: Int): Result<Unit> {
-        TODO("Not yet implemented")
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                // 외래키 때문에 순차 삭제
+                playlistTrackDao.deletePlaylistTrack(id)
+                playlistDao.deletePlaylistName(id)
+            }
+        }
     }
 }

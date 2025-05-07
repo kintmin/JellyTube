@@ -27,6 +27,9 @@ fun MainNavHost(
         mainScreen(
             navigateToPlaylistDetail = { playlistId ->
                 navController.navigateToPlaylistDetailScreen(playlistId, navOptions)
+            },
+            navigateToPlaylistEdit = { playlistId ->
+                navController.navigateToPlaylistEditScreen(playlistId, navOptions)
             }
         )
         playlistDetail(

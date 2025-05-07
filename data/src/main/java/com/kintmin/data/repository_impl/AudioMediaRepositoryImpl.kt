@@ -154,10 +154,12 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
             listOf(
                 async { fileManager.deleteFile(data.audioFileNameWithExt) },
                 async { fileManager.deleteFile(data.audioFileNameWithExt) },
+                async {
+                    // 외래키 때문에 순차 삭제
+                    playlistTrackDao.deleteAudioMedia(id)
+                    audioMediaDao.deleteById(id)
+                }
             ).awaitAll()
-
-            playlistTrackDao.deleteAudioMedia(id)
-            audioMediaDao.deleteById(id)
         }
     }
 }

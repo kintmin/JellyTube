@@ -36,7 +36,7 @@ android {
     productFlavors {
         create("development") {
             dimension = "abi"
-            ndk { abiFilters += listOf("arm64-v8a", "x86_64", "armeabi-v7a", "x86") }
+            ndk { abiFilters += listOf("arm64-v8a", "x86_64", "armeabi-v7a") }
         }
         create("production") {
             dimension = "abi"

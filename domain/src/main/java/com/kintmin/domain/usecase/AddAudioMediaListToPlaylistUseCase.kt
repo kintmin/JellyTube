@@ -24,7 +24,7 @@ class AddAudioMediaListToPlaylistUseCase @Inject constructor(
                     ).awaitAll()
 
                     audioMediaIdList.map { audioMediaId ->
-                        async { playbackRepository.deletePlaylistTrack(Playlist.UNCATEGORIZED, audioMediaId) }
+                        async { playbackRepository.deletePlaylistTrackMedia(Playlist.UNCATEGORIZED, audioMediaId) }
                     }.awaitAll()
 
                     listOf(

@@ -11,5 +11,5 @@ interface PlaybackRepository {
     suspend fun setIsPlaybackShuffling(isShuffling: Boolean): Result<Unit>
     suspend fun setPlaybackRepeating(isRepeating: Boolean): Result<Unit>
     suspend fun updatePlaybackSequence(playlistId: Int, audioMediaId: Int, newSequence: Int): Result<Unit>
-    suspend fun deletePlaylistTrack(playlistId: Int, audioMediaId: Int): Result<Unit>
+    suspend fun deletePlaylistTrackMedia(playlistId: Int, audioMediaId: Int): Result<Unit>
 }

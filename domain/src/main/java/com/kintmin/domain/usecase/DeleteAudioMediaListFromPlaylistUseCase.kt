@@ -18,7 +18,7 @@ class DeleteAudioMediaListFromPlaylistUseCase @Inject constructor(
     suspend operator fun invoke(playlistId: Int, audioMediaIdList: List<Int>): Result<Unit> = runCatching {
         coroutineScope {
             audioMediaIdList.map { id ->
-                async { playbackRepository.deletePlaylistTrack(playlistId, id).getOrThrow() }
+                async { playbackRepository.deletePlaylistTrackMedia(playlistId, id).getOrThrow() }
             }.awaitAll()
 
             listOf(

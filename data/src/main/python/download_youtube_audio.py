@@ -35,16 +35,21 @@ def download_audio(url, audio_path):
         raise Exception(f"Download failed: {e}")
 
 def extract_video_urls_from_playlist(playlist_url):
-    ydl_opts = {
-        'quiet': True,
-        'extract_flat': True,
-        'skip_download': True,
-    }
+    try:
+        ydl_opts = {
+            'quiet': True,
+            'extract_flat': True,
+            'skip_download': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.cache.remove()
+            info_dict = ydl.extract_info(playlist_url, download=False)
+            if info_dict is None:
+                raise Exception("No information extracted for URL")
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info_dict = ydl.extract_info(playlist_url, download=False)
+            entries = info_dict.get("entries", [])
+            video_urls = [entry.get("url") for entry in entries if "url" in entry]
 
-        entries = info_dict.get("entries", [])
-        video_urls = [entry.get("url") for entry in entries if "url" in entry]
-
-        return video_urls
+            return video_urls
+    except Exception as e:
+        raise Exception(f"Extract urls failed: {e}")

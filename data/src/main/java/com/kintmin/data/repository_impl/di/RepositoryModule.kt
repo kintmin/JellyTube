@@ -44,10 +44,12 @@ object RepositoryModule {
     @Singleton
     fun providePlaylistRepository(
         playlistDao: PlaylistDao,
+        playlistTrackDao: PlaylistTrackDao,
         fileManager: FileManager,
     ): PlaylistRepository {
         return PlaylistRepositoryImpl(
             playlistDao = playlistDao,
+            playlistTrackDao = playlistTrackDao,
             fileManager = fileManager,
         )
     }
