@@ -9,11 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,22 +27,32 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.PlatformTextStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
-import java.io.File
+
+@Composable
+fun AudioMediaDetailScreen(
+    navigateToBack: () -> Unit,
+) {
+    val mainViewModel = hiltViewModel<AudioMediaDetailViewModel>()
+
+    AudioMediaDetailScreen(
+        navigateToBack = navigateToBack,
+        data = ,
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AudioMediaDetailScreen(
     navigateToBack: () -> Unit,
+    data: AudioMediaDetailUiState,
 ) {
     val imageRequest = ImageRequest.Builder(LocalContext.current)
         .data(
@@ -98,31 +106,31 @@ fun AudioMediaDetailScreen(
         ) {
             Text(
                 modifier = Modifier.padding(top = 20.dp, start = 16.dp, bottom = 8.dp),
-                text = "미디어 이름",
+                text = data.audioMediaName,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 lineHeight = 10.sp,
             )
             Text(
                 modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
-                text = "아티스트: 나는야 아티스트",
+                text = "아티스트: ${data.artist}",
                 fontSize = 16.sp,
                 maxLines = 1,
                 lineHeight = 1.sp,
             )
             Text(
                 modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
-                text = "재생 시간: 999:99",
+                text = "재생 시간: ${data.playTime}",
                 fontSize = 16.sp,
             )
             Text(
                 modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
-                text = "생성 시각: yyyy년 M월 dd일 HH:mm",
+                text = "생성 시각: ${data.audioMediaCreationTime}",
                 fontSize = 16.sp,
             )
             Text(
                 modifier = Modifier.padding(start = 16.dp),
-                text = "출처: https://youtube.com",
+                text = "출처: ${data.source}",
                 fontSize = 16.sp,
             )
 
@@ -137,18 +145,18 @@ fun AudioMediaDetailScreen(
 
             Text(
                 modifier = Modifier.padding(start = 16.dp),
-                text = "플레이리스트 이름",
+                text = data.playlistName,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 modifier = Modifier.padding(top = 8.dp, start = 16.dp),
-                text = "생성된 시각: yyyy년 M월 dd일 HH:mm",
+                text = "생성된 시각: ${data.playlistCreationTime}",
                 fontSize = 15.sp,
             )
             Text(
                 modifier = Modifier.padding(top = 4.dp, start = 16.dp),
-                text = "추가된 시각: yyyy년 M월 dd일 HH:mm",
+                text = "추가된 시각: ${data.playlistAddedTime}",
                 fontSize = 15.sp,
             )
 
@@ -163,7 +171,7 @@ fun AudioMediaDetailScreen(
 
             Text(
                 modifier = Modifier.padding(start = 16.dp, bottom = 16.dp, end = 16.dp),
-                text = "이것은 미디어 설명입니다. 이것은 미디어 설명입니다. 이것은 미디어 설명입니다. 이것은 미디어 설명입니다. 이것은 미디어 설명입니다.",
+                text = data.audioMediaDescription,
                 fontSize = 16.sp,
             )
 
@@ -199,6 +207,7 @@ fun AudioMediaDetailScreenPreview() {
     JellyTubeTheme {
         AudioMediaDetailScreen(
             navigateToBack = {},
+            data = AudioMediaDetailUiState.getMock(),
         )
     }
 }
