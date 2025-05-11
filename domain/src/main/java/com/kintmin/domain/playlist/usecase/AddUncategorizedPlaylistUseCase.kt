@@ -5,6 +5,8 @@ import com.kintmin.domain.playlist.model.Playlist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -17,7 +19,7 @@ class AddUncategorizedPlaylistUseCase @Inject constructor(
         withContext(Dispatchers.IO) {
             val targetAudioMediaIdList = audioMediaIdList.map { audioMediaId ->
                 async {
-                    val playlistIdList = audioTrackRepository.getPlaylistIdList(audioMediaId).getOrThrow()
+                    val playlistIdList = audioTrackRepository.getPlaylistIdListFlow(audioMediaId).first()
                     val isExistOnlyTotal = playlistIdList.size == 1
                     if (isExistOnlyTotal) audioMediaId else null
                 }

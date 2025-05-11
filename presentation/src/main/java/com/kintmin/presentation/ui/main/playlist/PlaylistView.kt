@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.main.MainScreenIntent
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemAddView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
 
@@ -17,6 +18,7 @@ fun PlaylistView(
     modifier: Modifier,
     data: List<PlaylistItemUiState>,
     sendIntent: (PlaylistIntent) -> Unit,
+    sendMainIntent: (MainScreenIntent) -> Unit,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -32,6 +34,7 @@ fun PlaylistView(
                 data = data[index],
                 isBasePlaylist = data[index].isBasePlaylist,
                 sendIntent = sendIntent,
+                sendMainIntent = sendMainIntent,
             )
         }
         item {
@@ -51,6 +54,7 @@ fun PlaylistPreview() {
             modifier = Modifier.fillMaxSize(),
             PlaylistItemUiState.getMockList(),
             sendIntent = {},
+            sendMainIntent = {},
         )
     }
 }

@@ -10,7 +10,7 @@ interface AudioTrackRepository {
     fun getPlaylistTrackAggregateFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackAggregate>
     fun getPlaylistTrackAggregateListFlow(playlistId: Int): Flow<List<PlaylistTrackAggregate>>
 
-    suspend fun getPlaylistIdList(audioMediaId: Int): Result<List<Int>>
+    fun getPlaylistIdListFlow(audioMediaId: Int): Flow<List<Int>>
 
     suspend fun updateTrackSequence(playlistId: Int, audioMediaId: Int, newSequence: Int): Result<Unit>
     suspend fun deleteAudioTrackList(playlistId: Int, audioMediaIdList: List<Int>): Result<Unit>

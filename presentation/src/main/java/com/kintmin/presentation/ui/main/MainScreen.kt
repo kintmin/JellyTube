@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -46,17 +48,18 @@ import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebView
 
 @Composable
 fun MainScreen(
-    initTabItem: MainTabItem,
     navigateToPlaylistDetail: (id: Int) -> Unit,
     navigateToPlaylistEdit: (id: Int) -> Unit,
     navigateToPlaylistAdd: (id: Int) -> Unit,
 ) {
     val context = LocalContext.current
+    val mainViewModel = hiltViewModel<MainViewModel>()
     val downloadViewModel = hiltViewModel<YoutubeDownloadViewModel>()
     val playlistViewModel = hiltViewModel<PlaylistViewModel>()
 
-    var selectedTab by remember { mutableStateOf(initTabItem) }
-    val playlist by playlistViewModel.playlistFlow.collectAsState(initial = emptyList())
+    val playlist by playlistViewModel.playlistFlow.collectAsState()
+    val selectedTab by mainViewModel.tabItem.collectAsState()
+    val currentUrl by downloadViewModel.currentUrl.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -72,7 +75,6 @@ fun MainScreen(
             when (event) {
                 is PlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistInfo.id)
                 is PlaylistEvent.NavigateToPlaylistEditScreen -> navigateToPlaylistEdit(event.playlistId)
-                PlaylistEvent.NavigateToMediaSearchScreen -> selectedTab = MainTabItem.Search
                 is PlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId)
             }
         }
@@ -102,8 +104,9 @@ fun MainScreen(
 
     MainScreen(
         selectedTab = selectedTab,
-        onChangeSelectedTab = { newTab -> selectedTab = newTab },
         playlist = playlist,
+        currentUrl = currentUrl,
+        sendMainIntent = mainViewModel::sendIntent,
         sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
         sendPlaylistIntent = playlistViewModel::sendIntent,
     )
@@ -113,13 +116,13 @@ fun MainScreen(
 @Composable
 fun MainScreen(
     selectedTab: MainTabItem,
-    onChangeSelectedTab: (MainTabItem) -> Unit,
     playlist: List<PlaylistItemUiState>,
+    currentUrl: String,
+    sendMainIntent: (MainScreenIntent) -> Unit,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
 ) {
     var webView: WebView? by remember { mutableStateOf(null) }
-    var currentUrl: String by remember { mutableStateOf("https://www.youtube.com/") }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -152,14 +155,18 @@ fun MainScreen(
         },
         bottomBar = {
             NavigationBar {
-                MainTabItem.entries.forEach { tab ->
-                    NavigationBarItem(
-                        icon = { Icon(tab.getIcon(), contentDescription = tab.getLabel()) },
-                        label = { Text(tab.getLabel()) },
-                        selected = selectedTab == tab,
-                        onClick = { onChangeSelectedTab(tab) }
-                    )
-                }
+                NavigationBarItem(
+                    icon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                    label = { Text("음원추가") },
+                    selected = selectedTab == MainTabItem.Search,
+                    onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Rounded.VideoLibrary, contentDescription = null) },
+                    label = { Text("플레이리스트") },
+                    selected = selectedTab == MainTabItem.Playlist,
+                    onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) }
+                )
             }
         }
     ) { innerPadding ->
@@ -169,11 +176,9 @@ fun MainScreen(
                     .fillMaxSize()
                     .padding(innerPadding),
                 currentUrl = currentUrl,
-                onChangeUrl = { newUrl ->
-                    currentUrl = newUrl
-                },
                 setWebView = { value -> webView = value },
                 webView = webView,
+                sendIntent = sendYoutubeDownloadIntent,
             )
 
             MainTabItem.Playlist -> PlaylistView(
@@ -182,6 +187,7 @@ fun MainScreen(
                     .padding(innerPadding),
                 data = playlist,
                 sendIntent = sendPlaylistIntent,
+                sendMainIntent = sendMainIntent,
             )
         }
     }
@@ -194,9 +200,10 @@ fun MainScreenSearchTabPreview() {
         MainScreen(
             selectedTab = MainTabItem.Search,
             playlist = PlaylistItemUiState.getMockList(),
+            currentUrl = "",
+            sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},
-            onChangeSelectedTab = {},
         )
     }
 }
@@ -208,9 +215,10 @@ fun MainScreenPlayTabPreview() {
         MainScreen(
             selectedTab = MainTabItem.Playlist,
             playlist = PlaylistItemUiState.getMockList(),
+            currentUrl = "",
+            sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},
-            onChangeSelectedTab = {},
         )
     }
 }

@@ -35,7 +35,7 @@ class PlaylistViewModel @Inject constructor(
             is PlaylistIntent.MakeNewPlaylist -> makeNewPlaylist(intent.title)
             is PlaylistIntent.OnClickDeletePlaylist -> deletePlaylist(intent.data.id)
             is PlaylistIntent.OnClickModifyPlaylist -> navigateToPlaylistEditScreen(intent.data)
-            is PlaylistIntent.OnClickAddPlaylist -> navigateToAddPlaylistScreen(intent.data, intent.isBasePlaylist)
+            is PlaylistIntent.OnClickAddPlaylist -> navigateToAddPlaylistScreen(intent.data)
         }
     }
 
@@ -51,13 +51,9 @@ class PlaylistViewModel @Inject constructor(
         }
     }
 
-    private fun navigateToAddPlaylistScreen(data: PlaylistItemUiState, isBasePlaylist: Boolean) {
+    private fun navigateToAddPlaylistScreen(data: PlaylistItemUiState) {
         viewModelScope.launch {
-            if (isBasePlaylist) {
-                _eventFlow.emit(PlaylistEvent.NavigateToMediaSearchScreen)
-            } else {
-                _eventFlow.emit(PlaylistEvent.NavigateToPlaylistAddScreen(data.id))
-            }
+            _eventFlow.emit(PlaylistEvent.NavigateToPlaylistAddScreen(data.id))
         }
     }
 

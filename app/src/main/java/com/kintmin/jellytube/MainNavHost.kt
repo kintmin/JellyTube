@@ -1,6 +1,7 @@
 package com.kintmin.jellytube
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
@@ -30,6 +31,7 @@ fun MainNavHost(
     ) {
         mainScreen(
             navigateToPlaylistDetail = { playlistId ->
+                navController.navigateToMainScreen(MainTabItem.Playlist, navOptions)
                 navController.navigateToPlaylistDetailScreen(playlistId, navOptions)
             },
             navigateToPlaylistEdit = { playlistId ->
@@ -59,21 +61,25 @@ fun MainNavHost(
         )
         audioMediaDetailScreen(
             navigateToBack = { navController.popBackStack() },
-            navigationToAudioMediaEditScreen = {},
+            navigationToAudioMediaEditScreen = { },
+            navigateToMainSearchTab = { url ->
+                navController.navigateToMainScreen(
+                    MainTabItem.Search,
+                    getDeepNav(navController),
+                    url,
+                )
+            },
+            navigateToPlaylistDetailScreen = { playlistId ->
+                navController.navigateToPlaylistDetailScreen(playlistId, getDeepNav(navController))
+            },
         )
     }
 }
 
-//navOptions {
-//    // Pop up to the start destination of the graph to
-//    // avoid building up a large stack of destinations
-//    // on the back stack as users select items
-//    popUpTo(navController.graph.findStartDestination().id) {
-//        saveState = true
-//    }
-//    // Avoid multiple copies of the same destination when
-//    // reselecting the same item
-//    launchSingleTop = true
-//    // Restore state when reselecting a previously selected item
-//    restoreState = true
-//}
+fun getDeepNav(navController: NavHostController) = navOptions {
+    popUpTo(navController.graph.findStartDestination().id) {
+        inclusive = false
+    }
+    launchSingleTop = true
+    restoreState = true
+}

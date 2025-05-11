@@ -33,7 +33,7 @@ interface PlaylistTrackDao {
     suspend fun getAudioMediaIdList(playlistId: Int): List<Int>
 
     @Query("SELECT playlistId FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
-    suspend fun getPlaylistIdList(audioMediaId: Int): List<Int>
+    fun getPlaylistIdListFlow(audioMediaId: Int): Flow<List<Int>>
 
     @Query("SELECT COALESCE(MAX(sequence), 0) + 1 FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     suspend fun getNextSequence(playlistId: Int): Int

@@ -28,9 +28,9 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 fun YoutubeWebView(
     modifier: Modifier = Modifier,
     currentUrl: String,
-    onChangeUrl: (String) -> Unit,
     setWebView: (WebView) -> Unit,
     webView: WebView?,
+    sendIntent: (YoutubeDownloadIntent) -> Unit,
 ) {
     if (LocalInspectionMode.current) {
         Box(
@@ -76,7 +76,7 @@ fun YoutubeWebView(
                         isReload: Boolean
                     ) {
                         Log.d("webview", "doUpdateVisitedHistory: $url")
-                        url?.let { onChangeUrl(it) }
+                        url?.let { sendIntent(YoutubeDownloadIntent.OnChangeUrl(it)) }
                         super.doUpdateVisitedHistory(view, url, isReload)
                     }
                 }
@@ -101,9 +101,9 @@ fun YoutubeWebViewPreview() {
         YoutubeWebView(
             modifier = Modifier.fillMaxSize(),
             currentUrl = "",
-            onChangeUrl = {},
             setWebView = {},
             webView = null,
+            sendIntent = {},
         )
     }
 }

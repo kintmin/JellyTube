@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.main.MainScreenIntent
+import com.kintmin.presentation.ui.main.MainTabItem
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistDeleteDialog
@@ -47,6 +49,7 @@ fun PlaylistItemView(
     data: PlaylistItemUiState,
     isBasePlaylist: Boolean,
     sendIntent: (PlaylistIntent) -> Unit,
+    sendMainIntent: (MainScreenIntent) -> Unit,
 ) {
     var isDropDownExpanded by remember { mutableStateOf(false) }
     var isShowDialog by remember { mutableStateOf(false) }
@@ -143,7 +146,11 @@ fun PlaylistItemView(
                         text = { Text("추가하기") },
                         onClick = {
                             isDropDownExpanded = false
-                            sendIntent(PlaylistIntent.OnClickAddPlaylist(data, isBasePlaylist))
+                            if (isBasePlaylist) {
+                                sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search))
+                            } else {
+                                sendIntent(PlaylistIntent.OnClickAddPlaylist(data))
+                            }
                         }
                     )
                     if (!isBasePlaylist) {
@@ -170,6 +177,7 @@ fun PlaylistItemPreview() {
             PlaylistItemUiState.getMock(),
             isBasePlaylist = false,
             sendIntent = {},
+            sendMainIntent = {},
         )
     }
 }

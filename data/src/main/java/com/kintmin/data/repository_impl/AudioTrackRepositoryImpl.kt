@@ -66,12 +66,8 @@ class AudioTrackRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getPlaylistIdList(audioMediaId: Int): Result<List<Int>> {
-        return withContext(Dispatchers.IO) {
-            runCatching {
-                playlistTrackDao.getPlaylistIdList(audioMediaId)
-            }
-        }
+    override fun getPlaylistIdListFlow(audioMediaId: Int): Flow<List<Int>> {
+        return playlistTrackDao.getPlaylistIdListFlow(audioMediaId)
     }
 
     override suspend fun updateTrackSequence(playlistId: Int, audioMediaId: Int, newSequence: Int): Result<Unit> {
