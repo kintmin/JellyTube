@@ -10,7 +10,7 @@ interface AudioMediaRepository {
         name: String? = null,
         artist: String? = null,
         description: String? = null,
-        imageFileNameWithExt: String? = null,
+        imageFileFullPath: String? = null,
     ): Result<Unit>
 
     suspend fun deleteAudioMedia(id: Int): Result<Unit>

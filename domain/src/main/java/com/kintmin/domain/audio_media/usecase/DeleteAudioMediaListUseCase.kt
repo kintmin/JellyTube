@@ -4,9 +4,11 @@ import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistImageWhenUpdateTrackUseCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class DeleteAudioMediaListUseCase @Inject constructor(
@@ -15,7 +17,7 @@ class DeleteAudioMediaListUseCase @Inject constructor(
     private val updatePlaylistImageWhenUpdateTrackUseCase: UpdatePlaylistImageWhenUpdateTrackUseCase,
 ) {
     suspend operator fun invoke(playlistId: Int, idList: List<Int>): Result<Unit> = runCatching {
-        coroutineScope {
+        withContext(Dispatchers.IO) {
             idList.map { id ->
                 async { audioMediaRepository.deleteAudioMedia(id).getOrThrow() }
             }.awaitAll()

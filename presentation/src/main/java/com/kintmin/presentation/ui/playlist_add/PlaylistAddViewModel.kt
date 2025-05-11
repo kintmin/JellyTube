@@ -47,9 +47,9 @@ class PlaylistAddViewModel @Inject constructor(
         _checkedItemIdList,
         _searchText,
     ) { mediaList, checkedIds, searchText ->
-        mediaList.filter { it.audioMediaName.matchKorean(searchText) }.map { audioMedia ->
-            audioMedia.toPlaylistAddListItemUiState(
-                isChecked = audioMedia.audioMediaId in checkedIds
+        mediaList.filter { it.audioMedia.name.matchKorean(searchText) }.map { data ->
+            data.toPlaylistAddListItemUiState(
+                isChecked = data.audioMedia.id in checkedIds
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

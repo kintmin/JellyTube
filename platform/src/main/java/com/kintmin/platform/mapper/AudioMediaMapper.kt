@@ -3,19 +3,19 @@ package com.kintmin.platform.mapper
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
+import com.kintmin.domain.audio_media.model.AudioMedia
 import java.io.File
 
-internal fun PlaylistTrackAggregate.toMediaItem() = MediaItem.Builder()
-    .setMediaId(audioMedia.id.toString())
-    .setUri(audioMedia.audioFileFullPath)
+internal fun AudioMedia.toMediaItem() = MediaItem.Builder()
+    .setMediaId(id.toString())
+    .setUri(audioFileFullPath)
     .setMediaMetadata(
         MediaMetadata.Builder()
-            .setTitle(audioMedia.name)
-            .setDescription(audioMedia.description)
-            .setArtist(audioMedia.artist)
+            .setTitle(name)
+            .setDescription(description)
+            .setArtist(artist)
             .apply {
-                audioMedia.imageFileFullPath?.let {
+                imageFileFullPath?.let {
                     setArtworkUri(Uri.fromFile(File(it)))
                 }
             }

@@ -45,7 +45,7 @@ fun AudioMediaDetailScreen(
 
     AudioMediaDetailScreen(
         navigateToBack = navigateToBack,
-        data = ,
+        data = AudioMediaDetailUiState.getMock(),
     )
 }
 

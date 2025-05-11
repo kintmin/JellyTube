@@ -51,9 +51,9 @@ class PlaylistEditListViewModel @Inject constructor(
             fetchAudioMediaListFlowUseCase(playlistId),
             _checkedItemIdList
         ) { mediaList, checkedIds ->
-            mediaList.map { audioMedia ->
-                audioMedia.toPlaylistEditListItemUiState(
-                    isChecked = audioMedia.audioMediaId in checkedIds
+            mediaList.map { data ->
+                data.toPlaylistEditListItemUiState(
+                    isChecked = data.audioMedia.id in checkedIds
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

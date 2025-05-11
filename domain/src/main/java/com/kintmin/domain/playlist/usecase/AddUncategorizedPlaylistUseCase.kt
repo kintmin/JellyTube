@@ -2,9 +2,10 @@ package com.kintmin.domain.playlist.usecase
 
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.playlist.model.Playlist
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class AddUncategorizedPlaylistUseCase @Inject constructor(
@@ -13,7 +14,7 @@ class AddUncategorizedPlaylistUseCase @Inject constructor(
     private val updatePlaylistImageWhenUpdateTrackUseCase: UpdatePlaylistImageWhenUpdateTrackUseCase,
 ) {
     suspend operator fun invoke(audioMediaIdList: List<Int>): Result<Unit> = runCatching {
-        coroutineScope {
+        withContext(Dispatchers.IO) {
             val targetAudioMediaIdList = audioMediaIdList.map { audioMediaId ->
                 async {
                     val playlistIdList = audioTrackRepository.getPlaylistIdList(audioMediaId).getOrThrow()

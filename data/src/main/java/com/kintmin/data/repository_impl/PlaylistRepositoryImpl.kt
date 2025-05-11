@@ -59,17 +59,15 @@ class PlaylistRepositoryImpl @Inject constructor(
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
             runCatching {
-                val data = playlistDao.getPlaylistById(id)
                 playlistDao.updatePlaylist(
-                    data.copy(
-                        name = name ?: data.name,
-                        description = description ?: data.description,
-                        imageFileNameWithExt = imageFileFullPath?.let {
-                            fileManager.getFileNameWithExt(it).getOrThrow()
-                        } ?: data.imageFileNameWithExt,
-                        audioMediaCount = audioMediaCount ?: data.audioMediaCount,
-                        rawPlayTimeDuration = rawTotalDuration ?: data.rawPlayTimeDuration,
-                    )
+                    id = id,
+                    name = name,
+                    description = description,
+                    imageFileNameWithExt = imageFileFullPath?.let {
+                        fileManager.getFileNameWithExt(it).getOrThrow()
+                    },
+                    audioMediaCount = audioMediaCount,
+                    rawPlayTimeDuration = rawTotalDuration,
                 )
             }
         }

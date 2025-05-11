@@ -80,19 +80,18 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         name: String?,
         artist: String?,
         description: String?,
-        imageFileNameWithExt: String?
+        imageFileFullPath: String?
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
             runCatching {
-                val data = audioMediaDao.getDataById(id)
-
                 audioMediaDao.updateAudioMedia(
-                    data.copy(
-                        name = name ?: data.name,
-                        artist = artist ?: data.artist,
-                        description = description ?: data.description,
-                        imageFileNameWithExt = imageFileNameWithExt ?: data.imageFileNameWithExt,
-                    )
+                    id = id,
+                    name = name,
+                    artist = artist,
+                    description = description,
+                    imageFileNameWithExt = imageFileFullPath?.let {
+                        fileManager.getFileNameWithExt(it).getOrThrow()
+                    },
                 )
             }
         }

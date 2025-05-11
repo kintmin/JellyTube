@@ -17,6 +17,22 @@ class AudioTrackRepositoryImpl @Inject constructor(
     private val playlistTrackDao: PlaylistTrackDao,
     private val fileManager: FileManager,
 ) : AudioTrackRepository {
+    override suspend fun addAudioTrack(playlistId: Int, audioMediaId: Int): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val sequence = playlistTrackDao.getNextSequence(playlistId)
+
+                playlistTrackDao.insertPlaylistTrack(
+                    PlaylistTrackEntity(
+                        playlistId = playlistId,
+                        audioMediaId = audioMediaId,
+                        sequence = sequence,
+                        rawCreatedTime = Instant.now().toEpochMilli(),
+                    )
+                )
+            }
+        }
+    }
 
     override suspend fun addAudioTrackList(playlistId: Int, audioMediaIdList: List<Int>): Result<Unit> {
         return withContext(Dispatchers.IO) {

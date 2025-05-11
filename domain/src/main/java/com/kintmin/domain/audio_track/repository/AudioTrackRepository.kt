@@ -4,6 +4,7 @@ import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import kotlinx.coroutines.flow.Flow
 
 interface AudioTrackRepository {
+    suspend fun addAudioTrack(playlistId: Int, audioMediaId: Int): Result<Unit>
     suspend fun addAudioTrackList(playlistId: Int, audioMediaIdList: List<Int>): Result<Unit>
 
     fun getPlaylistTrackAggregateFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackAggregate>
