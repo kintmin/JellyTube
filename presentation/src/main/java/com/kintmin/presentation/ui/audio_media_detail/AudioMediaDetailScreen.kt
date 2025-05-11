@@ -125,47 +125,48 @@ fun AudioMediaDetailScreen(
                 .background(color = MaterialTheme.colorScheme.background)
         ) {
             LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp, vertical = 20.dp),
+                modifier = Modifier.weight(1f)
             ) {
                 item(key = -1) {
-                    Column {
+                    Column(modifier = Modifier.padding(top = 20.dp)) {
                         Text(
-                            modifier = Modifier.padding(bottom = 8.dp),
+                            modifier = Modifier.padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
                             text = data.audioMediaName,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             lineHeight = 24.sp,
                         )
                         Text(
-                            modifier = Modifier.padding(bottom = 4.dp),
+                            modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
                             text = "아티스트: ${data.artist}",
                             fontSize = 16.sp,
                             maxLines = 1,
                             lineHeight = 1.sp,
                         )
                         Text(
-                            modifier = Modifier.padding(bottom = 4.dp),
+                            modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
                             text = "재생 시간: ${data.playTime}",
                             fontSize = 16.sp,
                         )
                         Text(
-                            modifier = Modifier.padding(bottom = 4.dp),
+                            modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
                             text = "생성 시각: ${data.audioMediaCreationTime}",
                             fontSize = 16.sp,
                         )
                         Text(
-                            modifier = Modifier.clickable {
-                                navigateToMainSearchTab(data.source)
-                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    navigateToMainSearchTab(data.source)
+                                }
+                                .padding(horizontal = 16.dp),
                             text = "출처: ${data.source}",
                             fontSize = 16.sp,
                         )
 
                         Spacer(
                             modifier = Modifier
-                                .padding(vertical = 20.dp)
+                                .padding(vertical = 20.dp, horizontal = 16.dp)
                                 .fillMaxWidth()
                                 .height(0.5.dp)
                                 .clip(RoundedCornerShape(8.dp))
@@ -173,14 +174,14 @@ fun AudioMediaDetailScreen(
                         )
 
                         Text(
-                            modifier = Modifier,
+                            modifier = Modifier.padding(horizontal = 16.dp),
                             text = data.audioMediaDescription,
                             fontSize = 16.sp,
                         )
 
                         Spacer(
                             modifier = Modifier
-                                .padding(vertical = 20.dp)
+                                .padding(vertical = 20.dp, horizontal = 16.dp)
                                 .fillMaxWidth()
                                 .height(0.5.dp)
                                 .clip(RoundedCornerShape(8.dp))
@@ -188,7 +189,7 @@ fun AudioMediaDetailScreen(
                         )
 
                         Text(
-                            modifier = Modifier.padding(bottom = 16.dp),
+                            modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
                             text = "추가된 플레이리스트 목록",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
@@ -201,12 +202,13 @@ fun AudioMediaDetailScreen(
                     key = { index -> data.playlists[index].playlistId }
                 ) { index ->
                     Column(
-                        modifier = Modifier.clickable {
-                            navigateToPlaylistDetailScreen(data.playlists[index].playlistId)
-                        }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                navigateToPlaylistDetailScreen(data.playlists[index].playlistId)
+                            }.padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
                         Text(
-                            modifier = Modifier.padding(),
                             text = data.playlists[index].playlistName,
                             fontSize = 20.sp,
                         )
@@ -216,7 +218,7 @@ fun AudioMediaDetailScreen(
                             fontSize = 15.sp,
                         )
                         Text(
-                            modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
+                            modifier = Modifier.padding(top = 4.dp),
                             text = "플레이리스트에 추가된 시각: ${data.playlists[index].playlistAddedTime}",
                             fontSize = 15.sp,
                         )
