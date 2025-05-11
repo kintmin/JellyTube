@@ -27,9 +27,6 @@ class DownloadAudioMediaUseCase @Inject constructor(
         }.getOrElse {
             audioMediaRepository.addAudioMedia(downloadUrl).onSuccess { audioMedia ->
                 withContext(Dispatchers.IO) {
-
-                    log.d("DownloadAudioMediaUseCase", "1")
-
                     runCatching {
                         listOf(
                             async { audioTrackRepository.addAudioTrack(Playlist.TOTAL, audioMedia.id).getOrThrow() },
@@ -39,8 +36,6 @@ class DownloadAudioMediaUseCase @Inject constructor(
                         log.d("DownloadAudioMediaUseCase", "DB 추가 실패")
                     }.getOrThrow()
 
-                    log.d("DownloadAudioMediaUseCase", "2")
-
                     runCatching {
                         listOf(
                             async { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(Playlist.TOTAL) },
@@ -48,8 +43,6 @@ class DownloadAudioMediaUseCase @Inject constructor(
                             async { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(Playlist.UNCATEGORIZED) },
                             async { updatePlaylistImageWhenUpdateTrackUseCase(Playlist.UNCATEGORIZED) },
                         ).awaitAll()
-                    }.onSuccess {
-                        log.d("DownloadAudioMediaUseCase", "3")
                     }.onFailure {
                         log.d("DownloadAudioMediaUseCase", "DB 업데이트 실패")
                     }.getOrThrow()
