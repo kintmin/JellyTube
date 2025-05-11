@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
+import com.kintmin.presentation.ui.audio_media_detail.navigation.audioMediaDetailScreen
 import com.kintmin.presentation.ui.main.MainTabItem
 import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylistDetailScreen
 import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
@@ -51,6 +52,10 @@ fun MainNavHost(
         )
         playlistAdd(
             navigateToBack = { navController.popBackStack() }
+        )
+        audioMediaDetailScreen(
+            navigateToBack = { navController.popBackStack() },
+            navigationToAudioMediaEditScreen = {},
         )
     }
 }

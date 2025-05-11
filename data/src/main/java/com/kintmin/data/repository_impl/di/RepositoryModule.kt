@@ -8,11 +8,13 @@ import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.data.repository_impl.AudioMediaRepositoryImpl
-import com.kintmin.data.repository_impl.PlaybackRepositoryImpl
+import com.kintmin.data.repository_impl.AudioPlaySettingRepositoryImpl
+import com.kintmin.data.repository_impl.AudioTrackRepositoryImpl
 import com.kintmin.data.repository_impl.PlaylistRepositoryImpl
-import com.kintmin.domain.repository.AudioMediaRepository
-import com.kintmin.domain.repository.PlaybackRepository
-import com.kintmin.domain.repository.PlaylistRepository
+import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingRepository
+import com.kintmin.domain.audio_track.repository.AudioTrackRepository
+import com.kintmin.domain.playlist.repository.PlaylistRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -56,13 +58,23 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun providePlaybackRepository(
-        datastoreUtil: DatastoreUtil,
+    fun provideAudioTrackRepository(
+        fileManager: FileManager,
         playlistTrackDao: PlaylistTrackDao,
-    ): PlaybackRepository {
-        return PlaybackRepositoryImpl(
-            datastoreUtil = datastoreUtil,
+    ): AudioTrackRepository {
+        return AudioTrackRepositoryImpl(
+            fileManager = fileManager,
             playlistTrackDao = playlistTrackDao,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideAudioPlaySettingRepository(
+        datastoreUtil: DatastoreUtil,
+    ): AudioPlaySettingRepository {
+        return AudioPlaySettingRepositoryImpl(
+            datastoreUtil = datastoreUtil,
         )
     }
 }

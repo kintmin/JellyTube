@@ -3,7 +3,7 @@ package com.kintmin.presentation.ui.playlist_detail.list
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import com.kintmin.domain.model.AudioMedia
+import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import java.io.File
 import kotlin.time.Duration
@@ -40,30 +40,13 @@ data class PlaylistDetailListItemUiState(
     }
 }
 
-internal fun AudioMedia.toPlaylistDetailListItemUiState() = PlaylistDetailListItemUiState(
-    id = id,
-    mediaName = mediaName,
-    artist = artist,
-    audioDuration = audioDuration,
-    description = description,
-    audioFileFullPath = audioFileFullPath,
-    imageFileFullPath = imageFileFullPath,
-    sequence = audioMediaSequence,
+internal fun PlaylistTrackAggregate.toPlaylistDetailListItemUiState() = PlaylistDetailListItemUiState(
+    id = audioMedia.id,
+    mediaName = audioMedia.name,
+    artist = audioMedia.artist,
+    audioDuration = audioMedia.audioDuration,
+    description = audioMedia.description,
+    audioFileFullPath = audioMedia.audioFileFullPath,
+    imageFileFullPath = audioMedia.imageFileFullPath,
+    sequence = audioTrack.trackSequence,
 )
-
-internal fun PlaylistDetailListItemUiState.toMediaItem() = MediaItem.Builder()
-    .setMediaId(id.toString())
-    .setUri(audioFileFullPath)
-    .setMediaMetadata(
-        MediaMetadata.Builder()
-            .setTitle(mediaName)
-            .setDescription(description)
-            .setArtist(artist)
-            .apply {
-                imageFileFullPath?.let {
-                    setArtworkUri(Uri.fromFile(File(it)))
-                }
-            }
-            .build()
-    )
-    .build()

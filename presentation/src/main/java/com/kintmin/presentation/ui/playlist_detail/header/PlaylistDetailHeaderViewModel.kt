@@ -4,12 +4,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.kintmin.domain.model.Playlist
-import com.kintmin.domain.usecase.FetchIsPlaybackRepeatingFlowUseCase
-import com.kintmin.domain.usecase.FetchIsPlaybackShufflingFlowUseCase
-import com.kintmin.domain.usecase.FetchPlaylistFlowUseCase
-import com.kintmin.domain.usecase.UpdateIsPlaybackShufflingUseCase
-import com.kintmin.domain.usecase.UpdatePlaybackRepeatingUseCase
+import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlowUseCase
+import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
+import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
+import com.kintmin.domain.audio_play_setting.usecase.UpdateIsPlaybackShufflingUseCase
+import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseCase
+import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
@@ -40,7 +40,7 @@ class PlaylistDetailHeaderViewModel @Inject constructor(
     private val _eventFlow = MutableSharedFlow<PlaylistDetailHeaderEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
-    val isBasePlaylist get() = playlistId == Playlist.TOTAL || playlistId == Playlist.UNCATEGORIZED
+    val isBasePlaylist get() = Playlist.isBasePlaylist(playlistId)
 
     val headerDataFlow: StateFlow<PlaylistDetailHeaderUiState> =
         combine(

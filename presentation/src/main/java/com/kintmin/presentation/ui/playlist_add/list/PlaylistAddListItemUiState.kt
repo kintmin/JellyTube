@@ -1,6 +1,6 @@
 package com.kintmin.presentation.ui.playlist_add.list
 
-import com.kintmin.domain.model.AudioMedia
+import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -34,12 +34,12 @@ data class PlaylistAddListItemUiState(
     }
 }
 
-internal fun AudioMedia.toPlaylistAddListItemUiState(isChecked: Boolean) = PlaylistAddListItemUiState(
-    id = id,
-    mediaName = mediaName,
-    artist = artist,
-    audioDuration = audioDuration,
-    description = description,
-    imageFileFullPath = imageFileFullPath,
+internal fun PlaylistTrackAggregate.toPlaylistAddListItemUiState(isChecked: Boolean) = PlaylistAddListItemUiState(
+    id = audioMedia.id,
+    mediaName = audioMedia.name,
+    artist = audioMedia.artist,
+    audioDuration = audioMedia.audioDuration,
+    description = audioMedia.description,
+    imageFileFullPath = audioMedia.imageFileFullPath,
     isChecked = isChecked,
 )

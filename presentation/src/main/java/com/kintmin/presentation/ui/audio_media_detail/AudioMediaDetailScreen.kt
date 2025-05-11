@@ -39,6 +39,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 @Composable
 fun AudioMediaDetailScreen(
     navigateToBack: () -> Unit,
+    navigationToAudioMediaEditScreen: () -> Unit,
 ) {
     val mainViewModel = hiltViewModel<AudioMediaDetailViewModel>()
 

@@ -8,7 +8,7 @@ import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
+import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.platform.mapper.toMediaItem
 import com.kintmin.platform.service.PlaybackService
 import kotlinx.coroutines.Job

@@ -4,9 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.kintmin.domain.usecase.DeleteAudioMediaUseCase
-import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
-import com.kintmin.domain.usecase.UpdatePlaybackSequenceUseCase
+import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
+import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import dagger.hilt.android.lifecycle.HiltViewModel

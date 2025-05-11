@@ -15,7 +15,7 @@ import com.kintmin.data.local_db.model.PlaylistTrackEntity
         PlaylistEntity::class,
         PlaylistTrackEntity::class,
     ],
-    exportSchema = false,    // 앱 출시 시 변경 필요
+    exportSchema = false,    // TODO: 앱 출시 시 변경 필요
     version = 1,
     autoMigrations = [],
 )

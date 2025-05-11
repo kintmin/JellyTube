@@ -1,7 +1,7 @@
 package com.kintmin.platform.di
 
 import android.content.Context
-import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
+import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.platform.notification.PushNotificationUtil
 import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.platform.util.MediaControllerManagerImpl

@@ -12,9 +12,6 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PlaylistTrackDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPlaylistTrack(entity: PlaylistTrackEntity)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylistTrackList(entities: List<PlaylistTrackEntity>)
 
     @Transaction
@@ -23,7 +20,7 @@ interface PlaylistTrackDao {
 
     @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
-    suspend fun getPlaylistTrackFull(playlistId: Int, audioMediaId: Int): PlaylistTrackFullDto
+    fun getPlaylistTrackFullFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackFullDto>
 
     @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId ORDER BY sequence LIMIT 1")
@@ -53,6 +50,9 @@ WHERE playlistId = :playlistId
 
     @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
     suspend fun deletePlaylistTrackMedia(playlistId: Int, audioMediaId: Int)
+
+    @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId IN (:audioMediaIdList)")
+    suspend fun deletePlaylistTracks(playlistId: Int, audioMediaIdList: List<Int>)
 
     @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     suspend fun deletePlaylistTrack(playlistId: Int)

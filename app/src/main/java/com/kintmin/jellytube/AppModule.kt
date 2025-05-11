@@ -1,7 +1,7 @@
 package com.kintmin.jellytube
 
 import android.content.Context
-import com.kintmin.domain.platform_api.Log
+import com.kintmin.domain.common.platform_api.Log
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

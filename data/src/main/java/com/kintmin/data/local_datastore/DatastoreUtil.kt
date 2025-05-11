@@ -7,7 +7,9 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import com.kintmin.data.local_datastore.preference_key.BooleanPreferenceKey
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 class DatastoreUtil(
     val context: Context,
@@ -18,9 +20,13 @@ class DatastoreUtil(
 
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = DATASTORE_NAME)
 
-    suspend fun updateBooleanData(key: BooleanPreferenceKey, newData: Boolean): Result<Unit> = runCatching {
-        context.dataStore.edit { settings ->
-            settings[booleanPreferencesKey(key.name)] = newData
+    suspend fun updateBooleanData(key: BooleanPreferenceKey, newData: Boolean): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching<Unit> {
+                context.dataStore.edit { settings ->
+                    settings[booleanPreferencesKey(key.name)] = newData
+                }
+            }
         }
     }
 

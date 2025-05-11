@@ -4,14 +4,14 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.kintmin.domain.model.Playlist
-import com.kintmin.domain.usecase.DeleteAudioMediaListFromPlaylistUseCase
-import com.kintmin.domain.usecase.DeleteAudioMediaListUseCase
-import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
-import com.kintmin.domain.usecase.FetchPlaylistFlowUseCase
-import com.kintmin.domain.usecase.UpdatePlaybackSequenceUseCase
-import com.kintmin.domain.usecase.UpdatePlaylistDescriptionUseCase
-import com.kintmin.domain.usecase.UpdatePlaylistTitleUseCase
+import com.kintmin.domain.audio_track.usecase.DeleteAudioTrackListUseCase
+import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaListUseCase
+import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
+import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
+import com.kintmin.domain.audio_track.usecase.UpdateTrackSequenceUseCase
+import com.kintmin.domain.playlist.model.Playlist
+import com.kintmin.domain.playlist.usecase.UpdatePlaylistDescriptionUseCase
+import com.kintmin.domain.playlist.usecase.UpdatePlaylistTitleUseCase
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderUiState
 import com.kintmin.presentation.ui.playlist_edit.header.toPlaylistEditHeaderUiState
@@ -34,15 +34,15 @@ class PlaylistEditListViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
     fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
-    private val updatePlaybackSequenceUseCase: UpdatePlaybackSequenceUseCase,
+    private val updateTrackSequenceUseCase: UpdateTrackSequenceUseCase,
     private val updatePlaylistDescriptionUseCase: UpdatePlaylistDescriptionUseCase,
     private val updatePlaylistTitleUseCase: UpdatePlaylistTitleUseCase,
     private val deleteAudioMediaListUseCase: DeleteAudioMediaListUseCase,
-    private val deleteAudioMediaListFromPlaylistUseCase: DeleteAudioMediaListFromPlaylistUseCase,
+    private val deleteAudioTrackListUseCase: DeleteAudioTrackListUseCase,
 ) : ViewModel() {
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
-    val isBasePlaylist = playlistId == Playlist.TOTAL || playlistId == Playlist.UNCATEGORIZED
+    val isBasePlaylist = Playlist.isBasePlaylist(playlistId)
 
     private val _checkedItemIdList = MutableStateFlow(listOf<Int>())
 
@@ -53,7 +53,7 @@ class PlaylistEditListViewModel @Inject constructor(
         ) { mediaList, checkedIds ->
             mediaList.map { audioMedia ->
                 audioMedia.toPlaylistEditListItemUiState(
-                    isChecked = audioMedia.id in checkedIds
+                    isChecked = audioMedia.audioMediaId in checkedIds
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -92,7 +92,7 @@ class PlaylistEditListViewModel @Inject constructor(
 
     private fun deleteAudioMediaListInPlaylist() {
         viewModelScope.launch {
-            deleteAudioMediaListFromPlaylistUseCase(playlistId, _checkedItemIdList.value)
+            deleteAudioTrackListUseCase(playlistId, _checkedItemIdList.value)
             _checkedItemIdList.update { emptyList() }
         }
     }
@@ -132,7 +132,7 @@ class PlaylistEditListViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            updatePlaybackSequenceUseCase(playlistId, reorderData.id, newSequence)
+            updateTrackSequenceUseCase(playlistId, reorderData.id, newSequence)
         }
     }
 

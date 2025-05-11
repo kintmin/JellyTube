@@ -1,44 +1,23 @@
 package com.kintmin.data.local_db.mapper
 
 import com.kintmin.data.local_db.model.AudioMediaEntity
-import com.kintmin.data.local_db.model.PlaylistTrackEntity
 import com.kintmin.data.local_file.FileManager
-import com.kintmin.domain.extension.toLocalDateTime
-import com.kintmin.domain.model.AudioMedia
-import com.kintmin.domain.model.Playlist
+import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.domain.common.extension.toLocalDateTime
 import kotlin.time.Duration.Companion.seconds
 
-internal object AudioMediaMapper {
-    /**
-     * Result.failure: 확장자명이 잘못되거나 없음, 또는 기본 폴더가 없음
-     */
-    fun toDomain(
-        fileManager: FileManager,
-        audioMediaEntity: AudioMediaEntity,
-        playlistTrackEntity: PlaylistTrackEntity? = null,
-    ): Result<AudioMedia> = runCatching {
-        val audioFileFullPath = fileManager.getFullPathWithExt(
-            fileNameWithExt = audioMediaEntity.audioFileNameWithExt,
-        ).getOrThrow()
-
-        val imageFileFullPath = audioMediaEntity.imageFileNameWithExt?.let {
-            fileManager.getFullPathWithExt(
-                fileNameWithExt = it,
-            ).getOrNull()
-        }
-
-        AudioMedia(
-            id = audioMediaEntity.id,
-            playlistId = playlistTrackEntity?.playlistId ?: Playlist.TOTAL,
-            audioMediaSequence = playlistTrackEntity?.sequence ?: 0,
-            source = audioMediaEntity.source,
-            mediaName = audioMediaEntity.mediaName,
-            artist = audioMediaEntity.artist,
-            description = audioMediaEntity.description,
-            audioDuration = audioMediaEntity.rawAudioDurationSeconds?.seconds,
-            createdTime = audioMediaEntity.rawCreatedTime.toLocalDateTime(),
-            audioFileFullPath = audioFileFullPath,
-            imageFileFullPath = imageFileFullPath,
-        )
-    }
+internal fun AudioMediaEntity.toDomain(fileManager: FileManager) = runCatching {
+    AudioMedia(
+        id = id,
+        source = source,
+        name = name,
+        artist = artist,
+        description = description,
+        audioDuration = rawAudioDurationSeconds?.seconds,
+        audioFileFullPath = fileManager.getFullPathWithExt(fileNameWithExt = audioFileNameWithExt).getOrThrow(),
+        imageFileFullPath = imageFileNameWithExt?.let {
+            fileManager.getFullPathWithExt(fileNameWithExt = it).getOrThrow()
+        },
+        createdTime = rawCreatedTime.toLocalDateTime(),
+    )
 }
