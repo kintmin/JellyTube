@@ -6,6 +6,7 @@ import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
 import com.kintmin.presentation.ui.audio_media_detail.navigation.audioMediaDetailScreen
+import com.kintmin.presentation.ui.audio_media_detail.navigation.navigateToAudioMediaDetailScreen
 import com.kintmin.presentation.ui.main.MainTabItem
 import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylistDetailScreen
 import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
@@ -45,6 +46,9 @@ fun MainNavHost(
             },
             navigateToPlaylistEditScreen = { playlistId ->
                 navController.navigateToPlaylistEditScreen(playlistId, navOptions)
+            },
+            navigateToAudioDetailScreen = { playlistId, audioMediaId ->
+                navController.navigateToAudioMediaDetailScreen(playlistId, audioMediaId, navOptions)
             }
         )
         playlistEdit(

@@ -38,13 +38,7 @@ class PlaylistDetailListViewModel @Inject constructor(
             is PlaylistDetailListIntent.OnClickAudioItem -> playAudioMediaById(intent.data.id)
             is PlaylistDetailListIntent.OnClickDeleteAudioMediaFile -> deleteAudioMediaFile(intent.data.id)
             is PlaylistDetailListIntent.OnClickShowDetailAudioMedia -> {
-                triggerEvent(PlaylistDetailListEvent.NavigateToAudioDetailScreen)
-                // 타이틀 수정
-                // 설명 수정
-                // 아티스트 수정
-                // 이미지 수정
-                // 플레이리스트 수정 (다수 선택 가능)
-                // 음원 제거
+                triggerEvent(PlaylistDetailListEvent.NavigateToAudioDetailScreen(intent.data.id))
             }
         }
     }
