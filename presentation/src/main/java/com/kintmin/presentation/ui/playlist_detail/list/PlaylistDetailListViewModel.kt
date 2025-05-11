@@ -4,9 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.kintmin.domain.usecase.DeleteAudioMediaUseCase
-import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
-import com.kintmin.domain.usecase.UpdatePlaybackSequenceUseCase
+import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
+import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,13 +38,7 @@ class PlaylistDetailListViewModel @Inject constructor(
             is PlaylistDetailListIntent.OnClickAudioItem -> playAudioMediaById(intent.data.id)
             is PlaylistDetailListIntent.OnClickDeleteAudioMediaFile -> deleteAudioMediaFile(intent.data.id)
             is PlaylistDetailListIntent.OnClickShowDetailAudioMedia -> {
-                triggerEvent(PlaylistDetailListEvent.NavigateToAudioDetailScreen)
-                // 타이틀 수정
-                // 설명 수정
-                // 아티스트 수정
-                // 이미지 수정
-                // 플레이리스트 수정 (다수 선택 가능)
-                // 음원 제거
+                triggerEvent(PlaylistDetailListEvent.NavigateToAudioDetailScreen(intent.data.id))
             }
         }
     }

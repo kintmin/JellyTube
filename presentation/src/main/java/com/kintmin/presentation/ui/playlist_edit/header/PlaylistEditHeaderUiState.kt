@@ -1,6 +1,6 @@
 package com.kintmin.presentation.ui.playlist_edit.header
 
-import com.kintmin.domain.model.Playlist
+import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import kotlin.time.Duration.Companion.seconds
 

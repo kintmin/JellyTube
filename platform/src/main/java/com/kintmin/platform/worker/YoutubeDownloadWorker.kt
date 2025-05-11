@@ -7,8 +7,8 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
-import com.kintmin.domain.model.Playlist
-import com.kintmin.domain.usecase.DownloadYoutubeMediaUseCase
+import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
+import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.platform.mapper.toMediaItem
 import com.kintmin.platform.notification.NotificationData
 import com.kintmin.platform.notification.PushNotificationUtil
@@ -22,7 +22,7 @@ import kotlinx.coroutines.withContext
 class YoutubeDownloadWorker @AssistedInject constructor(
     @Assisted private val appContext: Context,
     @Assisted workerParams: WorkerParameters,
-    private val downloadYoutubeMediaUseCase: DownloadYoutubeMediaUseCase,
+    private val downloadAudioMediaUseCase: DownloadAudioMediaUseCase,
     private val pushNotificationUtil: PushNotificationUtil,
     private val mediaControllerManager: MediaControllerManager,
 ) : CoroutineWorker(appContext, workerParams) {
@@ -53,7 +53,7 @@ class YoutubeDownloadWorker @AssistedInject constructor(
         val url = inputData.getString(INPUT_DATA_URL) ?: return Result.failure()
         pushNotificationUtil.sendNotification(NotificationData.Download(1, 0))
 
-        downloadYoutubeMediaUseCase(url).onSuccess { audioMedia ->
+        downloadAudioMediaUseCase(url).onSuccess { audioMedia ->
             pushNotificationUtil.sendNotification(NotificationData.Download(1, 1))
             pushNotificationUtil.cancelNotification(NotificationData.Download())
             pushNotificationUtil.sendNotification(NotificationData.DownloadResult("완료되었습니다."))

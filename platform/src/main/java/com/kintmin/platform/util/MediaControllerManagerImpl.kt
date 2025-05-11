@@ -8,9 +8,10 @@ import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.kintmin.domain.usecase.FetchAudioMediaListFlowUseCase
+import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.platform.mapper.toMediaItem
 import com.kintmin.platform.service.PlaybackService
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -18,11 +19,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class MediaControllerManagerImpl @Inject constructor(
     private val fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
-): MediaControllerManager{
+) : MediaControllerManager {
     private val mainScope = MainScope()
 
     private var fetchDataJob: Job? = null
@@ -130,8 +132,10 @@ class MediaControllerManagerImpl @Inject constructor(
     private suspend fun resetMediaItemList(playlistId: Int) = runCatching {
         currentPlaylistId.update { playlistId }
 
-        val mediaItemList = fetchAudioMediaListFlowUseCase(playlistId).first().map {
-            it.toMediaItem()
+        val mediaItemList = withContext(Dispatchers.IO) {
+            fetchAudioMediaListFlowUseCase(playlistId).first().map {
+                it.audioMedia.toMediaItem()
+            }
         }
 
         if (mediaController.isPlaying) {

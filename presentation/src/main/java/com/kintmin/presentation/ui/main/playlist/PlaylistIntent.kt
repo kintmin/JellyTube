@@ -5,4 +5,5 @@ sealed interface PlaylistIntent {
     data class MakeNewPlaylist(val title: String) : PlaylistIntent
     data class OnClickModifyPlaylist(val data: PlaylistItemUiState) : PlaylistIntent
     data class OnClickDeletePlaylist(val data: PlaylistItemUiState) : PlaylistIntent
+    data class OnClickAddPlaylist(val data: PlaylistItemUiState) : PlaylistIntent
 }

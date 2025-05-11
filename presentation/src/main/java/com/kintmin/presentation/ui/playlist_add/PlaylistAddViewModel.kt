@@ -4,8 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.kintmin.domain.usecase.AddAudioMediaListToPlaylistUseCase
-import com.kintmin.domain.usecase.FetchAudioMediaListToSearchFlowUseCase
+import com.kintmin.domain.audio_track.usecase.AddAudioMediaListToPlaylistUseCase
+import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListToAddTrackFlowUseCase
 import com.kintmin.presentation.extension.matchKorean
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemUiState
 import com.kintmin.presentation.ui.playlist_add.list.toPlaylistAddListItemUiState
@@ -28,7 +28,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PlaylistAddViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    fetchAudioMediaListFlowUseCase: FetchAudioMediaListToSearchFlowUseCase,
+    fetchAudioMediaListFlowUseCase: FetchAudioMediaListToAddTrackFlowUseCase,
     private val addAudioMediaListToPlaylistUseCase: AddAudioMediaListToPlaylistUseCase,
 ) : ViewModel() {
 
@@ -47,9 +47,9 @@ class PlaylistAddViewModel @Inject constructor(
         _checkedItemIdList,
         _searchText,
     ) { mediaList, checkedIds, searchText ->
-        mediaList.filter { it.mediaName.matchKorean(searchText) }.map { audioMedia ->
-            audioMedia.toPlaylistAddListItemUiState(
-                isChecked = audioMedia.id in checkedIds
+        mediaList.filter { it.audioMedia.name.matchKorean(searchText) }.map { data ->
+            data.toPlaylistAddListItemUiState(
+                isChecked = data.audioMedia.id in checkedIds
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

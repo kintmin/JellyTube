@@ -23,7 +23,7 @@ interface PlaylistTrackDao {
 
     @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
-    suspend fun getPlaylistTrackFull(playlistId: Int, audioMediaId: Int): PlaylistTrackFullDto
+    fun getPlaylistTrackFullFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackFullDto>
 
     @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId ORDER BY sequence LIMIT 1")
@@ -33,7 +33,7 @@ interface PlaylistTrackDao {
     suspend fun getAudioMediaIdList(playlistId: Int): List<Int>
 
     @Query("SELECT playlistId FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
-    suspend fun getPlaylistIdList(audioMediaId: Int): List<Int>
+    fun getPlaylistIdListFlow(audioMediaId: Int): Flow<List<Int>>
 
     @Query("SELECT COALESCE(MAX(sequence), 0) + 1 FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     suspend fun getNextSequence(playlistId: Int): Int
@@ -53,6 +53,9 @@ WHERE playlistId = :playlistId
 
     @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
     suspend fun deletePlaylistTrackMedia(playlistId: Int, audioMediaId: Int)
+
+    @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId IN (:audioMediaIdList)")
+    suspend fun deletePlaylistTracks(playlistId: Int, audioMediaIdList: List<Int>)
 
     @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     suspend fun deletePlaylistTrack(playlistId: Int)

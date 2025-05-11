@@ -1,6 +1,6 @@
 package com.kintmin.presentation.ui.main.playlist
 
-import com.kintmin.domain.model.Playlist
+import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -15,6 +15,7 @@ data class PlaylistItemUiState(
 ) {
     val durationString: String get() = "재생시간: ${playlistDuration.to_hh_colon_mm_colon_ss()}"
     val audioMediaCountString: String get() = "음원수: $audioMediaCount"
+    val isBasePlaylist: Boolean get() = Playlist.isBasePlaylist(id)
 
     companion object {
         fun getMock(id: Int = 0): PlaylistItemUiState {

@@ -3,7 +3,7 @@ package com.kintmin.platform.mapper
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import com.kintmin.domain.model.AudioMedia
+import com.kintmin.domain.audio_media.model.AudioMedia
 import java.io.File
 
 internal fun AudioMedia.toMediaItem() = MediaItem.Builder()
@@ -11,7 +11,7 @@ internal fun AudioMedia.toMediaItem() = MediaItem.Builder()
     .setUri(audioFileFullPath)
     .setMediaMetadata(
         MediaMetadata.Builder()
-            .setTitle(mediaName)
+            .setTitle(name)
             .setDescription(description)
             .setArtist(artist)
             .apply {

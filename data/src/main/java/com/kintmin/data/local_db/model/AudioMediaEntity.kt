@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class AudioMediaEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val source: String,
-    val mediaName: String,
+    val name: String,
     val artist: String,
     val description: String,
     val rawAudioDurationSeconds: Long? = null,

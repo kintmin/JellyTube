@@ -5,10 +5,8 @@ import com.kintmin.data.local_db.dao.PlaylistTrackDao
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_file.FileManager
-import com.kintmin.domain.extension.toLocalDateTime
-import com.kintmin.domain.extension.toMillis
-import com.kintmin.domain.model.Playlist
-import com.kintmin.domain.repository.PlaylistRepository
+import com.kintmin.domain.playlist.model.Playlist
+import com.kintmin.domain.playlist.repository.PlaylistRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -37,55 +35,40 @@ class PlaylistRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getPlaylistListFlow(): Flow<List<Playlist>> {
+    override fun getAllPlaylistFlow(): Flow<List<Playlist>> {
         return playlistDao.getPlaylistListFlow().map { playlistList ->
             playlistList.map {
-                it.toDomain(fileManager)
+                it.toDomain(fileManager).getOrThrow()
             }
         }
     }
 
     override fun getPlaylistFlow(playlistId: Int): Flow<Playlist> {
         return playlistDao.getPlaylistFlow(playlistId).map { playlist ->
-            playlist.toDomain(fileManager)
+            playlist.toDomain(fileManager).getOrThrow()
         }
     }
 
-    override suspend fun getPlaylistById(playlistId: Int): Result<Playlist> {
+    override suspend fun updatePlaylist(
+        id: Int,
+        name: String?,
+        description: String?,
+        imageFileFullPath: String?,
+        audioMediaCount: Int?,
+        rawTotalDuration: Long?,
+    ): Result<Unit> {
         return withContext(Dispatchers.IO) {
             runCatching {
-                playlistDao.getPlaylistById(playlistId).toDomain(fileManager)
-            }
-        }
-    }
-
-    override suspend fun updatePlaylistName(id: Int, newName: String): Result<Unit> =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                playlistDao.updatePlaylistName(id, newName)
-            }
-        }
-
-
-    override suspend fun updatePlaylistDescription(id: Int, newDescription: String): Result<Unit> =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                playlistDao.updatePlaylistDescription(id, newDescription)
-            }
-        }
-
-    override suspend fun updatePlaylistPlayback(id: Int, mediaCount: Int, totalDuration: Long): Result<Unit> {
-        return withContext(Dispatchers.IO) {
-            kotlin.runCatching {
-                playlistDao.updatePlaylistPlayback(id, mediaCount, totalDuration)
-            }
-        }
-    }
-
-    override suspend fun updatePlaylistImage(id: Int, imageFileNameWithExt: String?): Result<Unit> {
-        return withContext(Dispatchers.IO) {
-            kotlin.runCatching {
-                playlistDao.updatePlaylistImage(id, imageFileNameWithExt)
+                playlistDao.updatePlaylist(
+                    id = id,
+                    name = name,
+                    description = description,
+                    imageFileNameWithExt = imageFileFullPath?.let {
+                        fileManager.getFileNameWithExt(it).getOrThrow()
+                    },
+                    audioMediaCount = audioMediaCount,
+                    rawPlayTimeDuration = rawTotalDuration,
+                )
             }
         }
     }

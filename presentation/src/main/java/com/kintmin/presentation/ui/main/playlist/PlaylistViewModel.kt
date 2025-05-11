@@ -2,9 +2,9 @@ package com.kintmin.presentation.ui.main.playlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kintmin.domain.usecase.AddNewPlaylistUseCase
-import com.kintmin.domain.usecase.DeletePlaylistUseCase
-import com.kintmin.domain.usecase.FetchPlaylistListFlowUseCase
+import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
+import com.kintmin.domain.playlist.usecase.DeletePlaylistUseCase
+import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,7 +17,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlaylistViewModel @Inject constructor(
-    fetchPlaylistListFlowUseCase: FetchPlaylistListFlowUseCase,
+    fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
     private val addNewPlaylistUseCase: AddNewPlaylistUseCase,
     private val deletePlaylistUseCase: DeletePlaylistUseCase,
 ) : ViewModel() {
@@ -25,7 +25,7 @@ class PlaylistViewModel @Inject constructor(
     private val _eventFlow = MutableSharedFlow<PlaylistEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
-    val playlistFlow: StateFlow<List<PlaylistItemUiState>> = fetchPlaylistListFlowUseCase()
+    val playlistFlow: StateFlow<List<PlaylistItemUiState>> = fetchAllPlaylistFlowUseCase()
         .map { list -> list.map { it.toUiModel() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -35,6 +35,7 @@ class PlaylistViewModel @Inject constructor(
             is PlaylistIntent.MakeNewPlaylist -> makeNewPlaylist(intent.title)
             is PlaylistIntent.OnClickDeletePlaylist -> deletePlaylist(intent.data.id)
             is PlaylistIntent.OnClickModifyPlaylist -> navigateToPlaylistEditScreen(intent.data)
+            is PlaylistIntent.OnClickAddPlaylist -> navigateToAddPlaylistScreen(intent.data)
         }
     }
 
@@ -47,6 +48,12 @@ class PlaylistViewModel @Inject constructor(
     private fun navigateToPlaylistEditScreen(playlistInfo: PlaylistItemUiState) {
         viewModelScope.launch {
             _eventFlow.emit(PlaylistEvent.NavigateToPlaylistEditScreen(playlistInfo.id))
+        }
+    }
+
+    private fun navigateToAddPlaylistScreen(data: PlaylistItemUiState) {
+        viewModelScope.launch {
+            _eventFlow.emit(PlaylistEvent.NavigateToPlaylistAddScreen(data.id))
         }
     }
 

@@ -3,7 +3,8 @@ package com.kintmin.data.local_file
 import com.kintmin.data.local_file.model.Ext
 
 interface FileManager {
-    fun getFileNameWithExt(fileNameWithExt: String): Result<String>
+    fun getFileNameWithExt(fileFullPath: String): Result<String>
+
     fun getFullPathWithExt(fileName: String, ext: Ext): Result<String>
     fun getFullPathWithExt(fileName: String, extName: String): Result<String>
     fun getFullPathWithExt(fileNameWithExt: String): Result<String>

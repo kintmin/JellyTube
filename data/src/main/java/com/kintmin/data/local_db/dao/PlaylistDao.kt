@@ -20,17 +20,24 @@ interface PlaylistDao {
     @Query("SELECT * FROM PLAYLIST WHERE id = :id")
     fun getPlaylistFlow(id: Int): Flow<PlaylistEntity>
 
-    @Query("UPDATE PLAYLIST SET name = :newName WHERE id = :id")
-    suspend fun updatePlaylistName(id: Int, newName: String)
-
-    @Query("UPDATE PLAYLIST SET description = :newDescription WHERE id = :id")
-    suspend fun updatePlaylistDescription(id: Int, newDescription: String)
-
-    @Query("UPDATE PLAYLIST SET imageFileNameWithExt = :newImageFileNameWithExt WHERE id = :id")
-    suspend fun updatePlaylistImage(id: Int, newImageFileNameWithExt: String?)
-
-    @Query("UPDATE PLAYLIST SET audioMediaCount = :audioMediaCount, rawPlayTimeDuration = :totalPlayTime WHERE id = :id")
-    suspend fun updatePlaylistPlayback(id: Int, audioMediaCount: Int, totalPlayTime: Long)
+    @Query("""
+UPDATE PLAYLIST
+SET 
+    name = COALESCE(:name, name),
+    description = COALESCE(:description, description),
+    audioMediaCount = COALESCE(:audioMediaCount, audioMediaCount),
+    rawPlayTimeDuration = COALESCE(:rawPlayTimeDuration, rawPlayTimeDuration),
+    imageFileNameWithExt = COALESCE(:imageFileNameWithExt, imageFileNameWithExt)
+WHERE id = :id
+""")
+    suspend fun updatePlaylist(
+        id: Int,
+        name: String? = null,
+        description: String? = null,
+        audioMediaCount: Int? = null,
+        rawPlayTimeDuration: Long? = null,
+        imageFileNameWithExt: String? = null,
+    )
 
     @Query("DELETE FROM PLAYLIST WHERE id = :id")
     suspend fun deletePlaylistName(id: Int)
