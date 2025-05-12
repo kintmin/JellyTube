@@ -12,9 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,7 +46,7 @@ import java.io.File
 @Composable
 fun AudioMediaDetailScreen(
     navigateToBack: () -> Unit,
-    navigationToAudioMediaEditScreen: () -> Unit,
+    navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int) -> Unit,
 ) {
@@ -69,7 +67,7 @@ fun AudioMediaDetailScreen(
 @Composable
 fun AudioMediaDetailScreen(
     navigateToBack: () -> Unit,
-    navigationToAudioMediaEditScreen: () -> Unit,
+    navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int) -> Unit,
     data: AudioMediaDetailUiState,
@@ -243,7 +241,7 @@ fun AudioMediaDetailScreen(
                     modifier = Modifier
                         .weight(1f)
                         .height(56.dp),
-                    onClick = {}) {
+                    onClick = { navigationToAudioMediaEditScreen(data.audioMediaId) }) {
                     Text(
                         text = "수정",
                         fontSize = 16.sp,

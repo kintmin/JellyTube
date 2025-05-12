@@ -8,6 +8,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
 import com.kintmin.presentation.ui.audio_media_detail.navigation.audioMediaDetailScreen
 import com.kintmin.presentation.ui.audio_media_detail.navigation.navigateToAudioMediaDetailScreen
+import com.kintmin.presentation.ui.audio_media_edit.navigation.audioMediaEdit
+import com.kintmin.presentation.ui.audio_media_edit.navigation.navigateToAudioMediaEditScreen
 import com.kintmin.presentation.ui.main.MainTabItem
 import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylistDetailScreen
 import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
@@ -61,7 +63,7 @@ fun MainNavHost(
         )
         audioMediaDetailScreen(
             navigateToBack = { navController.popBackStack() },
-            navigationToAudioMediaEditScreen = { },
+            navigationToAudioMediaEditScreen = { navController.navigateToAudioMediaEditScreen() },
             navigateToMainSearchTab = { url ->
                 navController.navigateToMainScreen(
                     MainTabItem.Search,
@@ -72,6 +74,9 @@ fun MainNavHost(
             navigateToPlaylistDetailScreen = { playlistId ->
                 navController.navigateToPlaylistDetailScreen(playlistId, getDeepNav(navController))
             },
+        )
+        audioMediaEdit(
+            navigateToBack = { navController.popBackStack() },
         )
     }
 }

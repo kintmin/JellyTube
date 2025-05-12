@@ -18,7 +18,7 @@ fun NavController.navigateToAudioMediaDetailScreen(
 
 fun NavGraphBuilder.audioMediaDetailScreen(
     navigateToBack: () -> Unit,
-    navigationToAudioMediaEditScreen: () -> Unit,
+    navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int) -> Unit,
 ) {
