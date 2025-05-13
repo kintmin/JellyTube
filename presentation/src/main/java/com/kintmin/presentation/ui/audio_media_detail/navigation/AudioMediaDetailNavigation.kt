@@ -8,17 +8,16 @@ import com.kintmin.presentation.ui.audio_media_detail.AudioMediaDetailScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AudioMediaDetailScreenRoute(val playlistId: Int, val audioMediaId: Int)
+data class AudioMediaDetailScreenRoute(val audioMediaId: Int)
 
 fun NavController.navigateToAudioMediaDetailScreen(
-    playlistId: Int,
     audioMediaId: Int,
     navOptions: NavOptions,
-) = navigate(AudioMediaDetailScreenRoute(playlistId, audioMediaId), navOptions)
+) = navigate(AudioMediaDetailScreenRoute(audioMediaId), navOptions)
 
 fun NavGraphBuilder.audioMediaDetailScreen(
     navigateToBack: () -> Unit,
-    navigationToAudioMediaEditScreen: () -> Unit,
+    navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int) -> Unit,
 ) {

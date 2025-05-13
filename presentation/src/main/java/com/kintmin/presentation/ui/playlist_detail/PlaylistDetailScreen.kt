@@ -39,7 +39,7 @@ fun PlaylistDetailScreen(
     navigateToBack: () -> Unit,
     navigateToAddAudioMediaScreen: (playlistId: Int) -> Unit,
     navigateToPlaylistEditScreen: (playlistId: Int) -> Unit,
-    navigateToAudioDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
+    navigateToAudioDetailScreen: (audioMediaId: Int) -> Unit,
 ) {
     val headerViewModel = hiltViewModel<PlaylistDetailHeaderViewModel>()
     val listViewModel = hiltViewModel<PlaylistDetailListViewModel>()
@@ -59,7 +59,7 @@ fun PlaylistDetailScreen(
     LaunchedEffect(Unit) {
         listViewModel.eventFlow.collect { event ->
             when (event) {
-                is PlaylistDetailListEvent.NavigateToAudioDetailScreen -> navigateToAudioDetailScreen(headerViewModel.playlistId, event.audioMediaId)
+                is PlaylistDetailListEvent.NavigateToAudioDetailScreen -> navigateToAudioDetailScreen(event.audioMediaId)
             }
         }
     }

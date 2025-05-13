@@ -19,7 +19,6 @@ class AudioMediaDetailViewModel @Inject constructor(
     fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
 ) : ViewModel() {
 
-    private val playlistId = savedStateHandle.toRoute<AudioMediaDetailScreenRoute>().playlistId
     private val audioMediaId = savedStateHandle.toRoute<AudioMediaDetailScreenRoute>().audioMediaId
 
     val data: StateFlow<AudioMediaDetailUiState> = fetchAudioMediaDetailFlowUseCase(audioMediaId)
