@@ -51,8 +51,8 @@ fun MainNavHost(
             navigateToPlaylistEditScreen = { playlistId ->
                 navController.navigateToPlaylistEditScreen(playlistId, navOptions)
             },
-            navigateToAudioDetailScreen = { playlistId, audioMediaId ->
-                navController.navigateToAudioMediaDetailScreen(playlistId, audioMediaId, navOptions)
+            navigateToAudioDetailScreen = { audioMediaId ->
+                navController.navigateToAudioMediaDetailScreen(audioMediaId, navOptions)
             }
         )
         playlistEdit(
@@ -63,7 +63,9 @@ fun MainNavHost(
         )
         audioMediaDetailScreen(
             navigateToBack = { navController.popBackStack() },
-            navigationToAudioMediaEditScreen = { navController.navigateToAudioMediaEditScreen() },
+            navigationToAudioMediaEditScreen = { audioMediaId ->
+                navController.navigateToAudioMediaEditScreen(audioMediaId, navOptions)
+            },
             navigateToMainSearchTab = { url ->
                 navController.navigateToMainScreen(
                     MainTabItem.Search,

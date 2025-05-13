@@ -1,17 +1,15 @@
 package com.kintmin.presentation.ui.audio_media_edit
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Cancel
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,6 +19,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.presentation.theme.JellyTubeTheme
 import java.io.File
 
@@ -46,6 +47,14 @@ fun AudioMediaEditScreen(
     navigateToBack: () -> Unit,
 ) {
     val mainViewModel = hiltViewModel<AudioMediaEditViewModel>()
+
+    val data by mainViewModel.data.collectAsState()
+
+    AudioMediaEditScreen(
+        navigateToBack = navigateToBack,
+        data = data,
+        sendIntent = mainViewModel::sendIntent,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,8 +62,11 @@ fun AudioMediaEditScreen(
 fun AudioMediaEditScreen(
     navigateToBack: () -> Unit,
     data: AudioMediaEditUiState,
+    sendIntent: (AudioMediaEditIntent) -> Unit,
 ) {
     var audioMediaName by remember { mutableStateOf(data.audioMediaName) }
+    var artist by remember { mutableStateOf(data.artist) }
+    var audioMediaDescription by remember { mutableStateOf(data.audioMediaDescription) }
 
     val imageRequest = ImageRequest.Builder(LocalContext.current)
         .data(data.imageFileFullPath?.let { File(it) }
@@ -64,13 +76,19 @@ fun AudioMediaEditScreen(
         .diskCachePolicy(coil.request.CachePolicy.DISABLED)
         .build()
 
+    LaunchedEffect(data.audioMediaName.isEmpty()) {
+        audioMediaName = data.audioMediaName
+        artist = data.artist
+        audioMediaDescription = data.audioMediaDescription
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "미디어 세부정보",
+                        text = "미디어 수정",
                         fontSize = 16.sp,
                         lineHeight = 16.sp,
                     )
@@ -87,100 +105,130 @@ fun AudioMediaEditScreen(
             )
         },
     ) { innerPadding ->
-        Column(
-            modifier = Modifier.padding(innerPadding),
+        LazyColumn(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize(),
         ) {
-            AsyncImage(
-                model = imageRequest,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-                    .height(220.dp)
-                    .background(Color.Gray)
-            )
-
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(),
-                value = audioMediaName,
-                onValueChange = { newText ->
-                    if (newText.length > 100) return@OutlinedTextField
-                    audioMediaName = newText
-                },
-                label = {
-                    Text(
-                        text = "미디어 이름 (${audioMediaName.length}/100)",
-                        fontSize = 14.sp,
-                        lineHeight = 14.sp,
-                    )
-                }
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(),
-                value = audioMediaName,
-                onValueChange = { newText ->
-                    if (newText.length > 100) return@OutlinedTextField
-                    audioMediaName = newText
-                },
-                label = {
-                    Text(
-                        text = "아티스트 (${audioMediaName.length}/100)",
-                        fontSize = 14.sp,
-                        lineHeight = 14.sp,
-                    )
-                }
-            )
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(),
-                value = audioMediaName,
-                onValueChange = { newText ->
-                    if (newText.length > 100) return@OutlinedTextField
-                    audioMediaName = newText
-                },
-                label = {
-                    Text(
-                        text = "미디어 설명 (${audioMediaName.length}/100)",
-                        fontSize = 14.sp,
-                        lineHeight = 14.sp,
-                    )
-                }
-            )
-            Text(
-                text = "연결된 플레이리스트",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                lineHeight = 24.sp,
-            )
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
+            item {
+                AsyncImage(
+                    model = imageRequest,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(vertical = 16.dp),
-                    text = "플레이리스트 1",
-                    fontSize = 16.sp,
-                    lineHeight = 16.sp,
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                        .height(220.dp)
+                        .background(Color.Gray)
                 )
-                IconButton(
-                    modifier = Modifier,
-                    onClick = {  },
-
-                    ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Cancel,
-                        contentDescription = "Cancel"
+            }
+            item {
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
+                    textStyle = TextStyle(),
+                    value = audioMediaName,
+                    onValueChange = { newText ->
+                        if (newText.length > 100) return@OutlinedTextField
+                        audioMediaName = newText
+                        if (audioMediaName.isNotEmpty()) {
+                            sendIntent(AudioMediaEditIntent.OnAudioMediaNameChanged(newText))
+                        }
+                    },
+                    isError = audioMediaName.isEmpty(),
+                    maxLines = 2,
+                    label = {
+                        Text(
+                            text = "미디어 이름 (${audioMediaName.length}/100)",
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                        )
+                    }
+                )
+            }
+            item {
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
+                    textStyle = TextStyle(),
+                    value = artist,
+                    onValueChange = { newText ->
+                        if (newText.length > 100) return@OutlinedTextField
+                        artist = newText
+                        sendIntent(AudioMediaEditIntent.OnAudioMediaArtistChanged(newText))
+                    },
+                    maxLines = 2,
+                    label = {
+                        Text(
+                            text = "아티스트 (${artist.length}/50)",
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                        )
+                    }
+                )
+            }
+            item {
+                OutlinedTextField(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
+                    textStyle = TextStyle(),
+                    value = audioMediaDescription,
+                    onValueChange = { newText ->
+                        if (newText.length > 100) return@OutlinedTextField
+                        audioMediaDescription = newText
+                        sendIntent(AudioMediaEditIntent.OnAudioMediaDescriptionChanged(newText))
+                    },
+                    label = {
+                        Text(
+                            text = "미디어 설명 (${audioMediaDescription.length}/100)",
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                        )
+                    }
+                )
+            }
+            item {
+                Text(
+                    modifier = Modifier.padding(16.dp),
+                    text = "연결된 플레이리스트",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 24.sp,
+                )
+            }
+            items(
+                count = data.playlists.size,
+                key = { index -> data.playlists[index].playlistId },
+            ) { index ->
+                val playlistData = data.playlists[index]
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(16.dp),
+                        text = playlistData.playlistName,
+                        fontSize = 16.sp,
+                        lineHeight = 16.sp,
                     )
+
+                    if (!Playlist.isBasePlaylist(playlistData.playlistId)) {
+                        IconButton(
+                            modifier = Modifier,
+                            onClick = { sendIntent(AudioMediaEditIntent.OnClickDeleteLinkedPlaylist(playlistData.playlistId)) },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Cancel,
+                                contentDescription = "Cancel"
+                            )
+                        }
+                    }
                 }
             }
-
-
-
         }
     }
 }
@@ -192,6 +240,7 @@ fun AudioMediaEditScreenPreview() {
         AudioMediaEditScreen(
             navigateToBack = {},
             data = AudioMediaEditUiState.getMock(),
+            sendIntent = {},
         )
     }
 }

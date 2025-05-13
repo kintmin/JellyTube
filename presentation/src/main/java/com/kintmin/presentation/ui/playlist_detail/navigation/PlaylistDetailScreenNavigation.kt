@@ -19,7 +19,7 @@ fun NavGraphBuilder.playlistDetail(
     navigateToBack: () -> Unit,
     navigateToAddAudioMediaScreen: (playlistId: Int) -> Unit,
     navigateToPlaylistEditScreen: (playlistId: Int) -> Unit,
-    navigateToAudioDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
+    navigateToAudioDetailScreen: (audioMediaId: Int) -> Unit,
 ) {
     composable<PlaylistDetailScreenRoute> {
         PlaylistDetailScreen(

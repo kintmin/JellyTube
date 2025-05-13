@@ -138,8 +138,7 @@ fun AudioMediaDetailScreen(
                             modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
                             text = "아티스트: ${data.artist}",
                             fontSize = 16.sp,
-                            maxLines = 1,
-                            lineHeight = 1.sp,
+                            lineHeight = 16.sp,
                         )
                         Text(
                             modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
@@ -171,21 +170,22 @@ fun AudioMediaDetailScreen(
                                 .background(Color.Gray)
                         )
 
-                        Text(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            text = data.audioMediaDescription,
-                            fontSize = 16.sp,
-                        )
+                        if (data.audioMediaDescription.isNotBlank()) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                text = data.audioMediaDescription,
+                                fontSize = 16.sp,
+                            )
 
-                        Spacer(
-                            modifier = Modifier
-                                .padding(vertical = 20.dp, horizontal = 16.dp)
-                                .fillMaxWidth()
-                                .height(0.5.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color.Gray)
-                        )
-
+                            Spacer(
+                                modifier = Modifier
+                                    .padding(vertical = 20.dp, horizontal = 16.dp)
+                                    .fillMaxWidth()
+                                    .height(0.5.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.Gray)
+                            )
+                        }
                         Text(
                             modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
                             text = "추가된 플레이리스트 목록",
