@@ -1,5 +1,6 @@
 package com.kintmin.data.local_db.database
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.kintmin.data.local_db.dao.AudioMediaDao
@@ -15,9 +16,9 @@ import com.kintmin.data.local_db.model.PlaylistTrackEntity
         PlaylistEntity::class,
         PlaylistTrackEntity::class,
     ],
-    exportSchema = false,    // TODO: 앱 출시 시 변경 필요
+    exportSchema = true,
     version = 1,
-    autoMigrations = [],
+    //autoMigrations = [],
 )
 abstract class JellyTubeDatabase : RoomDatabase() {
     abstract fun audioMediaDao(): AudioMediaDao
