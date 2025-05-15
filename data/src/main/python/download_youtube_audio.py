@@ -24,10 +24,10 @@ def download_audio(url, audio_path):
             if info_dict is None:
                 raise Exception("No information extracted for URL")
             
-            title = info_dict.get("title", "Unknown")
+            title = info_dict.get("title", "Unknown")[:100]
             thumbnail_url = info_dict.get("thumbnail", "")
             duration = info_dict.get("duration")
-            uploader = info_dict.get("uploader", "Unknown")
+            uploader = info_dict.get("uploader", "Unknown")[:50]
             description = info_dict.get("description", "")[:100]
             
             return title, thumbnail_url, duration, uploader, description

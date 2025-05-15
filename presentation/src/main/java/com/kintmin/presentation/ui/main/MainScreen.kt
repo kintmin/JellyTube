@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kintmin.platform.notification.NotificationChannelData
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
@@ -45,6 +46,7 @@ import com.kintmin.presentation.ui.main.playlist.PlaylistViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadIntent
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebView
+import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebViewEvent
 
 @Composable
 fun MainScreen(
@@ -69,6 +71,13 @@ fun MainScreen(
             }
         }
     )
+    LaunchedEffect(Unit) {
+        downloadViewModel.eventFlow.collect { event ->
+            when(event) {
+                is YoutubeWebViewEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         playlistViewModel.eventFlow.collect { event ->
@@ -78,6 +87,11 @@ fun MainScreen(
                 is PlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId)
             }
         }
+    }
+
+    LaunchedEffect(Unit) {
+        NotificationChannelData.Download.createChannelIfNotExist(context)
+        NotificationChannelData.DownloadResult.createChannelIfNotExist(context)
     }
 
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {

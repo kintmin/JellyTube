@@ -54,16 +54,11 @@ import com.kintmin.presentation.ui.playlist_edit.list.reorder.rememberReorderSta
 fun PlaylistEditScreen(
     navigateToBack: () -> Unit,
 ) {
-    val context = LocalContext.current
     val mainViewModel = hiltViewModel<PlaylistEditListViewModel>()
 
     val audioMediaList by mainViewModel.audioMediaListFlow.collectAsState()
     val checkedItemCount by mainViewModel.checkedItemCountFlow.collectAsState()
     val headerData by mainViewModel.headerDataFlow.collectAsState()
-
-    LaunchedEffect(Unit) {
-        Toast.makeText(context, "모든 수정사항은 즉시 적용됩니다.", Toast.LENGTH_SHORT).show()
-    }
 
     PlaylistEditScreen(
         navigateToBack = navigateToBack,
