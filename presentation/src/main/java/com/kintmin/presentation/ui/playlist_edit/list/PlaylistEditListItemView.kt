@@ -3,6 +3,7 @@ package com.kintmin.presentation.ui.playlist_edit.list
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -10,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Reorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,6 +40,7 @@ import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray80
 import java.io.File
 
 @Composable
@@ -85,16 +89,26 @@ fun PlaylistEditListItemView(
                 .align(Alignment.CenterVertically),
             onClick = { sendIntent(PlaylistEditListIntent.OnClickEditCheck(data)) }
         ) {
-            if (data.isChecked) {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(
+                        if (data.isChecked) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        },
+                    ),
+            ) {
                 Icon(
-                    imageVector = Icons.Rounded.CheckCircle,
-                    contentDescription = "CheckCircle",
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Rounded.CheckCircle,
-                    contentDescription = "CheckCircle",
+                    modifier = Modifier.size(24.dp).padding(4.dp),
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = "Check",
+                    tint = if (data.isChecked) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.38f)
+                    },
                 )
             }
         }
@@ -108,7 +122,7 @@ fun PlaylistEditListItemView(
                 .aspectRatio(1f)
                 .padding(8.dp)
                 .clip(RoundedCornerShape(16))
-                .background(Color.Gray)
+                .background(gray80)
         )
         Column(
             modifier = Modifier

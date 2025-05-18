@@ -13,6 +13,7 @@ import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -40,6 +41,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray80
 import java.io.File
 
 @Composable
@@ -101,7 +103,6 @@ fun AudioMediaEditScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(),
             )
         },
     ) { innerPadding ->
@@ -119,7 +120,7 @@ fun AudioMediaEditScreen(
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
                         .height(220.dp)
-                        .background(Color.Gray)
+                        .background(gray80)
                 )
             }
             item {

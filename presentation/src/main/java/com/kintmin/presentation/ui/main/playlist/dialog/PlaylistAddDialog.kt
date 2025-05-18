@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -39,7 +40,6 @@ fun PlaylistAddDialog(
     Dialog(onDismissRequest = {}) {
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp
         ) {
             Column(
@@ -85,7 +85,7 @@ fun PlaylistAddDialog(
                             lineHeight = 14.sp,
                         )
                     }
-                    ElevatedButton(
+                    Button(
                         contentPadding = PaddingValues(horizontal = 32.dp),
                         onClick = {
                             makePlaylist(newPlaylistTitle)

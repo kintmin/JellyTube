@@ -13,14 +13,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -30,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray40
+import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListIntent
 import java.io.File
 
@@ -70,7 +70,7 @@ fun PlaylistEditHeaderView(
                 .padding(bottom = 16.dp)
                 .height(220.dp)
                 .clip(RoundedCornerShape(8))
-                .background(Color.Gray)
+                .background(gray80)
         )
         TextField(
             modifier = Modifier
@@ -78,7 +78,7 @@ fun PlaylistEditHeaderView(
                 .padding(bottom = 16.dp)
                 .border(
                     width = 1.dp,
-                    color = Color.Gray,
+                    color = gray40,
                     shape = RoundedCornerShape(8.dp)
                 )
                 .clip(RoundedCornerShape(8.dp))

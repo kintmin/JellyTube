@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -87,13 +88,13 @@ fun PlaylistAddScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(),
             )
         },
         bottomBar = {
             ElevatedButton(
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-                ,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 onClick = { sendIntent(PlaylistAddIntent.OnClickAdd) }) {
                 Text(
                     text = "$checkedItemCount 추가하기",
@@ -111,7 +112,7 @@ fun PlaylistAddScreen(
                     .fillMaxWidth()
                     .height(56.dp)
                     .clip(RoundedCornerShape(4))
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                    .padding(horizontal = 16.dp)
             ) {
                 Icon(
                     modifier = Modifier
@@ -129,7 +130,9 @@ fun PlaylistAddScreen(
                     textStyle = TextStyle(
                         fontSize = 14.sp,
                         textAlign = TextAlign.Start,
+                        color = MaterialTheme.colorScheme.onSurface,
                     ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                     value = searchText,
                     onValueChange = { newText ->
                         searchText = newText

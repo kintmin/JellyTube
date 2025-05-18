@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -31,7 +32,6 @@ fun PlaylistDeleteDialog(
     Dialog(onDismissRequest = {}) {
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp
         ) {
             Column(
@@ -41,12 +41,10 @@ fun PlaylistDeleteDialog(
                 Text(
                     modifier = Modifier.padding(bottom = 16.dp),
                     text = "플레이리스트 삭제",
-                    style = MaterialTheme.typography.titleLarge,
                 )
                 Text(
                     modifier = Modifier.padding(bottom = 12.dp),
                     text = "[$playlistName]를 삭제하시겠습니까?",
-                    style = MaterialTheme.typography.bodyMedium,
                 )
                 Row(
                     modifier = Modifier.align(Alignment.End)
@@ -62,7 +60,7 @@ fun PlaylistDeleteDialog(
                             lineHeight = 14.sp,
                         )
                     }
-                    ElevatedButton(
+                    Button(
                         contentPadding = PaddingValues(horizontal = 32.dp),
                         onClick = {
                             deletePlaylist()
