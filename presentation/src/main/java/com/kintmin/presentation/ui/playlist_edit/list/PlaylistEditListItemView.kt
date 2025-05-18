@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Reorder
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -62,111 +64,118 @@ fun PlaylistEditListItemView(
         .diskCachePolicy(coil.request.CachePolicy.DISABLED)
         .build()
 
-    Row(modifier = modifier
-        .fillMaxWidth()
-        .zIndex(1f.takeIf { data.id == draggingItemId } ?: 0f)
-        .drawBehind {
-            if (data.id == draggingItemId) {
-                drawLine(
-                    color = Color(0xFFDADADA),
-                    strokeWidth = 0.5.dp.toPx(),
-                    start = Offset(0f, 0f),
-                    end = Offset(size.width, 0f)
-                )
-                drawLine(
-                    color = Color(0xFFDADADA),
-                    strokeWidth = 0.5.dp.toPx(),
-                    start = Offset(0f, size.height),
-                    end = Offset(size.width, size.height)
-                )
-            }
-        }
-        .clickable { sendIntent(PlaylistEditListIntent.OnClickEditCheck(data)) }
+    Card(
+        modifier,
+        shape = RectangleShape,
     ) {
-        IconButton(
-            modifier = Modifier
-                .fillMaxHeight()
-                .align(Alignment.CenterVertically),
-            onClick = { sendIntent(PlaylistEditListIntent.OnClickEditCheck(data)) }
-        ) {
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(
-                        if (data.isChecked) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        },
-                    ),
-            ) {
-                Icon(
-                    modifier = Modifier.size(24.dp).padding(4.dp),
-                    imageVector = Icons.Rounded.Check,
-                    contentDescription = "Check",
-                    tint = if (data.isChecked) {
-                        MaterialTheme.colorScheme.onPrimary
-                    } else {
-                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.38f)
-                    },
-                )
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .zIndex(1f.takeIf { data.id == draggingItemId } ?: 0f)
+            .drawBehind {
+                if (data.id == draggingItemId) {
+                    drawLine(
+                        color = Color(0xFFDADADA),
+                        strokeWidth = 0.5.dp.toPx(),
+                        start = Offset(0f, 0f),
+                        end = Offset(size.width, 0f)
+                    )
+                    drawLine(
+                        color = Color(0xFFDADADA),
+                        strokeWidth = 0.5.dp.toPx(),
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height)
+                    )
+                }
             }
-        }
-
-        AsyncImage(
-            model = imageRequest,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxHeight()
-                .aspectRatio(1f)
-                .padding(8.dp)
-                .clip(RoundedCornerShape(16))
-                .background(gray80)
-        )
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .align(Alignment.CenterVertically)
+            .clickable { sendIntent(PlaylistEditListIntent.OnClickEditCheck(data)) }
         ) {
-            Text(
-                text = data.mediaName,
-                fontSize = 14.sp,
-                lineHeight = 14.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = data.subTitle,
-                fontSize = 10.sp,
-                lineHeight = 10.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-
-        IconButton(
-            modifier = Modifier
-                .fillMaxHeight()
-                .pointerInput(data.id, data.sequence) {
-                    detectDragGestures(
-                        onDragStart = {
-                            onDragStart(it, data.id)
-                        },
-                        onDrag = { change, dragAmount ->
-                            onDrag(change, dragAmount)
-                        },
-                        onDragEnd = {
-                            onDragEnd()
+            IconButton(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .align(Alignment.CenterVertically),
+                onClick = { sendIntent(PlaylistEditListIntent.OnClickEditCheck(data)) }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(
+                            if (data.isChecked) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            },
+                        ),
+                ) {
+                    Icon(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .padding(4.dp),
+                        imageVector = Icons.Rounded.Check,
+                        contentDescription = "Check",
+                        tint = if (data.isChecked) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.38f)
                         },
                     )
-                },
-            onClick = {},
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Reorder,
-                contentDescription = "Reorder",
+                }
+            }
+
+            AsyncImage(
+                model = imageRequest,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .aspectRatio(1f)
+                    .padding(8.dp)
+                    .clip(RoundedCornerShape(16))
+                    .background(gray80)
             )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .align(Alignment.CenterVertically)
+            ) {
+                Text(
+                    text = data.mediaName,
+                    fontSize = 14.sp,
+                    lineHeight = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = data.subTitle,
+                    fontSize = 10.sp,
+                    lineHeight = 10.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            IconButton(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .pointerInput(data.id, data.sequence) {
+                        detectDragGestures(
+                            onDragStart = {
+                                onDragStart(it, data.id)
+                            },
+                            onDrag = { change, dragAmount ->
+                                onDrag(change, dragAmount)
+                            },
+                            onDragEnd = {
+                                onDragEnd()
+                            },
+                        )
+                    },
+                onClick = {},
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Reorder,
+                    contentDescription = "Reorder",
+                )
+            }
         }
     }
 }

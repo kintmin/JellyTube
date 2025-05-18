@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -55,71 +56,72 @@ fun PlaylistEditHeaderView(
         descriptionText = data.description
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(16.dp, 0.dp, 16.dp, 16.dp)
-    ) {
-        AsyncImage(
-            model = imageRequest,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
+    Card {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
-                .height(220.dp)
-                .clip(RoundedCornerShape(8))
-                .background(gray80)
-        )
-        TextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-                .border(
-                    width = 1.dp,
-                    color = gray40,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .clip(RoundedCornerShape(8.dp))
-            ,
-            maxLines = 1,
-            textStyle = TextStyle(),
-            value = titleText,
-            onValueChange = { newText ->
-                if (newText.length > 20) return@TextField
-                titleText = newText
-                if (newText.isNotEmpty()) {
-                    sendIntent(PlaylistEditListIntent.OnEditPlaylistTitle(newText))
+                .wrapContentHeight()
+                .padding(16.dp, 0.dp, 16.dp, 16.dp)
+        ) {
+            AsyncImage(
+                model = imageRequest,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .height(220.dp)
+                    .clip(RoundedCornerShape(8))
+                    .background(gray80)
+            )
+            TextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .border(
+                        width = 1.dp,
+                        color = gray40,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .clip(RoundedCornerShape(8.dp)),
+                maxLines = 1,
+                textStyle = TextStyle(),
+                value = titleText,
+                onValueChange = { newText ->
+                    if (newText.length > 20) return@TextField
+                    titleText = newText
+                    if (newText.isNotEmpty()) {
+                        sendIntent(PlaylistEditListIntent.OnEditPlaylistTitle(newText))
+                    }
+                },
+                isError = titleText.isEmpty(),
+                label = {
+                    Text(
+                        text = "제목 (${titleText.length}/20)",
+                        fontSize = 14.sp,
+                        lineHeight = 14.sp,
+                    )
                 }
-            },
-            isError = titleText.isEmpty(),
-            label = {
-                Text(
-                    text = "제목 (${titleText.length}/20)",
-                    fontSize = 14.sp,
-                    lineHeight = 14.sp,
-                )
-            }
-        )
+            )
 
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            textStyle = TextStyle(),
-            value = descriptionText,
-            onValueChange = { newText ->
-                if (newText.length > 100) return@OutlinedTextField
-                descriptionText = newText
-                sendIntent(PlaylistEditListIntent.OnEditPlaylistDescription(newText))
-            },
-            label = {
-                Text(
-                    text = "설명 (${descriptionText.length}/100)",
-                    fontSize = 14.sp,
-                    lineHeight = 14.sp,
-                )
-            }
-        )
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
+                textStyle = TextStyle(),
+                value = descriptionText,
+                onValueChange = { newText ->
+                    if (newText.length > 100) return@OutlinedTextField
+                    descriptionText = newText
+                    sendIntent(PlaylistEditListIntent.OnEditPlaylistDescription(newText))
+                },
+                label = {
+                    Text(
+                        text = "설명 (${descriptionText.length}/100)",
+                        fontSize = 14.sp,
+                        lineHeight = 14.sp,
+                    )
+                }
+            )
+        }
     }
 }
 
