@@ -30,6 +30,9 @@ class MainActivity : ComponentActivity() {
         mediaControllerManager.initialize(baseContext)
 
         enableEdgeToEdge()
+
+        setTheme(R.style.Theme_JellyTube)
+
         setContent {
             val navController = rememberNavController()
             JellyTubeTheme {
