@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray10
+import com.kintmin.presentation.theme.gray40
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderUiState
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderView
@@ -139,26 +141,17 @@ fun PlaylistEditScreen(
         },
         bottomBar = {
             if (checkedItemCount > 0) {
-                Column {
+                Column(Modifier.background(MaterialTheme.colorScheme.background)) {
                     Row(
                         Modifier
                             .fillMaxWidth()
                             .height(56.dp)
-                            .drawBehind {
-                                val strokeWidth = 1.dp.toPx()
-                                drawLine(
-                                    color = gray10,
-                                    strokeWidth = strokeWidth,
-                                    start = Offset(0f, 0f),
-                                    end = Offset(size.width, 0f)
-                                )
-                            }
                     ) {
                         Button(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxSize(),
-                            shape = RoundedCornerShape(0.dp),
+                            shape = RectangleShape,
                             onClick = {
                                 isShowDialog = true
                             }) {
@@ -172,6 +165,7 @@ fun PlaylistEditScreen(
                                 modifier = Modifier
                                     .weight(2f)
                                     .fillMaxSize(),
+                                shape = RectangleShape,
                                 onClick = { sendIntent(PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist) }) {
                                 Text(
                                     text = "플레이리스트에서 삭제",
