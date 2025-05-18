@@ -32,7 +32,7 @@ data class PlaylistDetailListItemUiState(
             audioDuration = 500.seconds,
             description = "설명설명설명설명",
             audioFileFullPath = "",
-            imageFileFullPath = "",
+            imageFileFullPath = null,
             sequence = index
         )
 

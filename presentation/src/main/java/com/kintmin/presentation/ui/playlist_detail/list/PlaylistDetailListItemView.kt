@@ -10,14 +10,17 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,15 +52,6 @@ fun PlaylistDetailListItemView(
 ) {
     var readModeDropdownExpanded by remember { mutableStateOf(false) }
 
-    val imageRequest = ImageRequest.Builder(LocalContext.current)
-        .data(
-            data.imageFileFullPath?.let { File(it) }
-                ?: androidx.media3.session.R.drawable.media3_icon_artist
-        )
-        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
-        .diskCachePolicy(coil.request.CachePolicy.DISABLED)
-        .build()
-
     Card(
         modifier,
         shape = RectangleShape,
@@ -66,17 +60,40 @@ fun PlaylistDetailListItemView(
             .fillMaxWidth()
             .clickable { sendIntent(PlaylistDetailListIntent.OnClickAudioItem(data)) }
         ) {
-            AsyncImage(
-                model = imageRequest,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .aspectRatio(1f)
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(16))
-                    .background(gray80)
-            )
+            if (data.imageFileFullPath == null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(16))
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.LibraryMusic,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            } else {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(File(data.imageFileFullPath))
+                        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
+                        .diskCachePolicy(coil.request.CachePolicy.DISABLED)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(16))
+                        .background(MaterialTheme.colorScheme.surface)
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .weight(1f)

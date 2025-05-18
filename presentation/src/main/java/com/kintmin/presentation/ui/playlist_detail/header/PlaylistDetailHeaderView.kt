@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
@@ -52,13 +54,6 @@ fun PlaylistDetailHeaderView(
     isBasePlaylist: Boolean,
     sendIntent: (PlaylistDetailHeaderIntent) -> Unit,
 ) {
-    val imageRequest = ImageRequest.Builder(LocalContext.current)
-        .data(headerData.imageFileFullPath?.let { File(it) }
-            ?: androidx.media3.session.R.drawable.media3_icon_artist)
-        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
-        .diskCachePolicy(coil.request.CachePolicy.DISABLED)
-        .build()
-
     Card {
         Column(
             modifier = Modifier
@@ -66,17 +61,40 @@ fun PlaylistDetailHeaderView(
                 .wrapContentHeight()
                 .padding(16.dp)
         ) {
-            AsyncImage(
-                model = imageRequest,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-                    .padding(bottom = 16.dp)
-                    .clip(RoundedCornerShape(4))
-                    .background(gray80)
-            )
+            if (headerData.imageFileFullPath == null) {
+                Box(
+                    modifier = Modifier
+                        .height(220.dp)
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                        .clip(RoundedCornerShape(4))
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.LibraryMusic,
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp),
+                    )
+                }
+            } else {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(File(headerData.imageFileFullPath))
+                        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
+                        .diskCachePolicy(coil.request.CachePolicy.DISABLED)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .padding(bottom = 16.dp)
+                        .clip(RoundedCornerShape(4))
+                        .background(MaterialTheme.colorScheme.surface)
+                )
+            }
+
             Column {
                 Row(
                     modifier = Modifier

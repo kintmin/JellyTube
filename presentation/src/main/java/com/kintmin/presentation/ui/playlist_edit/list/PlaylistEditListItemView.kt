@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Reorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -42,7 +43,6 @@ import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray80
 import java.io.File
 
 @Composable
@@ -55,15 +55,6 @@ fun PlaylistEditListItemView(
     onDragEnd: () -> Unit,
     sendIntent: (PlaylistEditListIntent) -> Unit,
 ) {
-    val imageRequest = ImageRequest.Builder(LocalContext.current)
-        .data(
-            data.imageFileFullPath?.let { File(it) }
-                ?: androidx.media3.session.R.drawable.media3_icon_artist
-        )
-        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
-        .diskCachePolicy(coil.request.CachePolicy.DISABLED)
-        .build()
-
     Card(
         modifier,
         shape = RectangleShape,
@@ -121,17 +112,40 @@ fun PlaylistEditListItemView(
                 }
             }
 
-            AsyncImage(
-                model = imageRequest,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .aspectRatio(1f)
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(16))
-                    .background(gray80)
-            )
+            if (data.imageFileFullPath == null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(16))
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.LibraryMusic,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            } else {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(File(data.imageFileFullPath))
+                        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
+                        .diskCachePolicy(coil.request.CachePolicy.DISABLED)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(16))
+                        .background(MaterialTheme.colorScheme.surface),
+                    )
+            }
+
             Column(
                 modifier = Modifier
                     .weight(1f)

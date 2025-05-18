@@ -26,7 +26,7 @@ data class PlaylistAddListItemUiState(
             artist = "아티스트",
             audioDuration = 500.seconds,
             description = "설명설명설명설명",
-            imageFileFullPath = "",
+            imageFileFullPath = null,
             isChecked = index % 2 == 0,
         )
 
