@@ -36,9 +36,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <item name="android:windowSplashScreenBackground">@color/...</item>
-            <item name="android:windowSplashScreenAnimatedIcon">@drawable/...</item>
-            <item name="android:windowSplashScreenIconBackgroundColor">@color/...</item>
         </activity>
 
         <service
