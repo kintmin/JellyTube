@@ -1,18 +1,23 @@
 package com.kintmin.presentation.ui.playlist_add
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -31,6 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -87,16 +94,24 @@ fun PlaylistAddScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(),
             )
         },
         bottomBar = {
-            ElevatedButton(
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-                ,
-                onClick = { sendIntent(PlaylistAddIntent.OnClickAdd) }) {
-                Text(
-                    text = "$checkedItemCount 추가하기",
+            Column(Modifier.background(MaterialTheme.colorScheme.background)) {
+                Button(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RectangleShape,
+                    enabled = checkedItemCount > 0,
+                    onClick = { sendIntent(PlaylistAddIntent.OnClickAdd) }) {
+                    Text(
+                        text = "$checkedItemCount 추가하기",
+                    )
+                }
+                Box(
+                    modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)
+                        .background(MaterialTheme.colorScheme.surface),
                 )
             }
         }
@@ -111,7 +126,7 @@ fun PlaylistAddScreen(
                     .fillMaxWidth()
                     .height(56.dp)
                     .clip(RoundedCornerShape(4))
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                    .padding(horizontal = 16.dp)
             ) {
                 Icon(
                     modifier = Modifier
@@ -129,7 +144,9 @@ fun PlaylistAddScreen(
                     textStyle = TextStyle(
                         fontSize = 14.sp,
                         textAlign = TextAlign.Start,
+                        color = MaterialTheme.colorScheme.onSurface,
                     ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
                     value = searchText,
                     onValueChange = { newText ->
                         searchText = newText

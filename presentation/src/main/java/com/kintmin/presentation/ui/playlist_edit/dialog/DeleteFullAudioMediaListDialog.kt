@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,7 +38,6 @@ fun DeleteFullAudioMediaListDialog(
         content = {
             Surface(
                 shape = RoundedCornerShape(4.dp),
-                color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp
             ) {
                 Column(
@@ -55,17 +56,17 @@ fun DeleteFullAudioMediaListDialog(
                     Row(
                         modifier = Modifier.align(Alignment.End)
                     ) {
-                        ElevatedButton(
+                        OutlinedButton(
                             modifier = Modifier.padding(end = 8.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
                             onClick = { onDismiss() }) {
                             Text(
                                 text = "취소",
                                 fontSize = 14.sp,
                             )
                         }
-                        ElevatedButton(
-                            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
+                        Button(
+                            contentPadding = PaddingValues(horizontal = 32.dp, vertical = 0.dp),
                             onClick = {
                                 deleteAudioMediaList()
                                 onDismiss()

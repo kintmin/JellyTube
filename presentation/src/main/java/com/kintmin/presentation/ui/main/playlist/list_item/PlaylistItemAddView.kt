@@ -11,11 +11,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,7 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,37 +48,40 @@ fun PlaylistItemAddView(
         },
     )
 
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(4))
-            .clickable { showDialog = true }
-            .padding(12.dp),
-    ) {
-        Box {
-            IconButton(
-                onClick = { showDialog = true },
-                modifier = Modifier.align(Alignment.Center)
-                    .aspectRatio(1f)
-                    .padding(bottom = 8.dp)
-                    .clip(RoundedCornerShape(4))
-                    .background(Color.Gray)
-            ) {
-                Icon(
-                    modifier = Modifier.size(36.dp),
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = "Add"
-                )
+    Card(modifier) {
+        Column(
+            modifier = Modifier
+                .clickable { showDialog = true }
+                .padding(12.dp),
+        ) {
+            Box {
+                IconButton(
+                    onClick = { showDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .aspectRatio(1f)
+                        .padding(bottom = 8.dp)
+                        .clip(RoundedCornerShape(4))
+                        .background(MaterialTheme.colorScheme.surface),
+                ) {
+                    Icon(
+                        modifier = Modifier.size(36.dp),
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "Add",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
+            Text(
+                modifier = Modifier.padding(bottom = 4.dp),
+                text = "플레이리스트 추가하기",
+                fontSize = 16.sp,
+                lineHeight = 16.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
-        Text(
-            modifier = Modifier.padding(bottom = 4.dp),
-            text = "플레이리스트 추가하기",
-            fontSize = 16.sp,
-            lineHeight = 16.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 

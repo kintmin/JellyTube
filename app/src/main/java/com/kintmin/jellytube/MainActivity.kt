@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
 import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.theme.JellyTubeTheme
@@ -20,9 +22,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        mediaControllerManager.initialize(baseContext)
+        val splashScreen = installSplashScreen()
+//        splashScreen.setKeepOnScreenCondition {
+//            true
+//        }
 
         enableEdgeToEdge()
+
+        setTheme(R.style.Theme_JellyTube)
+
         setContent {
             val navController = rememberNavController()
             JellyTubeTheme {
@@ -31,5 +39,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        mediaControllerManager.initialize(baseContext)
+    }
+
+    override fun onDestroy() {
+        mediaControllerManager.release()
+        super.onDestroy()
     }
 }

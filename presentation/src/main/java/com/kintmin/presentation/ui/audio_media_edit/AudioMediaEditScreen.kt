@@ -1,18 +1,25 @@
 package com.kintmin.presentation.ui.audio_media_edit
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Cancel
+import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -40,6 +48,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray80
 import java.io.File
 
 @Composable
@@ -68,14 +77,6 @@ fun AudioMediaEditScreen(
     var artist by remember { mutableStateOf(data.artist) }
     var audioMediaDescription by remember { mutableStateOf(data.audioMediaDescription) }
 
-    val imageRequest = ImageRequest.Builder(LocalContext.current)
-        .data(data.imageFileFullPath?.let { File(it) }
-            ?: androidx.media3.session.R.drawable.media3_icon_artist
-        )
-        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
-        .diskCachePolicy(coil.request.CachePolicy.DISABLED)
-        .build()
-
     LaunchedEffect(data.audioMediaName.isEmpty()) {
         audioMediaName = data.audioMediaName
         artist = data.artist
@@ -101,7 +102,6 @@ fun AudioMediaEditScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(),
             )
         },
     ) { innerPadding ->
@@ -111,16 +111,37 @@ fun AudioMediaEditScreen(
                 .fillMaxSize(),
         ) {
             item {
-                AsyncImage(
-                    model = imageRequest,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                        .height(220.dp)
-                        .background(Color.Gray)
-                )
+                if (data.imageFileFullPath == null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                            .height(220.dp)
+                            .background(MaterialTheme.colorScheme.surface),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.LibraryMusic,
+                            contentDescription = null,
+                            modifier = Modifier.size(36.dp),
+                        )
+                    }
+                } else {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(File(data.imageFileFullPath))
+                            .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
+                            .diskCachePolicy(coil.request.CachePolicy.DISABLED)
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                            .height(220.dp)
+                            .background(MaterialTheme.colorScheme.surface)
+                    )
+                }
             }
             item {
                 OutlinedTextField(

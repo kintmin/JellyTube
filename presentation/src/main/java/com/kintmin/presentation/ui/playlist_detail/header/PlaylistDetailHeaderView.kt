@@ -19,19 +19,21 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,103 +51,144 @@ fun PlaylistDetailHeaderView(
     isBasePlaylist: Boolean,
     sendIntent: (PlaylistDetailHeaderIntent) -> Unit,
 ) {
-    val imageRequest = ImageRequest.Builder(LocalContext.current)
-        .data(headerData.imageFileFullPath?.let { File(it) }
-            ?: androidx.media3.session.R.drawable.media3_icon_artist)
-        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
-        .diskCachePolicy(coil.request.CachePolicy.DISABLED)
-        .build()
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(16.dp)
-    ) {
-        AsyncImage(
-            model = imageRequest,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
+    Card {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp)
-                .padding(bottom = 16.dp)
-                .clip(RoundedCornerShape(4))
-                .background(Color.Gray)
-        )
-        Column {
-            Row(
-                modifier = Modifier
-                    .wrapContentHeight()
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = Modifier.wrapContentHeight(),
-                ) {
-                    Text(
-                        modifier = Modifier.padding(bottom = 4.dp),
-                        text = headerData.name,
-                        fontSize = 20.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = headerData.playlistSubtitle,
-                        fontSize = 12.sp,
-                        lineHeight = 10.sp,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        sendIntent(PlaylistDetailHeaderIntent.OnClickShuffle)
-                    },
+                .wrapContentHeight()
+                .padding(16.dp)
+        ) {
+            if (headerData.imageFileFullPath == null) {
+                Box(
                     modifier = Modifier
-                        .wrapContentWidth(Alignment.End)
-                        .weight(1f)
+                        .height(220.dp)
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                        .clip(RoundedCornerShape(4))
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        modifier = Modifier.size(20.dp),
-                        imageVector = if (headerData.isShuffling) Icons.Filled.Shuffle else Icons.Rounded.Shuffle,
-                        contentDescription = "Shuffle",
-                        tint = if (headerData.isShuffling) Color(0xFF1DB954) else Color.Gray
+                        imageVector = Icons.Rounded.LibraryMusic,
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp),
                     )
                 }
-                IconButton(
-                    onClick = {
-                        sendIntent(PlaylistDetailHeaderIntent.OnClickRepeat)
-                    },
+            } else {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(File(headerData.imageFileFullPath))
+                        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
+                        .diskCachePolicy(coil.request.CachePolicy.DISABLED)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .wrapContentWidth()
-                ) {
-                    Icon(
-                        modifier = Modifier.size(20.dp),
-                        imageVector = if (headerData.isRepeating) Icons.Filled.Repeat else Icons.Rounded.Repeat,
-                        contentDescription = "Repeat",
-                        tint = if (headerData.isRepeating) Color(0xFF1DB954) else Color.Gray
-                    )
-                }
-            }
-            if (headerData.description.isNotEmpty()) {
-                Text(
-                    modifier = Modifier.padding(bottom = 16.dp),
-                    text = headerData.description,
-                    fontSize = 12.sp,
-                    lineHeight = 15.sp,
-                    overflow = TextOverflow.Ellipsis,
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .padding(bottom = 16.dp)
+                        .clip(RoundedCornerShape(4))
+                        .background(MaterialTheme.colorScheme.surface)
                 )
             }
-        }
-        Row(
-            modifier = Modifier.height(36.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (!isBasePlaylist) {
+
+            Column {
+                Row(
+                    modifier = Modifier
+                        .wrapContentHeight()
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(
+                        modifier = Modifier.wrapContentHeight(),
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(bottom = 4.dp),
+                            text = headerData.name,
+                            fontSize = 20.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = headerData.playlistSubtitle,
+                            fontSize = 12.sp,
+                            lineHeight = 10.sp,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            sendIntent(PlaylistDetailHeaderIntent.OnClickShuffle)
+                        },
+                        modifier = Modifier
+                            .wrapContentWidth(Alignment.End)
+                            .weight(1f)
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(20.dp),
+                            imageVector = if (headerData.isShuffling) Icons.Filled.Shuffle else Icons.Rounded.Shuffle,
+                            contentDescription = "Shuffle",
+                            tint = if (headerData.isShuffling) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            sendIntent(PlaylistDetailHeaderIntent.OnClickRepeat)
+                        },
+                        modifier = Modifier
+                            .wrapContentWidth()
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(20.dp),
+                            imageVector = if (headerData.isRepeating) Icons.Filled.Repeat else Icons.Rounded.Repeat,
+                            contentDescription = "Repeat",
+                            tint = if (headerData.isRepeating) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
+                    }
+                }
+                if (headerData.description.isNotEmpty()) {
+                    Text(
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        text = headerData.description,
+                        fontSize = 12.sp,
+                        lineHeight = 15.sp,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.height(36.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (!isBasePlaylist) {
+                    OutlinedButton(
+                        onClick = {
+                            sendIntent(PlaylistDetailHeaderIntent.OnClickAdd)
+                        },
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .wrapContentWidth()
+                    ) {
+                        Icon(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .padding(0.dp),
+                            imageVector = Icons.Rounded.Add,
+                            contentDescription = "Add"
+                        )
+                        Text(
+                            modifier = Modifier.padding(0.dp),
+                            text = "추가",
+                            fontSize = 12.sp,
+                        )
+                    }
+                    Box(modifier = Modifier.width(8.dp))
+                }
                 OutlinedButton(
                     onClick = {
-                        sendIntent(PlaylistDetailHeaderIntent.OnClickAdd)
+                        sendIntent(PlaylistDetailHeaderIntent.OnClickEdit)
                     },
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     modifier = Modifier
@@ -153,58 +196,35 @@ fun PlaylistDetailHeaderView(
                         .wrapContentWidth()
                 ) {
                     Icon(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(0.dp),
-                        imageVector = Icons.Rounded.Add,
-                        contentDescription = "Add"
+                        modifier = Modifier.size(20.dp),
+                        imageVector = Icons.Rounded.Edit,
+                        contentDescription = "Edit"
                     )
                     Text(
-                        modifier = Modifier.padding(0.dp),
-                        text = "추가",
+                        text = "수정",
                         fontSize = 12.sp,
                     )
                 }
-                Box(modifier = Modifier.width(8.dp))
-            }
-            OutlinedButton(
-                onClick = {
-                    sendIntent(PlaylistDetailHeaderIntent.OnClickEdit)
-                },
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .wrapContentWidth()
-            ) {
-                Icon(
-                    modifier = Modifier.size(20.dp),
-                    imageVector = Icons.Rounded.Edit,
-                    contentDescription = "Edit"
-                )
-                Text(
-                    text = "수정",
-                    fontSize = 12.sp,
-                )
-            }
-            Button(
-                onClick = {
-                    sendIntent(PlaylistDetailHeaderIntent.OnClickPlay)
-                },
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .fillMaxHeight()
-                    .weight(1f),
-                contentPadding = PaddingValues(0.dp),
-            ) {
-                Text(
-                    text = "모두 재생",
-                    fontSize = 12.sp,
-                )
-                Icon(
-                    modifier = Modifier.size(20.dp),
-                    imageVector = Icons.Rounded.PlayArrow,
-                    contentDescription = "PlayArrow"
-                )
+                Button(
+                    onClick = {
+                        sendIntent(PlaylistDetailHeaderIntent.OnClickPlay)
+                    },
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .fillMaxHeight()
+                        .weight(1f),
+                    contentPadding = PaddingValues(0.dp),
+                ) {
+                    Text(
+                        text = "모두 재생",
+                        fontSize = 12.sp,
+                    )
+                    Icon(
+                        modifier = Modifier.size(20.dp),
+                        imageVector = Icons.Rounded.PlayArrow,
+                        contentDescription = "PlayArrow"
+                    )
+                }
             }
         }
     }

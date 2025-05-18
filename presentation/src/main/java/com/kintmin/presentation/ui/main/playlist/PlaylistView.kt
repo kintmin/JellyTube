@@ -21,8 +21,8 @@ fun PlaylistView(
     sendMainIntent: (MainScreenIntent) -> Unit,
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
         modifier = modifier,
+        columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(0.dp)
     ) {
         items(

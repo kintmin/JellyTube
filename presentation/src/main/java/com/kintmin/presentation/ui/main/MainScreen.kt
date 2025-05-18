@@ -22,7 +22,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,7 +30,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -73,7 +71,7 @@ fun MainScreen(
     )
     LaunchedEffect(Unit) {
         downloadViewModel.eventFlow.collect { event ->
-            when(event) {
+            when (event) {
                 is YoutubeWebViewEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
             }
         }
@@ -147,7 +145,6 @@ fun MainScreen(
             }
             TopAppBar(
                 title = { Text(title) },
-                colors = TopAppBarDefaults.topAppBarColors(),
             )
         },
         floatingActionButton = {
@@ -157,8 +154,6 @@ fun MainScreen(
                     onClick = {
                         sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnClickDownload(currentUrl))
                     },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Add,
@@ -173,13 +168,13 @@ fun MainScreen(
                     icon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                     label = { Text("음원추가") },
                     selected = selectedTab == MainTabItem.Search,
-                    onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) }
+                    onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) },
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Rounded.VideoLibrary, contentDescription = null) },
                     label = { Text("플레이리스트") },
                     selected = selectedTab == MainTabItem.Playlist,
-                    onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) }
+                    onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
                 )
             }
         }
