@@ -37,7 +37,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray40
-import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListIntent
 import java.io.File
 
@@ -48,15 +47,6 @@ fun PlaylistEditHeaderView(
 ) {
     var titleText by remember { mutableStateOf(data.name) }
     var descriptionText by remember { mutableStateOf(data.description) }
-
-    val imageRequest = ImageRequest.Builder(LocalContext.current)
-        .data(
-            data.imageFileFullPath?.let { File(it) }
-                ?: androidx.media3.session.R.drawable.media3_icon_artist
-        )
-        .memoryCachePolicy(coil.request.CachePolicy.ENABLED)
-        .diskCachePolicy(coil.request.CachePolicy.DISABLED)
-        .build()
 
     LaunchedEffect(data.name.isEmpty()) {
         titleText = data.name

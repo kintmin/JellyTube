@@ -27,8 +27,6 @@ class MainActivity : ComponentActivity() {
 //            true
 //        }
 
-        mediaControllerManager.initialize(baseContext)
-
         enableEdgeToEdge()
 
         setTheme(R.style.Theme_JellyTube)
@@ -41,5 +39,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        mediaControllerManager.initialize(baseContext)
+    }
+
+    override fun onDestroy() {
+        mediaControllerManager.release()
+        super.onDestroy()
     }
 }

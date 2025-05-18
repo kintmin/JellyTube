@@ -17,16 +17,19 @@ val dark100 = Color(0xFF040404)
 val dark80 = Color(0xFF141414)
 val dark60 = Color(0xFF212121)
 
+// https://www.schemecolor.com/deep-sea-blue.php
 val deepSea100 = Color(0xFF0D1126)
 val deepSea80 = Color(0xFF1A224C)
 val deepSea60 = Color(0xFF263373)
 val deepSea40 = Color(0xFF31439B)
 
+// https://www.schemecolor.com/bloody-reds.php
 val bloodyRed100 = Color(0xFFE90000)
 val bloodyRed80 = Color(0xFFA40D03)
 val bloodyRed60 = Color(0xFF7D0000)
 val bloodyRed40 = Color(0xFF5A0607)
 
+// https://www.schemecolor.com/blue-green-pastel-sea.php
 val seaBlue100 = Color(0xFFACE5EE)
 val seaBlue80 = Color(0xFF8ACCDC)
 val seaBlue60 = Color(0xFF67B3C9)

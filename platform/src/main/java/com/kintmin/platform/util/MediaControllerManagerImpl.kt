@@ -14,7 +14,6 @@ import com.kintmin.platform.service.PlaybackService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -52,7 +51,7 @@ class MediaControllerManagerImpl @Inject constructor(
         mediaController.release()
         _mediaController = null
         currentPlaylistId.update { null }
-        mainScope.cancel()
+        fetchDataJob?.cancel()
     }
 
     override fun pause() {
