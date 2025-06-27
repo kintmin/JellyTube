@@ -10,6 +10,14 @@ sealed class NotificationData {
 
     abstract fun getNotification(context: Context): Notification?
 
+    data object NowPlaying : NotificationData() {
+        override val id = 3
+        override val channel = NotificationChannelData.NowPlaying
+        override fun getNotification(context: Context): Notification? {
+            TODO("Not yet implemented")
+        }
+    }
+
     data class Download(
         private val maxCount: Int = 0,
         private val currentCount: Int = 0,
