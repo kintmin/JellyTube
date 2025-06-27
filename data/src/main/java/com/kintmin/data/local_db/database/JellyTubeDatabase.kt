@@ -18,9 +18,7 @@ import com.kintmin.data.local_db.model.PlaylistTrackEntity
     ],
     exportSchema = true,
     version = 1,
-    autoMigrations = [
-//        AutoMigration(from = 1, to = 2)
-    ],
+    //autoMigrations = [],
 )
 abstract class JellyTubeDatabase : RoomDatabase() {
     abstract fun audioMediaDao(): AudioMediaDao

@@ -18,9 +18,6 @@ internal fun AudioMedia.toMediaItem() = MediaItem.Builder()
                 imageFileFullPath?.let {
                     setArtworkUri(Uri.fromFile(File(it)))
                 }
-                audioDuration?.inWholeMilliseconds?.let {
-                    setDurationMs(it)
-                }
             }
             .build()
     )

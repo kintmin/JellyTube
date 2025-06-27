@@ -35,5 +35,6 @@ VALUES (2, '미분류', '', 0, 0, strftime('%s','now') * 1000, null, 0)
         """.trimIndent())
             }
         })
+        .fallbackToDestructiveMigration()
         .build()
 }

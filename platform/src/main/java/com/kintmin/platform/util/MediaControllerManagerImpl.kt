@@ -29,6 +29,11 @@ class MediaControllerManagerImpl @Inject constructor(
     private var fetchDataJob: Job? = null
 
     private var _mediaController: MediaController? = null
+    private val mediaController get() = _mediaController ?: throw Exception("미디어 초기화가 필요합니다.")
+
+    val isRepeat get() = mediaController.repeatMode == REPEAT_MODE_ALL
+    val isShuffle get() = mediaController.shuffleModeEnabled
+
     private var currentPlaylistId = MutableStateFlow<Int?>(null)
 
     override fun initialize(context: Context) {
@@ -43,21 +48,21 @@ class MediaControllerManagerImpl @Inject constructor(
     }
 
     override fun release() {
-        _mediaController?.release()
+        mediaController.release()
         _mediaController = null
         currentPlaylistId.update { null }
         fetchDataJob?.cancel()
     }
 
     override fun pause() {
-        if (_mediaController?.isPlaying == true) {
-            _mediaController!!.pause()
+        if (mediaController.isPlaying) {
+            mediaController.pause()
         }
     }
 
     override fun resume() {
-        if (_mediaController?.isPlaying == false) {
-            _mediaController?.play()
+        if (!mediaController.isPlaying) {
+            mediaController.play()
         }
     }
 
@@ -89,7 +94,7 @@ class MediaControllerManagerImpl @Inject constructor(
     ): Result<Unit> = runCatching {
         if (currentPlaylistId.value == playlistId) {
             val targetIndex = findMediaItem(mediaId).getOrThrow()
-            _mediaController?.removeMediaItem(targetIndex)
+            mediaController.removeMediaItem(targetIndex)
         }
     }
 
@@ -98,18 +103,18 @@ class MediaControllerManagerImpl @Inject constructor(
         mediaItem: MediaItem,
     ): Result<Unit> = runCatching {
         if (currentPlaylistId.value == playlistId) {
-            _mediaController?.addMediaItem(mediaItem)
+            mediaController.addMediaItem(mediaItem)
         }
     }
 
     override fun setShuffleMode(isShuffle: Boolean) {
-        if (_mediaController?.shuffleModeEnabled == isShuffle) return
-        _mediaController?.shuffleModeEnabled = isShuffle
-        _mediaController?.prepare()
+        if (mediaController.shuffleModeEnabled == isShuffle) return
+        mediaController.shuffleModeEnabled = isShuffle
+        mediaController.prepare()
     }
 
     override fun setRepeatMode(isRepeat: Boolean) {
-        _mediaController?.repeatMode = if (isRepeat) REPEAT_MODE_ALL else REPEAT_MODE_OFF
+        mediaController.repeatMode = if (isRepeat) REPEAT_MODE_ALL else REPEAT_MODE_OFF
     }
 
     private fun playbackPlaylist(startMediaId: Int?) {
@@ -117,9 +122,9 @@ class MediaControllerManagerImpl @Inject constructor(
             seekMediaItem(it).getOrThrow()
         }
 
-        if (_mediaController?.isPlaying == false) {
-            _mediaController?.prepare()
-            _mediaController?.play()
+        if (!mediaController.isPlaying) {
+            mediaController.prepare()
+            mediaController.play()
         }
     }
 
@@ -132,25 +137,25 @@ class MediaControllerManagerImpl @Inject constructor(
             }
         }
 
-        if (_mediaController?.isPlaying == true) {
-            _mediaController?.pause()
+        if (mediaController.isPlaying) {
+            mediaController.pause()
         }
-        if (_mediaController?.mediaItemCount != 0) {
-            _mediaController?.clearMediaItems()
+        if (mediaController.mediaItemCount != 0) {
+            mediaController.clearMediaItems()
         }
-        _mediaController?.setMediaItems(mediaItemList)
+        mediaController.setMediaItems(mediaItemList)
     }
 
     private fun seekMediaItem(startMediaId: Int) = runCatching {
         val targetIndex = findMediaItem(startMediaId).getOrThrow()
-        if (_mediaController?.isPlaying == true) {
-            _mediaController?.pause()
+        if (mediaController.isPlaying) {
+            mediaController.pause()
         }
-        _mediaController?.seekTo(targetIndex, 0)
+        mediaController.seekTo(targetIndex, 0)
     }
 
     private fun findMediaItem(mediaId: Int) = runCatching {
-        (0 until (_mediaController?.mediaItemCount ?: 0))
-            .first { i -> _mediaController?.getMediaItemAt(i)?.mediaId == mediaId.toString() }
+        (0 until mediaController.mediaItemCount)
+            .first { i -> mediaController.getMediaItemAt(i).mediaId == mediaId.toString() }
     }
 }

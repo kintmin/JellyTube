@@ -54,10 +54,6 @@ chaquopy {
     }
 }
 
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
-
 dependencies {
     implementation(project(":domain"))
     implementation(libs.hilt.android)

@@ -18,12 +18,7 @@ sealed class NotificationChannelData {
         manager.createNotificationChannel(channel)
     }
 
-    data object NowPlaying : NotificationChannelData() {
-        override val id = "now_playing_channel"
-        override val name = "지금 재생 중"
-        override val description = "현재 재생중인 음원을 보여주는 알림 채널입니다."
-        override val importance = NotificationManager.IMPORTANCE_LOW
-    }
+    /// 지금 재생 중 채널은 ExoPlayer가 자체 제공
 
     data object Download : NotificationChannelData() {
         override val id = "download_channel"
