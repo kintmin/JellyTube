@@ -23,9 +23,9 @@ uiTooling = "1.7.8"
 coilCompose = "2.7.0"
 jetbrainsKotlinJvm = "2.0.0"
 navigationCompose = "2.8.9"
-google-service = "4.4.2"
-firebase-bom = "33.13.0"
-crashlytics = "3.0.3"
+google-service = "4.4.3"
+firebase-bom = "33.16.0"
+crashlytics = "3.0.4"
 splash = "1.0.1"
 
 [libraries]

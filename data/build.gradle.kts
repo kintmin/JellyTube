@@ -1,3 +1,6 @@
+import com.kintmin.buildSrc.AppConfiguration
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -8,50 +11,47 @@ plugins {
 
 android {
     namespace = "com.kintmin.data"
-    compileSdk = 34
+    compileSdk = AppConfiguration.COMPILE_SDK
 
     defaultConfig {
-        minSdk = 26
+        minSdk = AppConfiguration.MIN_SDK
         consumerProguardFiles("consumer-rules.pro")
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            ndk { abiFilters += listOf("x86_64") }
         }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
-    flavorDimensions += "abi"
-    productFlavors {
-        create("development") {
-            dimension = "abi"
-            ndk { abiFilters += listOf("arm64-v8a", "x86_64", "armeabi-v7a") }
-        }
-        create("production") {
-            dimension = "abi"
-            ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 }
 
 chaquopy {
     defaultConfig {
-        version = "3.8"
+        version = AppConfiguration.PYTHON_VERSION
         pip {
             install("yt_dlp")
         }
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {

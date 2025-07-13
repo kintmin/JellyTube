@@ -1,23 +1,40 @@
-# kotlinx.serialization 보존
--keepnames class * implements java.io.Serializable
--keepclassmembers class * implements java.io.Serializable {
-    static final long serialVersionUID;
-    private static final java.io.ObjectStreamField[] serialPersistentFields;
-    !static !transient <fields>;
-    private void writeObject(java.io.ObjectOutputStream);
-    private void readObject(java.io.ObjectInputStream);
-    java.lang.Object writeReplace();
-    java.lang.Object readResolve();
+# 메타데이터 난독화 제외
+-keepattributes Signature, *Annotation*, EnclosingMethod, InnerClasses
+-keep class kotlin.Metadata { *; }
+-keepclassmembers class ** {
+    @kotlin.Metadata *;
 }
 
-# firebase 보존
--keepnames class com.kintmin.jellytube.beans.** { *; }
--keep class com.firebase.** { *; }
--keep class org.apache.** { *; }
--keepnames class com.fasterxml.jackson.** { *; }
--keepnames class javax.servlet.** { *; }
--keepnames class org.ietf.jgss.** { *; }
--dontwarn org.w3c.dom.**
--dontwarn org.joda.time.**
--dontwarn org.shaded.apache.**
--dontwarn org.ietf.jgss.**
+# 모든 네이티브 함수와 클래스는 난독화 제외
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# kotlinx.serialization 보존
+-keep class kotlinx.serialization.** { *; }
+-keep @kotlinx.serialization.Serializable class * { *; }
+-keepclassmembers @kotlinx.serialization.Serializable class ** {
+    public static ** INSTANCE;
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+# Parcelable 객체 보존
+-keep class * implements android.os.Parcelable {
+    public static final android.os.Parcelable$Creator *;
+}
+
+# R & Manifest 보존
+-keep class **.R
+-keep class **.R$* {*;}
+
+# Jetpack Compose 관련 클래스 보존
+-keep class androidx.compose.** { *; }
+
+# Application을 상속받은 Public 클래스는 난독화 제외
+-keep public class * extends android.app.Application
+
+# Activity를 상속받은 Public 클래스는 난독화 제외
+-keep public class * extends android.app.Activity
+
+# JDK 호환
+-dontwarn java.lang.invoke.StringConcatFactory

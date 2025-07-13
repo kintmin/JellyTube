@@ -1,0 +1,226 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "061b73156861964497b85d7aa9b12d1f",
+    "entities": [
+      {
+        "tableName": "AUDIO_MEDIA",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `source` TEXT NOT NULL, `name` TEXT NOT NULL, `artist` TEXT NOT NULL, `description` TEXT NOT NULL, `rawAudioDurationSeconds` INTEGER, `audioFileNameWithExt` TEXT NOT NULL, `imageFileNameWithExt` TEXT, `rawCreatedTime` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "artist",
+            "columnName": "artist",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rawAudioDurationSeconds",
+            "columnName": "rawAudioDurationSeconds",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "audioFileNameWithExt",
+            "columnName": "audioFileNameWithExt",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageFileNameWithExt",
+            "columnName": "imageFileNameWithExt",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "rawCreatedTime",
+            "columnName": "rawCreatedTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "PLAYLIST",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `audioMediaCount` INTEGER NOT NULL, `rawPlayTimeDuration` INTEGER NOT NULL, `rawCreatedTime` INTEGER NOT NULL, `imageFileNameWithExt` TEXT, `isCustomImage` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "audioMediaCount",
+            "columnName": "audioMediaCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rawPlayTimeDuration",
+            "columnName": "rawPlayTimeDuration",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rawCreatedTime",
+            "columnName": "rawCreatedTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "imageFileNameWithExt",
+            "columnName": "imageFileNameWithExt",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isCustomImage",
+            "columnName": "isCustomImage",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "PLAYLIST_TRACK",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`playlistId` INTEGER NOT NULL, `audioMediaId` INTEGER NOT NULL, `sequence` INTEGER NOT NULL, `rawCreatedTime` INTEGER NOT NULL, PRIMARY KEY(`playlistId`, `audioMediaId`), FOREIGN KEY(`audioMediaId`) REFERENCES `AUDIO_MEDIA`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`playlistId`) REFERENCES `PLAYLIST`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "playlistId",
+            "columnName": "playlistId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "audioMediaId",
+            "columnName": "audioMediaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sequence",
+            "columnName": "sequence",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rawCreatedTime",
+            "columnName": "rawCreatedTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "playlistId",
+            "audioMediaId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_PLAYLIST_TRACK_playlistId_sequence",
+            "unique": false,
+            "columnNames": [
+              "playlistId",
+              "sequence"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_PLAYLIST_TRACK_playlistId_sequence` ON `${TABLE_NAME}` (`playlistId`, `sequence`)"
+          },
+          {
+            "name": "index_PLAYLIST_TRACK_audioMediaId",
+            "unique": false,
+            "columnNames": [
+              "audioMediaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_PLAYLIST_TRACK_audioMediaId` ON `${TABLE_NAME}` (`audioMediaId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "AUDIO_MEDIA",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "audioMediaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "PLAYLIST",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "playlistId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '061b73156861964497b85d7aa9b12d1f')"
+    ]
+  }
+}

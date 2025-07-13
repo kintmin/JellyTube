@@ -4,16 +4,15 @@ import android.app.Notification
 import android.content.Context
 import androidx.core.app.NotificationCompat
 
-sealed class NotificationData {
-    abstract val id: Int
-    abstract val channel: NotificationChannelData
-
-    abstract fun getNotification(context: Context): Notification?
+sealed interface NotificationData {
+    val id: Int
+    val channel: NotificationChannelData
+    fun getNotification(context: Context): Notification?
 
     data class Download(
         private val maxCount: Int = 0,
         private val currentCount: Int = 0,
-    ) : NotificationData() {
+    ) : NotificationData {
         override val id = 1
         override val channel = NotificationChannelData.Download
 
@@ -31,7 +30,7 @@ sealed class NotificationData {
 
     data class DownloadResult(
         val contentText: String = "지금 바로 감상하기"
-    ) : NotificationData() {
+    ) : NotificationData {
         override val id = 2
         override val channel = NotificationChannelData.DownloadResult
 

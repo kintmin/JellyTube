@@ -1,8 +1,18 @@
+import com.kintmin.buildSrc.AppConfiguration
+import com.kintmin.buildSrc.ManifestPlaceholdersKey
+import com.kintmin.buildSrc.PropertyName
+import com.kintmin.buildSrc.SigningConfigName
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
     alias(libs.plugins.crashlytics)
@@ -10,51 +20,72 @@ plugins {
 
 android {
     namespace = "com.kintmin.jellytube"
-    compileSdk = 34
+    compileSdk = AppConfiguration.COMPILE_SDK
 
     defaultConfig {
         applicationId = "com.kintmin.jellytube"
-        minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        minSdk = AppConfiguration.MIN_SDK
+        targetSdk = AppConfiguration.TARGET_SDK
+        versionCode = AppConfiguration.VERSION_CODE
+        versionName = AppConfiguration.VERSION_NAME
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+    }
+
+    signingConfigs {
+        create(SigningConfigName.RELEASE) {
+            storeFile = file(property(PropertyName.STORE_FILE).toString())
+            storePassword = property(PropertyName.STORE_PASSWORD).toString()
+            keyAlias = property(PropertyName.KEY_ALIAS).toString()
+            keyPassword = property(PropertyName.KEY_PASSWORD).toString()
+        }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            manifestPlaceholders[ManifestPlaceholdersKey.APP_LABEL] = AppConfiguration.RELEASE_APP_NAME
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            firebaseCrashlytics {
+                mappingFileUploadEnabled = true
+            }
+            signingConfig = signingConfigs.getByName(SigningConfigName.RELEASE)
         }
         debug {
-            applicationIdSuffix = ".dev"
+            ndk { abiFilters += listOf("x86_64") }
             isMinifyEnabled = false
+            isShrinkResources = false
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            manifestPlaceholders[ManifestPlaceholdersKey.APP_LABEL] = AppConfiguration.DEBUG_APP_NAME
         }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+        }
     }
 
     buildFeatures {
         compose = true
     }
 
-    flavorDimensions += "abi"
-    productFlavors {
-        create("development") {
-            dimension = "abi"
-            ndk { abiFilters += listOf("arm64-v8a", "x86_64", "armeabi-v7a") }
-        }
-        create("production") {
-            dimension = "abi"
-            ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+    androidComponents {
+        onVariants { variant ->
+            variant.outputs.forEach { output ->
+                if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
+                    val time = Instant.now().atZone(ZoneId.systemDefault()).toLocalDateTime()
+                    val timeString = DateTimeFormatter.ofPattern("yyyy.MM.dd_HH.mm.ss").format(time)
+                    output.outputFileName = "JellyTube_${AppConfiguration.VERSION_NAME}(${AppConfiguration.VERSION_CODE})_${variant.name}_$timeString.apk"
+                }
+            }
         }
     }
 }
@@ -68,6 +99,8 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
+
+    implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.hilt.android)
     implementation(libs.androidx.work.runtime.ktx)
