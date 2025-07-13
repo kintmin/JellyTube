@@ -87,11 +87,6 @@ fun MainScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        NotificationChannelData.Download.createChannelIfNotExist(context)
-        NotificationChannelData.DownloadResult.createChannelIfNotExist(context)
-    }
-
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
         LaunchedEffect(Unit) {
             if (context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {

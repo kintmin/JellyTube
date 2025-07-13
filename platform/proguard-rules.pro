@@ -1,21 +1,26 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# 메타데이터 난독화 제외
+-keepattributes Signature, *Annotation*, EnclosingMethod, InnerClasses
+-keep class kotlin.Metadata { *; }
+-keepclassmembers class ** {
+    @kotlin.Metadata *;
+}
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# 모든 네이티브 함수와 클래스는 난독화 제외
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Parcelable 객체 보존
+-keep class * implements android.os.Parcelable {
+    public static final android.os.Parcelable$Creator *;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# R & Manifest 보존
+-keep class **.R
+-keep class **.R$* {*;}
+
+# hilt 주입 문제가 많아서 통으로 난독화 제외
+-keep class com.kintmin.platform.** { *; }
+
+# JDK 호환
+-dontwarn java.lang.invoke.StringConcatFactory
