@@ -7,6 +7,7 @@ import android.webkit.WebView
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.platform.notification.NotificationChannelData
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
@@ -158,19 +160,22 @@ fun MainScreen(
             }
         },
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                    label = { Text("음원추가") },
-                    selected = selectedTab == MainTabItem.Search,
-                    onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) },
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Rounded.VideoLibrary, contentDescription = null) },
-                    label = { Text("플레이리스트") },
-                    selected = selectedTab == MainTabItem.Playlist,
-                    onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
-                )
+            Column {
+                PlayerBar()
+                NavigationBar {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                        label = { Text("음원추가") },
+                        selected = selectedTab == MainTabItem.Search,
+                        onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) },
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Rounded.VideoLibrary, contentDescription = null) },
+                        label = { Text("플레이리스트") },
+                        selected = selectedTab == MainTabItem.Playlist,
+                        onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
+                    )
+                }
             }
         }
     ) { innerPadding ->
