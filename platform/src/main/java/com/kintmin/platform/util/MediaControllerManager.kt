@@ -14,6 +14,7 @@ interface MediaControllerManager {
 
     val playingMediaItem: MediaItem?
     val currentPosition: Long?
+    val playbackDuration: Long?
 
     fun playFromPlaylist(
         playlistId: Int,

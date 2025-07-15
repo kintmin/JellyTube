@@ -10,6 +10,7 @@ data class PlayerBarUiState(
     val currentDuration: Duration,
     val playbackDuration: Duration,
     val imageFileFullPath: String?,
+    val isPlaying: Boolean,
 ) {
     val timeString get() = "${currentDuration.to_hh_colon_mm_colon_ss()} / ${playbackDuration.to_hh_colon_mm_colon_ss()}"
 
@@ -21,6 +22,7 @@ data class PlayerBarUiState(
                 currentDuration = 130.seconds,
                 playbackDuration = 4200.seconds,
                 imageFileFullPath = null,
+                isPlaying = true,
             )
         }
     }

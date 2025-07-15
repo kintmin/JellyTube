@@ -14,6 +14,7 @@ internal fun AudioMedia.toMediaItem() = MediaItem.Builder()
             .setTitle(name)
             .setDescription(description)
             .setArtist(artist)
+            .setDurationMs(audioDuration?.let { it.inWholeSeconds * 1000L })
             .apply {
                 imageFileFullPath?.let {
                     setArtworkUri(Uri.fromFile(File(it)))

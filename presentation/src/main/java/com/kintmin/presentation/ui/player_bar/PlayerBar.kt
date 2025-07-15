@@ -67,6 +67,7 @@ fun PlayerBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
+                .background(Color.Transparent)
                 .defaultMinSize(minHeight = 0.dp)
                 .offset(y = 20.dp),
             valueRange = 0f..data.playbackDuration.inWholeSeconds.toFloat(),

@@ -28,24 +28,27 @@ class PlayerBarViewModel @Inject constructor(
             currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
             playbackDuration = (mediaControllerManager.playingMediaItem?.mediaMetadata?.durationMs ?: 0L).milliseconds,
             imageFileFullPath = mediaControllerManager.playingMediaItem?.mediaMetadata?.artworkUri?.path,
+            isPlaying = mediaControllerManager.isPlaying,
         )
     )
     val currentMediaItem = _currentMediaItem.asStateFlow()
 
+    private var isHandling = false
+
     init {
         viewModelScope.launch {
-            while(isActive) {
+            while (isActive) {
                 delay(500)
-                val currentDuration = mediaControllerManager.currentPosition?.toDuration(DurationUnit.SECONDS)
+                val currentDuration = mediaControllerManager.currentPosition?.toDuration(DurationUnit.MILLISECONDS)
 
-                val isHandling = false
                 if (!isHandling) {
                     if (currentDuration == null) {
-                        // 버튼 일시정지
+                        _currentMediaItem.update {
+                            it.copy(isPlaying = mediaControllerManager.isPlaying)
+                        }
                     } else {
-                        if (_currentMediaItem.value.id == mediaControllerManager.playingMediaItem?.mediaId &&
-                            _currentMediaItem.value.currentDuration < currentDuration
-                        ) {
+                        val isSameMedia = currentMediaItem.value.id == mediaControllerManager.playingMediaItem?.mediaId
+                        if (isSameMedia) {
                             _currentMediaItem.update {
                                 it.copy(currentDuration = currentDuration)
                             }
@@ -57,6 +60,7 @@ class PlayerBarViewModel @Inject constructor(
                                     currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
                                     playbackDuration = (mediaControllerManager.playingMediaItem?.mediaMetadata?.durationMs ?: 0L).milliseconds,
                                     imageFileFullPath = mediaControllerManager.playingMediaItem?.mediaMetadata?.artworkUri?.path,
+                                    mediaControllerManager.isPlaying,
                                 )
                             }
                         }
@@ -66,6 +70,10 @@ class PlayerBarViewModel @Inject constructor(
         }
     }
 
+    fun setHandling(newValue: Boolean) {
+        isHandling = newValue
+    }
+
     fun sendIntent(intent: PlayerBarIntent) {
         when (intent) {
             PlayerBarIntent.OnClickPlayOrPauseButton -> if (mediaControllerManager.isPlaying) {
@@ -73,6 +81,7 @@ class PlayerBarViewModel @Inject constructor(
             } else {
                 mediaControllerManager.resume()
             }
+
             is PlayerBarIntent.OnChangeTimeSlider -> {
                 _currentMediaItem.update {
                     it.copy(currentDuration = intent.duration.toLong().seconds)

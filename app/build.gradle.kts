@@ -49,9 +49,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            firebaseCrashlytics {
-                mappingFileUploadEnabled = true
-            }
             signingConfig = signingConfigs.getByName(SigningConfigName.RELEASE)
         }
         debug {
@@ -63,6 +60,7 @@ android {
             manifestPlaceholders[ManifestPlaceholdersKey.APP_LABEL] = AppConfiguration.DEBUG_APP_NAME
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -75,6 +73,10 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    firebaseCrashlytics {
+        mappingFileUploadEnabled = true
     }
 
     androidComponents {

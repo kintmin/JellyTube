@@ -70,6 +70,8 @@ class MediaControllerManagerImpl @Inject constructor(
         get() = _mediaController?.currentMediaItem
     override val currentPosition: Long?
         get() = _mediaController?.currentPosition
+    override val playbackDuration: Long?
+        get() = _mediaController?.duration
 
     override fun playFromPlaylist(
         playlistId: Int,
