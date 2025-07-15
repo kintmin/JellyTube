@@ -1,9 +1,14 @@
 package com.kintmin.presentation.ui.playlist_detail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -24,6 +29,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.player_bar.PlayerBar
+import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
+import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
+import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
 import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderEvent
 import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderIntent
 import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderView
@@ -44,9 +53,11 @@ fun PlaylistDetailScreen(
 ) {
     val headerViewModel = hiltViewModel<PlaylistDetailHeaderViewModel>()
     val listViewModel = hiltViewModel<PlaylistDetailListViewModel>()
+    val playerBarViewModel = hiltViewModel<PlayerBarViewModel>()
 
     val headerData by headerViewModel.headerDataFlow.collectAsState()
     val audioList by listViewModel.audioListFlow.collectAsState()
+    val currentMediaItem by playerBarViewModel.currentMediaItem.collectAsState()
 
     LaunchedEffect(Unit) {
         headerViewModel.eventFlow.collect { event ->
@@ -70,8 +81,10 @@ fun PlaylistDetailScreen(
         headerData = headerData,
         audioPlayDataList = audioList,
         isBasePlaylist = headerViewModel.isBasePlaylist,
+        playerBar = currentMediaItem,
         sendPlaylistDetailListIntent = listViewModel::sendIntent,
-        sendPlaylistDetailHeaderIntent = headerViewModel::sendIntent
+        sendPlaylistDetailHeaderIntent = headerViewModel::sendIntent,
+        sendPlayerBarIntent = playerBarViewModel::sendIntent,
     )
 }
 
@@ -82,8 +95,10 @@ fun PlaylistDetailScreen(
     headerData: PlaylistDetailHeaderUiState,
     audioPlayDataList: List<PlaylistDetailListItemUiState>,
     isBasePlaylist: Boolean,
+    playerBar: PlayerBarUiState,
     sendPlaylistDetailListIntent: (PlaylistDetailListIntent) -> Unit,
     sendPlaylistDetailHeaderIntent: (PlaylistDetailHeaderIntent) -> Unit,
+    sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -100,6 +115,18 @@ fun PlaylistDetailScreen(
                 },
             )
         },
+        bottomBar = {
+            Column(Modifier.background(MaterialTheme.colorScheme.background)) {
+                PlayerBar(
+                    data = playerBar,
+                    sendIntent = sendPlayerBarIntent,
+                )
+                Box(
+                    modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)
+                        .background(MaterialTheme.colorScheme.surface),
+                )
+            }
+        }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -139,8 +166,10 @@ fun PlaylistDetailScreenPreview() {
             headerData = PlaylistDetailHeaderUiState.getMock(),
             audioPlayDataList = PlaylistDetailListItemUiState.getMockList(),
             isBasePlaylist = false,
+            playerBar = PlayerBarUiState.getMock(),
             sendPlaylistDetailListIntent = {},
             sendPlaylistDetailHeaderIntent = {},
+            sendPlayerBarIntent = {},
         )
     }
 }

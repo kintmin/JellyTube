@@ -59,7 +59,6 @@ fun PlayerBar(
     sendIntent: (PlayerBarIntent) -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
-
     LaunchedEffect(Unit) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             lifecycleOwner.lifecycleScope.launch {
@@ -70,6 +69,8 @@ fun PlayerBar(
             }
         }
     }
+
+    if (data.id == "") return
 
     Column(
         modifier = Modifier

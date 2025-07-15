@@ -17,7 +17,7 @@ data class PlayerBarUiState(
     companion object {
         fun getMock(): PlayerBarUiState {
             return PlayerBarUiState(
-                id = "",
+                id = "temp",
                 title = "제목제목제목",
                 currentDuration = 130.seconds,
                 playbackDuration = 4200.seconds,
