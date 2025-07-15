@@ -8,6 +8,7 @@ interface MediaControllerManager {
     fun initialize(context: Context)
     fun release()
 
+    val isPlaying: Boolean
     fun pause()
     fun resume()
 

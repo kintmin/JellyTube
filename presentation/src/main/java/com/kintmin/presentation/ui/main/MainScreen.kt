@@ -47,6 +47,9 @@ import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadIntent
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebView
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebViewEvent
+import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
+import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
+import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
 
 @Composable
 fun MainScreen(
@@ -58,10 +61,12 @@ fun MainScreen(
     val mainViewModel = hiltViewModel<MainViewModel>()
     val downloadViewModel = hiltViewModel<YoutubeDownloadViewModel>()
     val playlistViewModel = hiltViewModel<PlaylistViewModel>()
+    val playerBarViewModel = hiltViewModel<PlayerBarViewModel>()
 
     val playlist by playlistViewModel.playlistFlow.collectAsState()
     val selectedTab by mainViewModel.tabItem.collectAsState()
     val currentUrl by downloadViewModel.currentUrl.collectAsState()
+    val currentMediaItem by playerBarViewModel.currentMediaItem.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -114,10 +119,12 @@ fun MainScreen(
     MainScreen(
         selectedTab = selectedTab,
         playlist = playlist,
+        playerBar = currentMediaItem,
         currentUrl = currentUrl,
         sendMainIntent = mainViewModel::sendIntent,
         sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
         sendPlaylistIntent = playlistViewModel::sendIntent,
+        sendPlayerBarIntent = playerBarViewModel::sendIntent,
     )
 }
 
@@ -126,10 +133,12 @@ fun MainScreen(
 fun MainScreen(
     selectedTab: MainTabItem,
     playlist: List<PlaylistItemUiState>,
+    playerBar: PlayerBarUiState,
     currentUrl: String,
     sendMainIntent: (MainScreenIntent) -> Unit,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
+    sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     var webView: WebView? by remember { mutableStateOf(null) }
 
@@ -161,7 +170,10 @@ fun MainScreen(
         },
         bottomBar = {
             Column {
-                PlayerBar()
+                PlayerBar(
+                    data = playerBar,
+                    sendIntent = sendPlayerBarIntent,
+                )
                 NavigationBar {
                     NavigationBarItem(
                         icon = { Icon(Icons.Rounded.Search, contentDescription = null) },
@@ -209,10 +221,12 @@ fun MainScreenSearchTabPreview() {
         MainScreen(
             selectedTab = MainTabItem.Search,
             playlist = PlaylistItemUiState.getMockList(),
+            playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},
+            sendPlayerBarIntent = {},
         )
     }
 }
@@ -224,10 +238,12 @@ fun MainScreenPlayTabPreview() {
         MainScreen(
             selectedTab = MainTabItem.Playlist,
             playlist = PlaylistItemUiState.getMockList(),
+            playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},
+            sendPlayerBarIntent = {},
         )
     }
 }
