@@ -14,12 +14,14 @@ import com.kintmin.platform.service.PlaybackService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.time.Duration
 
 class MediaControllerManagerImpl @Inject constructor(
     private val fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
@@ -47,7 +49,11 @@ class MediaControllerManagerImpl @Inject constructor(
         _mediaController = null
         currentPlaylistId.update { null }
         fetchDataJob?.cancel()
+        mainScope.cancel()
     }
+
+    override val isPlaying: Boolean
+        get() = _mediaController?.isPlaying ?: false
 
     override fun pause() {
         if (_mediaController?.isPlaying == true) {
@@ -59,6 +65,17 @@ class MediaControllerManagerImpl @Inject constructor(
         if (_mediaController?.isPlaying == false) {
             _mediaController?.play()
         }
+    }
+
+    override val playingMediaItem: MediaItem?
+        get() = _mediaController?.currentMediaItem
+    override val currentPosition: Long?
+        get() = _mediaController?.currentPosition
+    override val playbackDuration: Long?
+        get() = _mediaController?.duration
+
+    override fun seek(duration: Duration) {
+        _mediaController?.seekTo(duration.inWholeMilliseconds)
     }
 
     override fun playFromPlaylist(

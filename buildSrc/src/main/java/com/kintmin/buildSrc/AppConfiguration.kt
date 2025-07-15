@@ -3,8 +3,8 @@ package com.kintmin.buildSrc
 object AppConfiguration {
     const val RELEASE_APP_NAME = "JellyTube"
     const val DEBUG_APP_NAME = "JellyTube(개발)"
-    const val COMPILE_SDK = 34
-    const val TARGET_SDK = 34
+    const val COMPILE_SDK = 35
+    const val TARGET_SDK = 35
     const val MIN_SDK = 26
     const val VERSION_CODE = 4
     const val VERSION_NAME = "1.0.4"

@@ -7,6 +7,7 @@ import android.webkit.WebView
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -16,7 +17,6 @@ import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -34,8 +34,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.kintmin.platform.notification.NotificationChannelData
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
@@ -45,6 +45,9 @@ import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadIntent
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebView
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebViewEvent
+import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
+import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
+import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
 
 @Composable
 fun MainScreen(
@@ -56,10 +59,12 @@ fun MainScreen(
     val mainViewModel = hiltViewModel<MainViewModel>()
     val downloadViewModel = hiltViewModel<YoutubeDownloadViewModel>()
     val playlistViewModel = hiltViewModel<PlaylistViewModel>()
+    val playerBarViewModel = hiltViewModel<PlayerBarViewModel>()
 
     val playlist by playlistViewModel.playlistFlow.collectAsState()
     val selectedTab by mainViewModel.tabItem.collectAsState()
     val currentUrl by downloadViewModel.currentUrl.collectAsState()
+    val currentMediaItem by playerBarViewModel.currentMediaItem.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -112,10 +117,12 @@ fun MainScreen(
     MainScreen(
         selectedTab = selectedTab,
         playlist = playlist,
+        playerBar = currentMediaItem,
         currentUrl = currentUrl,
         sendMainIntent = mainViewModel::sendIntent,
         sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
         sendPlaylistIntent = playlistViewModel::sendIntent,
+        sendPlayerBarIntent = playerBarViewModel::sendIntent,
     )
 }
 
@@ -124,10 +131,12 @@ fun MainScreen(
 fun MainScreen(
     selectedTab: MainTabItem,
     playlist: List<PlaylistItemUiState>,
+    playerBar: PlayerBarUiState,
     currentUrl: String,
     sendMainIntent: (MainScreenIntent) -> Unit,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
+    sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     var webView: WebView? by remember { mutableStateOf(null) }
 
@@ -158,19 +167,25 @@ fun MainScreen(
             }
         },
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                    label = { Text("음원추가") },
-                    selected = selectedTab == MainTabItem.Search,
-                    onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) },
+            Column {
+                PlayerBar(
+                    data = playerBar,
+                    sendIntent = sendPlayerBarIntent,
                 )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Rounded.VideoLibrary, contentDescription = null) },
-                    label = { Text("플레이리스트") },
-                    selected = selectedTab == MainTabItem.Playlist,
-                    onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
-                )
+                NavigationBar {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                        label = { Text("음원추가") },
+                        selected = selectedTab == MainTabItem.Search,
+                        onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) },
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Rounded.VideoLibrary, contentDescription = null) },
+                        label = { Text("플레이리스트") },
+                        selected = selectedTab == MainTabItem.Playlist,
+                        onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -204,10 +219,12 @@ fun MainScreenSearchTabPreview() {
         MainScreen(
             selectedTab = MainTabItem.Search,
             playlist = PlaylistItemUiState.getMockList(),
+            playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},
+            sendPlayerBarIntent = {},
         )
     }
 }
@@ -219,10 +236,12 @@ fun MainScreenPlayTabPreview() {
         MainScreen(
             selectedTab = MainTabItem.Playlist,
             playlist = PlaylistItemUiState.getMockList(),
+            playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},
+            sendPlayerBarIntent = {},
         )
     }
 }
