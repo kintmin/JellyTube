@@ -12,6 +12,9 @@ interface MediaControllerManager {
     fun pause()
     fun resume()
 
+    val playingMediaItem: MediaItem?
+    val currentPosition: Long?
+
     fun playFromPlaylist(
         playlistId: Int,
         startMediaId: Int? = null,

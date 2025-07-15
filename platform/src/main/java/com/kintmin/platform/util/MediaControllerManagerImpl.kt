@@ -66,6 +66,11 @@ class MediaControllerManagerImpl @Inject constructor(
         }
     }
 
+    override val playingMediaItem: MediaItem?
+        get() = _mediaController?.currentMediaItem
+    override val currentPosition: Long?
+        get() = _mediaController?.currentPosition
+
     override fun playFromPlaylist(
         playlistId: Int,
         startMediaId: Int?,
