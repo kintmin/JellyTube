@@ -2,6 +2,7 @@ package com.kintmin.platform.util
 
 import android.content.Context
 import androidx.media3.common.MediaItem
+import kotlin.time.Duration
 
 interface MediaControllerManager {
 
@@ -15,6 +16,8 @@ interface MediaControllerManager {
     val playingMediaItem: MediaItem?
     val currentPosition: Long?
     val playbackDuration: Long?
+
+    fun seek(duration: Duration)
 
     fun playFromPlaylist(
         playlistId: Int,

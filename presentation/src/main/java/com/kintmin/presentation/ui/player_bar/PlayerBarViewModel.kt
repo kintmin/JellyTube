@@ -1,15 +1,11 @@
 package com.kintmin.presentation.ui.player_bar
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.kintmin.platform.util.MediaControllerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -33,16 +29,39 @@ class PlayerBarViewModel @Inject constructor(
     )
     val currentMediaItem = _currentMediaItem.asStateFlow()
 
-    private var isHandling = false
+    private var _isHandling = false
 
-    init {
-        viewModelScope.launch {
-            while (isActive) {
-                delay(500)
+    fun sendIntent(intent: PlayerBarIntent) {
+        when (intent) {
+            PlayerBarIntent.OnClickPlayOrPauseButton -> {
+                if (mediaControllerManager.isPlaying) {
+                    mediaControllerManager.pause()
+                } else {
+                    mediaControllerManager.resume()
+                }
+                _currentMediaItem.update {
+                    it.copy(isPlaying = mediaControllerManager.isPlaying)
+                }
+            }
+
+            is PlayerBarIntent.OnChangeTimeSlider -> {
+                _isHandling = true
+                _currentMediaItem.update {
+                    it.copy(currentDuration = intent.duration.toLong().seconds)
+                }
+            }
+
+            PlayerBarIntent.OnChangeFinishTimeSlider -> {
+                _isHandling = false
+                mediaControllerManager.seek(currentMediaItem.value.currentDuration)
+            }
+
+            PlayerBarIntent.OnRefreshMediaData -> {
                 val currentDuration = mediaControllerManager.currentPosition?.toDuration(DurationUnit.MILLISECONDS)
 
-                if (!isHandling) {
-                    if (currentDuration == null) {
+                if (!_isHandling) {
+                    val isChangePlaying = mediaControllerManager.isPlaying != currentMediaItem.value.isPlaying || currentDuration == null
+                    if (isChangePlaying) {
                         _currentMediaItem.update {
                             it.copy(isPlaying = mediaControllerManager.isPlaying)
                         }
@@ -60,31 +79,11 @@ class PlayerBarViewModel @Inject constructor(
                                     currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
                                     playbackDuration = (mediaControllerManager.playingMediaItem?.mediaMetadata?.durationMs ?: 0L).milliseconds,
                                     imageFileFullPath = mediaControllerManager.playingMediaItem?.mediaMetadata?.artworkUri?.path,
-                                    mediaControllerManager.isPlaying,
+                                    isPlaying = mediaControllerManager.isPlaying,
                                 )
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-
-    fun setHandling(newValue: Boolean) {
-        isHandling = newValue
-    }
-
-    fun sendIntent(intent: PlayerBarIntent) {
-        when (intent) {
-            PlayerBarIntent.OnClickPlayOrPauseButton -> if (mediaControllerManager.isPlaying) {
-                mediaControllerManager.pause()
-            } else {
-                mediaControllerManager.resume()
-            }
-
-            is PlayerBarIntent.OnChangeTimeSlider -> {
-                _currentMediaItem.update {
-                    it.copy(currentDuration = intent.duration.toLong().seconds)
                 }
             }
         }

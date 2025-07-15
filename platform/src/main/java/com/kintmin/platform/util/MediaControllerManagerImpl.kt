@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.time.Duration
 
 class MediaControllerManagerImpl @Inject constructor(
     private val fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
@@ -72,6 +73,10 @@ class MediaControllerManagerImpl @Inject constructor(
         get() = _mediaController?.currentPosition
     override val playbackDuration: Long?
         get() = _mediaController?.duration
+
+    override fun seek(duration: Duration) {
+        _mediaController?.seekTo(duration.inWholeMilliseconds)
+    }
 
     override fun playFromPlaylist(
         playlistId: Int,
