@@ -1,6 +1,10 @@
 package com.kintmin.presentation.ui.playlist_detail
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -11,24 +15,38 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.common.SearchBar
 import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
 import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
@@ -43,6 +61,7 @@ import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListEvent
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListIntent
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemView
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewModel
+import kotlin.math.min
 
 @Composable
 fun PlaylistDetailScreen(
@@ -100,20 +119,41 @@ fun PlaylistDetailScreen(
     sendPlaylistDetailHeaderIntent: (PlaylistDetailHeaderIntent) -> Unit,
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
+    val scrollState = rememberLazyListState()
+    val maxOffset = with(LocalDensity.current) { 300.dp.toPx() }
+    val scrollOffset = min(scrollState.firstVisibleItemScrollOffset.toFloat(), maxOffset)
+    val progress = scrollOffset / maxOffset
+    val backgroundColor = MaterialTheme.colorScheme.background.copy(alpha = progress)
+
     Scaffold(
+        containerColor = Color.Red,
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(onClick = { navigateToBack() }) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBackIosNew,
-                            contentDescription = "ArrowBackIosNew"
+            Column {
+                TopAppBar(
+                    title = {
+                        Text(
+                            headerData.name,
+                            fontSize = 16.sp,
+                            lineHeight = 16.sp,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = progress)
                         )
-                    }
-                },
-            )
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = { navigateToBack() },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowBackIosNew,
+                                contentDescription = "ArrowBackIosNew"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = backgroundColor
+                    )
+                )
+            }
         },
         bottomBar = {
             Column(Modifier.background(MaterialTheme.colorScheme.background)) {
@@ -122,19 +162,20 @@ fun PlaylistDetailScreen(
                     sendIntent = sendPlayerBarIntent,
                 )
                 Box(
-                    modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)
+                    modifier = Modifier
+                        .windowInsetsBottomHeight(WindowInsets.navigationBars)
                         .background(MaterialTheme.colorScheme.surface),
                 )
             }
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier = Modifier.fillMaxSize(),
+            state = scrollState,
         ) {
             item {
                 PlaylistDetailHeaderView(
+                    innerPaddingValues = innerPadding,
                     headerData = headerData,
                     isBasePlaylist = isBasePlaylist,
                     sendIntent = sendPlaylistDetailHeaderIntent,
