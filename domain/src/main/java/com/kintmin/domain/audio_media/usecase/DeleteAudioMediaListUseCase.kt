@@ -5,9 +5,11 @@ import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistImageWhenUpdateTrackUseCase
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -16,20 +18,39 @@ class DeleteAudioMediaListUseCase @Inject constructor(
     private val updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase: UpdatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase,
     private val updatePlaylistImageWhenUpdateTrackUseCase: UpdatePlaylistImageWhenUpdateTrackUseCase,
 ) {
-    suspend operator fun invoke(playlistId: Int, idList: List<Int>): Result<Unit> = runCatching {
+    suspend operator fun invoke(idList: List<Int>): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
-            idList.map { id ->
-                async { audioMediaRepository.deleteAudioMedia(id).getOrThrow() }
-            }.awaitAll()
+            val mutex = Mutex()
+            val targetPlaylistIdSet = mutableSetOf<Int>()
 
-            listOf(
-                async { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(playlistId) },
-                async { updatePlaylistImageWhenUpdateTrackUseCase(playlistId) },
-                async { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(Playlist.TOTAL) },
-                async { updatePlaylistImageWhenUpdateTrackUseCase(Playlist.TOTAL) },
-                async { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(Playlist.UNCATEGORIZED) },
-                async { updatePlaylistImageWhenUpdateTrackUseCase(Playlist.UNCATEGORIZED) },
-            ).awaitAll()
+            supervisorScope {
+                idList.map { id ->
+                    launch {
+                        val targetPlaylistIdList = audioMediaRepository.deleteAudioMedia(id).getOrThrow()
+                        mutex.withLock {
+                            targetPlaylistIdSet.addAll(targetPlaylistIdList)
+                        }
+                    }
+                }.joinAll()
+            }
+
+            supervisorScope {
+                targetPlaylistIdSet.flatMap  { playlistId ->
+                    listOf(
+                        launch { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(playlistId) },
+                        launch { updatePlaylistImageWhenUpdateTrackUseCase(playlistId) },
+                    )
+                }.joinAll()
+            }
+
+            supervisorScope {
+                listOf(
+                    launch { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(Playlist.TOTAL) },
+                    launch { updatePlaylistImageWhenUpdateTrackUseCase(Playlist.TOTAL) },
+                    launch { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(Playlist.UNCATEGORIZED) },
+                    launch { updatePlaylistImageWhenUpdateTrackUseCase(Playlist.UNCATEGORIZED) },
+                ).joinAll()
+            }
         }
     }
 }

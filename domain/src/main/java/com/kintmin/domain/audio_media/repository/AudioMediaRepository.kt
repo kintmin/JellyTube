@@ -13,5 +13,5 @@ interface AudioMediaRepository {
         imageFileFullPath: String? = null,
     ): Result<Unit>
 
-    suspend fun deleteAudioMedia(id: Int): Result<Unit>
+    suspend fun deleteAudioMedia(id: Int): Result<List<Int>>
 }

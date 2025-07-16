@@ -30,6 +30,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,6 +48,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray40
+import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
 import java.io.File
 
 @Composable
@@ -76,6 +80,15 @@ fun AudioMediaDetailScreen(
     navigateToPlaylistDetailScreen: (playlistId: Int) -> Unit,
     data: AudioMediaDetailUiState,
 ) {
+    var isShowDialog by remember { mutableStateOf(false) }
+
+    DeleteFullAudioMediaListDialog(
+        isShow = isShowDialog,
+        onDismiss = { isShowDialog = false },
+        selectedMediaCount = 1,
+        deleteAudioMediaList = { sendIntent(PlaylistEditListIntent.OnClickFullDeleteAudioMediaList) },
+    )
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -109,7 +122,7 @@ fun AudioMediaDetailScreen(
                             .weight(1f)
                             .fillMaxSize(),
                         shape = RectangleShape,
-                        onClick = {}) {
+                        onClick = { isShowDialog = true }) {
                         Text(
                             text = "삭제",
                             fontSize = 16.sp,

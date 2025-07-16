@@ -49,7 +49,9 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
-        mediaControllerManager.release()
+        if (::mediaControllerManager.isInitialized) {
+            mediaControllerManager.release()
+        }
         mediaSession?.run {
             player.release()
             release()
