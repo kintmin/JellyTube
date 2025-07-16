@@ -4,15 +4,16 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaListUseCase
+import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,10 +21,13 @@ import javax.inject.Inject
 class AudioMediaDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
-    private val deleteAudioMediaListUseCase: DeleteAudioMediaListUseCase,
+    private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
 ) : ViewModel() {
 
     private val audioMediaId = savedStateHandle.toRoute<AudioMediaDetailScreenRoute>().audioMediaId
+
+    private val _eventFlow = MutableSharedFlow<AudioMediaDetailEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
 
     val data: StateFlow<AudioMediaDetailUiState> = fetchAudioMediaDetailFlowUseCase(audioMediaId)
         .map { it.toAudioMediaDetailUiState() }
@@ -49,8 +53,14 @@ class AudioMediaDetailViewModel @Inject constructor(
 
     private fun deleteAudioMedia() {
         viewModelScope.launch {
-            deleteAudioMediaListUseCase(data.play, listOf(audioMediaId))
-            _checkedItemIdList.update { emptyList() }
+            deleteAudioMediaUseCase(audioMediaId)
+            triggerEvent(AudioMediaDetailEvent.OnNavigateToBack)
+        }
+    }
+
+    private fun triggerEvent(newEvent: AudioMediaDetailEvent) {
+        viewModelScope.launch {
+            _eventFlow.emit(newEvent)
         }
     }
 }
