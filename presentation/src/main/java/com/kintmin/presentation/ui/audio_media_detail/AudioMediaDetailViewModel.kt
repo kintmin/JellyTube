@@ -4,22 +4,30 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class AudioMediaDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
+    private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
 ) : ViewModel() {
 
     private val audioMediaId = savedStateHandle.toRoute<AudioMediaDetailScreenRoute>().audioMediaId
+
+    private val _eventFlow = MutableSharedFlow<AudioMediaDetailEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
 
     val data: StateFlow<AudioMediaDetailUiState> = fetchAudioMediaDetailFlowUseCase(audioMediaId)
         .map { it.toAudioMediaDetailUiState() }
@@ -36,4 +44,23 @@ class AudioMediaDetailViewModel @Inject constructor(
                 playlists = listOf(),
             )
         )
+
+    fun sendIntent(intent: AudioMediaDetailIntent) {
+        when (intent) {
+            AudioMediaDetailIntent.OnClickDeleteAudioMedia -> deleteAudioMedia()
+        }
+    }
+
+    private fun deleteAudioMedia() {
+        viewModelScope.launch {
+            deleteAudioMediaUseCase(audioMediaId)
+            triggerEvent(AudioMediaDetailEvent.OnNavigateToBack)
+        }
+    }
+
+    private fun triggerEvent(newEvent: AudioMediaDetailEvent) {
+        viewModelScope.launch {
+            _eventFlow.emit(newEvent)
+        }
+    }
 }

@@ -99,7 +99,7 @@ class PlaylistEditListViewModel @Inject constructor(
 
     private fun deleteFullAudioMediaList() {
         viewModelScope.launch {
-            deleteAudioMediaListUseCase(playlistId, _checkedItemIdList.value)
+            deleteAudioMediaListUseCase(_checkedItemIdList.value)
             _checkedItemIdList.update { emptyList() }
         }
     }

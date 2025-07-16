@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.audio_media_detail
 
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.seconds
 
@@ -47,26 +48,38 @@ data class AudioMediaDetailUiState(
 }
 
 internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMediaDetailUiState {
-    val audioMedia = first().audioMedia
-    return AudioMediaDetailUiState(
-        audioMediaId = audioMedia.id,
-        imageFileFullPath = audioMedia.imageFileFullPath,
-        audioMediaName = audioMedia.name,
-        artist = audioMedia.artist,
-        playTime = (audioMedia.audioDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
+    return firstOrNull()?.audioMedia?.let { audioMedia ->
+        AudioMediaDetailUiState(
+            audioMediaId = audioMedia.id,
+            imageFileFullPath = audioMedia.imageFileFullPath,
+            audioMediaName = audioMedia.name,
+            artist = audioMedia.artist,
+            playTime = (audioMedia.audioDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
+            audioMediaCreationTime = DateTimeFormatter.ofPattern("yyyy년 M월 d일 H시 m분 s.S초")
+                .format(audioMedia.createdTime),
+            source = audioMedia.source,
+            audioMediaDescription = audioMedia.description,
+            playlists = this.map { dataList ->
+                AudioMediaDetailUiState.Playlist(
+                    playlistId = dataList.playlist.id,
+                    playlistName = dataList.playlist.name,
+                    playlistCreationTime = DateTimeFormatter.ofPattern("yyyy년 M월 d일 H시 m분 s.S초")
+                        .format(dataList.playlist.createdTime),
+                    playlistAddedTime = DateTimeFormatter.ofPattern("yyyy년 M월 d일 H시 m분 s.S초")
+                        .format(dataList.audioTrack.trackAddedTime),
+                )
+            }
+        )
+    } ?: AudioMediaDetailUiState(
+        audioMediaId = -1,
+        imageFileFullPath = null,
+        audioMediaName = "삭제된 음원",
+        artist = "",
+        playTime = 0.seconds.to_hh_colon_mm_colon_ss(),
         audioMediaCreationTime = DateTimeFormatter.ofPattern("yyyy년 M월 d일 H시 m분 s.S초")
-            .format(audioMedia.createdTime),
-        source = audioMedia.source,
-        audioMediaDescription = audioMedia.description,
-        playlists = this.map { dataList ->
-            AudioMediaDetailUiState.Playlist(
-                playlistId = dataList.playlist.id,
-                playlistName = dataList.playlist.name,
-                playlistCreationTime = DateTimeFormatter.ofPattern("yyyy년 M월 d일 H시 m분 s.S초")
-                    .format(dataList.playlist.createdTime),
-                playlistAddedTime = DateTimeFormatter.ofPattern("yyyy년 M월 d일 H시 m분 s.S초")
-                    .format(dataList.audioTrack.trackAddedTime),
-            )
-        }
+            .format(LocalDateTime.now()),
+        source = "",
+        audioMediaDescription = "삭제되었습니다.",
+        playlists = emptyList(),
     )
 }

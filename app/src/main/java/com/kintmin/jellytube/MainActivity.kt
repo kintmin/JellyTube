@@ -21,13 +21,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val splashScreen = installSplashScreen()
-//        splashScreen.setKeepOnScreenCondition {
-//            true
-//        }
+        installSplashScreen()
 
         enableEdgeToEdge()
-
         setTheme(R.style.Theme_JellyTube)
 
         setContent {
@@ -42,13 +38,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::mediaControllerManager.isInitialized) {
+        runCatching {
             mediaControllerManager.initialize(baseContext)
         }
     }
 
     override fun onDestroy() {
-        if (::mediaControllerManager.isInitialized) {
+        runCatching {
             mediaControllerManager.release()
         }
         super.onDestroy()

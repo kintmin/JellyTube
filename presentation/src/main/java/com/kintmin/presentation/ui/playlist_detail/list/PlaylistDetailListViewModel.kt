@@ -22,7 +22,6 @@ class PlaylistDetailListViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
     private val mediaControllerManager: MediaControllerManager,
-    private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
 ) : ViewModel() {
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
@@ -36,7 +35,6 @@ class PlaylistDetailListViewModel @Inject constructor(
     fun sendIntent(intent: PlaylistDetailListIntent) {
         when (intent) {
             is PlaylistDetailListIntent.OnClickAudioItem -> playAudioMediaById(intent.data.id)
-            is PlaylistDetailListIntent.OnClickDeleteAudioMediaFile -> deleteAudioMediaFile(intent.data.id)
             is PlaylistDetailListIntent.OnClickShowDetailAudioMedia -> {
                 triggerEvent(PlaylistDetailListEvent.NavigateToAudioDetailScreen(intent.data.id))
             }
@@ -45,13 +43,6 @@ class PlaylistDetailListViewModel @Inject constructor(
 
     private fun playAudioMediaById(id: Int) {
         mediaControllerManager.playFromPlaylist(playlistId, id)
-    }
-
-    private fun deleteAudioMediaFile(id: Int) {
-        viewModelScope.launch {
-            mediaControllerManager.tryDeleteMediaItem(playlistId, id)
-            deleteAudioMediaUseCase(playlistId, id)
-        }
     }
 
     private fun triggerEvent(newEvent: PlaylistDetailListEvent) {

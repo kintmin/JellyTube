@@ -13,6 +13,9 @@ import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.util.UUID
@@ -97,19 +100,26 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteAudioMedia(id: Int): Result<Unit> = runCatching {
+    override suspend fun deleteAudioMedia(id: Int): Result<List<Int>> = runCatching {
         withContext(Dispatchers.IO) {
             val data = audioMediaDao.getDataById(id)
 
-            listOf(
-                async { fileManager.deleteFile(data.audioFileNameWithExt) },
-                async { fileManager.deleteFile(data.audioFileNameWithExt) },
-                async {
-                    // 외래키 때문에 순차 삭제
-                    playlistTrackDao.deleteAudioMedia(id)
-                    audioMediaDao.deleteById(id)
-                }
-            ).awaitAll()
+            val deleteFileJob = listOf(
+                launch { fileManager.deleteFile(data.audioFileNameWithExt) },
+                launch { fileManager.deleteFile(data.audioFileNameWithExt) },
+            )
+
+            val playlistIdList = async {
+                val result = playlistTrackDao.getPlaylistIdListFlow(id).first()
+
+                // 외래키 때문에 순차 삭제
+                playlistTrackDao.deleteAudioMedia(id)
+                audioMediaDao.deleteById(id)
+                result
+            }
+
+            deleteFileJob.joinAll()
+            playlistIdList.await()
         }
     }
 }
