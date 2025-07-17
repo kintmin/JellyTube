@@ -9,15 +9,8 @@ import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.google.common.util.concurrent.ListenableFuture
-import com.kintmin.platform.util.MediaControllerManager
-import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
-@AndroidEntryPoint
 class PlaybackService : MediaSessionService() {
-
-    @Inject
-    lateinit var mediaControllerManager: MediaControllerManager
 
     private var mediaSession: MediaSession? = null
 
@@ -51,9 +44,6 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
-        runCatching {
-            mediaControllerManager.release()
-        }
         mediaSession?.run {
             player.release()
             release()

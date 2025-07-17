@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.playlist_detail
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -120,13 +121,16 @@ fun PlaylistDetailScreen(
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     val scrollState = rememberLazyListState()
-    val maxOffset = with(LocalDensity.current) { 300.dp.toPx() }
-    val scrollOffset = min(scrollState.firstVisibleItemScrollOffset.toFloat(), maxOffset)
-    val progress = scrollOffset / maxOffset
+    val maxOffset = with(LocalDensity.current) { 280.dp.toPx() }
+    val scrollOffset = if (scrollState.firstVisibleItemIndex == 0) {
+        min(scrollState.firstVisibleItemScrollOffset.toFloat(), maxOffset)
+    } else {
+        maxOffset
+    }
+    val progress = EaseIn.transform(min(scrollOffset / maxOffset, 1f))
     val backgroundColor = MaterialTheme.colorScheme.background.copy(alpha = progress)
 
     Scaffold(
-        containerColor = Color.Red,
         modifier = Modifier.fillMaxSize(),
         topBar = {
             Column {
@@ -156,7 +160,7 @@ fun PlaylistDetailScreen(
             }
         },
         bottomBar = {
-            Column(Modifier.background(MaterialTheme.colorScheme.background)) {
+            Column {
                 PlayerBar(
                     data = playerBar,
                     sendIntent = sendPlayerBarIntent,
@@ -170,7 +174,9 @@ fun PlaylistDetailScreen(
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = innerPadding.calculateBottomPadding()),
             state = scrollState,
         ) {
             item {
