@@ -6,8 +6,8 @@ object AppConfiguration {
     const val COMPILE_SDK = 35
     const val TARGET_SDK = 35
     const val MIN_SDK = 26
-    const val VERSION_CODE = 4
-    const val VERSION_NAME = "1.0.4"
+    const val VERSION_CODE = 6
+    const val VERSION_NAME = "1.0.6"
     const val PYTHON_VERSION = "3.8"    // 구버전 Android 기기 대응된 최대 파이썬 버전
 }
 

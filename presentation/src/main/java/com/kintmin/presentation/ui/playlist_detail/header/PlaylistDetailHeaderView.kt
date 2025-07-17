@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,15 +49,20 @@ import java.io.File
 
 @Composable
 fun PlaylistDetailHeaderView(
+    innerPaddingValues: PaddingValues,
     headerData: PlaylistDetailHeaderUiState,
     isBasePlaylist: Boolean,
     sendIntent: (PlaylistDetailHeaderIntent) -> Unit,
 ) {
-    Card {
+    Box(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
+                .padding(top = innerPaddingValues.calculateTopPadding())
                 .padding(16.dp)
         ) {
             if (headerData.imageFileFullPath == null) {
@@ -109,12 +116,14 @@ fun PlaylistDetailHeaderView(
                             fontSize = 20.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = headerData.playlistSubtitle,
                             fontSize = 12.sp,
                             lineHeight = 10.sp,
                             overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                     IconButton(
@@ -154,6 +163,7 @@ fun PlaylistDetailHeaderView(
                         fontSize = 12.sp,
                         lineHeight = 15.sp,
                         overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
@@ -235,6 +245,7 @@ fun PlaylistDetailHeaderView(
 fun MusicControlsPreview() {
     JellyTubeTheme {
         PlaylistDetailHeaderView(
+            innerPaddingValues = PaddingValues(top = 24.dp),
             sendIntent = {},
             isBasePlaylist = false,
             headerData = PlaylistDetailHeaderUiState.getMock(),
