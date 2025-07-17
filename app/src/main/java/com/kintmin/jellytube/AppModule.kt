@@ -1,7 +1,12 @@
 package com.kintmin.jellytube
 
 import android.content.Context
-import com.kintmin.domain.common.platform_api.Log
+import androidx.core.os.bundleOf
+import com.google.firebase.Firebase
+import com.google.firebase.analytics.analytics
+import com.kintmin.log.FirebaseEvent
+import com.kintmin.log.Log
+import com.kintmin.log.LogcatEvent
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,8 +28,30 @@ object AppModule {
     @Singleton
     fun provideLog(): Log {
         return object : Log {
-            override fun d(tag: String, message: String) {
-                android.util.Log.d(tag, message)
+            override fun sendLogcatEvent(event: LogcatEvent) {
+                android.util.Log.d(event.tag, event.message)
+            }
+
+            override fun sendFirebaseEvent(event: FirebaseEvent) {
+                val isDebug = false
+                val params = bundleOf(*event.params)
+
+                if (isDebug) {
+                    val firebaseEventTag = "JellyTubeFirebaseEvent"
+                    val logMessage = if (!params.isEmpty) {
+                        val formattedBundle = params.keySet().joinToString(separator = "\n\t") { key ->
+                            val value = params.get(key)
+                            "$key=$value(${value?.javaClass?.simpleName ?: "null"})"
+                        }
+                        "${event.logName}\n\t$formattedBundle"
+                    } else {
+                        event.logName
+                    }
+
+                    android.util.Log.d(firebaseEventTag, logMessage)
+                } else {
+                    Firebase.analytics.logEvent(event.logName, params)
+                }
             }
         }
     }

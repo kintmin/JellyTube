@@ -97,6 +97,7 @@ dependencies {
     implementation(project(":platform"))
     implementation(project(":domain"))
     implementation(project(":data"))
+    implementation(project(":log"))
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)

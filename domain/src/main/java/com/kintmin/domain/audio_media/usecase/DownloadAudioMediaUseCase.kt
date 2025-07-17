@@ -14,7 +14,6 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class DownloadAudioMediaUseCase @Inject constructor(
-    private val log: Log,
     private val audioMediaRepository: AudioMediaRepository,
     private val audioTrackRepository: AudioTrackRepository,
     private val updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase: UpdatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase,
@@ -22,7 +21,7 @@ class DownloadAudioMediaUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(downloadUrl: String): Result<AudioMedia> = runCatching {
         audioMediaRepository.getAudioMediaBySource(source = downloadUrl).onFailure {
-            log.d("DownloadAudioMediaUseCase", "로컬 음원 가져오기 실패 - ${it.message}: ${it.cause}")
+//            log.d("DownloadAudioMediaUseCase", "로컬 음원 가져오기 실패 - ${it.message}: ${it.cause}")
         }.getOrElse {
             audioMediaRepository.addAudioMedia(downloadUrl).onSuccess { audioMedia ->
                 withContext(Dispatchers.IO) {
@@ -32,7 +31,7 @@ class DownloadAudioMediaUseCase @Inject constructor(
                             async { audioTrackRepository.addAudioTrack(Playlist.UNCATEGORIZED, audioMedia.id).getOrThrow() },
                         ).awaitAll()
                     }.onFailure {
-                        log.d("DownloadAudioMediaUseCase", "DB 추가 실패")
+//                        log.d("DownloadAudioMediaUseCase", "DB 추가 실패")
                     }.getOrThrow()
 
                     runCatching {
@@ -43,11 +42,11 @@ class DownloadAudioMediaUseCase @Inject constructor(
                             async { updatePlaylistImageWhenUpdateTrackUseCase(Playlist.UNCATEGORIZED) },
                         ).awaitAll()
                     }.onFailure {
-                        log.d("DownloadAudioMediaUseCase", "DB 업데이트 실패")
+//                        log.d("DownloadAudioMediaUseCase", "DB 업데이트 실패")
                     }.getOrThrow()
                 }
             }.onFailure { exception ->
-                log.d("DownloadAudioMediaUseCase", "음원 저장 실패 - ${exception.message}: ${exception.cause}")
+//                log.d("DownloadAudioMediaUseCase", "음원 저장 실패 - ${exception.message}: ${exception.cause}")
             }.getOrThrow()
         }
     }
