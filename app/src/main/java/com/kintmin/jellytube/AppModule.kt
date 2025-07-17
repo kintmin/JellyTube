@@ -50,6 +50,9 @@ object AppModule {
 
                     android.util.Log.d(firebaseEventTag, logMessage)
                 } else {
+                    // 사용자 고유값, 디바이스명, 디바이스 os,
+                    //Firebase.analytics.setUserId()
+                    //Firebase.analytics.setUserProperty()
                     Firebase.analytics.logEvent(event.logName, params)
                 }
             }
