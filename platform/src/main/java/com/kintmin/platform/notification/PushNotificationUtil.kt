@@ -10,7 +10,7 @@ import javax.inject.Singleton
 
 @Singleton
 class PushNotificationUtil @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) {
     fun sendNotification(notificationData: NotificationData) {
         createChannelIfNotExist(notificationData)

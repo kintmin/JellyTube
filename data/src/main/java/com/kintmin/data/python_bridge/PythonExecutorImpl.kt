@@ -12,7 +12,7 @@ import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 
 internal class PythonExecutorImpl @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : PythonExecutor {
 
     override suspend fun downloadYoutubeMedia(
