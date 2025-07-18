@@ -33,10 +33,9 @@ object AppModule {
             }
 
             override fun sendFirebaseEvent(event: FirebaseEvent) {
-                val isDebug = false
                 val params = bundleOf(*event.params)
 
-                if (isDebug) {
+                if (BuildConfig.DEBUG) {
                     val firebaseEventTag = "JellyTubeFirebaseEvent"
                     val logMessage = if (!params.isEmpty) {
                         val formattedBundle = params.keySet().joinToString(separator = "\n\t") { key ->
