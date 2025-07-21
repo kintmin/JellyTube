@@ -5,8 +5,10 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.kintmin.data.local_datastore.preference_key.BooleanPreferenceKey
+import com.kintmin.data.local_datastore.preference_key.StringPreferenceKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -30,11 +32,25 @@ class DatastoreUtil(
         }
     }
 
+    suspend fun updateStringData(key: StringPreferenceKey, newData: String): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching<Unit> {
+                context.dataStore.edit { settings ->
+                    settings[stringPreferencesKey(key.name)] = newData
+                }
+            }
+        }
+    }
+
     val isPlaybackRepeatingFlow = context.dataStore.data.map {
         it[booleanPreferencesKey(BooleanPreferenceKey.IsPlaybackRepeating.name)] ?: false
     }
 
     val isPlaybackShufflingFlow = context.dataStore.data.map {
         it[booleanPreferencesKey(BooleanPreferenceKey.IsPlaybackShuffling.name)] ?: false
+    }
+
+    val userId = context.dataStore.data.map {
+        it[stringPreferencesKey(StringPreferenceKey.UserId.name)]
     }
 }

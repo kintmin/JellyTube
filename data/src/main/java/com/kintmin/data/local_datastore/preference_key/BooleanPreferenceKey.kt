@@ -4,3 +4,7 @@ enum class BooleanPreferenceKey {
     IsPlaybackRepeating,
     IsPlaybackShuffling,
 }
+
+enum class StringPreferenceKey {
+    UserId,
+}

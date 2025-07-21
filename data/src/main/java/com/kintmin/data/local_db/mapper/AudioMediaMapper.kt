@@ -3,7 +3,7 @@ package com.kintmin.data.local_db.mapper
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.audio_media.model.AudioMedia
-import com.kintmin.domain.common.extension.toLocalDateTime
+import com.kintmin.domain.extension.toLocalDateTime
 import kotlin.time.Duration.Companion.seconds
 
 internal fun AudioMediaEntity.toDomain(fileManager: FileManager) = runCatching {

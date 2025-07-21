@@ -1,4 +1,4 @@
-package com.kintmin.domain.common.extension
+package com.kintmin.domain.extension
 
 import java.time.LocalDateTime
 import java.time.ZoneId

@@ -17,6 +17,7 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":log"))
     implementation(libs.hilt.core)
     ksp(libs.hilt.core.compiler)
     implementation(libs.kotlinx.coroutines.core)

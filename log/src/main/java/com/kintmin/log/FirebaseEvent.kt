@@ -1,5 +1,8 @@
 package com.kintmin.log
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 /**
  * 제한1: 이벤트명의 최대 길이는 영문 기준 40자
  * 제한2: 한 로그 당 params 최대 개수는 25개
@@ -9,4 +12,14 @@ package com.kintmin.log
  */
 sealed class FirebaseEvent(val logName: String, vararg val params: Pair<String, Any?>) {
 
+    data class SuccessRegisterUser(val userId: String) : FirebaseEvent(
+        logName = "SuccessRegisterUser",
+        "userId" to userId,
+        "time" to DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss").format(LocalDateTime.now()),
+    )
+
+    data class FailedRegisterUser(val exception: Throwable) : FirebaseEvent(
+        logName = "FailedRegisterUser",
+        "errorMessage" to exception.message?.take(100),
+    )
 }

@@ -1,9 +1,11 @@
 package com.kintmin.jellytube
 
 import android.content.Context
+import android.os.Build
 import androidx.core.os.bundleOf
 import com.google.firebase.Firebase
 import com.google.firebase.analytics.analytics
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kintmin.log.FirebaseEvent
 import com.kintmin.log.Log
 import com.kintmin.log.LogcatEvent
@@ -28,8 +30,15 @@ object AppModule {
     @Singleton
     fun provideLog(): Log {
         return object : Log {
+
             override fun sendLogcatEvent(event: LogcatEvent) {
                 android.util.Log.d(event.tag, event.message)
+            }
+
+            override fun setFirebaseConfig(userId: String) {
+                FirebaseCrashlytics.getInstance().setUserId(userId)
+                Firebase.analytics.setUserId(userId)
+                // 언제 등록됐는지 시간
             }
 
             override fun sendFirebaseEvent(event: FirebaseEvent) {
@@ -49,9 +58,6 @@ object AppModule {
 
                     android.util.Log.d(firebaseEventTag, logMessage)
                 } else {
-                    // 사용자 고유값, 디바이스명, 디바이스 os,
-                    //Firebase.analytics.setUserId()
-                    //Firebase.analytics.setUserProperty()
                     Firebase.analytics.logEvent(event.logName, params)
                 }
             }
