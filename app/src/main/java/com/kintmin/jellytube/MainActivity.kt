@@ -8,9 +8,6 @@ import androidx.activity.viewModels
 import androidx.compose.material3.Surface
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.Firebase
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.analytics
 import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.theme.JellyTubeTheme
 import dagger.hilt.android.AndroidEntryPoint

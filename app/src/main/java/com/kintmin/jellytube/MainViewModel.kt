@@ -10,7 +10,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val registerUserUseCase: RegisterUserUseCase,
-): ViewModel() {
+) : ViewModel() {
+
     fun registerUser() {
         viewModelScope.launch {
             registerUserUseCase()

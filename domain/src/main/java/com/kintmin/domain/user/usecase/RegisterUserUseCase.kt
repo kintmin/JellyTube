@@ -22,5 +22,7 @@ class RegisterUserUseCase @Inject constructor(
         newUserId
     }.onFailure { error ->
         log.sendFirebaseEvent(FirebaseEvent.FailedRegisterUser(error))
+    }.onSuccess { userId ->
+        log.setFirebaseConfig(userId)
     }
 }
