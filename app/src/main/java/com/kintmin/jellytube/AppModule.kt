@@ -1,7 +1,6 @@
 package com.kintmin.jellytube
 
 import android.content.Context
-import android.os.Build
 import androidx.core.os.bundleOf
 import com.google.firebase.Firebase
 import com.google.firebase.analytics.analytics
@@ -38,7 +37,6 @@ object AppModule {
             override fun setFirebaseConfig(userId: String) {
                 FirebaseCrashlytics.getInstance().setUserId(userId)
                 Firebase.analytics.setUserId(userId)
-                // 언제 등록됐는지 시간
             }
 
             override fun sendFirebaseEvent(event: FirebaseEvent) {
