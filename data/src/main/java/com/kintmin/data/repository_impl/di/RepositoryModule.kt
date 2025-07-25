@@ -89,4 +89,14 @@ object RepositoryModule {
             datastoreUtil = datastoreUtil,
         )
     }
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(
+        datastoreUtil: DatastoreUtil,
+    ): UserRepository {
+        return UserRepositoryImpl(
+            datastoreUtil = datastoreUtil,
+        )
+    }
 }

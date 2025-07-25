@@ -22,4 +22,12 @@ sealed class FirebaseEvent(val logName: String, vararg val params: Pair<String, 
         logName = "FailedRegisterUser",
         "errorMessage" to exception.message?.take(100),
     )
+
+    data class FailedDownloadAudioMedia(
+        val url: String,
+    ) : FirebaseEvent(
+        logName = "FailedDownloadAudioMedia",
+        "url" to url,
+
+    )
 }
