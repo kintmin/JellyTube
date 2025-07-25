@@ -46,8 +46,7 @@ object AppModule {
                     val firebaseEventTag = "JellyTubeFirebaseEvent"
                     val logMessage = if (!params.isEmpty) {
                         val formattedBundle = params.keySet().joinToString(separator = "\n\t") { key ->
-                            val value = params.get(key)
-                            "$key=$value(${value?.javaClass?.simpleName ?: "null"})"
+                            "$key=${params.get(key)}"
                         }
                         "${event.logName}\n\t$formattedBundle"
                     } else {
@@ -55,9 +54,9 @@ object AppModule {
                     }
 
                     android.util.Log.d(firebaseEventTag, logMessage)
-                } else {
-                    Firebase.analytics.logEvent(event.logName, params)
                 }
+
+                Firebase.analytics.logEvent(event.logName, params)
             }
         }
     }

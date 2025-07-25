@@ -16,7 +16,7 @@ class RegisterUserUseCase @Inject constructor(
         if (savedUserId != null) return@runCatching savedUserId
 
         val newUserId = UUID.randomUUID().toString()
-        userRepository.registerUser(newUserId).onSuccess {
+        userRepository.setUserId(newUserId).onSuccess {
             log.sendFirebaseEvent(FirebaseEvent.SuccessRegisterUser(newUserId))
         }
         newUserId

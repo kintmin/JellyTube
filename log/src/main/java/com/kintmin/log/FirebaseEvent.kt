@@ -15,7 +15,7 @@ sealed class FirebaseEvent(val logName: String, vararg val params: Pair<String, 
     data class SuccessRegisterUser(val userId: String) : FirebaseEvent(
         logName = "SuccessRegisterUser",
         "userId" to userId,
-        "time" to DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss").format(LocalDateTime.now()),
+        "time" to DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now()),
     )
 
     data class FailedRegisterUser(val exception: Throwable) : FirebaseEvent(
