@@ -25,7 +25,9 @@ import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
 fun MainNavHost(
     navController: NavHostController,
 ) {
-    val navOptions = NavOptions.Builder().build()
+    val navOptions = navOptions {
+        launchSingleTop = true
+    }
 
     NavHost(
         navController = navController,
@@ -85,7 +87,7 @@ fun MainNavHost(
 
 fun getDeepNav(navController: NavHostController) = navOptions {
     popUpTo(navController.graph.findStartDestination().id) {
-        inclusive = false
+        inclusive = true
     }
     launchSingleTop = true
     restoreState = true

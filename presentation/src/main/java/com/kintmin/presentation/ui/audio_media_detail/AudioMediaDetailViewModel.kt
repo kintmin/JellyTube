@@ -53,7 +53,7 @@ class AudioMediaDetailViewModel @Inject constructor(
 
     private fun deleteAudioMedia() {
         viewModelScope.launch {
-            deleteAudioMediaUseCase(audioMediaId)
+            deleteAudioMediaUseCase(audioMediaId, data.value.source)
             triggerEvent(AudioMediaDetailEvent.OnNavigateToBack)
         }
     }

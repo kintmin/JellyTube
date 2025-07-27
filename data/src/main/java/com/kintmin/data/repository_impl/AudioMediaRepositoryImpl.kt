@@ -12,8 +12,9 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -74,6 +75,14 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             runCatching {
                 audioMediaDao.getDataBySource(source).toDomain(fileManager).getOrThrow()
+            }
+        }
+    }
+
+    override fun getAudioMediaListFlow(): Flow<List<AudioMedia>> {
+        return audioMediaDao.getAudioMediaListFlow().map { audioMediaList ->
+            audioMediaList.map {
+                it.toDomain(fileManager).getOrThrow()
             }
         }
     }

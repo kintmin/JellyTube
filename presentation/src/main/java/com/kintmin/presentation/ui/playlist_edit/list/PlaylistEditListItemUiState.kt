@@ -15,6 +15,7 @@ data class PlaylistEditListItemUiState(
     val imageFileFullPath: String?,
     val sequence: Int,
     val isChecked: Boolean,
+    val source: String,
 ) {
     val subTitle: String get() = "$artist | $audioDurationString | $description"
 
@@ -32,6 +33,7 @@ data class PlaylistEditListItemUiState(
             imageFileFullPath = null,
             sequence = index,
             isChecked = index % 2 == 0,
+            source = "",
         )
 
         fun getMockList() = List(5) { index -> getMock(index) }
@@ -48,4 +50,5 @@ internal fun PlaylistTrackAggregate.toPlaylistEditListItemUiState(isChecked: Boo
     imageFileFullPath = audioMedia.imageFileFullPath,
     sequence = audioTrack.trackSequence,
     isChecked = isChecked,
+    source = audioMedia.source,
 )

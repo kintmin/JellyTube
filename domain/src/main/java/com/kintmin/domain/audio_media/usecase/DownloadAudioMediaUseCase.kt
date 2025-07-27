@@ -3,52 +3,66 @@ package com.kintmin.domain.audio_media.usecase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
-import com.kintmin.domain.common.platform_api.Log
+import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.playlist.model.Playlist
-import com.kintmin.domain.playlist.usecase.UpdatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase
-import com.kintmin.domain.playlist.usecase.UpdatePlaylistImageWhenUpdateTrackUseCase
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.withContext
+import com.kintmin.domain.playlist.usecase.internal.UpdateOnPlaylistChangeUseCase
+import com.kintmin.log.FirebaseEvent
+import com.kintmin.log.Log
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 class DownloadAudioMediaUseCase @Inject constructor(
-    private val log: Log,
     private val audioMediaRepository: AudioMediaRepository,
     private val audioTrackRepository: AudioTrackRepository,
-    private val updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase: UpdatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase,
-    private val updatePlaylistImageWhenUpdateTrackUseCase: UpdatePlaylistImageWhenUpdateTrackUseCase,
+    private val updateOnPlaylistChangeUseCase: UpdateOnPlaylistChangeUseCase,
+    private val log: Log,
+    private val deviceStatusRepository: DeviceStatusRepository,
 ) {
     suspend operator fun invoke(downloadUrl: String): Result<AudioMedia> = runCatching {
-        audioMediaRepository.getAudioMediaBySource(source = downloadUrl).onFailure {
-            log.d("DownloadAudioMediaUseCase", "로컬 음원 가져오기 실패 - ${it.message}: ${it.cause}")
-        }.getOrElse {
+        // 다운한 목록 중 동일한 출처가 있다면 제외한다.
+        audioMediaRepository.getAudioMediaBySource(source = downloadUrl).getOrElse {
+            // 미디어 다운 및 추가를 하는 중 예외가 발생 시 그대로 throw한다.
             audioMediaRepository.addAudioMedia(downloadUrl).onSuccess { audioMedia ->
-                withContext(Dispatchers.IO) {
-                    runCatching {
-                        listOf(
-                            async { audioTrackRepository.addAudioTrack(Playlist.TOTAL, audioMedia.id).getOrThrow() },
-                            async { audioTrackRepository.addAudioTrack(Playlist.UNCATEGORIZED, audioMedia.id).getOrThrow() },
-                        ).awaitAll()
-                    }.onFailure {
-                        log.d("DownloadAudioMediaUseCase", "DB 추가 실패")
-                    }.getOrThrow()
+                supervisorScope {
+                    listOf(
+                        // 전체 추가는 무조건 보장해야 하므로 예외 발생 시 그대로 throw한다.
+                        launch {
+                            val sequence = audioTrackRepository.addAudioTrack(Playlist.TOTAL, audioMedia.id).getOrThrow()
+                            log.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(downloadUrl, sequence))
+                        },
+                        // 미분류 추가는 오류가 나도 무시한다.
+                        launch { audioTrackRepository.addAudioTrack(Playlist.UNCATEGORIZED, audioMedia.id) },
+                    ).joinAll()
 
-                    runCatching {
-                        listOf(
-                            async { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(Playlist.TOTAL) },
-                            async { updatePlaylistImageWhenUpdateTrackUseCase(Playlist.TOTAL) },
-                            async { updatePlaylistCountAndPlayTimeWhenUpdatePlaybackUseCase(Playlist.UNCATEGORIZED) },
-                            async { updatePlaylistImageWhenUpdateTrackUseCase(Playlist.UNCATEGORIZED) },
-                        ).awaitAll()
-                    }.onFailure {
-                        log.d("DownloadAudioMediaUseCase", "DB 업데이트 실패")
-                    }.getOrThrow()
+                    // 업데이트는 오류가 나도 무시한다.
+                    listOf(
+                        launch { updateOnPlaylistChangeUseCase(Playlist.TOTAL) },
+                        launch { updateOnPlaylistChangeUseCase(Playlist.UNCATEGORIZED) },
+                    ).joinAll()
+
+
                 }
-            }.onFailure { exception ->
-                log.d("DownloadAudioMediaUseCase", "음원 저장 실패 - ${exception.message}: ${exception.cause}")
             }.getOrThrow()
         }
+    }.onFailure { exception ->
+        val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()
+        val connectionStatus = deviceStatusRepository.getConnectionStatus().getOrNull()
+
+        log.sendFirebaseEvent(
+            FirebaseEvent.FailedDownloadAudioMedia(
+                source = downloadUrl,
+                exception = exception,
+                availableRemMemory = systemMemory?.availableRemMemory,
+                isLowRemMemory = systemMemory?.isLowRemMemory,
+                availableStorage = systemMemory?.availableStorage,
+                isConnected = connectionStatus?.isConnected,
+                isWifi = connectionStatus?.isWifi,
+                isCellular = connectionStatus?.isCellular,
+                downstreamKbps = connectionStatus?.downstreamKbps,
+                upstreamKbps = connectionStatus?.upstreamKbps,
+            )
+        )
     }
 }

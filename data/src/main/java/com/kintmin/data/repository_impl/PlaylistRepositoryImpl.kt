@@ -20,7 +20,7 @@ class PlaylistRepositoryImpl @Inject constructor(
     private val fileManager: FileManager,
 ) : PlaylistRepository {
 
-    override suspend fun addPlaylist(title: String): Result<Unit> = withContext(Dispatchers.IO) {
+    override suspend fun addPlaylist(title: String): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
             playlistDao.insertPlaylist(
                 PlaylistEntity(
@@ -31,7 +31,7 @@ class PlaylistRepositoryImpl @Inject constructor(
                     rawCreatedTime = Instant.now().toEpochMilli(),
                     isCustomImage = false,
                 )
-            )
+            ).toInt()
         }
     }
 

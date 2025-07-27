@@ -4,7 +4,7 @@ import com.kintmin.domain.playlist.model.Playlist
 import kotlinx.coroutines.flow.Flow
 
 interface PlaylistRepository {
-    suspend fun addPlaylist(title: String): Result<Unit>
+    suspend fun addPlaylist(title: String): Result<Int>
 
     fun getAllPlaylistFlow(): Flow<List<Playlist>>
     fun getPlaylistFlow(playlistId: Int): Flow<Playlist>

@@ -4,7 +4,7 @@ import com.kintmin.data.local_db.model.PlaylistTrackEntity
 import com.kintmin.data.local_db.model.PlaylistTrackFullDto
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.audio_track.model.AudioTrack
-import com.kintmin.domain.common.extension.toLocalDateTime
+import com.kintmin.domain.extension.toLocalDateTime
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 
 internal fun PlaylistTrackFullDto.toDomain(fileManager: FileManager) = runCatching {
