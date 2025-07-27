@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import com.kintmin.data.local_db.model.AudioMediaEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AudioMediaDao {
@@ -15,6 +16,9 @@ interface AudioMediaDao {
 
     @Query("SELECT * FROM AUDIO_MEDIA WHERE source = :source")
     suspend fun getDataBySource(source: String): AudioMediaEntity
+
+    @Query("SELECT * FROM AUDIO_MEDIA")
+    fun getAudioMediaListFlow(): Flow<List<AudioMediaEntity>>
 
     @Query("""
 UPDATE AUDIO_MEDIA 

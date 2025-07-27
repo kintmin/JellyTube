@@ -12,8 +12,8 @@ internal object FirebaseParam {
     }
 
     fun userId(value: String) = param("userId", value)
-    fun errorMessage(exception: Throwable) = param("errorMessage", exception.message ?: "Unknown")
-    fun url(value: String) = param("url", value)
+    fun errorMessage(exception: Throwable) = param("errorMessage", exception.message.toString())
+    fun source(value: String) = param("source", value)
     fun availableRemMemory(value: Long?) = param("availableRemMemory", value.toString())
     fun isLowRemMemory(value: Boolean?) = param("isLowRemMemory", value.toString())
     fun availableStorage(value: Long?) = param("availableStorage", value.toString())
@@ -22,4 +22,7 @@ internal object FirebaseParam {
     fun isCellular(value: Boolean?) = param("isCellular", value.toString())
     fun downstreamKbps(value: Int?) = param("downstreamKbps", value.toString())
     fun upstreamKbps(value: Int?) = param("upstreamKbps", value.toString())
+    fun audioMediaCount(value: Int) = param("audioMediaCount", value.toString())
+    fun playlistId(value: Int) = param("playlistId", value.toString())
+    fun playlistTitle(value: String) = param("playlistTitle", value)
 }

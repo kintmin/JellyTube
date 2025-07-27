@@ -28,7 +28,10 @@ class DownloadAudioMediaUseCase @Inject constructor(
                 supervisorScope {
                     listOf(
                         // 전체 추가는 무조건 보장해야 하므로 예외 발생 시 그대로 throw한다.
-                        launch { audioTrackRepository.addAudioTrack(Playlist.TOTAL, audioMedia.id).getOrThrow() },
+                        launch {
+                            val sequence = audioTrackRepository.addAudioTrack(Playlist.TOTAL, audioMedia.id).getOrThrow()
+                            log.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(downloadUrl, sequence))
+                        },
                         // 미분류 추가는 오류가 나도 무시한다.
                         launch { audioTrackRepository.addAudioTrack(Playlist.UNCATEGORIZED, audioMedia.id) },
                     ).joinAll()
@@ -38,6 +41,8 @@ class DownloadAudioMediaUseCase @Inject constructor(
                         launch { updateOnPlaylistChangeUseCase(Playlist.TOTAL) },
                         launch { updateOnPlaylistChangeUseCase(Playlist.UNCATEGORIZED) },
                     ).joinAll()
+
+
                 }
             }.getOrThrow()
         }
@@ -47,7 +52,7 @@ class DownloadAudioMediaUseCase @Inject constructor(
 
         log.sendFirebaseEvent(
             FirebaseEvent.FailedDownloadAudioMedia(
-                url = downloadUrl,
+                source = downloadUrl,
                 exception = exception,
                 availableRemMemory = systemMemory?.availableRemMemory,
                 isLowRemMemory = systemMemory?.isLowRemMemory,

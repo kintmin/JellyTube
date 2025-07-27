@@ -22,7 +22,7 @@ sealed class FirebaseEvent(rawLogName: String, vararg rawParams: Pair<String, An
     )
 
     data class FailedDownloadAudioMedia(
-        val url: String,
+        val source: String,
         val exception: Throwable,
         val availableRemMemory: Long? = null,
         val isLowRemMemory: Boolean? = null,
@@ -34,7 +34,7 @@ sealed class FirebaseEvent(rawLogName: String, vararg rawParams: Pair<String, An
         val upstreamKbps: Int? = null,
     ) : FirebaseEvent(
         "FailedDownloadAudioMedia",
-        FirebaseParam.url(url),
+        FirebaseParam.source(source),
         FirebaseParam.errorMessage(exception),
         FirebaseParam.availableRemMemory(availableRemMemory),
         FirebaseParam.isLowRemMemory(isLowRemMemory),
@@ -44,5 +44,41 @@ sealed class FirebaseEvent(rawLogName: String, vararg rawParams: Pair<String, An
         FirebaseParam.isCellular(isCellular),
         FirebaseParam.downstreamKbps(downstreamKbps),
         FirebaseParam.upstreamKbps(upstreamKbps),
+    )
+
+    data class AddAudioMedia(
+        val source: String,
+        val audioMediaCount: Int,
+    ): FirebaseEvent(
+        "AddAudioMedia",
+        FirebaseParam.source(source),
+        FirebaseParam.audioMediaCount(audioMediaCount),
+    )
+
+    data class DeleteAudioMedia(
+        val source: String,
+    ): FirebaseEvent(
+        "DeleteAudioMedia",
+        FirebaseParam.source(source),
+    )
+
+    data class AddPlaylist(
+        val playlistId: Int,
+        val playlistTitle: String,
+    ): FirebaseEvent(
+        "AddPlaylist",
+        FirebaseParam.playlistId(playlistId),
+        FirebaseParam.playlistTitle(playlistTitle),
+    )
+
+    data class DeletePlaylist(
+        val playlistId: Int,
+        val playlistTitle: String,
+        val audioMediaCount: Int,
+    ): FirebaseEvent(
+        "DeletePlaylist",
+        FirebaseParam.playlistId(playlistId),
+        FirebaseParam.playlistTitle(playlistTitle),
+        FirebaseParam.audioMediaCount(audioMediaCount),
     )
 }

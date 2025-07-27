@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PlaylistDao {
     @Insert
-    suspend fun insertPlaylist(entity: PlaylistEntity)
+    suspend fun insertPlaylist(entity: PlaylistEntity): Long
 
     @Query("SELECT * FROM PLAYLIST WHERE id = :id")
     suspend fun getPlaylistById(id: Int): PlaylistEntity

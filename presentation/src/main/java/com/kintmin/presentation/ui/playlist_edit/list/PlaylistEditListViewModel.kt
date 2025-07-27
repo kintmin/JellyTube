@@ -99,7 +99,12 @@ class PlaylistEditListViewModel @Inject constructor(
 
     private fun deleteFullAudioMediaList() {
         viewModelScope.launch {
-            deleteAudioMediaListUseCase(_checkedItemIdList.value)
+            val sourceList = audioMediaListFlow.value.filter {
+                it.id in _checkedItemIdList.value
+            }.map {
+                it.source
+            }
+            deleteAudioMediaListUseCase(_checkedItemIdList.value, sourceList)
             _checkedItemIdList.update { emptyList() }
         }
     }
