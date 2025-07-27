@@ -1,11 +1,7 @@
 package com.kintmin.presentation.ui.playlist_detail.list
 
-import android.net.Uri
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
-import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 

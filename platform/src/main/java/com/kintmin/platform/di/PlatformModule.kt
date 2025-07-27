@@ -1,7 +1,6 @@
 package com.kintmin.platform.di
 
 import android.content.Context
-import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.platform.notification.PushNotificationUtil
 import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.platform.util.MediaControllerManagerImpl
@@ -26,8 +25,8 @@ object PlatformModule {
     @Provides
     @Singleton
     fun bindMediaControllerManager(
-        fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
+        @ApplicationContext context: Context,
     ): MediaControllerManager {
-        return MediaControllerManagerImpl(fetchAudioMediaListFlowUseCase)
+        return MediaControllerManagerImpl(context)
     }
 }

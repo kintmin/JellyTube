@@ -10,7 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 class ExecuteYoutubeDownload @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val appContext: Context,
 ) {
 
     operator fun invoke(url: String) {
@@ -18,6 +18,6 @@ class ExecuteYoutubeDownload @Inject constructor(
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setInputData(workDataOf(YoutubeDownloadWorker.INPUT_DATA_URL to url))
             .build()
-        WorkManager.getInstance(context).enqueue(request)
+        WorkManager.getInstance(appContext).enqueue(request)
     }
 }

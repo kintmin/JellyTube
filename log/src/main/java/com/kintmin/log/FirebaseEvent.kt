@@ -6,7 +6,7 @@ package com.kintmin.log
  * 제한3: 앱 사용자당 500개
  * https://support.google.com/analytics/answer/9267744
  */
-sealed class FirebaseEvent(rawLogName: String, vararg rawParams: Pair<String, Any?>) {
+sealed class FirebaseEvent(rawLogName: String, vararg rawParams: Pair<String, String>) {
 
     val logName = rawLogName.take(40)
     val params = rawParams.take(25).toTypedArray()

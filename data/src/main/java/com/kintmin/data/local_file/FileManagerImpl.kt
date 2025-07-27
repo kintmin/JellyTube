@@ -7,7 +7,6 @@ import android.os.Build
 import android.os.Environment
 import com.kintmin.data.local_file.model.Ext
 import com.kintmin.data.local_file.model.FileType
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -15,7 +14,7 @@ import java.io.FileOutputStream
 import javax.inject.Inject
 
 internal class FileManagerImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    private val appContext: Context,
 ) : FileManager {
 
     override fun getFileNameWithExt(fileFullPath: String) = runCatching {
@@ -68,7 +67,7 @@ internal class FileManagerImpl @Inject constructor(
     }
 
     override fun clearDiskCache(): Result<Unit> = runCatching {
-        context.cacheDir.deleteRecursively()
+        appContext.cacheDir.deleteRecursively()
     }
 
     private fun extractExtFromFileName(fileNameWithExt: String): Pair<String, Ext> {
@@ -89,8 +88,8 @@ internal class FileManagerImpl @Inject constructor(
 
     private fun getDirectory(fileType: FileType): File {
         val dir = when (fileType) {
-            FileType.Audio -> context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
-            FileType.Image -> context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            FileType.Audio -> appContext.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+            FileType.Image -> appContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         }
         return dir?.takeIf { it.exists() || it.mkdirs() }
             ?: throw Exception("디렉토리를 찾을 수 없습니다.")

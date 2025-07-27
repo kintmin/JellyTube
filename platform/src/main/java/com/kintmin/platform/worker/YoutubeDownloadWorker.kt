@@ -9,11 +9,10 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.playlist.model.Playlist
-import com.kintmin.platform.mapper.toMediaItem
-import com.kintmin.platform.notification.NotificationChannelData
 import com.kintmin.platform.notification.NotificationData
 import com.kintmin.platform.notification.PushNotificationUtil
 import com.kintmin.platform.util.MediaControllerManager
+import com.kintmin.platform.util.mapper.toMediaControlData
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -59,8 +58,8 @@ class YoutubeDownloadWorker @AssistedInject constructor(
             pushNotificationUtil.cancelNotification(NotificationData.Download())
             pushNotificationUtil.sendNotification(NotificationData.DownloadResult("완료되었습니다."))
             withContext(Dispatchers.Main) {
-                mediaControllerManager.tryAddLastMediaItem(Playlist.TOTAL, audioMedia.toMediaItem())
-                mediaControllerManager.tryAddLastMediaItem(Playlist.UNCATEGORIZED, audioMedia.toMediaItem())
+                mediaControllerManager.tryAddLastMediaItem(Playlist.TOTAL, audioMedia.toMediaControlData())
+                mediaControllerManager.tryAddLastMediaItem(Playlist.UNCATEGORIZED, audioMedia.toMediaControlData())
             }
             return Result.success()
         }.onFailure {

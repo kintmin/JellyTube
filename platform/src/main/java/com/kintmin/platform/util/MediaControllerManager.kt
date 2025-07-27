@@ -1,19 +1,18 @@
 package com.kintmin.platform.util
 
-import android.content.Context
-import androidx.media3.common.MediaItem
+import com.kintmin.platform.util.model.MediaControlData
 import kotlin.time.Duration
 
 interface MediaControllerManager {
 
-    fun initialize(context: Context)
+    fun initialize()
     fun release()
 
     val isPlaying: Boolean
     fun pause()
     fun resume()
 
-    val playingMediaItem: MediaItem?
+    val playingMediaItem: MediaControlData?
     val currentPosition: Long?
     val playbackDuration: Long?
 
@@ -22,6 +21,7 @@ interface MediaControllerManager {
     fun playFromPlaylist(
         playlistId: Int,
         startMediaId: Int? = null,
+        mediaControlDataList: List<MediaControlData>,
     ): Result<Unit>
 
     fun tryDeleteMediaItem(
@@ -31,7 +31,7 @@ interface MediaControllerManager {
 
     fun tryAddLastMediaItem(
         playlistId: Int,
-        mediaItem: MediaItem,
+        mediaItem: MediaControlData,
     ): Result<Unit>
 
     fun setShuffleMode(isShuffle: Boolean)

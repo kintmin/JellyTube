@@ -7,7 +7,7 @@ package com.kintmin.log
  */
 internal object FirebaseParam {
 
-    private fun param(key: String, value: String): Pair<String, Any> {
+    private fun param(key: String, value: String): Pair<String, String> {
         return key.take(40) to value.take(100)
     }
 
