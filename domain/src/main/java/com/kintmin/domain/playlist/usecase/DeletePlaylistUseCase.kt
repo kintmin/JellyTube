@@ -4,8 +4,8 @@ import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class DeletePlaylistUseCase @Inject constructor(
@@ -16,13 +16,13 @@ class DeletePlaylistUseCase @Inject constructor(
 
     suspend operator fun invoke(playlistId: Int) {
         runCatching {
-            withContext(Dispatchers.IO) {
-                val audioMediaIdList = audioTrackRepository.getPlaylistTrackAggregateListFlow(playlistId).map { aggregateList ->
+            val audioMediaIdList = audioTrackRepository.getPlaylistTrackAggregateListFlow(playlistId)
+                .flowOn(Dispatchers.IO)
+                .map { aggregateList ->
                     aggregateList.map { it.audioMedia.id }
                 }.first()
-                playlistRepository.deletePlaylist(playlistId).getOrThrow()
-                addUncategorizedPlaylistUseCase(audioMediaIdList)
-            }
+            playlistRepository.deletePlaylist(playlistId).getOrThrow()
+            addUncategorizedPlaylistUseCase(audioMediaIdList)
         }
     }
 }

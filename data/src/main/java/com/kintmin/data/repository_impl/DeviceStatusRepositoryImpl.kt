@@ -11,10 +11,24 @@ class DeviceStatusRepositoryImpl @Inject constructor(
 ) : DeviceStatusRepository {
 
     override fun getSystemMemory(): Result<DeviceMemory> {
-        TODO("Not yet implemented")
+        return deviceStatus.getSystemMemory().map {
+            DeviceMemory(
+                availableRemMemory = it.availableRemMemory,
+                isLowRemMemory = it.isLowRemMemory,
+                availableStorage = it.availableStorage,
+            )
+        }
     }
 
     override fun getConnectionStatus(): Result<ConnectionStatus> {
-        TODO("Not yet implemented")
+        return deviceStatus.getConnectionStatus().map {
+            ConnectionStatus(
+                isConnected = it.isConnected,
+                isWifi = it.isWifi,
+                isCellular = it.isCellular,
+                downstreamKbps = it.downstreamKbps,
+                upstreamKbps = it.upstreamKbps,
+            )
+        }
     }
 }

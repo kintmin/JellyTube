@@ -1,5 +1,6 @@
 package com.kintmin.data.repository_impl.di
 
+import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.local_datastore.DatastoreUtil
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dao.PlaylistDao
@@ -10,11 +11,13 @@ import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.data.repository_impl.AudioMediaRepositoryImpl
 import com.kintmin.data.repository_impl.AudioPlaySettingRepositoryImpl
 import com.kintmin.data.repository_impl.AudioTrackRepositoryImpl
+import com.kintmin.data.repository_impl.DeviceStatusRepositoryImpl
 import com.kintmin.data.repository_impl.PlaylistRepositoryImpl
 import com.kintmin.data.repository_impl.UserRepositoryImpl
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingRepository
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
+import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.domain.user.repository.UserRepository
 import dagger.Module
@@ -92,11 +95,11 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideUserRepository(
-        datastoreUtil: DatastoreUtil,
-    ): UserRepository {
-        return UserRepositoryImpl(
-            datastoreUtil = datastoreUtil,
+    fun provideDeviceStatusRepository(
+        deviceStatus: DeviceStatus,
+    ): DeviceStatusRepository {
+        return DeviceStatusRepositoryImpl(
+            deviceStatus = deviceStatus,
         )
     }
 }

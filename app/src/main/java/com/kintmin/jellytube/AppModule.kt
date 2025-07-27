@@ -34,7 +34,15 @@ object AppModule {
                 android.util.Log.d(event.tag, event.message)
             }
 
-            override fun setFirebaseConfig(userId: String) {
+            /**
+             * 제한1: 속성 최대 개수는 25개
+             * 제한2: 속성 이름 길이는 영문 기준 24자
+             * 제한3: 속성값 길이는 영문 기준 36자
+             * 제한4: userId 길이는 영문 기준 256자
+             * https://support.google.com/analytics/answer/9267744
+             */
+            override fun setFirebaseConfig(rawUserId: String) {
+                val userId = rawUserId.take(256)
                 FirebaseCrashlytics.getInstance().setUserId(userId)
                 Firebase.analytics.setUserId(userId)
             }
