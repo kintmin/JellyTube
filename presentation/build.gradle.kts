@@ -65,7 +65,4 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
 
     implementation(libs.io.coil.compose)
-
-    implementation(libs.androidx.media3.ui)
-    implementation(libs.androidx.media3.session)
 }

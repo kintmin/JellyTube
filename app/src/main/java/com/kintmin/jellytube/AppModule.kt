@@ -54,7 +54,7 @@ object AppModule {
                     val firebaseEventTag = "JellyTubeFirebaseEvent"
                     val logMessage = if (!params.isEmpty) {
                         val formattedBundle = params.keySet().joinToString(separator = "\n\t") { key ->
-                            "$key=${params.get(key)}"
+                            "$key=${params.getString(key)}"
                         }
                         "${event.logName}\n\t$formattedBundle"
                     } else {

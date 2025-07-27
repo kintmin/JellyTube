@@ -8,16 +8,11 @@ import androidx.activity.viewModels
 import androidx.compose.material3.Surface
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
-import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.presentation.theme.JellyTubeTheme
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    @Inject
-    lateinit var mediaControllerManager: MediaControllerManager
 
     private val viewModel: MainViewModel by viewModels()
 
@@ -25,6 +20,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         viewModel.registerUser()
+        viewModel.initializeMediaController()
         installSplashScreen()
 
         enableEdgeToEdge()
@@ -40,17 +36,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        runCatching {
-            mediaControllerManager.initialize(baseContext)
-        }
-    }
-
-    override fun onDestroy() {
-        runCatching {
-            mediaControllerManager.release()
-        }
-        super.onDestroy()
+    override fun onStop() {
+        super.onStop()
+        viewModel.releaseMediaController()
     }
 }

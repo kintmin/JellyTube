@@ -17,16 +17,19 @@ class PlayerBarViewModel @Inject constructor(
     private val mediaControllerManager: MediaControllerManager,
 ) : ViewModel() {
 
-    private val _currentMediaItem = MutableStateFlow(
-        PlayerBarUiState(
-            id = mediaControllerManager.playingMediaItem?.mediaId ?: "",
-            title = (mediaControllerManager.playingMediaItem?.mediaMetadata?.title ?: "").toString(),
-            currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
-            playbackDuration = (mediaControllerManager.playingMediaItem?.mediaMetadata?.durationMs ?: 0L).milliseconds,
-            imageFileFullPath = mediaControllerManager.playingMediaItem?.mediaMetadata?.artworkUri?.path,
-            isPlaying = mediaControllerManager.isPlaying,
+    private val _currentMediaItem = mediaControllerManager.playingMediaItem.let {
+        MutableStateFlow(
+            PlayerBarUiState(
+                id = it?.mediaId ?: "",
+                title = it?.mediaTitle ?: "",
+                currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
+                playbackDuration = (it?.mediaDurationMs ?: 0L).milliseconds,
+                imageFileFullPath = it?.mediaArtworkFileUri,
+                isPlaying = mediaControllerManager.isPlaying,
+            )
         )
-    )
+    }
+
     val currentMediaItem = _currentMediaItem.asStateFlow()
 
     private var _isHandling = false
@@ -73,14 +76,16 @@ class PlayerBarViewModel @Inject constructor(
                             }
                         } else {
                             _currentMediaItem.update {
-                                PlayerBarUiState(
-                                    id = mediaControllerManager.playingMediaItem?.mediaId ?: "",
-                                    title = (mediaControllerManager.playingMediaItem?.mediaMetadata?.title ?: "").toString(),
-                                    currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
-                                    playbackDuration = (mediaControllerManager.playingMediaItem?.mediaMetadata?.durationMs ?: 0L).milliseconds,
-                                    imageFileFullPath = mediaControllerManager.playingMediaItem?.mediaMetadata?.artworkUri?.path,
-                                    isPlaying = mediaControllerManager.isPlaying,
-                                )
+                                mediaControllerManager.playingMediaItem.let {
+                                    PlayerBarUiState(
+                                        id = it?.mediaId ?: "",
+                                        title = it?.mediaTitle ?: "",
+                                        currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
+                                        playbackDuration = (it?.mediaDurationMs ?: 0L).milliseconds,
+                                        imageFileFullPath = it?.mediaArtworkFileUri,
+                                        isPlaying = mediaControllerManager.isPlaying,
+                                    )
+                                }
                             }
                         }
                     }

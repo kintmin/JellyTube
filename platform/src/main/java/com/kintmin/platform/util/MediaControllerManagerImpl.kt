@@ -3,171 +3,169 @@ package com.kintmin.platform.util
 import android.content.ComponentName
 import android.content.Context
 import androidx.core.content.ContextCompat
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
-import com.kintmin.platform.mapper.toMediaItem
+import com.google.common.util.concurrent.ListenableFuture
+import com.kintmin.platform.util.mapper.toMediaItem
 import com.kintmin.platform.service.PlaybackService
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.kintmin.platform.util.mapper.toMediaControlData
+import com.kintmin.platform.util.model.MediaControlData
 import javax.inject.Inject
 import kotlin.time.Duration
 
 class MediaControllerManagerImpl @Inject constructor(
-    private val fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
+    private val appContext: Context,
 ) : MediaControllerManager {
-    private val mainScope = MainScope()
 
-    private var fetchDataJob: Job? = null
+    private var mediaController: MediaController? = null
+    private var controllerFuture: ListenableFuture<MediaController>? = null
 
-    private var _mediaController: MediaController? = null
-    private var currentPlaylistId = MutableStateFlow<Int?>(null)
+    private var currentPlaylistId: Int? = null
 
-    override fun initialize(context: Context) {
-        if (_mediaController == null) {
-            val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
-            MediaController.Builder(context, sessionToken).buildAsync().let { controllerFuture ->
-                controllerFuture.addListener({
-                    _mediaController = controllerFuture.get()
-                }, ContextCompat.getMainExecutor(context))
-            }
+    private fun getMediaController(): MediaController? {
+        if (mediaController == null) initialize()
+        return mediaController
+    }
+
+    override fun initialize() {
+        if (mediaController != null || controllerFuture?.isDone == false && controllerFuture?.isCancelled == false) return
+
+        val sessionToken = SessionToken(appContext, ComponentName(appContext, PlaybackService::class.java))
+        controllerFuture = MediaController.Builder(appContext, sessionToken).buildAsync().apply {
+            addListener({
+                runCatching {
+                    mediaController = get()
+                }.onFailure {
+                    controllerFuture = null
+                }
+            }, ContextCompat.getMainExecutor(appContext))
         }
     }
 
     override fun release() {
-        _mediaController?.release()
-        _mediaController = null
-        currentPlaylistId.update { null }
-        fetchDataJob?.cancel()
-        mainScope.cancel()
+        try {
+            controllerFuture?.let {
+                MediaController.releaseFuture(it)
+            }
+        } finally {
+            controllerFuture = null
+            mediaController = null
+        }
     }
 
     override val isPlaying: Boolean
-        get() = _mediaController?.isPlaying ?: false
+        get() = getMediaController()?.isPlaying ?: false
 
     override fun pause() {
-        if (_mediaController?.isPlaying == true) {
-            _mediaController?.pause()
+        val mediaController = getMediaController() ?: return
+        if (mediaController.isPlaying) {
+            mediaController.pause()
         }
     }
 
     override fun resume() {
-        if (_mediaController?.isPlaying == false) {
-            _mediaController?.play()
+        val mediaController = getMediaController() ?: return
+        if (!mediaController.isPlaying) {
+            mediaController.play()
         }
     }
 
-    override val playingMediaItem: MediaItem?
-        get() = _mediaController?.currentMediaItem
+    override val playingMediaItem: MediaControlData?
+        get() = getMediaController()?.currentMediaItem?.toMediaControlData()
     override val currentPosition: Long?
-        get() = _mediaController?.currentPosition
+        get() = getMediaController()?.currentPosition
     override val playbackDuration: Long?
-        get() = _mediaController?.duration
+        get() = getMediaController()?.duration
 
     override fun seek(duration: Duration) {
-        _mediaController?.seekTo(duration.inWholeMilliseconds)
+        getMediaController()?.seekTo(duration.inWholeMilliseconds)
     }
 
     override fun playFromPlaylist(
         playlistId: Int,
         startMediaId: Int?,
+        mediaControlDataList: List<MediaControlData>,
     ): Result<Unit> = runCatching {
-        if (currentPlaylistId.value != playlistId) {
-            val isDataFetchingOtherPlaylist = fetchDataJob?.isCompleted == false
-            if (isDataFetchingOtherPlaylist) {
-                fetchDataJob!!.cancel()
-            }
-
-            fetchDataJob = mainScope.launch {
-                resetMediaItemList(playlistId)
-                playbackPlaylist(startMediaId)
-            }
+        if (currentPlaylistId != playlistId) {
+            currentPlaylistId = playlistId
+            resetMediaItemList(mediaControlDataList).getOrThrow()
         }
 
-        val isDataFetching = fetchDataJob?.isCompleted == false
-        if (isDataFetching) return@runCatching
-
-        playbackPlaylist(startMediaId)
+        playbackPlaylist(startMediaId).getOrThrow()
     }
 
     override fun tryDeleteMediaItem(
         playlistId: Int,
         mediaId: Int,
     ): Result<Unit> = runCatching {
-        if (currentPlaylistId.value == playlistId) {
+        if (currentPlaylistId == playlistId) {
+            val mediaController = getMediaController() ?: return@runCatching
             val targetIndex = findMediaItem(mediaId).getOrThrow()
-            _mediaController?.removeMediaItem(targetIndex)
+            mediaController.removeMediaItem(targetIndex)
         }
     }
 
     override fun tryAddLastMediaItem(
         playlistId: Int,
-        mediaItem: MediaItem,
+        mediaItem: MediaControlData,
     ): Result<Unit> = runCatching {
-        if (currentPlaylistId.value == playlistId) {
-            _mediaController?.addMediaItem(mediaItem)
+        if (currentPlaylistId == playlistId) {
+            val mediaController = getMediaController() ?: return@runCatching
+            mediaController.addMediaItem(mediaItem.toMediaItem())
         }
     }
 
     override fun setShuffleMode(isShuffle: Boolean) {
-        if (_mediaController?.shuffleModeEnabled == isShuffle) return
-        _mediaController?.shuffleModeEnabled = isShuffle
-        _mediaController?.prepare()
+        val mediaController = getMediaController() ?: return
+        if (mediaController.shuffleModeEnabled == isShuffle) return
+        mediaController.shuffleModeEnabled = isShuffle
+        mediaController.prepare()
     }
 
     override fun setRepeatMode(isRepeat: Boolean) {
-        _mediaController?.repeatMode = if (isRepeat) REPEAT_MODE_ALL else REPEAT_MODE_OFF
+        getMediaController()?.repeatMode = if (isRepeat) REPEAT_MODE_ALL else REPEAT_MODE_OFF
     }
 
-    private fun playbackPlaylist(startMediaId: Int?) {
+    private fun playbackPlaylist(startMediaId: Int?) = runCatching {
+        val mediaController = getMediaController() ?: return@runCatching
+
         startMediaId?.let {
             seekMediaItem(it).getOrThrow()
         }
 
-        if (_mediaController?.isPlaying == false) {
-            _mediaController?.prepare()
-            _mediaController?.play()
+        if (!mediaController.isPlaying) {
+            mediaController.prepare()
+            mediaController.play()
         }
     }
 
-    private suspend fun resetMediaItemList(playlistId: Int) = runCatching {
-        currentPlaylistId.update { playlistId }
-
-        val mediaItemList = withContext(Dispatchers.IO) {
-            fetchAudioMediaListFlowUseCase(playlistId).first().map {
-                it.audioMedia.toMediaItem()
-            }
+    private fun resetMediaItemList(audioMediaList: List<MediaControlData>) = runCatching {
+        val mediaController = getMediaController() ?: return@runCatching
+        if (mediaController.isPlaying) {
+            mediaController.pause()
         }
-
-        if (_mediaController?.isPlaying == true) {
-            _mediaController?.pause()
+        if (mediaController.mediaItemCount != 0) {
+            mediaController.clearMediaItems()
         }
-        if (_mediaController?.mediaItemCount != 0) {
-            _mediaController?.clearMediaItems()
-        }
-        _mediaController?.setMediaItems(mediaItemList)
+        mediaController.setMediaItems(audioMediaList.map {
+            it.toMediaItem()
+        })
     }
 
     private fun seekMediaItem(startMediaId: Int) = runCatching {
+        val mediaController = getMediaController()!!
         val targetIndex = findMediaItem(startMediaId).getOrThrow()
-        if (_mediaController?.isPlaying == true) {
-            _mediaController?.pause()
+        if (mediaController.isPlaying) {
+            mediaController.pause()
         }
-        _mediaController?.seekTo(targetIndex, 0)
+        mediaController.seekTo(targetIndex, 0)
     }
 
     private fun findMediaItem(mediaId: Int) = runCatching {
-        (0 until (_mediaController?.mediaItemCount ?: 0))
-            .first { i -> _mediaController?.getMediaItemAt(i)?.mediaId == mediaId.toString() }
+        val mediaController = getMediaController()!!
+        (0 until (mediaController.mediaItemCount))
+            .first { i -> mediaController.getMediaItemAt(i).mediaId == mediaId.toString() }
     }
 }
