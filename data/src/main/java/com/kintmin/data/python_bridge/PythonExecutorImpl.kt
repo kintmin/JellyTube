@@ -57,7 +57,7 @@ internal class PythonExecutorImpl @Inject constructor(
         }
     }
 
-    companion object {
+    private companion object {
         const val TIME_OUT = 30000L
         const val FILE_NAME = "download_youtube_audio"
         const val METHOD_GET_VERSION = "get_version"
