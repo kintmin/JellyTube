@@ -73,7 +73,10 @@ fun YoutubeWebView(
                     }
                 }
 
-                loadUrl(currentUrl)
+                val headers = mutableMapOf<String, String>().apply {
+                    put("Referer", "https://${context.packageName.lowercase()}")
+                }
+                loadUrl(currentUrl, headers)
             }
         }
     )

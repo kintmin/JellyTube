@@ -45,7 +45,7 @@ chaquopy {
     defaultConfig {
         version = AppConfiguration.PYTHON_VERSION
         pip {
-            install("yt_dlp")
+            install("yt-dlp")
         }
     }
 }
