@@ -20,7 +20,18 @@ interface AudioMediaDao {
     @Query("SELECT * FROM AUDIO_MEDIA")
     fun getAudioMediaListFlow(): Flow<List<AudioMediaEntity>>
 
-    @Query("""
+    @Query(
+        """
+SELECT COALESCE(SUM(rawAudioDurationSeconds), 0)
+FROM AUDIO_MEDIA
+WHERE id IN (:idList)
+    """
+    )
+    suspend fun getTotalAudioDuration(idList: List<Int>): Long
+
+
+    @Query(
+        """
 UPDATE AUDIO_MEDIA 
 SET 
     name = COALESCE(:name, name),
@@ -28,7 +39,8 @@ SET
     description = COALESCE(:description, description),
     imageFileNameWithExt = COALESCE(:imageFileNameWithExt, imageFileNameWithExt)
 WHERE id = :id
-""")
+"""
+    )
     suspend fun updateAudioMedia(
         id: Int,
         name: String? = null,

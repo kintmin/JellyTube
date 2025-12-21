@@ -1,53 +1,46 @@
 package com.kintmin.data.repository_impl
 
+import androidx.room.withTransaction
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
+import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
+import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.mapper.toDomain
-import com.kintmin.data.local_db.model.PlaylistTrackEntity
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
+import com.kintmin.domain.playlist.model.Playlist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import java.time.Instant
 import javax.inject.Inject
 
 class AudioTrackRepositoryImpl @Inject constructor(
+    private val db: JellyTubeDatabase,
+    private val audioMediaFacade: AudioMediaFacade,
     private val playlistTrackDao: PlaylistTrackDao,
     private val fileManager: FileManager,
 ) : AudioTrackRepository {
-    override suspend fun addAudioTrack(playlistId: Int, audioMediaId: Int): Result<Int> {
-        return withContext(Dispatchers.IO) {
-            runCatching {
-                playlistTrackDao.getNextSequence(playlistId).apply {
-                    playlistTrackDao.insertPlaylistTrack(
-                        PlaylistTrackEntity(
-                            playlistId = playlistId,
-                            audioMediaId = audioMediaId,
-                            sequence = this,
-                            rawCreatedTime = Instant.now().toEpochMilli(),
-                        )
-                    )
-                }
+
+    override suspend fun addCustomAudioTrack(
+        playlistId: Int,
+        audioMediaIdList: List<Int>
+    ): Result<Int> = withContext(Dispatchers.IO) {
+        runCatching {
+            db.withTransaction {
+                val playlistAudioCount = audioMediaFacade.addAudioMediaToPlaylist(playlistId, audioMediaIdList)
+                playlistAudioCount
             }
         }
     }
 
-    override suspend fun addAudioTrackList(playlistId: Int, audioMediaIdList: List<Int>): Result<Unit> {
-        return withContext(Dispatchers.IO) {
-            runCatching {
-                var sequence = playlistTrackDao.getNextSequence(playlistId)
-                val targetList = audioMediaIdList.map { audioMediaId ->
-                    PlaylistTrackEntity(
-                        playlistId = playlistId,
-                        audioMediaId = audioMediaId,
-                        sequence = sequence++,
-                        rawCreatedTime = Instant.now().toEpochMilli(),
-                    )
-                }
-
-                playlistTrackDao.insertPlaylistTrackList(targetList)
+    override suspend fun deleteCustomAudioTrack(
+        playlistId: Int,
+        audioMediaIdList: List<Int>
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching<Unit> {
+            db.withTransaction {
+                audioMediaFacade.deleteAudioMediaToPlaylist(playlistId, audioMediaIdList)
             }
         }
     }
@@ -70,18 +63,21 @@ class AudioTrackRepositoryImpl @Inject constructor(
         return playlistTrackDao.getPlaylistIdListFlow(audioMediaId)
     }
 
-    override suspend fun updateTrackSequence(playlistId: Int, audioMediaId: Int, newSequence: Int): Result<Unit> {
+    override suspend fun getPlaylistTrackCount(playlistId: Int): Result<Int> {
         return withContext(Dispatchers.IO) {
             runCatching {
-                playlistTrackDao.updateSequence(playlistId, audioMediaId, newSequence)
+                playlistTrackDao.getPlaylistTrackCount(playlistId)
             }
         }
     }
 
-    override suspend fun deleteAudioTrackList(playlistId: Int, audioMediaIdList: List<Int>): Result<Unit> {
+
+    override suspend fun updateTrackSequence(playlistId: Int, audioMediaId: Int, newSequence: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
             runCatching {
-                playlistTrackDao.deletePlaylistTracks(playlistId, audioMediaIdList)
+                db.withTransaction {
+                    audioMediaFacade.updateTrackSequence(playlistId, audioMediaId, newSequence)
+                }
             }
         }
     }

@@ -22,7 +22,7 @@ internal class HttpDataSourceImpl @Inject constructor(
                 throw Exception(response.body.toString())
             }
 
-            response.body!!.bytes()
+            response.body.bytes()
         }
     }
 }

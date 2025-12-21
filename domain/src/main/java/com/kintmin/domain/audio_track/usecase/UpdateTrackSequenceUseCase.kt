@@ -1,15 +1,12 @@
 package com.kintmin.domain.audio_track.usecase
 
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
-import com.kintmin.domain.playlist.usecase.internal.UpdatePlaylistImageUseCase
 import javax.inject.Inject
 
 class UpdateTrackSequenceUseCase @Inject constructor(
     private val audioTrackRepository: AudioTrackRepository,
-    private val updatePlaylistImageUseCase: UpdatePlaylistImageUseCase,
 ) {
-    suspend operator fun invoke(playlistId: Int, audioMediaId: Int, newSequence: Int) = runCatching {
-        audioTrackRepository.updateTrackSequence(playlistId, audioMediaId, newSequence)
-        updatePlaylistImageUseCase(playlistId)
+    suspend operator fun invoke(playlistId: Int, audioMediaId: Int, newSequence: Int): Result<Unit> {
+        return audioTrackRepository.updateTrackSequence(playlistId, audioMediaId, newSequence)
     }
 }

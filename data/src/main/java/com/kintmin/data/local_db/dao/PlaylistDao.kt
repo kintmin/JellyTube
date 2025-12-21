@@ -41,4 +41,7 @@ WHERE id = :id
 
     @Query("DELETE FROM PLAYLIST WHERE id = :id")
     suspend fun deletePlaylistName(id: Int)
+
+    @Query("UPDATE PLAYLIST SET imageFileNameWithExt = null WHERE id = :id")
+    suspend fun deletePlaylistImage(id: Int)
 }

@@ -12,29 +12,26 @@ import javax.inject.Inject
 class DeletePlaylistUseCase @Inject constructor(
     private val audioTrackRepository: AudioTrackRepository,
     private val playlistRepository: PlaylistRepository,
-    private val addUncategorizedPlaylistUseCase: AddUncategorizedPlaylistUseCase,
     private val log: Log,
 ) {
 
     suspend operator fun invoke(playlistId: Int) {
         runCatching {
-            val trackList = audioTrackRepository.getPlaylistTrackAggregateListFlow(playlistId)
+            val playlistToDelete = playlistRepository.getPlaylistFlow(playlistId)
                 .flowOn(Dispatchers.IO)
                 .first()
 
+            val trackCount = audioTrackRepository.getPlaylistTrackCount(playlistId).getOrThrow()
+
             playlistRepository.deletePlaylist(playlistId).onSuccess {
-                val playlist = trackList.firstOrNull()?.playlist ?: return@onSuccess
                 log.sendFirebaseEvent(
                     FirebaseEvent.DeletePlaylist(
-                        playlistId = playlist.id,
-                        playlistTitle = playlist.name,
-                        audioMediaCount = trackList.count(),
+                        playlistId = playlistToDelete.id,
+                        playlistTitle = playlistToDelete.name,
+                        audioMediaCount = trackCount,
                     )
                 )
             }.getOrThrow()
-
-            val audioMediaIdList = trackList.map { it.audioMedia.id }
-            addUncategorizedPlaylistUseCase(audioMediaIdList)
         }
     }
 }

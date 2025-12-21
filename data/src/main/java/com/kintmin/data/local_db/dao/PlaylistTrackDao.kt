@@ -11,21 +11,22 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PlaylistTrackDao {
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylistTrack(entity: PlaylistTrackEntity)
+
+    @Query("SELECT COALESCE(MAX(sequence), 0) + 1 FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
+    suspend fun getNextSequence(playlistId: Int): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylistTrackList(entities: List<PlaylistTrackEntity>)
 
-    @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     fun getPlaylistTrackFullListFlow(playlistId: Int): Flow<List<PlaylistTrackFullDto>>
 
-    @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
     fun getPlaylistTrackFullFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackFullDto>
 
-    @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId ORDER BY sequence LIMIT 1")
     suspend fun getFirstAudioMedia(playlistId: Int): PlaylistTrackFullDto
 
@@ -35,9 +36,13 @@ interface PlaylistTrackDao {
     @Query("SELECT playlistId FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
     fun getPlaylistIdListFlow(audioMediaId: Int): Flow<List<Int>>
 
-    @Query("SELECT COALESCE(MAX(sequence), 0) + 1 FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
-    suspend fun getNextSequence(playlistId: Int): Int
+    @Query("SELECT playlistId FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
+    suspend fun getLinkedPlaylistIdList(audioMediaId: Int): List<Int>
 
+    @Query("SELECT COUNT(*) FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
+    suspend fun getPlaylistTrackCount(playlistId: Int): Int
+
+    @Transaction
     @Query(
         """
 UPDATE PLAYLIST_TRACK
@@ -50,9 +55,6 @@ WHERE playlistId = :playlistId
 """
     )
     suspend fun updateSequence(playlistId: Int, audioMediaId: Int, newSequence: Int)
-
-    @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
-    suspend fun deletePlaylistTrackMedia(playlistId: Int, audioMediaId: Int)
 
     @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId IN (:audioMediaIdList)")
     suspend fun deletePlaylistTracks(playlistId: Int, audioMediaIdList: List<Int>)

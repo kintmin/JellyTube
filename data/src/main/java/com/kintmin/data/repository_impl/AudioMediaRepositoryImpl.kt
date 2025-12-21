@@ -1,7 +1,10 @@
 package com.kintmin.data.repository_impl
 
+import androidx.room.withTransaction
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
+import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
+import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_file.FileManager
@@ -9,9 +12,12 @@ import com.kintmin.data.local_file.model.Ext
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.playlist.model.Playlist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -23,6 +29,8 @@ import java.util.UUID
 import javax.inject.Inject
 
 internal class AudioMediaRepositoryImpl @Inject constructor(
+    private val db: JellyTubeDatabase,
+    private val audioMediaFacade: AudioMediaFacade,
     private val audioMediaDao: AudioMediaDao,
     private val playlistTrackDao: PlaylistTrackDao,
     private val httpDataSource: HttpDataSource,
@@ -30,7 +38,7 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
     private val pythonExecutor: PythonExecutor,
 ) : AudioMediaRepository {
 
-    override suspend fun addAudioMedia(downloadUrl: String): Result<AudioMedia> {
+    override suspend fun downloadAudioMedia(downloadUrl: String): Result<DownloadedMedia> {
         return withContext(Dispatchers.IO) {
             runCatching {
                 val fileName = UUID.randomUUID().toString()
@@ -54,19 +62,40 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                     ).getOrNull()
                 }
 
-                val audioMediaEntityToSave = AudioMediaEntity(
-                    source = downloadUrl,
-                    name = downloadDto.title,
-                    artist = downloadDto.uploader,
-                    description = downloadDto.description,
-                    rawAudioDurationSeconds = downloadDto.duration.toLongOrNull(),
+                DownloadedMedia(
+                    downloadUrl = downloadUrl,
+                    title = downloadDto.title,
                     audioFileNameWithExt = "${fileName}.${Ext.MP3}",
                     imageFileNameWithExt = imageFileExt?.let { "${fileName}.${it}" },
+                    duration = downloadDto.duration,
+                    uploader = downloadDto.uploader,
+                    description = downloadDto.description,
+                )
+            }
+        }
+    }
+
+    override suspend fun addAudioMedia(downloadedAudioMedia: DownloadedMedia): Result<Pair<AudioMedia, Int>> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val audioMediaEntityToSave = AudioMediaEntity(
+                    source = downloadedAudioMedia.downloadUrl,
+                    name = downloadedAudioMedia.title,
+                    artist = downloadedAudioMedia.uploader,
+                    description = downloadedAudioMedia.description,
+                    rawAudioDurationSeconds = downloadedAudioMedia.duration.toLongOrNull(),
+                    audioFileNameWithExt = downloadedAudioMedia.audioFileNameWithExt,
+                    imageFileNameWithExt = downloadedAudioMedia.imageFileNameWithExt,
                     rawCreatedTime = Instant.now().toEpochMilli(),
                 )
 
-                val audioMediaId = audioMediaDao.insertAudioMedia(audioMediaEntityToSave).toInt()
-                audioMediaEntityToSave.copy(id = audioMediaId).toDomain(fileManager).getOrThrow()
+                val (audioMediaId, totalPlaylistMediaCount) = db.withTransaction {
+                    val newAudioMediaId = audioMediaDao.insertAudioMedia(audioMediaEntityToSave).toInt()
+                    val totalCount = audioMediaFacade.addAudioMediaToPlaylist(Playlist.TOTAL, listOf(newAudioMediaId))
+                    newAudioMediaId to totalCount
+                }
+
+                audioMediaEntityToSave.copy(id = audioMediaId).toDomain(fileManager).getOrThrow() to totalPlaylistMediaCount
             }
         }
     }
@@ -109,26 +138,37 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteAudioMedia(id: Int): Result<List<Int>> = runCatching {
+    override suspend fun deleteDownloadedFile(downloadedAudioMedia: DownloadedMedia): Result<Unit> {
+       return runCatching {
+           fileManager.deleteFile(downloadedAudioMedia.audioFileNameWithExt).getOrThrow()
+           downloadedAudioMedia.imageFileNameWithExt?.let { fileManager.deleteFile(it).getOrThrow() }
+       }
+    }
+
+    override suspend fun deleteAudioMedia(id: Int): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
             val data = audioMediaDao.getDataById(id)
+            val playlistIdListToDelete = playlistTrackDao.getLinkedPlaylistIdList(id)
 
-            val deleteFileJob = listOf(
-                launch { fileManager.deleteFile(data.audioFileNameWithExt) },
-                launch { fileManager.deleteFile(data.audioFileNameWithExt) },
-            )
-
-            val playlistIdList = async {
-                val result = playlistTrackDao.getPlaylistIdListFlow(id).first()
-
-                // 외래키 때문에 순차 삭제
-                playlistTrackDao.deleteAudioMedia(id)
+            // Track과 Media 정합성을 위해 트랜잭션 처리
+            db.withTransaction {
+                // 외래키로 인해 track 먼저 삭제
+                playlistIdListToDelete.forEach { playlistId ->
+                    audioMediaFacade.deleteAudioMediaToPlaylist(playlistId, listOf(id))
+                }
                 audioMediaDao.deleteById(id)
-                result
             }
 
-            deleteFileJob.joinAll()
-            playlistIdList.await()
+            // DB 삭제 후 로컬 데이터 삭제 순서로 정합성 유지
+            // 단, 파일 삭제는 실패해도 에러를 발생시키지 않는다.
+            coroutineScope {
+                launch { fileManager.deleteFile(data.audioFileNameWithExt) }
+                data.imageFileNameWithExt?.let {
+                    launch {
+                        fileManager.deleteFile(it)
+                    }
+                }
+            }
         }
     }
 }

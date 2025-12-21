@@ -1,7 +1,10 @@
 package com.kintmin.data.repository_impl
 
+import androidx.room.withTransaction
 import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
+import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
+import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_file.FileManager
@@ -15,6 +18,8 @@ import java.time.Instant
 import javax.inject.Inject
 
 class PlaylistRepositoryImpl @Inject constructor(
+    private val db: JellyTubeDatabase,
+    private val audioMediaFacade: AudioMediaFacade,
     private val playlistDao: PlaylistDao,
     private val playlistTrackDao: PlaylistTrackDao,
     private val fileManager: FileManager,
@@ -75,10 +80,14 @@ class PlaylistRepositoryImpl @Inject constructor(
 
     override suspend fun deletePlaylist(id: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching {
-                // 외래키 때문에 순차 삭제
-                playlistTrackDao.deletePlaylistTrack(id)
-                playlistDao.deletePlaylistName(id)
+            runCatching<Unit> {
+                db.withTransaction {
+                    val audioMediaIdList = playlistTrackDao.getAudioMediaIdList(id)
+
+                    // 외래키 때문에 순차 삭제
+                    audioMediaFacade.deleteAudioMediaToPlaylist(id, audioMediaIdList)
+                    playlistDao.deletePlaylistName(id)
+                }
             }
         }
     }
