@@ -13,7 +13,7 @@ object AppConfiguration {
      * Python 3.12 이상은 armeabi-v7a (구버전 기기) 대응이 안 됨
      * Chaquopy version 15.0.1 news 참고: https://chaquo.com/chaquopy/news/
      */
-    const val PYTHON_VERSION = "3.10"
+    const val PYTHON_VERSION = "3.11"
 }
 
 // xml 사용되는 것 확인

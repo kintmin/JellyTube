@@ -21,12 +21,15 @@ interface PlaylistTrackDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylistTrackList(entities: List<PlaylistTrackEntity>)
 
+    @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     fun getPlaylistTrackFullListFlow(playlistId: Int): Flow<List<PlaylistTrackFullDto>>
 
+    @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
     fun getPlaylistTrackFullFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackFullDto>
 
+    @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId ORDER BY sequence LIMIT 1")
     suspend fun getFirstAudioMedia(playlistId: Int): PlaylistTrackFullDto
 

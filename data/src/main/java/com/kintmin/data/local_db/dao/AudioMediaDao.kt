@@ -29,7 +29,6 @@ WHERE id IN (:idList)
     )
     suspend fun getTotalAudioDuration(idList: List<Int>): Long
 
-
     @Query(
         """
 UPDATE AUDIO_MEDIA 

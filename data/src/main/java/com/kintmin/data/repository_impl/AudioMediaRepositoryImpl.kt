@@ -86,7 +86,6 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                     rawAudioDurationSeconds = downloadedAudioMedia.duration.toLongOrNull(),
                     audioFileNameWithExt = downloadedAudioMedia.audioFileNameWithExt,
                     imageFileNameWithExt = downloadedAudioMedia.imageFileNameWithExt,
-                    rawCreatedTime = Instant.now().toEpochMilli(),
                 )
 
                 val (audioMediaId, totalPlaylistMediaCount) = db.withTransaction {

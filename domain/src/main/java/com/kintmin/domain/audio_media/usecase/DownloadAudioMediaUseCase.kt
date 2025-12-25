@@ -7,8 +7,6 @@ import com.kintmin.log.FirebaseEvent
 import com.kintmin.log.Log
 import com.kintmin.log.LogcatEvent
 import javax.inject.Inject
-import kotlin.system.measureTimeMillis
-import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
 
 class DownloadAudioMediaUseCase @Inject constructor(
@@ -35,17 +33,12 @@ class DownloadAudioMediaUseCase @Inject constructor(
 
         val downloadedAudioMedia = downloadedAudioMediaTimedValue.value
 
-        val resultTimedValue = measureTimedValue {
-            val (audioMedia, totalPlaylistMediaCount) = audioMediaRepository.addAudioMedia(downloadedAudioMedia).onFailure {
-                audioMediaRepository.deleteDownloadedFile(downloadedAudioMedia)
-            }.getOrThrow()
+        val (audioMedia, totalPlaylistMediaCount) = audioMediaRepository.addAudioMedia(downloadedAudioMedia).onFailure {
+            audioMediaRepository.deleteDownloadedFile(downloadedAudioMedia)
+        }.getOrThrow()
 
-            log.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(downloadUrl, totalPlaylistMediaCount))
-            audioMedia
-        }
-        log.sendLogcatEvent(LogcatEvent("DownloadAudioMediaUseCase", "addAudioMedia: ${resultTimedValue.duration}"))
-
-        resultTimedValue.value
+        log.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(downloadUrl, totalPlaylistMediaCount))
+        audioMedia
     }.onFailure { exception ->
         val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()
         val connectionStatus = deviceStatusRepository.getConnectionStatus().getOrNull()
