@@ -61,7 +61,7 @@ class AudioMediaEditViewModel @Inject constructor(
 
     private fun updateAudioMediaName(name: String) {
         viewModelScope.launch {
-            nameDebounce(viewModelScope) {
+            nameDebounce {
                 updateAudioMediaUseCase(
                     id = audioMediaId,
                     name = name,
@@ -72,20 +72,18 @@ class AudioMediaEditViewModel @Inject constructor(
 
     private fun updateAudioArtist(artist: String) {
         viewModelScope.launch {
-            descriptionDebounce(viewModelScope) {
-                artistDebounce(viewModelScope) {
-                    updateAudioMediaUseCase(
-                        id = audioMediaId,
-                        artist = artist,
-                    )
-                }
+            artistDebounce {
+                updateAudioMediaUseCase(
+                    id = audioMediaId,
+                    artist = artist,
+                )
             }
         }
     }
 
     private fun updateAudioDescription(description: String) {
         viewModelScope.launch {
-            descriptionDebounce(viewModelScope) {
+            descriptionDebounce {
                 updateAudioMediaUseCase(
                     id = audioMediaId,
                     description = description,

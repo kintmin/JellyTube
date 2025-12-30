@@ -143,7 +143,7 @@ class PlaylistEditListViewModel @Inject constructor(
 
     private fun updatePlaylistTitle(newTitle: String) {
         viewModelScope.launch {
-            updatePlaylistTitleDebounce(viewModelScope) {
+            updatePlaylistTitleDebounce {
                 updatePlaylistTitleUseCase(playlistId, newTitle)
             }
         }
@@ -151,7 +151,7 @@ class PlaylistEditListViewModel @Inject constructor(
 
     private fun updatePlaylistDescription(newDescription: String) {
         viewModelScope.launch {
-            updatePlaylistDescriptionDebounce(viewModelScope) {
+            updatePlaylistDescriptionDebounce {
                 updatePlaylistDescriptionUseCase(playlistId, newDescription)
             }
         }

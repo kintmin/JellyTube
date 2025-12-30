@@ -68,7 +68,7 @@ class PlaylistAddViewModel @Inject constructor(
 
     private fun changeSearchText(newSearchText: String) {
         viewModelScope.launch {
-            changeSearchTextDebounce(viewModelScope) {
+            changeSearchTextDebounce {
                 _searchText.update { newSearchText }
             }
         }
