@@ -20,13 +20,16 @@ class DebounceTest {
 
         repeat(100_000) { _ ->
             launch {
-                debounce { ++callCount }
+                debounce {
+                    delay(200)
+                    ++callCount
+                }
             }
         }
 
         delay(400L)
         assertEquals(0, callCount)
-        delay(200L)
+        delay(1000L)
         assertEquals(1, callCount)
     }
 

@@ -6,9 +6,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import kotlin.coroutines.CoroutineContext
@@ -18,16 +18,18 @@ class ThrottleTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `Throttle 동작이 정상작동 해야 한다`() = runTest {
-        val throttle = Throttle(1000L)
+        val throttle = Throttle(100L)
         var callCount = 0
 
         repeat(100_000) { _ ->
             launch {
-                throttle { ++callCount }
+                throttle {
+                    ++callCount
+                }
             }
         }
 
-        delay(100L)
+        delay(250)
         assertEquals(1, callCount)
         delay(1000L)
         assertEquals(1, callCount)

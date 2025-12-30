@@ -2,6 +2,7 @@ package com.kintmin.presentation.util
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.yield
 
 class Throttle(private val intervalTimeMillis: Long) {
 
@@ -9,11 +10,12 @@ class Throttle(private val intervalTimeMillis: Long) {
     private val mutex = Mutex()
 
     suspend operator fun invoke(action: suspend () -> Unit) {
+        val calledTime = System.currentTimeMillis()
         mutex.withLock {
-            val now = System.currentTimeMillis()
-            if (now - lastExecuted < intervalTimeMillis) return
-            lastExecuted = now
+            if (calledTime - lastExecuted < intervalTimeMillis) return
+            yield()
+            action()
+            lastExecuted = System.currentTimeMillis()
         }
-        action()
     }
 }
