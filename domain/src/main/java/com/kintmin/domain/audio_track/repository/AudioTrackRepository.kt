@@ -16,5 +16,5 @@ interface AudioTrackRepository {
 
     suspend fun getPlaylistTrackCount(playlistId: Int): Result<Int>
 
-    suspend fun updateTrackSequence(playlistId: Int, audioMediaId: Int, newSequence: Int): Result<Unit>
+    suspend fun updateTrackSequence(playlistId: Int, audioMediaId: Int, oldSequence: Int, newSequence: Int): Result<Unit>
 }

@@ -1,10 +1,7 @@
 package com.kintmin.data.repository_impl
 
-import androidx.room.withTransaction
 import com.kintmin.data.local_db.dao.AudioMediaDao
-import com.kintmin.data.local_db.dao.PlaylistTrackDao
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
-import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_file.FileManager
@@ -14,25 +11,18 @@ import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
-import com.kintmin.domain.playlist.model.Playlist
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 
 internal class AudioMediaRepositoryImpl @Inject constructor(
-    private val db: JellyTubeDatabase,
     private val audioMediaFacade: AudioMediaFacade,
     private val audioMediaDao: AudioMediaDao,
-    private val playlistTrackDao: PlaylistTrackDao,
     private val httpDataSource: HttpDataSource,
     private val fileManager: FileManager,
     private val pythonExecutor: PythonExecutor,
@@ -87,14 +77,8 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                     audioFileNameWithExt = downloadedAudioMedia.audioFileNameWithExt,
                     imageFileNameWithExt = downloadedAudioMedia.imageFileNameWithExt,
                 )
-
-                val (audioMediaId, totalPlaylistMediaCount) = db.withTransaction {
-                    val newAudioMediaId = audioMediaDao.insertAudioMedia(audioMediaEntityToSave).toInt()
-                    val totalCount = audioMediaFacade.addAudioMediaToPlaylist(Playlist.TOTAL, listOf(newAudioMediaId))
-                    newAudioMediaId to totalCount
-                }
-
-                audioMediaEntityToSave.copy(id = audioMediaId).toDomain(fileManager).getOrThrow() to totalPlaylistMediaCount
+                val (newAudioMediaId, totalPlaylist) = audioMediaFacade.addNewAudioMedia(audioMediaEntityToSave)
+                audioMediaEntityToSave.copy(id = newAudioMediaId).toDomain(fileManager).getOrThrow() to totalPlaylist.audioMediaCount
             }
         }
     }
@@ -147,19 +131,9 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
     override suspend fun deleteAudioMedia(id: Int): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
             val data = audioMediaDao.getDataById(id)
-            val playlistIdListToDelete = playlistTrackDao.getLinkedPlaylistIdList(id)
+            audioMediaFacade.deleteAudioMedia(id)
 
-            // Track과 Media 정합성을 위해 트랜잭션 처리
-            db.withTransaction {
-                // 외래키로 인해 track 먼저 삭제
-                playlistIdListToDelete.forEach { playlistId ->
-                    audioMediaFacade.deleteAudioMediaToPlaylist(playlistId, listOf(id))
-                }
-                audioMediaDao.deleteById(id)
-            }
-
-            // DB 삭제 후 로컬 데이터 삭제 순서로 정합성 유지
-            // 단, 파일 삭제는 실패해도 에러를 발생시키지 않는다.
+            // 파일 삭제는 실패해도 에러를 발생시키지 않는다.
             coroutineScope {
                 launch { fileManager.deleteFile(data.audioFileNameWithExt) }
                 data.imageFileNameWithExt?.let {

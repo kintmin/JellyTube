@@ -2,9 +2,10 @@ package com.kintmin.data.local_db.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.lang.System
 
 /**
- * 수정 시 DatabaseModule 기본값 삽입값 필요
+ * 수정 시 DB의 addCallback 수정 필요
  */
 @Entity(tableName = "PLAYLIST")
 data class PlaylistEntity(
@@ -13,7 +14,7 @@ data class PlaylistEntity(
     val description: String,
     val audioMediaCount: Int,
     val rawPlayTimeDuration: Long,
-    val rawCreatedTime: Long,
+    val rawCreatedTime: Long = System.currentTimeMillis(),
     val imageFileNameWithExt: String? = null,
     val isCustomImage: Boolean,
 )

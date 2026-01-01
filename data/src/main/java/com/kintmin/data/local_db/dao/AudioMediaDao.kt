@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AudioMediaDao {
+
     @Insert
     suspend fun insertAudioMedia(entity: AudioMediaEntity): Long
 

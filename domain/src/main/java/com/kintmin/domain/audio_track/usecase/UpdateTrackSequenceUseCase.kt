@@ -6,7 +6,7 @@ import javax.inject.Inject
 class UpdateTrackSequenceUseCase @Inject constructor(
     private val audioTrackRepository: AudioTrackRepository,
 ) {
-    suspend operator fun invoke(playlistId: Int, audioMediaId: Int, newSequence: Int): Result<Unit> {
-        return audioTrackRepository.updateTrackSequence(playlistId, audioMediaId, newSequence)
+    suspend operator fun invoke(playlistId: Int, audioMediaId: Int, oldSequence: Int, newSequence: Int): Result<Unit> {
+        return audioTrackRepository.updateTrackSequence(playlistId, audioMediaId, oldSequence, newSequence)
     }
 }

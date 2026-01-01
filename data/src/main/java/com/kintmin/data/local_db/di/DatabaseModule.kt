@@ -1,6 +1,7 @@
 package com.kintmin.data.local_db.di
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -10,7 +11,13 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.util.concurrent.Executors
+import javax.inject.Qualifier
 import javax.inject.Singleton
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class TestDatabase
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -22,18 +29,40 @@ internal object DatabaseModule {
         JellyTubeDatabase::class.java,
         JellyTubeDatabase.DB_NAME,
     )
-        .addCallback(object : RoomDatabase.Callback() {
+        .addCallback(getRoomDbCallback())
+        .build()
+
+    @Provides
+    @Singleton
+    @TestDatabase
+    fun provideTestDatabase(@ApplicationContext context: Context) = Room.inMemoryDatabaseBuilder(
+        context,
+        JellyTubeDatabase::class.java,
+    )
+        .allowMainThreadQueries()
+        .addCallback(getRoomDbCallback())
+        .setQueryCallback({ sql, bindArgs ->
+            Log.d("RoomSQL", "sql=$sql args=$bindArgs thread=${Thread.currentThread().name}")
+        }, Executors.newSingleThreadExecutor())
+        .build()
+
+    private fun getRoomDbCallback(): RoomDatabase.Callback {
+        return object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
-                db.execSQL("""
+                db.execSQL(
+                    """
 INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime, imageFileNameWithExt, isCustomImage) 
 VALUES (1, '전체', '', 0, 0, strftime('%s','now') * 1000, null, 0)
-                """.trimIndent())
-                db.execSQL("""
+                """.trimIndent()
+                )
+                db.execSQL(
+                    """
 INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime, imageFileNameWithExt, isCustomImage)
 VALUES (2, '미분류', '', 0, 0, strftime('%s','now') * 1000, null, 0)
-        """.trimIndent())
+        """.trimIndent()
+                )
             }
-        })
-        .build()
+        }
+    }
 }

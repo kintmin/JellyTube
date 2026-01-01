@@ -137,7 +137,7 @@ class PlaylistEditListViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            updateTrackSequenceUseCase(playlistId, reorderData.id, newSequence)
+            updateTrackSequenceUseCase(playlistId, reorderData.id, reorderData.sequence, newSequence)
         }
     }
 

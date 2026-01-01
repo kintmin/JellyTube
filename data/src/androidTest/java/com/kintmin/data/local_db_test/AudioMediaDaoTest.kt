@@ -1,14 +1,15 @@
-package com.kintmin.data
+package com.kintmin.data.local_db_test
 
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.database.JellyTubeDatabase
+import com.kintmin.data.local_db.di.TestDatabase
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.util.allCombinations
 import com.kintmin.data.util.allNullableCombinations
 import com.kintmin.data.util.assertList
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.withIndex
@@ -16,14 +17,22 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import javax.inject.Inject
 
 @RunWith(AndroidJUnit4::class)
+@HiltAndroidTest
 class AudioMediaDaoTest {
 
-    private lateinit var db: JellyTubeDatabase
-    private lateinit var dao: AudioMediaDao
+    @get:Rule
+    val hiltRule = HiltAndroidRule(this)
+
+    @Inject
+    @TestDatabase
+    lateinit var db: JellyTubeDatabase
+    lateinit var dao: AudioMediaDao
 
     private val newEntity = AudioMediaEntity(
         source = "",
@@ -35,13 +44,7 @@ class AudioMediaDaoTest {
 
     @Before
     fun setup() {
-        db = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            JellyTubeDatabase::class.java
-        )
-            .allowMainThreadQueries()
-            .build()
-
+        hiltRule.inject()
         dao = db.audioMediaDao()
     }
 
@@ -85,6 +88,24 @@ class AudioMediaDaoTest {
     @Test
     fun getDataById_시_삽입된_데이터와_동일해야한다(): Unit = runBlocking {
         val targetEntity = newEntity
+
+        val targetId = dao.insertAudioMedia(targetEntity)
+        val resultEntity = dao.getDataById(targetId.toInt())
+
+        assert(resultEntity == targetEntity.copy(id = targetId.toInt()))
+    }
+
+    @Test
+    fun getDataBySource_시_source가_없으면_에러발생된다(): Unit = runBlocking {
+        val result = runCatching {
+            dao.getDataBySource("")
+        }
+        assert(result.isFailure)
+    }
+
+    @Test
+    fun getDataBySource_시_삽입된_데이터와_동일해야한다(): Unit = runBlocking {
+        val targetEntity = newEntity.copy(source = "source")
 
         val targetId = dao.insertAudioMedia(targetEntity)
         val resultEntity = dao.getDataById(targetId.toInt())

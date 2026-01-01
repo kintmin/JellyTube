@@ -17,7 +17,7 @@ android {
         minSdk = AppConfiguration.MIN_SDK
         consumerProguardFiles("consumer-rules.pro")
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.kintmin.data.util.HiltTestRunner"
     }
 
     buildTypes {
@@ -74,9 +74,14 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.hilt.test)
+    kspTest(libs.hilt.android.compiler)
 
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.hilt.test)
+    kspAndroidTest(libs.hilt.android.compiler)
     androidTestImplementation(libs.room.test)
 }

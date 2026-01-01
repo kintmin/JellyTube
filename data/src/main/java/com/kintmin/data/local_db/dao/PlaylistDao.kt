@@ -37,10 +37,10 @@ WHERE id = :id
         audioMediaCount: Int? = null,
         rawPlayTimeDuration: Long? = null,
         imageFileNameWithExt: String? = null,
-    )
+    ): Int
 
     @Query("DELETE FROM PLAYLIST WHERE id = :id")
-    suspend fun deletePlaylistName(id: Int)
+    suspend fun deleteById(id: Int)
 
     @Query("UPDATE PLAYLIST SET imageFileNameWithExt = null WHERE id = :id")
     suspend fun deletePlaylistImage(id: Int)

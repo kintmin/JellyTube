@@ -1,14 +1,11 @@
 package com.kintmin.data.repository_impl
 
-import androidx.room.withTransaction
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
-import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
-import com.kintmin.domain.playlist.model.Playlist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -16,7 +13,6 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class AudioTrackRepositoryImpl @Inject constructor(
-    private val db: JellyTubeDatabase,
     private val audioMediaFacade: AudioMediaFacade,
     private val playlistTrackDao: PlaylistTrackDao,
     private val fileManager: FileManager,
@@ -27,10 +23,7 @@ class AudioTrackRepositoryImpl @Inject constructor(
         audioMediaIdList: List<Int>
     ): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
-            db.withTransaction {
-                val playlistAudioCount = audioMediaFacade.addAudioMediaToPlaylist(playlistId, audioMediaIdList)
-                playlistAudioCount
-            }
+            audioMediaFacade.addTrack(playlistId, audioMediaIdList).audioMediaCount
         }
     }
 
@@ -39,9 +32,7 @@ class AudioTrackRepositoryImpl @Inject constructor(
         audioMediaIdList: List<Int>
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching<Unit> {
-            db.withTransaction {
-                audioMediaFacade.deleteAudioMediaToPlaylist(playlistId, audioMediaIdList)
-            }
+            audioMediaFacade.deleteTrack(playlistId, audioMediaIdList)
         }
     }
 
@@ -72,12 +63,10 @@ class AudioTrackRepositoryImpl @Inject constructor(
     }
 
 
-    override suspend fun updateTrackSequence(playlistId: Int, audioMediaId: Int, newSequence: Int): Result<Unit> {
+    override suspend fun updateTrackSequence(playlistId: Int, audioMediaId: Int, oldSequence: Int, newSequence: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
             runCatching {
-                db.withTransaction {
-                    audioMediaFacade.updateTrackSequence(playlistId, audioMediaId, newSequence)
-                }
+                audioMediaFacade.updateTrackSequence(playlistId, audioMediaId, oldSequence, newSequence)
             }
         }
     }

@@ -27,6 +27,6 @@ import androidx.room.Index
 data class PlaylistTrackEntity(
     val playlistId: Int,
     val audioMediaId: Int,
-    val sequence: Int,
-    val rawCreatedTime: Long,
+    val sequence: Int,  // 1부터 시작하며, 중복없이 증가하는 값. 트랙 삭제를 한 적이 있다면 등차가 아닐 수 있다.
+    val rawCreatedTime: Long = System.currentTimeMillis(),
 )

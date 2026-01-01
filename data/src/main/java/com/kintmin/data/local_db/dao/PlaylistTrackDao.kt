@@ -13,12 +13,6 @@ import kotlinx.coroutines.flow.Flow
 interface PlaylistTrackDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPlaylistTrack(entity: PlaylistTrackEntity)
-
-    @Query("SELECT COALESCE(MAX(sequence), 0) + 1 FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
-    suspend fun getNextSequence(playlistId: Int): Int
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylistTrackList(entities: List<PlaylistTrackEntity>)
 
     @Transaction
@@ -29,12 +23,11 @@ interface PlaylistTrackDao {
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
     fun getPlaylistTrackFullFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackFullDto>
 
-    @Transaction
+    /**
+     * withTransaction 에서 실행되기 위해 Dto지만 Transaction 없이 값을 가져온다.
+     */
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId ORDER BY sequence LIMIT 1")
-    suspend fun getFirstAudioMedia(playlistId: Int): PlaylistTrackFullDto
-
-    @Query("SELECT audioMediaId FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
-    suspend fun getAudioMediaIdList(playlistId: Int): List<Int>
+    suspend fun getFirstAudioMediaWithNoLock(playlistId: Int): PlaylistTrackFullDto
 
     @Query("SELECT playlistId FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
     fun getPlaylistIdListFlow(audioMediaId: Int): Flow<List<Int>>
@@ -45,26 +38,26 @@ interface PlaylistTrackDao {
     @Query("SELECT COUNT(*) FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     suspend fun getPlaylistTrackCount(playlistId: Int): Int
 
-    @Transaction
+    @Query("SELECT COALESCE(MAX(sequence), 0) FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
+    suspend fun getMaxSequence(playlistId: Int): Int
+
     @Query(
         """
 UPDATE PLAYLIST_TRACK
 SET sequence = (CASE
     WHEN audioMediaId = :audioMediaId THEN :newSequence
-    WHEN sequence >= :newSequence THEN sequence + 1
+    WHEN :newSequence < :oldSequence AND sequence BETWEEN :newSequence AND (:oldSequence - 1) THEN sequence + 1
+    WHEN :newSequence > :oldSequence AND sequence BETWEEN (:oldSequence + 1) AND :newSequence THEN sequence - 1
     ELSE sequence
 END)
 WHERE playlistId = :playlistId
 """
     )
-    suspend fun updateSequence(playlistId: Int, audioMediaId: Int, newSequence: Int)
+    suspend fun updateSequence(playlistId: Int, audioMediaId: Int, oldSequence: Int, newSequence: Int)
 
     @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId IN (:audioMediaIdList)")
     suspend fun deletePlaylistTracks(playlistId: Int, audioMediaIdList: List<Int>)
 
     @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
-    suspend fun deletePlaylistTrack(playlistId: Int)
-
-    @Query("DELETE FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
-    suspend fun deleteAudioMedia(audioMediaId: Int)
+    suspend fun deletePlaylistTrackByPlaylistId(playlistId: Int)
 }

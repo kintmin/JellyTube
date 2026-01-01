@@ -5,19 +5,13 @@
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="getDataById_시_id가_없으면_에러발생된다()">
+      <SelectionState runConfigName="값이_없어도_getMaxSequence는_0을_반환해야한다()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="getDataById_시_삽입된_데이터와_동일해야한다()">
+      <SelectionState runConfigName="addNewAudioMedia_정상동작_테스트()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="getAudioMediaListFlow는_변경이_감지돼야한다()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="assertList체크()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="AudioMediaDaoTest">
+      <SelectionState runConfigName="deleteAudioMedia_정상동작_테스트()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

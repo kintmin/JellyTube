@@ -2,6 +2,7 @@ package com.kintmin.presentation
 
 import com.kintmin.presentation.util.Debounce
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -14,23 +15,61 @@ import kotlin.coroutines.CoroutineContext
 class DebounceTest {
 
     @Test
-    fun `Debounce 동작이 정상작동 해야 한다`() = runTest {
+    fun `Debounce 기본동작 테스트`() = runTest {
+        val expectedCallCount = 5
+        val debounceRepeatCount = 5
         val debounce = Debounce(500L)
         var callCount = 0
 
-        repeat(100_000) { _ ->
-            launch {
-                debounce {
-                    delay(200)
-                    ++callCount
+        coroutineScope {
+            repeat(expectedCallCount) {
+                coroutineScope {
+                    repeat(debounceRepeatCount) {
+                        launch { debounce { ++callCount } }
+                    }
+                    delay(10L)
+                    assertEquals(it, callCount)
+                    delay(600L)
+                    assertEquals(it + 1, callCount)
                 }
             }
         }
 
-        delay(400L)
-        assertEquals(0, callCount)
-        delay(1000L)
+        assertEquals(expectedCallCount, callCount)
+    }
+
+    @Test
+    fun `비동기에서 Debounce 동작이 정상작동 해야 한다`() = runTest {
+        val debounce = Debounce(500L)
+        var callCount = 0
+
+        coroutineScope {
+            repeat(100_000) { _ ->
+                launch {
+                    debounce {
+                        ++callCount
+                    }
+                }
+            }
+        }
+
         assertEquals(1, callCount)
+    }
+
+    @Test
+    fun `Debounce의 action 에러는 부모 스코프로 전파되어야 한다`() = runTest {
+        val errorMessage = "테스트"
+        val debounce = Debounce(500L)
+
+        val result = runCatching {
+            coroutineScope {
+                debounce {
+                    throw Exception(errorMessage)
+                }
+            }
+        }
+
+        assertEquals(errorMessage, result.exceptionOrNull()!!.message)
     }
 
     @Test

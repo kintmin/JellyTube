@@ -6,7 +6,6 @@ import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
-import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
@@ -31,22 +30,19 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
+
     @Provides
     @Singleton
     fun provideAudioMediaRepository(
-        db: JellyTubeDatabase,
         audioMediaFacade: AudioMediaFacade,
         audioMediaDao: AudioMediaDao,
-        playlistTrackDao: PlaylistTrackDao,
         httpDataSource: HttpDataSource,
         fileManager: FileManager,
         pythonExecutor: PythonExecutor,
     ): AudioMediaRepository {
         return AudioMediaRepositoryImpl(
-            db = db,
             audioMediaFacade = audioMediaFacade,
             audioMediaDao = audioMediaDao,
-            playlistTrackDao = playlistTrackDao,
             httpDataSource = httpDataSource,
             fileManager = fileManager,
             pythonExecutor = pythonExecutor,
@@ -56,17 +52,13 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun providePlaylistRepository(
-        db: JellyTubeDatabase,
         audioMediaFacade: AudioMediaFacade,
         playlistDao: PlaylistDao,
-        playlistTrackDao: PlaylistTrackDao,
         fileManager: FileManager,
     ): PlaylistRepository {
         return PlaylistRepositoryImpl(
-            db = db,
             audioMediaFacade = audioMediaFacade,
             playlistDao = playlistDao,
-            playlistTrackDao = playlistTrackDao,
             fileManager = fileManager,
         )
     }
@@ -74,13 +66,11 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideAudioTrackRepository(
-        db: JellyTubeDatabase,
         audioMediaFacade: AudioMediaFacade,
         fileManager: FileManager,
         playlistTrackDao: PlaylistTrackDao,
     ): AudioTrackRepository {
         return AudioTrackRepositoryImpl(
-            db = db,
             audioMediaFacade = audioMediaFacade,
             fileManager = fileManager,
             playlistTrackDao = playlistTrackDao,
