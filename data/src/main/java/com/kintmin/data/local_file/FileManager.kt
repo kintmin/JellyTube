@@ -6,7 +6,6 @@ interface FileManager {
     fun getFileNameWithExt(fileFullPath: String): Result<String>
 
     fun getFullPathWithExt(fileName: String, ext: Ext): Result<String>
-    fun getFullPathWithExt(fileName: String, extName: String): Result<String>
     fun getFullPathWithExt(fileNameWithExt: String): Result<String>
 
     suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<Ext>
