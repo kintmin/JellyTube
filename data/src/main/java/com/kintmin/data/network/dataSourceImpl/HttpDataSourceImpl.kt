@@ -5,24 +5,25 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.IOException
 import javax.inject.Inject
 
 internal class HttpDataSourceImpl @Inject constructor(
     private val client: OkHttpClient,
-): HttpDataSource {
+) : HttpDataSource {
+
     override suspend fun downloadImage(imageUrl: String): Result<ByteArray> = runCatching {
         withContext(Dispatchers.IO) {
             val request = Request.Builder()
                 .url(imageUrl)
                 .build()
 
-            val response = client.newCall(request).execute()
-
-            if (!response.isSuccessful) {
-                throw Exception(response.body.toString())
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw Exception("http error ${response.code}: ${response.message}")
+                }
+                response.body.bytes()
             }
-
-            response.body.bytes()
         }
     }
 }

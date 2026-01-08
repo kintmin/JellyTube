@@ -5,13 +5,16 @@
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="값이_없어도_getMaxSequence는_0을_반환해야한다()">
+      <SelectionState runConfigName="getFullPathWithExt_withValidExt_pointsToExpectedExternalDir()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="addNewAudioMedia_정상동작_테스트()">
+      <SelectionState runConfigName="FileManagerTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="deleteAudioMedia_정상동작_테스트()">
+      <SelectionState runConfigName="saveImageWithCompression_savesFile_andReturnsTargetExt()">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="downloadYoutubeMedia_smokeTest()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
