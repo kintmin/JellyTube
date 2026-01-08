@@ -1,4 +1,4 @@
-package com.kintmin.data.local_file
+package com.kintmin.data.local_file_test
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -6,6 +6,8 @@ import android.os.Build
 import android.os.Environment
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.kintmin.data.local_file.FileManager
+import com.kintmin.data.local_file.FileManagerImpl
 import com.kintmin.data.local_file.model.Ext
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
