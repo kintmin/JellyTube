@@ -6,4 +6,5 @@ import kotlinx.serialization.Serializable
 enum class MainTabItem {
     Search,
     Playlist,
+    Debug,
 }

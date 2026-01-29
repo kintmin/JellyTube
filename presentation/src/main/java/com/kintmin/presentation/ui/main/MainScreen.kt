@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,6 +36,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.custom_ui.AgeColumn
+import com.kintmin.presentation.ui.custom_ui.DataTableView
+import com.kintmin.presentation.ui.custom_ui.DepartmentColumn
+import com.kintmin.presentation.ui.custom_ui.LineColumn
+import com.kintmin.presentation.ui.custom_ui.NameColumn
+import com.kintmin.presentation.ui.custom_ui.PaymentColumn
+import com.kintmin.presentation.ui.custom_ui.TempData
 import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
@@ -146,6 +154,7 @@ fun MainScreen(
             val title = when (selectedTab) {
                 MainTabItem.Search -> "다운받을 유튜브 영상 검색하기"
                 MainTabItem.Playlist -> "플레이리스트"
+                MainTabItem.Debug -> "테스트뷰"
             }
             TopAppBar(
                 title = { Text(title) },
@@ -185,6 +194,12 @@ fun MainScreen(
                         selected = selectedTab == MainTabItem.Playlist,
                         onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
                     )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Rounded.BugReport, contentDescription = null) },
+                        label = { Text("테스트뷰") },
+                        selected = selectedTab == MainTabItem.Debug,
+                        onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Debug)) },
+                    )
                 }
             }
         }
@@ -207,6 +222,14 @@ fun MainScreen(
                 data = playlist,
                 sendIntent = sendPlaylistIntent,
                 sendMainIntent = sendMainIntent,
+            )
+
+            MainTabItem.Debug -> DataTableView(
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
+                dataList = TempData.getMockList(20),
+                keySelector = { data -> data.id },
+                fixedHeaderList = listOf(NameColumn(), DepartmentColumn()),
+                flexibleHeaderList = listOf(AgeColumn(), PaymentColumn(), LineColumn())
             )
         }
     }
