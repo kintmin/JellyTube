@@ -3,6 +3,15 @@ import yt_dlp
 def get_version():
     return yt_dlp.version.__version__
 
+def test_extract(url, audio_path):
+    info_dict = {}
+    title = (info_dict.get("title") or "")[:100] or None
+    thumbnail_url = info_dict.get("thumbnail") or None
+    duration = info_dict.get("duration") or None
+    uploader = (info_dict.get("uploader") or "")[:50] or None
+    description = (info_dict.get("description") or "")[:100] or None
+    return title, thumbnail_url, duration, uploader, description
+
 def download_audio(url, audio_path):
     try:
         ydl_opts = {
@@ -24,11 +33,11 @@ def download_audio(url, audio_path):
             if info_dict is None:
                 raise Exception("No information extracted for URL")
             
-            title = info_dict.get("title", "Unknown")[:100]
-            thumbnail_url = info_dict.get("thumbnail", "")
-            duration = info_dict.get("duration")
-            uploader = info_dict.get("uploader", "Unknown")[:50]
-            description = info_dict.get("description", "")[:100]
+            title = (info_dict.get("title") or "")[:100] or None
+            thumbnail_url = info_dict.get("thumbnail") or None
+            duration = info_dict.get("duration") or None
+            uploader = (info_dict.get("uploader") or "")[:50] or None
+            description = (info_dict.get("description") or "")[:100] or None
             
             return title, thumbnail_url, duration, uploader, description
     except Exception as e:

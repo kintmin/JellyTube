@@ -40,6 +40,15 @@ android {
             jvmTarget.set(JvmTarget.JVM_17)
         }
     }
+
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*"
+            )
+        }
+    }
 }
 
 chaquopy {
@@ -74,6 +83,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.hilt.test)
     kspTest(libs.hilt.android.compiler)
 
@@ -81,6 +91,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.mockk.android)
     androidTestImplementation(libs.hilt.test)
     kspAndroidTest(libs.hilt.android.compiler)
     androidTestImplementation(libs.room.test)

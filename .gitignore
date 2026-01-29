@@ -20,3 +20,4 @@ local.properties
 /app/release
 /buildSrc/build
 /.kotlin/errors
+.idea/androidTestResultsUserPreferences.xml

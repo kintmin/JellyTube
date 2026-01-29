@@ -22,13 +22,8 @@ internal class FileManagerImpl @Inject constructor(
     }
 
     override fun getFullPathWithExt(fileNameWithExt: String) = runCatching {
-        val (fileName, ext) = extractExtFromFileName(fileNameWithExt)
-        getFullPathWithExt(fileName, ext).getOrThrow()
-    }
-
-    override fun getFullPathWithExt(fileName: String, extName: String) = runCatching {
-        val ext = extractExt(extName)
-        getFullPathWithExt(fileName, ext).getOrThrow()
+        val (_, ext) = extractExtFromFileName(fileNameWithExt)
+        getDirectory(ext.fileType).resolve(fileNameWithExt).absolutePath
     }
 
     override fun getFullPathWithExt(fileName: String, ext: Ext) = runCatching {
@@ -58,8 +53,8 @@ internal class FileManagerImpl @Inject constructor(
 
     override suspend fun deleteFile(fileNameWithExt: String): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
-            val (fileName, ext) = extractExtFromFileName(fileNameWithExt)
-            val file = getDirectory(ext.fileType).resolve("$fileName.$ext")
+            val (_, ext) = extractExtFromFileName(fileNameWithExt)
+            val file = getDirectory(ext.fileType).resolve(fileNameWithExt)
             if (file.exists()) {
                 file.delete()
             }

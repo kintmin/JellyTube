@@ -42,7 +42,9 @@ class AudioMediaFacade @Inject constructor(
             error("전체나 미분류는 지울 수 없다.")
         }
         db.withTransaction {
+            val linkedAudioMediaIdList = playlistTrackDao.getLinkedAudioMediaIdList(playlistId)
             playlistTrackDao.deletePlaylistTrackByPlaylistId(playlistId)
+            syncUncategorizedPlaylistWhenDeleteTrack(linkedAudioMediaIdList)
             playlistDao.deleteById(playlistId)
         }
     }

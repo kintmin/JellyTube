@@ -37,7 +37,7 @@ internal class PythonExecutorImpl @Inject constructor(
                     thumbnailDownloadUrl = pyResult.getOrNull(1)?.toString() ?: "",
                     duration = pyResult.getOrNull(2)?.toString() ?: "0",
                     uploader = pyResult.getOrNull(3)?.toString() ?: "알 수 없음",
-                    description = pyResult.getOrNull(4)?.toString() ?: ""
+                    description = pyResult.getOrNull(4)?.toString() ?: "",
                 )
             }
         }

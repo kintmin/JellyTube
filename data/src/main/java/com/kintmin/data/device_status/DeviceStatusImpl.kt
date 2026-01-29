@@ -16,12 +16,9 @@ class DeviceStatusImpl @Inject constructor(
 
     override fun getSystemMemory(): Result<DeviceMemoryDto> {
         return runCatching {
-            // RAM 용량
             val memoryInfo = ActivityManager.MemoryInfo()
             val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             activityManager.getMemoryInfo(memoryInfo)
-
-            // 기기 용량
             val stat = StatFs(Environment.getDataDirectory().path)
 
             DeviceMemoryDto(

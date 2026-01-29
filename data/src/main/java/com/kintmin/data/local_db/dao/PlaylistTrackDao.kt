@@ -35,6 +35,9 @@ interface PlaylistTrackDao {
     @Query("SELECT playlistId FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
     suspend fun getLinkedPlaylistIdList(audioMediaId: Int): List<Int>
 
+    @Query("SELECT audioMediaId FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
+    suspend fun getLinkedAudioMediaIdList(playlistId: Int): List<Int>
+
     @Query("SELECT COUNT(*) FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     suspend fun getPlaylistTrackCount(playlistId: Int): Int
 
