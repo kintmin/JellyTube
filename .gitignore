@@ -21,3 +21,4 @@ local.properties
 /buildSrc/build
 /.kotlin/errors
 .idea/androidTestResultsUserPreferences.xml
+/.idea
