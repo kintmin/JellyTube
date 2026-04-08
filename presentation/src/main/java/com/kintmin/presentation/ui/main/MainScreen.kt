@@ -10,20 +10,25 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.VideoLibrary
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -46,6 +51,8 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.custom_ui.AgeColumn
 import com.kintmin.presentation.ui.custom_ui.DataTableView
 import com.kintmin.presentation.ui.custom_ui.DepartmentColumn
+import com.kintmin.presentation.ui.custom_ui.FloatingComponentMode
+import com.kintmin.presentation.ui.custom_ui.FloatingComponentView
 import com.kintmin.presentation.ui.custom_ui.ImageDrawingView
 import com.kintmin.presentation.ui.custom_ui.LineColumn
 import com.kintmin.presentation.ui.custom_ui.NameColumn
@@ -54,6 +61,7 @@ import com.kintmin.presentation.ui.custom_ui.TempData
 import com.kintmin.presentation.ui.custom_ui.ZoomContentAlignment
 import com.kintmin.presentation.ui.custom_ui.ZoomLimitMode
 import com.kintmin.presentation.ui.custom_ui.ZoomableView
+import com.kintmin.presentation.ui.custom_ui.rememberFloatingComponentViewState
 import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
@@ -159,6 +167,8 @@ fun MainScreen(
 ) {
     var webView: WebView? by remember { mutableStateOf(null) }
     var debugIsEraserMode by remember { mutableStateOf(false) }
+    var debugFloatingMode by remember { mutableStateOf(FloatingComponentMode.Add) }
+    val debugFloatingState = rememberFloatingComponentViewState()
     val density = LocalDensity.current
     val debugCanvasWidth = with(density) { 1000f.toDp() }
     val debugCanvasHeight = with(density) { 4096f.toDp() }
@@ -241,20 +251,54 @@ fun MainScreen(
                 sendMainIntent = sendMainIntent,
             )
 
-            MainTabItem.Debug -> ZoomableView(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                zoomLimitMode = ZoomLimitMode.Horizontal,
-                contentAlignment = ZoomContentAlignment.Start,
-                content = {
-                    Box(
-                        modifier = Modifier
-                            .requiredSize(width = debugCanvasWidth, height = debugCanvasHeight)
-                            .background(Color.Blue)
-                            .border(width = 2.dp, color = Color.Green),
-                    )
+            MainTabItem.Debug -> Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (debugFloatingMode == FloatingComponentMode.Add) {
+                        Button(onClick = { debugFloatingMode = FloatingComponentMode.Add }) {
+                            Text("Add")
+                        }
+                        OutlinedButton(onClick = { debugFloatingMode = FloatingComponentMode.Edit }) {
+                            Text("Edit")
+                        }
+                    } else {
+                        OutlinedButton(onClick = { debugFloatingMode = FloatingComponentMode.Add }) {
+                            Text("Add")
+                        }
+                        Button(onClick = { debugFloatingMode = FloatingComponentMode.Edit }) {
+                            Text("Edit")
+                        }
+                    }
                 }
-            )
 
+                FloatingComponentView(
+                    modifier = Modifier.fillMaxSize(),
+                    mode = debugFloatingMode,
+                    state = debugFloatingState,
+                )
+            }
+
+//                ZoomableView(
+//                    modifier = Modifier.fillMaxSize().padding(innerPadding),
+//                    zoomLimitMode = ZoomLimitMode.Horizontal,
+//                    contentAlignment = ZoomContentAlignment.Start,
+//                    content = {
+//                        Box(
+//                            modifier = Modifier
+//                                .requiredSize(width = debugCanvasWidth, height = debugCanvasHeight)
+//                                .background(Color.Blue)
+//                                .border(width = 2.dp, color = Color.Green),
+//                        )
+//                    }
+//                )
 //            DataTableView(
 //                modifier = Modifier.fillMaxSize().padding(innerPadding),
 //                dataList = TempData.getMockList(20),

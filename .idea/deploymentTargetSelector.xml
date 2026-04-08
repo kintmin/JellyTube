@@ -5,9 +5,6 @@
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="getFullPathWithExt_withValidExt_pointsToExpectedExternalDir()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
       <SelectionState runConfigName="FileManagerTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
