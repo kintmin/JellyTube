@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.custom_ui
+package com.kintmin.presentation.ui.custom_ui.floating_component
 
 import android.view.MotionEvent
 import androidx.compose.foundation.background
@@ -21,10 +21,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
@@ -33,7 +35,7 @@ import kotlin.math.roundToInt
 internal fun EditableFloatingComponent(
     component: FloatingComponent,
     mode: FloatingComponentMode,
-    density: androidx.compose.ui.unit.Density,
+    density: Density,
     onMove: (Float, Float) -> Unit,
     onResize: (ResizeHandle, Float, Float) -> Unit,
     onRotate: (Float) -> Unit,
@@ -80,7 +82,7 @@ internal fun EditableFloatingComponent(
                 .fillMaxSize()
                 .graphicsLayer {
                     rotationZ = component.rotationDeg
-                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0.5f)
+                    transformOrigin = TransformOrigin(0.5f, 0.5f)
                 },
         ) {
             Box(

@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.custom_ui
+package com.kintmin.presentation.ui.custom_ui.zoomable
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.TransformOrigin
 import com.kintmin.presentation.theme.JellyTubeTheme
 import kotlin.math.max
 
@@ -185,7 +186,7 @@ fun ZoomableView(
                     scaleY = scale
                     translationX = offsetX
                     translationY = offsetY
-                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
+                    transformOrigin = TransformOrigin(0f, 0f)
                 },
             content = content,
         )

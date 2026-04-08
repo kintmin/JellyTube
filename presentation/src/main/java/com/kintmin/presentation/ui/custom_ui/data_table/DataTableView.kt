@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.custom_ui
+package com.kintmin.presentation.ui.custom_ui.data_table
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background

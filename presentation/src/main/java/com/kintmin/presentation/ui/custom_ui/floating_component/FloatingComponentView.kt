@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.custom_ui
+package com.kintmin.presentation.ui.custom_ui.floating_component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
