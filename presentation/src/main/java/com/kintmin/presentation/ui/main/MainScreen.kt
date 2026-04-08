@@ -43,6 +43,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.presentation.BuildConfig
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.custom_ui.data_table.AgeColumn
+import com.kintmin.presentation.ui.custom_ui.data_table.DataTableView
+import com.kintmin.presentation.ui.custom_ui.data_table.DepartmentColumn
+import com.kintmin.presentation.ui.custom_ui.data_table.LineColumn
+import com.kintmin.presentation.ui.custom_ui.data_table.NameColumn
+import com.kintmin.presentation.ui.custom_ui.data_table.PaymentColumn
+import com.kintmin.presentation.ui.custom_ui.data_table.TempData
 import com.kintmin.presentation.ui.custom_ui.floating_component.FloatingComponentMode
 import com.kintmin.presentation.ui.custom_ui.floating_component.FloatingComponentView
 import com.kintmin.presentation.ui.custom_ui.floating_component.rememberFloatingComponentViewState
@@ -235,41 +242,50 @@ fun MainScreen(
                 sendMainIntent = sendMainIntent,
             )
 
-            MainTabItem.Debug -> Column(
+            MainTabItem.Debug -> DataTableView(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (debugFloatingMode == FloatingComponentMode.Add) {
-                        Button(onClick = { debugFloatingMode = FloatingComponentMode.Add }) {
-                            Text("Add")
-                        }
-                        OutlinedButton(onClick = { debugFloatingMode = FloatingComponentMode.Edit }) {
-                            Text("Edit")
-                        }
-                    } else {
-                        OutlinedButton(onClick = { debugFloatingMode = FloatingComponentMode.Add }) {
-                            Text("Add")
-                        }
-                        Button(onClick = { debugFloatingMode = FloatingComponentMode.Edit }) {
-                            Text("Edit")
-                        }
-                    }
-                }
+                dataList = TempData.getMockList(500),
+                keySelector = { data -> data.id },
+                fixedHeaderList = listOf(NameColumn(), DepartmentColumn()),
+                flexibleHeaderList = listOf(AgeColumn(), PaymentColumn()) //+ List(3) { LineColumn() }
+            )
 
-                FloatingComponentView(
-                    modifier = Modifier.fillMaxSize(),
-                    mode = debugFloatingMode,
-                    state = debugFloatingState,
-                )
-            }
-
+//                Column(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .padding(innerPadding),
+//                ) {
+//                    Row(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(horizontal = 12.dp, vertical = 8.dp),
+//                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+//                    ) {
+//                        if (debugFloatingMode == FloatingComponentMode.Add) {
+//                            Button(onClick = { debugFloatingMode = FloatingComponentMode.Add }) {
+//                                Text("Add")
+//                            }
+//                            OutlinedButton(onClick = { debugFloatingMode = FloatingComponentMode.Edit }) {
+//                                Text("Edit")
+//                            }
+//                        } else {
+//                            OutlinedButton(onClick = { debugFloatingMode = FloatingComponentMode.Add }) {
+//                                Text("Add")
+//                            }
+//                            Button(onClick = { debugFloatingMode = FloatingComponentMode.Edit }) {
+//                                Text("Edit")
+//                            }
+//                        }
+//                    }
+//
+//                    FloatingComponentView(
+//                        modifier = Modifier.fillMaxSize(),
+//                        mode = debugFloatingMode,
+//                        state = debugFloatingState,
+//                    )
+//                }
 //                ZoomableView(
 //                    modifier = Modifier.fillMaxSize().padding(innerPadding),
 //                    zoomLimitMode = ZoomLimitMode.Horizontal,
@@ -283,13 +299,6 @@ fun MainScreen(
 //                        )
 //                    }
 //                )
-//            DataTableView(
-//                modifier = Modifier.fillMaxSize().padding(innerPadding),
-//                dataList = TempData.getMockList(20),
-//                keySelector = { data -> data.id },
-//                fixedHeaderList = listOf(NameColumn(), DepartmentColumn()),
-//                flexibleHeaderList = listOf(AgeColumn(), PaymentColumn(), LineColumn())
-//            )
 //            ImageDrawingView(
 //                modifier = Modifier.fillMaxSize().padding(innerPadding),
 //                imageModel = null,

@@ -28,8 +28,11 @@ import kotlin.math.roundToInt
 
 interface ColumnType<T> {
     val headerWidth: Dp
-    val makeHeader: @Composable (headerHeight: Dp) -> Unit
-    val makeCell: @Composable (cellHeight: Dp, data: T) -> Unit
+    @Composable
+    fun makeHeader(headerHeight: Dp)
+
+    @Composable
+    fun makeCell(cellHeight: Dp, data: T)
 }
 
 @Composable
@@ -199,7 +202,7 @@ data class TempData(
         fun getMockList(count: Int) = List(count) { index ->
             TempData(
                 id = index,
-                name = ('A' + index).toString(),
+                name = (('A' + (index % 52))).toString(),
                 age = 10 + index,
                 department = "index $index",
                 payment = 995.5f + index * 0.5f,
@@ -212,55 +215,73 @@ data class TempData(
 class NameColumn : ColumnType<TempData> {
     override val headerWidth: Dp = 80.dp
 
-    override val makeHeader: @Composable ((headerHeight: Dp) -> Unit)
-        get() = { headerHeight -> DefaultHeader(headerWidth, headerHeight, "이름") }
+    @Composable
+    override fun makeHeader(headerHeight: Dp) {
+        DefaultHeader(headerWidth, headerHeight, "이름")
+    }
 
-    override val makeCell: @Composable ((Dp, TempData) -> Unit)
-        get() = { cellHeight, data -> DefaultCell(headerWidth, cellHeight, data) { data -> data.name } }
+    @Composable
+    override fun makeCell(cellHeight: Dp, data: TempData) {
+        DefaultCell(headerWidth, cellHeight, data) { value -> value.name }
+    }
 }
 
 class AgeColumn : ColumnType<TempData> {
     override val headerWidth: Dp = 90.dp
 
-    override val makeHeader: @Composable ((headerHeight: Dp) -> Unit)
-        get() = { headerHeight -> DefaultHeader(headerWidth, headerHeight, "나이") }
+    @Composable
+    override fun makeHeader(headerHeight: Dp) {
+        DefaultHeader(headerWidth, headerHeight, "나이")
+    }
 
-    override val makeCell: @Composable ((Dp, TempData) -> Unit)
-        get() = { cellHeight, data -> DefaultCell(headerWidth, cellHeight, data) { data -> "${data.age}세" } }
+    @Composable
+    override fun makeCell(cellHeight: Dp, data: TempData) {
+        DefaultCell(headerWidth, cellHeight, data) { value -> "${value.age}세" }
+    }
 }
 
 class DepartmentColumn : ColumnType<TempData> {
     override val headerWidth: Dp = 140.dp
 
-    override val makeHeader: @Composable ((headerHeight: Dp) -> Unit)
-        get() = { headerHeight -> DefaultHeader(headerWidth, headerHeight, "부서") }
+    @Composable
+    override fun makeHeader(headerHeight: Dp) {
+        DefaultHeader(headerWidth, headerHeight, "부서")
+    }
 
-    override val makeCell: @Composable ((Dp, TempData) -> Unit)
-        get() = { cellHeight, data -> DefaultCell(headerWidth, cellHeight, data) { data -> data.department } }
+    @Composable
+    override fun makeCell(cellHeight: Dp, data: TempData) {
+        DefaultCell(headerWidth, cellHeight, data) { value -> value.department }
+    }
 }
 
 class PaymentColumn : ColumnType<TempData> {
     override val headerWidth: Dp = 140.dp
 
-    override val makeHeader: @Composable ((headerHeight: Dp) -> Unit)
-        get() = { headerHeight -> DefaultHeader(headerWidth, headerHeight, "금액") }
+    @Composable
+    override fun makeHeader(headerHeight: Dp) {
+        DefaultHeader(headerWidth, headerHeight, "금액")
+    }
 
-    override val makeCell: @Composable ((Dp, TempData) -> Unit)
-        get() = { cellHeight, data ->
-            DefaultCell(
-                headerWidth,
-                cellHeight,
-                data
-            ) { data -> "${"%,d".format(data.payment.roundToInt())}원" }
-        }
+    @Composable
+    override fun makeCell(cellHeight: Dp, data: TempData) {
+        DefaultCell(
+            headerWidth,
+            cellHeight,
+            data
+        ) { value -> "${"%,d".format(value.payment.roundToInt())}원" }
+    }
 }
 
 class LineColumn : ColumnType<TempData> {
     override val headerWidth: Dp = 600.dp
 
-    override val makeHeader: @Composable ((headerHeight: Dp) -> Unit)
-        get() = { headerHeight -> DefaultHeader(headerWidth, headerHeight, "추가설명") }
+    @Composable
+    override fun makeHeader(headerHeight: Dp) {
+        DefaultHeader(headerWidth, headerHeight, "추가설명")
+    }
 
-    override val makeCell: @Composable ((Dp, TempData) -> Unit)
-        get() = { cellHeight, data -> DefaultCell(headerWidth, cellHeight, data) { data -> data.line } }
+    @Composable
+    override fun makeCell(cellHeight: Dp, data: TempData) {
+        DefaultCell(headerWidth, cellHeight, data) { value -> value.line }
+    }
 }
