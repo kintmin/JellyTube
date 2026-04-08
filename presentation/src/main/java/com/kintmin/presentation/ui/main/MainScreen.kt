@@ -35,14 +35,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kintmin.presentation.BuildConfig
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.custom_ui.AgeColumn
 import com.kintmin.presentation.ui.custom_ui.DataTableView
 import com.kintmin.presentation.ui.custom_ui.DepartmentColumn
+import com.kintmin.presentation.ui.custom_ui.ImageDrawingView
 import com.kintmin.presentation.ui.custom_ui.LineColumn
 import com.kintmin.presentation.ui.custom_ui.NameColumn
 import com.kintmin.presentation.ui.custom_ui.PaymentColumn
 import com.kintmin.presentation.ui.custom_ui.TempData
+import com.kintmin.presentation.ui.custom_ui.ImageDrawingView
 import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
@@ -147,6 +150,7 @@ fun MainScreen(
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     var webView: WebView? by remember { mutableStateOf(null) }
+    var debugIsEraserMode by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -194,12 +198,14 @@ fun MainScreen(
                         selected = selectedTab == MainTabItem.Playlist,
                         onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
                     )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Rounded.BugReport, contentDescription = null) },
-                        label = { Text("테스트뷰") },
-                        selected = selectedTab == MainTabItem.Debug,
-                        onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Debug)) },
-                    )
+                    if (BuildConfig.DEBUG) {
+                        NavigationBarItem(
+                            icon = { Icon(Icons.Rounded.BugReport, contentDescription = null) },
+                            label = { Text("테스트뷰") },
+                            selected = selectedTab == MainTabItem.Debug,
+                            onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Debug)) },
+                        )
+                    }
                 }
             }
         }
@@ -224,13 +230,19 @@ fun MainScreen(
                 sendMainIntent = sendMainIntent,
             )
 
-            MainTabItem.Debug -> DataTableView(
+            MainTabItem.Debug ->  ImageDrawingView(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
-                dataList = TempData.getMockList(20),
-                keySelector = { data -> data.id },
-                fixedHeaderList = listOf(NameColumn(), DepartmentColumn()),
-                flexibleHeaderList = listOf(AgeColumn(), PaymentColumn(), LineColumn())
+                imageModel = null,
+                isEraserMode = debugIsEraserMode,
+                onEraserModeChange = { debugIsEraserMode = it },
             )
+//                DataTableView(
+//                modifier = Modifier.fillMaxSize().padding(innerPadding),
+//                dataList = TempData.getMockList(20),
+//                keySelector = { data -> data.id },
+//                fixedHeaderList = listOf(NameColumn(), DepartmentColumn()),
+//                flexibleHeaderList = listOf(AgeColumn(), PaymentColumn(), LineColumn())
+//            )
         }
     }
 }
