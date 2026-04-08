@@ -8,8 +8,12 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BugReport
@@ -30,7 +34,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,7 +51,9 @@ import com.kintmin.presentation.ui.custom_ui.LineColumn
 import com.kintmin.presentation.ui.custom_ui.NameColumn
 import com.kintmin.presentation.ui.custom_ui.PaymentColumn
 import com.kintmin.presentation.ui.custom_ui.TempData
-import com.kintmin.presentation.ui.custom_ui.ImageDrawingView
+import com.kintmin.presentation.ui.custom_ui.ZoomContentAlignment
+import com.kintmin.presentation.ui.custom_ui.ZoomLimitMode
+import com.kintmin.presentation.ui.custom_ui.ZoomableView
 import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
@@ -151,6 +159,9 @@ fun MainScreen(
 ) {
     var webView: WebView? by remember { mutableStateOf(null) }
     var debugIsEraserMode by remember { mutableStateOf(false) }
+    val density = LocalDensity.current
+    val debugCanvasWidth = with(density) { 1000f.toDp() }
+    val debugCanvasHeight = with(density) { 4096f.toDp() }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -230,19 +241,34 @@ fun MainScreen(
                 sendMainIntent = sendMainIntent,
             )
 
-            MainTabItem.Debug ->  ImageDrawingView(
+            MainTabItem.Debug -> ZoomableView(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
-                imageModel = null,
-                isEraserMode = debugIsEraserMode,
-                onEraserModeChange = { debugIsEraserMode = it },
+                zoomLimitMode = ZoomLimitMode.Horizontal,
+                contentAlignment = ZoomContentAlignment.Start,
+                content = {
+                    Box(
+                        modifier = Modifier
+                            .requiredSize(width = debugCanvasWidth, height = debugCanvasHeight)
+                            .background(Color.Blue)
+                            .border(width = 2.dp, color = Color.Green),
+                    )
+                }
             )
-//                DataTableView(
+
+//            DataTableView(
 //                modifier = Modifier.fillMaxSize().padding(innerPadding),
 //                dataList = TempData.getMockList(20),
 //                keySelector = { data -> data.id },
 //                fixedHeaderList = listOf(NameColumn(), DepartmentColumn()),
 //                flexibleHeaderList = listOf(AgeColumn(), PaymentColumn(), LineColumn())
 //            )
+//            ImageDrawingView(
+//                modifier = Modifier.fillMaxSize().padding(innerPadding),
+//                imageModel = null,
+//                isEraserMode = debugIsEraserMode,
+//                onEraserModeChange = { debugIsEraserMode = it },
+//            )
+
         }
     }
 }
