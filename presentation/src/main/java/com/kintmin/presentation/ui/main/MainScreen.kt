@@ -210,14 +210,12 @@ fun MainScreen(
                         selected = selectedTab == MainTabItem.Playlist,
                         onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
                     )
-                    if (BuildConfig.DEBUG) {
                         NavigationBarItem(
                             icon = { Icon(Icons.Rounded.BugReport, contentDescription = null) },
                             label = { Text("테스트뷰") },
                             selected = selectedTab == MainTabItem.Debug,
                             onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Debug)) },
                         )
-                    }
                 }
             }
         }
@@ -246,10 +244,10 @@ fun MainScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
-                dataList = TempData.getMockList(500),
+                dataList = TempData.getMockList(350),
                 keySelector = { data -> data.id },
                 fixedHeaderList = listOf(NameColumn(), DepartmentColumn()),
-                flexibleHeaderList = listOf(AgeColumn(), PaymentColumn()) //+ List(3) { LineColumn() }
+                flexibleHeaderList = listOf(AgeColumn(), PaymentColumn()) + List(30) { LineColumn() }
             )
 
 //                Column(
