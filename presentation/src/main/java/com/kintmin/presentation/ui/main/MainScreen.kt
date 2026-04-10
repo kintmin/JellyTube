@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Column
@@ -196,7 +197,20 @@ fun MainScreen(
             }
             Column {
                 TopAppBar(
-                    title = { Text(title) },
+                    title = {
+                        Text(
+                            text = title,
+                            modifier = if (selectedTab == MainTabItem.Search) {
+                                Modifier.clickable {
+                                    sendYoutubeDownloadIntent(
+                                        YoutubeDownloadIntent.OnChangeUrl("https://youtube.com")
+                                    )
+                                }
+                            } else {
+                                Modifier
+                            }
+                        )
+                    },
                     actions = {
                         if (selectedTab == MainTabItem.Search) {
                             IconButton(
