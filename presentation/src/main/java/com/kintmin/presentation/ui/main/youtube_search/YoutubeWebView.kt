@@ -78,6 +78,11 @@ fun YoutubeWebView(
                 }
                 loadUrl(currentUrl, headers)
             }
+        },
+        update = { view ->
+            if (currentUrl.isNotBlank() && view.url != currentUrl) {
+                view.loadUrl(currentUrl)
+            }
         }
     )
 

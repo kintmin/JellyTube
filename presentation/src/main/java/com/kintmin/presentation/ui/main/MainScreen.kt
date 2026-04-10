@@ -7,6 +7,13 @@ import android.webkit.WebView
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Search
@@ -22,8 +30,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,10 +44,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -157,6 +170,17 @@ fun MainScreen(
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     var webView: WebView? by remember { mutableStateOf(null) }
+    var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
+    var searchInput by rememberSaveable { mutableStateOf(currentUrl) }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    fun submitSearchUrl() {
+        val normalizedUrl = normalizeUrl(searchInput)
+        if (normalizedUrl.isBlank()) return
+        searchInput = normalizedUrl
+        sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnChangeUrl(normalizedUrl))
+        keyboardController?.hide()
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -166,9 +190,55 @@ fun MainScreen(
                 MainTabItem.Playlist -> "플레이리스트"
                 MainTabItem.Debug -> "테스트뷰"
             }
-            TopAppBar(
-                title = { Text(title) },
-            )
+            Column {
+                TopAppBar(
+                    title = { Text(title) },
+                    actions = {
+                        if (selectedTab == MainTabItem.Search) {
+                            IconButton(
+                                onClick = {
+                                    val showSearchBar = !isSearchFieldVisible
+                                    isSearchFieldVisible = showSearchBar
+                                    if (showSearchBar) {
+                                        searchInput = currentUrl
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Search,
+                                    contentDescription = "검색창 열기",
+                                )
+                            }
+                        }
+                    },
+                )
+
+                AnimatedVisibility(
+                    visible = selectedTab == MainTabItem.Search && isSearchFieldVisible,
+                    enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { fullHeight -> -fullHeight }) + fadeOut(),
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        value = searchInput,
+                        onValueChange = { searchInput = it },
+                        label = { Text("Youtube URL 붙여넣기") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { submitSearchUrl() }),
+                        trailingIcon = {
+                            IconButton(onClick = { submitSearchUrl() }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.Send,
+                                    contentDescription = "URL 로드",
+                                )
+                            }
+                        },
+                    )
+                }
+            }
         },
         floatingActionButton = {
             if (selectedTab == MainTabItem.Search) {
@@ -280,5 +350,16 @@ fun MainScreenPlayTabPreview() {
             sendPlaylistIntent = {},
             sendPlayerBarIntent = {},
         )
+    }
+}
+
+private fun normalizeUrl(rawInput: String): String {
+    val trimmed = rawInput.trim()
+    if (trimmed.isBlank()) return ""
+
+    return if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+        trimmed
+    } else {
+        "https://$trimmed"
     }
 }
