@@ -65,7 +65,11 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun addAudioMedia(downloadedAudioMedia: DownloadedMedia): Result<Pair<AudioMedia, Int>> {
+    override suspend fun addAudioMedia(
+        downloadedAudioMedia: DownloadedMedia,
+        playlistIdOnDownload: Int,
+        shouldInsertAtTopOnDownload: Boolean,
+    ): Result<Pair<AudioMedia, Int>> {
         return withContext(Dispatchers.IO) {
             runCatching {
                 val audioMediaEntityToSave = AudioMediaEntity(
@@ -77,7 +81,11 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                     audioFileNameWithExt = downloadedAudioMedia.audioFileNameWithExt,
                     imageFileNameWithExt = downloadedAudioMedia.imageFileNameWithExt,
                 )
-                val (newAudioMediaId, totalPlaylist) = audioMediaFacade.addNewAudioMedia(audioMediaEntityToSave)
+                val (newAudioMediaId, totalPlaylist) = audioMediaFacade.addNewAudioMedia(
+                    newAudioMedia = audioMediaEntityToSave,
+                    playlistIdOnDownload = playlistIdOnDownload,
+                    shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
+                )
                 audioMediaEntityToSave.copy(id = newAudioMediaId).toDomain(fileManager).getOrThrow() to totalPlaylist.audioMediaCount
             }
         }

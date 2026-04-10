@@ -6,7 +6,11 @@ import kotlinx.coroutines.flow.Flow
 
 interface AudioMediaRepository {
     suspend fun downloadAudioMedia(downloadUrl: String): Result<DownloadedMedia>
-    suspend fun addAudioMedia(downloadedAudioMedia: DownloadedMedia): Result<Pair<AudioMedia, Int>>
+    suspend fun addAudioMedia(
+        downloadedAudioMedia: DownloadedMedia,
+        playlistIdOnDownload: Int,
+        shouldInsertAtTopOnDownload: Boolean,
+    ): Result<Pair<AudioMedia, Int>>
     suspend fun getAudioMediaBySource(source: String): Result<AudioMedia>
     fun getAudioMediaListFlow(): Flow<List<AudioMedia>>
     suspend fun updateAudioMedia(

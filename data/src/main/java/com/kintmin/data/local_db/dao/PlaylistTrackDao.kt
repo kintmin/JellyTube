@@ -16,7 +16,7 @@ interface PlaylistTrackDao {
     suspend fun insertPlaylistTrackList(entities: List<PlaylistTrackEntity>)
 
     @Transaction
-    @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
+    @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId ORDER BY sequence")
     fun getPlaylistTrackFullListFlow(playlistId: Int): Flow<List<PlaylistTrackFullDto>>
 
     @Transaction
@@ -43,6 +43,9 @@ interface PlaylistTrackDao {
 
     @Query("SELECT COALESCE(MAX(sequence), 0) FROM PLAYLIST_TRACK WHERE playlistId = :playlistId")
     suspend fun getMaxSequence(playlistId: Int): Int
+
+    @Query("UPDATE PLAYLIST_TRACK SET sequence = sequence + :offset WHERE playlistId = :playlistId")
+    suspend fun increaseSequenceAll(playlistId: Int, offset: Int)
 
     @Query(
         """

@@ -18,11 +18,26 @@ class AudioMediaFacade @Inject constructor(
     private val playlistTrackDao: PlaylistTrackDao,
 ) {
 
-    suspend fun addNewAudioMedia(newAudioMedia: AudioMediaEntity): Pair<Int, PlaylistEntity> {
+    suspend fun addNewAudioMedia(
+        newAudioMedia: AudioMediaEntity,
+        playlistIdOnDownload: Int,
+        shouldInsertAtTopOnDownload: Boolean,
+    ): Pair<Int, PlaylistEntity> {
         return db.withTransaction {
             val insertedAudioMediaId = audioMediaDao.insertAudioMedia(newAudioMedia).toInt()
-            val totalPlaylist = addTrackWithSyncPlaylist(Playlist.TOTAL, listOf(insertedAudioMediaId))
-            addTrackWithSyncPlaylist(Playlist.UNCATEGORIZED, listOf(insertedAudioMediaId))
+            val totalPlaylist = addTrackWithSyncPlaylist(
+                playlistId = Playlist.TOTAL,
+                audioMediaIdList = listOf(insertedAudioMediaId),
+                shouldInsertAtTop = shouldInsertAtTopOnDownload,
+            )
+
+            if (playlistIdOnDownload != Playlist.TOTAL) {
+                addTrackWithSyncPlaylist(
+                    playlistId = playlistIdOnDownload,
+                    audioMediaIdList = listOf(insertedAudioMediaId),
+                    shouldInsertAtTop = shouldInsertAtTopOnDownload,
+                )
+            }
             insertedAudioMediaId to totalPlaylist
         }
     }
@@ -54,7 +69,8 @@ class AudioMediaFacade @Inject constructor(
             error("전체나 미분류는 추가할 수 없다.")
         }
         return db.withTransaction {
-            val result = addTrackWithSyncPlaylist(playlistId, audioMediaIdList)
+            // shouldInsertAtTop 은 다운로드 시에만 적용되기 때문에 false 고정
+            val result = addTrackWithSyncPlaylist(playlistId, audioMediaIdList, shouldInsertAtTop = false)
             syncUncategorizedPlaylistWhenAddTrack(audioMediaIdList)
             result
         }
@@ -77,14 +93,29 @@ class AudioMediaFacade @Inject constructor(
         }
     }
 
-    private suspend fun addTrackWithSyncPlaylist(playlistId: Int, audioMediaIdList: List<Int>): PlaylistEntity {
-        val nextSequence = playlistTrackDao.getMaxSequence(playlistId) + 1
-        val targetList = audioMediaIdList.withIndex().map { (index, audioMediaId) ->
-            PlaylistTrackEntity(
-                playlistId = playlistId,
-                audioMediaId = audioMediaId,
-                sequence = nextSequence + index,
-            )
+    private suspend fun addTrackWithSyncPlaylist(
+        playlistId: Int,
+        audioMediaIdList: List<Int>,
+        shouldInsertAtTop: Boolean,
+    ): PlaylistEntity {
+        val targetList = if (shouldInsertAtTop) {
+            playlistTrackDao.increaseSequenceAll(playlistId = playlistId, offset = audioMediaIdList.size)
+            audioMediaIdList.withIndex().map { (index, audioMediaId) ->
+                PlaylistTrackEntity(
+                    playlistId = playlistId,
+                    audioMediaId = audioMediaId,
+                    sequence = index + 1,
+                )
+            }
+        } else {
+            val nextSequence = playlistTrackDao.getMaxSequence(playlistId) + 1
+            audioMediaIdList.withIndex().map { (index, audioMediaId) ->
+                PlaylistTrackEntity(
+                    playlistId = playlistId,
+                    audioMediaId = audioMediaId,
+                    sequence = nextSequence + index,
+                )
+            }
         }
 
         playlistTrackDao.insertPlaylistTrackList(targetList)
@@ -203,6 +234,11 @@ class AudioMediaFacade @Inject constructor(
             }
         }
 
-        addTrackWithSyncPlaylist(Playlist.UNCATEGORIZED, targetAudioMediaIdList)
+        // shouldInsertAtTop 은 다운로드 시에만 적용되기 때문에 false 고정
+        addTrackWithSyncPlaylist(
+            playlistId = Playlist.UNCATEGORIZED,
+            audioMediaIdList = targetAudioMediaIdList,
+            shouldInsertAtTop = false,
+        )
     }
 }

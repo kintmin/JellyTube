@@ -117,6 +117,16 @@ class MediaControllerManagerImpl @Inject constructor(
         }
     }
 
+    override fun tryAddFirstMediaItem(
+        playlistId: Int,
+        mediaItem: MediaControlData,
+    ): Result<Unit> = runCatching {
+        if (currentPlaylistId == playlistId) {
+            val mediaController = getMediaController() ?: return@runCatching
+            mediaController.addMediaItem(0, mediaItem.toMediaItem())
+        }
+    }
+
     override fun setShuffleMode(isShuffle: Boolean) {
         val mediaController = getMediaController() ?: return
         if (mediaController.shuffleModeEnabled == isShuffle) return

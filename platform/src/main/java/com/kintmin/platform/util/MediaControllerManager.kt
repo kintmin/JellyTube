@@ -33,6 +33,10 @@ interface MediaControllerManager {
         playlistId: Int,
         mediaItem: MediaControlData,
     ): Result<Unit>
+    fun tryAddFirstMediaItem(
+        playlistId: Int,
+        mediaItem: MediaControlData,
+    ): Result<Unit>
 
     fun setShuffleMode(isShuffle: Boolean)
     fun setRepeatMode(isRepeat: Boolean)

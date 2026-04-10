@@ -13,6 +13,7 @@ import com.kintmin.platform.notification.NotificationData
 import com.kintmin.platform.notification.PushNotificationUtil
 import com.kintmin.platform.util.MediaControllerManager
 import com.kintmin.platform.util.mapper.toMediaControlData
+import com.kintmin.platform.util.model.MediaControlData
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -54,12 +55,24 @@ class YoutubeDownloadWorker @AssistedInject constructor(
         pushNotificationUtil.sendNotification(NotificationData.DownloadResult("다운로드를 시작합니다."))
         pushNotificationUtil.sendNotification(NotificationData.Download(1, 0))
 
-        downloadAudioMediaUseCase(url).onSuccess { audioMedia ->
+        downloadAudioMediaUseCase(url).onSuccess { result ->
             pushNotificationUtil.cancelNotification(NotificationData.Download())
             pushNotificationUtil.sendNotification(NotificationData.DownloadResult("완료되었습니다."))
             withContext(Dispatchers.Main) {
-                mediaControllerManager.tryAddLastMediaItem(Playlist.TOTAL, audioMedia.toMediaControlData())
-                mediaControllerManager.tryAddLastMediaItem(Playlist.UNCATEGORIZED, audioMedia.toMediaControlData())
+                val mediaControlData = result.audioMedia.toMediaControlData()
+                tryAddMediaItem(
+                    playlistId = Playlist.TOTAL,
+                    mediaControlData = mediaControlData,
+                    shouldInsertAtTop = result.shouldInsertAtTopOnDownload,
+                )
+
+                if (result.playlistIdOnDownload != Playlist.TOTAL) {
+                    tryAddMediaItem(
+                        playlistId = result.playlistIdOnDownload,
+                        mediaControlData = mediaControlData,
+                        shouldInsertAtTop = result.shouldInsertAtTopOnDownload,
+                    )
+                }
             }
             return Result.success()
         }.onFailure {
@@ -72,5 +85,17 @@ class YoutubeDownloadWorker @AssistedInject constructor(
 
     companion object {
         const val INPUT_DATA_URL = "youtube_url"
+    }
+
+    private fun tryAddMediaItem(
+        playlistId: Int,
+        mediaControlData: MediaControlData,
+        shouldInsertAtTop: Boolean,
+    ) {
+        if (shouldInsertAtTop) {
+            mediaControllerManager.tryAddFirstMediaItem(playlistId, mediaControlData)
+        } else {
+            mediaControllerManager.tryAddLastMediaItem(playlistId, mediaControlData)
+        }
     }
 }

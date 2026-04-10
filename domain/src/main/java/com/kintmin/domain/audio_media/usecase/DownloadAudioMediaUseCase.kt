@@ -2,21 +2,29 @@ package com.kintmin.domain.audio_media.usecase
 
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
+import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
+import com.kintmin.domain.playlist.model.Playlist
+import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
 import com.kintmin.log.FirebaseEvent
 import com.kintmin.log.Log
 import com.kintmin.log.LogcatEvent
 import javax.inject.Inject
+import kotlinx.coroutines.flow.first
 import kotlin.time.measureTimedValue
 
 class DownloadAudioMediaUseCase @Inject constructor(
     private val audioMediaRepository: AudioMediaRepository,
     private val deviceStatusRepository: DeviceStatusRepository,
+    private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase,
+    private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase,
+    private val fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
     private val log: Log,
 ) {
     private var downloadAttemptUrlList = mutableSetOf<String>()
 
-    suspend operator fun invoke(downloadUrl: String): Result<AudioMedia> = runCatching {
+    suspend operator fun invoke(downloadUrl: String): Result<DownloadedAudioMediaResult> = runCatching {
         if (downloadAttemptUrlList.contains(downloadUrl)) {
             throw AlreadyDownloadingMedia()
         }
@@ -33,12 +41,32 @@ class DownloadAudioMediaUseCase @Inject constructor(
 
         val downloadedAudioMedia = downloadedAudioMediaTimedValue.value
 
-        val (audioMedia, totalPlaylistMediaCount) = audioMediaRepository.addAudioMedia(downloadedAudioMedia).onFailure {
+        val shouldInsertAtTopOnDownload = fetchShouldInsertAtTopOnDownloadFlowUseCase().first()
+        val playlistIdOnDownload = fetchPlaylistIdOnDownloadFlowUseCase().first()
+        val allPlaylistIdSet = fetchAllPlaylistFlowUseCase().first().map { it.id }.toSet() + setOf(
+            Playlist.TOTAL,
+            Playlist.UNCATEGORIZED,
+        )
+        val resolvedPlaylistIdOnDownload = if (playlistIdOnDownload in allPlaylistIdSet) {
+            playlistIdOnDownload
+        } else {
+            Playlist.UNCATEGORIZED
+        }
+
+        val (audioMedia, totalPlaylistMediaCount) = audioMediaRepository.addAudioMedia(
+            downloadedAudioMedia = downloadedAudioMedia,
+            playlistIdOnDownload = resolvedPlaylistIdOnDownload,
+            shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
+        ).onFailure {
             audioMediaRepository.deleteDownloadedFile(downloadedAudioMedia)
         }.getOrThrow()
 
         log.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(downloadUrl, totalPlaylistMediaCount))
-        audioMedia
+        DownloadedAudioMediaResult(
+            audioMedia = audioMedia,
+            playlistIdOnDownload = resolvedPlaylistIdOnDownload,
+            shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
+        )
     }.onFailure { exception ->
         val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()
         val connectionStatus = deviceStatusRepository.getConnectionStatus().getOrNull()
@@ -69,3 +97,9 @@ class AlreadyDownloadingMedia(
 class AlreadyDownloadedMedia(
     override val message: String = "이미 저장된 미디어입니다."
 ) : Throwable()
+
+data class DownloadedAudioMediaResult(
+    val audioMedia: AudioMedia,
+    val playlistIdOnDownload: Int,
+    val shouldInsertAtTopOnDownload: Boolean,
+)
