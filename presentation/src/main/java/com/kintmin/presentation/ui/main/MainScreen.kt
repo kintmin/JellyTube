@@ -157,12 +157,6 @@ fun MainScreen(
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     var webView: WebView? by remember { mutableStateOf(null) }
-    var debugIsEraserMode by remember { mutableStateOf(false) }
-    var debugFloatingMode by remember { mutableStateOf(FloatingComponentMode.Add) }
-    val debugFloatingState = rememberFloatingComponentViewState()
-    val density = LocalDensity.current
-    val debugCanvasWidth = with(density) { 1000f.toDp() }
-    val debugCanvasHeight = with(density) { 4096f.toDp() }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -210,12 +204,14 @@ fun MainScreen(
                         selected = selectedTab == MainTabItem.Playlist,
                         onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
                     )
+                    if (BuildConfig.DEBUG) {
                         NavigationBarItem(
                             icon = { Icon(Icons.Rounded.BugReport, contentDescription = null) },
                             label = { Text("테스트뷰") },
                             selected = selectedTab == MainTabItem.Debug,
                             onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Debug)) },
                         )
+                    }
                 }
             }
         }
@@ -249,61 +245,6 @@ fun MainScreen(
                 fixedHeaderList = listOf(NameColumn(), DepartmentColumn()),
                 flexibleHeaderList = listOf(AgeColumn(), PaymentColumn()) + List(30) { LineColumn() }
             )
-
-//                Column(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .padding(innerPadding),
-//                ) {
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .padding(horizontal = 12.dp, vertical = 8.dp),
-//                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-//                    ) {
-//                        if (debugFloatingMode == FloatingComponentMode.Add) {
-//                            Button(onClick = { debugFloatingMode = FloatingComponentMode.Add }) {
-//                                Text("Add")
-//                            }
-//                            OutlinedButton(onClick = { debugFloatingMode = FloatingComponentMode.Edit }) {
-//                                Text("Edit")
-//                            }
-//                        } else {
-//                            OutlinedButton(onClick = { debugFloatingMode = FloatingComponentMode.Add }) {
-//                                Text("Add")
-//                            }
-//                            Button(onClick = { debugFloatingMode = FloatingComponentMode.Edit }) {
-//                                Text("Edit")
-//                            }
-//                        }
-//                    }
-//
-//                    FloatingComponentView(
-//                        modifier = Modifier.fillMaxSize(),
-//                        mode = debugFloatingMode,
-//                        state = debugFloatingState,
-//                    )
-//                }
-//                ZoomableView(
-//                    modifier = Modifier.fillMaxSize().padding(innerPadding),
-//                    zoomLimitMode = ZoomLimitMode.Horizontal,
-//                    contentAlignment = ZoomContentAlignment.Start,
-//                    content = {
-//                        Box(
-//                            modifier = Modifier
-//                                .requiredSize(width = debugCanvasWidth, height = debugCanvasHeight)
-//                                .background(Color.Blue)
-//                                .border(width = 2.dp, color = Color.Green),
-//                        )
-//                    }
-//                )
-//            ImageDrawingView(
-//                modifier = Modifier.fillMaxSize().padding(innerPadding),
-//                imageModel = null,
-//                isEraserMode = debugIsEraserMode,
-//                onEraserModeChange = { debugIsEraserMode = it },
-//            )
-
         }
     }
 }
