@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.main.playlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist.usecase.DeletePlaylistUseCase
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -26,8 +28,12 @@ class PlaylistViewModel @Inject constructor(
     val eventFlow = _eventFlow.asSharedFlow()
 
     val playlistFlow: StateFlow<List<PlaylistItemUiState>> = fetchAllPlaylistFlowUseCase()
-        .map { list -> list.map { it.toUiModel() } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .map { playlistList ->
+            // 미분류는 분류된 미디어가 없으면 fetch하지 않는다.
+            playlistList.filterNot {
+                it.id == Playlist.UNCATEGORIZED && it.audioMediaCount == 0
+            }.map { it.toUiModel() }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun sendIntent(intent: PlaylistIntent) {
         when (intent) {

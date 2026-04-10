@@ -14,7 +14,9 @@ import com.kintmin.data.repository_impl.AudioPlaySettingRepositoryImpl
 import com.kintmin.data.repository_impl.AudioTrackRepositoryImpl
 import com.kintmin.data.repository_impl.DeviceStatusRepositoryImpl
 import com.kintmin.data.repository_impl.PlaylistRepositoryImpl
+import com.kintmin.data.repository_impl.AppSettingRepositoryImpl
 import com.kintmin.data.repository_impl.UserRepositoryImpl
+import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingRepository
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
@@ -30,6 +32,16 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
+
+    @Provides
+    @Singleton
+    fun provideAppSettingRepository(
+        datastoreUtil: DatastoreUtil,
+    ): AppSettingRepository {
+        return AppSettingRepositoryImpl(
+            datastoreUtil = datastoreUtil,
+        )
+    }
 
     @Provides
     @Singleton

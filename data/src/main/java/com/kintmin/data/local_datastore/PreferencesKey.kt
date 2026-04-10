@@ -2,20 +2,29 @@ package com.kintmin.data.local_datastore
 
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 
 sealed interface PreferencesKey<T> {
     val key: Preferences.Key<T>
 
-    object IsPlaybackRepeating : PreferencesKey<Boolean> {
+    data object IsPlaybackRepeating : PreferencesKey<Boolean> {
         override val key = booleanPreferencesKey("IsPlaybackRepeating")
     }
 
-    object IsPlaybackShuffling : PreferencesKey<Boolean> {
+    data object IsPlaybackShuffling : PreferencesKey<Boolean> {
         override val key = booleanPreferencesKey("IsPlaybackShuffling")
     }
 
-    object UserId : PreferencesKey<String> {
+    data object UserId : PreferencesKey<String> {
         override val key = stringPreferencesKey("UserId")
+    }
+
+    data object ShouldInsertAtTopOnDownload : PreferencesKey<Boolean> {
+        override val key = booleanPreferencesKey("shouldInsertAtTopOnDownload")
+    }
+
+    data object PlaylistIdOnDownload : PreferencesKey<Int> {
+        override val key = intPreferencesKey("playlistIdOnDownload")
     }
 }

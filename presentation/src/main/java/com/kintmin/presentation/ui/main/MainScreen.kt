@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -85,6 +86,7 @@ fun MainScreen(
     navigateToPlaylistDetail: (id: Int) -> Unit,
     navigateToPlaylistEdit: (id: Int) -> Unit,
     navigateToPlaylistAdd: (id: Int) -> Unit,
+    navigateToSetting: () -> Unit,
 ) {
     val context = LocalContext.current
     val mainViewModel = hiltViewModel<MainViewModel>()
@@ -150,6 +152,7 @@ fun MainScreen(
         playlist = playlist,
         playerBar = currentMediaItem,
         currentUrl = currentUrl,
+        navigateToSetting = navigateToSetting,
         sendMainIntent = mainViewModel::sendIntent,
         sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
         sendPlaylistIntent = playlistViewModel::sendIntent,
@@ -164,6 +167,7 @@ fun MainScreen(
     playlist: List<PlaylistItemUiState>,
     playerBar: PlayerBarUiState,
     currentUrl: String,
+    navigateToSetting: () -> Unit,
     sendMainIntent: (MainScreenIntent) -> Unit,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
@@ -207,6 +211,16 @@ fun MainScreen(
                                 Icon(
                                     imageVector = Icons.Rounded.Search,
                                     contentDescription = "검색창 열기",
+                                )
+                            }
+                        }
+                        if (selectedTab == MainTabItem.Playlist) {
+                            IconButton(
+                                onClick = navigateToSetting,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Settings,
+                                    contentDescription = "설정 화면으로 이동",
                                 )
                             }
                         }
@@ -328,6 +342,7 @@ fun MainScreenSearchTabPreview() {
             playlist = PlaylistItemUiState.getMockList(),
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
+            navigateToSetting = {},
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},
@@ -345,6 +360,7 @@ fun MainScreenPlayTabPreview() {
             playlist = PlaylistItemUiState.getMockList(),
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
+            navigateToSetting = {},
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},

@@ -20,6 +20,8 @@ import com.kintmin.presentation.ui.playlist_add.navigation.navigateToPlaylistAdd
 import com.kintmin.presentation.ui.playlist_add.navigation.playlistAdd
 import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEditScreen
 import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
+import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
+import com.kintmin.presentation.ui.setting.navigation.settingScreen
 
 @Composable
 fun MainNavHost(
@@ -43,6 +45,9 @@ fun MainNavHost(
             },
             navigateToPlaylistAdd = { playlistId ->
                 navController.navigateToPlaylistAddScreen(playlistId, navOptions)
+            },
+            navigateToSetting = {
+                navController.navigateToSettingScreen(navOptions)
             },
         )
         playlistDetail(
@@ -80,6 +85,9 @@ fun MainNavHost(
             },
         )
         audioMediaEdit(
+            navigateToBack = { navController.popBackStack() },
+        )
+        settingScreen(
             navigateToBack = { navController.popBackStack() },
         )
     }
