@@ -1,5 +1,8 @@
 package com.kintmin.jellytube
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -34,10 +37,33 @@ fun MainNavHost(
     NavHost(
         navController = navController,
         startDestination = MainScreenRoute(MainTabItem.Playlist),
+        enterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = tween(500),
+            )
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = tween(500),
+            )
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = tween(500),
+            )
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = tween(500),
+            )
+        },
     ) {
         mainScreen(
             navigateToPlaylistDetail = { playlistId ->
-                navController.navigateToMainScreen(MainTabItem.Playlist, navOptions)
                 navController.navigateToPlaylistDetailScreen(playlistId, navOptions)
             },
             navigateToPlaylistEdit = { playlistId ->
