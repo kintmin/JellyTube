@@ -11,6 +11,8 @@ interface MediaControllerManager {
     val isPlaying: Boolean
     fun pause()
     fun resume()
+    fun playPrevious()
+    fun playNext()
 
     val playingMediaItem: MediaControlData?
     val currentPosition: Long?

@@ -72,6 +72,22 @@ class MediaControllerManagerImpl @Inject constructor(
         }
     }
 
+    override fun playPrevious() {
+        val mediaController = getMediaController() ?: return
+        mediaController.seekToPreviousMediaItem()
+        if (!mediaController.isPlaying) {
+            mediaController.play()
+        }
+    }
+
+    override fun playNext() {
+        val mediaController = getMediaController() ?: return
+        mediaController.seekToNextMediaItem()
+        if (!mediaController.isPlaying) {
+            mediaController.play()
+        }
+    }
+
     override val playingMediaItem: MediaControlData?
         get() = getMediaController()?.currentMediaItem?.toMediaControlData()
     override val currentPosition: Long?

@@ -88,6 +88,7 @@ fun MainScreen(
     navigateToPlaylistEdit: (id: Int) -> Unit,
     navigateToPlaylistAdd: (id: Int) -> Unit,
     navigateToSetting: () -> Unit,
+    navigateToPlayerDetail: () -> Unit,
 ) {
     val context = LocalContext.current
     val mainViewModel = hiltViewModel<MainViewModel>()
@@ -154,6 +155,7 @@ fun MainScreen(
         playerBar = currentMediaItem,
         currentUrl = currentUrl,
         navigateToSetting = navigateToSetting,
+        navigateToPlayerDetail = navigateToPlayerDetail,
         sendMainIntent = mainViewModel::sendIntent,
         sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
         sendPlaylistIntent = playlistViewModel::sendIntent,
@@ -169,6 +171,7 @@ fun MainScreen(
     playerBar: PlayerBarUiState,
     currentUrl: String,
     navigateToSetting: () -> Unit,
+    navigateToPlayerDetail: () -> Unit,
     sendMainIntent: (MainScreenIntent) -> Unit,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
@@ -288,6 +291,7 @@ fun MainScreen(
                 PlayerBar(
                     data = playerBar,
                     sendIntent = sendPlayerBarIntent,
+                    onClickBar = navigateToPlayerDetail,
                 )
                 NavigationBar {
                     NavigationBarItem(
@@ -357,6 +361,7 @@ fun MainScreenSearchTabPreview() {
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
             navigateToSetting = {},
+            navigateToPlayerDetail = {},
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},
@@ -375,6 +380,7 @@ fun MainScreenPlayTabPreview() {
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
             navigateToSetting = {},
+            navigateToPlayerDetail = {},
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},

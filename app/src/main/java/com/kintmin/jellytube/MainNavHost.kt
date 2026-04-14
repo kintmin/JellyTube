@@ -18,6 +18,8 @@ import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
 import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
 import com.kintmin.presentation.ui.main.navigation.mainScreen
 import com.kintmin.presentation.ui.main.navigation.navigateToMainScreen
+import com.kintmin.presentation.ui.player_detail.navigation.navigateToPlayerDetailScreen
+import com.kintmin.presentation.ui.player_detail.navigation.playerDetailScreen
 import com.kintmin.presentation.ui.playlist_add.navigation.navigateToPlaylistAddScreen
 import com.kintmin.presentation.ui.playlist_add.navigation.playlistAdd
 import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEditScreen
@@ -76,6 +78,9 @@ fun MainNavHost(
             navigateToSetting = {
                 navController.navigateToSettingScreen(navOptions)
             },
+            navigateToPlayerDetail = {
+                navController.navigateToPlayerDetailScreen(navOptions)
+            },
         )
         playlistDetail(
             navigateToBack = { navController.popBackStack() },
@@ -121,6 +126,9 @@ fun MainNavHost(
             },
         )
         appLogScreen(
+            navigateToBack = { navController.popBackStack() },
+        )
+        playerDetailScreen(
             navigateToBack = { navController.popBackStack() },
         )
     }

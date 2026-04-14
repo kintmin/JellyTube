@@ -1,6 +1,7 @@
 package com.kintmin.presentation.ui.player_bar
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,6 +55,7 @@ import java.io.File
 fun PlayerBar(
     data: PlayerBarUiState,
     sendIntent: (PlayerBarIntent) -> Unit,
+    onClickBar: () -> Unit = {},
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(Unit) {
@@ -111,6 +113,10 @@ fun PlayerBar(
                 .height(64.dp)
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surfaceDim)
+                .clickable(
+                    enabled = data.id.isNotBlank(),
+                    onClick = onClickBar,
+                )
         ) {
             if (data.imageFileFullPath == null) {
                 Box(

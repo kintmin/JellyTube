@@ -25,6 +25,7 @@ fun NavGraphBuilder.mainScreen(
     navigateToPlaylistEdit: (playlistId: Int) -> Unit,
     navigateToPlaylistAdd: (playlistId: Int) -> Unit,
     navigateToSetting: () -> Unit,
+    navigateToPlayerDetail: () -> Unit,
 ) {
     composable<MainScreenRoute> { backStackEntry ->
         MainScreen(
@@ -32,6 +33,7 @@ fun NavGraphBuilder.mainScreen(
             navigateToPlaylistEdit = navigateToPlaylistEdit,
             navigateToPlaylistAdd = navigateToPlaylistAdd,
             navigateToSetting = navigateToSetting,
+            navigateToPlayerDetail = navigateToPlayerDetail,
         )
     }
 }
