@@ -27,18 +27,32 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.main.MainScreen
+import com.kintmin.presentation.ui.main.MainTabItem
+import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
+import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
 
 @Composable
 fun SettingScreen(
     navigateToBack: () -> Unit,
+    navigateToAppLog: () -> Unit,
 ) {
     val viewModel = hiltViewModel<SettingViewModel>()
     val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.sendIntent(SettingIntent.OnInit)
+    }
+    LaunchedEffect(Unit) {
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                SettingEvent.NavigateToAppLogScreen -> navigateToAppLog()
+            }
+        }
     }
 
     SettingScreen(
@@ -156,6 +170,31 @@ fun SettingScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clickable {
+                        sendIntent(SettingIntent.OnClickAppLogTile)
+                    }
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = "앱 로그 보기")
+            }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SettingScreenPreview() {
+    JellyTubeTheme {
+        SettingScreen(
+            uiState = SettingUiState(),
+            navigateToBack = {},
+            sendIntent = {},
+        )
     }
 }

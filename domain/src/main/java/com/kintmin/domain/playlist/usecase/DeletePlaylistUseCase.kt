@@ -1,9 +1,9 @@
-package com.kintmin.domain.playlist.usecase
+﻿package com.kintmin.domain.playlist.usecase
 
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.playlist.repository.PlaylistRepository
-import com.kintmin.log.FirebaseEvent
-import com.kintmin.log.Log
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.FirebaseEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
@@ -12,7 +12,7 @@ import javax.inject.Inject
 class DeletePlaylistUseCase @Inject constructor(
     private val audioTrackRepository: AudioTrackRepository,
     private val playlistRepository: PlaylistRepository,
-    private val log: Log,
+    private val appLog: AppLog,
 ) {
 
     suspend operator fun invoke(playlistId: Int) {
@@ -24,7 +24,7 @@ class DeletePlaylistUseCase @Inject constructor(
             val trackCount = audioTrackRepository.getPlaylistTrackCount(playlistId).getOrThrow()
 
             playlistRepository.deletePlaylist(playlistId).onSuccess {
-                log.sendFirebaseEvent(
+                appLog.sendFirebaseEvent(
                     FirebaseEvent.DeletePlaylist(
                         playlistId = playlistToDelete.id,
                         playlistTitle = playlistToDelete.name,

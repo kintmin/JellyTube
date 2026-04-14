@@ -15,7 +15,9 @@ import com.kintmin.data.repository_impl.AudioTrackRepositoryImpl
 import com.kintmin.data.repository_impl.DeviceStatusRepositoryImpl
 import com.kintmin.data.repository_impl.PlaylistRepositoryImpl
 import com.kintmin.data.repository_impl.AppSettingRepositoryImpl
+import com.kintmin.data.repository_impl.AppLogRepositoryImpl
 import com.kintmin.data.repository_impl.UserRepositoryImpl
+import com.kintmin.domain.app_log.repository.AppLogRepository
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingRepository
@@ -32,6 +34,15 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
+    @Provides
+    @Singleton
+    fun provideAppLogRepository(
+        fileManager: FileManager,
+    ): AppLogRepository {
+        return AppLogRepositoryImpl(
+            fileManager = fileManager,
+        )
+    }
 
     @Provides
     @Singleton

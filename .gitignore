@@ -1,24 +1,35 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-/.idea/androidTestResultsUserPreferences.xml
-/.idea/deploymentTargetSelector.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Gradle
+**/.gradle/
+
+# Local config
 local.properties
+
+# Build outputs
+**/build/
 /app/debug
 /app/production
 /app/release
-/buildSrc/build
+
+# Native build
+.externalNativeBuild
+.cxx
+
+# Android
+/captures
+
+# Kotlin
 /.kotlin/errors
-.idea/androidTestResultsUserPreferences.xml
-/.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# IDE
+*.iml
+.idea/*
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+

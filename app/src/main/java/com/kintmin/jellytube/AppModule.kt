@@ -1,7 +1,6 @@
 package com.kintmin.jellytube
 
 import android.content.Context
-import com.kintmin.log.Log
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,11 +16,5 @@ object AppModule {
     @Singleton
     fun provideAppContext(@ApplicationContext context: Context): Context {
         return context
-    }
-
-    @Provides
-    @Singleton
-    fun provideLog(): Log {
-        return LogImpl()
     }
 }

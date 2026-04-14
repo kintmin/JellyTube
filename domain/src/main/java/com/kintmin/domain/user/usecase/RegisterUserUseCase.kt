@@ -1,14 +1,14 @@
-package com.kintmin.domain.user.usecase
+﻿package com.kintmin.domain.user.usecase
 
 import com.kintmin.domain.user.repository.UserRepository
-import com.kintmin.log.FirebaseEvent
-import com.kintmin.log.Log
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.FirebaseEvent
 import java.util.UUID
 import javax.inject.Inject
 
 class RegisterUserUseCase @Inject constructor(
     private val userRepository: UserRepository,
-    private val log: Log,
+    private val appLog: AppLog,
 ) {
 
     suspend operator fun invoke() = runCatching {
@@ -17,12 +17,12 @@ class RegisterUserUseCase @Inject constructor(
 
         val newUserId = UUID.randomUUID().toString()
         userRepository.setUserId(newUserId).onSuccess {
-            log.sendFirebaseEvent(FirebaseEvent.SuccessRegisterUser(newUserId))
+            appLog.sendFirebaseEvent(FirebaseEvent.SuccessRegisterUser(newUserId))
         }
         newUserId
     }.onFailure { error ->
-        log.sendFirebaseEvent(FirebaseEvent.FailedRegisterUser(error))
+        appLog.sendFirebaseEvent(FirebaseEvent.FailedRegisterUser(error))
     }.onSuccess { userId ->
-        log.setFirebaseConfig(userId)
+        appLog.setLogConfig(userId)
     }
 }

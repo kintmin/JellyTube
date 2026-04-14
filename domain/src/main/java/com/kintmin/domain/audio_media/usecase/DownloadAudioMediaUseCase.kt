@@ -1,4 +1,4 @@
-package com.kintmin.domain.audio_media.usecase
+﻿package com.kintmin.domain.audio_media.usecase
 
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
@@ -7,9 +7,9 @@ import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFl
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
-import com.kintmin.log.FirebaseEvent
-import com.kintmin.log.Log
-import com.kintmin.log.LogcatEvent
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.FirebaseEvent
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 import kotlin.time.measureTimedValue
@@ -20,7 +20,7 @@ class DownloadAudioMediaUseCase @Inject constructor(
     private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase,
     private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase,
     private val fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
-    private val log: Log,
+    private val appLog: AppLog,
 ) {
     private var downloadAttemptUrlList = mutableSetOf<String>()
 
@@ -37,7 +37,7 @@ class DownloadAudioMediaUseCase @Inject constructor(
         val downloadedAudioMediaTimedValue = measureTimedValue {
             audioMediaRepository.downloadAudioMedia(downloadUrl).getOrThrow()
         }
-        log.sendLogcatEvent(LogcatEvent("DownloadAudioMediaUseCase", "downloadAudioMedia: ${downloadedAudioMediaTimedValue.duration}"))
+        appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "downloadAudioMedia: ${downloadedAudioMediaTimedValue.duration}"))
 
         val downloadedAudioMedia = downloadedAudioMediaTimedValue.value
 
@@ -61,7 +61,7 @@ class DownloadAudioMediaUseCase @Inject constructor(
             audioMediaRepository.deleteDownloadedFile(downloadedAudioMedia)
         }.getOrThrow()
 
-        log.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(downloadUrl, totalPlaylistMediaCount))
+        appLog.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(downloadUrl, totalPlaylistMediaCount))
         DownloadedAudioMediaResult(
             audioMedia = audioMedia,
             playlistIdOnDownload = resolvedPlaylistIdOnDownload,
@@ -71,7 +71,7 @@ class DownloadAudioMediaUseCase @Inject constructor(
         val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()
         val connectionStatus = deviceStatusRepository.getConnectionStatus().getOrNull()
 
-        log.sendFirebaseEvent(
+        appLog.sendFirebaseEvent(
             FirebaseEvent.FailedDownloadAudioMedia(
                 source = downloadUrl,
                 exception = exception,

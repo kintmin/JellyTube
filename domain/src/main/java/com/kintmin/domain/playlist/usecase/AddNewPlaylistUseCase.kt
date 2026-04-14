@@ -1,17 +1,17 @@
-package com.kintmin.domain.playlist.usecase
+﻿package com.kintmin.domain.playlist.usecase
 
 import com.kintmin.domain.playlist.repository.PlaylistRepository
-import com.kintmin.log.FirebaseEvent
-import com.kintmin.log.Log
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.FirebaseEvent
 import javax.inject.Inject
 
 class AddNewPlaylistUseCase @Inject constructor(
     private val playlistRepository: PlaylistRepository,
-    private val log: Log,
+    private val appLog: AppLog,
 ) {
     suspend operator fun invoke(title: String): Result<Int> {
         return playlistRepository.addPlaylist(title).onSuccess { id ->
-            log.sendFirebaseEvent(FirebaseEvent.AddPlaylist(id, title))
+            appLog.sendFirebaseEvent(FirebaseEvent.AddPlaylist(id, title))
         }
     }
 }

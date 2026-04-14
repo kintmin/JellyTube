@@ -6,7 +6,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
 import com.kintmin.presentation.ui.audio_media_detail.navigation.audioMediaDetailScreen
@@ -23,6 +22,8 @@ import com.kintmin.presentation.ui.playlist_add.navigation.navigateToPlaylistAdd
 import com.kintmin.presentation.ui.playlist_add.navigation.playlistAdd
 import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEditScreen
 import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
+import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
+import com.kintmin.presentation.ui.setting.app_log.navigation.navigateToAppLogScreen
 import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
 import com.kintmin.presentation.ui.setting.navigation.settingScreen
 
@@ -114,6 +115,12 @@ fun MainNavHost(
             navigateToBack = { navController.popBackStack() },
         )
         settingScreen(
+            navigateToBack = { navController.popBackStack() },
+            navigateToAppLog = {
+                navController.navigateToAppLogScreen(navOptions)
+            },
+        )
+        appLogScreen(
             navigateToBack = { navController.popBackStack() },
         )
     }

@@ -17,6 +17,12 @@ internal class FileManagerImpl @Inject constructor(
     private val appContext: Context,
 ) : FileManager {
 
+    private companion object {
+
+        const val LOG_DIR_NAME = "app_logs"
+        const val MAX_LOG_FILE_COUNT = 14
+    }
+
     override fun getFileNameWithExt(fileFullPath: String) = runCatching {
         File(fileFullPath).name
     }
@@ -65,6 +71,33 @@ internal class FileManagerImpl @Inject constructor(
         appContext.cacheDir.deleteRecursively()
     }
 
+    override suspend fun appendAppLog(date: String, line: String): Result<Unit> = runCatching {
+        withContext(Dispatchers.IO) {
+            val file = getLogDirectory().resolve("$date.log")
+            file.appendText("$line\n")
+            cleanupOldLogFile()
+        }
+    }
+
+    override suspend fun fetchAppLogDateList(): Result<List<String>> = runCatching {
+        withContext(Dispatchers.IO) {
+            getLogDirectory()
+                .listFiles()
+                ?.filter { file -> file.isFile && file.extension == "log" }
+                ?.map { file -> file.nameWithoutExtension }
+                ?.sortedDescending()
+                ?: emptyList()
+        }
+    }
+
+    override suspend fun fetchAppLogLineList(date: String): Result<List<String>> = runCatching {
+        withContext(Dispatchers.IO) {
+            val targetFile = getLogDirectory().resolve("$date.log")
+            if (!targetFile.exists()) return@withContext emptyList()
+            targetFile.readLines().asReversed()
+        }
+    }
+
     private fun extractExtFromFileName(fileNameWithExt: String): Pair<String, Ext> {
         val lastDotIndex = fileNameWithExt.lastIndexOf(".")
         if (lastDotIndex == -1) {
@@ -88,5 +121,27 @@ internal class FileManagerImpl @Inject constructor(
         }
         return dir?.takeIf { it.exists() || it.mkdirs() }
             ?: throw Exception("디렉토리를 찾을 수 없습니다.")
+    }
+
+    private fun getLogDirectory(): File {
+        val dir = appContext.filesDir.resolve(LOG_DIR_NAME)
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+        return dir
+    }
+
+    private fun cleanupOldLogFile() {
+        val allLogFile = getLogDirectory()
+            .listFiles()
+            ?.filter { file ->
+                file.isFile && file.extension == "log"
+            }
+            ?.sortedByDescending { file -> file.nameWithoutExtension }
+            ?: return
+
+        allLogFile.drop(MAX_LOG_FILE_COUNT).forEach { file ->
+            file.delete()
+        }
     }
 }

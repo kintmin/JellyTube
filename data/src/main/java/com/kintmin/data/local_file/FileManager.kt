@@ -12,4 +12,8 @@ interface FileManager {
 
     suspend fun deleteFile(fileNameWithExt: String): Result<Unit>
     fun clearDiskCache(): Result<Unit>
+
+    suspend fun appendAppLog(date: String, line: String): Result<Unit>
+    suspend fun fetchAppLogDateList(): Result<List<String>>
+    suspend fun fetchAppLogLineList(date: String): Result<List<String>>
 }

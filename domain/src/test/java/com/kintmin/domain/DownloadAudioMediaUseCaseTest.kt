@@ -10,8 +10,8 @@ import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFl
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
-import com.kintmin.log.FirebaseEvent
-import com.kintmin.log.Log
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.FirebaseEvent
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -32,7 +32,7 @@ class DownloadAudioMediaUseCaseTest {
     private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase = mockk()
     private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase = mockk()
     private val fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase = mockk()
-    private val log: Log = mockk()
+    private val appLog: AppLog = mockk()
 
     private lateinit var useCase: DownloadAudioMediaUseCase
 
@@ -59,7 +59,7 @@ class DownloadAudioMediaUseCaseTest {
             fetchShouldInsertAtTopOnDownloadFlowUseCase = fetchShouldInsertAtTopOnDownloadFlowUseCase,
             fetchPlaylistIdOnDownloadFlowUseCase = fetchPlaylistIdOnDownloadFlowUseCase,
             fetchAllPlaylistFlowUseCase = fetchAllPlaylistFlowUseCase,
-            log = log,
+            appLog = appLog,
             deviceStatusRepository = deviceStatusRepository,
         )
 
@@ -96,7 +96,7 @@ class DownloadAudioMediaUseCaseTest {
             fetchShouldInsertAtTopOnDownloadFlowUseCase,
             fetchPlaylistIdOnDownloadFlowUseCase,
             fetchAllPlaylistFlowUseCase,
-            log,
+            appLog,
         )
     }
 
@@ -180,7 +180,7 @@ class DownloadAudioMediaUseCaseTest {
         exactly: Int = -1,
     ) {
         verify(inverse = inverse, exactly = exactly) {
-            log.sendFirebaseEvent(
+            appLog.sendFirebaseEvent(
                 match {
                     it is FirebaseEvent.AddAudioMedia && it.source == downloadUrl
                 }
@@ -194,7 +194,7 @@ class DownloadAudioMediaUseCaseTest {
         exactly: Int = -1,
     ) {
         verify(inverse = inverse, exactly = exactly) {
-            log.sendFirebaseEvent(
+            appLog.sendFirebaseEvent(
                 match {
                     it is FirebaseEvent.FailedDownloadAudioMedia &&
                             it.source == downloadUrl &&
@@ -205,9 +205,9 @@ class DownloadAudioMediaUseCaseTest {
     }
 
     private fun everyLogDefaults() {
-        io.mockk.every { log.sendLogcatEvent(any()) } returns Unit
-        io.mockk.every { log.sendFirebaseEvent(any()) } returns Unit
-        io.mockk.every { log.setFirebaseConfig(any()) } returns Unit
+        io.mockk.every { appLog.sendDebugLog(any()) } returns Unit
+        io.mockk.every { appLog.sendFirebaseEvent(any()) } returns Unit
+        io.mockk.every { appLog.setLogConfig(any()) } returns Unit
         io.mockk.every { deviceStatusRepository.getSystemMemory() } returns Result.failure(Exception())
         io.mockk.every { deviceStatusRepository.getConnectionStatus() } returns Result.failure(Exception())
     }

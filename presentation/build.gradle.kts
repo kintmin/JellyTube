@@ -46,6 +46,7 @@ android {
 dependencies {
     implementation(project(":domain"))
     implementation(project(":platform"))
+    implementation(project(":log:log-api"))
 
     implementation(libs.material3.android)
     implementation(libs.androidx.core.ktx)

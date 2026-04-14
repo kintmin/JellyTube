@@ -16,10 +16,12 @@ fun NavController.navigateToSettingScreen(
 
 fun NavGraphBuilder.settingScreen(
     navigateToBack: () -> Unit,
+    navigateToAppLog: () -> Unit,
 ) {
     composable<SettingScreenRoute> {
         SettingScreen(
             navigateToBack = navigateToBack,
+            navigateToAppLog = navigateToAppLog,
         )
     }
 }

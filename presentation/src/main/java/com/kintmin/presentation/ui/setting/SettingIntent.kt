@@ -7,4 +7,5 @@ sealed interface SettingIntent {
     data object OnClickPlaylistIdOnDownloadTile : SettingIntent
     data object OnDismissPlaylistIdOnDownloadBottomSheet : SettingIntent
     data class OnSelectPlaylistIdOnDownload(val playlistId: Int) : SettingIntent
+    data object OnClickAppLogTile : SettingIntent
 }

@@ -10,9 +10,11 @@ import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -27,6 +29,8 @@ class SettingViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val isPlaylistIdOnDownloadBottomSheetVisible = MutableStateFlow(false)
+    private val _eventFlow = MutableSharedFlow<SettingEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
 
     val uiState: StateFlow<SettingUiState> = combine(
         fetchShouldInsertAtTopOnDownloadFlowUseCase(),
@@ -38,11 +42,16 @@ class SettingViewModel @Inject constructor(
             .filterNot { it.id == Playlist.TOTAL }
             .map { it.id to it.name }
             .toMutableList()
+            .apply {
+                if (none { it.first == Playlist.UNCATEGORIZED }) {
+                    add(0, Playlist.UNCATEGORIZED to "미분류")
+                }
+            }
             .distinctBy { it.first }
             .map { (id, name) ->
                 DownloadPlaylistUiState(
                     id = id,
-                    name = name,
+                    name = toDisplayPlaylistName(id, name),
                     isSelected = id == playlistIdOnDownload,
                 )
             }
@@ -50,7 +59,7 @@ class SettingViewModel @Inject constructor(
         SettingUiState(
             shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
             playlistIdOnDownload = playlistIdOnDownload,
-            playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.id == playlistIdOnDownload }?.name ?: "미분류",
+            playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.id == playlistIdOnDownload }?.name ?: "기본",
             selectablePlaylistList = selectablePlaylistList,
             isPlaylistIdOnDownloadBottomSheetVisible = isBottomSheetVisible,
         )
@@ -78,6 +87,11 @@ class SettingViewModel @Inject constructor(
             is SettingIntent.OnSelectPlaylistIdOnDownload -> {
                 updatePlaylistIdOnDownload(intent.playlistId)
             }
+            SettingIntent.OnClickAppLogTile -> {
+                viewModelScope.launch {
+                    _eventFlow.emit(SettingEvent.NavigateToAppLogScreen)
+                }
+            }
         }
     }
 
@@ -92,5 +106,9 @@ class SettingViewModel @Inject constructor(
             updatePlaylistIdOnDownloadUseCase(playlistId)
             isPlaylistIdOnDownloadBottomSheetVisible.value = false
         }
+    }
+
+    private fun toDisplayPlaylistName(playlistId: Int, playlistName: String): String {
+        return if (playlistId == Playlist.UNCATEGORIZED) "기본" else playlistName
     }
 }
