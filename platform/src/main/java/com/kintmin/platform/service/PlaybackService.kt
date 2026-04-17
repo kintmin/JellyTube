@@ -1,14 +1,11 @@
 package com.kintmin.platform.service
 
-import android.os.Bundle
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
-import androidx.media3.session.SessionCommand
-import androidx.media3.session.SessionResult
-import com.google.common.util.concurrent.ListenableFuture
+import com.kintmin.platform.intent.mediaSessionPendingIntent
 
 class PlaybackService : MediaSessionService() {
 
@@ -30,16 +27,7 @@ class PlaybackService : MediaSessionService() {
 
         // https://developer.android.com/reference/androidx/media3/session/MediaSession.Callback
         mediaSession = MediaSession.Builder(this, player)
-            .setCallback(object : MediaSession.Callback {
-                override fun onCustomCommand(
-                    session: MediaSession,
-                    controller: MediaSession.ControllerInfo,
-                    customCommand: SessionCommand,
-                    args: Bundle
-                ): ListenableFuture<SessionResult> {
-                    return super.onCustomCommand(session, controller, customCommand, args)
-                }
-            })
+            .setSessionActivity(mediaSessionPendingIntent())
             .build()
     }
 

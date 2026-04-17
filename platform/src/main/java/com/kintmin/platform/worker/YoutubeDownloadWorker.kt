@@ -11,9 +11,9 @@ import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.platform.notification.NotificationData
 import com.kintmin.platform.notification.PushNotificationUtil
-import com.kintmin.platform.util.MediaControllerManager
-import com.kintmin.platform.util.mapper.toMediaControlData
-import com.kintmin.platform.util.model.MediaControlData
+import com.kintmin.platform.service_controller.MediaControllerManager
+import com.kintmin.platform.service_controller.mapper.toMediaControlData
+import com.kintmin.platform.service_controller.model.MediaControlData
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers

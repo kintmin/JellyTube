@@ -3,7 +3,7 @@ package com.kintmin.jellytube
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
-import com.kintmin.platform.util.MediaControllerManager
+import com.kintmin.platform.service_controller.MediaControllerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject

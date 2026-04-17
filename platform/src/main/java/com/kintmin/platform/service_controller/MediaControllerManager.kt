@@ -1,6 +1,6 @@
-package com.kintmin.platform.util
+package com.kintmin.platform.service_controller
 
-import com.kintmin.platform.util.model.MediaControlData
+import com.kintmin.platform.service_controller.model.MediaControlData
 import kotlin.time.Duration
 
 interface MediaControllerManager {

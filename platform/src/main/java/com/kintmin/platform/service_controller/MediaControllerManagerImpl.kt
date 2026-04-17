@@ -1,4 +1,4 @@
-package com.kintmin.platform.util
+package com.kintmin.platform.service_controller
 
 import android.content.ComponentName
 import android.content.Context
@@ -8,13 +8,15 @@ import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
-import com.kintmin.platform.util.mapper.toMediaItem
+import com.kintmin.platform.service_controller.mapper.toMediaItem
 import com.kintmin.platform.service.PlaybackService
-import com.kintmin.platform.util.mapper.toMediaControlData
-import com.kintmin.platform.util.model.MediaControlData
+import com.kintmin.platform.service_controller.mapper.toMediaControlData
+import com.kintmin.platform.service_controller.model.MediaControlData
 import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.time.Duration
 
+@Singleton
 class MediaControllerManagerImpl @Inject constructor(
     private val appContext: Context,
 ) : MediaControllerManager {

@@ -1,10 +1,10 @@
-package com.kintmin.platform.util.mapper
+package com.kintmin.platform.service_controller.mapper
 
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import com.kintmin.domain.audio_media.model.AudioMedia
-import com.kintmin.platform.util.model.MediaControlData
+import com.kintmin.platform.service_controller.model.MediaControlData
 import java.io.File
 
 internal fun MediaControlData.toMediaItem() = MediaItem.Builder()

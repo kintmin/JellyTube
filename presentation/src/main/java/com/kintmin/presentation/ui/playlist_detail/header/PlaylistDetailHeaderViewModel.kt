@@ -11,8 +11,8 @@ import com.kintmin.domain.audio_play_setting.usecase.UpdateIsPlaybackShufflingUs
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.playlist.model.Playlist
-import com.kintmin.platform.util.MediaControllerManager
-import com.kintmin.platform.util.model.MediaControlData
+import com.kintmin.platform.service_controller.MediaControllerManager
+import com.kintmin.platform.service_controller.model.MediaControlData
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.util.Throttle

@@ -1,4 +1,4 @@
-package com.kintmin.platform.util.model
+package com.kintmin.platform.service_controller.model
 
 data class MediaControlData(
     val mediaId: String,
