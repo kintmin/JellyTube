@@ -4,8 +4,12 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
+import androidx.navigation.navigation
 import com.kintmin.presentation.ui.setting.SettingScreen
 import kotlinx.serialization.Serializable
+
+@Serializable
+object SettingGraph
 
 @Serializable
 object SettingScreenRoute
@@ -14,14 +18,19 @@ fun NavController.navigateToSettingScreen(
     navOptions: NavOptions,
 ) = navigate(SettingScreenRoute, navOptions)
 
-fun NavGraphBuilder.settingScreen(
+fun NavGraphBuilder.settingGraph(
     navigateToBack: () -> Unit,
     navigateToAppLog: () -> Unit,
+    settingDestination: NavGraphBuilder.() -> Unit,
 ) {
-    composable<SettingScreenRoute> {
-        SettingScreen(
-            navigateToBack = navigateToBack,
-            navigateToAppLog = navigateToAppLog,
-        )
+    navigation<SettingGraph>(startDestination = SettingScreenRoute) {
+        composable<SettingScreenRoute> {
+            SettingScreen(
+                navigateToBack = navigateToBack,
+                navigateToAppLog = navigateToAppLog,
+            )
+        }
+
+        settingDestination()
     }
 }

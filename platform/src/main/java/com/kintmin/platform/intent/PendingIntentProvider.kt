@@ -13,7 +13,7 @@ internal fun Context.mediaSessionPendingIntent() = PendingIntent.getActivity(
     IntentRequestCode.MEDIA_SESSION_NOTIFICATION,
     Intent().apply {
         action = Intent.ACTION_VIEW
-        data = DeepLinkConstants.temp
+        data = DeepLinkConstants.UriBuilder.playerBar()
         component = ComponentName(
             packageName,
             TARGET_ACTIVITY_NAME,

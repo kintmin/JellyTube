@@ -1,13 +1,15 @@
 package com.kintmin.jellytube
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
+import com.kintmin.platform.deeplink.DeepLinkConstants
 import com.kintmin.presentation.ui.audio_media_detail.navigation.audioMediaDetailScreen
 import com.kintmin.presentation.ui.audio_media_detail.navigation.navigateToAudioMediaDetailScreen
 import com.kintmin.presentation.ui.audio_media_edit.navigation.audioMediaEdit
@@ -27,11 +29,14 @@ import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
 import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.navigateToAppLogScreen
 import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
-import com.kintmin.presentation.ui.setting.navigation.settingScreen
+import com.kintmin.presentation.ui.setting.navigation.settingGraph
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun MainNavHost(
     navController: NavHostController,
+    deepLinkFlow: Flow<Uri>,
 ) {
     val navOptions = navOptions {
         launchSingleTop = true
@@ -119,25 +124,123 @@ fun MainNavHost(
         audioMediaEdit(
             navigateToBack = { navController.popBackStack() },
         )
-        settingScreen(
+
+        settingGraph(
             navigateToBack = { navController.popBackStack() },
             navigateToAppLog = {
                 navController.navigateToAppLogScreen(navOptions)
             },
-        )
-        appLogScreen(
-            navigateToBack = { navController.popBackStack() },
-        )
+        ) {
+            appLogScreen(
+                navigateToBack = { navController.popBackStack() },
+            )
+        }
+
         playerDetailScreen(
             navigateToBack = { navController.popBackStack() },
         )
+    }
+
+    LaunchedEffect(navController, deepLinkFlow) {
+        deepLinkFlow.collectLatest { uri ->
+            handleDeepLink(navController, uri)
+        }
     }
 }
 
 fun getDeepNav(navController: NavHostController) = navOptions {
     popUpTo(navController.graph.findStartDestination().id) {
+        saveState = true
         inclusive = true
     }
     launchSingleTop = true
     restoreState = true
+}
+
+private fun handleDeepLink(
+    navController: NavHostController,
+    deepLink: Uri
+) {
+    with(deepLink) {
+        if (scheme != DeepLinkConstants.DEEP_LINK_SCHEME) return
+        if (host != DeepLinkConstants.DEEP_LINK_HOST) return
+
+        val pathList = pathSegments
+
+        val rootPath = pathList.getOrNull(0)
+        when (rootPath) {
+
+            DeepLinkConstants.Path.DOWNLOAD -> {    // https://www.jellytube.app.com/download
+                val encodedUrl = getQueryParameter(DeepLinkConstants.QueryKey.ENCODED_URL)
+                navController.navigateToMainScreen(
+                    tabItem = MainTabItem.Search,
+                    navOptions = getDeepNav(navController),
+                    searchUrl = encodedUrl,
+                )
+            }
+            DeepLinkConstants.Path.PLAYLIST, null -> {  // https://www.jellytube.app.com/playlst
+                navController.navigateToMainScreen(
+                    tabItem = MainTabItem.Playlist,
+                    navOptions = getDeepNav(navController),
+                )
+
+                val playlistPath = pathList.getOrNull(1)
+                when {
+                    playlistPath == DeepLinkConstants.Path.SETTING -> {     // https://www.jellytube.app.com/playlst/setting
+                        navController.navigateToSettingScreen(getDeepNav(navController))
+
+                        val settingPath = pathList.getOrNull(2)
+                        when(settingPath) {
+                            DeepLinkConstants.Path.APP_LOG -> {     // https://www.jellytube.app.com/playlst/setting/appLog
+                                navController.navigateToAppLogScreen(getDeepNav(navController))
+                            }
+                            else -> null
+                        }
+                    }
+                    playlistPath == DeepLinkConstants.Path.PLAYER -> {      // https://www.jellytube.app.com/playlst/player
+                        navController.navigateToPlayerDetailScreen(getDeepNav(navController))
+                    }
+                    playlistPath?.toIntOrNull() != null -> {    // https://www.jellytube.app.com/playlst/{playlistId}
+                        val playlistId = playlistPath.toInt()
+                        // TODO: 리스트 스크롤 추가
+
+                        val playlistIdPath = pathList.getOrNull(2)
+                        when(playlistIdPath) {
+                            DeepLinkConstants.Path.DETAIL -> {      // https://www.jellytube.app.com/playlst/{playlistId}/detail
+                                val audioMediaId = pathList.getOrNull(3)?.toIntOrNull()
+
+                                if (audioMediaId == null) {     // https://www.jellytube.app.com/playlst/{playlistId}/detail
+                                    navController.navigateToPlaylistDetailScreen(
+                                        playlistId = playlistId,
+                                        navOptions = getDeepNav(navController),
+                                    )
+                                } else {    // https://www.jellytube.app.com/playlst/{playlistId}/detail/{audioMediaId}
+                                    // TODO: 리스트 스크롤 추가
+                                    navController.navigateToPlaylistDetailScreen(
+                                        playlistId = playlistId,
+                                        navOptions = getDeepNav(navController),
+                                    )
+
+                                    val audioMediaIdPath = pathList.getOrNull(4)
+                                    when(audioMediaIdPath) {
+                                        DeepLinkConstants.Path.AUDIO_MEDIA -> {     // https://www.jellytube.app.com/playlst/{playlistId}/detail/{audioMediaId}/audioMedia
+                                            navController.navigateToAudioMediaDetailScreen(
+                                                audioMediaId = audioMediaId,
+                                                navOptions = getDeepNav(navController),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            else -> {
+                            }
+                        }
+                    }
+                }
+            }
+            else -> null
+        }
+
+
+    }
 }

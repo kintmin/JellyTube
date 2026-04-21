@@ -1,5 +1,6 @@
 package com.kintmin.jellytube
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +22,7 @@ class MainActivity : ComponentActivity() {
 
         viewModel.registerUser()
         viewModel.initializeMediaController()
+        viewModel.handleIntent(intent)
         installSplashScreen()
 
         enableEdgeToEdge()
@@ -30,14 +32,23 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             JellyTubeTheme {
                 Surface {
-                    MainNavHost(navController = navController)
+                    MainNavHost(
+                        navController = navController,
+                        deepLinkFlow = viewModel.deepLinkFlow,
+                    )
                 }
             }
         }
     }
 
-    override fun onStop() {
-        super.onStop()
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        viewModel.handleIntent(intent)
+    }
+
+    override fun onDestroy() {
         viewModel.releaseMediaController()
+        super.onDestroy()
     }
 }
