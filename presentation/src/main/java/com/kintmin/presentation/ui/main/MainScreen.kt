@@ -47,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -180,6 +181,7 @@ fun MainScreen(
     var webView: WebView? by remember { mutableStateOf(null) }
     var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
     var searchInput by rememberSaveable { mutableStateOf(currentUrl) }
+    val tabSaveableStateHolder = rememberSaveableStateHolder()
     val keyboardController = LocalSoftwareKeyboardController.current
 
     fun submitSearchUrl() {
@@ -318,35 +320,37 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
-        when (selectedTab) {
-            MainTabItem.Search -> YoutubeWebView(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                currentUrl = currentUrl,
-                setWebView = { value -> webView = value },
-                webView = webView,
-                sendIntent = sendYoutubeDownloadIntent,
-            )
+        tabSaveableStateHolder.SaveableStateProvider(key = selectedTab.name) {
+            when (selectedTab) {
+                MainTabItem.Search -> YoutubeWebView(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    currentUrl = currentUrl,
+                    setWebView = { value -> webView = value },
+                    webView = webView,
+                    sendIntent = sendYoutubeDownloadIntent,
+                )
 
-            MainTabItem.Playlist -> PlaylistView(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                data = playlist,
-                sendIntent = sendPlaylistIntent,
-                sendMainIntent = sendMainIntent,
-            )
+                MainTabItem.Playlist -> PlaylistView(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    data = playlist,
+                    sendIntent = sendPlaylistIntent,
+                    sendMainIntent = sendMainIntent,
+                )
 
-            MainTabItem.Debug -> DataTableView(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                dataList = TempData.getMockList(350),
-                keySelector = { data -> data.id },
-                fixedHeaderList = listOf(NameColumn(), DepartmentColumn()),
-                flexibleHeaderList = listOf(AgeColumn(), PaymentColumn()) + List(30) { LineColumn() }
-            )
+                MainTabItem.Debug -> DataTableView(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    dataList = TempData.getMockList(350),
+                    keySelector = { data -> data.id },
+                    fixedHeaderList = listOf(NameColumn(), DepartmentColumn()),
+                    flexibleHeaderList = listOf(AgeColumn(), PaymentColumn()) + List(30) { LineColumn() }
+                )
+            }
         }
     }
 }
