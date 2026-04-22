@@ -113,12 +113,12 @@ fun MainNavHost(
             navigateToMainSearchTab = { url ->
                 navController.navigateToMainScreen(
                     MainTabItem.Search,
-                    getDeepNav(navController),
+                    defaultNav(navController),
                     url,
                 )
             },
             navigateToPlaylistDetailScreen = { playlistId ->
-                navController.navigateToPlaylistDetailScreen(playlistId, getDeepNav(navController))
+                navController.navigateToPlaylistDetailScreen(playlistId, defaultNav(navController))
             },
         )
         audioMediaEdit(
@@ -148,99 +148,93 @@ fun MainNavHost(
     }
 }
 
-fun getDeepNav(navController: NavHostController) = navOptions {
-    popUpTo(navController.graph.findStartDestination().id) {
-        saveState = true
-        inclusive = true
-    }
+fun defaultNav(navController: NavHostController) = navOptions {
     launchSingleTop = true
     restoreState = true
 }
 
 private fun handleDeepLink(
     navController: NavHostController,
-    deepLink: Uri
+    deepLink: Uri,
 ) {
-    with(deepLink) {
-        if (scheme != DeepLinkConstants.DEEP_LINK_SCHEME) return
-        if (host != DeepLinkConstants.DEEP_LINK_HOST) return
+    if (deepLink.scheme != DeepLinkConstants.DEEP_LINK_SCHEME) return
+    if (deepLink.host != DeepLinkConstants.DEEP_LINK_HOST) return
 
-        val pathList = pathSegments
+    val pathList = deepLink.pathSegments
 
-        val rootPath = pathList.getOrNull(0)
-        when (rootPath) {
+    val rootPath = pathList.getOrNull(0)
+    if (rootPath != DeepLinkConstants.Path.MAIN) return
 
-            DeepLinkConstants.Path.DOWNLOAD -> {    // https://www.jellytube.app.com/download
-                val encodedUrl = getQueryParameter(DeepLinkConstants.QueryKey.ENCODED_URL)
-                navController.navigateToMainScreen(
-                    tabItem = MainTabItem.Search,
-                    navOptions = getDeepNav(navController),
-                    searchUrl = encodedUrl,
-                )
-            }
-            DeepLinkConstants.Path.PLAYLIST, null -> {  // https://www.jellytube.app.com/playlst
-                navController.navigateToMainScreen(
-                    tabItem = MainTabItem.Playlist,
-                    navOptions = getDeepNav(navController),
-                )
 
-                val playlistPath = pathList.getOrNull(1)
-                when {
-                    playlistPath == DeepLinkConstants.Path.SETTING -> {     // https://www.jellytube.app.com/playlst/setting
-                        navController.navigateToSettingScreen(getDeepNav(navController))
+    navController.navigate(MainScreenRoute(MainTabItem.Playlist)) {
+        popUpTo(navController.graph.startDestinationId) {
+            inclusive = true
+        }
+        launchSingleTop = true
+    }
 
-                        val settingPath = pathList.getOrNull(2)
-                        when(settingPath) {
-                            DeepLinkConstants.Path.APP_LOG -> {     // https://www.jellytube.app.com/playlst/setting/appLog
-                                navController.navigateToAppLogScreen(getDeepNav(navController))
-                            }
-                            else -> null
-                        }
-                    }
-                    playlistPath == DeepLinkConstants.Path.PLAYER -> {      // https://www.jellytube.app.com/playlst/player
-                        navController.navigateToPlayerDetailScreen(getDeepNav(navController))
-                    }
-                    playlistPath?.toIntOrNull() != null -> {    // https://www.jellytube.app.com/playlst/{playlistId}
-                        val playlistId = playlistPath.toInt()
-                        // TODO: 리스트 스크롤 추가
+    val mainPath = pathList.getOrNull(1)
+    when (mainPath) {
+        DeepLinkConstants.Path.SETTINGS -> {    // https://www.jellytube.app.com/main/settings
+            navController.navigateToMainScreen(
+                tabItem = MainTabItem.Playlist,
+                navOptions = defaultNav(navController),
+            )
+            navController.navigateToSettingScreen(defaultNav(navController))
 
-                        val playlistIdPath = pathList.getOrNull(2)
-                        when(playlistIdPath) {
-                            DeepLinkConstants.Path.DETAIL -> {      // https://www.jellytube.app.com/playlst/{playlistId}/detail
-                                val audioMediaId = pathList.getOrNull(3)?.toIntOrNull()
-
-                                if (audioMediaId == null) {     // https://www.jellytube.app.com/playlst/{playlistId}/detail
-                                    navController.navigateToPlaylistDetailScreen(
-                                        playlistId = playlistId,
-                                        navOptions = getDeepNav(navController),
-                                    )
-                                } else {    // https://www.jellytube.app.com/playlst/{playlistId}/detail/{audioMediaId}
-                                    // TODO: 리스트 스크롤 추가
-                                    navController.navigateToPlaylistDetailScreen(
-                                        playlistId = playlistId,
-                                        navOptions = getDeepNav(navController),
-                                    )
-
-                                    val audioMediaIdPath = pathList.getOrNull(4)
-                                    when(audioMediaIdPath) {
-                                        DeepLinkConstants.Path.AUDIO_MEDIA -> {     // https://www.jellytube.app.com/playlst/{playlistId}/detail/{audioMediaId}/audioMedia
-                                            navController.navigateToAudioMediaDetailScreen(
-                                                audioMediaId = audioMediaId,
-                                                navOptions = getDeepNav(navController),
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            else -> {
-                            }
-                        }
-                    }
+            val settingsPath = pathList.getOrNull(2)
+            when (settingsPath) {
+                DeepLinkConstants.Path.APP_LOG -> {     // https://www.jellytube.app.com/main/settings/appLog
+                    navController.navigateToAppLogScreen(defaultNav(navController))
                 }
             }
-            else -> null
         }
+        DeepLinkConstants.Path.DOWNLOAD -> {    // https://www.jellytube.app.com/main/download
+            val encodedUrl = deepLink.getQueryParameter(DeepLinkConstants.QueryKey.ENCODED_URL)
+            navController.navigateToMainScreen(
+                tabItem = MainTabItem.Search,
+                navOptions = defaultNav(navController),
+                searchUrl = encodedUrl,
+            )
+        }
+        DeepLinkConstants.Path.PLAYER -> {   // https://www.jellytube.app.com/main/player
+            navController.navigateToMainScreen(
+                tabItem = MainTabItem.Playlist,
+                navOptions = defaultNav(navController),
+            )
+            navController.navigateToPlayerDetailScreen(
+                navOptions = defaultNav(navController),
+            )
+        }
+        DeepLinkConstants.Path.PLAYLISTS -> {  // https://www.jellytube.app.com/main/playlsts
+            navController.navigateToMainScreen(
+                tabItem = MainTabItem.Playlist,
+                navOptions = defaultNav(navController),
+            )
 
+            val playlistPath = pathList.getOrNull(2)?.toIntOrNull()
+            if (playlistPath != null) {     // https://www.jellytube.app.com/main/playlsts/{playlistId}
+                navController.navigateToPlaylistDetailScreen(
+                    playlistId = playlistPath,
+                    navOptions = defaultNav(navController),
+                )
 
+                val playlistIdPath = pathList.getOrNull(3)
+                if (playlistIdPath != DeepLinkConstants.Path.AUDIO_MEDIAS) return
+
+                val focusAudioMediaId = deepLink.getQueryParameter(DeepLinkConstants.QueryKey.FOCUS_AUDIO_MEDIA_ID)
+                if (focusAudioMediaId != null) {
+                    // TODO: 리스트 스크롤 추가
+                }
+
+                val audioMediasPath = pathList.getOrNull(4)?.toIntOrNull()
+                if (audioMediasPath != null) {  // https://www.jellytube.app.com/main/playlsts/{playlistId}/audioMedias/{audioMediaId}
+                    navController.navigateToAudioMediaDetailScreen(
+                        audioMediaId = audioMediasPath,
+                        navOptions = defaultNav(navController),
+                    )
+                }
+            }
+        }
     }
 }

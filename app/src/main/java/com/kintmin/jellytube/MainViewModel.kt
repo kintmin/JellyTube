@@ -21,8 +21,6 @@ class MainViewModel @Inject constructor(
     private val deepLinkChannel = Channel<Uri>(capacity = Channel.BUFFERED)
     val deepLinkFlow = deepLinkChannel.receiveAsFlow()
 
-    private var lastHandledUri: String? = null
-
     fun registerUser() {
         viewModelScope.launch {
             registerUserUseCase()
@@ -39,9 +37,7 @@ class MainViewModel @Inject constructor(
 
     fun handleIntent(intent: Intent?) {
         val uri = intent?.data ?: return
-        val uriString = uri.toString()
-        if (lastHandledUri == uriString) return
-        lastHandledUri = uriString
+        intent.data = null  // 사용된 딥링크는 소비
         viewModelScope.launch {
             deepLinkChannel.send(uri)
         }
