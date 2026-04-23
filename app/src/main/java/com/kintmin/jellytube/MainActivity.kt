@@ -34,7 +34,8 @@ class MainActivity : ComponentActivity() {
                 Surface {
                     MainNavHost(
                         navController = navController,
-                        deepLinkFlow = viewModel.deepLinkFlow,
+                        navigationIntentFlow = viewModel.navigationIntentFlow,
+                        onDeepLink = viewModel::onDeepLink,
                     )
                 }
             }
@@ -45,10 +46,5 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         viewModel.handleIntent(intent)
         setIntent(intent)
-    }
-
-    override fun onDestroy() {
-        viewModel.releaseMediaController()
-        super.onDestroy()
     }
 }

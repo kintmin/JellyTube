@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -38,6 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -62,6 +64,8 @@ import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListEvent
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListIntent
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemView
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewModel
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlin.math.min
 
 @Composable
@@ -70,6 +74,8 @@ fun PlaylistDetailScreen(
     navigateToAddAudioMediaScreen: (playlistId: Int) -> Unit,
     navigateToPlaylistEditScreen: (playlistId: Int) -> Unit,
     navigateToAudioDetailScreen: (audioMediaId: Int) -> Unit,
+    navigateToPlayerDetail: () -> Unit,
+    focusAudioMediaId: Int? = null,
 ) {
     val headerViewModel = hiltViewModel<PlaylistDetailHeaderViewModel>()
     val listViewModel = hiltViewModel<PlaylistDetailListViewModel>()
@@ -102,6 +108,8 @@ fun PlaylistDetailScreen(
         audioPlayDataList = audioList,
         isBasePlaylist = headerViewModel.isBasePlaylist,
         playerBar = currentMediaItem,
+        navigateToPlayerDetail = navigateToPlayerDetail,
+        focusAudioMediaId = focusAudioMediaId,
         sendPlaylistDetailListIntent = listViewModel::sendIntent,
         sendPlaylistDetailHeaderIntent = headerViewModel::sendIntent,
         sendPlayerBarIntent = playerBarViewModel::sendIntent,
@@ -116,11 +124,14 @@ fun PlaylistDetailScreen(
     audioPlayDataList: List<PlaylistDetailListItemUiState>,
     isBasePlaylist: Boolean,
     playerBar: PlayerBarUiState,
+    navigateToPlayerDetail: () -> Unit,
+    focusAudioMediaId: Int? = null,
     sendPlaylistDetailListIntent: (PlaylistDetailListIntent) -> Unit,
     sendPlaylistDetailHeaderIntent: (PlaylistDetailHeaderIntent) -> Unit,
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     val scrollState = rememberLazyListState()
+    var isFocusedScrollDone by remember(focusAudioMediaId) { mutableStateOf(false) }
     val maxOffset = with(LocalDensity.current) { 280.dp.toPx() }
     val scrollOffset = if (scrollState.firstVisibleItemIndex == 0) {
         min(scrollState.firstVisibleItemScrollOffset.toFloat(), maxOffset)
@@ -129,6 +140,34 @@ fun PlaylistDetailScreen(
     }
     val progress = EaseIn.transform(min(scrollOffset / maxOffset, 1f))
     val backgroundColor = MaterialTheme.colorScheme.background.copy(alpha = progress)
+
+    LaunchedEffect(focusAudioMediaId, audioPlayDataList) {
+        if (isFocusedScrollDone || focusAudioMediaId == null || audioPlayDataList.isEmpty()) return@LaunchedEffect
+
+        val targetIndexInList = audioPlayDataList.indexOfFirst { it.id == focusAudioMediaId }
+        if (targetIndexInList < 0) return@LaunchedEffect
+
+        val targetItemIndex = targetIndexInList + 1 // 0 is header
+        val isTargetVisibleNow = scrollState.layoutInfo.visibleItemsInfo.any { it.index == targetItemIndex }
+        if (!isTargetVisibleNow) {
+            scrollState.scrollToItem(targetItemIndex)
+        }
+
+        val targetItemInfo = snapshotFlow {
+            scrollState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == targetItemIndex }
+        }.filter { it != null }
+            .first() ?: return@LaunchedEffect
+
+        val layoutInfo = scrollState.layoutInfo
+        val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
+        val itemCenter = targetItemInfo.offset + (targetItemInfo.size / 2)
+        val deltaToCenter = (itemCenter - viewportCenter).toFloat()
+
+        if (kotlin.math.abs(deltaToCenter) > 1f) {
+            scrollState.scrollBy(deltaToCenter)
+        }
+        isFocusedScrollDone = true
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -164,6 +203,7 @@ fun PlaylistDetailScreen(
                 PlayerBar(
                     data = playerBar,
                     sendIntent = sendPlayerBarIntent,
+                    onClickBar = navigateToPlayerDetail,
                 )
                 Box(
                     modifier = Modifier
@@ -214,6 +254,7 @@ fun PlaylistDetailScreenPreview() {
             audioPlayDataList = PlaylistDetailListItemUiState.getMockList(),
             isBasePlaylist = false,
             playerBar = PlayerBarUiState.getMock(),
+            navigateToPlayerDetail = {},
             sendPlaylistDetailListIntent = {},
             sendPlaylistDetailHeaderIntent = {},
             sendPlayerBarIntent = {},

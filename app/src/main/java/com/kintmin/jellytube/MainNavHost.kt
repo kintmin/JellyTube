@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
@@ -33,15 +32,17 @@ import com.kintmin.presentation.ui.setting.navigation.settingGraph
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 
+val navOptions = navOptions {
+    launchSingleTop = true
+    restoreState = true
+}
+
 @Composable
 fun MainNavHost(
     navController: NavHostController,
-    deepLinkFlow: Flow<Uri>,
+    navigationIntentFlow: Flow<NavigationIntent>,
+    onDeepLink: (Uri) -> Unit,
 ) {
-    val navOptions = navOptions {
-        launchSingleTop = true
-    }
-
     NavHost(
         navController = navController,
         startDestination = MainScreenRoute(MainTabItem.Playlist),
@@ -72,7 +73,7 @@ fun MainNavHost(
     ) {
         mainScreen(
             navigateToPlaylistDetail = { playlistId ->
-                navController.navigateToPlaylistDetailScreen(playlistId, navOptions)
+                navController.navigateToPlaylistDetailScreen(playlistId, null, navOptions)
             },
             navigateToPlaylistEdit = { playlistId ->
                 navController.navigateToPlaylistEditScreen(playlistId, navOptions)
@@ -97,7 +98,10 @@ fun MainNavHost(
             },
             navigateToAudioDetailScreen = { audioMediaId ->
                 navController.navigateToAudioMediaDetailScreen(audioMediaId, navOptions)
-            }
+            },
+            navigateToPlayerDetail = {
+                navController.navigateToPlayerDetailScreen(navOptions)
+            },
         )
         playlistEdit(
             navigateToBack = { navController.popBackStack() }
@@ -113,12 +117,12 @@ fun MainNavHost(
             navigateToMainSearchTab = { url ->
                 navController.navigateToMainScreen(
                     MainTabItem.Search,
-                    defaultNav(navController),
+                    navOptions,
                     url,
                 )
             },
             navigateToPlaylistDetailScreen = { playlistId ->
-                navController.navigateToPlaylistDetailScreen(playlistId, defaultNav(navController))
+                navController.navigateToPlaylistDetailScreen(playlistId, null, navOptions)
             },
         )
         audioMediaEdit(
@@ -138,103 +142,72 @@ fun MainNavHost(
 
         playerDetailScreen(
             navigateToBack = { navController.popBackStack() },
+            navigateToAudioMediaDetail = { audioMediaId ->
+                navController.navigateToAudioMediaDetailScreen(audioMediaId, navOptions)
+            },
+            navigateToAudioMediaEdit = { audioMediaId ->
+                navController.navigateToAudioMediaEditScreen(audioMediaId, navOptions)
+            },
+            navigateToPlayingPlaylist = { playlistId, audioMediaId ->
+                onDeepLink(DeepLinkConstants.UriBuilder.playlistContentScreen(playlistId, audioMediaId))
+            },
         )
     }
 
-    LaunchedEffect(navController, deepLinkFlow) {
-        deepLinkFlow.collectLatest { uri ->
-            handleDeepLink(navController, uri)
+    LaunchedEffect(navController, navigationIntentFlow) {
+        navigationIntentFlow.collectLatest { navigationIntent ->
+            consumeNavigationIntent(navController, navigationIntent)
         }
     }
 }
 
-fun defaultNav(navController: NavHostController) = navOptions {
-    launchSingleTop = true
-    restoreState = true
-}
-
-private fun handleDeepLink(
+private fun consumeNavigationIntent(
     navController: NavHostController,
-    deepLink: Uri,
+    navigationIntent: NavigationIntent,
 ) {
-    if (deepLink.scheme != DeepLinkConstants.DEEP_LINK_SCHEME) return
-    if (deepLink.host != DeepLinkConstants.DEEP_LINK_HOST) return
-
-    val pathList = deepLink.pathSegments
-
-    val rootPath = pathList.getOrNull(0)
-    if (rootPath != DeepLinkConstants.Path.MAIN) return
-
-
-    navController.navigate(MainScreenRoute(MainTabItem.Playlist)) {
-        popUpTo(navController.graph.startDestinationId) {
-            inclusive = true
-        }
-        launchSingleTop = true
-    }
-
-    val mainPath = pathList.getOrNull(1)
-    when (mainPath) {
-        DeepLinkConstants.Path.SETTINGS -> {    // https://www.jellytube.com/main/settings
-            navController.navigateToMainScreen(
-                tabItem = MainTabItem.Playlist,
-                navOptions = defaultNav(navController),
-            )
-            navController.navigateToSettingScreen(defaultNav(navController))
-
-            val settingsPath = pathList.getOrNull(2)
-            when (settingsPath) {
-                DeepLinkConstants.Path.APP_LOG -> {     // https://www.jellytube.com/main/settings/appLog
-                    navController.navigateToAppLogScreen(defaultNav(navController))
+    when (navigationIntent) {
+        NavigationIntent.PopAll -> {
+            navController.navigate(MainScreenRoute(MainTabItem.Playlist)) {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
                 }
+                launchSingleTop = true
             }
         }
-        DeepLinkConstants.Path.DOWNLOAD -> {    // https://www.jellytube.com/main/download
-            val encodedUrl = deepLink.getQueryParameter(DeepLinkConstants.QueryKey.ENCODED_URL)
+        NavigationIntent.NavigateToSettings -> {
+            navController.navigateToSettingScreen(navOptions)
+        }
+        NavigationIntent.NavigateToSettingAppLog -> {
+            navController.navigateToAppLogScreen(navOptions)
+        }
+        is NavigationIntent.NavigateToMainDownloadTab -> {
             navController.navigateToMainScreen(
-                tabItem = MainTabItem.Search,
-                navOptions = defaultNav(navController),
-                searchUrl = encodedUrl,
+                MainTabItem.Search,
+                navOptions,
+                navigationIntent.targetUrl,
             )
         }
-        DeepLinkConstants.Path.PLAYER -> {   // https://www.jellytube.com/main/player
+        NavigationIntent.NavigateToMainPlaylistsTab -> {
             navController.navigateToMainScreen(
-                tabItem = MainTabItem.Playlist,
-                navOptions = defaultNav(navController),
-            )
-            navController.navigateToPlayerDetailScreen(
-                navOptions = defaultNav(navController),
+                MainTabItem.Playlist,
+                navOptions,
             )
         }
-        DeepLinkConstants.Path.PLAYLISTS -> {  // https://www.jellytube.com/main/playlsts
-            navController.navigateToMainScreen(
-                tabItem = MainTabItem.Playlist,
-                navOptions = defaultNav(navController),
+        is NavigationIntent.NavigateToPlaylistContent -> {
+            navController.navigateToPlaylistDetailScreen(
+                navigationIntent.playlistId,
+                navigationIntent.focusAudioMediaId,
+                navOptions,
             )
-
-            val playlistPath = pathList.getOrNull(2)?.toIntOrNull()
-            if (playlistPath != null) {     // https://www.jellytube.com/main/playlsts/{playlistId}
-                navController.navigateToPlaylistDetailScreen(
-                    playlistId = playlistPath,
-                    navOptions = defaultNav(navController),
-                )
-
-                val playlistIdPath = pathList.getOrNull(3)
-                if (playlistIdPath != DeepLinkConstants.Path.AUDIO_MEDIAS) return
-
-                val focusAudioMediaId = deepLink.getQueryParameter(DeepLinkConstants.QueryKey.FOCUS_AUDIO_MEDIA_ID)
-                if (focusAudioMediaId != null) {
-                    // TODO: 리스트 스크롤 추가
-                }
-
-                val audioMediasPath = pathList.getOrNull(4)?.toIntOrNull()
-                if (audioMediasPath != null) {  // https://www.jellytube.com/main/playlsts/{playlistId}/audioMedias/{audioMediaId}
-                    navController.navigateToAudioMediaDetailScreen(
-                        audioMediaId = audioMediasPath,
-                        navOptions = defaultNav(navController),
-                    )
-                }
-            }
+        }
+        is NavigationIntent.NavigateToAudioMedia -> {
+            navController.navigateToAudioMediaDetailScreen(
+                navigationIntent.audioMediaId,
+                navOptions,
+            )
+        }
+        NavigationIntent.NavigateToPlayer -> {
+            navController.navigateToPlayerDetailScreen(navOptions)
         }
     }
 }

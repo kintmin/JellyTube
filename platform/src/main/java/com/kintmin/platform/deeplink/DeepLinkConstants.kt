@@ -30,11 +30,12 @@ object DeepLinkConstants {
 
     object QueryKey {
 
+        const val ENTRY = "entry"
         const val ENCODED_URL = "encodedUrl"
         const val FOCUS_AUDIO_MEDIA_ID = "focusAudioMediaId"
     }
 
-    object UriPattern {
+    private object UriPattern {
 
         const val PLAYER_SCREEN = "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.PLAYER}"
 
@@ -51,7 +52,17 @@ object DeepLinkConstants {
             "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.PLAYLISTS}/{${Path.PLAYLIST_ID}}/${Path.AUDIO_MEDIAS}/{${Path.AUDIO_MEDIA_ID}}"
     }
 
+    enum class PlayerScreenEntry(val path: String) {
+        Main(Path.MAIN),
+        Playlist(Path.PLAYLISTS),
+    }
+
     object UriBuilder {
+
+        fun playerScreen(entry: PlayerScreenEntry = PlayerScreenEntry.Main): Uri {
+            val base = UriPattern.PLAYER_SCREEN.toUri()
+            return base.buildUpon().appendQueryParameter(QueryKey.ENTRY, entry.path).build()
+        }
 
         fun mainScreenDownloadTab(downloadLink: String): Uri {
             return UriPattern.MAIN_SCREEN_DOWNLOAD.substringBefore("?").toUri()

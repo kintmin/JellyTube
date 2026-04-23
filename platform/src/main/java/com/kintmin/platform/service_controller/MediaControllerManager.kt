@@ -6,7 +6,6 @@ import kotlin.time.Duration
 interface MediaControllerManager {
 
     fun initialize()
-    fun release()
 
     val isPlaying: Boolean
     fun pause()
@@ -15,6 +14,7 @@ interface MediaControllerManager {
     fun playNext()
 
     val playingMediaItem: MediaControlData?
+    val currentPlaylistId: Int?
     val currentPosition: Long?
     val playbackDuration: Long?
 

@@ -6,24 +6,32 @@ import kotlin.time.Duration.Companion.seconds
 
 data class PlayerDetailUiState(
     val id: String,
+    val playlistId: Int?,
+    val playlistName: String,
     val title: String,
     val artist: String,
     val currentDuration: Duration,
     val playbackDuration: Duration,
     val imageFileFullPath: String?,
     val isPlaying: Boolean,
+    val isShuffling: Boolean,
+    val isRepeating: Boolean,
 ) {
     val timeString get() = "${currentDuration.to_hh_colon_mm_colon_ss()} / ${playbackDuration.to_hh_colon_mm_colon_ss()}"
 
     companion object {
         fun getMock() = PlayerDetailUiState(
             id = "temp",
+            playlistId = 1,
+            playlistName = "전체 재생목록",
             title = "제목제목제목",
             artist = "아티스트",
             currentDuration = 90.seconds,
             playbackDuration = 300.seconds,
             imageFileFullPath = null,
             isPlaying = true,
+            isShuffling = false,
+            isRepeating = false,
         )
     }
 }

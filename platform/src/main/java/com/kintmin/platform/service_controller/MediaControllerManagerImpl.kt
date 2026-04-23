@@ -24,7 +24,7 @@ class MediaControllerManagerImpl @Inject constructor(
     private var mediaController: MediaController? = null
     private var controllerFuture: ListenableFuture<MediaController>? = null
 
-    private var currentPlaylistId: Int? = null
+    private var currentPlaylistIdState: Int? = null
 
     private fun getMediaController(): MediaController? {
         if (mediaController == null) initialize()
@@ -43,17 +43,6 @@ class MediaControllerManagerImpl @Inject constructor(
                     controllerFuture = null
                 }
             }, ContextCompat.getMainExecutor(appContext))
-        }
-    }
-
-    override fun release() {
-        try {
-            controllerFuture?.let {
-                MediaController.releaseFuture(it)
-            }
-        } finally {
-            controllerFuture = null
-            mediaController = null
         }
     }
 
@@ -92,6 +81,8 @@ class MediaControllerManagerImpl @Inject constructor(
 
     override val playingMediaItem: MediaControlData?
         get() = getMediaController()?.currentMediaItem?.toMediaControlData()
+    override val currentPlaylistId: Int?
+        get() = currentPlaylistIdState
     override val currentPosition: Long?
         get() = getMediaController()?.currentPosition
     override val playbackDuration: Long?
@@ -106,8 +97,8 @@ class MediaControllerManagerImpl @Inject constructor(
         startMediaId: Int?,
         mediaControlDataList: List<MediaControlData>,
     ): Result<Unit> = runCatching {
-        if (currentPlaylistId != playlistId) {
-            currentPlaylistId = playlistId
+        if (currentPlaylistIdState != playlistId) {
+            currentPlaylistIdState = playlistId
             resetMediaItemList(mediaControlDataList).getOrThrow()
         }
 
@@ -118,7 +109,7 @@ class MediaControllerManagerImpl @Inject constructor(
         playlistId: Int,
         mediaId: Int,
     ): Result<Unit> = runCatching {
-        if (currentPlaylistId == playlistId) {
+        if (currentPlaylistIdState == playlistId) {
             val mediaController = getMediaController() ?: return@runCatching
             val targetIndex = findMediaItem(mediaId).getOrThrow()
             mediaController.removeMediaItem(targetIndex)
@@ -129,7 +120,7 @@ class MediaControllerManagerImpl @Inject constructor(
         playlistId: Int,
         mediaItem: MediaControlData,
     ): Result<Unit> = runCatching {
-        if (currentPlaylistId == playlistId) {
+        if (currentPlaylistIdState == playlistId) {
             val mediaController = getMediaController() ?: return@runCatching
             mediaController.addMediaItem(mediaItem.toMediaItem())
         }
@@ -139,7 +130,7 @@ class MediaControllerManagerImpl @Inject constructor(
         playlistId: Int,
         mediaItem: MediaControlData,
     ): Result<Unit> = runCatching {
-        if (currentPlaylistId == playlistId) {
+        if (currentPlaylistIdState == playlistId) {
             val mediaController = getMediaController() ?: return@runCatching
             mediaController.addMediaItem(0, mediaItem.toMediaItem())
         }
@@ -197,3 +188,4 @@ class MediaControllerManagerImpl @Inject constructor(
             .first { i -> mediaController.getMediaItemAt(i).mediaId == mediaId.toString() }
     }
 }
+

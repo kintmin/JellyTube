@@ -16,10 +16,16 @@ fun NavController.navigateToPlayerDetailScreen(
 
 fun NavGraphBuilder.playerDetailScreen(
     navigateToBack: () -> Unit,
+    navigateToAudioMediaDetail: (audioMediaId: Int) -> Unit,
+    navigateToAudioMediaEdit: (audioMediaId: Int) -> Unit,
+    navigateToPlayingPlaylist: (playlistId: Int, audioMediaId: Int?) -> Unit,
 ) {
     composable<PlayerDetailScreenRoute> {
         PlayerDetailScreen(
             navigateToBack = navigateToBack,
+            navigateToAudioMediaDetail = navigateToAudioMediaDetail,
+            navigateToAudioMediaEdit = navigateToAudioMediaEdit,
+            navigateToPlayingPlaylist = navigateToPlayingPlaylist,
         )
     }
 }
