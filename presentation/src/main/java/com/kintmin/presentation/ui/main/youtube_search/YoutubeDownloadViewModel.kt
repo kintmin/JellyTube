@@ -22,7 +22,7 @@ class YoutubeDownloadViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _currentUrl = MutableStateFlow(
-        savedStateHandle.toRoute<MainScreenRoute>().searchUrl ?: "https://www.youtube.com/"
+        savedStateHandle.toRoute<MainScreenRoute>().searchUrl ?: "https://m.youtube.com/"
     )
     val currentUrl = _currentUrl.asStateFlow()
 

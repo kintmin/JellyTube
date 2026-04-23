@@ -208,7 +208,7 @@ fun MainScreen(
                             modifier = if (selectedTab == MainTabItem.Search) {
                                 Modifier.clickable {
                                     sendYoutubeDownloadIntent(
-                                        YoutubeDownloadIntent.OnChangeUrl("https://youtube.com")
+                                        YoutubeDownloadIntent.OnChangeUrl("https://m.youtube.com/")
                                     )
                                 }
                             } else {
