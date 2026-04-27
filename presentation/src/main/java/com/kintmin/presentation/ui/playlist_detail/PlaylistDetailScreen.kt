@@ -1,9 +1,10 @@
 package com.kintmin.presentation.ui.playlist_detail
 
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -37,11 +38,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.Canvas
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -64,9 +67,10 @@ import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemVi
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewModel
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlin.math.max
+import kotlin.math.abs
+import kotlin.math.hypot
 import kotlin.math.min
-import kotlin.math.pow
+import kotlin.math.sin
 
 @Composable
 fun PlaylistDetailScreen(
@@ -133,7 +137,7 @@ fun PlaylistDetailScreen(
     val scrollState = rememberLazyListState()
     var consumedFocusAudioMediaId by rememberSaveable { mutableStateOf<Int?>(null) }
     var highlightedAudioMediaId by remember { mutableStateOf<Int?>(null) }
-    var focusBorderProgress by remember { mutableStateOf(0f) }
+    var focusSpreadProgress by remember { mutableStateOf(0f) }
     val maxOffset = with(LocalDensity.current) { 280.dp.toPx() }
     val scrollOffset = if (scrollState.firstVisibleItemIndex == 0) {
         min(scrollState.firstVisibleItemScrollOffset.toFloat(), maxOffset)
@@ -171,13 +175,15 @@ fun PlaylistDetailScreen(
         }
 
         highlightedAudioMediaId = focusAudioMediaId
+        focusSpreadProgress = 0f
         animate(
             initialValue = 0f,
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 700, easing = FocusTraceEasing),
+            animationSpec = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
         ) { value, _ ->
-            focusBorderProgress = value
+            focusSpreadProgress = value
         }
+        focusSpreadProgress = 0f
         highlightedAudioMediaId = null
         consumedFocusAudioMediaId = focusAudioMediaId
     }
@@ -245,12 +251,6 @@ fun PlaylistDetailScreen(
                 key = { _, item -> item.id }
             ) { _, item ->
                 val isHighlighted = highlightedAudioMediaId == item.id
-                val flashEnvelope = if (focusBorderProgress <= 0.5f) {
-                    focusBorderProgress * 2f
-                } else {
-                    (1f - focusBorderProgress) * 2f
-                }
-                val flashAlpha = 0.14f * flashEnvelope
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -264,16 +264,11 @@ fun PlaylistDetailScreen(
                         sendIntent = sendPlaylistDetailListIntent,
                     )
                     if (isHighlighted) {
-                        Box(
+                        FocusSpreadOverlay(
                             modifier = Modifier
                                 .matchParentSize()
-                                .background(Color.White.copy(alpha = flashAlpha))
-                        )
-                        FocusTraceBorder(
-                            modifier = Modifier
-                                .matchParentSize()
-                                ,
-                            progress = focusBorderProgress,
+                                .clipToBounds(),
+                            progress = focusSpreadProgress,
                         )
                     }
                 }
@@ -282,110 +277,74 @@ fun PlaylistDetailScreen(
     }
 }
 
-private const val FOCUS_TRACE_START_SPEED_RATIO = 0.12f
-private const val FOCUS_TRACE_PEAK_SPEED_MULTIPLIER = 3f
-
-private val FocusTraceEasing = Easing { fraction ->
-    val t = fraction.coerceIn(0f, 1f)
-    val startSpeedRatio = FOCUS_TRACE_START_SPEED_RATIO.coerceIn(0f, 0.95f)
-    val peakMultiplier = FOCUS_TRACE_PEAK_SPEED_MULTIPLIER.coerceAtLeast(1f)
-
-    // 중앙 burst를 더 다이나믹하게 만드는 비선형 지수.
-    // piecewise power easing의 중앙 최대 속도는 p 이므로, 원하는 배수에 맞게 역산.
-    val power = ((peakMultiplier - startSpeedRatio) / (1f - startSpeedRatio))
-        .coerceAtLeast(1.05f)
-
-    val burst = if (t <= 0.5f) {
-        0.5f * (2f * t).pow(power)
-    } else {
-        1f - 0.5f * (2f * (1f - t)).pow(power)
-    }
-
-    // 시작/끝 기본 속도 + 중앙 burst 합성
-    (startSpeedRatio * t) + ((1f - startSpeedRatio) * burst)
-}
-
 @Composable
-private fun FocusTraceBorder(
+private fun FocusSpreadOverlay(
     modifier: Modifier = Modifier,
     progress: Float,
 ) {
+    val primary = MaterialTheme.colorScheme.primary
+    val accent = MaterialTheme.colorScheme.tertiary
     Canvas(modifier = modifier) {
-        val strokeWidth = 2.dp.toPx()
-        val traceColor = Color.White.copy(alpha = 0.95f)
+        val clamped = progress.coerceIn(0f, 1f)
+        val envelope = (1f - abs((2f * clamped) - 1f)).coerceIn(0f, 1f)
+        if (envelope <= 0f) return@Canvas
+
         val width = size.width
         val height = size.height
-        val perimeter = (2f * (width + height)).coerceAtLeast(1f)
-        val clampedProgress = progress.coerceIn(0f, 1f)
-        val lengthEnvelope = if (clampedProgress <= 0.5f) {
-            clampedProgress * 2f
-        } else {
-            (1f - clampedProgress) * 2f
+        val center = Offset(width * 0.5f, height * 0.54f)
+        val diagonal = hypot(width, height)
+        val radius = diagonal * (0.24f + (0.84f * clamped))
+
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    primary.copy(alpha = 0.15f * envelope),
+                    accent.copy(alpha = 0.08f * envelope),
+                    Color.Transparent,
+                ),
+                center = center,
+                radius = radius,
+            ),
+            radius = radius,
+            center = center,
+        )
+        val scaleRadius = height * 0.20f
+        val rowStep = scaleRadius * 1.18f
+        val colStep = scaleRadius * 1.86f
+        val phase = clamped * TAU * 2.2f
+        val drift = width * (0.10f + (0.16f * clamped))
+        val scalePath = Path()
+
+        var rowIndex = 0
+        var y = -scaleRadius
+        while (y <= height + scaleRadius) {
+            val rowOffset = if (rowIndex % 2 == 0) 0f else scaleRadius * 0.93f
+            var x = (-2f * scaleRadius) + rowOffset + drift
+            while (x <= width + (2f * scaleRadius)) {
+                val wave = ((sin((x / width) * TAU * 1.8f + (y / height) * TAU * 0.7f + phase) + 1f) * 0.5f)
+                    .coerceIn(0f, 1f)
+                val alpha = (0.05f + (0.22f * wave)) * envelope
+                val tint = lerp(primary, accent, wave)
+
+                scalePath.reset()
+                scalePath.moveTo(x - scaleRadius, y)
+                scalePath.quadraticTo(x, y - (scaleRadius * 0.90f), x + scaleRadius, y)
+                scalePath.quadraticTo(x, y + (scaleRadius * 0.56f), x - scaleRadius, y)
+                scalePath.close()
+
+                drawPath(
+                    path = scalePath,
+                    color = tint.copy(alpha = alpha),
+                )
+                x += colStep
+            }
+            y += rowStep
+            rowIndex += 1
         }
-        val traceLength = perimeter * 0.22f * lengthEnvelope
-
-        val head = clampedProgress * perimeter
-        val tail = max(0f, head - traceLength)
-        drawRectPathSegment(
-            width = width,
-            height = height,
-            startDistance = tail,
-            endDistance = head,
-            color = traceColor,
-            strokeWidth = strokeWidth,
-        )
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawRectPathSegment(
-    width: Float,
-    height: Float,
-    startDistance: Float,
-    endDistance: Float,
-    color: Color,
-    strokeWidth: Float,
-) {
-    if (endDistance <= startDistance) return
-    val perimeter = (2f * (width + height)).coerceAtLeast(1f)
-    var cursor = startDistance.coerceIn(0f, perimeter)
-    val target = endDistance.coerceIn(0f, perimeter)
-    while (cursor < target) {
-        val edgeEnd = min(nextCornerDistance(cursor, width, height), target)
-        drawLine(
-            color = color,
-            start = pointAtDistance(cursor, width, height),
-            end = pointAtDistance(edgeEnd, width, height),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Square,
-        )
-        cursor = edgeEnd
-    }
-}
-
-private fun pointAtDistance(distance: Float, width: Float, height: Float): Offset {
-    val top = width
-    val right = top + height
-    val bottom = right + width
-    return when {
-        distance <= top -> Offset(distance, 0f)
-        distance <= right -> Offset(width, distance - top)
-        distance <= bottom -> Offset(width - (distance - right), height)
-        else -> Offset(0f, height - (distance - bottom))
-    }
-}
-
-private fun nextCornerDistance(distance: Float, width: Float, height: Float): Float {
-    val top = width
-    val right = top + height
-    val bottom = right + width
-    val perimeter = bottom + height
-    return when {
-        distance < top -> top
-        distance < right -> right
-        distance < bottom -> bottom
-        else -> perimeter
-    }
-}
+private const val TAU = 6.2831855f
 
 @Preview(showBackground = true)
 @Composable
