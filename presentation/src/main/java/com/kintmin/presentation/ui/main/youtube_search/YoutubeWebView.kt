@@ -1,9 +1,12 @@
 package com.kintmin.presentation.ui.main.youtube_search
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.CookieManager
+import android.webkit.URLUtil
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -29,7 +32,11 @@ fun YoutubeWebView(
     setWebView: (WebView) -> Unit,
     webView: WebView?,
     sendIntent: (YoutubeDownloadIntent) -> Unit,
+    onNavigateToPlaylist: () -> Unit,
 ) {
+    var shouldClearHistoryAfterHomeLoad by remember { mutableStateOf(false) }
+    val homeUrl = "https://m.youtube.com/"
+
     if (LocalInspectionMode.current) {
         Box(
             modifier = modifier
@@ -62,6 +69,14 @@ fun YoutubeWebView(
                 }
 
                 webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView?,
+                        url: String?
+                    ): Boolean {
+                        if (url.isNullOrBlank()) return false
+                        return handleIntentUrl(url, context)
+                    }
+
                     override fun doUpdateVisitedHistory(
                         view: WebView?,
                         url: String?,
@@ -70,6 +85,14 @@ fun YoutubeWebView(
                         Log.d("webview", "doUpdateVisitedHistory: $url")
                         url?.let { sendIntent(YoutubeDownloadIntent.OnChangeUrl(it)) }
                         super.doUpdateVisitedHistory(view, url, isReload)
+                    }
+
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        super.onPageFinished(view, url)
+                        if (shouldClearHistoryAfterHomeLoad) {
+                            view?.clearHistory()
+                            shouldClearHistoryAfterHomeLoad = false
+                        }
                     }
                 }
 
@@ -89,8 +112,50 @@ fun YoutubeWebView(
     BackHandler {
         val backEnabled = webView?.canGoBack() ?: false
         if (backEnabled) {
-            webView?.goBack()
+            webView.goBack()
+        } else if (webView?.url != homeUrl) {
+            shouldClearHistoryAfterHomeLoad = true
+            webView?.loadUrl(homeUrl)
+        } else {
+            onNavigateToPlaylist()
         }
+    }
+}
+
+private fun handleIntentUrl(url: String, context: android.content.Context): Boolean {
+    if (!url.startsWith("intent://")) return false
+
+    return try {
+        val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+        true
+    } catch (_: ActivityNotFoundException) {
+        val fallbackUrl = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
+            .getStringExtra("browser_fallback_url")
+        val convertedWebUrl = url.replaceFirst("intent://", "https://").substringBefore("#Intent")
+
+        when {
+            !fallbackUrl.isNullOrBlank() -> {
+                context.startActivity(
+                    Intent(Intent.ACTION_VIEW, android.net.Uri.parse(fallbackUrl)).addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK
+                    )
+                )
+                true
+            }
+            URLUtil.isNetworkUrl(convertedWebUrl) -> {
+                context.startActivity(
+                    Intent(Intent.ACTION_VIEW, android.net.Uri.parse(convertedWebUrl)).addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK
+                    )
+                )
+                true
+            }
+            else -> true
+        }
+    } catch (_: Exception) {
+        true
     }
 }
 
@@ -104,6 +169,7 @@ fun YoutubeWebViewPreview() {
             setWebView = {},
             webView = null,
             sendIntent = {},
+            onNavigateToPlaylist = {},
         )
     }
 }

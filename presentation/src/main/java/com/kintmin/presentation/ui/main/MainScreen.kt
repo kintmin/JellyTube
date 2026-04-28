@@ -331,6 +331,9 @@ fun MainScreen(
                     setWebView = { value -> webView = value },
                     webView = webView,
                     sendIntent = sendYoutubeDownloadIntent,
+                    onNavigateToPlaylist = {
+                        sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist))
+                    },
                 )
 
                 MainTabItem.Playlist -> PlaylistView(
