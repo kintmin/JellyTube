@@ -200,6 +200,13 @@ fun PlaylistDetailListItemView(
                     },
                 )
                 DropdownMenuItem(
+                    text = { Text("순서 조정") },
+                    onClick = {
+                        readModeDropdownExpanded = false
+                        sendIntent(PlaylistDetailListIntent.OnClickReorderAudioMedia(data))
+                    },
+                )
+                DropdownMenuItem(
                     text = { Text("수정") },
                     onClick = {
                         readModeDropdownExpanded = false

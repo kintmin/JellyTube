@@ -120,11 +120,11 @@ class ReorderState(
 
 @Composable
 fun rememberReorderState(
+    listState: LazyListState = rememberLazyListState(),
     audioPlayDataList: List<PlaylistEditListItemUiState>,
     initializeItemHeightPx: Dp,
 ): ReorderState {
     val density = LocalDensity.current
-    val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val audioPlayList = remember { mutableStateListOf(*audioPlayDataList.toTypedArray()) }
 

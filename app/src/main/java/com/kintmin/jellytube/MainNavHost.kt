@@ -76,7 +76,7 @@ fun MainNavHost(
                 navController.navigateToPlaylistDetailScreen(playlistId, null, navOptions)
             },
             navigateToPlaylistEdit = { playlistId ->
-                navController.navigateToPlaylistEditScreen(playlistId, navOptions)
+                navController.navigateToPlaylistEditScreen(playlistId, null, navOptions)
             },
             navigateToPlaylistAdd = { playlistId ->
                 navController.navigateToPlaylistAddScreen(playlistId, navOptions)
@@ -93,8 +93,8 @@ fun MainNavHost(
             navigateToAddAudioMediaScreen = { playlistId ->
                 navController.navigateToPlaylistAddScreen(playlistId, navOptions)
             },
-            navigateToPlaylistEditScreen = { playlistId ->
-                navController.navigateToPlaylistEditScreen(playlistId, navOptions)
+            navigateToPlaylistEditScreen = { playlistId, focusAudioMediaId ->
+                navController.navigateToPlaylistEditScreen(playlistId, focusAudioMediaId, navOptions)
             },
             navigateToAudioDetailScreen = { audioMediaId ->
                 navController.navigateToAudioMediaDetailScreen(audioMediaId, navOptions)

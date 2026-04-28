@@ -1,6 +1,8 @@
 package com.kintmin.presentation.ui.playlist_edit
 
-import android.widget.Toast
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,8 +15,10 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
@@ -36,8 +40,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -49,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.animation.FocusSpreadOverlay
 import com.kintmin.presentation.theme.gray10
 import com.kintmin.presentation.theme.gray40
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
@@ -59,10 +67,13 @@ import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListItemUiStat
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListItemView
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListViewModel
 import com.kintmin.presentation.ui.playlist_edit.list.reorder.rememberReorderState
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 
 @Composable
 fun PlaylistEditScreen(
     navigateToBack: () -> Unit,
+    focusAudioMediaId: Int? = null,
 ) {
     val mainViewModel = hiltViewModel<PlaylistEditListViewModel>()
 
@@ -76,6 +87,7 @@ fun PlaylistEditScreen(
         headerData = headerData,
         dataList = audioMediaList,
         checkedItemCount = checkedItemCount,
+        focusAudioMediaId = focusAudioMediaId,
         sendIntent = mainViewModel::sendIntent,
     )
 }
@@ -88,18 +100,64 @@ fun PlaylistEditScreen(
     headerData: PlaylistEditHeaderUiState,
     dataList: List<PlaylistEditListItemUiState>,
     checkedItemCount: Int,
+    focusAudioMediaId: Int? = null,
     sendIntent: (PlaylistEditListIntent) -> Unit,
 ) {
+    val scrollState = rememberLazyListState()
     val reorderState = rememberReorderState(
+        listState = scrollState,
         audioPlayDataList = dataList,
         initializeItemHeightPx = 80.dp,
     )
+    var consumedFocusAudioMediaId by rememberSaveable { mutableStateOf<Int?>(null) }
+    var highlightedAudioMediaId by remember { mutableStateOf<Int?>(null) }
+    var focusSpreadProgress by remember { mutableStateOf(0f) }
 
     var isShowDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(dataList) {
         reorderState.audioPlayList.clear()
         reorderState.audioPlayList.addAll(dataList)
+    }
+    LaunchedEffect(focusAudioMediaId, dataList) {
+        if (focusAudioMediaId == null || dataList.isEmpty()) return@LaunchedEffect
+        if (consumedFocusAudioMediaId == focusAudioMediaId) return@LaunchedEffect
+
+        val targetIndexInList = dataList.indexOfFirst { it.id == focusAudioMediaId }
+        if (targetIndexInList < 0) return@LaunchedEffect
+
+        val targetItemIndex = targetIndexInList + 1 // 0 is header
+        val isTargetVisibleNow = scrollState.layoutInfo.visibleItemsInfo.any { it.index == targetItemIndex }
+        if (!isTargetVisibleNow) {
+            scrollState.scrollToItem(targetItemIndex)
+        }
+
+        val targetItemInfo = snapshotFlow {
+            scrollState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == targetItemIndex }
+        }.filter { it != null }
+            .first() ?: return@LaunchedEffect
+
+        val layoutInfo = scrollState.layoutInfo
+        val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
+        val itemCenter = targetItemInfo.offset + (targetItemInfo.size / 2)
+        val deltaToCenter = (itemCenter - viewportCenter).toFloat()
+
+        if (kotlin.math.abs(deltaToCenter) > 1f) {
+            scrollState.scrollBy(deltaToCenter)
+        }
+
+        highlightedAudioMediaId = focusAudioMediaId
+        focusSpreadProgress = 0f
+        animate(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
+        ) { value, _ ->
+            focusSpreadProgress = value
+        }
+        focusSpreadProgress = 0f
+        highlightedAudioMediaId = null
+        consumedFocusAudioMediaId = focusAudioMediaId
     }
 
     DeleteFullAudioMediaListDialog(
@@ -186,7 +244,7 @@ fun PlaylistEditScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            state = reorderState.listState,
+            state = scrollState,
         ) {
             item(
                 key = -headerData.id,
@@ -221,6 +279,14 @@ fun PlaylistEditScreen(
                             reorderState.onDragEnd()
                         },
                     )
+                    if (highlightedAudioMediaId == item.id) {
+                        FocusSpreadOverlay(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clipToBounds(),
+                            progress = focusSpreadProgress,
+                        )
+                    }
                 }
             }
         }

@@ -46,6 +46,9 @@ class PlaylistDetailListViewModel @Inject constructor(
                     is PlaylistDetailListIntent.OnClickShowDetailAudioMedia -> {
                         triggerEvent(PlaylistDetailListEvent.NavigateToAudioDetailScreen(intent.data.id))
                     }
+                    is PlaylistDetailListIntent.OnClickReorderAudioMedia -> {
+                        triggerEvent(PlaylistDetailListEvent.NavigateToPlaylistEditScreen(intent.data.id))
+                    }
                     is PlaylistDetailListIntent.OnClickEditAudioMedia -> {
                         triggerEvent(PlaylistDetailListEvent.NavigateToAudioEditScreen(intent.data.id))
                     }

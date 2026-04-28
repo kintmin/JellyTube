@@ -12,9 +12,9 @@ import com.kintmin.domain.audio_track.usecase.UpdateTrackSequenceUseCase
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistDescriptionUseCase
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistTitleUseCase
-import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderUiState
 import com.kintmin.presentation.ui.playlist_edit.header.toPlaylistEditHeaderUiState
+import com.kintmin.presentation.ui.playlist_edit.navigation.PlaylistEditScreenRoute
 import com.kintmin.presentation.util.Debounce
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,7 +41,7 @@ class PlaylistEditListViewModel @Inject constructor(
     private val deleteAudioTrackListUseCase: DeleteAudioTrackListUseCase,
 ) : ViewModel() {
 
-    private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
+    private val playlistId = savedStateHandle.toRoute<PlaylistEditScreenRoute>().playlistId
     val isBasePlaylist = Playlist.isBasePlaylist(playlistId)
 
     private val _checkedItemIdList = MutableStateFlow(listOf<Int>())
