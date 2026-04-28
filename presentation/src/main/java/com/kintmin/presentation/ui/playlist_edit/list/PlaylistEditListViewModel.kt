@@ -129,15 +129,8 @@ class PlaylistEditListViewModel @Inject constructor(
     ) {
         if (reorderData.id == targetData.id) return
 
-        val isForward = reorderData.sequence > targetData.sequence
-        val newSequence = if (isForward) {
-            targetData.sequence
-        } else {
-            targetData.sequence + 1
-        }
-
         viewModelScope.launch {
-            updateTrackSequenceUseCase(playlistId, reorderData.id, reorderData.sequence, newSequence)
+            updateTrackSequenceUseCase(playlistId, reorderData.id, reorderData.sequence, targetData.sequence)
         }
     }
 

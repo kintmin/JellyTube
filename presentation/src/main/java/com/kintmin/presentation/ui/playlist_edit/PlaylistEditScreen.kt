@@ -272,7 +272,7 @@ fun PlaylistEditScreen(
                                 sendIntent(
                                     PlaylistEditListIntent.ReorderAudioItem(
                                         reorderData = item,
-                                        targetData = reorderState.audioPlayList[it]
+                                        targetData = dataList[it]
                                     ),
                                 )
                             }
