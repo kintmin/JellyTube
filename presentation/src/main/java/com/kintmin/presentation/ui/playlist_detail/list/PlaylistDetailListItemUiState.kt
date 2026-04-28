@@ -11,6 +11,7 @@ data class PlaylistDetailListItemUiState(
     val artist: String,
     val audioDuration: Duration?,
     val description: String,
+    val source: String,
     val audioFileFullPath: String,
     val imageFileFullPath: String?,
     val sequence: Int,
@@ -27,6 +28,7 @@ data class PlaylistDetailListItemUiState(
             artist = "아티스트",
             audioDuration = 500.seconds,
             description = "설명설명설명설명",
+            source = "https://example.com",
             audioFileFullPath = "",
             imageFileFullPath = null,
             sequence = index
@@ -42,6 +44,7 @@ internal fun PlaylistTrackAggregate.toPlaylistDetailListItemUiState() = Playlist
     artist = audioMedia.artist,
     audioDuration = audioMedia.audioDuration,
     description = audioMedia.description,
+    source = audioMedia.source,
     audioFileFullPath = audioMedia.audioFileFullPath,
     imageFileFullPath = audioMedia.imageFileFullPath,
     sequence = audioTrack.trackSequence,

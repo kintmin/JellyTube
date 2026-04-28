@@ -99,6 +99,9 @@ fun MainNavHost(
             navigateToAudioDetailScreen = { audioMediaId ->
                 navController.navigateToAudioMediaDetailScreen(audioMediaId, navOptions)
             },
+            navigateToAudioEditScreen = { audioMediaId ->
+                navController.navigateToAudioMediaEditScreen(audioMediaId, navOptions)
+            },
             navigateToPlayerDetail = {
                 navController.navigateToPlayerDetailScreen(navOptions)
             },

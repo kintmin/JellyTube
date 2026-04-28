@@ -221,6 +221,7 @@ class AudioMediaFacade @Inject constructor(
             }
         }
 
+        if (targetAudioMediaIdList.isEmpty()) return
         deleteTrackWithSyncPlaylist(Playlist.UNCATEGORIZED, targetAudioMediaIdList)
     }
 
@@ -233,6 +234,8 @@ class AudioMediaFacade @Inject constructor(
                 targetAudioMediaIdList += audioMediaId
             }
         }
+
+        if (targetAudioMediaIdList.isEmpty()) return
 
         // shouldInsertAtTop 은 다운로드 시에만 적용되기 때문에 false 고정
         addTrackWithSyncPlaylist(

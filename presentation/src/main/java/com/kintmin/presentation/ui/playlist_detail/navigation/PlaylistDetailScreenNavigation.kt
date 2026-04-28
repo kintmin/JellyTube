@@ -25,6 +25,7 @@ fun NavGraphBuilder.playlistDetail(
     navigateToAddAudioMediaScreen: (playlistId: Int) -> Unit,
     navigateToPlaylistEditScreen: (playlistId: Int) -> Unit,
     navigateToAudioDetailScreen: (audioMediaId: Int) -> Unit,
+    navigateToAudioEditScreen: (audioMediaId: Int) -> Unit,
     navigateToPlayerDetail: () -> Unit,
 ) {
     composable<PlaylistDetailScreenRoute> { backStackEntry ->
@@ -34,6 +35,7 @@ fun NavGraphBuilder.playlistDetail(
             navigateToAddAudioMediaScreen = navigateToAddAudioMediaScreen,
             navigateToPlaylistEditScreen = navigateToPlaylistEditScreen,
             navigateToAudioDetailScreen = navigateToAudioDetailScreen,
+            navigateToAudioEditScreen = navigateToAudioEditScreen,
             navigateToPlayerDetail = navigateToPlayerDetail,
             focusAudioMediaId = route.focusAudioMediaId,
         )

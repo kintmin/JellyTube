@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.platform.service_controller.MediaControllerManager
 import com.kintmin.platform.service_controller.model.MediaControlData
@@ -22,6 +23,7 @@ import javax.inject.Inject
 class PlaylistDetailListViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
+    private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
     private val mediaControllerManager: MediaControllerManager,
 ) : ViewModel() {
 
@@ -44,8 +46,20 @@ class PlaylistDetailListViewModel @Inject constructor(
                     is PlaylistDetailListIntent.OnClickShowDetailAudioMedia -> {
                         triggerEvent(PlaylistDetailListEvent.NavigateToAudioDetailScreen(intent.data.id))
                     }
+                    is PlaylistDetailListIntent.OnClickEditAudioMedia -> {
+                        triggerEvent(PlaylistDetailListEvent.NavigateToAudioEditScreen(intent.data.id))
+                    }
+                    is PlaylistDetailListIntent.OnClickDeleteAudioMediaInPlaylist -> {
+                        deleteAudioMedia(intent.data.id, intent.data.source)
+                    }
                 }
             }
+        }
+    }
+
+    private fun deleteAudioMedia(audioMediaId: Int, source: String) {
+        viewModelScope.launch {
+            deleteAudioMediaUseCase(audioMediaId, source)
         }
     }
 

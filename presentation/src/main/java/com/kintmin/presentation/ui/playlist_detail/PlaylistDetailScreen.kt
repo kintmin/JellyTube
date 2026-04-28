@@ -78,6 +78,7 @@ fun PlaylistDetailScreen(
     navigateToAddAudioMediaScreen: (playlistId: Int) -> Unit,
     navigateToPlaylistEditScreen: (playlistId: Int) -> Unit,
     navigateToAudioDetailScreen: (audioMediaId: Int) -> Unit,
+    navigateToAudioEditScreen: (audioMediaId: Int) -> Unit,
     navigateToPlayerDetail: () -> Unit,
     focusAudioMediaId: Int? = null,
 ) {
@@ -102,6 +103,7 @@ fun PlaylistDetailScreen(
         listViewModel.eventFlow.collect { event ->
             when (event) {
                 is PlaylistDetailListEvent.NavigateToAudioDetailScreen -> navigateToAudioDetailScreen(event.audioMediaId)
+                is PlaylistDetailListEvent.NavigateToAudioEditScreen -> navigateToAudioEditScreen(event.audioMediaId)
             }
         }
     }
