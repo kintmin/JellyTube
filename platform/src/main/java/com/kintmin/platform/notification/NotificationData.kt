@@ -1,8 +1,9 @@
-package com.kintmin.platform.notification
+﻿package com.kintmin.platform.notification
 
 import android.app.Notification
 import android.content.Context
 import androidx.core.app.NotificationCompat
+import com.kintmin.platform.intent.downloadResultPendingIntent
 
 sealed interface NotificationData {
 
@@ -31,7 +32,9 @@ sealed interface NotificationData {
     }
 
     data class DownloadResult(
-        val contentText: String = "지금 바로 감상하기"
+        val contentText: String = "지금 바로 감상하기",
+        val playlistId: Int? = null,
+        val audioMediaId: Int? = null,
     ) : NotificationData {
 
         override val id = 2
@@ -44,6 +47,12 @@ sealed interface NotificationData {
                 .setSmallIcon(android.R.drawable.stat_sys_download_done)
                 .setGroup(channel.id)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setAutoCancel(true)
+                .apply {
+                    if (playlistId != null && audioMediaId != null) {
+                        setContentIntent(context.downloadResultPendingIntent(playlistId, audioMediaId))
+                    }
+                }
                 .build()
     }
 }

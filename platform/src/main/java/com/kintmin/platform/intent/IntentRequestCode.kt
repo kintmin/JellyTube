@@ -3,4 +3,5 @@ package com.kintmin.platform.intent
 object IntentRequestCode {
 
     const val MEDIA_SESSION_NOTIFICATION = 0
+    const val DOWNLOAD_RESULT_NOTIFICATION = 1
 }

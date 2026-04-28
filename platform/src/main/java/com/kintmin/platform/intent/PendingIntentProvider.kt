@@ -21,3 +21,23 @@ internal fun Context.mediaSessionPendingIntent() = PendingIntent.getActivity(
     },
     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
 )
+
+internal fun Context.downloadResultPendingIntent(
+    playlistId: Int,
+    audioMediaId: Int,
+) = PendingIntent.getActivity(
+    this,
+    IntentRequestCode.DOWNLOAD_RESULT_NOTIFICATION,
+    Intent().apply {
+        action = Intent.ACTION_VIEW
+        data = DeepLinkConstants.UriBuilder.playlistContentScreen(
+            playlistId = playlistId,
+            audioMediaId = audioMediaId,
+        )
+        component = ComponentName(
+            packageName,
+            TARGET_ACTIVITY_NAME,
+        )
+    },
+    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+)

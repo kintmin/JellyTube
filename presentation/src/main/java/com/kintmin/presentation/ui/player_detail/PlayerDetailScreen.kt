@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.player_detail
+﻿package com.kintmin.presentation.ui.player_detail
 
 import android.graphics.BitmapFactory
 import android.widget.Toast
@@ -36,6 +36,7 @@ import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -319,7 +320,7 @@ fun PlayerDetailScreen(
                     Icon(
                         imageVector = Icons.Rounded.Shuffle,
                         contentDescription = "셔플",
-                        tint = if (data.isShuffling) Color(0xFFF3CC53) else Color.White.copy(alpha = 0.86f),
+                        tint = if (data.isShuffling) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
                     )
                 }
                 IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
@@ -332,7 +333,7 @@ fun PlayerDetailScreen(
                 }
                 IconButton(
                     modifier = Modifier
-                        .size(96.dp)
+                        .size(84.dp)
                         .border(
                             width = 2.dp,
                             color = Color.White.copy(alpha = 0.85f),
@@ -359,7 +360,7 @@ fun PlayerDetailScreen(
                     Icon(
                         imageVector = Icons.Rounded.Repeat,
                         contentDescription = "반복",
-                        tint = if (data.isRepeating) Color(0xFFF3CC53) else Color.White.copy(alpha = 0.86f),
+                        tint = if (data.isRepeating) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
                     )
                 }
             }
@@ -479,3 +480,4 @@ private fun PlayerDetailScreenPreview() {
         )
     }
 }
+

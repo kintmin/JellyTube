@@ -39,6 +39,7 @@ android {
 
 dependencies {
     implementation(project(":domain"))
+    implementation(project(":log:log-api"))
     implementation(libs.hilt.android)
     ksp(libs.androidx.hilt.compiler)
     ksp(libs.hilt.android.compiler)
