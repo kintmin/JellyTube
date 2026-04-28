@@ -19,7 +19,7 @@ fun NavGraphBuilder.audioMediaDetailScreen(
     navigateToBack: () -> Unit,
     navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
-    navigateToPlaylistDetailScreen: (playlistId: Int) -> Unit,
+    navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
 ) {
     composable<AudioMediaDetailScreenRoute> { backStackEntry ->
         AudioMediaDetailScreen(

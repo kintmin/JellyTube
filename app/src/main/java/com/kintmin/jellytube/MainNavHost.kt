@@ -124,8 +124,8 @@ fun MainNavHost(
                     url,
                 )
             },
-            navigateToPlaylistDetailScreen = { playlistId ->
-                navController.navigateToPlaylistDetailScreen(playlistId, null, navOptions)
+            navigateToPlaylistDetailScreen = { playlistId, audioMediaId ->
+                onDeepLink(DeepLinkConstants.UriBuilder.playlistContentScreen(playlistId, audioMediaId))
             },
         )
         audioMediaEdit(

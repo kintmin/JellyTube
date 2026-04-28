@@ -56,7 +56,7 @@ fun AudioMediaDetailScreen(
     navigateToBack: () -> Unit,
     navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
-    navigateToPlaylistDetailScreen: (playlistId: Int) -> Unit,
+    navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
 ) {
     val mainViewModel = hiltViewModel<AudioMediaDetailViewModel>()
 
@@ -86,7 +86,7 @@ fun AudioMediaDetailScreen(
     navigateToBack: () -> Unit,
     navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
-    navigateToPlaylistDetailScreen: (playlistId: Int) -> Unit,
+    navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
     data: AudioMediaDetailUiState,
     sendIntent: (AudioMediaDetailIntent) -> Unit,
 ) {
@@ -278,7 +278,7 @@ fun AudioMediaDetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                navigateToPlaylistDetailScreen(data.playlists[index].playlistId)
+                                navigateToPlaylistDetailScreen(data.playlists[index].playlistId, data.audioMediaId)
                             }.padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
                         Text(
@@ -311,7 +311,7 @@ fun AudioMediaDetailScreenPreview() {
             navigateToBack = {},
             navigationToAudioMediaEditScreen = {},
             navigateToMainSearchTab = {},
-            navigateToPlaylistDetailScreen = {},
+            navigateToPlaylistDetailScreen = { _, _, -> },
             data = AudioMediaDetailUiState.getMock(),
             sendIntent = {},
         )
