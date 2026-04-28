@@ -3,6 +3,7 @@ package com.kintmin.presentation.ui.player_detail
 import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,8 +23,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.NavigateBefore
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
+import androidx.compose.material.icons.automirrored.rounded.Subject
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
@@ -32,6 +36,7 @@ import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -51,6 +56,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -141,22 +147,27 @@ fun PlayerDetailScreen(
             )
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = gradientColors,
-                ),
-            ),
-    ) {
-        Column(
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
+    ) { innerPadding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = gradientColors,
+                    ),
+                )
+                .padding(innerPadding),
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(modifier = Modifier.height(20.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -165,7 +176,7 @@ fun PlayerDetailScreen(
             ) {
                 IconButton(onClick = navigateToBack) {
                     Icon(
-                        imageVector = Icons.Rounded.KeyboardArrowDown,
+                        imageVector = Icons.Rounded.ArrowBackIosNew,
                         contentDescription = "뒤로 가기",
                         tint = Color.White.copy(alpha = 0.82f),
                     )
@@ -187,8 +198,8 @@ fun PlayerDetailScreen(
                 }
                 IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
                     Icon(
-                        imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = "더보기",
+                        imageVector = Icons.AutoMirrored.Rounded.Subject,
+                        contentDescription = "세부 화면",
                         tint = Color.White.copy(alpha = 0.82f),
                     )
                 }
@@ -235,41 +246,33 @@ fun PlayerDetailScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickAddButton) }) {
-                    Icon(
-                        imageVector = Icons.Rounded.Add,
-                        contentDescription = "추가",
-                        tint = Color.White.copy(alpha = 0.82f),
-                    )
-                }
-
                 Column(
                     modifier = Modifier.weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .basicMarquee(),
                         text = data.title,
                         color = Color.White,
                         fontSize = 34.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
                     )
                     Text(
-                        modifier = Modifier.padding(top = 4.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .basicMarquee(),
                         text = data.artist,
                         color = Color.White.copy(alpha = 0.78f),
                         fontSize = 18.sp,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
-                    )
-                }
-
-                IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = "옵션",
-                        tint = Color.White.copy(alpha = 0.82f),
                     )
                 }
             }
@@ -363,25 +366,30 @@ fun PlayerDetailScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Row(
-                modifier = Modifier
-                    .padding(vertical = 6.dp)
-                    .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.LibraryMusic,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.82f),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
-                    color = Color.White.copy(alpha = 0.88f),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp)
+                        .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.LibraryMusic,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.82f),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        modifier = Modifier.weight(1f, fill = false).padding(vertical = 12.dp),
+                        text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
+                        color = Color.White.copy(alpha = 0.88f),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }

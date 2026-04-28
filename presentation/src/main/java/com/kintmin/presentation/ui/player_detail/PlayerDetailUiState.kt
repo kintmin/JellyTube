@@ -23,9 +23,9 @@ data class PlayerDetailUiState(
         fun getMock() = PlayerDetailUiState(
             id = "temp",
             playlistId = 1,
-            playlistName = "전체 재생목록",
-            title = "제목제목제목",
-            artist = "아티스트",
+            playlistName = "재생목록재생목록재생목록재생목록재생목록재생목록재생목록",
+            title = "제목제목제목제목제목제목제목제목제목제목제목제목",
+            artist = "아티스트아티스트아티스트아티스트아티스트아티스트아티스트아티스트",
             currentDuration = 90.seconds,
             playbackDuration = 300.seconds,
             imageFileFullPath = null,
