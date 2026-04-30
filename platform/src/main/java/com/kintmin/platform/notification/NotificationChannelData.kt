@@ -23,4 +23,11 @@ sealed interface NotificationChannelData {
         override val description = "음원 다운로드가 완료되었을 때 받을 알림 채널입니다."
         override val importance = NotificationManager.IMPORTANCE_MAX
     }
+
+    data object StepSensor : NotificationChannelData {
+        override val id = "step_channel"
+        override val name = "걸음수 채널"
+        override val description = "걸음수를 측정하는 알림 채널입니다."
+        override val importance = NotificationManager.IMPORTANCE_LOW
+    }
 }

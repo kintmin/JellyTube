@@ -2,21 +2,12 @@ package com.kintmin.data.repository_impl.di
 
 import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.local_datastore.DatastoreUtil
-import com.kintmin.data.local_db.dao.AudioMediaDao
-import com.kintmin.data.local_db.dao.PlaylistDao
-import com.kintmin.data.local_db.dao.PlaylistTrackDao
-import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
+import com.kintmin.data.local_db.dao.*
+import com.kintmin.data.local_db.dao_facade.*
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
-import com.kintmin.data.repository_impl.AudioMediaRepositoryImpl
-import com.kintmin.data.repository_impl.AudioPlaySettingRepositoryImpl
-import com.kintmin.data.repository_impl.AudioTrackRepositoryImpl
-import com.kintmin.data.repository_impl.DeviceStatusRepositoryImpl
-import com.kintmin.data.repository_impl.PlaylistRepositoryImpl
-import com.kintmin.data.repository_impl.AppSettingRepositoryImpl
-import com.kintmin.data.repository_impl.AppLogRepositoryImpl
-import com.kintmin.data.repository_impl.UserRepositoryImpl
+import com.kintmin.data.repository_impl.*
 import com.kintmin.domain.app_log.repository.AppLogRepository
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
@@ -24,6 +15,7 @@ import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingReposito
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.step.repository.StepRepository
 import com.kintmin.domain.user.repository.UserRepository
 import dagger.Module
 import dagger.Provides
@@ -127,6 +119,18 @@ object RepositoryModule {
     ): DeviceStatusRepository {
         return DeviceStatusRepositoryImpl(
             deviceStatus = deviceStatus,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideStepRepository(
+        stepDao: StepDao,
+        datastoreUtil: DatastoreUtil,
+    ): StepRepository {
+        return StepRepositoryImpl(
+            stepDao = stepDao,
+            datastoreUtil = datastoreUtil,
         )
     }
 }

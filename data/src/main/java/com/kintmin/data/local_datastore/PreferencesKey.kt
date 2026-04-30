@@ -3,6 +3,7 @@ package com.kintmin.data.local_datastore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 
 sealed interface PreferencesKey<T> {
@@ -26,5 +27,17 @@ sealed interface PreferencesKey<T> {
 
     data object PlaylistIdOnDownload : PreferencesKey<Int> {
         override val key = intPreferencesKey("playlistIdOnDownload")
+    }
+
+    data object TodayStepCount : PreferencesKey<Int> {
+        override val key = intPreferencesKey("todayStepCount")
+    }
+
+    data object LastStepSensor : PreferencesKey<Long> {
+        override val key = longPreferencesKey("lastStepSensor")
+    }
+
+    data object AccelerateStep : PreferencesKey<Int> {
+        override val key = intPreferencesKey("accelerateStep")
     }
 }

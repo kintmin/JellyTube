@@ -2,8 +2,10 @@
 
 import android.app.Notification
 import android.content.Context
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.kintmin.platform.intent.downloadResultPendingIntent
+import com.kintmin.platform.R
 
 sealed interface NotificationData {
 
@@ -54,5 +56,31 @@ sealed interface NotificationData {
                     }
                 }
                 .build()
+    }
+
+    data class SensorStep(
+        val stepSensorStepCount: Int,
+        val accelerometerStepCount: Int,
+    ) : NotificationData {
+
+        override val id = 3
+        override val channel = NotificationChannelData.StepSensor
+
+        override fun getNotification(context: Context): Notification {
+            val remoteViews = RemoteViews(context.packageName, R.layout.notification_sensor_steps).apply {
+                setTextViewText(R.id.tv_step_sensor_value, "$stepSensorStepCount")
+                setTextViewText(R.id.tv_accelerometer_value, "$accelerometerStepCount")
+            }
+
+            return NotificationCompat.Builder(context, channel.id)
+                .setCustomContentView(remoteViews)
+                .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setGroup(channel.id)
+                .setCategory(NotificationCompat.CATEGORY_STATUS)
+                .setOngoing(true)
+                .setAutoCancel(false)
+                .build()
+        }
     }
 }

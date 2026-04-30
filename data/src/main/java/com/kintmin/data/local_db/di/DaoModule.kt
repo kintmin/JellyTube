@@ -3,6 +3,7 @@ package com.kintmin.data.local_db.di
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
+import com.kintmin.data.local_db.dao.StepDao
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import dagger.Module
 import dagger.Provides
@@ -25,5 +26,10 @@ internal object DaoModule {
     @Provides
     fun providePlaylistTrackDao(database: JellyTubeDatabase): PlaylistTrackDao {
         return database.playlistTrackDao()
+    }
+
+    @Provides
+    fun provideStepDao(database: JellyTubeDatabase): StepDao {
+        return database.stepDao()
     }
 }

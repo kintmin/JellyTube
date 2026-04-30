@@ -1,0 +1,20 @@
+package com.kintmin.platform.receiver
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import androidx.core.content.ContextCompat
+import com.kintmin.platform.service.StepForegroundService
+
+class PackageChangedReceiver: BroadcastReceiver() {
+
+    override fun onReceive(context: Context, intent: Intent?) {
+        when(intent?.action) {
+            Intent.ACTION_MY_PACKAGE_REPLACED -> {
+                runCatching {
+                    ContextCompat.startForegroundService(context, Intent(context, StepForegroundService::class.java))
+                }
+            }
+        }
+    }
+}
