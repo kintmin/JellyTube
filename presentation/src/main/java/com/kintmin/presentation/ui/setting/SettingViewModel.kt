@@ -87,6 +87,11 @@ class SettingViewModel @Inject constructor(
             is SettingIntent.OnSelectPlaylistIdOnDownload -> {
                 updatePlaylistIdOnDownload(intent.playlistId)
             }
+            SettingIntent.OnClickStepTile -> {
+                viewModelScope.launch {
+                    _eventFlow.emit(SettingEvent.NavigateToStepScreen)
+                }
+            }
             SettingIntent.OnClickAppLogTile -> {
                 viewModelScope.launch {
                     _eventFlow.emit(SettingEvent.NavigateToAppLogScreen)

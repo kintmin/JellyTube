@@ -20,6 +20,7 @@ fun NavController.navigateToSettingScreen(
 
 fun NavGraphBuilder.settingGraph(
     navigateToBack: () -> Unit,
+    navigateToStep: () -> Unit,
     navigateToAppLog: () -> Unit,
     settingDestination: NavGraphBuilder.() -> Unit,
 ) {
@@ -27,6 +28,7 @@ fun NavGraphBuilder.settingGraph(
         composable<SettingScreenRoute> {
             SettingScreen(
                 navigateToBack = navigateToBack,
+                navigateToStep = navigateToStep,
                 navigateToAppLog = navigateToAppLog,
             )
         }

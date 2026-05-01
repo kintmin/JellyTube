@@ -2,38 +2,100 @@ package com.kintmin.domain.step.usecase
 
 import com.kintmin.domain.step.model.StepData
 import com.kintmin.domain.step.repository.StepRepository
-import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import kotlinx.coroutines.flow.firstOrNull
 
 class GetHourlyStepsUseCase @Inject constructor(
     private val stepRepository: StepRepository,
 ) {
 
     suspend operator fun invoke(date: String): Result<List<Int>> {
+        val latestStepSensor = stepRepository.getLastStepSensor().firstOrNull()
+
         return stepRepository.getStepDataListByDate(date)
             .map { stepDataList ->
-                calculateHourlySteps(stepDataList)
+                val mergedStepDataList = mergeLatestStepSensorIfNeeded(
+                    date = date,
+                    stepDataList = stepDataList,
+                    latestStepSensor = latestStepSensor,
+                )
+                calculateHourlySteps(date, mergedStepDataList)
             }
     }
 
-    private fun calculateHourlySteps(stepDataList: List<StepData>): List<Int> {
-        if (stepDataList.size < 2) {
+    private fun mergeLatestStepSensorIfNeeded(
+        date: String,
+        stepDataList: List<StepData>,
+        latestStepSensor: Long?,
+    ): List<StepData> {
+        if (latestStepSensor == null) return stepDataList
+
+        val today = LocalDate.now(ZoneId.systemDefault()).format(DateTimeFormatter.BASIC_ISO_DATE)
+        if (date != today) return stepDataList
+
+        val mutableList = stepDataList.toMutableList().apply {
+            add(
+                StepData(
+                    rawCreatedTime = System.currentTimeMillis(),
+                    stepSensor = latestStepSensor,
+                )
+            )
+        }
+
+        return mutableList
+    }
+
+    private fun calculateHourlySteps(date: String, stepDataList: List<StepData>): List<Int> {
+        if (stepDataList.isEmpty()) {
             return List(24) { 0 }
         }
 
-        val buckets = Array(24) { mutableListOf<Long>() }
+        val zoneId = ZoneId.systemDefault()
+        val targetDate = LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE)
+        val dayStartMillis = targetDate
+            .atStartOfDay(zoneId)
+            .toInstant()
+            .toEpochMilli()
+        val oneHourMillis = 60 * 60 * 1000L
 
-        for (stepData in stepDataList) {
-            val hour = Instant.ofEpochMilli(stepData.rawCreatedTime)
-                .atZone(ZoneId.systemDefault())
-                .hour
+        val sortedData = stepDataList.sortedBy { it.rawCreatedTime }
 
-            buckets[hour].add(stepData.stepSensor)
-        }
+        return List(24) { hour ->
+            val bucketStart = dayStartMillis + (hour * oneHourMillis)
+            val bucketEnd = bucketStart + oneHourMillis
 
-        return buckets.map { bucket ->
-            calculateSteps(bucket)
+            val bucketData = sortedData
+                .asSequence()
+                .filter { it.rawCreatedTime in bucketStart..bucketEnd }
+                .toList()
+
+            if (hour == 0) {
+                calculateSteps(bucketData.map { it.stepSensor })
+            } else {
+                if (bucketData.isEmpty()) {
+                    0
+                } else {
+                    val isFirstDataAtHourStart = bucketData.first().rawCreatedTime == bucketStart
+                    val previousSensor = if (isFirstDataAtHourStart) {
+                        null
+                    } else {
+                        sortedData
+                            .lastOrNull { it.rawCreatedTime < bucketStart }
+                            ?.stepSensor
+                    }
+
+                    val sensorsForHour = if (previousSensor != null) {
+                        listOf(previousSensor) + bucketData.map { it.stepSensor }
+                    } else {
+                        bucketData.map { it.stepSensor }
+                    }
+
+                    calculateSteps(sensorsForHour)
+                }
+            }
         }
     }
 

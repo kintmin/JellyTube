@@ -3,6 +3,7 @@ package com.kintmin.platform.service
 import android.Manifest.permission
 import android.annotation.SuppressLint
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.ComponentCallbacks
 import android.content.Context
 import android.content.Intent
@@ -36,12 +37,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -76,18 +78,27 @@ class StepForegroundService : Service() {
         }
     }
 
-    @Inject lateinit var pushNotificationManager: PushNotificationManager
+    @Inject
+    lateinit var pushNotificationManager: PushNotificationManager
 
-    @Inject lateinit var resetDataOncePerDayUseCase: ResetDataOncePerDayUseCase
-    @Inject lateinit var backupStepSensorUseCase: BackupStepSensorUseCase
+    @Inject
+    lateinit var resetDataOncePerDayUseCase: ResetDataOncePerDayUseCase
+    @Inject
+    lateinit var backupStepSensorUseCase: BackupStepSensorUseCase
 
-    @Inject lateinit var getTodayStepCountUseCase: GetTodayStepCountUseCase
-    @Inject lateinit var getLastStepSensorUseCase: GetLastStepSensorUseCase
-    @Inject lateinit var getAccelerateStepUseCase: GetAccelerateStepUseCase
+    @Inject
+    lateinit var getTodayStepCountUseCase: GetTodayStepCountUseCase
+    @Inject
+    lateinit var getLastStepSensorUseCase: GetLastStepSensorUseCase
+    @Inject
+    lateinit var getAccelerateStepUseCase: GetAccelerateStepUseCase
 
-    @Inject lateinit var updateTodayStepCountUseCase: UpdateTodayStepCountUseCase
-    @Inject lateinit var updateLastStepSensorUseCase: UpdateLastStepSensorUseCase
-    @Inject lateinit var updateAccelerateStepUseCase: UpdateAccelerateStepUseCase
+    @Inject
+    lateinit var updateTodayStepCountUseCase: UpdateTodayStepCountUseCase
+    @Inject
+    lateinit var updateLastStepSensorUseCase: UpdateLastStepSensorUseCase
+    @Inject
+    lateinit var updateAccelerateStepUseCase: UpdateAccelerateStepUseCase
 
     private val foregroundServiceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
 
@@ -262,20 +273,41 @@ class StepForegroundService : Service() {
             }
         }
 
-        // roomDB는 1분 단위로 update
+        // roomDB는 매 정각의 base sensor를 저장
         foregroundServiceScope.launch {
-            currentStepSensor.filterNotNull().map { stepSensor ->
-                val now = System.currentTimeMillis()
-                val minuteTime = now - (now % 60_000L)
-
-                minuteTime to stepSensor
-            }.distinctUntilChanged { old, new ->
-                old.first == new.first
-            }.collect { (_, stepSensor) ->
-                backupStepSensorUseCase(stepSensor)
+            combine(
+                hourTickFlow(),
+                currentStepSensor.filterNotNull(),
+            ) { hourTime, stepSensor ->
+                hourTime to stepSensor
+            }.collect { (hourTime, stepSensor) ->
+                backupStepSensorUseCase(stepSensor, hourTime)
             }
         }
     }
+
+    private fun hourTickFlow() = callbackFlow {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == Intent.ACTION_TIME_TICK) {
+                    val now = System.currentTimeMillis()
+                    val hourTime = now - (now % 3_600_000)
+                    trySend(hourTime)
+                }
+            }
+        }
+
+        val filter = IntentFilter(Intent.ACTION_TIME_TICK)
+        registerReceiver(receiver, filter)
+
+        val now = System.currentTimeMillis()
+        val hourTime = now - (now % 3_600_000)
+        trySend(hourTime)
+
+        awaitClose {
+            runCatching { unregisterReceiver(receiver) }
+        }
+    }.distinctUntilChanged()
 
     private fun updateForegroundNotification() {
         pushNotificationManager.sendNotification(

@@ -38,8 +38,8 @@ class DailyResetImmediatelyWorker @AssistedInject constructor(
             if (lastStepSensor != -1L) {
                 val targetLocalDate = LocalDate.parse(targetDate, DateTimeFormatter.BASIC_ISO_DATE)
                 val endOfDayMillis = targetLocalDate
-                    .atTime(LocalTime.of(23, 59, 59, 999_000_000))
-                    .atZone(ZoneId.systemDefault())
+                    .plusDays(1)
+                    .atStartOfDay(ZoneId.systemDefault())
                     .toInstant()
                     .toEpochMilli()
 
@@ -51,7 +51,7 @@ class DailyResetImmediatelyWorker @AssistedInject constructor(
             deleteOldStepsUseCase()
             return Result.success()
         } catch (_: Exception) {
-            return if (runAttemptCount >= 5) {
+            return if (runAttemptCount >= 3) {
                 Result.failure()
             } else {
                 Result.retry()

@@ -29,6 +29,8 @@ import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.navigateToAppLogScreen
 import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
 import com.kintmin.presentation.ui.setting.navigation.settingGraph
+import com.kintmin.presentation.ui.step.navigation.navigateToStepScreen
+import com.kintmin.presentation.ui.step.navigation.stepScreen
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 
@@ -134,6 +136,9 @@ fun MainNavHost(
 
         settingGraph(
             navigateToBack = { navController.popBackStack() },
+            navigateToStep = {
+                navController.navigateToStepScreen(navOptions)
+            },
             navigateToAppLog = {
                 navController.navigateToAppLogScreen(navOptions)
             },
@@ -155,6 +160,8 @@ fun MainNavHost(
                 onDeepLink(DeepLinkConstants.UriBuilder.playlistContentScreen(playlistId, audioMediaId))
             },
         )
+
+        stepScreen()
     }
 
     LaunchedEffect(navController, navigationIntentFlow) {

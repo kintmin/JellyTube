@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -31,14 +32,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.ui.main.MainScreen
-import com.kintmin.presentation.ui.main.MainTabItem
-import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
-import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
 
 @Composable
 fun SettingScreen(
     navigateToBack: () -> Unit,
+    navigateToStep: () -> Unit,
     navigateToAppLog: () -> Unit,
 ) {
     val viewModel = hiltViewModel<SettingViewModel>()
@@ -50,6 +48,7 @@ fun SettingScreen(
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
+                SettingEvent.NavigateToStepScreen -> navigateToStep()
                 SettingEvent.NavigateToAppLogScreen -> navigateToAppLog()
             }
         }
@@ -168,6 +167,24 @@ fun SettingScreen(
                 Text(
                     text = uiState.playlistIdOnDownloadName,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clickable {
+                        sendIntent(SettingIntent.OnClickStepTile)
+                    }
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = "걸음수 현황 보기")
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = "걸음수 현황 화면으로 이동",
                 )
             }
 

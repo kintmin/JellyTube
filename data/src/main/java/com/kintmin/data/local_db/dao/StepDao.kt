@@ -9,7 +9,7 @@ import com.kintmin.data.local_db.model.StepEntity
 @Dao
 interface StepDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(entity: StepEntity)
 
     @Query(
@@ -27,7 +27,7 @@ interface StepDao {
         SELECT *
         FROM STEP
         WHERE rawCreatedTime >= :startUtc
-            AND rawCreatedTime < :endUtc
+            AND rawCreatedTime <= :endUtc
         ORDER BY rawCreatedTime ASC
     """
     )

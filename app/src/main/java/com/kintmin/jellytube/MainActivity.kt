@@ -14,6 +14,7 @@ import androidx.compose.material3.Surface
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
+import com.kintmin.platform.service.StepForegroundService
 import com.kintmin.presentation.theme.JellyTubeTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -52,6 +53,8 @@ class MainActivity : ComponentActivity() {
         }
 
         checkPermission()
+
+        StepForegroundService.startService(this)
     }
 
     override fun onNewIntent(intent: Intent) {
