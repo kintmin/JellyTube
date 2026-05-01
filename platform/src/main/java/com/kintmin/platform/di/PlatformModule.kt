@@ -1,7 +1,8 @@
 package com.kintmin.platform.di
 
 import android.content.Context
-import com.kintmin.platform.notification.PushNotificationUtil
+import com.kintmin.platform.push_notification.PushNotificationManager
+import com.kintmin.platform.push_notification.PushNotificationManagerImpl
 import com.kintmin.platform.service_controller.MediaControllerManager
 import com.kintmin.platform.service_controller.MediaControllerManagerImpl
 import dagger.Module
@@ -14,12 +15,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object PlatformModule {
+
     @Provides
     @Singleton
-    fun providePushNotificationUtil(
+    fun bindPushNotificationManager(
         @ApplicationContext context: Context,
-    ): PushNotificationUtil {
-        return PushNotificationUtil(context)
+    ): PushNotificationManager {
+        return PushNotificationManagerImpl(context)
     }
 
     @Provides

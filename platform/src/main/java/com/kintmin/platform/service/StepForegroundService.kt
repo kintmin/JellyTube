@@ -1,15 +1,22 @@
 package com.kintmin.platform.service
 
+import android.Manifest.permission
+import android.annotation.SuppressLint
 import android.app.Service
 import android.content.ComponentCallbacks
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager.PERMISSION_GRANTED
+import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.hardware.Sensor
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import android.os.IBinder
+import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
 import com.kintmin.domain.step.usecase.GetAccelerateStepUseCase
 import com.kintmin.domain.step.usecase.GetLastStepSensorUseCase
@@ -18,8 +25,8 @@ import com.kintmin.domain.step.usecase.ResetDataOncePerDayUseCase
 import com.kintmin.domain.step.usecase.UpdateAccelerateStepUseCase
 import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
 import com.kintmin.domain.step.usecase.UpdateTodayStepCountUseCase
-import com.kintmin.platform.notification.NotificationData
-import com.kintmin.platform.notification.PushNotificationUtil
+import com.kintmin.platform.push_notification.PushNotificationManager
+import com.kintmin.platform.push_notification.notifications.SensorStepNotification
 import com.kintmin.platform.receiver.DateChangeBroadcastReceiver
 import com.kintmin.platform.service.sensor.AccelerometerSensorListener
 import com.kintmin.platform.service.sensor.StepCounterSensorListener
@@ -30,12 +37,11 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -45,8 +51,35 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class StepForegroundService : Service() {
 
-    @Inject lateinit var notificationUtil: PushNotificationUtil
+    companion object {
+
+        fun startService(context: Context): Result<Unit> {
+            return runCatching {
+                val hasPostNotification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    ContextCompat.checkSelfPermission(context, permission.POST_NOTIFICATIONS) == PERMISSION_GRANTED
+                } else {
+                    true
+                }
+
+                val hasActivityRecognition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ContextCompat.checkSelfPermission(context, permission.ACTIVITY_RECOGNITION) == PERMISSION_GRANTED
+                } else {
+                    true
+                }
+
+                if (hasPostNotification && hasActivityRecognition) {
+                    ContextCompat.startForegroundService(context, Intent(context, StepForegroundService::class.java))
+                } else {
+                    throw SecurityException("권한이 부족합니다. POST_NOTIFICATIONS: $hasPostNotification ACTIVITY_RECOGNITION: $hasActivityRecognition")
+                }
+            }
+        }
+    }
+
+    @Inject lateinit var pushNotificationManager: PushNotificationManager
+
     @Inject lateinit var resetDataOncePerDayUseCase: ResetDataOncePerDayUseCase
+    @Inject lateinit var backupStepSensorUseCase: BackupStepSensorUseCase
 
     @Inject lateinit var getTodayStepCountUseCase: GetTodayStepCountUseCase
     @Inject lateinit var getLastStepSensorUseCase: GetLastStepSensorUseCase
@@ -55,8 +88,6 @@ class StepForegroundService : Service() {
     @Inject lateinit var updateTodayStepCountUseCase: UpdateTodayStepCountUseCase
     @Inject lateinit var updateLastStepSensorUseCase: UpdateLastStepSensorUseCase
     @Inject lateinit var updateAccelerateStepUseCase: UpdateAccelerateStepUseCase
-
-    @Inject lateinit var backupStepSensorUseCase: BackupStepSensorUseCase
 
     private val foregroundServiceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
 
@@ -93,7 +124,16 @@ class StepForegroundService : Service() {
     override fun onBind(p0: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        notificationUtil.startForeground(this, NotificationData.SensorStep(0, 0))
+        runCatching {
+            val notificationData = SensorStepNotification(0, 0)
+            ServiceCompat.startForeground(
+                this,
+                notificationData.id,
+                notificationData.createNotification(this),
+                @SuppressLint("InlinedApi") ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH,
+            )
+        }
+
         return START_STICKY
     }
 
@@ -117,10 +157,6 @@ class StepForegroundService : Service() {
                 registerLightDarkModeSwitchListener()
                 observeNotificationData()
                 registerStepBackup()
-                // TODO: 30분마다 foreground 꺼졌는지 체크하는 background (필수는 아님)
-            }.onFailure {
-
-                print(it)
             }
         }
     }
@@ -153,7 +189,11 @@ class StepForegroundService : Service() {
             updateStep = { updateAccelerateStep() },
             checkDailyReset = { checkDailyReset() },
         )
-        sensorManager.registerListener(accelerometerSensorListener, accelerometerSensor, SensorManager.SENSOR_DELAY_GAME)
+        sensorManager.registerListener(
+            accelerometerSensorListener,
+            accelerometerSensor,
+            SensorManager.SENSOR_DELAY_GAME
+        )
     }
 
     private fun registerStepResetReceiver() {
@@ -198,14 +238,14 @@ class StepForegroundService : Service() {
                 currentAccelerateStep,
             ) { _, _ -> }
                 .sample(1000L)
-                .collect {
+                .collectLatest {
                     updateForegroundNotification()
                 }
         }
     }
 
     private fun registerStepBackup() {
-        // datastore는 누락없이 즉시 update
+        // datastore는 즉시 update
         foregroundServiceScope.launch {
             currentStep.collect {
                 updateTodayStepCountUseCase(it)
@@ -217,7 +257,7 @@ class StepForegroundService : Service() {
             }
         }
         foregroundServiceScope.launch {
-            currentAccelerateStep.collect {
+            currentAccelerateStep.collectLatest {
                 updateAccelerateStepUseCase(it)
             }
         }
@@ -238,13 +278,16 @@ class StepForegroundService : Service() {
     }
 
     private fun updateForegroundNotification() {
-        runCatching {
-            notificationUtil.sendNotification(NotificationData.SensorStep(currentStep.value, currentAccelerateStep.value))
-        }
+        pushNotificationManager.sendNotification(
+            SensorStepNotification(
+                currentStep.value,
+                currentAccelerateStep.value,
+            )
+        )
     }
 
     private fun checkDailyReset() {
-        resetDataOncePerDayUseCase.invoke(currentStep.value, foregroundServiceScope) {
+        resetDataOncePerDayUseCase.invoke(currentStep.value, currentStepSensor.value) {
             currentStep.update { 0 }
             currentAccelerateStep.update { 0 }
         }

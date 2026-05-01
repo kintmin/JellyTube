@@ -14,7 +14,6 @@ import androidx.compose.material3.Surface
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
-import com.kintmin.platform.service.StepForegroundService
 import com.kintmin.presentation.theme.JellyTubeTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -23,10 +22,9 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 
-    private val activityRecognitionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
+    private val permissionLauncher = registerForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) tryStartStepForegroundService()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,28 +51,39 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val hasActivityRecognitionPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
-
-        if (hasActivityRecognitionPermission) {
-            tryStartStepForegroundService()
-        } else {
-            activityRecognitionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
-        }
-    }
-
-    private fun tryStartStepForegroundService() {
-        val hasNotificationPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-
-        if (hasNotificationPermission) {
-            ContextCompat.startForegroundService(this, Intent(this, StepForegroundService::class.java))
-        }
+        checkPermission()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         viewModel.handleIntent(intent)
         setIntent(intent)
+    }
+
+    private fun checkPermission() {
+        // 32이하 SDK 외부 파일 권한 호환
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        }
+
+        // 푸시 알림 권한
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
+        // 신체 활동 권한
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+            }
+        }
     }
 }

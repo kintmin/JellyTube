@@ -103,14 +103,14 @@ fun MainScreen(
     val currentUrl by downloadViewModel.currentUrl.collectAsState()
     val currentMediaItem by playerBarViewModel.currentMediaItem.collectAsState()
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { granted ->
-            if (!granted) {
-                Toast.makeText(context, "권한이 필요합니다.", Toast.LENGTH_SHORT).show()
-            }
-        }
-    )
+//    val permissionLauncher = rememberLauncherForActivityResult(
+//        contract = ActivityResultContracts.RequestPermission(),
+//        onResult = { granted ->
+//            if (!granted) {
+//                Toast.makeText(context, "권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+//            }
+//        }
+//    )
     LaunchedEffect(Unit) {
         downloadViewModel.eventFlow.collect { event ->
             when (event) {
@@ -129,27 +129,11 @@ fun MainScreen(
         }
     }
 
-    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-        LaunchedEffect(Unit) {
-            if (context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
-        }
-    } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
-        LaunchedEffect(Unit) {
-            if (context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-        }
-    }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        LaunchedEffect(Unit) {
-            if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
+//    LaunchedEffect(Unit) {
+//        if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+//            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+//        }
+//    }
 
     MainScreen(
         selectedTab = selectedTab,

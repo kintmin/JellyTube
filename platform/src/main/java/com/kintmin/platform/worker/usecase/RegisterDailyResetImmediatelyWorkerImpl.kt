@@ -13,13 +13,14 @@ class RegisterDailyResetImmediatelyWorkerImpl @Inject constructor(
     private val appContext: Context,
 ): RegisterDailyResetImmediatelyWorker {
 
-    override fun invoke(targetDate: String, lastDailyStep: Int) {
+    override fun invoke(targetDate: String, lastDailyStep: Int, lastStepSensor: Long?) {
         runCatching {
             val request = OneTimeWorkRequestBuilder<DailyResetImmediatelyWorker>()
                 .setInputData(
                     workDataOf(
                         DailyResetImmediatelyWorker.KEY_TARGET_DATE to targetDate,
                         DailyResetImmediatelyWorker.KEY_LAST_STEPS to lastDailyStep,
+                        DailyResetImmediatelyWorker.KEY_LAST_STEP_SENSOR to lastStepSensor,
                     )
                 )
                 .build()

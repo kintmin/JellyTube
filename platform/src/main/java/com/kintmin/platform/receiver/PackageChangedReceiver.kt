@@ -12,7 +12,7 @@ class PackageChangedReceiver: BroadcastReceiver() {
         when(intent?.action) {
             Intent.ACTION_MY_PACKAGE_REPLACED -> {
                 runCatching {
-                    ContextCompat.startForegroundService(context, Intent(context, StepForegroundService::class.java))
+                    StepForegroundService.startService(context)
                 }
             }
         }

@@ -11,8 +11,9 @@ import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
-import com.kintmin.platform.notification.NotificationData
-import com.kintmin.platform.notification.PushNotificationUtil
+import com.kintmin.platform.push_notification.PushNotificationManager
+import com.kintmin.platform.push_notification.notifications.DownloadNotification
+import com.kintmin.platform.push_notification.notifications.DownloadResultNotification
 import com.kintmin.platform.service_controller.MediaControllerManager
 import com.kintmin.platform.service_controller.mapper.toMediaControlData
 import com.kintmin.platform.service_controller.model.MediaControlData
@@ -26,14 +27,14 @@ class YoutubeDownloadWorker @AssistedInject constructor(
     @Assisted private val appContext: Context,
     @Assisted workerParams: WorkerParameters,
     private val downloadAudioMediaUseCase: DownloadAudioMediaUseCase,
-    private val pushNotificationUtil: PushNotificationUtil,
     private val mediaControllerManager: MediaControllerManager,
+    private val pushNotificationManager: PushNotificationManager,
     private val appLog: AppLog,
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
-        val notificationData = NotificationData.Download()
-        val notification = notificationData.getNotification(appContext)
+        val notificationData = DownloadNotification()
+        val notification = notificationData.createNotification(appContext)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ForegroundInfo(notificationData.id, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         } else {
@@ -49,21 +50,22 @@ class YoutubeDownloadWorker @AssistedInject constructor(
         if (foregroundResult.isFailure) {
             val exception = foregroundResult.exceptionOrNull()
             val errorMessage = "포그라운드 서비스 시작 실패: ${exception?.message ?: "알 수 없는 오류"}"
-            pushNotificationUtil.sendNotification(
-                NotificationData.DownloadResult(errorMessage)
-            )
+
+            pushNotificationManager.sendNotification(DownloadResultNotification(errorMessage))
             appLog.sendDebugLog(DebugLog("YoutubeDownloadWorker", errorMessage))
             return Result.failure()
         }
 
         val url = inputData.getString(INPUT_DATA_URL) ?: return Result.failure()
-        pushNotificationUtil.sendNotification(NotificationData.DownloadResult("다운로드를 시작합니다."))
-        pushNotificationUtil.sendNotification(NotificationData.Download(1, 0))
+        pushNotificationManager.sendNotification(DownloadResultNotification("다운로드를 시작합니다."))
+        
+        val downloadNotification = DownloadNotification(1, 0)
+        pushNotificationManager.sendNotification(downloadNotification)
 
         downloadAudioMediaUseCase(url).onSuccess { result ->
-            pushNotificationUtil.cancelNotification(NotificationData.Download())
-            pushNotificationUtil.sendNotification(
-                NotificationData.DownloadResult(
+            pushNotificationManager.cancelNotification(downloadNotification.id)
+            pushNotificationManager.sendNotification(
+                DownloadResultNotification(
                     contentText = "완료되었습니다.",
                     playlistId = result.playlistIdOnDownload,
                     audioMediaId = result.audioMedia.id,
@@ -87,10 +89,14 @@ class YoutubeDownloadWorker @AssistedInject constructor(
             }
             return Result.success()
         }.onFailure {
-            pushNotificationUtil.cancelNotification(NotificationData.Download())
+            pushNotificationManager.cancelNotification(downloadNotification.id)
 
             val errorMessage = it.message.toString()
-            pushNotificationUtil.sendNotification(NotificationData.DownloadResult("다운에 실패했습니다. 로그를 확인해주세요."))
+            pushNotificationManager.sendNotification(
+                DownloadResultNotification(
+                    contentText = "다운에 실패했습니다. 로그를 확인해주세요.",
+                )
+            )
             appLog.sendDebugLog(DebugLog("YoutubeDownloadWorker", errorMessage))
         }
 
