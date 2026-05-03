@@ -279,7 +279,6 @@ class StepForegroundService : Service() {
     }
 
     private fun registerStepBackup() {
-        // datastore는 즉시 update
         foregroundServiceScope.launch {
             currentStepSensor.filterNotNull().collect {
                 updateLastStepSensorUseCase(it)

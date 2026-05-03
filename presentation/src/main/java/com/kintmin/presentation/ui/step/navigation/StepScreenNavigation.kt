@@ -14,8 +14,10 @@ fun NavController.navigateToStepScreen(
     navOptions: NavOptions,
 ) = navigate(StepScreenRoute, navOptions)
 
-fun NavGraphBuilder.stepScreen() {
+fun NavGraphBuilder.stepScreen(
+    navigateToBack: () -> Unit,
+) {
     composable<StepScreenRoute> {
-        StepScreen()
+        StepScreen(navigateToBack = navigateToBack)
     }
 }

@@ -146,6 +146,10 @@ fun MainNavHost(
             appLogScreen(
                 navigateToBack = { navController.popBackStack() },
             )
+
+            stepScreen(
+                navigateToBack = { navController.popBackStack() },
+            )
         }
 
         playerDetailScreen(
@@ -160,8 +164,6 @@ fun MainNavHost(
                 onDeepLink(DeepLinkConstants.UriBuilder.playlistContentScreen(playlistId, audioMediaId))
             },
         )
-
-        stepScreen()
     }
 
     LaunchedEffect(navController, navigationIntentFlow) {
