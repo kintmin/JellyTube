@@ -1,7 +1,7 @@
 package com.kintmin.platform.worker.di
 
 import android.content.Context
-import com.kintmin.domain.step.usecase.FetchLoadBalancingDelaySecondUseCase
+import com.kintmin.domain.common_usecase.FetchLoadBalancingDelaySecondUseCase
 import com.kintmin.domain.step.worker.*
 import com.kintmin.platform.worker.usecase.*
 import dagger.Module

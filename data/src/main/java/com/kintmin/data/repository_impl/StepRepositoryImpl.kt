@@ -26,20 +26,12 @@ class StepRepositoryImpl @Inject constructor(
     private val datastoreUtil: DatastoreUtil,
 ): StepRepository {
 
-    override fun getTodayStepCount(): Flow<Int?> {
-        return datastoreUtil.getData(PreferencesKey.TodayStepCount)
-    }
-
     override fun getLastStepSensor(): Flow<Long?> {
         return datastoreUtil.getData(PreferencesKey.LastStepSensor)
     }
 
     override fun getAccelerateStep(): Flow<Int?> {
         return datastoreUtil.getData(PreferencesKey.AccelerateStep)
-    }
-
-    override suspend fun updateTodayStepCount(newStep: Int): Result<Unit> {
-        return datastoreUtil.updateData(PreferencesKey.TodayStepCount, newStep)
     }
 
     override suspend fun updateLastStepSensor(newSensor: Long): Result<Unit> {
@@ -91,19 +83,6 @@ class StepRepositoryImpl @Inject constructor(
                         stepSensor = it.stepSensor,
                     )
                 }
-            }
-        }
-    }
-
-    override suspend fun deleteEntitiesOlderThan15DaysFromTodayMidnight(): Result<Unit> {
-        return withContext(Dispatchers.IO) {
-            runCatching {
-                val cutoff = LocalDate.now(ZoneId.systemDefault())
-                    .minusDays(15)
-                    .atStartOfDay(ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
-                stepDao.deleteOlderThan(cutoff)
             }
         }
     }

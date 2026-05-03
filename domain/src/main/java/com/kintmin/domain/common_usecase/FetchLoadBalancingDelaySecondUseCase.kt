@@ -1,4 +1,4 @@
-package com.kintmin.domain.step.usecase
+package com.kintmin.domain.common_usecase
 
 import javax.inject.Inject
 import kotlin.random.Random

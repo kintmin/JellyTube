@@ -13,12 +13,10 @@ import android.hardware.SensorEventListener
  */
 class StepCounterSensorListener(
     private val updateStep: (Long) -> Unit,
-    private val checkDailyReset: () -> Unit,
 ) : SensorEventListener {
 
     override fun onSensorChanged(sensorEvent: SensorEvent?) {
         if (sensorEvent == null) return
-        checkDailyReset()
 
         val stepsSinceLastReboot = sensorEvent.values.firstOrNull()?.toLong() ?: return
         updateStep(stepsSinceLastReboot)

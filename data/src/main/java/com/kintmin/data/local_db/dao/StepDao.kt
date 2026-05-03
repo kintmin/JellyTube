@@ -9,7 +9,7 @@ import com.kintmin.data.local_db.model.StepEntity
 @Dao
 interface StepDao {
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: StepEntity)
 
     @Query(
@@ -32,12 +32,4 @@ interface StepDao {
     """
     )
     suspend fun getEntitiesBetween(startUtc: Long, endUtc: Long): List<StepEntity>
-
-    @Query(
-        """
-        DELETE FROM STEP
-        WHERE rawCreatedTime < :cutoffMUtc
-    """
-    )
-    suspend fun deleteOlderThan(cutoffMUtc: Long)
 }

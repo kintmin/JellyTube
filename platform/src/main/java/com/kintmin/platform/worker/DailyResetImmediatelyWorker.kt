@@ -5,11 +5,9 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
-import com.kintmin.domain.step.usecase.DeleteOldStepsUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -18,7 +16,6 @@ class DailyResetImmediatelyWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val backupStepSensorUseCase: BackupStepSensorUseCase,
-    private val deleteOldStepsUseCase: DeleteOldStepsUseCase,
 ) : CoroutineWorker(context, params) {
 
     companion object {
@@ -48,7 +45,6 @@ class DailyResetImmediatelyWorker @AssistedInject constructor(
                     rawCreatedTime = endOfDayMillis,
                 )
             }
-            deleteOldStepsUseCase()
             return Result.success()
         } catch (_: Exception) {
             return if (runAttemptCount >= 3) {

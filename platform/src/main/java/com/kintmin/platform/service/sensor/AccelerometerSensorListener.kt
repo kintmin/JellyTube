@@ -16,7 +16,6 @@ import kotlin.math.abs
  */
 class AccelerometerSensorListener(
     private val updateStep: () -> Unit,
-    private val checkDailyReset: () -> Unit,
 ) : SensorEventListener {
 
     private var yOffset: Float = 480 * 0.5f
@@ -35,7 +34,6 @@ class AccelerometerSensorListener(
 
     override fun onSensorChanged(sensorEvent: SensorEvent?) {
         if (sensorEvent == null) return
-        checkDailyReset()
 
         var vSum = 0f
         (0..2).forEach {

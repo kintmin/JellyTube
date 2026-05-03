@@ -29,10 +29,6 @@ sealed interface PreferencesKey<T> {
         override val key = intPreferencesKey("playlistIdOnDownload")
     }
 
-    data object TodayStepCount : PreferencesKey<Int> {
-        override val key = intPreferencesKey("todayStepCount")
-    }
-
     data object LastStepSensor : PreferencesKey<Long> {
         override val key = longPreferencesKey("lastStepSensor")
     }
