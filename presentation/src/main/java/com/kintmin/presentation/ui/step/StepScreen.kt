@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +27,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun StepScreen(
@@ -51,6 +55,17 @@ fun StepScreen(
     navigateToBack: () -> Unit,
     sendIntent: (StepIntent) -> Unit,
 ) {
+    val totalSteps = uiState.dailyStepsByDate[uiState.selectedDate] ?: uiState.hourlySteps.sum()
+    val peakHour = uiState.hourlySteps
+        .withIndex()
+        .maxByOrNull { it.value }
+        ?.index
+        ?: 0
+    val peakHourRangeText = "%02d:00~%02d:00".format(peakHour, (peakHour + 1) % 24)
+    val dateText = uiState.selectedDate.format(
+        DateTimeFormatter.ofPattern("yyyy년 M월 d일", Locale.KOREAN),
+    )
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color(0xFF090C12),
@@ -71,9 +86,18 @@ fun StepScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 16.dp),
         ) {
+            StepDailySummaryView(
+                dateText = dateText,
+                totalSteps = totalSteps,
+                peakHourRangeText = peakHourRangeText,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             StepHourlyChartView(
                 hourlySteps = uiState.hourlySteps,
                 selectedHour = uiState.selectedHour,
