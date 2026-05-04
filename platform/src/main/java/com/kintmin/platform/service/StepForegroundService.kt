@@ -56,6 +56,8 @@ class StepForegroundService : Service() {
 
     companion object {
 
+        const val BACKUP_UNIT_MILLIS = 30 * 60 * 1000L
+
         fun startService(context: Context): Result<Unit> {
             return runCatching {
                 val hasPostNotification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -325,16 +327,16 @@ class StepForegroundService : Service() {
         val prevCheckedMillis = lastCheckedMillis.value
         val currentMillis = System.currentTimeMillis()
 
-        val prevHalfHourMillis = toHalfHourMillis(prevCheckedMillis, zoneId)
-        val currentHalfHourMillis = toHalfHourMillis(currentMillis, zoneId)
+        val prevUnitMillis = truncateToUnitMillis(prevCheckedMillis, zoneId)
+        val currentUnitMillis = truncateToUnitMillis(currentMillis, zoneId)
 
-        if (prevHalfHourMillis != currentHalfHourMillis) {
-            val currentDateTime = Instant.ofEpochMilli(currentHalfHourMillis).atZone(zoneIdFlow.value)
+        if (prevUnitMillis != currentUnitMillis) {
+            val currentDateTime = Instant.ofEpochMilli(currentUnitMillis).atZone(zoneIdFlow.value)
             if (currentDateTime.hour == 0 && currentDateTime.minute == 0) {
                 checkDailyReset()
             } else {
                 foregroundServiceScope.launch {
-                    backupStepSensorUseCase(baseSensorStep, currentHalfHourMillis)
+                    backupStepSensorUseCase(baseSensorStep, prevUnitMillis + BACKUP_UNIT_MILLIS)
                 }
             }
         }
@@ -342,9 +344,10 @@ class StepForegroundService : Service() {
         lastCheckedMillis.update { currentMillis }
     }
 
-    fun toHalfHourMillis(millis: Long, zoneId: ZoneId): Long {
+    fun truncateToUnitMillis(millis: Long, zoneId: ZoneId): Long {
+        val unitMinutes = (BACKUP_UNIT_MILLIS / 60_000L).toInt()
         val zoned = Instant.ofEpochMilli(millis).atZone(zoneId)
-        val truncatedMinute = if (zoned.minute < 30) 0 else 30
+        val truncatedMinute = (zoned.minute / unitMinutes) * unitMinutes
 
         return zoned
             .withMinute(truncatedMinute)
