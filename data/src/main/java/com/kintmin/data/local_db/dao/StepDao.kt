@@ -9,7 +9,10 @@ import com.kintmin.data.local_db.model.StepEntity
 @Dao
 interface StepDao {
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    /**
+     * 어뷰저를 고려하여, Abort가 아닌 Replace로 늘 최신 데이터를 유지하도록 설정
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: StepEntity)
 
     @Query(

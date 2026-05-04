@@ -18,16 +18,13 @@ import android.os.IBinder
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
-import com.kintmin.domain.step.usecase.GetAccelerateStepUseCase
 import com.kintmin.domain.step.usecase.GetLastStepSensorUseCase
 import com.kintmin.domain.step.usecase.GetStepCountUseCase
 import com.kintmin.domain.step.usecase.ResetDataOncePerDayUseCase
-import com.kintmin.domain.step.usecase.UpdateAccelerateStepUseCase
 import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.SensorStepNotification
 import com.kintmin.platform.receiver.DateChangeBroadcastReceiver
-import com.kintmin.platform.service.sensor.AccelerometerSensorListener
 import com.kintmin.platform.service.sensor.StepCounterSensorListener
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -36,8 +33,6 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.sample
@@ -46,8 +41,8 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 @OptIn(FlowPreview::class)
@@ -72,51 +67,38 @@ class StepForegroundService : Service() {
                     true
                 }
 
-                if (hasPostNotification && hasActivityRecognition) {
-                    ContextCompat.startForegroundService(context, Intent(context, StepForegroundService::class.java))
-                } else {
+                if (!hasPostNotification || !hasActivityRecognition) {
                     throw SecurityException("권한이 부족합니다. POST_NOTIFICATIONS: $hasPostNotification ACTIVITY_RECOGNITION: $hasActivityRecognition")
                 }
+
+                val hasStepCounterSensor = (context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager)?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER) != null
+                if (!hasStepCounterSensor) {
+                    throw Exception("걸음수 센서가 없습니다.")
+                }
+
+                ContextCompat.startForegroundService(context, Intent(context, StepForegroundService::class.java))
             }
         }
     }
 
-    @Inject
-    lateinit var pushNotificationManager: PushNotificationManager
+    @Inject lateinit var pushNotificationManager: PushNotificationManager
+    @Inject lateinit var resetDataOncePerDayUseCase: ResetDataOncePerDayUseCase
+    @Inject lateinit var backupStepSensorUseCase: BackupStepSensorUseCase
 
-    @Inject
-    lateinit var resetDataOncePerDayUseCase: ResetDataOncePerDayUseCase
-
-    @Inject
-    lateinit var backupStepSensorUseCase: BackupStepSensorUseCase
-
-
-    @Inject
-    lateinit var getStepCountUseCase: GetStepCountUseCase
-
-    @Inject
-    lateinit var getLastStepSensorUseCase: GetLastStepSensorUseCase
-
-    @Inject
-    lateinit var getAccelerateStepUseCase: GetAccelerateStepUseCase
-
-    @Inject
-    lateinit var updateLastStepSensorUseCase: UpdateLastStepSensorUseCase
-
-    @Inject
-    lateinit var updateAccelerateStepUseCase: UpdateAccelerateStepUseCase
+    @Inject lateinit var getStepCountUseCase: GetStepCountUseCase
+    @Inject lateinit var getLastStepSensorUseCase: GetLastStepSensorUseCase
+    @Inject lateinit var updateLastStepSensorUseCase: UpdateLastStepSensorUseCase
 
     private val foregroundServiceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
 
     private var stepSensorListener: SensorEventListener? = null
-    private var accelerometerSensorListener: SensorEventListener? = null
 
     private val currentStep = MutableStateFlow(0)
     private val currentStepSensor = MutableStateFlow<Long?>(null)
-    private val currentAccelerateStep = MutableStateFlow(0)
 
-    private val lastCheckedMillis = MutableStateFlow(System.currentTimeMillis())
     private val zoneIdFlow = MutableStateFlow(ZoneId.systemDefault())
+
+    private val lastBackupUnitMillis = MutableStateFlow<Long?>(null)
 
     private val dateChangeBroadcastReceiver = DateChangeBroadcastReceiver().apply {
         setOnDateChangedListener(object : DateChangeBroadcastReceiver.OnDateChangedListener {
@@ -127,14 +109,28 @@ class StepForegroundService : Service() {
 
             override fun onTimeChanged() {
                 // 사용자가 시간을 변경하거나, NTP 보정으로 인해 불리는 경우
-                backupPrevStepSensorIfUnitTimeChanged()
+                currentStepSensor.value?.let {
+                    val currentMillis = System.currentTimeMillis()
+                    backupStepSensor(
+                        stepSensor = it,
+                        currentMillis = currentMillis,
+                        saveMillis = currentMillis,
+                    )
+                }
             }
 
             override fun onTimezoneChanged(timeZone: String) {
                 // 지역 설정이 변경되는 경우
                 val zoneId = runCatching { ZoneId.of(timeZone) }.getOrDefault(ZoneId.systemDefault())
                 zoneIdFlow.update { zoneId }
-                backupPrevStepSensorIfUnitTimeChanged()
+                currentStepSensor.value?.let {
+                    val currentMillis = System.currentTimeMillis()
+                    backupStepSensor(
+                        stepSensor = it,
+                        currentMillis = currentMillis,
+                        saveMillis = currentMillis,
+                    )
+                }
             }
         })
     }
@@ -151,7 +147,7 @@ class StepForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         runCatching {
-            val notificationData = SensorStepNotification(0, 0)
+            val notificationData = SensorStepNotification(0)
             ServiceCompat.startForeground(
                 this,
                 notificationData.id,
@@ -177,14 +173,13 @@ class StepForegroundService : Service() {
             val lastStepSensor = getLastStepSensorUseCase().getOrNull()
             currentStepSensor.update { lastStepSensor }
 
-            val todayAccelerateStepCount = getAccelerateStepUseCase().getOrDefault(0)
-            currentAccelerateStep.update { todayAccelerateStepCount }
-
-            registerSensor().onSuccess {
+            registerStepSensor().onSuccess {
                 registerStepResetReceiver()
                 registerLightDarkModeSwitchListener()
-                observeNotificationData()
-                registerStepBackup()
+                syncPushNotification()
+                syncLastStepSensor()
+            }.onFailure {
+                stopSelf()
             }
         }
     }
@@ -200,7 +195,7 @@ class StepForegroundService : Service() {
 
     private fun registerStepSensor(): Result<Unit> = runCatching {
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)!!
+        val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
         stepSensorListener = StepCounterSensorListener(
             updateStep = { stepsSinceLastReboot -> updateStep(stepsSinceLastReboot) },
@@ -208,35 +203,11 @@ class StepForegroundService : Service() {
         sensorManager.registerListener(stepSensorListener, stepSensor, SensorManager.SENSOR_DELAY_UI)
     }
 
-    private fun registerAccelerometerSensor(): Result<Unit> = runCatching {
-        val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)!!
-
-        accelerometerSensorListener = AccelerometerSensorListener(
-            updateStep = { updateAccelerateStep() },
-        )
-        sensorManager.registerListener(
-            accelerometerSensorListener,
-            accelerometerSensor,
-            SensorManager.SENSOR_DELAY_GAME
-        )
-    }
-
-    private fun registerSensor(): Result<Unit> {
-        return registerStepSensor().mapCatching {
-            registerAccelerometerSensor().getOrThrow()
-        }
-    }
-
     private fun unregisterSensor() {
         runCatching {
             val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-
             stepSensorListener?.let { sensorManager.unregisterListener(it) }
             stepSensorListener = null
-
-            accelerometerSensorListener?.let { sensorManager.unregisterListener(it) }
-            accelerometerSensorListener = null
         }
     }
 
@@ -256,38 +227,27 @@ class StepForegroundService : Service() {
     }
 
     private fun registerLightDarkModeSwitchListener() {
-        registerComponentCallbacks(lightDarkModeSwitchListener)
+        runCatching { registerComponentCallbacks(lightDarkModeSwitchListener) }
     }
 
     private fun unregisterLightDarkModeSwitchListener() {
         runCatching { unregisterComponentCallbacks(lightDarkModeSwitchListener) }
     }
 
-    private fun observeNotificationData() {
+    private fun syncPushNotification() {
         foregroundServiceScope.launch {
-            combine(
-                currentStep,
-                currentAccelerateStep,
-            ) { _, _ -> }
-                .onStart {
-                    updateForegroundNotification()
-                }
-                .sample(1000L)
-                .collectLatest {
-                    updateForegroundNotification()
-                }
+            currentStep.onStart {
+                updateForegroundNotification()
+            }.sample(1000L).collect {
+                updateForegroundNotification()
+            }
         }
     }
 
-    private fun registerStepBackup() {
+    private fun syncLastStepSensor() {
         foregroundServiceScope.launch {
             currentStepSensor.filterNotNull().collect {
                 updateLastStepSensorUseCase(it)
-            }
-        }
-        foregroundServiceScope.launch {
-            currentAccelerateStep.collectLatest {
-                updateAccelerateStepUseCase(it)
             }
         }
     }
@@ -296,55 +256,55 @@ class StepForegroundService : Service() {
         pushNotificationManager.sendNotification(
             SensorStepNotification(
                 currentStep.value,
-                currentAccelerateStep.value,
             )
         )
     }
 
     private fun updateStep(newStepSensor: Long) {
         val prevStepSensor = currentStepSensor.value
+        val lastBackupUnitMillis = lastBackupUnitMillis.value
+        val currentMillis = System.currentTimeMillis()
 
-        if (prevStepSensor != null) {
-            if (newStepSensor > prevStepSensor) {
-                val stepDelta = (newStepSensor - prevStepSensor).toInt()
-                currentStep.update { prevStep -> prevStep + stepDelta }
-                backupPrevStepSensorIfUnitTimeChanged()
-            } else {    // 센서가 작아진 경우 = 재부팅 or 기기 이슈
-                foregroundServiceScope.launch {
-                    val currentMillis = System.currentTimeMillis()
-                    backupStepSensorUseCase(newStepSensor, currentMillis)
-                }
-            }
+        val isFirstCheck = prevStepSensor == null || lastBackupUnitMillis == null
+        val isRebooted = prevStepSensor?.let { newStepSensor < it } ?: false
+
+        if (isFirstCheck || isRebooted) {
+            backupStepSensor(
+                stepSensor = newStepSensor,
+                currentMillis = currentMillis,
+                saveMillis = currentMillis,
+            )
+        } else {
+            val stepDelta = (newStepSensor - prevStepSensor).toInt()
+            currentStep.update { prevStep -> prevStep + stepDelta }
+            backupStepSensor(
+                stepSensor = prevStepSensor,
+                currentMillis = currentMillis,
+                saveMillis = lastBackupUnitMillis + BACKUP_UNIT_MILLIS,
+            )
         }
 
         currentStepSensor.update { newStepSensor }
     }
 
-    private fun backupPrevStepSensorIfUnitTimeChanged() {
-        val baseSensorStep = currentStepSensor.value ?: return
+    private fun backupStepSensor(stepSensor: Long, currentMillis: Long, saveMillis: Long) {
+        val currentUnit = truncateToUnitZonedDateTime(currentMillis, zoneIdFlow.value)
+        val currentUnitMillis = currentUnit.toInstant().toEpochMilli()
 
-        val zoneId = zoneIdFlow.value
-        val prevCheckedMillis = lastCheckedMillis.value
-        val currentMillis = System.currentTimeMillis()
+        if (lastBackupUnitMillis.value == currentUnitMillis) return
 
-        val prevUnitMillis = truncateToUnitMillis(prevCheckedMillis, zoneId)
-        val currentUnitMillis = truncateToUnitMillis(currentMillis, zoneId)
-
-        if (prevUnitMillis != currentUnitMillis) {
-            val currentDateTime = Instant.ofEpochMilli(currentUnitMillis).atZone(zoneIdFlow.value)
-            if (currentDateTime.hour == 0 && currentDateTime.minute == 0) {
-                checkDailyReset()
-            } else {
-                foregroundServiceScope.launch {
-                    backupStepSensorUseCase(baseSensorStep, prevUnitMillis + BACKUP_UNIT_MILLIS)
-                }
+        if (currentUnit.hour == 0 && currentUnit.minute == 0) {
+            checkDailyReset()
+        } else {
+            foregroundServiceScope.launch {
+                backupStepSensorUseCase(stepSensor, saveMillis)
             }
         }
 
-        lastCheckedMillis.update { currentMillis }
+        lastBackupUnitMillis.update { currentUnitMillis }
     }
 
-    fun truncateToUnitMillis(millis: Long, zoneId: ZoneId): Long {
+    fun truncateToUnitZonedDateTime(millis: Long, zoneId: ZoneId): ZonedDateTime {
         val unitMinutes = (BACKUP_UNIT_MILLIS / 60_000L).toInt()
         val zoned = Instant.ofEpochMilli(millis).atZone(zoneId)
         val truncatedMinute = (zoned.minute / unitMinutes) * unitMinutes
@@ -353,18 +313,11 @@ class StepForegroundService : Service() {
             .withMinute(truncatedMinute)
             .withSecond(0)
             .withNano(0)
-            .toInstant()
-            .toEpochMilli()
     }
 
     private fun checkDailyReset() {
         resetDataOncePerDayUseCase.invoke(currentStep.value, currentStepSensor.value, zoneIdFlow.value) {
             currentStep.update { 0 }
-            currentAccelerateStep.update { 0 }
         }
-    }
-
-    private fun updateAccelerateStep() {
-        currentAccelerateStep.update { it + 1 }
     }
 }

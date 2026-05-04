@@ -3,7 +3,6 @@ package com.kintmin.platform.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import androidx.core.content.ContextCompat
 import com.kintmin.platform.service.StepForegroundService
 
 class PackageChangedReceiver: BroadcastReceiver() {

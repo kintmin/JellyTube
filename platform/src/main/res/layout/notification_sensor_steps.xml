@@ -40,42 +40,6 @@
             android:textSize="13sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/tv_divider"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_marginEnd="10dp"
-            android:gravity="center"
-            android:text="|"
-            android:textColor="#7E838B"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/tv_accelerometer_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="가속   "
-            android:textColor="#C8CCD3"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/tv_accelerometer_value"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0"
-            android:textColor="#FFFFFF"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tv_accelerometer_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=" 걸음"
-            android:textColor="#FFFFFF"
-            android:textSize="13sp"
-            android:textStyle="bold" />
     </LinearLayout>
 
 </LinearLayout>

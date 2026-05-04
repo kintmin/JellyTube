@@ -9,7 +9,6 @@ import com.kintmin.platform.push_notification.channels.StepSensorChannel
 
 data class SensorStepNotification(
     val stepSensorStepCount: Int,
-    val accelerometerStepCount: Int,
 ) : PushNotification() {
 
     override val id = PushNotificationIds.SENSOR_STEP
@@ -17,8 +16,7 @@ data class SensorStepNotification(
 
     override fun buildNotification(context: Context): Notification {
         val remoteViews = RemoteViews(context.packageName, com.kintmin.platform.R.layout.notification_sensor_steps).apply {
-            setTextViewText(com.kintmin.platform.R.id.tv_step_sensor_value, "$stepSensorStepCount")
-            setTextViewText(com.kintmin.platform.R.id.tv_accelerometer_value, "$accelerometerStepCount")
+            setTextViewText(com.kintmin.platform.R.id.tv_step_sensor_value, "%,d".format(stepSensorStepCount))
         }
 
         return NotificationCompat.Builder(context, channel.id)
