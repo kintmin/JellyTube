@@ -9,7 +9,7 @@ import com.kintmin.data.local_db.model.StepEntity
 @Dao
 interface StepDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(entity: StepEntity)
 
     @Query(

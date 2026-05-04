@@ -130,7 +130,6 @@ class StepForegroundService : Service() {
 
             override fun onTimezoneChanged(timeZone: String) {
                 // 지역 설정이 변경되는 경우
-                // TODO: DB에 zone id 저장해서 지역 변경도 할 수 있음
                 val zoneId = runCatching { ZoneId.of(timeZone) }.getOrDefault(ZoneId.systemDefault())
                 zoneIdFlow.update { zoneId }
                 backupPrevStepSensorIfUnitTimeChanged()
