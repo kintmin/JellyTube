@@ -330,7 +330,7 @@ class StepForegroundService : Service() {
 
         if (prevHalfHourMillis != currentHalfHourMillis) {
             val currentDateTime = Instant.ofEpochMilli(currentHalfHourMillis).atZone(zoneIdFlow.value)
-            if (currentDateTime.hour == 0) {
+            if (currentDateTime.hour == 0 && currentDateTime.minute == 0) {
                 checkDailyReset()
             } else {
                 foregroundServiceScope.launch {
