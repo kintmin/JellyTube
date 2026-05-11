@@ -6,7 +6,9 @@ import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingReposito
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class AudioPlaySettingRepositoryImpl @Inject constructor(
     private val datastoreUtil: DatastoreUtil,
 ) : AudioPlaySettingRepository {

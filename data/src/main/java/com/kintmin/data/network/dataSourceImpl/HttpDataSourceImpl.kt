@@ -7,7 +7,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 internal class HttpDataSourceImpl @Inject constructor(
     private val client: OkHttpClient,
 ) : HttpDataSource {

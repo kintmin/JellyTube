@@ -19,7 +19,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 internal class AudioMediaRepositoryImpl @Inject constructor(
     private val audioMediaFacade: AudioMediaFacade,
     private val audioMediaDao: AudioMediaDao,

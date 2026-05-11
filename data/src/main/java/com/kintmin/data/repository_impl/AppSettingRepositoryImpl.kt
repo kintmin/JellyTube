@@ -7,7 +7,9 @@ import com.kintmin.domain.playlist.model.Playlist
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Singleton
 
+@Singleton
 class AppSettingRepositoryImpl @Inject constructor(
     private val datastoreUtil: DatastoreUtil,
 ) : AppSettingRepository {

@@ -12,7 +12,9 @@ import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.inject.Singleton
 
+@Singleton
 class AppLogRepositoryImpl @Inject constructor(
     private val fileManager: FileManager,
 ) : AppLogRepository {

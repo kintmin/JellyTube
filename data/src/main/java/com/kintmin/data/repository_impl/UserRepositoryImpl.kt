@@ -5,7 +5,9 @@ import com.kintmin.data.local_datastore.PreferencesKey
 import com.kintmin.domain.user.repository.UserRepository
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class UserRepositoryImpl @Inject constructor(
     private val datastoreUtil: DatastoreUtil,
 ) : UserRepository {

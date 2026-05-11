@@ -12,7 +12,9 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 internal class FileManagerImpl @Inject constructor(
     private val appContext: Context,
 ) : FileManager {

@@ -9,7 +9,9 @@ import android.os.StatFs
 import com.kintmin.data.device_status.model.ConnectionStatusDto
 import com.kintmin.data.device_status.model.DeviceMemoryDto
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class DeviceStatusImpl @Inject constructor(
     private val context: Context,
 ): DeviceStatus {

@@ -5,7 +5,9 @@ import com.kintmin.domain.device.model.ConnectionStatus
 import com.kintmin.domain.device.model.DeviceMemory
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class DeviceStatusRepositoryImpl @Inject constructor(
     private val deviceStatus: DeviceStatus,
 ) : DeviceStatusRepository {
