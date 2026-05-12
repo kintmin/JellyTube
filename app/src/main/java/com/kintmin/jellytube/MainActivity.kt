@@ -27,7 +27,9 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
         val denied = results.filterValues { !it }.keys
-        // 거부된 권한 처리
+        if (!denied.contains(Manifest.permission.ACTIVITY_RECOGNITION)) {
+            StepForegroundService.startService(this)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
