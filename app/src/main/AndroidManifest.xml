@@ -42,12 +42,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.JellyTube">
 
+        <!-- HiltWorker 세팅 -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
             android:exported="false"
-            android:multiprocess="true"
-            tools:node="remove" />
+            tools:node="merge">
+
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -93,8 +99,7 @@
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:exported="false"
             android:foregroundServiceType="dataSync"
-            android:permission="android.permission.FOREGROUND_SERVICE"
-            tools:replace="android:foregroundServiceType" />
+            tools:node="merge" />
 
         <service
             android:name="com.kintmin.platform.service.StepForegroundService"
@@ -111,7 +116,7 @@
 
         <receiver
             android:name="com.kintmin.platform.receiver.BootCompleteReceive"
-            android:exported="true"
+            android:exported="false"
             android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
