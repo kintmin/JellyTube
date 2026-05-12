@@ -192,7 +192,7 @@ fun AudioMediaDetailScreen(
         }
         Column(
             modifier = Modifier
-                .padding(top = innerPadding.calculateTopPadding() + 210.dp)
+                .padding(top = innerPadding.calculateTopPadding() + 210.dp, bottom = 56.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .fillMaxSize()
                 .background(color = MaterialTheme.colorScheme.background)
