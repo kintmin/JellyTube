@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,8 +34,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -97,7 +98,7 @@ fun StepHourlyChartView(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(barAreaHeight + 52.dp)
+                    .height(barAreaHeight + 28.dp)
                     .pointerInput(Unit) {
                         awaitPointerEventScope {
                             while (true) {
@@ -150,15 +151,28 @@ fun StepHourlyChartView(
                                     if (selected) Color(0xFF43E38E) else Color(0xFF29D174),
                                 ),
                         )
+                    }
+                }
+            }
 
-                        Spacer(modifier = Modifier.height(10.dp))
-
+            Box(modifier = Modifier.fillMaxWidth().height(14.dp)) {
+                AXIS_LABELS.forEach { (slot, label) ->
+                    key(slot) {
+                        var labelWidthPx by remember { mutableFloatStateOf(0f) }
                         Text(
-                            text = slotLabel(slot),
-                            color = if (selected && slot != slotCount - 1) Color(0xFFD7FFE9) else Color(0xFF8E96A4),
+                            text = label,
+                            color = Color(0xFF8E96A4),
                             style = MaterialTheme.typography.labelMedium,
-                            textAlign = TextAlign.Center,
                             maxLines = 1,
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .onSizeChanged { labelWidthPx = it.width.toFloat() }
+                                .offset {
+                                    val centerXPx = (slotWidth * slot + slotWidth / 2f).toPx()
+                                    val x = (centerXPx - labelWidthPx / 2f)
+                                        .coerceIn(0f, (chartWidthPx - labelWidthPx).coerceAtLeast(0f))
+                                    IntOffset(x = x.roundToInt(), y = 0)
+                                },
                         )
                     }
                 }
@@ -264,14 +278,13 @@ private fun getBarHeightDp(
     return barHeight.coerceAtLeast(minBarHeight)
 }
 
-private fun slotLabel(slot: Int): String = when (slot) {
-    0 -> "0시"
-    12 -> "6시"
-    24 -> "12시"
-    36 -> "18시"
-    47 -> "시"
-    else -> ""
-}
+private val AXIS_LABELS = listOf(
+    0 to "0",
+    12 to "6",
+    24 to "12",
+    36 to "18",
+    47 to "시",
+)
 
 @Preview(showBackground = true)
 @Composable
