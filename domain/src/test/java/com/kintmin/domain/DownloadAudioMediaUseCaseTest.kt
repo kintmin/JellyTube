@@ -110,7 +110,7 @@ class DownloadAudioMediaUseCaseTest {
         assert(result.exceptionOrNull() is AlreadyDownloadedMedia)
         coVerify(inverse = true) { audioMediaRepository.downloadAudioMedia(any()) }
         verifySuccessDownloadAudioMediaLog(inverse = true)
-        verifyFailedDownloadAudioMediaLog(exactly = 1)
+        verifyFailedDownloadAudioMediaLog(exception = AlreadyDownloadedMedia(), exactly = 1)
     }
 
     @Test

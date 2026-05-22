@@ -17,16 +17,6 @@ interface StepDao {
 
     @Query(
         """
-        SELECT stepSensor
-        FROM STEP
-        ORDER BY rawCreatedTime DESC
-        LIMIT 1
-    """
-    )
-    suspend fun getLastStepSensor(): Long?
-
-    @Query(
-        """
         SELECT *
         FROM STEP
         WHERE rawCreatedTime >= :startUtc

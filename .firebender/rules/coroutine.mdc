@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+---
+
+- never use GlobalScope
+- prefer structured concurrency
+- ViewModel owns UI coroutine scope
+- repository should expose Flow or suspend
+- avoid launching uncontrolled jobs
+- cancel long-running jobs properly

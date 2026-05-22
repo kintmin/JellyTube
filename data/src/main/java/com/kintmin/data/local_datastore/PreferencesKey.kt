@@ -33,6 +33,10 @@ sealed interface PreferencesKey<T> {
         override val key = longPreferencesKey("lastStepSensor")
     }
 
+    data object LastStepSensorDate : PreferencesKey<String> {
+        override val key = stringPreferencesKey("lastStepSensorDate")
+    }
+
     data object AccelerateStep : PreferencesKey<Int> {
         override val key = intPreferencesKey("accelerateStep")
     }

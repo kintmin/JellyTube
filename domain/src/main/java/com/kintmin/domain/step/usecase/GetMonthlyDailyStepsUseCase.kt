@@ -14,9 +14,10 @@ class GetMonthlyDailyStepsUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(yearMonth: YearMonth): Result<Map<LocalDate, Int>> {
-        val latestStepSensor = stepRepository.getLastStepSensor().firstOrNull()
         val today = LocalDate.now(ZoneId.systemDefault())
         val formatter = DateTimeFormatter.BASIC_ISO_DATE
+        val todayText = today.format(formatter)
+        val latestStepSensor = stepRepository.getLastStepSensorForToday(todayText).firstOrNull()
 
         val dailyStepMap = mutableMapOf<LocalDate, Int>()
 

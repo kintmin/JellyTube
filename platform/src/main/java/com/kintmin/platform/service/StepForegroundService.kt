@@ -18,7 +18,7 @@ import android.os.IBinder
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
-import com.kintmin.domain.step.usecase.GetLastStepSensorUseCase
+import com.kintmin.domain.step.usecase.GetLastStepSensorForTodayUseCase
 import com.kintmin.domain.step.usecase.GetStepCountUseCase
 import com.kintmin.domain.step.usecase.ResetDataOncePerDayUseCase
 import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
@@ -38,13 +38,14 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
+/**
+ * Known Issue: 자정에 Foreground가 안 켜져 있었다면, 당일 걸음수는 누락될 수 있음.
+ */
 @OptIn(FlowPreview::class)
 @AndroidEntryPoint
 class StepForegroundService : Service() {
@@ -71,7 +72,8 @@ class StepForegroundService : Service() {
                     throw SecurityException("권한이 부족합니다. POST_NOTIFICATIONS: $hasPostNotification ACTIVITY_RECOGNITION: $hasActivityRecognition")
                 }
 
-                val hasStepCounterSensor = (context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager)?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER) != null
+                val hasStepCounterSensor =
+                    (context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager)?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER) != null
                 if (!hasStepCounterSensor) {
                     throw Exception("걸음수 센서가 없습니다.")
                 }
@@ -86,7 +88,7 @@ class StepForegroundService : Service() {
     @Inject lateinit var backupStepSensorUseCase: BackupStepSensorUseCase
 
     @Inject lateinit var getStepCountUseCase: GetStepCountUseCase
-    @Inject lateinit var getLastStepSensorUseCase: GetLastStepSensorUseCase
+    @Inject lateinit var getLastStepSensorForTodayUseCase: GetLastStepSensorForTodayUseCase
     @Inject lateinit var updateLastStepSensorUseCase: UpdateLastStepSensorUseCase
 
     private val foregroundServiceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
@@ -96,9 +98,19 @@ class StepForegroundService : Service() {
     private val currentStep = MutableStateFlow(0)
     private val currentStepSensor = MutableStateFlow<Long?>(null)
 
+    // 서비스 꺼진 후 재시작했을 걸음수 복원을 위해 사용
+    private var todayLastSavedStepSensorWhenStarted: Long? = null
+
     private val zoneIdFlow = MutableStateFlow(ZoneId.systemDefault())
 
-    private val lastBackupUnitMillis = MutableStateFlow<Long?>(null)
+    private val stepSensorProcessor = StepSensorProcessor(
+        backupUnitMillis = BACKUP_UNIT_MILLIS,
+        getZoneId = { zoneIdFlow.value },
+        onBackupSensor = { sensor, saveMillis ->
+            foregroundServiceScope.launch { backupStepSensorUseCase(sensor, saveMillis) }
+        },
+        onDailyReset = { checkDailyReset() },
+    )
 
     private val dateChangeBroadcastReceiver = DateChangeBroadcastReceiver().apply {
         setOnDateChangedListener(object : DateChangeBroadcastReceiver.OnDateChangedListener {
@@ -110,12 +122,7 @@ class StepForegroundService : Service() {
             override fun onTimeChanged() {
                 // 사용자가 시간을 변경하거나, NTP 보정으로 인해 불리는 경우
                 currentStepSensor.value?.let {
-                    val currentMillis = System.currentTimeMillis()
-                    backupStepSensor(
-                        stepSensor = it,
-                        currentMillis = currentMillis,
-                        saveMillis = currentMillis,
-                    )
+                    stepSensorProcessor.forceBackupWithCurrentTime(it, System.currentTimeMillis())
                 }
             }
 
@@ -124,12 +131,7 @@ class StepForegroundService : Service() {
                 val zoneId = runCatching { ZoneId.of(timeZone) }.getOrDefault(ZoneId.systemDefault())
                 zoneIdFlow.update { zoneId }
                 currentStepSensor.value?.let {
-                    val currentMillis = System.currentTimeMillis()
-                    backupStepSensor(
-                        stepSensor = it,
-                        currentMillis = currentMillis,
-                        saveMillis = currentMillis,
-                    )
+                    stepSensorProcessor.forceBackupWithCurrentTime(it, System.currentTimeMillis())
                 }
             }
         })
@@ -167,11 +169,12 @@ class StepForegroundService : Service() {
 
         foregroundServiceScope.launch {
             val today = LocalDate.now(zoneIdFlow.value).format(DateTimeFormatter.BASIC_ISO_DATE)
-            val todayStepCount = getStepCountUseCase(today)
-            currentStep.update { todayStepCount }
+            todayLastSavedStepSensorWhenStarted = getLastStepSensorForTodayUseCase(today)
+            currentStep.update { getStepCountUseCase(today) }
 
-            val lastStepSensor = getLastStepSensorUseCase().getOrNull()
-            currentStepSensor.update { lastStepSensor }
+            // getStepCountUseCase가 suspend되는 동안 자정이 지날 수 있음.
+            // 날짜가 바뀐 경우 어제 걸음수를 오늘 걸음수로 사용하지 않도록 0으로 처리.
+            checkDailyReset()
 
             registerStepSensor().onSuccess {
                 registerStepResetReceiver()
@@ -262,62 +265,16 @@ class StepForegroundService : Service() {
 
     private fun updateStep(newStepSensor: Long) {
         val prevStepSensor = currentStepSensor.value
-        val lastBackupUnitMillis = lastBackupUnitMillis.value
-        val currentMillis = System.currentTimeMillis()
-
-        val isFirstCheck = prevStepSensor == null || lastBackupUnitMillis == null
-        val isRebooted = prevStepSensor?.let { newStepSensor < it } ?: false
-
-        if (isFirstCheck || isRebooted) {
-            backupStepSensor(
-                stepSensor = newStepSensor,
-                currentMillis = currentMillis,
-                saveMillis = currentMillis,
-            )
-        } else {
-            val stepDelta = (newStepSensor - prevStepSensor).toInt()
-            currentStep.update { prevStep -> prevStep + stepDelta }
-            backupStepSensor(
-                stepSensor = prevStepSensor,
-                currentMillis = currentMillis,
-                saveMillis = lastBackupUnitMillis + BACKUP_UNIT_MILLIS,
-            )
+        stepSensorProcessor.updateStep(prevStepSensor, newStepSensor, System.currentTimeMillis(), todayLastSavedStepSensorWhenStarted) { delta ->
+            currentStep.update { it + delta }
         }
-
         currentStepSensor.update { newStepSensor }
-    }
-
-    private fun backupStepSensor(stepSensor: Long, currentMillis: Long, saveMillis: Long) {
-        val currentUnit = truncateToUnitZonedDateTime(currentMillis, zoneIdFlow.value)
-        val currentUnitMillis = currentUnit.toInstant().toEpochMilli()
-
-        if (lastBackupUnitMillis.value == currentUnitMillis) return
-
-        if (currentUnit.hour == 0 && currentUnit.minute == 0) {
-            checkDailyReset()
-        } else {
-            foregroundServiceScope.launch {
-                backupStepSensorUseCase(stepSensor, saveMillis)
-            }
-        }
-
-        lastBackupUnitMillis.update { currentUnitMillis }
-    }
-
-    fun truncateToUnitZonedDateTime(millis: Long, zoneId: ZoneId): ZonedDateTime {
-        val unitMinutes = (BACKUP_UNIT_MILLIS / 60_000L).toInt()
-        val zoned = Instant.ofEpochMilli(millis).atZone(zoneId)
-        val truncatedMinute = (zoned.minute / unitMinutes) * unitMinutes
-
-        return zoned
-            .withMinute(truncatedMinute)
-            .withSecond(0)
-            .withNano(0)
     }
 
     private fun checkDailyReset() {
         resetDataOncePerDayUseCase.invoke(currentStep.value, currentStepSensor.value, zoneIdFlow.value) {
             currentStep.update { 0 }
+            todayLastSavedStepSensorWhenStarted = null
         }
     }
 }

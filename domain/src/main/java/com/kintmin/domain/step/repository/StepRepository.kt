@@ -5,10 +5,11 @@ import kotlinx.coroutines.flow.Flow
 
 interface StepRepository {
 
-    fun getLastStepSensor(): Flow<Long?>
+    fun getLastStepSensorForToday(today: String): Flow<Long?>
     fun getAccelerateStep(): Flow<Int?>
 
     suspend fun updateLastStepSensor(newSensor: Long): Result<Unit>
+    suspend fun updateLastStepSensorDate(date: String): Result<Unit>
     suspend fun updateAccelerateStep(newStep: Int): Result<Unit>
 
     suspend fun insertStepSensor(rawCreatedTime: Long, stepSensor: Long): Result<Unit>

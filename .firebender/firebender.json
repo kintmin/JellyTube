@@ -1,0 +1,7 @@
+{
+  "agents": [
+    ".firebender/agents/android-code-navigator.md",
+    ".firebender/agents/pr-reviewer.md",
+    ".firebender/agents/error-handling-reviewer.md"
+  ]
+}

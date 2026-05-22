@@ -1,14 +1,9 @@
 package com.kintmin.domain.step.usecase
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,44 +12,22 @@ class ResetDataOncePerDayUseCase @Inject constructor(
     private val registerDailyResetWorkerUseCase: RegisterDailyResetWorkerUseCase,
 ) {
 
-    private val mutex = Mutex()
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    @Volatile
-    private var cachedEpochDay = LocalDate.now(ZoneId.systemDefault()).toEpochDay()
-
-    operator fun invoke(currentStep: Int, currentStepSensor: Long?, zoneId: ZoneId, resetAction: () -> Unit) {
-        val todayEpochDay = LocalDate.now(zoneId).toEpochDay()
-        if (cachedEpochDay >= todayEpochDay) return
-
-        scope.launch {
-            mutex.withLock {
-                resetDataAtomically(currentStep, currentStepSensor, zoneId, resetAction)
-            }
-        }
-    }
+    internal val cachedEpochDay = AtomicLong(LocalDate.now(ZoneId.systemDefault()).toEpochDay())
 
     /**
      * 원자성 보장:
-     * 1. suspend가 되어선 안된다. (코루틴 cancel 전파로 인해 중도 실패 시 원자성이 깨짐)
-     * 2. launch 등으로 코루틴을 생성해선 안된다. (원자성에 어긋남. 필요 시 registerDailyResetWorkerUseCase 에서 worker 등록)
+     * - AtomicLong.compareAndSet으로 중복 초기화 방지
+     * - resetAction을 즉시 동기 호출하여 코루틴 지연으로 인한 일시적 0걸음 이슈 방지
+     * - registerDailyResetWorkerUseCase는 WorkManager 등록(동기 API)이므로 직접 호출
      */
-    private fun resetDataAtomically(
-        currentStep: Int,
-        currentStepSensor: Long?,
-        zoneId: ZoneId,
-        resetAction: () -> Unit
-    ) {
-        runCatching {
-            // 다수의 코루틴 생성 시 중복 방지
-            val todayEpochDay = LocalDate.now(zoneId).toEpochDay()
-            if (cachedEpochDay >= todayEpochDay) return
+    operator fun invoke(currentStep: Int, currentStepSensor: Long?, zoneId: ZoneId, resetAction: () -> Unit) {
+        val todayEpochDay = LocalDate.now(zoneId).toEpochDay()
+        val prevDay = cachedEpochDay.get()
+        if (prevDay >= todayEpochDay) return
+        if (!cachedEpochDay.compareAndSet(prevDay, todayEpochDay)) return
 
-            val targetDate = LocalDate.ofEpochDay(cachedEpochDay).format(DateTimeFormatter.BASIC_ISO_DATE)
-            resetAction()
-            registerDailyResetWorkerUseCase(targetDate, currentStep, currentStepSensor)
-
-            cachedEpochDay = todayEpochDay
-        }
+        val targetDate = LocalDate.ofEpochDay(prevDay).format(DateTimeFormatter.BASIC_ISO_DATE)
+        resetAction()
+        registerDailyResetWorkerUseCase(targetDate, currentStep, currentStepSensor)
     }
 }

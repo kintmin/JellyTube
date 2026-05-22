@@ -8,6 +8,7 @@ import com.kintmin.domain.step.model.StepData
 import com.kintmin.domain.step.repository.StepRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
@@ -15,19 +16,17 @@ import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * dataStore - TodayStepCount: 오늘 걸음수를 보장
- * dataStore - LastStepSensor: 마지막으로 측정된 센서값을 보장
- * roomDB - StepSensor: 분 단위 센서값을 보장
- */
 @Singleton
 class StepRepositoryImpl @Inject constructor(
     private val stepDao: StepDao,
     private val datastoreUtil: DatastoreUtil,
 ): StepRepository {
 
-    override fun getLastStepSensor(): Flow<Long?> {
-        return datastoreUtil.getData(PreferencesKey.LastStepSensor)
+    override fun getLastStepSensorForToday(today: String): Flow<Long?> {
+        return combine(
+            datastoreUtil.getData(PreferencesKey.LastStepSensor),
+            datastoreUtil.getData(PreferencesKey.LastStepSensorDate),
+        ) { sensor, date -> if (date == today) sensor else null }
     }
 
     override fun getAccelerateStep(): Flow<Int?> {
@@ -36,6 +35,10 @@ class StepRepositoryImpl @Inject constructor(
 
     override suspend fun updateLastStepSensor(newSensor: Long): Result<Unit> {
         return datastoreUtil.updateData(PreferencesKey.LastStepSensor, newSensor)
+    }
+
+    override suspend fun updateLastStepSensorDate(date: String): Result<Unit> {
+        return datastoreUtil.updateData(PreferencesKey.LastStepSensorDate, date)
     }
 
     override suspend fun updateAccelerateStep(newStep: Int): Result<Unit> {

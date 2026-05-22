@@ -14,12 +14,11 @@ class GetHourlyStepsUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(date: String): Result<List<Int>> {
-        val latestStepSensor = stepRepository.getLastStepSensor().firstOrNull()
+        val latestStepSensor = stepRepository.getLastStepSensorForToday(date).firstOrNull()
 
         return stepRepository.getStepDataListByDate(date)
             .map { stepDataList ->
                 val mergedStepDataList = mergeLatestStepSensorIfNeeded(
-                    date = date,
                     stepDataList = stepDataList,
                     latestStepSensor = latestStepSensor,
                 )
@@ -28,14 +27,10 @@ class GetHourlyStepsUseCase @Inject constructor(
     }
 
     private fun mergeLatestStepSensorIfNeeded(
-        date: String,
         stepDataList: List<StepData>,
         latestStepSensor: Long?,
     ): List<StepData> {
         if (latestStepSensor == null) return stepDataList
-
-        val today = LocalDate.now(ZoneId.systemDefault()).format(DateTimeFormatter.BASIC_ISO_DATE)
-        if (date != today) return stepDataList
 
         val mutableList = stepDataList.toMutableList().apply {
             add(

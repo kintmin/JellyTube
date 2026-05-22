@@ -24,12 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.NavigateBefore
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
 import androidx.compose.material.icons.automirrored.rounded.Subject
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.LibraryMusic
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
@@ -70,9 +66,9 @@ import androidx.palette.graphics.Palette
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.theme.JellyTubeTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -80,6 +76,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun PlayerDetailScreen(
@@ -285,12 +282,12 @@ fun PlayerDetailScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = toMinSec(currentSeconds),
+                    text = currentSeconds.seconds.to_hh_colon_mm_colon_ss(),
                     color = Color.White.copy(alpha = 0.88f),
                     fontSize = 13.sp,
                 )
                 Text(
-                    text = toMinSec(playbackSeconds),
+                    text = playbackSeconds.seconds.to_hh_colon_mm_colon_ss(),
                     color = Color.White.copy(alpha = 0.88f),
                     fontSize = 13.sp,
                 )
@@ -409,7 +406,7 @@ private suspend fun extractGradientFromArtwork(path: String?): List<Color>? = wi
     if (options.outWidth <= 0 || options.outHeight <= 0) return@withContext null
 
     val sampledOptions = BitmapFactory.Options().apply {
-        inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight, 240, 240)
+        inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight)
         inPreferredConfig = android.graphics.Bitmap.Config.RGB_565
     }
     val bitmap = BitmapFactory.decodeFile(path, sampledOptions) ?: return@withContext null
@@ -430,11 +427,11 @@ private suspend fun extractGradientFromArtwork(path: String?): List<Color>? = wi
     }
 }
 
-private fun calculateInSampleSize(width: Int, height: Int, reqWidth: Int, reqHeight: Int): Int {
+private fun calculateInSampleSize(width: Int, height: Int, reqWidth: Int = 240, reqHeight: Int = 240): Int {
     var inSampleSize = 1
     if (height > reqHeight || width > reqWidth) {
-        var halfHeight = height / 2
-        var halfWidth = width / 2
+        val halfHeight = height / 2
+        val halfWidth = width / 2
         while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
             inSampleSize *= 2
         }
@@ -461,12 +458,6 @@ private fun Color.darken(factor: Float): Color {
         blue = blue * mul,
         alpha = 1f,
     )
-}
-
-private fun toMinSec(seconds: Long): String {
-    val min = seconds / 60
-    val sec = seconds % 60
-    return "$min:${sec.toString().padStart(2, '0')}"
 }
 
 @Preview(showBackground = true)

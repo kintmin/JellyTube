@@ -10,7 +10,7 @@ class GetStepCountUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(date: String): Int {
-        val lastStepSensor = stepRepository.getLastStepSensor().firstOrNull()
+        val lastStepSensor = stepRepository.getLastStepSensorForToday(date).firstOrNull()
         val steps = stepRepository.getStepDataListByDate(date).getOrDefault(emptyList()).map {
             it.stepSensor
         }.toMutableList()
