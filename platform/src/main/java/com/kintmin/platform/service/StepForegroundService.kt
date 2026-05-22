@@ -86,6 +86,13 @@ class StepForegroundService : Service() {
                 ContextCompat.startForegroundService(context, Intent(context, StepForegroundService::class.java))
             }
         }
+
+        fun stopService(context: Context): Result<Unit> {
+            return runCatching {
+                context.stopService(Intent(context, StepForegroundService::class.java))
+                NotificationManagerCompat.from(context).cancel(PushNotificationIds.SENSOR_STEP)
+            }
+        }
     }
 
     @Inject lateinit var pushNotificationManager: PushNotificationManager

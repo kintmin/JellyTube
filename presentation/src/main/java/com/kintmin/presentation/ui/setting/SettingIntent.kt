@@ -11,4 +11,5 @@ sealed interface SettingIntent {
     data object OnClickAppLogTile : SettingIntent
     data class OnToggleIsStepEnabled(val value: Boolean) : SettingIntent
     data object OnActivityRecognitionGranted : SettingIntent
+    data object OnActivityRecognitionDenied : SettingIntent
 }

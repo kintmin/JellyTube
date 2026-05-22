@@ -56,6 +56,8 @@ fun SettingScreen(
         if (granted) {
             viewModel.sendIntent(SettingIntent.OnActivityRecognitionGranted)
             StepForegroundService.startService(context)
+        } else {
+            viewModel.sendIntent(SettingIntent.OnActivityRecognitionDenied)
         }
     }
 
@@ -67,6 +69,7 @@ fun SettingScreen(
             when (event) {
                 SettingEvent.NavigateToStepScreen -> navigateToStep()
                 SettingEvent.NavigateToAppLogScreen -> navigateToAppLog()
+                SettingEvent.StopStepForegroundService -> StepForegroundService.stopService(context)
                 SettingEvent.RequestActivityRecognitionPermission -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         val permission = Manifest.permission.ACTIVITY_RECOGNITION

@@ -111,11 +111,17 @@ class SettingViewModel @Inject constructor(
                         _eventFlow.emit(SettingEvent.RequestActivityRecognitionPermission)
                     }
                 } else {
-                    updateIsStepEnabled(false)
+                    viewModelScope.launch {
+                        updateIsStepEnabledUseCase(false)
+                        _eventFlow.emit(SettingEvent.StopStepForegroundService)
+                    }
                 }
             }
             SettingIntent.OnActivityRecognitionGranted -> {
                 updateIsStepEnabled(true)
+            }
+            SettingIntent.OnActivityRecognitionDenied -> {
+                updateIsStepEnabled(false)
             }
         }
     }
