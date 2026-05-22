@@ -56,6 +56,7 @@ fun StepHourlyChartView(
     val minBarHeight = 6.dp
     val tooltipHeight = 40.dp
     val tooltipTopAreaHeight = 56.dp
+    val axisLabelGap = 8.dp
     val density = LocalDensity.current
     var chartWidthPx by remember { mutableFloatStateOf(0f) }
     var bubbleWidthPx by remember { mutableFloatStateOf(112f) }
@@ -98,7 +99,7 @@ fun StepHourlyChartView(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(barAreaHeight + 28.dp)
+                    .height(barAreaHeight + axisLabelGap)
                     .pointerInput(Unit) {
                         awaitPointerEventScope {
                             while (true) {

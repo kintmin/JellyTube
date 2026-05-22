@@ -29,7 +29,7 @@ class StepViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _selectedDate = MutableStateFlow(LocalDate.now())
-    private val _selectedSlot = MutableStateFlow<Int?>(null)
+    private val _selectedSlot = MutableStateFlow<Int?>(currentHalfHourlySlot())
     private val _chartAnimationKey = MutableStateFlow(0L)
 
     private val halfHourlyStepsFlow = _selectedDate.flatMapLatest { date ->
@@ -48,18 +48,12 @@ class StepViewModel @Inject constructor(
         _selectedSlot,
         _chartAnimationKey,
     ) { selectedDate, halfHourlySteps, dailyStepsByDate, selectedSlot, chartAnimationKey ->
-        val now = LocalTime.now(ZoneId.systemDefault())
-        val defaultSlot = if (selectedDate == LocalDate.now(ZoneId.systemDefault())) {
-            now.hour * 2 + now.minute / 30
-        } else {
-            0
-        }
         StepUiState(
             isLoading = false,
             selectedDate = selectedDate,
             halfHourlySteps = halfHourlySteps,
             dailyStepsByDate = dailyStepsByDate,
-            selectedSlot = selectedSlot ?: defaultSlot,
+            selectedSlot = selectedSlot ?: currentHalfHourlySlot(),
             chartAnimationKey = chartAnimationKey,
         )
     }.stateIn(
@@ -76,9 +70,13 @@ class StepViewModel @Inject constructor(
             }
             is StepIntent.OnSelectDate -> {
                 _selectedDate.update { intent.date }
-                _selectedSlot.update { null }
                 _chartAnimationKey.update { it + 1L }
             }
         }
+    }
+
+    private fun currentHalfHourlySlot(): Int {
+        val now = LocalTime.now(ZoneId.systemDefault())
+        return now.hour * 2 + now.minute / 30
     }
 }
