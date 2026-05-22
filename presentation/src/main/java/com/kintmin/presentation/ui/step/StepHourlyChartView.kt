@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,7 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -56,10 +59,13 @@ fun StepHourlyChartView(
     val minBarHeight = 6.dp
     val tooltipHeight = 40.dp
     val tooltipTopAreaHeight = 56.dp
-    val axisLabelGap = 8.dp
+    val axisTickHeight = 4.dp
+    val axisLabelHeight = 14.dp
     val density = LocalDensity.current
     var chartWidthPx by remember { mutableFloatStateOf(0f) }
     var bubbleWidthPx by remember { mutableFloatStateOf(112f) }
+    var measuredSelectedSlot by remember { mutableIntStateOf(-1) }
+    var measuredSelectedBarCenterXPx by remember { mutableFloatStateOf(Float.NaN) }
     val animatedProgress = remember(animationKey) { Animatable(0f) }
     val slotCount = hourlySteps.size
 
@@ -91,7 +97,6 @@ fun StepHourlyChartView(
         }
 
         val chartWidthDp = with(density) { chartWidthPx.toDp() }
-        val slotWidth = if (chartWidthPx > 0f) chartWidthDp / slotCount.toFloat() else 0.dp
 
         Column {
             Spacer(modifier = Modifier.height(tooltipTopAreaHeight))
@@ -99,7 +104,7 @@ fun StepHourlyChartView(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(barAreaHeight + axisLabelGap)
+                    .height(barAreaHeight)
                     .pointerInput(Unit) {
                         awaitPointerEventScope {
                             while (true) {
@@ -133,6 +138,13 @@ fun StepHourlyChartView(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize()
+                            .onGloballyPositioned { coordinates ->
+                                if (selected) {
+                                    measuredSelectedSlot = slot
+                                    measuredSelectedBarCenterXPx =
+                                        coordinates.positionInParent().x + coordinates.size.width / 2f
+                                }
+                            }
                             .clickable(
                                 interactionSource = interactionSource,
                                 indication = null,
@@ -145,9 +157,10 @@ fun StepHourlyChartView(
 
                         Box(
                             modifier = Modifier
-                                .width(4.dp)
+                                .fillMaxWidth()
+                                .padding(horizontal = 1.5.dp)
                                 .height(barHeight)
-                                .clip(RoundedCornerShape(999.dp))
+                                .clip(RoundedCornerShape(topStart = 999.dp, topEnd = 999.dp))
                                 .background(
                                     if (selected) Color(0xFF43E38E) else Color(0xFF29D174),
                                 ),
@@ -156,10 +169,32 @@ fun StepHourlyChartView(
                 }
             }
 
-            Box(modifier = Modifier.fillMaxWidth().height(14.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF8E96A4)))
+
+            Box(modifier = Modifier.fillMaxWidth().height(axisTickHeight + axisLabelHeight)) {
                 AXIS_LABELS.forEach { (slot, label) ->
                     key(slot) {
                         var labelWidthPx by remember { mutableFloatStateOf(0f) }
+                        val centerXPx = when (slot) {
+                            0 -> 0f
+                            slotCount - 1 -> chartWidthPx
+                            else -> chartWidthPx * slot / slotCount.toFloat()
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .offset {
+                                    val tickWidthPx = 1.dp.toPx()
+                                    val x = (centerXPx - tickWidthPx / 2f)
+                                        .coerceIn(0f, (chartWidthPx - tickWidthPx).coerceAtLeast(0f))
+                                    IntOffset(x = x.roundToInt(), y = 0)
+                                }
+                                .width(1.dp)
+                                .height(axisTickHeight)
+                                .background(Color(0xFF8E96A4)),
+                        )
+
                         Text(
                             text = label,
                             color = Color(0xFF8E96A4),
@@ -169,10 +204,9 @@ fun StepHourlyChartView(
                                 .align(Alignment.TopStart)
                                 .onSizeChanged { labelWidthPx = it.width.toFloat() }
                                 .offset {
-                                    val centerXPx = (slotWidth * slot + slotWidth / 2f).toPx()
                                     val x = (centerXPx - labelWidthPx / 2f)
                                         .coerceIn(0f, (chartWidthPx - labelWidthPx).coerceAtLeast(0f))
-                                    IntOffset(x = x.roundToInt(), y = 0)
+                                    IntOffset(x = x.roundToInt(), y = axisTickHeight.roundToPx())
                                 },
                         )
                     }
@@ -191,13 +225,18 @@ fun StepHourlyChartView(
             )
 
             val safePadding = 4.dp
-            val bubbleWidthDp = with(density) { bubbleWidthPx.toDp() }
-            val maxBubbleStart = (chartWidthDp - bubbleWidthDp - safePadding).coerceAtLeast(safePadding)
-            val barCenterX = (slotWidth * selectedHour) + (slotWidth / 2f)
-            val bubbleStartX = (barCenterX - bubbleWidthDp / 2f).coerceIn(safePadding, maxBubbleStart)
-            val connectorHeight = (
-                tooltipTopAreaHeight + (barAreaHeight - selectedBarHeight) - tooltipHeight
-                ).coerceAtLeast(8.dp)
+            val safePaddingPx = with(density) { safePadding.toPx() }
+            val maxBubbleStartPx = (chartWidthPx - bubbleWidthPx - safePaddingPx).coerceAtLeast(safePaddingPx)
+            val fallbackBarCenterXPx = chartWidthPx * (selectedHour + 0.5f) / slotCount.toFloat()
+            val barCenterXPx = if (measuredSelectedSlot == selectedHour && !measuredSelectedBarCenterXPx.isNaN()) {
+                measuredSelectedBarCenterXPx
+            } else {
+                fallbackBarCenterXPx
+            }
+            val bubbleStartXPx = (barCenterXPx - bubbleWidthPx / 2f).coerceIn(safePaddingPx, maxBubbleStartPx)
+            val bubbleStartX = with(density) { bubbleStartXPx.toDp() }
+            val connectorX = with(density) { (barCenterXPx - bubbleStartXPx).toDp() }
+            val connectorHeight = (tooltipTopAreaHeight + (barAreaHeight - selectedBarHeight) - tooltipHeight).coerceAtLeast(8.dp)
 
             SelectedSlotTooltip(
                 modifier = Modifier
@@ -207,7 +246,7 @@ fun StepHourlyChartView(
                     },
                 slot = selectedHour,
                 steps = selectedSteps,
-                connectorX = barCenterX - bubbleStartX,
+                connectorX = connectorX,
                 connectorHeight = connectorHeight,
                 maxBubbleWidth = (chartWidthDp - (safePadding * 2f)).coerceAtLeast(120.dp),
             )
@@ -230,6 +269,7 @@ private fun SelectedSlotTooltip(
     val endTotalMinutes = (slot + 1) * 30
     val endHour = endTotalMinutes / 60
     val endMinute = endTotalMinutes % 60
+    val connectorWidth = 1.dp
 
     Box(modifier = modifier) {
         Box(
@@ -258,9 +298,9 @@ private fun SelectedSlotTooltip(
 
         Box(
             modifier = Modifier
-                .offset(x = connectorX, y = 40.dp)
+                .offset(x = connectorX - connectorWidth / 2f, y = 40.dp)
                 .height(connectorHeight)
-                .width(1.dp)
+                .width(connectorWidth)
                 .background(bubbleColor),
         )
     }
@@ -273,6 +313,7 @@ private fun getBarHeightDp(
     minBarHeight: Dp,
     progress: Float,
 ): Dp {
+    if (steps == 0) return 0.dp
     val ratio = (steps.toFloat() / maxStep.toFloat()).coerceIn(0f, 1f)
     val animatedRatio = (ratio * progress).coerceIn(0f, 1f)
     val barHeight = (animatedRatio * maxBarHeight.value).roundToInt().dp
@@ -299,7 +340,7 @@ private fun StepHourlyChartViewPreview() {
                 1700, 1400, 2200, 2600, 3100, 3500, 3900, 3400, 2700, 2200,
                 1600, 1300, 700, 400, 200, 100,
             ),
-            selectedHour = 22,
+            selectedHour = 24,
             onSelectHour = {},
         )
     }
