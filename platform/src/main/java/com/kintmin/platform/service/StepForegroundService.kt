@@ -15,6 +15,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Build
 import android.os.IBinder
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
@@ -23,6 +24,7 @@ import com.kintmin.domain.step.usecase.GetLastStepSensorForTodayUseCase
 import com.kintmin.domain.step.usecase.GetStepCountUseCase
 import com.kintmin.domain.step.usecase.ResetDataOncePerDayUseCase
 import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
+import com.kintmin.platform.push_notification.PushNotificationIds
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.SensorStepNotification
 import com.kintmin.platform.receiver.DateChangeBroadcastReceiver
@@ -80,6 +82,7 @@ class StepForegroundService : Service() {
                     throw Exception("걸음수 센서가 없습니다.")
                 }
 
+                NotificationManagerCompat.from(context).cancel(PushNotificationIds.SENSOR_STEP)
                 ContextCompat.startForegroundService(context, Intent(context, StepForegroundService::class.java))
             }
         }
@@ -152,7 +155,7 @@ class StepForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         runCatching {
-            val notificationData = SensorStepNotification(0)
+            val notificationData = SensorStepNotification(currentStep.value)
             ServiceCompat.startForeground(
                 this,
                 notificationData.id,
