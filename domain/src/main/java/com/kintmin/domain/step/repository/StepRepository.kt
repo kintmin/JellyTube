@@ -14,4 +14,6 @@ interface StepRepository {
 
     suspend fun insertStepSensor(rawCreatedTime: Long, stepSensor: Long): Result<Unit>
     suspend fun getStepDataListByDate(date: String): Result<List<StepData>>
+    fun getStepDataListByDateFlow(date: String): Flow<List<StepData>>
+    fun getStepDataListInRangeFlow(startMillis: Long, endMillis: Long): Flow<List<StepData>>
 }

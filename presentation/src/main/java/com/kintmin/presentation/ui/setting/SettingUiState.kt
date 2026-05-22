@@ -8,6 +8,7 @@ data class SettingUiState(
     val playlistIdOnDownloadName: String = "기본",
     val selectablePlaylistList: List<DownloadPlaylistUiState> = emptyList(),
     val isPlaylistIdOnDownloadBottomSheetVisible: Boolean = false,
+    val isStepEnabled: Boolean = true,
 )
 
 data class DownloadPlaylistUiState(

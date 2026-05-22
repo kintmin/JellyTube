@@ -33,4 +33,14 @@ class AppSettingRepositoryImpl @Inject constructor(
     override suspend fun updatePlaylistIdOnDownload(playlistId: Int): Result<Unit> {
         return datastoreUtil.updateData(PreferencesKey.PlaylistIdOnDownload, playlistId)
     }
+
+    override fun getIsStepEnabledFlow(): Flow<Boolean> {
+        return datastoreUtil.getData(PreferencesKey.IsStepEnabled).map {
+            it ?: false
+        }
+    }
+
+    override suspend fun updateIsStepEnabled(value: Boolean): Result<Unit> {
+        return datastoreUtil.updateData(PreferencesKey.IsStepEnabled, value)
+    }
 }

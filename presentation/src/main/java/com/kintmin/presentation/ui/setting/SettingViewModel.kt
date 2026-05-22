@@ -2,8 +2,10 @@ package com.kintmin.presentation.ui.setting
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
+import com.kintmin.domain.app_setting.usecase.UpdateIsStepEnabledUseCase
 import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
 import com.kintmin.domain.app_setting.usecase.UpdateShouldInsertAtTopOnDownloadUseCase
 import com.kintmin.domain.playlist.model.Playlist
@@ -24,13 +26,17 @@ class SettingViewModel @Inject constructor(
     fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase,
     fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase,
     fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
+    fetchIsStepEnabledFlowUseCase: FetchIsStepEnabledFlowUseCase,
     private val updateShouldInsertAtTopOnDownloadUseCase: UpdateShouldInsertAtTopOnDownloadUseCase,
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
+    private val updateIsStepEnabledUseCase: UpdateIsStepEnabledUseCase,
 ) : ViewModel() {
 
     private val isPlaylistIdOnDownloadBottomSheetVisible = MutableStateFlow(false)
     private val _eventFlow = MutableSharedFlow<SettingEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
+
+    private val isStepEnabledFlow = fetchIsStepEnabledFlowUseCase()
 
     val uiState: StateFlow<SettingUiState> = combine(
         fetchShouldInsertAtTopOnDownloadFlowUseCase(),
@@ -63,6 +69,8 @@ class SettingViewModel @Inject constructor(
             selectablePlaylistList = selectablePlaylistList,
             isPlaylistIdOnDownloadBottomSheetVisible = isBottomSheetVisible,
         )
+    }.combine(isStepEnabledFlow) { state, isStepEnabled ->
+        state.copy(isStepEnabled = isStepEnabled)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
@@ -97,6 +105,18 @@ class SettingViewModel @Inject constructor(
                     _eventFlow.emit(SettingEvent.NavigateToAppLogScreen)
                 }
             }
+            is SettingIntent.OnToggleIsStepEnabled -> {
+                if (intent.value) {
+                    viewModelScope.launch {
+                        _eventFlow.emit(SettingEvent.RequestActivityRecognitionPermission)
+                    }
+                } else {
+                    updateIsStepEnabled(false)
+                }
+            }
+            SettingIntent.OnActivityRecognitionGranted -> {
+                updateIsStepEnabled(true)
+            }
         }
     }
 
@@ -110,6 +130,12 @@ class SettingViewModel @Inject constructor(
         viewModelScope.launch {
             updatePlaylistIdOnDownloadUseCase(playlistId)
             isPlaylistIdOnDownloadBottomSheetVisible.value = false
+        }
+    }
+
+    private fun updateIsStepEnabled(value: Boolean) {
+        viewModelScope.launch {
+            updateIsStepEnabledUseCase(value)
         }
     }
 

@@ -6,24 +6,25 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
-class GetHourlyStepsUseCase @Inject constructor(
+class GetHalfHourlyStepsUseCase @Inject constructor(
     private val stepRepository: StepRepository,
     private val calculateStepCountUseCase: CalculateStepCountUseCase,
 ) {
 
-    suspend operator fun invoke(date: String): Result<List<Int>> {
-        val latestStepSensor = stepRepository.getLastStepSensorForToday(date).firstOrNull()
-
-        return stepRepository.getStepDataListByDate(date)
-            .map { stepDataList ->
-                val mergedStepDataList = mergeLatestStepSensorIfNeeded(
-                    stepDataList = stepDataList,
-                    latestStepSensor = latestStepSensor,
-                )
-                calculateHourlySteps(date, mergedStepDataList)
-            }
+    operator fun invoke(date: String): Flow<List<Int>> {
+        return combine(
+            stepRepository.getStepDataListByDateFlow(date),
+            stepRepository.getLastStepSensorForToday(date),
+        ) { stepDataList, latestStepSensor ->
+            val mergedStepDataList = mergeLatestStepSensorIfNeeded(
+                stepDataList = stepDataList,
+                latestStepSensor = latestStepSensor,
+            )
+            calculateHalfHourlySteps(date, mergedStepDataList)
+        }
     }
 
     private fun mergeLatestStepSensorIfNeeded(
@@ -44,9 +45,9 @@ class GetHourlyStepsUseCase @Inject constructor(
         return mutableList
     }
 
-    private fun calculateHourlySteps(date: String, stepDataList: List<StepData>): List<Int> {
+    private fun calculateHalfHourlySteps(date: String, stepDataList: List<StepData>): List<Int> {
         if (stepDataList.isEmpty()) {
-            return List(24) { 0 }
+            return List(48) { 0 }
         }
 
         val zoneId = ZoneId.systemDefault()
@@ -55,27 +56,27 @@ class GetHourlyStepsUseCase @Inject constructor(
             .atStartOfDay(zoneId)
             .toInstant()
             .toEpochMilli()
-        val oneHourMillis = 60 * 60 * 1000L
+        val halfHourMillis = 30 * 60 * 1000L
 
         val sortedData = stepDataList.sortedBy { it.rawCreatedTime }
 
-        return List(24) { hour ->
-            val bucketStart = dayStartMillis + (hour * oneHourMillis)
-            val bucketEnd = bucketStart + oneHourMillis
+        return List(48) { slot ->
+            val bucketStart = dayStartMillis + (slot * halfHourMillis)
+            val bucketEnd = bucketStart + halfHourMillis
 
             val bucketData = sortedData
                 .asSequence()
                 .filter { it.rawCreatedTime in bucketStart..bucketEnd }
                 .toList()
 
-            if (hour == 0) {
+            if (slot == 0) {
                 calculateStepCountUseCase(bucketData.map { it.stepSensor })
             } else {
                 if (bucketData.isEmpty()) {
                     0
                 } else {
-                    val isFirstDataAtHourStart = bucketData.first().rawCreatedTime == bucketStart
-                    val previousSensor = if (isFirstDataAtHourStart) {
+                    val isFirstDataAtSlotStart = bucketData.first().rawCreatedTime == bucketStart
+                    val previousSensor = if (isFirstDataAtSlotStart) {
                         null
                     } else {
                         sortedData
@@ -83,13 +84,13 @@ class GetHourlyStepsUseCase @Inject constructor(
                             ?.stepSensor
                     }
 
-                    val sensorsForHour = if (previousSensor != null) {
+                    val sensorsForSlot = if (previousSensor != null) {
                         listOf(previousSensor) + bucketData.map { it.stepSensor }
                     } else {
                         bucketData.map { it.stepSensor }
                     }
 
-                    calculateStepCountUseCase(sensorsForHour)
+                    calculateStepCountUseCase(sensorsForSlot)
                 }
             }
         }

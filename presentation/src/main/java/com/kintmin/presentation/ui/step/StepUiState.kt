@@ -5,9 +5,9 @@ import java.time.LocalDate
 data class StepUiState(
     val isLoading: Boolean = true,
     val selectedDate: LocalDate = LocalDate.now(),
-    val hourlySteps: List<Int> = List(24) { 0 },
+    val halfHourlySteps: List<Int> = List(48) { 0 },
     val dailyStepsByDate: Map<LocalDate, Int> = emptyMap(),
-    val selectedHour: Int? = null,
+    val selectedSlot: Int? = null,
     val chartAnimationKey: Long = 0L,
     val errorMessage: String? = null,
 )

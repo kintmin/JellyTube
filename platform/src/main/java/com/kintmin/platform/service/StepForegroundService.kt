@@ -17,6 +17,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
 import com.kintmin.domain.step.usecase.GetLastStepSensorForTodayUseCase
 import com.kintmin.domain.step.usecase.GetStepCountUseCase
@@ -34,6 +35,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.update
@@ -86,6 +88,7 @@ class StepForegroundService : Service() {
     @Inject lateinit var pushNotificationManager: PushNotificationManager
     @Inject lateinit var resetDataOncePerDayUseCase: ResetDataOncePerDayUseCase
     @Inject lateinit var backupStepSensorUseCase: BackupStepSensorUseCase
+    @Inject lateinit var fetchIsStepEnabledFlowUseCase: FetchIsStepEnabledFlowUseCase
 
     @Inject lateinit var getStepCountUseCase: GetStepCountUseCase
     @Inject lateinit var getLastStepSensorForTodayUseCase: GetLastStepSensorForTodayUseCase
@@ -168,6 +171,12 @@ class StepForegroundService : Service() {
         super.onCreate()
 
         foregroundServiceScope.launch {
+            val isStepEnabled = fetchIsStepEnabledFlowUseCase().first()
+            if (!isStepEnabled) {
+                stopSelf()
+                return@launch
+            }
+
             val today = LocalDate.now(zoneIdFlow.value).format(DateTimeFormatter.BASIC_ISO_DATE)
             todayLastSavedStepSensorWhenStarted = getLastStepSensorForTodayUseCase(today)
             currentStep.update { getStepCountUseCase(today) }

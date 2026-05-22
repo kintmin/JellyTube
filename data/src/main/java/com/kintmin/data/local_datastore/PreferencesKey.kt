@@ -40,4 +40,8 @@ sealed interface PreferencesKey<T> {
     data object AccelerateStep : PreferencesKey<Int> {
         override val key = intPreferencesKey("accelerateStep")
     }
+
+    data object IsStepEnabled : PreferencesKey<Boolean> {
+        override val key = booleanPreferencesKey("isStepEnabled")
+    }
 }

@@ -9,6 +9,8 @@ import com.kintmin.domain.step.repository.StepRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
@@ -61,32 +63,38 @@ class StepRepositoryImpl @Inject constructor(
     override suspend fun getStepDataListByDate(date: String): Result<List<StepData>> {
         return withContext(Dispatchers.IO) {
             runCatching {
-                val targetDate = LocalDate.parse(
-                    date,
-                    DateTimeFormatter.BASIC_ISO_DATE // yyyyMMdd
-                )
-
-                val start = targetDate
-                    .atStartOfDay(ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
-
-                val end = targetDate
-                    .plusDays(1)
-                    .atStartOfDay(ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
-
+                val (start, end) = dateToRangeMillis(date)
                 stepDao.getEntitiesBetween(
                     startUtc = start,
                     endUtc = end,
-                ).map {
-                    StepData(
-                        rawCreatedTime = it.rawCreatedTime,
-                        stepSensor = it.stepSensor,
-                    )
-                }
+                ).map { it.toStepData() }
             }
         }
     }
+
+    override fun getStepDataListByDateFlow(date: String): Flow<List<StepData>> {
+        val (start, end) = dateToRangeMillis(date)
+        return stepDao.getEntitiesBetweenFlow(start, end)
+            .map { entities -> entities.map { it.toStepData() } }
+            .flowOn(Dispatchers.IO)
+    }
+
+    override fun getStepDataListInRangeFlow(startMillis: Long, endMillis: Long): Flow<List<StepData>> {
+        return stepDao.getEntitiesBetweenFlow(startMillis, endMillis)
+            .map { entities -> entities.map { it.toStepData() } }
+            .flowOn(Dispatchers.IO)
+    }
+
+    private fun dateToRangeMillis(date: String): Pair<Long, Long> {
+        val targetDate = LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE)
+        val zoneId = ZoneId.systemDefault()
+        val start = targetDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
+        val end = targetDate.plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli()
+        return start to end
+    }
+
+    private fun StepEntity.toStepData() = StepData(
+        rawCreatedTime = rawCreatedTime,
+        stepSensor = stepSensor,
+    )
 }

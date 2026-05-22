@@ -59,6 +59,7 @@ fun StepHourlyChartView(
     var chartWidthPx by remember { mutableFloatStateOf(0f) }
     var bubbleWidthPx by remember { mutableFloatStateOf(112f) }
     val animatedProgress = remember(animationKey) { Animatable(0f) }
+    val slotCount = hourlySteps.size
 
     LaunchedEffect(animationKey) {
         animatedProgress.snapTo(0f)
@@ -81,14 +82,14 @@ fun StepHourlyChartView(
                 chartWidthPx = size.width.toFloat()
             },
     ) {
-        fun hourFromXPosition(x: Float): Int {
+        fun slotFromXPosition(x: Float): Int {
             if (chartWidthPx <= 0f) return 0
-            val raw = floor(x / (chartWidthPx / 24f)).toInt()
-            return raw.coerceIn(0, 23)
+            val raw = floor(x / (chartWidthPx / slotCount.toFloat())).toInt()
+            return raw.coerceIn(0, slotCount - 1)
         }
 
         val chartWidthDp = with(density) { chartWidthPx.toDp() }
-        val slotWidth = if (chartWidthPx > 0f) chartWidthDp / 24f else 0.dp
+        val slotWidth = if (chartWidthPx > 0f) chartWidthDp / slotCount.toFloat() else 0.dp
 
         Column {
             Spacer(modifier = Modifier.height(tooltipTopAreaHeight))
@@ -103,20 +104,20 @@ fun StepHourlyChartView(
                                 val down = awaitPointerEvent().changes.firstOrNull() ?: continue
                                 if (!down.pressed) continue
 
-                                onSelectHour(hourFromXPosition(down.position.x))
+                                onSelectHour(slotFromXPosition(down.position.x))
 
                                 while (true) {
                                     val event = awaitPointerEvent()
                                     val change = event.changes.firstOrNull() ?: break
                                     if (!change.pressed) break
-                                    onSelectHour(hourFromXPosition(change.position.x))
+                                    onSelectHour(slotFromXPosition(change.position.x))
                                 }
                             }
                         }
                     },
             ) {
-                hourlySteps.forEachIndexed { hour, steps ->
-                    val selected = selectedHour == hour
+                hourlySteps.forEachIndexed { slot, steps ->
+                    val selected = selectedHour == slot
                     val barHeight = getBarHeightDp(
                         steps = steps,
                         maxStep = maxStep,
@@ -124,7 +125,7 @@ fun StepHourlyChartView(
                         minBarHeight = minBarHeight,
                         progress = animatedProgress.value,
                     )
-                    val interactionSource = remember(hour) { MutableInteractionSource() }
+                    val interactionSource = remember(slot) { MutableInteractionSource() }
 
                     Column(
                         modifier = Modifier
@@ -134,7 +135,7 @@ fun StepHourlyChartView(
                                 interactionSource = interactionSource,
                                 indication = null,
                             ) {
-                                onSelectHour(hour)
+                                onSelectHour(slot)
                             },
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -142,7 +143,7 @@ fun StepHourlyChartView(
 
                         Box(
                             modifier = Modifier
-                                .width(10.dp)
+                                .width(4.dp)
                                 .height(barHeight)
                                 .clip(RoundedCornerShape(999.dp))
                                 .background(
@@ -153,8 +154,8 @@ fun StepHourlyChartView(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         Text(
-                            text = hourLabel(hour),
-                            color = if (selected && hour != 23) Color(0xFFD7FFE9) else Color(0xFF8E96A4),
+                            text = slotLabel(slot),
+                            color = if (selected && slot != slotCount - 1) Color(0xFFD7FFE9) else Color(0xFF8E96A4),
                             style = MaterialTheme.typography.labelMedium,
                             textAlign = TextAlign.Center,
                             maxLines = 1,
@@ -164,7 +165,7 @@ fun StepHourlyChartView(
             }
         }
 
-        val selectedSteps = selectedHour?.let { hour -> hourlySteps.getOrNull(hour) ?: 0 }
+        val selectedSteps = selectedHour?.let { slot -> hourlySteps.getOrNull(slot) ?: 0 }
         if (selectedHour != null && selectedSteps != null && chartWidthPx > 0f) {
             val selectedBarHeight = getBarHeightDp(
                 steps = selectedSteps,
@@ -183,13 +184,13 @@ fun StepHourlyChartView(
                 tooltipTopAreaHeight + (barAreaHeight - selectedBarHeight) - tooltipHeight
                 ).coerceAtLeast(8.dp)
 
-            SelectedHourTooltip(
+            SelectedSlotTooltip(
                 modifier = Modifier
                     .offset(x = bubbleStartX)
                     .onSizeChanged { size ->
                         bubbleWidthPx = size.width.toFloat()
                     },
-                hour = selectedHour,
+                slot = selectedHour,
                 steps = selectedSteps,
                 connectorX = barCenterX - bubbleStartX,
                 connectorHeight = connectorHeight,
@@ -200,15 +201,20 @@ fun StepHourlyChartView(
 }
 
 @Composable
-private fun SelectedHourTooltip(
+private fun SelectedSlotTooltip(
     modifier: Modifier,
-    hour: Int,
+    slot: Int,
     steps: Int,
     connectorX: Dp,
     connectorHeight: Dp,
     maxBubbleWidth: Dp,
 ) {
     val bubbleColor = Color(0xFF2C6C52)
+    val startHour = slot / 2
+    val startMinute = if (slot % 2 == 0) 0 else 30
+    val endTotalMinutes = (slot + 1) * 30
+    val endHour = endTotalMinutes / 60
+    val endMinute = endTotalMinutes % 60
 
     Box(modifier = modifier) {
         Box(
@@ -221,7 +227,13 @@ private fun SelectedHourTooltip(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "%02d:00  ${steps}걸음".format(hour),
+                text = "%d:%02d - %d:%02d  %d걸음".format(
+                    startHour,
+                    startMinute,
+                    endHour,
+                    endMinute,
+                    steps,
+                ),
                 color = Color(0xFFE9FFF4),
                 style = MaterialTheme.typography.labelLarge,
                 maxLines = 1,
@@ -252,12 +264,12 @@ private fun getBarHeightDp(
     return barHeight.coerceAtLeast(minBarHeight)
 }
 
-private fun hourLabel(hour: Int): String = when (hour) {
+private fun slotLabel(slot: Int): String = when (slot) {
     0 -> "0시"
-    6 -> "6시"
-    12 -> "12시"
-    18 -> "18시"
-    23 -> "시"
+    12 -> "6시"
+    24 -> "12시"
+    36 -> "18시"
+    47 -> "시"
     else -> ""
 }
 
@@ -267,12 +279,13 @@ private fun StepHourlyChartViewPreview() {
     JellyTubeTheme {
         StepHourlyChartView(
             hourlySteps = listOf(
-                100, 200, 130, 400, 600, 1200,
-                500, 900, 1800, 2600, 4100, 3800,
-                2400, 1500, 900, 800, 1200, 1700,
-                2200, 3100, 3900, 2700, 1600, 700,
+                50, 80, 60, 100, 200, 300, 250, 400, 600, 700, 500, 900,
+                900, 1200, 1800, 2000, 2600, 3000, 4100, 3500, 3800, 3200,
+                2400, 2000, 1500, 1200, 900, 700, 800, 600, 1200, 1000,
+                1700, 1400, 2200, 2600, 3100, 3500, 3900, 3400, 2700, 2200,
+                1600, 1300, 700, 400, 200, 100,
             ),
-            selectedHour = 11,
+            selectedHour = 22,
             onSelectHour = {},
         )
     }

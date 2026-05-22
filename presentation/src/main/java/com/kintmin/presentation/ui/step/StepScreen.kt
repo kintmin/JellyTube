@@ -55,13 +55,20 @@ fun StepScreen(
     navigateToBack: () -> Unit,
     sendIntent: (StepIntent) -> Unit,
 ) {
-    val totalSteps = uiState.dailyStepsByDate[uiState.selectedDate] ?: uiState.hourlySteps.sum()
-    val peakHour = uiState.hourlySteps
+    val totalSteps = uiState.dailyStepsByDate[uiState.selectedDate] ?: uiState.halfHourlySteps.sum()
+    val peakSlot = uiState.halfHourlySteps
         .withIndex()
         .maxByOrNull { it.value }
         ?.index
         ?: 0
-    val peakHourRangeText = "%02d:00~%02d:00".format(peakHour, (peakHour + 1) % 24)
+    val peakStartHour = peakSlot / 2
+    val peakStartMin = if (peakSlot % 2 == 0) 0 else 30
+    val peakEndMin = peakStartMin + 30
+    val peakEndHour = if (peakEndMin >= 60) (peakStartHour + 1) % 24 else peakStartHour
+    val peakHourRangeText = "%02d:%02d~%02d:%02d".format(
+        peakStartHour, peakStartMin,
+        peakEndHour, peakEndMin % 60,
+    )
     val dateText = uiState.selectedDate.format(
         DateTimeFormatter.ofPattern("yyyy년 M월 d일", Locale.KOREAN),
     )
@@ -99,11 +106,11 @@ fun StepScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             StepHourlyChartView(
-                hourlySteps = uiState.hourlySteps,
-                selectedHour = uiState.selectedHour,
+                hourlySteps = uiState.halfHourlySteps,
+                selectedHour = uiState.selectedSlot,
                 animationKey = uiState.chartAnimationKey,
-                onSelectHour = { hour ->
-                    sendIntent(StepIntent.OnSelectHour(hour))
+                onSelectHour = { slot ->
+                    sendIntent(StepIntent.OnSelectHour(slot))
                 },
             )
 
@@ -132,11 +139,12 @@ private fun StepScreenPreview() {
         StepScreen(
             uiState = StepUiState(
                 isLoading = false,
-                hourlySteps = listOf(
-                    100, 200, 130, 400, 600, 1200,
-                    500, 900, 1800, 2600, 4100, 3800,
-                    2400, 1500, 900, 800, 1200, 1700,
-                    2200, 3100, 3900, 2700, 1600, 700,
+                halfHourlySteps = listOf(
+                    50, 80, 60, 100, 200, 300, 250, 400, 600, 700, 500, 900,
+                    900, 1200, 1800, 2000, 2600, 3000, 4100, 3500, 3800, 3200,
+                    2400, 2000, 1500, 1200, 900, 700, 800, 600, 1200, 1000,
+                    1700, 1400, 2200, 2600, 3100, 3500, 3900, 3400, 2700, 2200,
+                    1600, 1300, 700, 400, 200, 100,
                 ),
                 dailyStepsByDate = mapOf(
                     LocalDate.of(2026, 5, 1) to 3120,
@@ -145,7 +153,7 @@ private fun StepScreenPreview() {
                     LocalDate.of(2026, 5, 4) to 960,
                     LocalDate.of(2026, 5, 5) to 11021,
                 ),
-                selectedHour = 11,
+                selectedSlot = 22,
                 selectedDate = YearMonth.of(2026, 5).atDay(3),
             ),
             navigateToBack = {},
