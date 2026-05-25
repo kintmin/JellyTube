@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.deepSea40
 import com.kintmin.presentation.theme.deepSea80
+import com.kintmin.presentation.theme.seaBlue10
+import com.kintmin.presentation.theme.seaBlue40
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -162,7 +164,7 @@ fun StepCalendarView(
                             .height(46.dp)
                             .padding(horizontal = 2.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (isSelected) deepSea80 else Color.Transparent)
+                            .background(if (isSelected) seaBlue10 else Color.Transparent)
                             .let {
                                 if (date != null) {
                                     it.clickable { onSelectDate(date) }

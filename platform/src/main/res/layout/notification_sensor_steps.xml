@@ -3,12 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-
     android:layout_weight="1"
     android:gravity="center"
     android:orientation="horizontal"
     android:paddingVertical="14dp"
-    tools:background="#111317">
+    tools:background="#191919">
 
     <TextView
         android:id="@+id/tv_step_sensor_label"

@@ -15,9 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -94,7 +94,6 @@ fun MainFloatingActionButton(
         Surface(
             modifier = Modifier
                 .size(56.dp)
-                .alpha(0.9f)
                 .combinedClickable(
                     role = Role.Button,
                     onLongClick = {
@@ -103,7 +102,7 @@ fun MainFloatingActionButton(
                     onClick = onClickDownload,
                 ),
             shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.primaryContainer,
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             shadowElevation = 6.dp,
         ) {

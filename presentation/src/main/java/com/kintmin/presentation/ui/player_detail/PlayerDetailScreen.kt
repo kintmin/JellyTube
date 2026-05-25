@@ -341,7 +341,7 @@ fun PlayerDetailScreen(
                     }
                     IconButton(
                         modifier = Modifier
-                            .size(84.dp)
+                            .size(72.dp)
                             .border(
                                 width = 2.dp,
                                 color = Color.White.copy(alpha = 0.85f),
@@ -350,7 +350,7 @@ fun PlayerDetailScreen(
                         onClick = { sendIntent(PlayerDetailIntent.OnClickPlayOrPauseButton) },
                     ) {
                         Icon(
-                            modifier = Modifier.size(44.dp),
+                            modifier = Modifier.size(38.dp),
                             imageVector = if (data.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                             contentDescription = "재생/일시정지",
                             tint = Color.White,
@@ -373,47 +373,48 @@ fun PlayerDetailScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(96.dp))
+            }
 
-                Box(
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                PlaybackPitchChip(
+                    modifier = Modifier.align(Alignment.CenterStart),
+                    semitone = data.playbackPitchSemitone,
+                    onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
+                )
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    contentAlignment = Alignment.Center,
+                        .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
+                        .padding(horizontal = 48.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
                 ) {
-                    PlaybackPitchChip(
-                        modifier = Modifier.align(Alignment.CenterStart),
-                        semitone = data.playbackPitchSemitone,
-                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
+                    Icon(
+                        imageVector = Icons.Rounded.LibraryMusic,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.82f),
                     )
-                    Row(
-                        modifier = Modifier
-                            .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
-                            .padding(horizontal = 48.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.LibraryMusic,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.82f),
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
-                            color = Color.White.copy(alpha = 0.88f),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    PlaybackSpeedChip(
-                        modifier = Modifier.align(Alignment.CenterEnd),
-                        speed = data.playbackSpeed,
-                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
+                        color = Color.White.copy(alpha = 0.88f),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
+                PlaybackSpeedChip(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    speed = data.playbackSpeed,
+                    onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
+                )
             }
 
             if (data.isPlaybackSpeedMenuVisible) {

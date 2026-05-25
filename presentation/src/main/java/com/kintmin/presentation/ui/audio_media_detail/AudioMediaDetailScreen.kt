@@ -192,7 +192,10 @@ fun AudioMediaDetailScreen(
         }
         Column(
             modifier = Modifier
-                .padding(top = innerPadding.calculateTopPadding() + 210.dp, bottom = 56.dp)
+                .padding(
+                    top = innerPadding.calculateTopPadding() + 210.dp,
+                    bottom = innerPadding.calculateBottomPadding()
+                )
                 .clip(RoundedCornerShape(16.dp))
                 .fillMaxSize()
                 .background(color = MaterialTheme.colorScheme.background)
@@ -311,9 +314,9 @@ fun AudioMediaDetailScreenPreview() {
             navigateToBack = {},
             navigationToAudioMediaEditScreen = {},
             navigateToMainSearchTab = {},
-            navigateToPlaylistDetailScreen = { _, _, -> },
+            navigateToPlaylistDetailScreen = { _, _ -> },
             data = AudioMediaDetailUiState.getMock(),
-            sendIntent = {},
+            sendIntent = {}
         )
     }
 }

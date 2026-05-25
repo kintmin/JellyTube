@@ -2,6 +2,8 @@ package com.kintmin.platform.push_notification.notifications
 
 import android.app.Notification
 import android.content.Context
+import android.content.res.Configuration
+import android.graphics.Color
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.kintmin.platform.intent.stepScreenPendingIntent
@@ -16,8 +18,15 @@ data class SensorStepNotification(
     override val channel = StepSensorChannel
 
     override fun buildNotification(context: Context): Notification {
+        val textColor = if (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) {
+            Color.WHITE
+        } else {
+            Color.BLACK
+        }
         val remoteViews = RemoteViews(context.packageName, com.kintmin.platform.R.layout.notification_sensor_steps).apply {
             setTextViewText(com.kintmin.platform.R.id.tv_step_sensor_value, "%,d".format(stepSensorStepCount))
+            setTextColor(com.kintmin.platform.R.id.tv_step_sensor_label, textColor)
+            setTextColor(com.kintmin.platform.R.id.tv_step_sensor_value, textColor)
         }
 
         return NotificationCompat.Builder(context, channel.id)
