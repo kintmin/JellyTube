@@ -18,14 +18,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material.icons.automirrored.rounded.NavigateBefore
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
 import androidx.compose.material.icons.automirrored.rounded.Subject
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
@@ -74,8 +79,10 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -364,32 +371,257 @@ fun PlayerDetailScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-                Row(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 6.dp)
-                        .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
+                        .padding(vertical = 6.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.82f),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        modifier = Modifier.weight(1f, fill = false).padding(vertical = 12.dp),
-                        text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
-                        color = Color.White.copy(alpha = 0.88f),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                    Row(
+                        modifier = Modifier
+                            .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
+                            .padding(horizontal = 48.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.LibraryMusic,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.82f),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
+                            color = Color.White.copy(alpha = 0.88f),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    PlaybackSpeedChip(
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        speed = data.playbackSpeed,
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
                     )
                 }
             }
+
+            if (data.isPlaybackSpeedMenuVisible) {
+                PlaybackSpeedMenu(
+                    selectedSpeed = data.playbackSpeed,
+                    onDismiss = { sendIntent(PlayerDetailIntent.OnDismissPlaybackSpeedMenu) },
+                    onSelectSpeed = { sendIntent(PlayerDetailIntent.OnSelectPlaybackSpeed(it)) },
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun PlaybackSpeedChip(
+    modifier: Modifier = Modifier,
+    speed: Float,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color.White.copy(alpha = 0.16f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = speed.toPlaybackSpeedText(),
+            color = Color.White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun PlaybackSpeedMenu(
+    selectedSpeed: Float,
+    onDismiss: () -> Unit,
+    onSelectSpeed: (Float) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center,
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {},
+                ),
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Black.copy(alpha = 0.42f),
+            ),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp, vertical = 18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "재생 속도",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = selectedSpeed.toPlaybackSpeedText(),
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PlaybackSpeedStepButton(
+                        imageVector = Icons.Rounded.Remove,
+                        contentDescription = "재생 속도 낮추기",
+                        onClick = {
+                            selectedSpeed.previousPlaybackSpeed()?.let(onSelectSpeed)
+                        },
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Slider(
+                        modifier = Modifier.weight(1f),
+                        value = selectedSpeed.coerceIn(MinPlaybackSpeed, MaxPlaybackSpeed),
+                        onValueChange = { value ->
+                            val speed = value.roundToPlaybackSpeedStep()
+                            if (speed != selectedSpeed) {
+                                onSelectSpeed(speed)
+                            }
+                        },
+                        valueRange = MinPlaybackSpeed..MaxPlaybackSpeed,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color.White,
+                            activeTrackColor = Color.White,
+                            inactiveTrackColor = Color.White.copy(alpha = 0.36f),
+                            activeTickColor = Color.Transparent,
+                            inactiveTickColor = Color.Transparent,
+                        ),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    PlaybackSpeedStepButton(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "재생 속도 높이기",
+                        onClick = {
+                            selectedSpeed.nextPlaybackSpeed()?.let(onSelectSpeed)
+                        },
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    PlaybackSpeedOptions.forEach { speed ->
+                        PlaybackSpeedOptionChip(
+                            speed = speed,
+                            isSelected = selectedSpeed == speed,
+                            onClick = { onSelectSpeed(speed) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlaybackSpeedStepButton(
+    imageVector: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.16f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = contentDescription,
+            tint = Color.White,
+            modifier = Modifier.size(16.dp),
+        )
+    }
+}
+
+@Composable
+private fun PlaybackSpeedOptionChip(
+    speed: Float,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color.White.copy(alpha = if (isSelected) 0.26f else 0.14f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 11.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = speed.formatPlaybackSpeed(),
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+private const val MinPlaybackSpeed = 0.25f
+private const val MaxPlaybackSpeed = 3.0f
+private const val PlaybackSpeedStep = 0.01f
+
+private val PlaybackSpeedOptions = listOf(1.0f, 1.25f, 1.5f, 2.0f, 3.0f)
+
+private fun Float.toPlaybackSpeedText(): String = "x${formatPlaybackSpeed()}"
+
+private fun Float.previousPlaybackSpeed(): Float? {
+    return (this - PlaybackSpeedStep)
+        .takeIf { it >= MinPlaybackSpeed }
+        ?.roundToPlaybackSpeedStep()
+}
+
+private fun Float.nextPlaybackSpeed(): Float? {
+    return (this + PlaybackSpeedStep)
+        .takeIf { it <= MaxPlaybackSpeed }
+        ?.roundToPlaybackSpeedStep()
+}
+
+private fun Float.roundToPlaybackSpeedStep(): Float {
+    return (this / PlaybackSpeedStep).roundToInt()
+        .times(PlaybackSpeedStep)
+        .coerceIn(MinPlaybackSpeed, MaxPlaybackSpeed)
+}
+
+private fun Float.formatPlaybackSpeed(): String {
+    return if (this % 1.0f == 0f) {
+        String.format(Locale.ROOT, "%.1f", this)
+    } else {
+        String.format(Locale.ROOT, "%.2f", this).trimEnd('0')
     }
 }
 

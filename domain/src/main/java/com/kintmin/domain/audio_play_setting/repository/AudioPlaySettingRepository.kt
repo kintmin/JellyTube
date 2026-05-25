@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.Flow
 interface AudioPlaySettingRepository {
     fun getIsPlaybackRepeatingFlow(): Flow<Boolean>
     fun getIsPlaybackShufflingFlow(): Flow<Boolean>
+    fun getPlaybackSpeedFlow(): Flow<Float>
     suspend fun updateIsPlaybackRepeating(isRepeating: Boolean): Result<Unit>
     suspend fun updateIsPlaybackShuffling(isShuffling: Boolean): Result<Unit>
+    suspend fun updatePlaybackSpeed(speed: Float): Result<Unit>
 }

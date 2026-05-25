@@ -17,6 +17,7 @@ interface MediaControllerManager {
     val currentPlaylistId: Int?
     val currentPosition: Long?
     val playbackDuration: Long?
+    val playbackSpeed: Float
 
     fun seek(duration: Duration)
 
@@ -42,4 +43,5 @@ interface MediaControllerManager {
 
     fun setShuffleMode(isShuffle: Boolean)
     fun setRepeatMode(isRepeat: Boolean)
+    fun setPlaybackSpeed(speed: Float)
 }

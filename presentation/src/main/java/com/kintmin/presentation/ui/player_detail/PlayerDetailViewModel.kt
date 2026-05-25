@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
+import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdateIsPlaybackShufflingUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseCase
+import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackSpeedUseCase
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.platform.service_controller.MediaControllerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,7 +15,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -28,8 +29,10 @@ class PlayerDetailViewModel @Inject constructor(
     private val mediaControllerManager: MediaControllerManager,
     fetchIsPlaybackRepeatingFlowUseCase: FetchIsPlaybackRepeatingFlowUseCase,
     fetchIsPlaybackShufflingFlowUseCase: FetchIsPlaybackShufflingFlowUseCase,
+    fetchPlaybackSpeedFlowUseCase: FetchPlaybackSpeedFlowUseCase,
     private val updatePlaybackRepeatingUseCase: UpdatePlaybackRepeatingUseCase,
     private val updateIsPlaybackShufflingUseCase: UpdateIsPlaybackShufflingUseCase,
+    private val updatePlaybackSpeedUseCase: UpdatePlaybackSpeedUseCase,
     private val fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
 ) : ViewModel() {
 
@@ -50,6 +53,7 @@ class PlayerDetailViewModel @Inject constructor(
                 isPlaying = mediaControllerManager.isPlaying,
                 isShuffling = false,
                 isRepeating = false,
+                playbackSpeed = mediaControllerManager.playbackSpeed,
             )
         )
     }
@@ -69,6 +73,12 @@ class PlayerDetailViewModel @Inject constructor(
             fetchIsPlaybackShufflingFlowUseCase().collect {
                 _data.update { prev -> prev.copy(isShuffling = it) }
                 mediaControllerManager.setShuffleMode(it)
+            }
+        }
+        viewModelScope.launch {
+            fetchPlaybackSpeedFlowUseCase().collect { speed ->
+                _data.update { prev -> prev.copy(playbackSpeed = speed) }
+                mediaControllerManager.setPlaybackSpeed(speed)
             }
         }
     }
@@ -144,6 +154,24 @@ class PlayerDetailViewModel @Inject constructor(
                 }
             }
 
+            PlayerDetailIntent.OnClickPlaybackSpeedButton -> {
+                _data.update { it.copy(isPlaybackSpeedMenuVisible = true) }
+            }
+
+            PlayerDetailIntent.OnDismissPlaybackSpeedMenu -> {
+                _data.update { it.copy(isPlaybackSpeedMenuVisible = false) }
+            }
+
+            is PlayerDetailIntent.OnSelectPlaybackSpeed -> {
+                viewModelScope.launch {
+                    updatePlaybackSpeedUseCase(intent.speed)
+                    _data.update {
+                        it.copy(playbackSpeed = intent.speed)
+                    }
+                    mediaControllerManager.setPlaybackSpeed(intent.speed)
+                }
+            }
+
             is PlayerDetailIntent.OnChangeTimeSlider -> {
                 isHandlingSlider = true
                 _data.update {
@@ -192,6 +220,8 @@ class PlayerDetailViewModel @Inject constructor(
                 isPlaying = mediaControllerManager.isPlaying,
                 isShuffling = data.value.isShuffling,
                 isRepeating = data.value.isRepeating,
+                playbackSpeed = data.value.playbackSpeed,
+                isPlaybackSpeedMenuVisible = data.value.isPlaybackSpeedMenuVisible,
             )
         }
 

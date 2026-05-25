@@ -25,6 +25,7 @@ class MediaControllerManagerImpl @Inject constructor(
     private var controllerFuture: ListenableFuture<MediaController>? = null
 
     private var currentPlaylistIdState: Int? = null
+    private var playbackSpeedState = 1.0f
 
     private fun getMediaController(): MediaController? {
         if (mediaController == null) initialize()
@@ -38,7 +39,9 @@ class MediaControllerManagerImpl @Inject constructor(
         controllerFuture = MediaController.Builder(appContext, sessionToken).buildAsync().apply {
             addListener({
                 runCatching {
-                    mediaController = get()
+                    mediaController = get().also {
+                        it.setPlaybackSpeed(playbackSpeedState)
+                    }
                 }.onFailure {
                     controllerFuture = null
                 }
@@ -87,6 +90,8 @@ class MediaControllerManagerImpl @Inject constructor(
         get() = getMediaController()?.currentPosition
     override val playbackDuration: Long?
         get() = getMediaController()?.duration
+    override val playbackSpeed: Float
+        get() = playbackSpeedState
 
     override fun seek(duration: Duration) {
         getMediaController()?.seekTo(duration.inWholeMilliseconds)
@@ -145,6 +150,11 @@ class MediaControllerManagerImpl @Inject constructor(
 
     override fun setRepeatMode(isRepeat: Boolean) {
         getMediaController()?.repeatMode = if (isRepeat) REPEAT_MODE_ALL else REPEAT_MODE_OFF
+    }
+
+    override fun setPlaybackSpeed(speed: Float) {
+        playbackSpeedState = speed
+        getMediaController()?.setPlaybackSpeed(speed)
     }
 
     private fun playbackPlaylist(startMediaId: Int?) = runCatching {

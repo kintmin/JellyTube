@@ -25,11 +25,21 @@ class AudioPlaySettingRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getPlaybackSpeedFlow(): Flow<Float> {
+        return datastoreUtil.getData(PreferencesKey.PlaybackSpeed).map {
+            it ?: 1.0f
+        }
+    }
+
     override suspend fun updateIsPlaybackRepeating(isRepeating: Boolean): Result<Unit> {
         return datastoreUtil.updateData(PreferencesKey.IsPlaybackRepeating, isRepeating)
     }
 
     override suspend fun updateIsPlaybackShuffling(isShuffling: Boolean): Result<Unit> {
         return datastoreUtil.updateData(PreferencesKey.IsPlaybackShuffling, isShuffling)
+    }
+
+    override suspend fun updatePlaybackSpeed(speed: Float): Result<Unit> {
+        return datastoreUtil.updateData(PreferencesKey.PlaybackSpeed, speed)
     }
 }

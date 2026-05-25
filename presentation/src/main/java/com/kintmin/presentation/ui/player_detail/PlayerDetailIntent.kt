@@ -10,6 +10,9 @@ sealed interface PlayerDetailIntent {
     data object OnClickAddButton : PlayerDetailIntent
     data object OnClickMoreButton : PlayerDetailIntent
     data object OnClickPlayingPlaylistButton : PlayerDetailIntent
+    data object OnClickPlaybackSpeedButton : PlayerDetailIntent
+    data object OnDismissPlaybackSpeedMenu : PlayerDetailIntent
+    data class OnSelectPlaybackSpeed(val speed: Float) : PlayerDetailIntent
     data class OnChangeTimeSlider(val duration: Float) : PlayerDetailIntent
     data object OnChangeFinishTimeSlider : PlayerDetailIntent
 }
