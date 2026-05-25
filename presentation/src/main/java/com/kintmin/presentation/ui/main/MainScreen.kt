@@ -260,8 +260,9 @@ fun MainScreen(
         floatingActionButton = {
             if (selectedTab == MainTabItem.Search) {
                 MainFloatingActionButton(
-                    onClickDownload = {
-                        sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnClickDownload(currentUrl))
+                    currentUrl = currentUrl,
+                    onClickDownload = { url ->
+                        sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnClickDownload(url))
                     },
                 )
             }
