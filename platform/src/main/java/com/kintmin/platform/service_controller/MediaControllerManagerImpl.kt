@@ -17,6 +17,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.pow
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
 class MediaControllerManagerImpl @Inject constructor(
@@ -29,6 +30,9 @@ class MediaControllerManagerImpl @Inject constructor(
     private var currentPlaylistIdState: Int? = null
     private var playbackSpeedState = 1.0f
     private var playbackPitchSemitoneState = 0
+    private var repeatRangeMediaId: String? = null
+    private var repeatRangeStart: Duration? = null
+    private var repeatRangeEnd: Duration? = null
 
     private fun getMediaController(): MediaController? {
         if (mediaController == null) initialize()
@@ -97,9 +101,58 @@ class MediaControllerManagerImpl @Inject constructor(
         get() = playbackSpeedState
     override val playbackPitchSemitone: Int
         get() = playbackPitchSemitoneState
+    override val repeatRangeState: RepeatRangeState
+        get() {
+            clearRepeatRangeIfMediaChanged()
+            return RepeatRangeState(
+                mediaId = repeatRangeMediaId,
+                startDuration = repeatRangeStart,
+                endDuration = repeatRangeEnd,
+            )
+        }
 
     override fun seek(duration: Duration) {
         getMediaController()?.seekTo(duration.inWholeMilliseconds)
+    }
+
+    override fun updateRepeatRange(): Result<Unit> = runCatching {
+        val mediaController = getMediaController() ?: return@runCatching
+        val mediaId = mediaController.currentMediaItem?.mediaId ?: return@runCatching
+        clearRepeatRangeIfMediaChanged(mediaId)
+
+        val currentDuration = mediaController.currentPosition.milliseconds
+        when {
+            repeatRangeStart == null -> {
+                repeatRangeMediaId = mediaId
+                repeatRangeStart = currentDuration
+            }
+
+            repeatRangeEnd == null -> {
+                val start = repeatRangeStart ?: return@runCatching
+                check(currentDuration > start)
+                repeatRangeEnd = currentDuration
+            }
+
+            else -> clearRepeatRange()
+        }
+    }
+
+    override fun clearRepeatRange() {
+        repeatRangeMediaId = null
+        repeatRangeStart = null
+        repeatRangeEnd = null
+    }
+
+    override fun repeatRangeIfNeeded() {
+        val mediaController = getMediaController() ?: return
+        val mediaId = mediaController.currentMediaItem?.mediaId ?: return
+        clearRepeatRangeIfMediaChanged(mediaId)
+
+        val start = repeatRangeStart ?: return
+        val end = repeatRangeEnd ?: return
+        if (mediaController.currentPosition.milliseconds >= end) {
+            mediaController.seekTo(start.inWholeMilliseconds)
+        }
     }
 
     override fun playFromPlaylist(
@@ -176,6 +229,12 @@ class MediaControllerManagerImpl @Inject constructor(
 
     private fun Int.toPitchFactor(): Float {
         return 2.0.pow(this / 12.0).toFloat()
+    }
+
+    private fun clearRepeatRangeIfMediaChanged(mediaId: String? = playingMediaItem?.mediaId) {
+        if (repeatRangeMediaId != null && repeatRangeMediaId != mediaId) {
+            clearRepeatRange()
+        }
     }
 
     private fun playbackPlaylist(startMediaId: Int?) = runCatching {

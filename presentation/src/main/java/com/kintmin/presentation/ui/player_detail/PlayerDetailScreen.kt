@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
@@ -46,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -55,7 +57,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,6 +77,7 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.seaBlue10
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -183,14 +188,18 @@ fun PlayerDetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = navigateToBack) {
+                    IconButton(
+                        modifier = Modifier.padding(end = 8.dp),
+                        onClick = navigateToBack) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             contentDescription = "뒤로 가기",
                             tint = Color.White.copy(alpha = 0.82f),
                         )
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "PLAYING FROM ARTIST",
                             color = Color.White.copy(alpha = 0.65f),
@@ -198,14 +207,20 @@ fun PlayerDetailScreen(
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .basicMarquee(),
                             text = data.artist,
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
                             maxLines = 1,
                         )
                     }
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
+                    IconButton(
+                        modifier = Modifier.padding(start = 8.dp),
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.Subject,
                             contentDescription = "세부 화면",
@@ -252,7 +267,7 @@ fun PlayerDetailScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(90.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
@@ -304,71 +319,89 @@ fun PlayerDetailScreen(
                     )
                 }
 
-                Slider(
-                    modifier = Modifier.fillMaxWidth(),
-                    valueRange = 0f..playbackSeconds.toFloat(),
-                    value = currentSeconds.toFloat(),
+                PlaybackSlider(
+                    playbackSeconds = playbackSeconds,
+                    currentSeconds = currentSeconds,
+                    repeatRangeStartSeconds = data.repeatRangeStartDuration?.inWholeSeconds,
+                    repeatRangeEndSeconds = data.repeatRangeEndDuration?.inWholeSeconds,
                     onValueChange = { sendIntent(PlayerDetailIntent.OnChangeTimeSlider(it)) },
                     onValueChangeFinished = { sendIntent(PlayerDetailIntent.OnChangeFinishTimeSlider) },
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.White,
-                        activeTrackColor = Color.White,
-                        inactiveTrackColor = Color.White.copy(alpha = 0.28f),
-                    ),
                 )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
-                        Icon(
-                            imageVector = Icons.Rounded.Shuffle,
-                            contentDescription = "셔플",
-                            tint = if (data.isShuffling) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
-                        )
-                    }
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
-                        Icon(
-                            modifier = Modifier.size(40.dp),
-                            imageVector = Icons.AutoMirrored.Rounded.NavigateBefore,
-                            contentDescription = "이전 음원",
-                            tint = Color.White,
-                        )
-                    }
-                    IconButton(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .border(
-                                width = 2.dp,
-                                color = Color.White.copy(alpha = 0.85f),
-                                shape = CircleShape,
-                            ),
-                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlayOrPauseButton) },
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            modifier = Modifier.size(38.dp),
-                            imageVector = if (data.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                            contentDescription = "재생/일시정지",
-                            tint = Color.White,
-                        )
+                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
+                            Icon(
+                                imageVector = Icons.Rounded.Shuffle,
+                                contentDescription = "셔플",
+                                tint = if (data.isShuffling) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
+                            )
+                        }
+                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) }) {
+                            Icon(
+                                imageVector = Icons.Rounded.Repeat,
+                                contentDescription = "반복",
+                                tint = if (data.isRepeating) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
+                            )
+                        }
                     }
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) }) {
-                        Icon(
-                            modifier = Modifier.size(40.dp),
-                            imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
-                            contentDescription = "다음 음원",
-                            tint = Color.White,
-                        )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
+                            Icon(
+                                modifier = Modifier.size(40.dp),
+                                imageVector = Icons.AutoMirrored.Rounded.NavigateBefore,
+                                contentDescription = "이전 음원",
+                                tint = Color.White,
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .border(
+                                    width = 2.dp,
+                                    color = Color.White.copy(alpha = 0.85f),
+                                    shape = CircleShape,
+                                ),
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickPlayOrPauseButton) },
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(38.dp),
+                                imageVector = if (data.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                                contentDescription = "재생/일시정지",
+                                tint = Color.White,
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) }) {
+                            Icon(
+                                modifier = Modifier.size(40.dp),
+                                imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
+                                contentDescription = "다음 음원",
+                                tint = Color.White,
+                            )
+                        }
                     }
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) }) {
-                        Icon(
-                            imageVector = Icons.Rounded.Repeat,
-                            contentDescription = "반복",
-                            tint = if (data.isRepeating) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        RepeatRangeButton(
+                            isStartSelected = data.repeatRangeStartDuration != null,
+                            isEndSelected = data.repeatRangeEndDuration != null,
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatRangeButton) },
                         )
                     }
                 }
@@ -376,42 +409,50 @@ fun PlayerDetailScreen(
                 Spacer(modifier = Modifier.height(96.dp))
             }
 
-            Box(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
                     .padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
-                contentAlignment = Alignment.Center,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 PlaybackPitchChip(
-                    modifier = Modifier.align(Alignment.CenterStart),
+                    Modifier.width(56.dp),
                     semitone = data.playbackPitchSemitone,
                     onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
                 )
-                Row(
+                Box(
                     modifier = Modifier
-                        .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
-                        .padding(horizontal = 48.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
+                        .weight(1f)
+                        .padding(horizontal = 8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.82f),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
-                        color = Color.White.copy(alpha = 0.88f),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
+                            .padding(vertical  = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.LibraryMusic,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.82f),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
+                            color = Color.White.copy(alpha = 0.88f),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 PlaybackSpeedChip(
-                    modifier = Modifier.align(Alignment.CenterEnd),
+                    Modifier.width(56.dp),
                     speed = data.playbackSpeed,
                     onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
                 )
@@ -436,18 +477,127 @@ fun PlayerDetailScreen(
 }
 
 @Composable
+private fun PlaybackSlider(
+    playbackSeconds: Long,
+    currentSeconds: Long,
+    repeatRangeStartSeconds: Long?,
+    repeatRangeEndSeconds: Long?,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit,
+) {
+    var sliderWidth by remember { mutableIntStateOf(0) }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onSizeChanged { sliderWidth = it.width },
+    ) {
+        Slider(
+            modifier = Modifier.fillMaxWidth(),
+            valueRange = 0f..playbackSeconds.toFloat(),
+            value = currentSeconds.toFloat(),
+            onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
+            colors = SliderDefaults.colors(
+                thumbColor = Color.White,
+                activeTrackColor = Color.White,
+                inactiveTrackColor = Color.White.copy(alpha = 0.28f),
+            ),
+        )
+        RepeatRangeMarker(
+            label = "A",
+            seconds = repeatRangeStartSeconds,
+            playbackSeconds = playbackSeconds,
+            sliderWidth = sliderWidth,
+        )
+        RepeatRangeMarker(
+            label = "B",
+            seconds = repeatRangeEndSeconds,
+            playbackSeconds = playbackSeconds,
+            sliderWidth = sliderWidth,
+        )
+    }
+}
+
+@Composable
+private fun RepeatRangeMarker(
+    label: String,
+    seconds: Long?,
+    playbackSeconds: Long,
+    sliderWidth: Int,
+) {
+    if (seconds == null || sliderWidth == 0) return
+
+    val density = LocalDensity.current
+    val markerSize = 18.dp
+    val markerOffset = with(density) {
+        (sliderWidth * (seconds.toFloat() / playbackSeconds).coerceIn(0f, 1f)).toDp()
+    }
+    Box(
+        modifier = Modifier
+            .offset(x = markerOffset - markerSize / 2)
+            .size(markerSize)
+            .clip(CircleShape)
+            .background(seaBlue10),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            color = Color.White,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun RepeatRangeButton(
+    modifier: Modifier = Modifier,
+    isStartSelected: Boolean,
+    isEndSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "A",
+            color = if (isStartSelected) seaBlue10 else Color.White,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = " | ",
+            color = Color.White,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = "B",
+            color = if (isEndSelected) seaBlue10 else Color.White,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
 private fun PlaybackPitchChip(
     modifier: Modifier = Modifier,
     semitone: Int,
     onClick: () -> Unit,
 ) {
-    Box(
+    Row(
         modifier = modifier
             .clip(RoundedCornerShape(18.dp))
             .background(Color.White.copy(alpha = 0.16f))
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 7.dp),
-        contentAlignment = Alignment.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
         Text(
             text = semitone.toPitchSemitoneText(),
@@ -464,13 +614,14 @@ private fun PlaybackSpeedChip(
     speed: Float,
     onClick: () -> Unit,
 ) {
-    Box(
+    Row(
         modifier = modifier
             .clip(RoundedCornerShape(18.dp))
             .background(Color.White.copy(alpha = 0.16f))
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 7.dp),
-        contentAlignment = Alignment.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
         Text(
             text = speed.toPlaybackSpeedText(),
@@ -490,7 +641,7 @@ private fun PlaybackPitchMenu(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
             .clickable(onClick = onDismiss),
         contentAlignment = Alignment.Center,
     ) {
@@ -505,7 +656,7 @@ private fun PlaybackPitchMenu(
                 ),
             shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.Black.copy(alpha = 0.42f),
+                containerColor = Color.Black.copy(alpha = 0.85f),
             ),
         ) {
             Column(
@@ -596,7 +747,7 @@ private fun PlaybackSpeedMenu(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.7f))
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
             .clickable(onClick = onDismiss),
         contentAlignment = Alignment.Center,
     ) {
@@ -611,7 +762,7 @@ private fun PlaybackSpeedMenu(
                 ),
             shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.Black.copy(alpha = 0.8f),
+                containerColor = Color.Black.copy(alpha = 0.85f),
             ),
         ) {
             Column(

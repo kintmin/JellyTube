@@ -3,6 +3,12 @@ package com.kintmin.platform.service_controller
 import com.kintmin.platform.service_controller.model.MediaControlData
 import kotlin.time.Duration
 
+data class RepeatRangeState(
+    val mediaId: String? = null,
+    val startDuration: Duration? = null,
+    val endDuration: Duration? = null,
+)
+
 interface MediaControllerManager {
 
     fun initialize()
@@ -19,8 +25,12 @@ interface MediaControllerManager {
     val playbackDuration: Long?
     val playbackSpeed: Float
     val playbackPitchSemitone: Int
+    val repeatRangeState: RepeatRangeState
 
     fun seek(duration: Duration)
+    fun updateRepeatRange(): Result<Unit>
+    fun clearRepeatRange()
+    fun repeatRangeIfNeeded()
 
     fun playFromPlaylist(
         playlistId: Int,

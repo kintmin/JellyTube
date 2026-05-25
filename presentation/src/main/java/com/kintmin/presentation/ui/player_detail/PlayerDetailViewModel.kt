@@ -59,6 +59,8 @@ class PlayerDetailViewModel @Inject constructor(
                 isRepeating = false,
                 playbackSpeed = mediaControllerManager.playbackSpeed,
                 playbackPitchSemitone = mediaControllerManager.playbackPitchSemitone,
+                repeatRangeStartDuration = mediaControllerManager.repeatRangeState.startDuration,
+                repeatRangeEndDuration = mediaControllerManager.repeatRangeState.endDuration,
             )
         )
     }
@@ -108,11 +110,15 @@ class PlayerDetailViewModel @Inject constructor(
             }
 
             PlayerDetailIntent.OnClickPreviousMediaButton -> {
+                mediaControllerManager.clearRepeatRange()
+                refreshRepeatRangeState()
                 mediaControllerManager.playPrevious()
                 refreshMediaData()
             }
 
             PlayerDetailIntent.OnClickNextMediaButton -> {
+                mediaControllerManager.clearRepeatRange()
+                refreshRepeatRangeState()
                 mediaControllerManager.playNext()
                 refreshMediaData()
             }
@@ -128,6 +134,14 @@ class PlayerDetailViewModel @Inject constructor(
                 viewModelScope.launch {
                     val newValue = !data.value.isRepeating
                     updatePlaybackRepeatingUseCase(newValue)
+                }
+            }
+
+            PlayerDetailIntent.OnClickRepeatRangeButton -> {
+                viewModelScope.launch {
+                    mediaControllerManager.updateRepeatRange()
+                        .onSuccess { refreshRepeatRangeState() }
+                        .onFailure { _eventFlow.emit(PlayerDetailEvent.ShowToast("B 지점은 A 지점 이후로 설정해주세요.")) }
                 }
             }
 
@@ -220,17 +234,21 @@ class PlayerDetailViewModel @Inject constructor(
     private fun refreshMediaData() {
         if (isHandlingSlider) return
 
+        mediaControllerManager.repeatRangeIfNeeded()
         val currentDuration = mediaControllerManager.currentPosition?.toDuration(DurationUnit.MILLISECONDS) ?: return
         val currentPlayingItem = mediaControllerManager.playingMediaItem
         val currentPlaylistId = mediaControllerManager.currentPlaylistId
         val isSamePlaylist = data.value.playlistId == currentPlaylistId
         val isSameMedia = data.value.id == currentPlayingItem?.mediaId
 
+        val repeatRangeState = mediaControllerManager.repeatRangeState
         if (isSameMedia && isSamePlaylist) {
             _data.update {
                 it.copy(
                     currentDuration = currentDuration,
                     isPlaying = mediaControllerManager.isPlaying,
+                    repeatRangeStartDuration = repeatRangeState.startDuration,
+                    repeatRangeEndDuration = repeatRangeState.endDuration,
                 )
             }
             return
@@ -251,6 +269,8 @@ class PlayerDetailViewModel @Inject constructor(
                 isRepeating = data.value.isRepeating,
                 playbackSpeed = data.value.playbackSpeed,
                 playbackPitchSemitone = data.value.playbackPitchSemitone,
+                repeatRangeStartDuration = repeatRangeState.startDuration,
+                repeatRangeEndDuration = repeatRangeState.endDuration,
                 isPlaybackSpeedMenuVisible = data.value.isPlaybackSpeedMenuVisible,
                 isPlaybackPitchMenuVisible = data.value.isPlaybackPitchMenuVisible,
             )
@@ -258,6 +278,16 @@ class PlayerDetailViewModel @Inject constructor(
 
         if (!isSamePlaylist) {
             refreshPlaylistName(currentPlaylistId)
+        }
+    }
+
+    private fun refreshRepeatRangeState() {
+        val repeatRangeState = mediaControllerManager.repeatRangeState
+        _data.update {
+            it.copy(
+                repeatRangeStartDuration = repeatRangeState.startDuration,
+                repeatRangeEndDuration = repeatRangeState.endDuration,
+            )
         }
     }
 

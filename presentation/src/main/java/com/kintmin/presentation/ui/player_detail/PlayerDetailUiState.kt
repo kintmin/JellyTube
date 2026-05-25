@@ -18,6 +18,8 @@ data class PlayerDetailUiState(
     val isRepeating: Boolean,
     val playbackSpeed: Float,
     val playbackPitchSemitone: Int,
+    val repeatRangeStartDuration: Duration? = null,
+    val repeatRangeEndDuration: Duration? = null,
     val isPlaybackSpeedMenuVisible: Boolean = false,
     val isPlaybackPitchMenuVisible: Boolean = false,
 ) {
@@ -38,7 +40,9 @@ data class PlayerDetailUiState(
             isRepeating = false,
             playbackSpeed = 1.0f,
             playbackPitchSemitone = 0,
-            isPlaybackSpeedMenuVisible = true,
+            repeatRangeStartDuration = 60.seconds,
+            repeatRangeEndDuration = 180.seconds,
+            isPlaybackSpeedMenuVisible = false,
             isPlaybackPitchMenuVisible = false,
         )
     }
