@@ -328,8 +328,6 @@ fun PlayerDetailScreen(
                     onValueChangeFinished = { sendIntent(PlayerDetailIntent.OnChangeFinishTimeSlider) },
                 )
 
-                Spacer(modifier = Modifier.height(14.dp))
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -487,7 +485,7 @@ private fun PlaybackSlider(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp)
+            .height(64.dp)
             .onSizeChanged { sliderWidth = it.width },
     ) {
         Slider(

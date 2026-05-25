@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -43,6 +44,7 @@ fun PlaybackPitchDialog(
     JellyTubeDialog(
         showDialog = showDialog,
         onDismiss = onDismiss,
+        containerColor = Color.Black.copy(alpha = 0.8f),
         surfaceModifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
