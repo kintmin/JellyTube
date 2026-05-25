@@ -72,7 +72,10 @@ import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.deepSea60
+import com.kintmin.presentation.theme.deepSea80
 import com.kintmin.presentation.theme.seaBlue10
+import com.kintmin.presentation.theme.seaBlue40
 import com.kintmin.presentation.ui.player_detail.dialog.PlaybackPitchDialog
 import com.kintmin.presentation.ui.player_detail.dialog.PlaybackSpeedDialog
 import com.kintmin.presentation.ui.player_detail.dialog.toPitchSemitoneText
@@ -484,6 +487,7 @@ private fun PlaybackSlider(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .height(72.dp)
             .onSizeChanged { sliderWidth = it.width },
     ) {
         Slider(
@@ -524,22 +528,46 @@ private fun RepeatRangeMarker(
 
     val density = LocalDensity.current
     val markerSize = 18.dp
+    val markerWidth = 42.dp
+    val barWidth = 2.dp
     val markerOffset = with(density) {
         (sliderWidth * (seconds.toFloat() / playbackSeconds).coerceIn(0f, 1f)).toDp()
     }
-    Box(
+    Column(
         modifier = Modifier
-            .offset(x = markerOffset - markerSize / 2)
-            .size(markerSize)
-            .clip(CircleShape)
-            .background(seaBlue10),
-        contentAlignment = Alignment.Center,
+            .offset(x = markerOffset - markerWidth / 2)
+            .width(markerWidth),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Box(
+            modifier = Modifier
+                .size(markerSize)
+                .clip(CircleShape)
+                .background(seaBlue10),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = label,
+                color = Color.White,
+                fontSize = 11.sp,
+                lineHeight = 11.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .width(barWidth)
+                .height(22.dp)
+                .background(seaBlue10),
+        )
+        Spacer(modifier = Modifier.height(2.dp))
         Text(
-            text = label,
-            color = Color.White,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
+            text = seconds.seconds.to_hh_colon_mm_colon_ss(),
+            color = Color.White.copy(alpha = 0.88f),
+            fontSize = 10.sp,
+            lineHeight = 10.sp,
+            maxLines = 1,
         )
     }
 }
