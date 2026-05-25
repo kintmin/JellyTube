@@ -336,15 +336,23 @@ fun PlayerDetailScreen(
                         modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
+                        IconButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) },
+                        ) {
                             Icon(
+                                modifier = Modifier.size(24.dp),
                                 imageVector = Icons.Rounded.Shuffle,
                                 contentDescription = "셔플",
                                 tint = if (data.isShuffling) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
                             )
                         }
-                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) }) {
+                        IconButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) },
+                        ) {
                             Icon(
+                                modifier = Modifier.size(24.dp),
                                 imageVector = Icons.Rounded.Repeat,
                                 contentDescription = "반복",
                                 tint = if (data.isRepeating) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
@@ -355,15 +363,16 @@ fun PlayerDetailScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
                     ) {
+                        Spacer(modifier = Modifier.width(8.dp))
                         IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
                             Icon(
-                                modifier = Modifier.size(40.dp),
+                                modifier = Modifier.size(48.dp),
                                 imageVector = Icons.AutoMirrored.Rounded.NavigateBefore,
                                 contentDescription = "이전 음원",
                                 tint = Color.White,
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         IconButton(
                             modifier = Modifier
                                 .size(72.dp)
@@ -381,15 +390,16 @@ fun PlayerDetailScreen(
                                 tint = Color.White,
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) }) {
                             Icon(
-                                modifier = Modifier.size(40.dp),
+                                modifier = Modifier.size(48.dp),
                                 imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
                                 contentDescription = "다음 음원",
                                 tint = Color.White,
                             )
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
                     }
                     Row(
                         modifier = Modifier.weight(1f),
