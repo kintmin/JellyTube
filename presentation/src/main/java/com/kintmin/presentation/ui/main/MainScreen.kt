@@ -19,25 +19,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.VideoLibrary
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -51,7 +45,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
@@ -67,10 +60,8 @@ import com.kintmin.presentation.ui.custom_ui.data_table.LineColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.NameColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.PaymentColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.TempData
-import com.kintmin.presentation.ui.custom_ui.floating_component.FloatingComponentMode
-import com.kintmin.presentation.ui.custom_ui.floating_component.FloatingComponentView
-import com.kintmin.presentation.ui.custom_ui.floating_component.rememberFloatingComponentViewState
 import com.kintmin.presentation.ui.player_bar.PlayerBar
+import com.kintmin.presentation.ui.main.floating_action.MainFloatingActionButton
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
@@ -268,17 +259,11 @@ fun MainScreen(
         },
         floatingActionButton = {
             if (selectedTab == MainTabItem.Search) {
-                FloatingActionButton(
-                    modifier = Modifier.padding(bottom = 48.dp),
-                    onClick = {
+                MainFloatingActionButton(
+                    onClickDownload = {
                         sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnClickDownload(currentUrl))
                     },
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Add,
-                        contentDescription = "추가"
-                    )
-                }
+                )
             }
         },
         bottomBar = {

@@ -10,6 +10,7 @@ import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
 import com.kintmin.domain.app_setting.usecase.UpdateShouldInsertAtTopOnDownloadUseCase
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
+import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow

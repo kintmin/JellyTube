@@ -17,7 +17,9 @@ data class PlayerDetailUiState(
     val isShuffling: Boolean,
     val isRepeating: Boolean,
     val playbackSpeed: Float,
+    val playbackPitchSemitone: Int,
     val isPlaybackSpeedMenuVisible: Boolean = false,
+    val isPlaybackPitchMenuVisible: Boolean = false,
 ) {
     val timeString get() = "${currentDuration.to_hh_colon_mm_colon_ss()} / ${playbackDuration.to_hh_colon_mm_colon_ss()}"
 
@@ -35,7 +37,9 @@ data class PlayerDetailUiState(
             isShuffling = false,
             isRepeating = false,
             playbackSpeed = 1.0f,
-            isPlaybackSpeedMenuVisible = true,
+            playbackPitchSemitone = 0,
+            isPlaybackSpeedMenuVisible = false,
+            isPlaybackPitchMenuVisible = false,
         )
     }
 }

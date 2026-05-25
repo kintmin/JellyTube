@@ -3,6 +3,7 @@ package com.kintmin.platform.service_controller
 import android.content.ComponentName
 import android.content.Context
 import androidx.core.content.ContextCompat
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.session.MediaController
@@ -14,6 +15,7 @@ import com.kintmin.platform.service_controller.mapper.toMediaControlData
 import com.kintmin.platform.service_controller.model.MediaControlData
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.pow
 import kotlin.time.Duration
 
 @Singleton
@@ -26,6 +28,7 @@ class MediaControllerManagerImpl @Inject constructor(
 
     private var currentPlaylistIdState: Int? = null
     private var playbackSpeedState = 1.0f
+    private var playbackPitchSemitoneState = 0
 
     private fun getMediaController(): MediaController? {
         if (mediaController == null) initialize()
@@ -40,7 +43,7 @@ class MediaControllerManagerImpl @Inject constructor(
             addListener({
                 runCatching {
                     mediaController = get().also {
-                        it.setPlaybackSpeed(playbackSpeedState)
+                        applyPlaybackParameters(it)
                     }
                 }.onFailure {
                     controllerFuture = null
@@ -92,6 +95,8 @@ class MediaControllerManagerImpl @Inject constructor(
         get() = getMediaController()?.duration
     override val playbackSpeed: Float
         get() = playbackSpeedState
+    override val playbackPitchSemitone: Int
+        get() = playbackPitchSemitoneState
 
     override fun seek(duration: Duration) {
         getMediaController()?.seekTo(duration.inWholeMilliseconds)
@@ -154,7 +159,23 @@ class MediaControllerManagerImpl @Inject constructor(
 
     override fun setPlaybackSpeed(speed: Float) {
         playbackSpeedState = speed
-        getMediaController()?.setPlaybackSpeed(speed)
+        applyPlaybackParameters(getMediaController())
+    }
+
+    override fun setPlaybackPitchSemitone(semitone: Int) {
+        playbackPitchSemitoneState = semitone
+        applyPlaybackParameters(getMediaController())
+    }
+
+    private fun applyPlaybackParameters(mediaController: MediaController?) {
+        mediaController?.playbackParameters = PlaybackParameters(
+            playbackSpeedState,
+            playbackPitchSemitoneState.toPitchFactor(),
+        )
+    }
+
+    private fun Int.toPitchFactor(): Float {
+        return 2.0.pow(this / 12.0).toFloat()
     }
 
     private fun playbackPlaylist(startMediaId: Int?) = runCatching {

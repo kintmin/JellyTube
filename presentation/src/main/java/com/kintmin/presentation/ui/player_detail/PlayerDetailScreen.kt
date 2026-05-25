@@ -107,7 +107,11 @@ fun PlayerDetailScreen(
             when (event) {
                 is PlayerDetailEvent.NavigateToAudioMediaDetailScreen -> navigateToAudioMediaDetail(event.audioMediaId)
                 is PlayerDetailEvent.NavigateToAudioMediaEditScreen -> navigateToAudioMediaEdit(event.audioMediaId)
-                is PlayerDetailEvent.NavigateToPlayingPlaylist -> navigateToPlayingPlaylist(event.playlistId, event.audioMediaId)
+                is PlayerDetailEvent.NavigateToPlayingPlaylist -> navigateToPlayingPlaylist(
+                    event.playlistId,
+                    event.audioMediaId
+                )
+
                 is PlayerDetailEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
             }
         }
@@ -174,202 +178,202 @@ fun PlayerDetailScreen(
             ) {
                 Spacer(modifier = Modifier.height(20.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = navigateToBack) {
-                    Icon(
-                        imageVector = Icons.Rounded.ArrowBackIosNew,
-                        contentDescription = "뒤로 가기",
-                        tint = Color.White.copy(alpha = 0.82f),
-                    )
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "PLAYING FROM ARTIST",
-                        color = Color.White.copy(alpha = 0.65f),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        text = data.artist,
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                    )
-                }
-                IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.Subject,
-                        contentDescription = "세부 화면",
-                        tint = Color.White.copy(alpha = 0.82f),
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            if (data.imageFileFullPath == null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(Color.Black.copy(alpha = 0.25f)),
-                    contentAlignment = Alignment.Center,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        modifier = Modifier.size(100.dp),
-                        imageVector = Icons.Rounded.LibraryMusic,
+                    IconButton(onClick = navigateToBack) {
+                        Icon(
+                            imageVector = Icons.Rounded.ArrowBackIosNew,
+                            contentDescription = "뒤로 가기",
+                            tint = Color.White.copy(alpha = 0.82f),
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "PLAYING FROM ARTIST",
+                            color = Color.White.copy(alpha = 0.65f),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            text = data.artist,
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                        )
+                    }
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.Subject,
+                            contentDescription = "세부 화면",
+                            tint = Color.White.copy(alpha = 0.82f),
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                if (data.imageFileFullPath == null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color.Black.copy(alpha = 0.25f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(100.dp),
+                            imageVector = Icons.Rounded.LibraryMusic,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.7f),
+                        )
+                    }
+                } else {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(File(data.imageFileFullPath))
+                            .memoryCachePolicy(CachePolicy.ENABLED)
+                            .diskCachePolicy(CachePolicy.DISABLED)
+                            .build(),
                         contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.7f),
-                    )
-                }
-            } else {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(File(data.imageFileFullPath))
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCachePolicy(CachePolicy.DISABLED)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(Color.Black.copy(alpha = 0.25f)),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .basicMarquee(),
-                        text = data.title,
-                        color = Color.White,
-                        fontSize = 34.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
+                            .aspectRatio(1f)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color.Black.copy(alpha = 0.25f)),
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .basicMarquee(),
+                            text = data.title,
+                            color = Color.White,
+                            fontSize = 34.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp)
+                                .basicMarquee(),
+                            text = data.artist,
+                            color = Color.White.copy(alpha = 0.78f),
+                            fontSize = 18.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = currentSeconds.seconds.to_hh_colon_mm_colon_ss(),
+                        color = Color.White.copy(alpha = 0.88f),
+                        fontSize = 13.sp,
                     )
                     Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp)
-                            .basicMarquee(),
-                        text = data.artist,
-                        color = Color.White.copy(alpha = 0.78f),
-                        fontSize = 18.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
+                        text = playbackSeconds.seconds.to_hh_colon_mm_colon_ss(),
+                        color = Color.White.copy(alpha = 0.88f),
+                        fontSize = 13.sp,
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = currentSeconds.seconds.to_hh_colon_mm_colon_ss(),
-                    color = Color.White.copy(alpha = 0.88f),
-                    fontSize = 13.sp,
+                Slider(
+                    modifier = Modifier.fillMaxWidth(),
+                    valueRange = 0f..playbackSeconds.toFloat(),
+                    value = currentSeconds.toFloat(),
+                    onValueChange = { sendIntent(PlayerDetailIntent.OnChangeTimeSlider(it)) },
+                    onValueChangeFinished = { sendIntent(PlayerDetailIntent.OnChangeFinishTimeSlider) },
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color.White,
+                        activeTrackColor = Color.White,
+                        inactiveTrackColor = Color.White.copy(alpha = 0.28f),
+                    ),
                 )
-                Text(
-                    text = playbackSeconds.seconds.to_hh_colon_mm_colon_ss(),
-                    color = Color.White.copy(alpha = 0.88f),
-                    fontSize = 13.sp,
-                )
-            }
 
-            Slider(
-                modifier = Modifier.fillMaxWidth(),
-                valueRange = 0f..playbackSeconds.toFloat(),
-                value = currentSeconds.toFloat(),
-                onValueChange = { sendIntent(PlayerDetailIntent.OnChangeTimeSlider(it)) },
-                onValueChangeFinished = { sendIntent(PlayerDetailIntent.OnChangeFinishTimeSlider) },
-                colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = Color.White,
-                    inactiveTrackColor = Color.White.copy(alpha = 0.28f),
-                ),
-            )
+                Spacer(modifier = Modifier.height(14.dp))
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
-                    Icon(
-                        imageVector = Icons.Rounded.Shuffle,
-                        contentDescription = "셔플",
-                        tint = if (data.isShuffling) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
-                    )
-                }
-                IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
-                    Icon(
-                        modifier = Modifier.size(40.dp),
-                        imageVector = Icons.AutoMirrored.Rounded.NavigateBefore,
-                        contentDescription = "이전 음원",
-                        tint = Color.White,
-                    )
-                }
-                IconButton(
-                    modifier = Modifier
-                        .size(84.dp)
-                        .border(
-                            width = 2.dp,
-                            color = Color.White.copy(alpha = 0.85f),
-                            shape = CircleShape,
-                        ),
-                    onClick = { sendIntent(PlayerDetailIntent.OnClickPlayOrPauseButton) },
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        modifier = Modifier.size(44.dp),
-                        imageVector = if (data.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        contentDescription = "재생/일시정지",
-                        tint = Color.White,
-                    )
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Shuffle,
+                            contentDescription = "셔플",
+                            tint = if (data.isShuffling) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
+                        )
+                    }
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
+                        Icon(
+                            modifier = Modifier.size(40.dp),
+                            imageVector = Icons.AutoMirrored.Rounded.NavigateBefore,
+                            contentDescription = "이전 음원",
+                            tint = Color.White,
+                        )
+                    }
+                    IconButton(
+                        modifier = Modifier
+                            .size(84.dp)
+                            .border(
+                                width = 2.dp,
+                                color = Color.White.copy(alpha = 0.85f),
+                                shape = CircleShape,
+                            ),
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlayOrPauseButton) },
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(44.dp),
+                            imageVector = if (data.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            contentDescription = "재생/일시정지",
+                            tint = Color.White,
+                        )
+                    }
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) }) {
+                        Icon(
+                            modifier = Modifier.size(40.dp),
+                            imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
+                            contentDescription = "다음 음원",
+                            tint = Color.White,
+                        )
+                    }
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Repeat,
+                            contentDescription = "반복",
+                            tint = if (data.isRepeating) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
+                        )
+                    }
                 }
-                IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) }) {
-                    Icon(
-                        modifier = Modifier.size(40.dp),
-                        imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
-                        contentDescription = "다음 음원",
-                        tint = Color.White,
-                    )
-                }
-                IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) }) {
-                    Icon(
-                        imageVector = Icons.Rounded.Repeat,
-                        contentDescription = "반복",
-                        tint = if (data.isRepeating) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
-                    )
-                }
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Box(
                     modifier = Modifier
@@ -377,6 +381,11 @@ fun PlayerDetailScreen(
                         .padding(vertical = 6.dp),
                     contentAlignment = Alignment.Center,
                 ) {
+                    PlaybackPitchChip(
+                        modifier = Modifier.align(Alignment.CenterStart),
+                        semitone = data.playbackPitchSemitone,
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
+                    )
                     Row(
                         modifier = Modifier
                             .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
@@ -414,7 +423,37 @@ fun PlayerDetailScreen(
                     onSelectSpeed = { sendIntent(PlayerDetailIntent.OnSelectPlaybackSpeed(it)) },
                 )
             }
+            if (data.isPlaybackPitchMenuVisible) {
+                PlaybackPitchMenu(
+                    selectedSemitone = data.playbackPitchSemitone,
+                    onDismiss = { sendIntent(PlayerDetailIntent.OnDismissPlaybackPitchMenu) },
+                    onSelectSemitone = { sendIntent(PlayerDetailIntent.OnSelectPlaybackPitchSemitone(it)) },
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun PlaybackPitchChip(
+    modifier: Modifier = Modifier,
+    semitone: Int,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color.White.copy(alpha = 0.16f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = semitone.toPitchSemitoneText(),
+            color = Color.White,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
@@ -438,6 +477,112 @@ private fun PlaybackSpeedChip(
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
         )
+    }
+}
+
+@Composable
+private fun PlaybackPitchMenu(
+    selectedSemitone: Int,
+    onDismiss: () -> Unit,
+    onSelectSemitone: (Int) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center,
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {},
+                ),
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Black.copy(alpha = 0.42f),
+            ),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp, vertical = 18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "피치",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = selectedSemitone.toPitchSemitoneText(),
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PlaybackSpeedStepButton(
+                        imageVector = Icons.Rounded.Remove,
+                        contentDescription = "피치 낮추기",
+                        onClick = {
+                            selectedSemitone.previousPitchSemitone()?.let(onSelectSemitone)
+                        },
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Slider(
+                        modifier = Modifier.weight(1f),
+                        value = selectedSemitone.toFloat(),
+                        onValueChange = { value ->
+                            val semitone =
+                                value.roundToInt().coerceIn(MinPlaybackPitchSemitone, MaxPlaybackPitchSemitone)
+                            if (semitone != selectedSemitone) {
+                                onSelectSemitone(semitone)
+                            }
+                        },
+                        valueRange = MinPlaybackPitchSemitone.toFloat()..MaxPlaybackPitchSemitone.toFloat(),
+                        steps = MaxPlaybackPitchSemitone - MinPlaybackPitchSemitone - 1,
+                        colors = SliderDefaults.colors(
+                            thumbColor = Color.White,
+                            activeTrackColor = Color.White,
+                            inactiveTrackColor = Color.White.copy(alpha = 0.36f),
+                            activeTickColor = Color.Transparent,
+                            inactiveTickColor = Color.Transparent,
+                        ),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    PlaybackSpeedStepButton(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "피치 높이기",
+                        onClick = {
+                            selectedSemitone.nextPitchSemitone()?.let(onSelectSemitone)
+                        },
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    PlaybackPitchOptions.forEach { semitone ->
+                        PlaybackPitchOptionChip(
+                            semitone = semitone,
+                            isSelected = selectedSemitone == semitone,
+                            onClick = { onSelectSemitone(semitone) },
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -569,6 +714,29 @@ private fun PlaybackSpeedStepButton(
 }
 
 @Composable
+private fun PlaybackPitchOptionChip(
+    semitone: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color.White.copy(alpha = if (isSelected) 0.26f else 0.14f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 11.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = semitone.toPitchSemitoneText(),
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
 private fun PlaybackSpeedOptionChip(
     speed: Float,
     isSelected: Boolean,
@@ -591,11 +759,32 @@ private fun PlaybackSpeedOptionChip(
     }
 }
 
+private const val MinPlaybackPitchSemitone = -10
+private const val MaxPlaybackPitchSemitone = 10
+private const val PlaybackPitchStep = 1
+
+private val PlaybackPitchOptions = listOf(-4, -2, 0, 2, 4)
+
 private const val MinPlaybackSpeed = 0.25f
 private const val MaxPlaybackSpeed = 3.0f
 private const val PlaybackSpeedStep = 0.01f
 
 private val PlaybackSpeedOptions = listOf(1.0f, 1.25f, 1.5f, 2.0f, 3.0f)
+
+private fun Int.toPitchSemitoneText(): String {
+    return when {
+        this > 0 -> "+$this"
+        else -> toString()
+    }
+}
+
+private fun Int.previousPitchSemitone(): Int? {
+    return (this - PlaybackPitchStep).takeIf { it >= MinPlaybackPitchSemitone }
+}
+
+private fun Int.nextPitchSemitone(): Int? {
+    return (this + PlaybackPitchStep).takeIf { it <= MaxPlaybackPitchSemitone }
+}
 
 private fun Float.toPlaybackSpeedText(): String = "x${formatPlaybackSpeed()}"
 

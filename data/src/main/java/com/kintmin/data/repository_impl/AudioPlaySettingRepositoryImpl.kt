@@ -31,6 +31,12 @@ class AudioPlaySettingRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getPlaybackPitchSemitoneFlow(): Flow<Int> {
+        return datastoreUtil.getData(PreferencesKey.PlaybackPitchSemitone).map {
+            it ?: 0
+        }
+    }
+
     override suspend fun updateIsPlaybackRepeating(isRepeating: Boolean): Result<Unit> {
         return datastoreUtil.updateData(PreferencesKey.IsPlaybackRepeating, isRepeating)
     }
@@ -41,5 +47,9 @@ class AudioPlaySettingRepositoryImpl @Inject constructor(
 
     override suspend fun updatePlaybackSpeed(speed: Float): Result<Unit> {
         return datastoreUtil.updateData(PreferencesKey.PlaybackSpeed, speed)
+    }
+
+    override suspend fun updatePlaybackPitchSemitone(semitone: Int): Result<Unit> {
+        return datastoreUtil.updateData(PreferencesKey.PlaybackPitchSemitone, semitone)
     }
 }

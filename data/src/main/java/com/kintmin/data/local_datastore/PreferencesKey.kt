@@ -22,6 +22,10 @@ sealed interface PreferencesKey<T> {
         override val key = floatPreferencesKey("PlaybackSpeed")
     }
 
+    data object PlaybackPitchSemitone : PreferencesKey<Int> {
+        override val key = intPreferencesKey("PlaybackPitchSemitone")
+    }
+
     data object UserId : PreferencesKey<String> {
         override val key = stringPreferencesKey("UserId")
     }

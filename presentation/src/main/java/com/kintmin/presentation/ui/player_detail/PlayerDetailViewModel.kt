@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
+import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdateIsPlaybackShufflingUseCase
+import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackPitchSemitoneUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackSpeedUseCase
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
@@ -30,9 +32,11 @@ class PlayerDetailViewModel @Inject constructor(
     fetchIsPlaybackRepeatingFlowUseCase: FetchIsPlaybackRepeatingFlowUseCase,
     fetchIsPlaybackShufflingFlowUseCase: FetchIsPlaybackShufflingFlowUseCase,
     fetchPlaybackSpeedFlowUseCase: FetchPlaybackSpeedFlowUseCase,
+    fetchPlaybackPitchSemitoneFlowUseCase: FetchPlaybackPitchSemitoneFlowUseCase,
     private val updatePlaybackRepeatingUseCase: UpdatePlaybackRepeatingUseCase,
     private val updateIsPlaybackShufflingUseCase: UpdateIsPlaybackShufflingUseCase,
     private val updatePlaybackSpeedUseCase: UpdatePlaybackSpeedUseCase,
+    private val updatePlaybackPitchSemitoneUseCase: UpdatePlaybackPitchSemitoneUseCase,
     private val fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
 ) : ViewModel() {
 
@@ -54,6 +58,7 @@ class PlayerDetailViewModel @Inject constructor(
                 isShuffling = false,
                 isRepeating = false,
                 playbackSpeed = mediaControllerManager.playbackSpeed,
+                playbackPitchSemitone = mediaControllerManager.playbackPitchSemitone,
             )
         )
     }
@@ -79,6 +84,12 @@ class PlayerDetailViewModel @Inject constructor(
             fetchPlaybackSpeedFlowUseCase().collect { speed ->
                 _data.update { prev -> prev.copy(playbackSpeed = speed) }
                 mediaControllerManager.setPlaybackSpeed(speed)
+            }
+        }
+        viewModelScope.launch {
+            fetchPlaybackPitchSemitoneFlowUseCase().collect { semitone ->
+                _data.update { prev -> prev.copy(playbackPitchSemitone = semitone) }
+                mediaControllerManager.setPlaybackPitchSemitone(semitone)
             }
         }
     }
@@ -172,6 +183,24 @@ class PlayerDetailViewModel @Inject constructor(
                 }
             }
 
+            PlayerDetailIntent.OnClickPlaybackPitchButton -> {
+                _data.update { it.copy(isPlaybackPitchMenuVisible = true) }
+            }
+
+            PlayerDetailIntent.OnDismissPlaybackPitchMenu -> {
+                _data.update { it.copy(isPlaybackPitchMenuVisible = false) }
+            }
+
+            is PlayerDetailIntent.OnSelectPlaybackPitchSemitone -> {
+                viewModelScope.launch {
+                    updatePlaybackPitchSemitoneUseCase(intent.semitone)
+                    _data.update {
+                        it.copy(playbackPitchSemitone = intent.semitone)
+                    }
+                    mediaControllerManager.setPlaybackPitchSemitone(intent.semitone)
+                }
+            }
+
             is PlayerDetailIntent.OnChangeTimeSlider -> {
                 isHandlingSlider = true
                 _data.update {
@@ -221,7 +250,9 @@ class PlayerDetailViewModel @Inject constructor(
                 isShuffling = data.value.isShuffling,
                 isRepeating = data.value.isRepeating,
                 playbackSpeed = data.value.playbackSpeed,
+                playbackPitchSemitone = data.value.playbackPitchSemitone,
                 isPlaybackSpeedMenuVisible = data.value.isPlaybackSpeedMenuVisible,
+                isPlaybackPitchMenuVisible = data.value.isPlaybackPitchMenuVisible,
             )
         }
 
