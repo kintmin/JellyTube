@@ -596,7 +596,7 @@ private fun PlaybackSpeedMenu(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f))
+            .background(Color.Black.copy(alpha = 0.7f))
             .clickable(onClick = onDismiss),
         contentAlignment = Alignment.Center,
     ) {
@@ -611,7 +611,7 @@ private fun PlaybackSpeedMenu(
                 ),
             shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.Black.copy(alpha = 0.42f),
+                containerColor = Color.Black.copy(alpha = 0.8f),
             ),
         ) {
             Column(

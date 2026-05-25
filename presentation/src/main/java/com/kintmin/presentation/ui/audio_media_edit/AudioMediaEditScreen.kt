@@ -1,17 +1,16 @@
 package com.kintmin.presentation.ui.audio_media_edit
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Cancel
@@ -20,11 +19,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -34,12 +33,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,7 +46,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray80
 import java.io.File
 
 @Composable
@@ -81,6 +78,18 @@ fun AudioMediaEditScreen(
         audioMediaName = data.audioMediaName
         artist = data.artist
         audioMediaDescription = data.audioMediaDescription
+    }
+
+    if (data.isAddPlaylistBottomSheetVisible) {
+        AddPlaylistBottomSheet(
+            playlists = data.selectablePlaylists,
+            onClickPlaylist = { playlistId ->
+                sendIntent(AudioMediaEditIntent.OnClickAddLinkedPlaylist(playlistId))
+            },
+            onDismissRequest = {
+                sendIntent(AudioMediaEditIntent.OnDismissAddPlaylistBottomSheet)
+            },
+        )
     }
 
     Scaffold(
@@ -247,6 +256,65 @@ fun AudioMediaEditScreen(
                                 contentDescription = "Cancel"
                             )
                         }
+                    }
+                }
+            }
+            item(key = "add_playlist") {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { sendIntent(AudioMediaEditIntent.OnClickShowAddPlaylistBottomSheet) }
+                        .padding(16.dp),
+                    text = "+",
+                    textAlign = TextAlign.Center,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 24.sp,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddPlaylistBottomSheet(
+    playlists: List<AudioMediaEditUiState.Playlist>,
+    onClickPlaylist: (playlistId: Int) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            if (playlists.isEmpty()) {
+                item {
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        text = "추가할 수 있는 플레이리스트가 없습니다.",
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            } else {
+                items(
+                    items = playlists,
+                    key = { item -> item.playlistId },
+                ) { item ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clickable { onClickPlaylist(item.playlistId) }
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(text = item.playlistName)
                     }
                 }
             }

@@ -38,7 +38,7 @@ data class PlayerDetailUiState(
             isRepeating = false,
             playbackSpeed = 1.0f,
             playbackPitchSemitone = 0,
-            isPlaybackSpeedMenuVisible = false,
+            isPlaybackSpeedMenuVisible = true,
             isPlaybackPitchMenuVisible = false,
         )
     }

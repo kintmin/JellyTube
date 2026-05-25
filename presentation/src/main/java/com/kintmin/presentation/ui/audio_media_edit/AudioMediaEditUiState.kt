@@ -2,7 +2,6 @@ package com.kintmin.presentation.ui.audio_media_edit
 
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
-import com.kintmin.presentation.ui.audio_media_detail.AudioMediaDetailUiState
 import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.seconds
 
@@ -16,6 +15,8 @@ data class AudioMediaEditUiState(
     val source: String,
     val audioMediaDescription: String,
     val playlists: List<Playlist>,
+    val selectablePlaylists: List<Playlist> = emptyList(),
+    val isAddPlaylistBottomSheetVisible: Boolean = false,
 ) {
 
     data class Playlist(
