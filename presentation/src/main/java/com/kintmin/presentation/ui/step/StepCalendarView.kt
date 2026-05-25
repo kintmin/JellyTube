@@ -31,6 +31,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.deepSea40
+import com.kintmin.presentation.theme.deepSea80
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -65,7 +67,7 @@ fun StepCalendarView(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF0E121A))
+            .background(MaterialTheme.colorScheme.surface)
             .pointerInput(currentMonth) {
                 detectHorizontalDragGestures(
                     onHorizontalDrag = { _, dragAmount ->
@@ -96,13 +98,13 @@ fun StepCalendarView(
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.NavigateBefore,
                     contentDescription = "이전 달",
-                    tint = Color(0xFFE8ECF2),
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
 
             Text(
                 text = selectedDate.format(DateTimeFormatter.ofPattern("yyyy년 M월")),
-                color = Color(0xFFE8ECF2),
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
@@ -114,7 +116,7 @@ fun StepCalendarView(
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
                     contentDescription = "다음 달",
-                    tint = Color(0xFFE8ECF2),
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -130,7 +132,7 @@ fun StepCalendarView(
                     modifier = Modifier.weight(1f),
                     text = day,
                     textAlign = TextAlign.Center,
-                    color = Color(0xFF7F8794),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
@@ -148,9 +150,9 @@ fun StepCalendarView(
                 week.forEach { date ->
                     val isSelected = date == selectedDate
                     val dayColor = when (date?.dayOfWeek) {
-                        DayOfWeek.SUNDAY -> Color(0xFFE06E7A)
-                        DayOfWeek.SATURDAY -> Color(0xFF7A8BEA)
-                        else -> Color(0xFFD0D6E0)
+                        DayOfWeek.SUNDAY -> MaterialTheme.colorScheme.error
+                        DayOfWeek.SATURDAY -> deepSea40
+                        else -> MaterialTheme.colorScheme.onSurface
                     }
                     val daySteps = date?.let { dailyStepsByDate[it] ?: 0 }
 
@@ -160,7 +162,7 @@ fun StepCalendarView(
                             .height(46.dp)
                             .padding(horizontal = 2.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (isSelected) Color(0xFF2D6F57) else Color.Transparent)
+                            .background(if (isSelected) deepSea80 else Color.Transparent)
                             .let {
                                 if (date != null) {
                                     it.clickable { onSelectDate(date) }
@@ -174,7 +176,7 @@ fun StepCalendarView(
                         if (date != null) {
                             Text(
                                 text = date.dayOfMonth.toString(),
-                                color = if (isSelected) Color(0xFFD7FFE9) else dayColor,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else dayColor,
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             )
@@ -182,7 +184,7 @@ fun StepCalendarView(
                             Text(
                                 modifier = Modifier.padding(top = 2.dp),
                                 text = "${daySteps ?: 0}",
-                                color = if (isSelected) Color(0xFFC7FFD8) else Color(0xFF7F8794),
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelSmall,
                                 maxLines = 1,
                             )

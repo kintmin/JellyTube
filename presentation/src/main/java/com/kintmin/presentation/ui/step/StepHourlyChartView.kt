@@ -31,7 +31,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
@@ -43,6 +42,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.deepSea40
+import com.kintmin.presentation.theme.deepSea80
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
@@ -84,7 +85,7 @@ fun StepHourlyChartView(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
-            .background(Color(0xFF0E121A))
+            .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 8.dp, vertical = 20.dp)
             .onSizeChanged { size ->
                 chartWidthPx = size.width.toFloat()
@@ -162,14 +163,14 @@ fun StepHourlyChartView(
                                 .height(barHeight)
                                 .clip(RoundedCornerShape(topStart = 999.dp, topEnd = 999.dp))
                                 .background(
-                                    if (selected) Color(0xFF43E38E) else Color(0xFF29D174),
+                                    if (selected) deepSea40 else deepSea40.copy(alpha = 0.78f),
                                 ),
                         )
                     }
                 }
             }
 
-            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFF8E96A4)))
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outline))
 
             Box(modifier = Modifier.fillMaxWidth().height(axisTickHeight + axisLabelHeight)) {
                 AXIS_LABELS.forEach { (slot, label) ->
@@ -192,12 +193,12 @@ fun StepHourlyChartView(
                                 }
                                 .width(1.dp)
                                 .height(axisTickHeight)
-                                .background(Color(0xFF8E96A4)),
+                                .background(MaterialTheme.colorScheme.outline),
                         )
 
                         Text(
                             text = label,
-                            color = Color(0xFF8E96A4),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelMedium,
                             maxLines = 1,
                             modifier = Modifier
@@ -263,7 +264,7 @@ private fun SelectedSlotTooltip(
     connectorHeight: Dp,
     maxBubbleWidth: Dp,
 ) {
-    val bubbleColor = Color(0xFF2C6C52)
+    val bubbleColor = deepSea80
     val startHour = slot / 2
     val startMinute = if (slot % 2 == 0) 0 else 30
     val endTotalMinutes = (slot + 1) * 30
@@ -289,7 +290,7 @@ private fun SelectedSlotTooltip(
                     endMinute,
                     steps,
                 ),
-                color = Color(0xFFE9FFF4),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 style = MaterialTheme.typography.labelLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

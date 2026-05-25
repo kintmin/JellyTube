@@ -13,11 +13,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.deepSea40
 
 @Composable
 fun StepDailySummaryView(
@@ -30,7 +30,7 @@ fun StepDailySummaryView(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF0E121A))
+            .background(MaterialTheme.colorScheme.surface)
             .heightIn(min = 116.dp)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -38,7 +38,7 @@ fun StepDailySummaryView(
         Text(
             text = dateText,
             style = MaterialTheme.typography.titleMedium,
-            color = Color(0xFFE8ECF2),
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
         )
 
@@ -47,12 +47,12 @@ fun StepDailySummaryView(
                 Text(
                     text = "최종 걸음수",
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFF8E96A4),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     text = "${totalSteps}걸음",
                     style = MaterialTheme.typography.titleLarge,
-                    color = Color(0xFFD7FFE9),
+                    color = deepSea40,
                     fontWeight = FontWeight.Bold,
                 )
             }
@@ -61,12 +61,12 @@ fun StepDailySummaryView(
                 Text(
                     text = "가장 많이 걸은 시간대",
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFF8E96A4),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     text = peakHourRangeText,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFFE8ECF2),
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
                 )
             }

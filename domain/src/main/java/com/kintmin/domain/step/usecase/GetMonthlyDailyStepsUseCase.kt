@@ -47,7 +47,7 @@ class GetMonthlyDailyStepsUseCase @Inject constructor(
             val dayEnd = date.plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli()
 
             val stepDataList = allStepData.filter {
-                it.rawCreatedTime in dayStart until dayEnd
+                it.rawCreatedTime in dayStart..dayEnd
             }
 
             val sensors = stepDataList
