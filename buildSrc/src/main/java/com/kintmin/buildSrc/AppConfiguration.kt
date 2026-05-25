@@ -7,8 +7,8 @@ object AppConfiguration {
     const val COMPILE_SDK = 35
     const val TARGET_SDK = 35
     const val MIN_SDK = 26
-    const val VERSION_CODE = 13
-    const val VERSION_NAME = "1.1.3"
+    const val VERSION_CODE = 14
+    const val VERSION_NAME = "1.1.4"
     /**
      * Python 3.12 이상은 armeabi-v7a (구버전 기기) 대응이 안 됨
      * Chaquopy version 15.0.1 news 참고: https://chaquo.com/chaquopy/news/
