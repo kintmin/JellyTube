@@ -19,19 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material.icons.automirrored.rounded.NavigateBefore
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
 import androidx.compose.material.icons.automirrored.rounded.Subject
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.LibraryMusic
-import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
@@ -78,16 +73,18 @@ import coil.request.ImageRequest
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.seaBlue10
+import com.kintmin.presentation.ui.player_detail.dialog.PlaybackPitchDialog
+import com.kintmin.presentation.ui.player_detail.dialog.PlaybackSpeedDialog
+import com.kintmin.presentation.ui.player_detail.dialog.toPitchSemitoneText
+import com.kintmin.presentation.ui.player_detail.dialog.toPlaybackSpeedText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -267,7 +264,7 @@ fun PlayerDetailScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth().height(90.dp),
+                    modifier = Modifier.fillMaxWidth().height(78.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
@@ -417,14 +414,14 @@ fun PlayerDetailScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 PlaybackPitchChip(
-                    Modifier.width(56.dp),
+                    Modifier.width(52.dp),
                     semitone = data.playbackPitchSemitone,
                     onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
                 )
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 8.dp)
+                        .padding(start = 20.dp, end = 8.dp)
                 ) {
                     Row(
                         modifier = Modifier
@@ -452,26 +449,24 @@ fun PlayerDetailScreen(
                     }
                 }
                 PlaybackSpeedChip(
-                    Modifier.width(56.dp),
+                    Modifier.width(64.dp),
                     speed = data.playbackSpeed,
                     onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
                 )
             }
 
-            if (data.isPlaybackSpeedMenuVisible) {
-                PlaybackSpeedMenu(
-                    selectedSpeed = data.playbackSpeed,
-                    onDismiss = { sendIntent(PlayerDetailIntent.OnDismissPlaybackSpeedMenu) },
-                    onSelectSpeed = { sendIntent(PlayerDetailIntent.OnSelectPlaybackSpeed(it)) },
-                )
-            }
-            if (data.isPlaybackPitchMenuVisible) {
-                PlaybackPitchMenu(
-                    selectedSemitone = data.playbackPitchSemitone,
-                    onDismiss = { sendIntent(PlayerDetailIntent.OnDismissPlaybackPitchMenu) },
-                    onSelectSemitone = { sendIntent(PlayerDetailIntent.OnSelectPlaybackPitchSemitone(it)) },
-                )
-            }
+            PlaybackSpeedDialog(
+                showDialog = data.isPlaybackSpeedMenuVisible,
+                selectedSpeed = data.playbackSpeed,
+                onDismiss = { sendIntent(PlayerDetailIntent.OnDismissPlaybackSpeedMenu) },
+                onSelectSpeed = { sendIntent(PlayerDetailIntent.OnSelectPlaybackSpeed(it)) },
+            )
+            PlaybackPitchDialog(
+                showDialog = data.isPlaybackPitchMenuVisible,
+                selectedSemitone = data.playbackPitchSemitone,
+                onDismiss = { sendIntent(PlayerDetailIntent.OnDismissPlaybackPitchMenu) },
+                onSelectSemitone = { sendIntent(PlayerDetailIntent.OnSelectPlaybackPitchSemitone(it)) },
+            )
         }
     }
 }
@@ -629,340 +624,6 @@ private fun PlaybackSpeedChip(
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
         )
-    }
-}
-
-@Composable
-private fun PlaybackPitchMenu(
-    selectedSemitone: Int,
-    onDismiss: () -> Unit,
-    onSelectSemitone: (Int) -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
-            .clickable(onClick = onDismiss),
-        contentAlignment = Alignment.Center,
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {},
-                ),
-            shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.Black.copy(alpha = 0.85f),
-            ),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 18.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = "피치",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = selectedSemitone.toPitchSemitoneText(),
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PlaybackSpeedStepButton(
-                        imageVector = Icons.Rounded.Remove,
-                        contentDescription = "피치 낮추기",
-                        onClick = {
-                            selectedSemitone.previousPitchSemitone()?.let(onSelectSemitone)
-                        },
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Slider(
-                        modifier = Modifier.weight(1f),
-                        value = selectedSemitone.toFloat(),
-                        onValueChange = { value ->
-                            val semitone =
-                                value.roundToInt().coerceIn(MinPlaybackPitchSemitone, MaxPlaybackPitchSemitone)
-                            if (semitone != selectedSemitone) {
-                                onSelectSemitone(semitone)
-                            }
-                        },
-                        valueRange = MinPlaybackPitchSemitone.toFloat()..MaxPlaybackPitchSemitone.toFloat(),
-                        steps = MaxPlaybackPitchSemitone - MinPlaybackPitchSemitone - 1,
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color.White,
-                            activeTrackColor = Color.White,
-                            inactiveTrackColor = Color.White.copy(alpha = 0.36f),
-                            activeTickColor = Color.Transparent,
-                            inactiveTickColor = Color.Transparent,
-                        ),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    PlaybackSpeedStepButton(
-                        imageVector = Icons.Rounded.Add,
-                        contentDescription = "피치 높이기",
-                        onClick = {
-                            selectedSemitone.nextPitchSemitone()?.let(onSelectSemitone)
-                        },
-                    )
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    PlaybackPitchOptions.forEach { semitone ->
-                        PlaybackPitchOptionChip(
-                            semitone = semitone,
-                            isSelected = selectedSemitone == semitone,
-                            onClick = { onSelectSemitone(semitone) },
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PlaybackSpeedMenu(
-    selectedSpeed: Float,
-    onDismiss: () -> Unit,
-    onSelectSpeed: (Float) -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
-            .clickable(onClick = onDismiss),
-        contentAlignment = Alignment.Center,
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {},
-                ),
-            shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.Black.copy(alpha = 0.85f),
-            ),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 18.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = "재생 속도",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = selectedSpeed.toPlaybackSpeedText(),
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PlaybackSpeedStepButton(
-                        imageVector = Icons.Rounded.Remove,
-                        contentDescription = "재생 속도 낮추기",
-                        onClick = {
-                            selectedSpeed.previousPlaybackSpeed()?.let(onSelectSpeed)
-                        },
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Slider(
-                        modifier = Modifier.weight(1f),
-                        value = selectedSpeed.coerceIn(MinPlaybackSpeed, MaxPlaybackSpeed),
-                        onValueChange = { value ->
-                            val speed = value.roundToPlaybackSpeedStep()
-                            if (speed != selectedSpeed) {
-                                onSelectSpeed(speed)
-                            }
-                        },
-                        valueRange = MinPlaybackSpeed..MaxPlaybackSpeed,
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color.White,
-                            activeTrackColor = Color.White,
-                            inactiveTrackColor = Color.White.copy(alpha = 0.36f),
-                            activeTickColor = Color.Transparent,
-                            inactiveTickColor = Color.Transparent,
-                        ),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    PlaybackSpeedStepButton(
-                        imageVector = Icons.Rounded.Add,
-                        contentDescription = "재생 속도 높이기",
-                        onClick = {
-                            selectedSpeed.nextPlaybackSpeed()?.let(onSelectSpeed)
-                        },
-                    )
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    PlaybackSpeedOptions.forEach { speed ->
-                        PlaybackSpeedOptionChip(
-                            speed = speed,
-                            isSelected = selectedSpeed == speed,
-                            onClick = { onSelectSpeed(speed) },
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PlaybackSpeedStepButton(
-    imageVector: androidx.compose.ui.graphics.vector.ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.16f))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = imageVector,
-            contentDescription = contentDescription,
-            tint = Color.White,
-            modifier = Modifier.size(16.dp),
-        )
-    }
-}
-
-@Composable
-private fun PlaybackPitchOptionChip(
-    semitone: Int,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.White.copy(alpha = if (isSelected) 0.26f else 0.14f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 11.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = semitone.toPitchSemitoneText(),
-            color = Color.White,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
-
-@Composable
-private fun PlaybackSpeedOptionChip(
-    speed: Float,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.White.copy(alpha = if (isSelected) 0.26f else 0.14f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 11.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = speed.formatPlaybackSpeed(),
-            color = Color.White,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
-
-private const val MinPlaybackPitchSemitone = -10
-private const val MaxPlaybackPitchSemitone = 10
-private const val PlaybackPitchStep = 1
-
-private val PlaybackPitchOptions = listOf(-4, -2, 0, 2, 4)
-
-private const val MinPlaybackSpeed = 0.25f
-private const val MaxPlaybackSpeed = 3.0f
-private const val PlaybackSpeedStep = 0.01f
-
-private val PlaybackSpeedOptions = listOf(1.0f, 1.25f, 1.5f, 2.0f, 3.0f)
-
-private fun Int.toPitchSemitoneText(): String {
-    return when {
-        this > 0 -> "+$this"
-        else -> toString()
-    }
-}
-
-private fun Int.previousPitchSemitone(): Int? {
-    return (this - PlaybackPitchStep).takeIf { it >= MinPlaybackPitchSemitone }
-}
-
-private fun Int.nextPitchSemitone(): Int? {
-    return (this + PlaybackPitchStep).takeIf { it <= MaxPlaybackPitchSemitone }
-}
-
-private fun Float.toPlaybackSpeedText(): String = "x${formatPlaybackSpeed()}"
-
-private fun Float.previousPlaybackSpeed(): Float? {
-    return (this - PlaybackSpeedStep)
-        .takeIf { it >= MinPlaybackSpeed }
-        ?.roundToPlaybackSpeedStep()
-}
-
-private fun Float.nextPlaybackSpeed(): Float? {
-    return (this + PlaybackSpeedStep)
-        .takeIf { it <= MaxPlaybackSpeed }
-        ?.roundToPlaybackSpeedStep()
-}
-
-private fun Float.roundToPlaybackSpeedStep(): Float {
-    return (this / PlaybackSpeedStep).roundToInt()
-        .times(PlaybackSpeedStep)
-        .coerceIn(MinPlaybackSpeed, MaxPlaybackSpeed)
-}
-
-private fun Float.formatPlaybackSpeed(): String {
-    return if (this % 1.0f == 0f) {
-        String.format(Locale.ROOT, "%.1f", this)
-    } else {
-        String.format(Locale.ROOT, "%.2f", this).trimEnd('0')
     }
 }
 
