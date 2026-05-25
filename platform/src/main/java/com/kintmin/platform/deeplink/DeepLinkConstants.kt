@@ -75,6 +75,8 @@ object DeepLinkConstants {
 
         fun stepScreen(): Uri = UriPattern.STEP_SCREEN.toUri()
 
+        fun appLogScreen(): Uri = UriPattern.APP_LOG_SCREEN.toUri()
+
         fun playlistContentScreen(playlistId: Int, audioMediaId: Int? = null): Uri {
             val base = UriPattern.PLAYLIST_CONTENT_SCREEN
                 .replace("{${Path.PLAYLIST_ID}}", playlistId.toString())

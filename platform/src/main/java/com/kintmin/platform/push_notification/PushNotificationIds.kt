@@ -2,7 +2,6 @@ package com.kintmin.platform.push_notification
 
 object PushNotificationIds {
     const val DOWNLOAD = 1
-    const val DOWNLOAD_RESULT = 2
     const val SENSOR_STEP = 3
 }
 

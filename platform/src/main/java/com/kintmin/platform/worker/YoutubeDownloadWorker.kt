@@ -51,14 +51,17 @@ class YoutubeDownloadWorker @AssistedInject constructor(
             val exception = foregroundResult.exceptionOrNull()
             val errorMessage = "포그라운드 서비스 시작 실패: ${exception?.message ?: "알 수 없는 오류"}"
 
-            pushNotificationManager.sendNotification(DownloadResultNotification(errorMessage))
+            pushNotificationManager.sendNotification(
+                DownloadResultNotification(
+                    resultType = DownloadResultNotification.ResultType.Failure,
+                    contentText = errorMessage,
+                )
+            )
             appLog.sendDebugLog(DebugLog("YoutubeDownloadWorker", errorMessage))
             return Result.failure()
         }
 
         val url = inputData.getString(INPUT_DATA_URL) ?: return Result.failure()
-        pushNotificationManager.sendNotification(DownloadResultNotification("다운로드를 시작합니다."))
-        
         val downloadNotification = DownloadNotification(1, 0)
         pushNotificationManager.sendNotification(downloadNotification)
 
@@ -66,7 +69,8 @@ class YoutubeDownloadWorker @AssistedInject constructor(
             pushNotificationManager.cancelNotification(downloadNotification.id)
             pushNotificationManager.sendNotification(
                 DownloadResultNotification(
-                    contentText = "완료되었습니다.",
+                    resultType = DownloadResultNotification.ResultType.Success,
+                    contentText = "${result.audioMedia.artist} - ${result.audioMedia.name}",
                     playlistId = result.playlistIdOnDownload,
                     audioMediaId = result.audioMedia.id,
                 )
@@ -94,6 +98,7 @@ class YoutubeDownloadWorker @AssistedInject constructor(
             val errorMessage = it.message.toString()
             pushNotificationManager.sendNotification(
                 DownloadResultNotification(
+                    resultType = DownloadResultNotification.ResultType.Failure,
                     contentText = "다운에 실패했습니다. 로그를 확인해주세요.",
                 )
             )
