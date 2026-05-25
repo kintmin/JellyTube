@@ -69,6 +69,11 @@ class MainViewModel @Inject constructor(
                     }
                 }
             }
+            DeepLinkConstants.Path.STEP -> {
+                navigationIntentChannel.send(NavigationIntent.NavigateToMainPlaylistsTab)
+                navigationIntentChannel.send(NavigationIntent.NavigateToSettings)
+                navigationIntentChannel.send(NavigationIntent.NavigateToStep)
+            }
             DeepLinkConstants.Path.DOWNLOAD -> {
                 val encodedUrl = uri.getQueryParameter(DeepLinkConstants.QueryKey.ENCODED_URL)
                 val targetUrl = URLDecoder.decode(encodedUrl, "UTF-8")

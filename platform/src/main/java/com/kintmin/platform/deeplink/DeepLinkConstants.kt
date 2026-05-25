@@ -19,6 +19,7 @@ object DeepLinkConstants {
 
         const val SETTINGS = "settings"
         const val APP_LOG = "appLog"
+        const val STEP = "step"
 
         const val DOWNLOAD = "download"
 
@@ -41,6 +42,7 @@ object DeepLinkConstants {
 
         const val SETTINGS_SCREEN = "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.SETTINGS}"
         const val APP_LOG_SCREEN = "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.SETTINGS}/${Path.APP_LOG}"
+        const val STEP_SCREEN = "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.STEP}"
 
         const val MAIN_SCREEN_DOWNLOAD =
             "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.DOWNLOAD}?${QueryKey.ENCODED_URL}={${QueryKey.ENCODED_URL}}"
@@ -70,6 +72,8 @@ object DeepLinkConstants {
                 .appendQueryParameter(QueryKey.ENCODED_URL, downloadLink)
                 .build()
         }
+
+        fun stepScreen(): Uri = UriPattern.STEP_SCREEN.toUri()
 
         fun playlistContentScreen(playlistId: Int, audioMediaId: Int? = null): Uri {
             val base = UriPattern.PLAYLIST_CONTENT_SCREEN

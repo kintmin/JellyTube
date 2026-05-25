@@ -22,6 +22,20 @@ internal fun Context.mediaSessionPendingIntent() = PendingIntent.getActivity(
     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
 )
 
+internal fun Context.stepScreenPendingIntent() = PendingIntent.getActivity(
+    this,
+    IntentRequestCode.SENSOR_STEP_NOTIFICATION,
+    Intent().apply {
+        action = Intent.ACTION_VIEW
+        data = DeepLinkConstants.UriBuilder.stepScreen()
+        component = ComponentName(
+            packageName,
+            TARGET_ACTIVITY_NAME,
+        )
+    },
+    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+)
+
 internal fun Context.downloadResultPendingIntent(
     playlistId: Int,
     audioMediaId: Int,

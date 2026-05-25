@@ -4,6 +4,7 @@ import android.app.Notification
 import android.content.Context
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
+import com.kintmin.platform.intent.stepScreenPendingIntent
 import com.kintmin.platform.push_notification.PushNotificationIds
 import com.kintmin.platform.push_notification.channels.StepSensorChannel
 
@@ -25,6 +26,7 @@ data class SensorStepNotification(
             .setSmallIcon(android.R.drawable.stat_notify_sync)
             .setGroup(channel.id)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setContentIntent(context.stepScreenPendingIntent())
             .setOngoing(true)
             .setAutoCancel(false)
             .build()

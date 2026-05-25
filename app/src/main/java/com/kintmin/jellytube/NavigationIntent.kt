@@ -12,6 +12,7 @@ sealed interface NavigationIntent {
 
     data object NavigateToSettings : NavigationIntent
     data object NavigateToSettingAppLog : NavigationIntent
+    data object NavigateToStep : NavigationIntent
 
     data object NavigateToPlayer : NavigationIntent
 

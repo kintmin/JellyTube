@@ -192,6 +192,9 @@ private fun consumeNavigationIntent(
         NavigationIntent.NavigateToSettingAppLog -> {
             navController.navigateToAppLogScreen(navOptions)
         }
+        NavigationIntent.NavigateToStep -> {
+            navController.navigateToStepScreen(navOptions)
+        }
         is NavigationIntent.NavigateToMainDownloadTab -> {
             navController.navigateToMainScreen(
                 MainTabItem.Search,
