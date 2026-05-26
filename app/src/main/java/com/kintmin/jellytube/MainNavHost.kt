@@ -29,6 +29,8 @@ import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.navigateToAppLogScreen
 import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
 import com.kintmin.presentation.ui.setting.navigation.settingGraph
+import com.kintmin.presentation.ui.setting.file_share_receive.navigation.navigateToSettingFileShareReceiveScreen
+import com.kintmin.presentation.ui.setting.file_share_receive.navigation.settingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.share.navigation.navigateToSettingShareScreen
 import com.kintmin.presentation.ui.setting.share.navigation.settingShareScreen
 import com.kintmin.presentation.ui.step.navigation.navigateToStepScreen
@@ -147,6 +149,9 @@ fun MainNavHost(
             navigateToShare = {
                 navController.navigateToSettingShareScreen(navOptions)
             },
+            navigateToFileShareReceive = {
+                navController.navigateToSettingFileShareReceiveScreen(navOptions)
+            },
         ) {
             appLogScreen(
                 navigateToBack = { navController.popBackStack() },
@@ -157,6 +162,10 @@ fun MainNavHost(
             )
 
             settingShareScreen(
+                navigateToBack = { navController.popBackStack() },
+            )
+
+            settingFileShareReceiveScreen(
                 navigateToBack = { navController.popBackStack() },
             )
         }

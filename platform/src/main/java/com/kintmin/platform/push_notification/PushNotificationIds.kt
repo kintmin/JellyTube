@@ -3,6 +3,7 @@ package com.kintmin.platform.push_notification
 object PushNotificationIds {
     const val DOWNLOAD = 1
     const val SENSOR_STEP = 3
+    const val FILE_SHARE_SERVER = 4
 }
 
 object PushNotificationIdGenerator {

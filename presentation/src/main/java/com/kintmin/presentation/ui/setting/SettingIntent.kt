@@ -10,6 +10,7 @@ sealed interface SettingIntent {
     data object OnClickStepTile : SettingIntent
     data object OnClickAppLogTile : SettingIntent
     data object OnClickShareTile : SettingIntent
+    data object OnClickFileShareReceiveTile : SettingIntent
     data class OnToggleIsStepEnabled(val value: Boolean) : SettingIntent
     data object OnActivityRecognitionGranted : SettingIntent
     data object OnActivityRecognitionDenied : SettingIntent

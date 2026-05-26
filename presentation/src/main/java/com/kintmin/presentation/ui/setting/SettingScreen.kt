@@ -44,6 +44,7 @@ fun SettingScreen(
     navigateToStep: () -> Unit,
     navigateToAppLog: () -> Unit,
     navigateToShare: () -> Unit,
+    navigateToFileShareReceive: () -> Unit,
 ) {
     val viewModel = hiltViewModel<SettingViewModel>()
     val uiState by viewModel.uiState.collectAsState()
@@ -69,6 +70,7 @@ fun SettingScreen(
                 SettingEvent.NavigateToStepScreen -> navigateToStep()
                 SettingEvent.NavigateToAppLogScreen -> navigateToAppLog()
                 SettingEvent.NavigateToShareScreen -> navigateToShare()
+                SettingEvent.NavigateToFileShareReceiveScreen -> navigateToFileShareReceive()
                 SettingEvent.StopStepForegroundService -> StepForegroundService.stopService(context)
                 SettingEvent.RequestActivityRecognitionPermission -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -252,6 +254,24 @@ fun SettingScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                     contentDescription = "Quick Share 화면으로 이동",
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clickable {
+                        sendIntent(SettingIntent.OnClickFileShareReceiveTile)
+                    }
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = "파일 공유 받기")
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = "파일 공유 받기 화면으로 이동",
                 )
             }
         }

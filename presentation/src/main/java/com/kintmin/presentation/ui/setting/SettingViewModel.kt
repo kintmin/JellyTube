@@ -111,6 +111,11 @@ class SettingViewModel @Inject constructor(
                     _eventFlow.emit(SettingEvent.NavigateToShareScreen)
                 }
             }
+            SettingIntent.OnClickFileShareReceiveTile -> {
+                viewModelScope.launch {
+                    _eventFlow.emit(SettingEvent.NavigateToFileShareReceiveScreen)
+                }
+            }
             is SettingIntent.OnToggleIsStepEnabled -> {
                 if (intent.value) {
                     viewModelScope.launch {

@@ -31,6 +31,17 @@ interface AudioMediaRepository {
         shouldInsertAtTopOnDownload: Boolean,
     ): Result<Pair<AudioMedia, Int>>
 
+    /**
+     * HTTP 업로드로 수신한 바이트 배열을 앱 내부 저장소에 저장하고 DB에 추가한다.
+     * source는 "fileShare://sha256/<hex>" 형태로 저장된다.
+     */
+    suspend fun importUploadedAudio(
+        bytes: ByteArray,
+        originalFileName: String,
+        playlistIdOnDownload: Int,
+        shouldInsertAtTopOnDownload: Boolean,
+    ): Result<Pair<AudioMedia, Int>>
+
     suspend fun deleteDownloadedFile(downloadedAudioMedia: DownloadedMedia): Result<Unit>
     suspend fun deleteAudioMedia(id: Int): Result<Unit>
 }

@@ -126,6 +126,40 @@ internal class FileManagerImpl @Inject constructor(
         }
     }
 
+    override suspend fun saveUploadedAudio(bytes: ByteArray, originalFileName: String): Result<CopiedAudioInfo> = runCatching {
+        withContext(Dispatchers.IO) {
+            val extName = originalFileName.substringAfterLast(".", "")
+            val ext = Ext.entries.find { it.fileType == FileType.Audio && it.name.equals(extName, ignoreCase = true) } ?: Ext.MP3
+            val fileName = UUID.randomUUID().toString()
+            val fileNameWithExt = "$fileName.$ext"
+            val targetFile = getDirectory(FileType.Audio).resolve(fileNameWithExt)
+
+            val digest = MessageDigest.getInstance("SHA-256")
+            FileOutputStream(targetFile).use { output ->
+                output.write(bytes)
+                digest.update(bytes)
+            }
+            val sha256Hex = digest.digest().joinToString("") { "%02x".format(it) }
+
+            val retriever = MediaMetadataRetriever()
+            val (title, artist, durationMs) = runCatching {
+                retriever.setDataSource(targetFile.absolutePath)
+                val t = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+                val a = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                val d = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+                Triple(t, a, d)
+            }.getOrElse { Triple(null, null, null) }.also { retriever.release() }
+
+            CopiedAudioInfo(
+                fileNameWithExt = fileNameWithExt,
+                sha256Hex = sha256Hex,
+                title = title?.takeIf { it.isNotBlank() } ?: originalFileName.substringBeforeLast("."),
+                artist = artist?.takeIf { it.isNotBlank() },
+                durationMs = durationMs,
+            )
+        }
+    }
+
     private fun resolveAudioExt(mimeType: String?, displayName: String?): Ext {
         val fromMime = when (mimeType) {
             "audio/mpeg", "audio/mp3" -> Ext.MP3
