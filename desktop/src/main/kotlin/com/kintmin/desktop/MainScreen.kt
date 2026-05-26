@@ -50,6 +50,7 @@ import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kintmin.fileshare.UploadStatus
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.datatransfer.DataFlavor
 import java.io.File
 
@@ -63,6 +64,34 @@ fun MainScreen() {
         onDispose { viewModel.onDispose() }
     }
 
+    MainScreenContent(
+        uiState = uiState,
+        onRefresh = viewModel::startDiscovery,
+        onAudioFilesDrop = viewModel::onAudioFilesDrop,
+        onImageDrop = viewModel::onImageDrop,
+        onUnsupportedImageDrop = viewModel::onUnsupportedImageDrop,
+        onBulkArtistChange = viewModel::onBulkArtistChange,
+        onApplyBulkArtist = viewModel::onApplyBulkArtist,
+        onClearAll = viewModel::onClearAll,
+        onRetry = viewModel::onRetry,
+        onRemoveItem = viewModel::onRemoveItem,
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@Composable
+private fun MainScreenContent(
+    uiState: MainUiState,
+    onRefresh: () -> Unit,
+    onAudioFilesDrop: (List<File>) -> Unit,
+    onImageDrop: (File) -> Unit,
+    onUnsupportedImageDrop: () -> Unit,
+    onBulkArtistChange: (String) -> Unit,
+    onApplyBulkArtist: () -> Unit,
+    onClearAll: () -> Unit,
+    onRetry: (String) -> Unit,
+    onRemoveItem: (String) -> Unit,
+) {
     val dropTarget = remember {
         object : DragAndDropTarget {
             override fun onDrop(event: DragAndDropEvent): Boolean {
@@ -74,9 +103,9 @@ fun MainScreen() {
                 val audioFiles = files.filter { isAudioFile(it) }
                 val imageFiles = files.filter { isImageFile(it) }
                 when {
-                    audioFiles.isNotEmpty() -> viewModel.onAudioFilesDrop(audioFiles)
-                    imageFiles.size == 1 -> viewModel.onImageDrop(imageFiles.first())
-                    imageFiles.size > 1 -> viewModel.onUnsupportedImageDrop()
+                    audioFiles.isNotEmpty() -> onAudioFilesDrop(audioFiles)
+                    imageFiles.size == 1 -> onImageDrop(imageFiles.first())
+                    imageFiles.size > 1 -> onUnsupportedImageDrop()
                     else -> return false
                 }
                 return true
@@ -107,7 +136,7 @@ fun MainScreen() {
 
                 DiscoveryStatusCard(
                     discoveryState = uiState.discoveryState,
-                    onRefresh = viewModel::startDiscovery,
+                    onRefresh = onRefresh,
                 )
 
                 if (uiState.discoveryState == DiscoveryState.FOUND) {
@@ -116,14 +145,14 @@ fun MainScreen() {
                         bulkArtist = uiState.bulkArtist,
                         bulkMessage = uiState.bulkMessage,
                         hasItems = uiState.uploadItems.isNotEmpty(),
-                        onBulkArtistChange = viewModel::onBulkArtistChange,
-                        onApplyBulkArtist = viewModel::onApplyBulkArtist,
-                        onClearAll = viewModel::onClearAll,
+                        onBulkArtistChange = onBulkArtistChange,
+                        onApplyBulkArtist = onApplyBulkArtist,
+                        onClearAll = onClearAll,
                     )
                     UploadList(
                         uploadItems = uiState.uploadItems,
-                        onRetry = viewModel::onRetry,
-                        onRemove = viewModel::onRemoveItem,
+                        onRetry = onRetry,
+                        onRemove = onRemoveItem,
                     )
                 }
             }
@@ -415,6 +444,44 @@ private fun statusColor(status: UploadStatus) = when (status) {
     UploadStatus.UPLOADING -> MaterialTheme.colorScheme.secondary
     UploadStatus.SUCCESS -> MaterialTheme.colorScheme.primary
     UploadStatus.FAILURE -> MaterialTheme.colorScheme.error
+}
+
+@Preview
+@Composable
+private fun MainScreenPreview() {
+    MainScreenContent(
+        uiState = MainUiState(
+            discoveryState = DiscoveryState.FOUND,
+            uploadItems = listOf(
+                UploadFileItem(
+                    file = File("sample-track.mp3"),
+                    status = UploadStatus.SUCCESS,
+                    audioMediaId = 1,
+                    title = "Sample Track",
+                ),
+                UploadFileItem(
+                    file = File("uploading-track.flac"),
+                    status = UploadStatus.UPLOADING,
+                ),
+                UploadFileItem(
+                    file = File("failed-track.wav"),
+                    status = UploadStatus.FAILURE,
+                    errorMessage = "업로드 실패",
+                ),
+            ),
+            bulkArtist = "Sample Artist",
+            bulkMessage = "업로드 완료 항목에 일괄 적용할 수 있습니다.",
+        ),
+        onRefresh = {},
+        onAudioFilesDrop = {},
+        onImageDrop = {},
+        onUnsupportedImageDrop = {},
+        onBulkArtistChange = {},
+        onApplyBulkArtist = {},
+        onClearAll = {},
+        onRetry = {},
+        onRemoveItem = {},
+    )
 }
 
 private fun isAudioFile(file: File): Boolean {

@@ -100,6 +100,7 @@ class FileShareForegroundService : Service() {
         ktorServer?.let { server ->
             runCatching { server.stop(500L, 500L) }
         }
+        ktorServer = null
         serviceScope.coroutineContext.cancelChildren()
         super.onDestroy()
     }
@@ -145,13 +146,13 @@ class FileShareForegroundService : Service() {
                             }
 
                             importUseCase(bytes, originalFileName)
-                                .onSuccess { audioMedia ->
+                                .onSuccess { result ->
                                     notificationManager.sendNotification(
                                         DownloadResultNotification(
                                             resultType = DownloadResultNotification.ResultType.Success,
-                                            contentText = "${audioMedia.artist} - ${audioMedia.name}",
-                                            playlistId = null,
-                                            audioMediaId = audioMedia.id,
+                                            contentText = "${result.audioMedia.artist} - ${result.audioMedia.name}",
+                                            playlistId = result.playlistIdOnDownload,
+                                            audioMediaId = result.audioMedia.id,
                                         ),
                                     )
                                     call.respond(
@@ -159,8 +160,8 @@ class FileShareForegroundService : Service() {
                                         UploadResponse(
                                             success = true,
                                             message = "업로드 성공",
-                                            audioMediaId = audioMedia.id,
-                                            title = audioMedia.name,
+                                            audioMediaId = result.audioMedia.id,
+                                            title = result.audioMedia.name,
                                         ),
                                     )
                                 }

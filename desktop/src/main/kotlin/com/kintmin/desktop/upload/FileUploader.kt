@@ -22,6 +22,9 @@ class FileUploader(
     private val port: Int,
 ) {
     private val client = HttpClient(CIO) {
+        engine {
+            requestTimeout = 0
+        }
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
         }

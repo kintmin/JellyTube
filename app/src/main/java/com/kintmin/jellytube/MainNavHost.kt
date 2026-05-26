@@ -93,6 +93,9 @@ fun MainNavHost(
             navigateToPlayerDetail = {
                 navController.navigateToPlayerDetailScreen(navOptions)
             },
+            navigateToFileShareReceive = {
+                navController.navigateToSettingFileShareReceiveScreen(navOptions)
+            },
         )
         playlistDetail(
             navigateToBack = { navController.popBackStack() },

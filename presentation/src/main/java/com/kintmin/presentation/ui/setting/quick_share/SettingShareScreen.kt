@@ -126,7 +126,7 @@ fun SettingShareScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                     }
-                    Text("오디오 파일 선택해서 가져오기")
+                    Text("음원 파일 선택해서 가져오기")
                 }
             }
         },
@@ -140,7 +140,7 @@ fun SettingShareScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "Windows PC 또는 Android 기기에서\n오디오 파일을 JellyTube로 가져오는 방법",
+                text = "Windows PC 또는 Android 기기에서\n음원 파일을 JellyTube로 가져오는 방법",
                 style = MaterialTheme.typography.titleMedium,
             )
 
@@ -186,7 +186,7 @@ fun SettingShareScreen(
             StepCard(
                 stepNumber = 1,
                 title = "보내는 기기에서 Quick Share 열기",
-                description = "Windows PC 또는 Android 기기에서 Quick Share를 열고 공유할 오디오 파일(mp3, wav 등)을 선택합니다.",
+                description = "Windows PC 또는 Android 기기에서 Quick Share를 열고 공유할 음원 파일(mp3, wav 등)을 선택합니다.",
             )
 
             StepCard(
@@ -226,7 +226,7 @@ fun SettingShareScreen(
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                         )
                         Text(
-                            text = "Quick Share 없이도 아래 버튼으로 기기에 저장된 오디오 파일을 바로 가져올 수 있습니다.",
+                            text = "Quick Share 없이도 아래 버튼으로 기기에 저장된 음원 파일을 바로 가져올 수 있습니다.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                         )

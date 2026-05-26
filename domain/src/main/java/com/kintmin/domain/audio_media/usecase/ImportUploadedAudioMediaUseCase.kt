@@ -15,7 +15,7 @@ class ImportUploadedAudioMediaUseCase @Inject constructor(
     private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase,
     private val fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
 ) {
-    suspend operator fun invoke(bytes: ByteArray, originalFileName: String): Result<AudioMedia> = runCatching {
+    suspend operator fun invoke(bytes: ByteArray, originalFileName: String): Result<ImportedAudioMediaResult> = runCatching {
         val shouldInsertAtTop = fetchShouldInsertAtTopOnDownloadFlowUseCase().first()
         val playlistId = fetchPlaylistIdOnDownloadFlowUseCase().first()
         val allPlaylistIdSet = fetchAllPlaylistFlowUseCase().first().map { it.id }.toSet() +
@@ -29,6 +29,14 @@ class ImportUploadedAudioMediaUseCase @Inject constructor(
             shouldInsertAtTopOnDownload = shouldInsertAtTop,
         ).getOrThrow()
 
-        audioMedia
+        ImportedAudioMediaResult(
+            audioMedia = audioMedia,
+            playlistIdOnDownload = resolvedPlaylistId,
+        )
     }
 }
+
+data class ImportedAudioMediaResult(
+    val audioMedia: AudioMedia,
+    val playlistIdOnDownload: Int,
+)
