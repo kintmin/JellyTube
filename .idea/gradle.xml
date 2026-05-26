@@ -24,12 +24,15 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/buildSrc" />
             <option value="$PROJECT_DIR$/data" />
+            <option value="$PROJECT_DIR$/desktop" />
             <option value="$PROJECT_DIR$/domain" />
             <option value="$PROJECT_DIR$/log" />
             <option value="$PROJECT_DIR$/log/log-api" />
             <option value="$PROJECT_DIR$/log/log-impl" />
             <option value="$PROJECT_DIR$/platform" />
             <option value="$PROJECT_DIR$/presentation" />
+            <option value="$PROJECT_DIR$/shared" />
+            <option value="$PROJECT_DIR$/shared/file-share" />
           </set>
         </option>
       </GradleProjectSettings>
