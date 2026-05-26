@@ -29,6 +29,8 @@ import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.navigateToAppLogScreen
 import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
 import com.kintmin.presentation.ui.setting.navigation.settingGraph
+import com.kintmin.presentation.ui.setting.share.navigation.navigateToSettingShareScreen
+import com.kintmin.presentation.ui.setting.share.navigation.settingShareScreen
 import com.kintmin.presentation.ui.step.navigation.navigateToStepScreen
 import com.kintmin.presentation.ui.step.navigation.stepScreen
 import kotlinx.coroutines.flow.Flow
@@ -142,12 +144,19 @@ fun MainNavHost(
             navigateToAppLog = {
                 navController.navigateToAppLogScreen(navOptions)
             },
+            navigateToShare = {
+                navController.navigateToSettingShareScreen(navOptions)
+            },
         ) {
             appLogScreen(
                 navigateToBack = { navController.popBackStack() },
             )
 
             stepScreen(
+                navigateToBack = { navController.popBackStack() },
+            )
+
+            settingShareScreen(
                 navigateToBack = { navController.popBackStack() },
             )
         }

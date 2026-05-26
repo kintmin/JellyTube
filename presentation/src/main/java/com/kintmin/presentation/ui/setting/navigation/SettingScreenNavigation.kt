@@ -22,6 +22,7 @@ fun NavGraphBuilder.settingGraph(
     navigateToBack: () -> Unit,
     navigateToStep: () -> Unit,
     navigateToAppLog: () -> Unit,
+    navigateToShare: () -> Unit,
     settingDestination: NavGraphBuilder.() -> Unit,
 ) {
     navigation<SettingGraph>(startDestination = SettingScreenRoute) {
@@ -30,6 +31,7 @@ fun NavGraphBuilder.settingGraph(
                 navigateToBack = navigateToBack,
                 navigateToStep = navigateToStep,
                 navigateToAppLog = navigateToAppLog,
+                navigateToShare = navigateToShare,
             )
         }
 

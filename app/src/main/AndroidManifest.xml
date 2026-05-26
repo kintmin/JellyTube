@@ -84,6 +84,20 @@
                 <data android:scheme="https" />
                 <data android:host="www.jellytube.com" />
             </intent-filter>
+
+            <!-- Quick Share / 파일 공유 수신: 단일 오디오 파일 -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+
+            <!-- Quick Share / 파일 공유 수신: 다중 오디오 파일 -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
         </activity>
 
         <service

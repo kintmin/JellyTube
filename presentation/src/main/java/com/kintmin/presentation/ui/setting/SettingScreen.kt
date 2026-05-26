@@ -43,6 +43,7 @@ fun SettingScreen(
     navigateToBack: () -> Unit,
     navigateToStep: () -> Unit,
     navigateToAppLog: () -> Unit,
+    navigateToShare: () -> Unit,
 ) {
     val viewModel = hiltViewModel<SettingViewModel>()
     val uiState by viewModel.uiState.collectAsState()
@@ -67,6 +68,7 @@ fun SettingScreen(
             when (event) {
                 SettingEvent.NavigateToStepScreen -> navigateToStep()
                 SettingEvent.NavigateToAppLogScreen -> navigateToAppLog()
+                SettingEvent.NavigateToShareScreen -> navigateToShare()
                 SettingEvent.StopStepForegroundService -> StepForegroundService.stopService(context)
                 SettingEvent.RequestActivityRecognitionPermission -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -94,6 +96,8 @@ fun SettingScreen(
         sendIntent = viewModel::sendIntent,
     )
 }
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -231,6 +235,24 @@ fun SettingScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(text = "앱 로그 보기")
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clickable {
+                        sendIntent(SettingIntent.OnClickShareTile)
+                    }
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = "Quick Share로 공유받기")
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = "Quick Share 화면으로 이동",
+                )
             }
         }
     }

@@ -3,14 +3,21 @@ package com.kintmin.data.local_file
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+import android.provider.OpenableColumns
+import com.kintmin.data.local_file.model.CopiedAudioInfo
 import com.kintmin.data.local_file.model.Ext
 import com.kintmin.data.local_file.model.FileType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.security.MessageDigest
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,6 +65,83 @@ internal class FileManagerImpl @Inject constructor(
                 targetExt
             }
         }
+
+    override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = runCatching {
+        withContext(Dispatchers.IO) {
+            val uri = Uri.parse(contentUriString)
+            val contentResolver = appContext.contentResolver
+
+            // 파일명과 MIME 타입 조회
+            val (displayName, mimeType) = contentResolver.query(
+                uri,
+                arrayOf(OpenableColumns.DISPLAY_NAME, MediaStore.MediaColumns.MIME_TYPE),
+                null, null, null,
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    val mimeIdx = cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)
+                    val name = if (nameIdx >= 0) cursor.getString(nameIdx) else null
+                    val mime = if (mimeIdx >= 0) cursor.getString(mimeIdx) else null
+                    name to mime
+                } else null to null
+            } ?: (null to null)
+
+            val targetExt = resolveAudioExt(mimeType, displayName)
+            val fileName = UUID.randomUUID().toString()
+            val fileNameWithExt = "$fileName.$targetExt"
+            val targetFile = getDirectory(FileType.Audio).resolve(fileNameWithExt)
+
+            // 파일 복사 + SHA-256 동시 계산
+            val digest = MessageDigest.getInstance("SHA-256")
+            contentResolver.openInputStream(uri)?.use { input ->
+                FileOutputStream(targetFile).use { output ->
+                    val buffer = ByteArray(8192)
+                    var bytesRead: Int
+                    while (input.read(buffer).also { bytesRead = it } != -1) {
+                        output.write(buffer, 0, bytesRead)
+                        digest.update(buffer, 0, bytesRead)
+                    }
+                }
+            } ?: throw Exception("content URI를 열 수 없습니다: $contentUriString")
+
+            val sha256Hex = digest.digest().joinToString("") { "%02x".format(it) }
+
+            // 메타데이터 추출
+            val retriever = MediaMetadataRetriever()
+            val (title, artist, durationMs) = runCatching {
+                retriever.setDataSource(targetFile.absolutePath)
+                val t = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+                val a = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+                val d = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+                Triple(t, a, d)
+            }.getOrElse { Triple(null, null, null) }.also { retriever.release() }
+
+            CopiedAudioInfo(
+                fileNameWithExt = fileNameWithExt,
+                sha256Hex = sha256Hex,
+                title = title?.takeIf { it.isNotBlank() } ?: displayName?.substringBeforeLast("."),
+                artist = artist?.takeIf { it.isNotBlank() },
+                durationMs = durationMs,
+            )
+        }
+    }
+
+    private fun resolveAudioExt(mimeType: String?, displayName: String?): Ext {
+        val fromMime = when (mimeType) {
+            "audio/mpeg", "audio/mp3" -> Ext.MP3
+            "audio/wav", "audio/x-wav", "audio/wave" -> Ext.WAV
+            "audio/flac", "audio/x-flac" -> Ext.FLAC
+            "audio/ogg", "audio/vorbis", "audio/x-ogg" -> Ext.OGG
+            "audio/mp4", "audio/x-m4a", "audio/m4a" -> Ext.M4A
+            "audio/aac", "audio/x-aac" -> Ext.AAC
+            else -> null
+        }
+        if (fromMime != null) return fromMime
+
+        val extName = displayName?.substringAfterLast(".", "").orEmpty()
+        return Ext.entries.find { it.fileType == FileType.Audio && it.name.equals(extName, ignoreCase = true) }
+            ?: Ext.MP3
+    }
 
     override suspend fun deleteFile(fileNameWithExt: String): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {

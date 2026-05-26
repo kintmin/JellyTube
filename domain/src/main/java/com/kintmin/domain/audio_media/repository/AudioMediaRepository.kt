@@ -21,6 +21,16 @@ interface AudioMediaRepository {
         imageFileFullPath: String? = null,
     ): Result<Unit>
 
+    /**
+     * content URI로 공유된 오디오 파일을 앱 내부 저장소로 복사하고 DB에 저장한다.
+     * source는 "quickShare://sha256/<hex>" 형태로 저장된다.
+     */
+    suspend fun importSharedAudio(
+        contentUriString: String,
+        playlistIdOnDownload: Int,
+        shouldInsertAtTopOnDownload: Boolean,
+    ): Result<Pair<AudioMedia, Int>>
+
     suspend fun deleteDownloadedFile(downloadedAudioMedia: DownloadedMedia): Result<Unit>
     suspend fun deleteAudioMedia(id: Int): Result<Unit>
 }

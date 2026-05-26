@@ -2,8 +2,10 @@ package com.kintmin.jellytube
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
 import com.kintmin.platform.deeplink.DeepLinkConstants
 import com.kintmin.platform.service_controller.MediaControllerManager
@@ -18,6 +20,7 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     private val mediaControllerManager: MediaControllerManager,
     private val registerUserUseCase: RegisterUserUseCase,
+    private val importSharedAudioMediaUseCase: ImportSharedAudioMediaUseCase,
 ) : ViewModel() {
 
     private val navigationIntentChannel = Channel<NavigationIntent>(capacity = 8)
@@ -34,9 +37,52 @@ class MainViewModel @Inject constructor(
     }
 
     fun handleIntent(intent: Intent?) {
-        val uri = intent?.data ?: return
-        intent.data = null  // 사용된 딥링크는 소비
-        onDeepLink(uri)
+        intent ?: return
+
+        // 딥링크 처리
+        val uri = intent.data
+        if (uri != null) {
+            intent.data = null  // 사용된 딥링크는 소비
+            onDeepLink(uri)
+            return
+        }
+
+        // Quick Share / 공유 시트를 통한 오디오 파일 수신
+        when (intent.action) {
+            Intent.ACTION_SEND -> {
+                @Suppress("DEPRECATION")
+                val sharedUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                } else {
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                }
+                if (sharedUri != null) {
+                    intent.removeExtra(Intent.EXTRA_STREAM)  // 재처리 방지
+                    handleSharedAudioUris(listOf(sharedUri))
+                }
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                @Suppress("DEPRECATION")
+                val sharedUris = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                } else {
+                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)
+                }
+                if (!sharedUris.isNullOrEmpty()) {
+                    intent.removeExtra(Intent.EXTRA_STREAM)  // 재처리 방지
+                    handleSharedAudioUris(sharedUris)
+                }
+            }
+        }
+    }
+
+    private fun handleSharedAudioUris(uris: List<Uri>) {
+        viewModelScope.launch {
+            uris.forEach { uri ->
+                importSharedAudioMediaUseCase(uri.toString())
+            }
+            navigationIntentChannel.send(NavigationIntent.NavigateToMainPlaylistsTab)
+        }
     }
 
     fun onDeepLink(uri: Uri) {

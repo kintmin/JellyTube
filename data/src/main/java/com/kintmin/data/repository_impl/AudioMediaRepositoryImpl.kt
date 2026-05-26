@@ -11,6 +11,7 @@ import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -127,6 +128,41 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                         fileManager.getFileNameWithExt(it).getOrThrow()
                     },
                 )
+            }
+        }
+    }
+
+    override suspend fun importSharedAudio(
+        contentUriString: String,
+        playlistIdOnDownload: Int,
+        shouldInsertAtTopOnDownload: Boolean,
+    ): Result<Pair<AudioMedia, Int>> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val copiedInfo = fileManager.copyAudioFromContentUri(contentUriString).getOrThrow()
+                val source = "quickShare://sha256/${copiedInfo.sha256Hex}"
+
+                // 중복 파일 확인: 같은 SHA-256이 이미 저장된 경우 복사본을 삭제하고 에러 반환
+                runCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
+                    fileManager.deleteFile(copiedInfo.fileNameWithExt)
+                    throw AlreadyDownloadedMedia()
+                }
+
+                val entity = AudioMediaEntity(
+                    source = source,
+                    name = copiedInfo.title ?: copiedInfo.fileNameWithExt,
+                    artist = copiedInfo.artist ?: "",
+                    description = "",
+                    rawAudioDurationSeconds = copiedInfo.durationMs?.let { it / 1000 },
+                    audioFileNameWithExt = copiedInfo.fileNameWithExt,
+                    imageFileNameWithExt = null,
+                )
+                val (newId, totalPlaylist) = audioMediaFacade.addNewAudioMedia(
+                    newAudioMedia = entity,
+                    playlistIdOnDownload = playlistIdOnDownload,
+                    shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
+                )
+                entity.copy(id = newId).toDomain(fileManager).getOrThrow() to totalPlaylist.audioMediaCount
             }
         }
     }

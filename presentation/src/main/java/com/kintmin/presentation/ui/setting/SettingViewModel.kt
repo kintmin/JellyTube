@@ -106,6 +106,11 @@ class SettingViewModel @Inject constructor(
                     _eventFlow.emit(SettingEvent.NavigateToAppLogScreen)
                 }
             }
+            SettingIntent.OnClickShareTile -> {
+                viewModelScope.launch {
+                    _eventFlow.emit(SettingEvent.NavigateToShareScreen)
+                }
+            }
             is SettingIntent.OnToggleIsStepEnabled -> {
                 if (intent.value) {
                     viewModelScope.launch {
