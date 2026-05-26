@@ -48,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.common.FullScreenImageViewer
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
 import java.io.File
 
@@ -91,6 +92,12 @@ fun AudioMediaDetailScreen(
     sendIntent: (AudioMediaDetailIntent) -> Unit,
 ) {
     var isShowDialog by remember { mutableStateOf(false) }
+    var isShowFullScreenImageViewer by remember { mutableStateOf(false) }
+
+    FullScreenImageViewer(
+        imageFileFullPath = if (isShowFullScreenImageViewer) data.imageFileFullPath else null,
+        onDismiss = { isShowFullScreenImageViewer = false },
+    )
 
     DeleteFullAudioMediaListDialog(
         isShow = isShowDialog,
@@ -187,6 +194,7 @@ fun AudioMediaDetailScreen(
                         .padding(bottom = 16.dp)
                         .height(220.dp)
                         .background(MaterialTheme.colorScheme.surface)
+                        .clickable { isShowFullScreenImageViewer = true }
                 )
             }
         }

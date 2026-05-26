@@ -26,6 +26,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.WindowCompat
 
 @Composable
 fun JellyTubeDialog(
@@ -46,7 +47,10 @@ fun JellyTubeDialog(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+        ),
     ) {
         val view = LocalView.current
         val interactionSource = remember { MutableInteractionSource() }
@@ -55,6 +59,11 @@ fun JellyTubeDialog(
             val window = (view.parent as? DialogWindowProvider)?.window ?: return@SideEffect
             window.setBackgroundDrawable(AndroidColor.TRANSPARENT.toDrawable())
             window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            window.setLayout(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+            )
+            WindowCompat.setDecorFitsSystemWindows(window, false)
         }
 
         Box(

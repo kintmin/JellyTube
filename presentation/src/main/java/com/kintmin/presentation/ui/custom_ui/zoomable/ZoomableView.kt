@@ -49,6 +49,7 @@ fun ZoomableView(
     minScale: Float = 1f,
     maxScale: Float = minScale * 4f,
     doubleTapScale: Float = minScale * 2f,
+    onTap: () -> Unit = {},
     content: @Composable BoxScope.() -> Unit,
 ) {
     var scale by remember { mutableFloatStateOf(minScale) }
@@ -77,10 +78,10 @@ fun ZoomableView(
         else -> zoomLimitMode
     }
 
-    val effectiveMinScale = when (resolvedLimitMode) {
-        ZoomLimitMode.Horizontal -> horizontalFitMinScale
-        ZoomLimitMode.Vertical -> verticalFitMinScale
-        ZoomLimitMode.Auto -> minScale
+    val effectiveMinScale = if (resolvedLimitMode == ZoomLimitMode.Horizontal) {
+        horizontalFitMinScale
+    } else {
+        verticalFitMinScale
     }
     val effectiveMaxScale = max(maxScale, effectiveMinScale)
 
@@ -138,11 +139,8 @@ fun ZoomableView(
         val newScale = targetScale.coerceIn(effectiveMinScale, effectiveMaxScale)
         val scaleDelta = newScale / scale
 
-        val dx = focus.x * (1f - scaleDelta)
-        val dy = focus.y * (1f - scaleDelta)
-
-        val rawX = offsetX + dx
-        val rawY = offsetY + dy
+        val rawX = focus.x - (focus.x - offsetX) * scaleDelta
+        val rawY = focus.y - (focus.y - offsetY) * scaleDelta
 
         scale = newScale
         offsetX = clampOffsetX(rawTranslation = rawX, currentScale = newScale)
@@ -158,18 +156,17 @@ fun ZoomableView(
                     val newScale = (scale * zoom).coerceIn(effectiveMinScale, effectiveMaxScale)
                     val scaleDelta = newScale / scale
 
-                    val scaleDx = centroid.x * (1f - scaleDelta)
-                    val scaleDy = centroid.y * (1f - scaleDelta)
-                    val rawX = offsetX + pan.x + scaleDx
-                    val rawY = offsetY + pan.y + scaleDy
+                    val rawX = centroid.x - (centroid.x - offsetX) * scaleDelta + pan.x
+                    val rawY = centroid.y - (centroid.y - offsetY) * scaleDelta + pan.y
 
                     scale = newScale
                     offsetX = clampOffsetX(rawTranslation = rawX, currentScale = newScale)
                     offsetY = clampOffsetY(rawTranslation = rawY, currentScale = newScale)
                 }
             }
-            .pointerInput(effectiveMinScale, effectiveMaxScale, doubleTapScale) {
+            .pointerInput(effectiveMinScale, effectiveMaxScale, doubleTapScale, onTap) {
                 detectTapGestures(
+                    onTap = { onTap() },
                     onDoubleTap = { offset ->
                         val targetScale = if (scale > effectiveMinScale) effectiveMinScale else doubleTapScale
                         applyScale(targetScale = targetScale, focus = offset)
