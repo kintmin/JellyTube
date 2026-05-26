@@ -6,4 +6,5 @@ data class CopiedAudioInfo(
     val title: String?,
     val artist: String?,
     val durationMs: Long?,
+    val imageFileNameWithExt: String? = null,
 )

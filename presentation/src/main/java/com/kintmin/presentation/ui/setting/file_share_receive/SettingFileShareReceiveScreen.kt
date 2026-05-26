@@ -1,7 +1,5 @@
-package com.kintmin.presentation.ui.setting.share
+package com.kintmin.presentation.ui.setting.file_share_receive
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,13 +21,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Computer
-import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.MusicNote
-import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,43 +40,39 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kintmin.platform.service.FileShareForegroundService
 import com.kintmin.presentation.theme.JellyTubeTheme
 
 @Composable
-fun SettingShareScreen(
+fun SettingFileShareReceiveScreen(
     navigateToBack: () -> Unit,
 ) {
-    val viewModel = hiltViewModel<SettingShareViewModel>()
+    val viewModel = hiltViewModel<SettingFileShareReceiveViewModel>()
     val uiState by viewModel.uiState.collectAsState()
 
-    val fileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(),
-    ) { uris ->
-        viewModel.onFilesSelected(uris.map { it.toString() })
-    }
-
-    SettingShareScreen(
+    SettingFileShareReceiveScreen(
         uiState = uiState,
         navigateToBack = navigateToBack,
-        onClickPickFiles = { fileLauncher.launch(arrayOf("audio/*")) },
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingShareScreen(
-    uiState: SettingShareUiState,
+fun SettingFileShareReceiveScreen(
+    uiState: SettingFileShareReceiveUiState,
     navigateToBack: () -> Unit,
-    onClickPickFiles: () -> Unit,
 ) {
+    val context = LocalContext.current
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Quick Share로 공유받기") },
+                title = { Text("데스크톱에서 파일 공유받기") },
                 navigationIcon = {
                     IconButton(onClick = navigateToBack) {
                         Icon(
@@ -97,36 +90,35 @@ fun SettingShareScreen(
                     .navigationBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
-                if (uiState.successCount > 0) {
+                if (uiState.serverStatus == ServerStatus.RUNNING) {
                     Text(
-                        text = "${uiState.successCount}개 파일을 라이브러리에 추가했습니다.",
+                        text = "서버가 실행 중입니다. PC에서 파일을 전송해 주세요.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 8.dp),
                     )
                 }
-                uiState.errors.forEach { error ->
-                    Text(
-                        text = error,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(bottom = 4.dp),
-                    )
-                }
-                Button(
-                    onClick = onClickPickFiles,
-                    enabled = !uiState.isLoading,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                        Spacer(Modifier.width(8.dp))
+                when (uiState.serverStatus) {
+                    ServerStatus.STOPPED -> Button(
+                        onClick = {
+                            FileShareForegroundService.startService(context)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("파일 공유 받기 시작")
                     }
-                    Text("오디오 파일 선택해서 가져오기")
+                    ServerStatus.RUNNING -> Button(
+                        onClick = {
+                            FileShareForegroundService.stopService(context)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        ),
+                    ) {
+                        Text("파일 공유 받기 중지")
+                    }
                 }
             }
         },
@@ -140,12 +132,12 @@ fun SettingShareScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "Windows PC에서 오디오 파일을 젤리튜브로 가져오는 방법",
+                text = "Windows PC에서 음원 파일을\nJellyTube로 전송하는 방법",
                 style = MaterialTheme.typography.titleMedium,
             )
 
-            // 흐름도 다이어그램
             Card(
+                modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 ),
@@ -158,52 +150,24 @@ fun SettingShareScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    FlowNode(
-                        icon = Icons.Rounded.Computer,
-                        label = "Windows PC",
-                    )
+                    FlowNode(icon = Icons.Rounded.Computer, label = "Windows PC")
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    FlowNode(
-                        icon = Icons.Rounded.Share,
-                        label = "Quick Share",
-                    )
+                    FlowNode(icon = Icons.Rounded.Wifi, label = "Wi-Fi")
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    FlowNode(
-                        icon = Icons.Rounded.MusicNote,
-                        label = "젤리튜브",
-                    )
+                    FlowNode(icon = Icons.Rounded.MusicNote, label = "JellyTube")
                 }
             }
 
-            // 단계별 안내
-            StepCard(
-                stepNumber = 1,
-                title = "Windows에서 Quick Share 앱 열기",
-                description = "Windows PC에서 Google Quick Share 앱을 실행하고, 공유할 mp3·wav 등 오디오 파일을 선택합니다.",
-            )
-
-            StepCard(
-                stepNumber = 2,
-                title = "Android 기기로 파일 전송",
-                description = "Quick Share에서 이 기기를 선택해 파일을 전송합니다. 수신 알림이 뜨면 수락하면 파일이 Downloads 폴더에 저장됩니다.",
-            )
-
-            StepCard(
-                stepNumber = 3,
-                title = "파일을 젤리튜브로 열기",
-                description = "파일 관리자나 Downloads 앱에서 받은 파일을 길게 누르거나 열기 → '젤리튜브'를 선택하면 자동으로 라이브러리에 추가됩니다.",
-            )
-
-            // 직접 가져오기 안내
             Card(
+                modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 ),
@@ -214,7 +178,7 @@ fun SettingShareScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.FileOpen,
+                        imageVector = Icons.Rounded.Wifi,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.size(24.dp),
@@ -222,12 +186,12 @@ fun SettingShareScreen(
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "직접 파일 선택",
+                            text = "같은 Wi-Fi 네트워크 필요",
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                         )
                         Text(
-                            text = "Quick Share 없이도 아래 버튼으로 기기에 저장된 오디오 파일을 바로 가져올 수 있습니다.",
+                            text = "PC와 이 기기가 같은 Wi-Fi에 연결되어 있어야 합니다.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
                         )
@@ -235,16 +199,30 @@ fun SettingShareScreen(
                 }
             }
 
+            // 단계별 안내
+            StepCard(
+                stepNumber = 1,
+                title = "파일 공유 받기 시작",
+                description = "아래 버튼을 눌러 파일 수신 서버를 시작합니다. 서버가 켜져 있는 동안 PC에서 파일을 전송할 수 있습니다.",
+            )
+            StepCard(
+                stepNumber = 2,
+                title = "PC에서 JellyTube 앱 실행",
+                description = "Windows PC에서 JellyTube 파일 공유 앱을 실행합니다. 이 기기를 자동으로 검색합니다.",
+            )
+            StepCard(
+                stepNumber = 3,
+                title = "파일 드래그 앤 드롭",
+                description = "PC 앱에 음원 파일을 끌어다 놓으면 자동으로 이 기기의 라이브러리에 추가됩니다.",
+            )
+
             Spacer(Modifier.height(8.dp))
         }
     }
 }
 
 @Composable
-private fun FlowNode(
-    icon: ImageVector,
-    label: String,
-) {
+private fun FlowNode(icon: ImageVector, label: String) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -274,14 +252,8 @@ private fun FlowNode(
 }
 
 @Composable
-private fun StepCard(
-    stepNumber: Int,
-    title: String,
-    description: String,
-) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-    ) {
+private fun StepCard(stepNumber: Int, title: String, description: String) {
+    Card(shape = RoundedCornerShape(12.dp)) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.Top,
@@ -320,12 +292,22 @@ private fun StepCard(
 
 @Preview(showBackground = true)
 @Composable
-private fun SettingShareScreenPreview() {
+private fun SettingFileShareReceiveScreenIdlePreview() {
     JellyTubeTheme {
-        SettingShareScreen(
-            uiState = SettingShareUiState(),
+        SettingFileShareReceiveScreen(
+            uiState = SettingFileShareReceiveUiState(),
             navigateToBack = {},
-            onClickPickFiles = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SettingFileShareReceiveScreenRunningPreview() {
+    JellyTubeTheme {
+        SettingFileShareReceiveScreen(
+            uiState = SettingFileShareReceiveUiState(serverStatus = ServerStatus.RUNNING),
+            navigateToBack = {},
         )
     }
 }

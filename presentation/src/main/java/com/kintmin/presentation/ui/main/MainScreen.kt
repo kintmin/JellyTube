@@ -82,6 +82,7 @@ fun MainScreen(
     navigateToPlaylistAdd: (id: Int) -> Unit,
     navigateToSetting: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
+    navigateToFileShareReceive: () -> Unit,
 ) {
     val context = LocalContext.current
     val mainViewModel = hiltViewModel<MainViewModel>()
@@ -98,6 +99,11 @@ fun MainScreen(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = { _ -> },
     )
+    val fileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenMultipleDocuments(),
+    ) { uris ->
+        mainViewModel.sendIntent(MainScreenIntent.ImportMediaFiles(uris.map { it.toString() }))
+    }
     LaunchedEffect(Unit) {
         val permissions = buildList {
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
@@ -125,6 +131,14 @@ fun MainScreen(
     }
 
     LaunchedEffect(Unit) {
+        mainViewModel.eventFlow.collect { event ->
+            when (event) {
+                is MainScreenEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
         playlistViewModel.eventFlow.collect { event ->
             when (event) {
                 is PlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistInfo.id)
@@ -141,6 +155,8 @@ fun MainScreen(
         currentUrl = currentUrl,
         navigateToSetting = navigateToSetting,
         navigateToPlayerDetail = navigateToPlayerDetail,
+        navigateToFileShareReceive = navigateToFileShareReceive,
+        onClickPickMedia = { fileLauncher.launch(arrayOf("audio/*")) },
         sendMainIntent = mainViewModel::sendIntent,
         sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
         sendPlaylistIntent = playlistViewModel::sendIntent,
@@ -157,6 +173,8 @@ fun MainScreen(
     currentUrl: String,
     navigateToSetting: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
+    navigateToFileShareReceive: () -> Unit,
+    onClickPickMedia: () -> Unit,
     sendMainIntent: (MainScreenIntent) -> Unit,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
@@ -264,6 +282,8 @@ fun MainScreen(
                     onClickDownload = { url ->
                         sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnClickDownload(url))
                     },
+                    onClickPickMedia = onClickPickMedia,
+                    onClickDesktopFileShare = navigateToFileShareReceive,
                 )
             }
         },
@@ -348,6 +368,8 @@ fun MainScreenSearchTabPreview() {
             currentUrl = "",
             navigateToSetting = {},
             navigateToPlayerDetail = {},
+            navigateToFileShareReceive = {},
+            onClickPickMedia = {},
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},
@@ -367,6 +389,8 @@ fun MainScreenPlayTabPreview() {
             currentUrl = "",
             navigateToSetting = {},
             navigateToPlayerDetail = {},
+            navigateToFileShareReceive = {},
+            onClickPickMedia = {},
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},

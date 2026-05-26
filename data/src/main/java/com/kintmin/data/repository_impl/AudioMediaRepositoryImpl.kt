@@ -110,6 +110,16 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun saveImage(imageData: ByteArray): Result<String> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val fileName = UUID.randomUUID().toString()
+                val ext = fileManager.saveImageWithCompression(imageData, fileName).getOrThrow()
+                fileManager.getFullPathWithExt(fileName = fileName, ext = ext).getOrThrow()
+            }
+        }
+    }
+
     override suspend fun updateAudioMedia(
         id: Int,
         name: String?,
@@ -155,7 +165,42 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                     description = "",
                     rawAudioDurationSeconds = copiedInfo.durationMs?.let { it / 1000 },
                     audioFileNameWithExt = copiedInfo.fileNameWithExt,
-                    imageFileNameWithExt = null,
+                    imageFileNameWithExt = copiedInfo.imageFileNameWithExt,
+                )
+                val (newId, totalPlaylist) = audioMediaFacade.addNewAudioMedia(
+                    newAudioMedia = entity,
+                    playlistIdOnDownload = playlistIdOnDownload,
+                    shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
+                )
+                entity.copy(id = newId).toDomain(fileManager).getOrThrow() to totalPlaylist.audioMediaCount
+            }
+        }
+    }
+
+    override suspend fun importUploadedAudio(
+        bytes: ByteArray,
+        originalFileName: String,
+        playlistIdOnDownload: Int,
+        shouldInsertAtTopOnDownload: Boolean,
+    ): Result<Pair<AudioMedia, Int>> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val copiedInfo = fileManager.saveUploadedAudio(bytes, originalFileName).getOrThrow()
+                val source = "fileShare://sha256/${copiedInfo.sha256Hex}"
+
+                runCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
+                    fileManager.deleteFile(copiedInfo.fileNameWithExt)
+                    throw AlreadyDownloadedMedia()
+                }
+
+                val entity = AudioMediaEntity(
+                    source = source,
+                    name = copiedInfo.title ?: copiedInfo.fileNameWithExt,
+                    artist = copiedInfo.artist ?: "",
+                    description = "",
+                    rawAudioDurationSeconds = copiedInfo.durationMs?.let { it / 1000 },
+                    audioFileNameWithExt = copiedInfo.fileNameWithExt,
+                    imageFileNameWithExt = copiedInfo.imageFileNameWithExt,
                 )
                 val (newId, totalPlaylist) = audioMediaFacade.addNewAudioMedia(
                     newAudioMedia = entity,

@@ -232,7 +232,9 @@ fun AudioMediaDetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    navigateToMainSearchTab(data.source)
+                                    if (data.source.startsWith("http://") || data.source.startsWith("https://")) {
+                                        navigateToMainSearchTab(data.source)
+                                    }
                                 }
                                 .padding(horizontal = 16.dp),
                             text = "출처: ${data.source}",

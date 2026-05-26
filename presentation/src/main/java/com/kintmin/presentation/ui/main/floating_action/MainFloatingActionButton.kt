@@ -43,6 +43,8 @@ import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
 fun MainFloatingActionButton(
     currentUrl: String,
     onClickDownload: (String) -> Unit,
+    onClickPickMedia: () -> Unit,
+    onClickDesktopFileShare: () -> Unit,
 ) {
     val viewModel = hiltViewModel<MainFloatingActionViewModel>()
     val uiState by viewModel.uiState.collectAsState()
@@ -60,6 +62,8 @@ fun MainFloatingActionButton(
     MainFloatingActionButton(
         uiState = uiState,
         currentUrl = currentUrl,
+        onClickPickMedia = onClickPickMedia,
+        onClickDesktopFileShare = onClickDesktopFileShare,
         sendIntent = viewModel::sendIntent,
     )
 }
@@ -69,9 +73,11 @@ fun MainFloatingActionButton(
 fun MainFloatingActionButton(
     uiState: MainFloatingActionUiState,
     currentUrl: String,
+    onClickPickMedia: () -> Unit,
+    onClickDesktopFileShare: () -> Unit,
     sendIntent: (MainFloatingActionIntent) -> Unit,
 ) {
-    var isPlaylistButtonVisible by rememberSaveable { mutableStateOf(false) }
+    var isActionButtonVisible by rememberSaveable { mutableStateOf(false) }
 
     if (uiState.isPlaylistBottomSheetVisible) {
         DownloadPlaylistSelectorBottomSheet(
@@ -91,24 +97,64 @@ fun MainFloatingActionButton(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         AnimatedVisibility(
-            visible = isPlaylistButtonVisible,
+            visible = isActionButtonVisible,
             enter = slideInVertically(initialOffsetY = { fullHeight -> fullHeight }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { fullHeight -> fullHeight }) + fadeOut(),
         ) {
-            ExtendedFloatingActionButton(
-                modifier = Modifier.alpha(0.9f),
-                onClick = {
-                    sendIntent(MainFloatingActionIntent.OnClickPlaylistButton)
-                },
-                shape = MaterialTheme.shapes.extraLarge,
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 0.dp,
-                    pressedElevation = 0.dp,
-                    focusedElevation = 0.dp,
-                    hoveredElevation = 0.dp,
-                ),
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(text = "현재 재생목록: ${uiState.playlistIdOnDownloadName}")
+                ExtendedFloatingActionButton(
+                    modifier = Modifier.alpha(0.9f),
+                    onClick = {
+                        isActionButtonVisible = false
+                        onClickDesktopFileShare()
+                    },
+                    shape = MaterialTheme.shapes.extraLarge,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp,
+                        focusedElevation = 0.dp,
+                        hoveredElevation = 0.dp,
+                    ),
+                ) {
+                    Text(text = "데스크톱에서 추가하기")
+                }
+
+                ExtendedFloatingActionButton(
+                    modifier = Modifier.alpha(0.9f),
+                    onClick = {
+                        isActionButtonVisible = false
+                        onClickPickMedia()
+                    },
+                    shape = MaterialTheme.shapes.extraLarge,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp,
+                        focusedElevation = 0.dp,
+                        hoveredElevation = 0.dp,
+                    ),
+                ) {
+                    Text(text = "미디어에서 추가하기")
+                }
+
+                ExtendedFloatingActionButton(
+                    modifier = Modifier.alpha(0.9f),
+                    onClick = {
+                        isActionButtonVisible = false
+                        sendIntent(MainFloatingActionIntent.OnClickPlaylistButton)
+                    },
+                    shape = MaterialTheme.shapes.extraLarge,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp,
+                        focusedElevation = 0.dp,
+                        hoveredElevation = 0.dp,
+                    ),
+                ) {
+                    Text(text = "현재 재생목록: ${uiState.playlistIdOnDownloadName}")
+                }
             }
         }
 
@@ -118,7 +164,7 @@ fun MainFloatingActionButton(
                 .combinedClickable(
                     role = Role.Button,
                     onLongClick = {
-                        isPlaylistButtonVisible = !isPlaylistButtonVisible
+                        isActionButtonVisible = !isActionButtonVisible
                     },
                     onClick = {
                         sendIntent(MainFloatingActionIntent.OnClickDownload(currentUrl))
@@ -150,6 +196,8 @@ fun MainFloatingActionButtonPreview() {
                 playlistIdOnDownloadName = "기본",
             ),
             currentUrl = "https://m.youtube.com/watch?v=test",
+            onClickPickMedia = {},
+            onClickDesktopFileShare = {},
             sendIntent = {},
         )
     }

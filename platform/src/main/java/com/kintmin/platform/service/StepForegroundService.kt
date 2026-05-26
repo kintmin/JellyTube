@@ -60,20 +60,14 @@ class StepForegroundService : Service() {
 
         fun startService(context: Context): Result<Unit> {
             return runCatching {
-                val hasPostNotification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    ContextCompat.checkSelfPermission(context, permission.POST_NOTIFICATIONS) == PERMISSION_GRANTED
-                } else {
-                    true
-                }
-
                 val hasActivityRecognition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     ContextCompat.checkSelfPermission(context, permission.ACTIVITY_RECOGNITION) == PERMISSION_GRANTED
                 } else {
                     true
                 }
 
-                if (!hasPostNotification || !hasActivityRecognition) {
-                    throw SecurityException("권한이 부족합니다. POST_NOTIFICATIONS: $hasPostNotification ACTIVITY_RECOGNITION: $hasActivityRecognition")
+                if (!hasActivityRecognition) {
+                    throw SecurityException("권한이 부족합니다. ACTIVITY_RECOGNITION: false")
                 }
 
                 val hasStepCounterSensor =
