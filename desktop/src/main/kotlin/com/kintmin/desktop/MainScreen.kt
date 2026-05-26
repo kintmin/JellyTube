@@ -14,16 +14,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AudioFile
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -43,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.awtTransferable
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kintmin.fileshare.UploadStatus
 import java.awt.datatransfer.DataFlavor
@@ -65,8 +70,15 @@ fun MainScreen() {
                 if (!transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) return false
                 @Suppress("UNCHECKED_CAST")
                 val files = transferable.getTransferData(DataFlavor.javaFileListFlavor) as? List<File>
-                val audioFile = files?.firstOrNull { isAudioFile(it) } ?: return false
-                viewModel.onFileDrop(audioFile)
+                    ?: return false
+                val audioFiles = files.filter { isAudioFile(it) }
+                val imageFiles = files.filter { isImageFile(it) }
+                when {
+                    audioFiles.isNotEmpty() -> viewModel.onAudioFilesDrop(audioFiles)
+                    imageFiles.size == 1 -> viewModel.onImageDrop(imageFiles.first())
+                    imageFiles.size > 1 -> viewModel.onUnsupportedImageDrop()
+                    else -> return false
+                }
                 return true
             }
         }
@@ -88,25 +100,30 @@ fun MainScreen() {
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                // 타이틀
                 Text(
                     text = "JellyTube 파일 공유",
                     style = MaterialTheme.typography.headlineMedium,
                 )
 
-                // 기기 검색 상태 카드
                 DiscoveryStatusCard(
                     discoveryState = uiState.discoveryState,
                     onRefresh = viewModel::startDiscovery,
                 )
 
-                // 파일 업로드 영역
                 if (uiState.discoveryState == DiscoveryState.FOUND) {
-                    FileDropCard(
-                        pendingFile = uiState.pendingFile,
-                        onUpload = viewModel::onUpload,
+                    FileDropCard()
+                    BulkControls(
+                        bulkArtist = uiState.bulkArtist,
+                        bulkMessage = uiState.bulkMessage,
+                        hasItems = uiState.uploadItems.isNotEmpty(),
+                        onBulkArtistChange = viewModel::onBulkArtistChange,
+                        onApplyBulkArtist = viewModel::onApplyBulkArtist,
+                        onClearAll = viewModel::onClearAll,
+                    )
+                    UploadList(
+                        uploadItems = uiState.uploadItems,
                         onRetry = viewModel::onRetry,
-                        onClear = viewModel::onClearFile,
+                        onRemove = viewModel::onRemoveItem,
                     )
                 }
             }
@@ -190,17 +207,12 @@ private fun DiscoveryStatusCard(
 }
 
 @Composable
-private fun FileDropCard(
-    pendingFile: PendingFileItem?,
-    onUpload: () -> Unit,
-    onRetry: () -> Unit,
-    onClear: () -> Unit,
-) {
+private fun FileDropCard() {
     Card(
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp),
+            .height(160.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
@@ -209,103 +221,183 @@ private fun FileDropCard(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             contentAlignment = Alignment.Center,
         ) {
-            if (pendingFile == null) {
-                // 드래그 앤 드롭 안내
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Upload,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(48.dp),
-                    )
-                    Text(
-                        text = "음원 파일을 이 곳에 끌어다 놓으세요",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = "mp3, wav, flac 등 지원",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.primaryContainer,
-                                    CircleShape,
-                                ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.AudioFile,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp),
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = pendingFile.file.name,
-                                style = MaterialTheme.typography.titleSmall,
-                            )
-                            Text(
-                                text = statusLabel(pendingFile.status),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = statusColor(pendingFile.status),
-                            )
-                        }
-                    }
-
-                    pendingFile.errorMessage?.let { errorMsg ->
-                        Text(
-                            text = errorMsg,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        when (pendingFile.status) {
-                            UploadStatus.IDLE -> Button(onClick = onUpload) {
-                                Text("업로드")
-                            }
-                            UploadStatus.UPLOADING -> CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
-                            UploadStatus.SUCCESS -> {
-                                Text(
-                                    text = "업로드 성공",
-                                    color = MaterialTheme.colorScheme.primary,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                                OutlinedButton(onClick = onClear) { Text("닫기") }
-                            }
-                            UploadStatus.FAILURE -> {
-                                Button(
-                                    onClick = onRetry,
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                                ) {
-                                    Text("재시도")
-                                }
-                                OutlinedButton(onClick = onClear) { Text("취소") }
-                            }
-                        }
-                    }
-                }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Upload,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(48.dp),
+                )
+                Text(
+                    text = "음원 파일을 끌어다 놓으면 즉시 업로드됩니다",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "mp3, wav, flac 등 여러 음원 지원 · 이미지 1장은 성공 항목 썸네일로 적용",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun BulkControls(
+    bulkArtist: String,
+    bulkMessage: String?,
+    hasItems: Boolean,
+    onBulkArtistChange: (String) -> Unit,
+    onApplyBulkArtist: () -> Unit,
+    onClearAll: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = bulkArtist,
+                    onValueChange = onBulkArtistChange,
+                    label = { Text("아티스트 일괄 적용") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+                Button(onClick = onApplyBulkArtist) {
+                    Text("적용")
+                }
+                OutlinedButton(
+                    onClick = onClearAll,
+                    enabled = hasItems,
+                ) {
+                    Text("전체 삭제")
+                }
+            }
+            bulkMessage?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun UploadList(
+    uploadItems: List<UploadFileItem>,
+    onRetry: (String) -> Unit,
+    onRemove: (String) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(uploadItems, key = { it.id }) { item ->
+            UploadListItem(
+                item = item,
+                onRetry = { onRetry(item.id) },
+                onRemove = { onRemove(item.id) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun UploadListItem(
+    item: UploadFileItem,
+    onRetry: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.AudioFile,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = item.title ?: item.file.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = item.errorMessage ?: statusLabel(item.status),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = statusColor(item.status),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            StatusIcon(status = item.status)
+            if (item.status == UploadStatus.FAILURE) {
+                IconButton(onClick = onRetry) {
+                    Icon(
+                        imageVector = Icons.Rounded.RestartAlt,
+                        contentDescription = "재시도",
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+            IconButton(onClick = onRemove) {
+                Icon(
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = "삭제",
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusIcon(status: UploadStatus) {
+    when (status) {
+        UploadStatus.IDLE -> Icon(
+            imageVector = Icons.Rounded.AudioFile,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        UploadStatus.UPLOADING -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+        UploadStatus.SUCCESS -> Icon(
+            imageVector = Icons.Rounded.CheckCircle,
+            contentDescription = "업로드 완료",
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        UploadStatus.FAILURE -> Icon(
+            imageVector = Icons.Rounded.Error,
+            contentDescription = "업로드 실패",
+            tint = MaterialTheme.colorScheme.error,
+        )
     }
 }
 
@@ -328,4 +420,9 @@ private fun statusColor(status: UploadStatus) = when (status) {
 private fun isAudioFile(file: File): Boolean {
     val audioExtensions = setOf("mp3", "wav", "flac", "aac", "ogg", "m4a", "wma", "opus", "aiff")
     return file.extension.lowercase() in audioExtensions
+}
+
+private fun isImageFile(file: File): Boolean {
+    val imageExtensions = setOf("jpg", "jpeg", "png", "webp")
+    return file.extension.lowercase() in imageExtensions
 }

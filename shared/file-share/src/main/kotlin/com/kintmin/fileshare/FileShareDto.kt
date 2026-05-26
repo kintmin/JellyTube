@@ -10,6 +10,18 @@ data class UploadResponse(
     val title: String? = null,
 )
 
+@Serializable
+data class BulkArtistUpdateRequest(
+    val audioMediaIds: List<Int>,
+    val artist: String,
+)
+
+@Serializable
+data class FileShareResponse(
+    val success: Boolean,
+    val message: String,
+)
+
 enum class UploadStatus {
     IDLE,
     UPLOADING,

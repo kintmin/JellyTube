@@ -107,21 +107,15 @@ internal class FileManagerImpl @Inject constructor(
             val sha256Hex = digest.digest().joinToString("") { "%02x".format(it) }
 
             // 메타데이터 추출
-            val retriever = MediaMetadataRetriever()
-            val (title, artist, durationMs) = runCatching {
-                retriever.setDataSource(targetFile.absolutePath)
-                val t = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
-                val a = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
-                val d = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
-                Triple(t, a, d)
-            }.getOrElse { Triple(null, null, null) }.also { retriever.release() }
+            val metadata = extractAudioMetadata(targetFile, fileName)
 
             CopiedAudioInfo(
                 fileNameWithExt = fileNameWithExt,
                 sha256Hex = sha256Hex,
-                title = title?.takeIf { it.isNotBlank() } ?: displayName?.substringBeforeLast("."),
-                artist = artist?.takeIf { it.isNotBlank() },
-                durationMs = durationMs,
+                title = metadata.title?.takeIf { it.isNotBlank() } ?: displayName?.substringBeforeLast("."),
+                artist = metadata.artist?.takeIf { it.isNotBlank() },
+                durationMs = metadata.durationMs,
+                imageFileNameWithExt = metadata.imageFileNameWithExt,
             )
         }
     }
@@ -141,24 +135,45 @@ internal class FileManagerImpl @Inject constructor(
             }
             val sha256Hex = digest.digest().joinToString("") { "%02x".format(it) }
 
-            val retriever = MediaMetadataRetriever()
-            val (title, artist, durationMs) = runCatching {
-                retriever.setDataSource(targetFile.absolutePath)
-                val t = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
-                val a = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
-                val d = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
-                Triple(t, a, d)
-            }.getOrElse { Triple(null, null, null) }.also { retriever.release() }
+            val metadata = extractAudioMetadata(targetFile, fileName)
 
             CopiedAudioInfo(
                 fileNameWithExt = fileNameWithExt,
                 sha256Hex = sha256Hex,
-                title = title?.takeIf { it.isNotBlank() } ?: originalFileName.substringBeforeLast("."),
-                artist = artist?.takeIf { it.isNotBlank() },
-                durationMs = durationMs,
+                title = metadata.title?.takeIf { it.isNotBlank() } ?: originalFileName.substringBeforeLast("."),
+                artist = metadata.artist?.takeIf { it.isNotBlank() },
+                durationMs = metadata.durationMs,
+                imageFileNameWithExt = metadata.imageFileNameWithExt,
             )
         }
     }
+
+    private suspend fun extractAudioMetadata(file: File, imageFileName: String): AudioMetadata {
+        val retriever = MediaMetadataRetriever()
+        return runCatching {
+            retriever.setDataSource(file.absolutePath)
+            val title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
+            val artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
+            val durationMs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+            val imageFileNameWithExt = retriever.embeddedPicture?.let { imageData ->
+                saveImageWithCompression(imageData, imageFileName).getOrNull()?.let { ext ->
+                    "$imageFileName.$ext"
+                }
+            }
+            AudioMetadata(title, artist, durationMs, imageFileNameWithExt)
+        }.getOrElse {
+            AudioMetadata()
+        }.also {
+            retriever.release()
+        }
+    }
+
+    private data class AudioMetadata(
+        val title: String? = null,
+        val artist: String? = null,
+        val durationMs: Long? = null,
+        val imageFileNameWithExt: String? = null,
+    )
 
     private fun resolveAudioExt(mimeType: String?, displayName: String?): Ext {
         val fromMime = when (mimeType) {

@@ -110,6 +110,16 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun saveImage(imageData: ByteArray): Result<String> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val fileName = UUID.randomUUID().toString()
+                val ext = fileManager.saveImageWithCompression(imageData, fileName).getOrThrow()
+                fileManager.getFullPathWithExt(fileName = fileName, ext = ext).getOrThrow()
+            }
+        }
+    }
+
     override suspend fun updateAudioMedia(
         id: Int,
         name: String?,
@@ -155,7 +165,7 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                     description = "",
                     rawAudioDurationSeconds = copiedInfo.durationMs?.let { it / 1000 },
                     audioFileNameWithExt = copiedInfo.fileNameWithExt,
-                    imageFileNameWithExt = null,
+                    imageFileNameWithExt = copiedInfo.imageFileNameWithExt,
                 )
                 val (newId, totalPlaylist) = audioMediaFacade.addNewAudioMedia(
                     newAudioMedia = entity,
@@ -190,7 +200,7 @@ internal class AudioMediaRepositoryImpl @Inject constructor(
                     description = "",
                     rawAudioDurationSeconds = copiedInfo.durationMs?.let { it / 1000 },
                     audioFileNameWithExt = copiedInfo.fileNameWithExt,
-                    imageFileNameWithExt = null,
+                    imageFileNameWithExt = copiedInfo.imageFileNameWithExt,
                 )
                 val (newId, totalPlaylist) = audioMediaFacade.addNewAudioMedia(
                     newAudioMedia = entity,

@@ -11,7 +11,11 @@ import android.os.IBinder
 import androidx.core.app.ServiceCompat
 import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
+import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
+import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
+import com.kintmin.fileshare.BulkArtistUpdateRequest
 import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.fileshare.FileShareResponse
 import com.kintmin.fileshare.UploadResponse
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.DownloadResultNotification
@@ -24,6 +28,7 @@ import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.request.header
+import io.ktor.server.request.receive
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respond
 import io.ktor.server.routing.post
@@ -45,6 +50,8 @@ import javax.inject.Inject
 class FileShareForegroundService : Service() {
 
     @Inject lateinit var importUploadedAudioMediaUseCase: ImportUploadedAudioMediaUseCase
+    @Inject lateinit var updateAudioMediaUseCase: UpdateAudioMediaUseCase
+    @Inject lateinit var saveAudioMediaImageUseCase: SaveAudioMediaImageUseCase
     @Inject lateinit var pushNotificationManager: PushNotificationManager
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -99,6 +106,8 @@ class FileShareForegroundService : Service() {
         serviceScope.launch {
             runCatching {
                 val importUseCase = importUploadedAudioMediaUseCase
+                val updateUseCase = updateAudioMediaUseCase
+                val saveImageUseCase = saveAudioMediaImageUseCase
                 val notificationManager = pushNotificationManager
 
                 ktorServer = embeddedServer(CIO, port = FileShareConstants.DEFAULT_PORT) {
@@ -164,6 +173,74 @@ class FileShareForegroundService : Service() {
                                     )
                                 }
                         }
+
+                        post(FileShareConstants.HTTP_BULK_ARTIST_PATH) {
+                            val request = runCatching { call.receive<BulkArtistUpdateRequest>() }
+                                .getOrElse {
+                                    call.respond(
+                                        HttpStatusCode.BadRequest,
+                                        FileShareResponse(success = false, message = "요청을 읽을 수 없습니다."),
+                                    )
+                                    return@post
+                                }
+                            if (request.audioMediaIds.isEmpty() || request.artist.isBlank()) {
+                                call.respond(
+                                    HttpStatusCode.BadRequest,
+                                    FileShareResponse(success = false, message = "적용할 음원이나 아티스트가 없습니다."),
+                                )
+                                return@post
+                            }
+
+                            val result = runCatching {
+                                request.audioMediaIds.forEach { id ->
+                                    updateUseCase(id = id, artist = request.artist).getOrThrow()
+                                }
+                            }
+                            call.respond(
+                                if (result.isSuccess) HttpStatusCode.OK else HttpStatusCode.UnprocessableEntity,
+                                FileShareResponse(
+                                    success = result.isSuccess,
+                                    message = result.exceptionOrNull()?.message ?: "아티스트 적용 완료",
+                                ),
+                            )
+                        }
+
+                        post(FileShareConstants.HTTP_BULK_THUMBNAIL_PATH) {
+                            val ids = call.request.header(FileShareConstants.HEADER_AUDIO_MEDIA_IDS)
+                                ?.split(",")
+                                ?.mapNotNull { it.trim().toIntOrNull() }
+                                .orEmpty()
+                            if (ids.isEmpty()) {
+                                call.respond(
+                                    HttpStatusCode.BadRequest,
+                                    FileShareResponse(success = false, message = "적용할 음원이 없습니다."),
+                                )
+                                return@post
+                            }
+
+                            val bytes = runCatching {
+                                call.receiveChannel().toInputStream().readBytes()
+                            }.getOrElse {
+                                call.respond(
+                                    HttpStatusCode.BadRequest,
+                                    FileShareResponse(success = false, message = "이미지를 읽을 수 없습니다."),
+                                )
+                                return@post
+                            }
+                            val result = runCatching {
+                                ids.forEach { id ->
+                                    val imageFileFullPath = saveImageUseCase(bytes).getOrThrow()
+                                    updateUseCase(id = id, imageFileFullPath = imageFileFullPath).getOrThrow()
+                                }
+                            }
+                            call.respond(
+                                if (result.isSuccess) HttpStatusCode.OK else HttpStatusCode.UnprocessableEntity,
+                                FileShareResponse(
+                                    success = result.isSuccess,
+                                    message = result.exceptionOrNull()?.message ?: "썸네일 적용 완료",
+                                ),
+                            )
+                        }
                     }
                 }.start(wait = false)
             }
@@ -188,7 +265,7 @@ class FileShareForegroundService : Service() {
             }
 
             nsdRegistrationListener = listener
-            nsdManager = getSystemService(Context.NSD_SERVICE) as NsdManager
+            nsdManager = getSystemService(NSD_SERVICE) as NsdManager
             nsdManager?.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, listener)
         }
     }
