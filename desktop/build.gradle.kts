@@ -43,9 +43,19 @@ compose.desktop {
     application {
         mainClass = "com.kintmin.desktop.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Msi)
+            targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "JellyTube File Share"
             packageVersion = "1.0.0"
+            vendor = "kintmin"
+            description = "Desktop file sharing client for JellyTube"
+
+            windows {
+                menu = true
+                shortcut = true
+                perUserInstall = true
+                dirChooser = true
+                upgradeUuid = "8ebf0665-d668-4ea7-92f1-cc8da8a3b9da"
+            }
         }
     }
 }

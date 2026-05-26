@@ -38,3 +38,5 @@
 
 # JDK 호환
 -dontwarn java.lang.invoke.StringConcatFactory
+-dontwarn java.lang.management.ManagementFactory
+-dontwarn java.lang.management.RuntimeMXBean
