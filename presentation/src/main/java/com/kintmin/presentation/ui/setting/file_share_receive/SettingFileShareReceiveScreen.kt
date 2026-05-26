@@ -40,9 +40,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kintmin.platform.service.FileShareForegroundService
 import com.kintmin.presentation.theme.JellyTubeTheme
 
 @Composable
@@ -55,8 +57,6 @@ fun SettingFileShareReceiveScreen(
     SettingFileShareReceiveScreen(
         uiState = uiState,
         navigateToBack = navigateToBack,
-        onStartServer = viewModel::onStartServer,
-        onStopServer = viewModel::onStopServer,
     )
 }
 
@@ -65,14 +65,14 @@ fun SettingFileShareReceiveScreen(
 fun SettingFileShareReceiveScreen(
     uiState: SettingFileShareReceiveUiState,
     navigateToBack: () -> Unit,
-    onStartServer: () -> Unit,
-    onStopServer: () -> Unit,
 ) {
+    val context = LocalContext.current
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("파일 공유 받기") },
+                title = { Text("데스크톱에서 파일 공유받기") },
                 navigationIcon = {
                     IconButton(onClick = navigateToBack) {
                         Icon(
@@ -99,14 +99,18 @@ fun SettingFileShareReceiveScreen(
                     )
                 }
                 when (uiState.serverStatus) {
-                    ServerStatus.IDLE -> Button(
-                        onClick = onStartServer,
+                    ServerStatus.STOPPED -> Button(
+                        onClick = {
+                            FileShareForegroundService.startService(context)
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("파일 공유 받기 시작")
                     }
                     ServerStatus.RUNNING -> Button(
-                        onClick = onStopServer,
+                        onClick = {
+                            FileShareForegroundService.stopService(context)
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -128,12 +132,12 @@ fun SettingFileShareReceiveScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "Windows PC에서 음원 파일을 젤리튜브로 전송하는 방법",
+                text = "Windows PC에서 음원 파일을 JellyTube로 전송하는 방법",
                 style = MaterialTheme.typography.titleMedium,
             )
 
-            // 흐름도 다이어그램
             Card(
+                modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 ),
@@ -162,8 +166,8 @@ fun SettingFileShareReceiveScreen(
                 }
             }
 
-            // 사전 조건 안내
             Card(
+                modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 ),
@@ -293,8 +297,6 @@ private fun SettingFileShareReceiveScreenIdlePreview() {
         SettingFileShareReceiveScreen(
             uiState = SettingFileShareReceiveUiState(),
             navigateToBack = {},
-            onStartServer = {},
-            onStopServer = {},
         )
     }
 }
@@ -306,8 +308,6 @@ private fun SettingFileShareReceiveScreenRunningPreview() {
         SettingFileShareReceiveScreen(
             uiState = SettingFileShareReceiveUiState(serverStatus = ServerStatus.RUNNING),
             navigateToBack = {},
-            onStartServer = {},
-            onStopServer = {},
         )
     }
 }

@@ -15,10 +15,9 @@ data object FileShareServerNotification : PushNotification() {
 
     override fun buildNotification(context: Context) =
         NotificationCompat.Builder(context, channel.id)
-            .setContentTitle("파일 공유 받기 실행 중")
-            .setContentText("PC에서 파일을 전송할 수 있습니다.")
+            .setContentTitle("PC 파일 공유 받기 실행 중")
+            .setContentText("PC 파일 공유를 사용 중지하려면 탭하세요.")
             .setSmallIcon(android.R.drawable.stat_sys_upload)
-            .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .addAction(
                 android.R.drawable.ic_delete,

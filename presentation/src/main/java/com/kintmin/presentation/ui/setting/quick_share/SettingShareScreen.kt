@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.setting.share
+﻿package com.kintmin.presentation.ui.setting.quick_share
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,7 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.Computer
+import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Share
@@ -99,7 +99,7 @@ fun SettingShareScreen(
             ) {
                 if (uiState.successCount > 0) {
                     Text(
-                        text = "${uiState.successCount}개 파일을 라이브러리에 추가했습니다.",
+                        text = "${uiState.successCount}개 파일이 라이브러리에 추가되었습니다.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 8.dp),
@@ -140,11 +140,10 @@ fun SettingShareScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "Windows PC에서 오디오 파일을 젤리튜브로 가져오는 방법",
+                text = "Windows PC 또는 Android 기기에서\n오디오 파일을 JellyTube로 가져오는 방법",
                 style = MaterialTheme.typography.titleMedium,
             )
 
-            // 흐름도 다이어그램
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -159,8 +158,8 @@ fun SettingShareScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     FlowNode(
-                        icon = Icons.Rounded.Computer,
-                        label = "Windows PC",
+                        icon = Icons.Rounded.Devices,
+                        label = "PC/Android",
                     )
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
@@ -178,7 +177,7 @@ fun SettingShareScreen(
                     )
                     FlowNode(
                         icon = Icons.Rounded.MusicNote,
-                        label = "젤리튜브",
+                        label = "JellyTube",
                     )
                 }
             }
@@ -186,20 +185,20 @@ fun SettingShareScreen(
             // 단계별 안내
             StepCard(
                 stepNumber = 1,
-                title = "Windows에서 Quick Share 앱 열기",
-                description = "Windows PC에서 Google Quick Share 앱을 실행하고, 공유할 mp3·wav 등 오디오 파일을 선택합니다.",
+                title = "보내는 기기에서 Quick Share 열기",
+                description = "Windows PC 또는 Android 기기에서 Quick Share를 열고 공유할 오디오 파일(mp3, wav 등)을 선택합니다.",
             )
 
             StepCard(
                 stepNumber = 2,
                 title = "Android 기기로 파일 전송",
-                description = "Quick Share에서 이 기기를 선택해 파일을 전송합니다. 수신 알림이 뜨면 수락하면 파일이 Downloads 폴더에 저장됩니다.",
+                description = "Quick Share에서 이 기기를 선택해 파일을 전송합니다. 수신 알림이 뜨면 허용하면 파일이 Downloads 폴더에 저장됩니다.",
             )
 
             StepCard(
                 stepNumber = 3,
-                title = "파일을 젤리튜브로 열기",
-                description = "파일 관리자나 Downloads 앱에서 받은 파일을 길게 누르거나 열기 → '젤리튜브'를 선택하면 자동으로 라이브러리에 추가됩니다.",
+                title = "파일을 JellyTube로 열기",
+                description = "파일 관리자에서 Downloads의 파일을 길게 누르거나 열기 메뉴에서 JellyTube를 선택하면 라이브러리에 추가됩니다.",
             )
 
             // 직접 가져오기 안내

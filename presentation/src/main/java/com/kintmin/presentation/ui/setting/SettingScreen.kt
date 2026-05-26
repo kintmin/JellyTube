@@ -4,8 +4,10 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +38,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kintmin.platform.service.StepForegroundService
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
 
 @Composable
@@ -190,6 +193,50 @@ fun SettingScreen(
                     .fillMaxWidth()
                     .height(56.dp)
                     .clickable {
+                        sendIntent(SettingIntent.OnClickShareTile)
+                    }
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = "Quick Share로 공유받기")
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = "Quick Share 화면으로 이동",
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clickable {
+                        sendIntent(SettingIntent.OnClickFileShareReceiveTile)
+                    }
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = "데스크톱에서 파일 공유받기")
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = "파일 공유 받기 화면으로 이동",
+                )
+            }
+
+             Box(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .fillMaxWidth()
+                    .background(gray80.copy(alpha = 0.5f))
+                    .height(1.dp)
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clickable {
                         sendIntent(SettingIntent.OnToggleIsStepEnabled(!uiState.isStepEnabled))
                     }
                     .padding(horizontal = 16.dp),
@@ -226,6 +273,14 @@ fun SettingScreen(
                 )
             }
 
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .fillMaxWidth()
+                    .background(gray80.copy(alpha = 0.5f))
+                    .height(1.dp)
+            )
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -237,42 +292,6 @@ fun SettingScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(text = "앱 로그 보기")
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable {
-                        sendIntent(SettingIntent.OnClickShareTile)
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(text = "Quick Share로 공유받기")
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = "Quick Share 화면으로 이동",
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable {
-                        sendIntent(SettingIntent.OnClickFileShareReceiveTile)
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(text = "파일 공유 받기")
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = "파일 공유 받기 화면으로 이동",
-                )
             }
         }
     }

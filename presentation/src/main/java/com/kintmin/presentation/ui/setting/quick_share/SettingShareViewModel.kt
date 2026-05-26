@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.setting.share
+package com.kintmin.presentation.ui.setting.quick_share
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

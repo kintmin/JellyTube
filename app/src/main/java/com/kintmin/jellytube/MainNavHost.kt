@@ -31,8 +31,8 @@ import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
 import com.kintmin.presentation.ui.setting.navigation.settingGraph
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.navigateToSettingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.settingFileShareReceiveScreen
-import com.kintmin.presentation.ui.setting.share.navigation.navigateToSettingShareScreen
-import com.kintmin.presentation.ui.setting.share.navigation.settingShareScreen
+import com.kintmin.presentation.ui.setting.quick_share.navigation.navigateToSettingShareScreen
+import com.kintmin.presentation.ui.setting.quick_share.navigation.settingShareScreen
 import com.kintmin.presentation.ui.step.navigation.navigateToStepScreen
 import com.kintmin.presentation.ui.step.navigation.stepScreen
 import kotlinx.coroutines.flow.Flow
