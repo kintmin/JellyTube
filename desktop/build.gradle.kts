@@ -23,6 +23,7 @@ dependencies {
     implementation(compose.material3)
     implementation(compose.materialIconsExtended)
     implementation(compose.components.uiToolingPreview)
+    implementation(compose.components.resources)
 
     implementation(project(":shared:file-share"))
 
@@ -37,6 +38,10 @@ dependencies {
 
     // mDNS NSD discovery
     implementation(libs.jmdns)
+}
+
+compose.resources {
+    packageOfResClass = "com.kintmin.desktop.resources"
 }
 
 compose.desktop {
@@ -55,6 +60,7 @@ compose.desktop {
                 perUserInstall = true
                 dirChooser = true
                 upgradeUuid = "8ebf0665-d668-4ea7-92f1-cc8da8a3b9da"
+                iconFile.set(project.file("src/main/resources/icon.ico"))
             }
         }
     }
