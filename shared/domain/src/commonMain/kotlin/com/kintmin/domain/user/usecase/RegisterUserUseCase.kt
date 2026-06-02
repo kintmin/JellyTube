@@ -3,8 +3,10 @@ package com.kintmin.domain.user.usecase
 import com.kintmin.domain.user.repository.UserRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.FirebaseEvent
-import java.util.UUID
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 class RegisterUserUseCase constructor(
     private val userRepository: UserRepository,
     private val appLog: AppLog,
@@ -14,7 +16,7 @@ class RegisterUserUseCase constructor(
         val savedUserId = userRepository.getUserId().getOrThrow()
         if (savedUserId != null) return@runCatching savedUserId
 
-        val newUserId = UUID.randomUUID().toString()
+        val newUserId = Uuid.random().toString()
         userRepository.setUserId(newUserId).onSuccess {
             appLog.sendFirebaseEvent(FirebaseEvent.SuccessRegisterUser(newUserId))
         }
