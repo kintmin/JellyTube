@@ -14,7 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "YTMusicBox"
+rootProject.name = "JellyTube"
 include(":android:app")
 include(":android:presentation")
 include(":android:platform")
