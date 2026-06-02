@@ -15,11 +15,10 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "YTMusicBox"
-include(":app")
-include(":presentation")
-include(":platform")
-include(":log:log-api")
-include(":log:log-impl")
+include(":android:app")
+include(":android:presentation")
+include(":android:platform")
+include(":shared:log")
 include(":shared:domain")
 include(":shared:data")
 include(":shared:file-share")

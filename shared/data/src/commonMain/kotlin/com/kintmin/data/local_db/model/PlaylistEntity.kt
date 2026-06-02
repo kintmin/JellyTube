@@ -2,10 +2,10 @@ package com.kintmin.data.local_db.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.lang.System
+import kotlinx.datetime.Clock
 
 /**
- * ?�정 ??DB??addCallback ?�정 ?�요
+ * 기본값 설정 시 DB에 addCallback 설정 필요
  */
 @Entity(tableName = "PLAYLIST")
 data class PlaylistEntity(
@@ -14,7 +14,7 @@ data class PlaylistEntity(
     val description: String,
     val audioMediaCount: Int,
     val rawPlayTimeDuration: Long,
-    val rawCreatedTime: Long = System.currentTimeMillis(),
+    val rawCreatedTime: Long = Clock.System.now().toEpochMilliseconds(),
     val imageFileNameWithExt: String? = null,
     val isCustomImage: Boolean,
 )

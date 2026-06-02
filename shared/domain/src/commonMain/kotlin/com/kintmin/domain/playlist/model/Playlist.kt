@@ -1,6 +1,6 @@
 package com.kintmin.domain.playlist.model
 
-import java.time.LocalDateTime
+import kotlinx.datetime.LocalDateTime
 import kotlin.time.Duration
 
 data class Playlist(
@@ -17,7 +17,6 @@ data class Playlist(
         const val TOTAL = 1
         const val UNCATEGORIZED = 2
 
-        fun isBasePlaylist(playlistId: Int) =  playlistId == TOTAL || playlistId == UNCATEGORIZED
+        fun isBasePlaylist(playlistId: Int) = playlistId == TOTAL || playlistId == UNCATEGORIZED
     }
 }
-

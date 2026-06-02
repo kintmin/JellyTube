@@ -24,8 +24,8 @@ interface AudioMediaRepository {
     suspend fun saveImage(imageData: ByteArray): Result<String>
 
     /**
-     * content URI�?공유???�디???�일?????��? ?�?�소�?복사?�고 DB???�?�한??
-     * source??"quickShare://sha256/<hex>" ?�태�??�?�된??
+     * content URI로 공유된 오디오 파일을 내부 저장소로 복사하고 DB에 저장한다.
+     * source는 "quickShare://sha256/<hex>" 형태로 저장된다.
      */
     suspend fun importSharedAudio(
         contentUriString: String,
@@ -34,8 +34,8 @@ interface AudioMediaRepository {
     ): Result<Pair<AudioMedia, Int>>
 
     /**
-     * HTTP ?�로?�로 ?�신??바이??배열?????��? ?�?�소???�?�하�?DB??추�??�다.
-     * source??"fileShare://sha256/<hex>" ?�태�??�?�된??
+     * HTTP 스트림으로 수신된 바이트 배열을 내부 저장소에 저장하고 DB에 추가한다.
+     * source는 "fileShare://sha256/<hex>" 형태로 저장된다.
      */
     suspend fun importUploadedAudio(
         bytes: ByteArray,

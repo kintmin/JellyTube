@@ -34,3 +34,4 @@ Thumbs.db
 !.idea/inspectionProfiles/
 
 /.kotlin
+/android/app/release

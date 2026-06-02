@@ -17,7 +17,7 @@ class FetchLoadBalancingDelaySecondUseCase constructor() {
         var hash = 0xcbf29ce484222325UL
         val prime = 0x100000001b3UL
 
-        for (byte in input.toByteArray(Charsets.UTF_8)) {
+        for (byte in input.encodeToByteArray()) {
             hash = hash xor byte.toUByte().toULong()
             hash *= prime
         }

@@ -24,7 +24,7 @@ interface PlaylistTrackDao {
     fun getPlaylistTrackFullFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackFullDto>
 
     /**
-     * withTransaction ?�서 ?�행?�기 ?�해 Dto지�?Transaction ?�이 값을 가?�온??
+     * withTransaction 에서 실행하기 위해 Dto지만 Transaction 없이 값을 가져온다
      */
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId ORDER BY sequence LIMIT 1")
     suspend fun getFirstAudioMediaWithNoLock(playlistId: Int): PlaylistTrackFullDto

@@ -53,3 +53,13 @@ For multi-step tasks, state a brief plan:
 ```
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+## 5. File Encoding
+
+**Always use UTF-8 (without BOM) when writing or moving files.**
+
+- Every file write (`write`, `edit`, move, copy) must use UTF-8 encoding.
+- Never use EUC-KR, CP949, UTF-16, or any other encoding — even on Windows.
+- Korean comments, strings, and identifiers must be preserved as valid UTF-8.
+- If you see "The file was loaded in a wrong encoding" or garbled Korean text, the root cause is a non-UTF-8 write. Fix by rewriting the file explicitly as UTF-8.
+- Do not let the OS default encoding (e.g., Windows CP949) influence file output.

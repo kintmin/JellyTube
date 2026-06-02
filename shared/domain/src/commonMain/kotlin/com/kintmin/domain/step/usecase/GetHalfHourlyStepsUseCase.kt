@@ -1,12 +1,12 @@
 package com.kintmin.domain.step.usecase
 
+import com.kintmin.domain.extension.parseBasicIsoDate
+import com.kintmin.domain.extension.startOfDayMillis
 import com.kintmin.domain.step.model.StepData
 import com.kintmin.domain.step.repository.StepRepository
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.datetime.TimeZone
 
 class GetHalfHourlyStepsUseCase constructor(
     private val stepRepository: StepRepository,
@@ -32,16 +32,14 @@ class GetHalfHourlyStepsUseCase constructor(
     ): List<StepData> {
         if (latestStepSensor == null) return stepDataList
 
-        val mutableList = stepDataList.toMutableList().apply {
+        return stepDataList.toMutableList().apply {
             add(
                 StepData(
-                    rawCreatedTime = System.currentTimeMillis(),
+                    rawCreatedTime = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
                     stepSensor = latestStepSensor,
                 )
             )
         }
-
-        return mutableList
     }
 
     private fun calculateHalfHourlySteps(date: String, stepDataList: List<StepData>): List<Int> {
@@ -49,12 +47,9 @@ class GetHalfHourlyStepsUseCase constructor(
             return List(48) { 0 }
         }
 
-        val zoneId = ZoneId.systemDefault()
-        val targetDate = LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE)
-        val dayStartMillis = targetDate
-            .atStartOfDay(zoneId)
-            .toInstant()
-            .toEpochMilli()
+        val timeZone = TimeZone.currentSystemDefault()
+        val targetDate = date.parseBasicIsoDate()
+        val dayStartMillis = targetDate.startOfDayMillis(timeZone)
         val halfHourMillis = 30 * 60 * 1000L
 
         val sortedData = stepDataList.sortedBy { it.rawCreatedTime }

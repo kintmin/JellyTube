@@ -1,8 +1,9 @@
 package com.kintmin.domain.extension
 
-import java.time.LocalDateTime
-import java.time.ZoneId
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 
 fun LocalDateTime.toMillis(): Long {
-    return atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    return toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
 }

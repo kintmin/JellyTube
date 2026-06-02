@@ -1,6 +1,7 @@
 package com.kintmin.data.local_db.dao_facade
 
-import androidx.room.withTransaction
+import androidx.room.immediateTransaction
+import androidx.room.useWriterConnection
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
@@ -22,73 +23,87 @@ class AudioMediaFacade constructor(
         playlistIdOnDownload: Int,
         shouldInsertAtTopOnDownload: Boolean,
     ): Pair<Int, PlaylistEntity> {
-        return db.withTransaction {
-            val insertedAudioMediaId = audioMediaDao.insertAudioMedia(newAudioMedia).toInt()
-            val totalPlaylist = addTrackWithSyncPlaylist(
-                playlistId = Playlist.TOTAL,
-                audioMediaIdList = listOf(insertedAudioMediaId),
-                shouldInsertAtTop = shouldInsertAtTopOnDownload,
-            )
-
-            if (playlistIdOnDownload != Playlist.TOTAL) {
-                addTrackWithSyncPlaylist(
-                    playlistId = playlistIdOnDownload,
+        return db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                val insertedAudioMediaId = audioMediaDao.insertAudioMedia(newAudioMedia).toInt()
+                val totalPlaylist = addTrackWithSyncPlaylist(
+                    playlistId = Playlist.TOTAL,
                     audioMediaIdList = listOf(insertedAudioMediaId),
                     shouldInsertAtTop = shouldInsertAtTopOnDownload,
                 )
+
+                if (playlistIdOnDownload != Playlist.TOTAL) {
+                    addTrackWithSyncPlaylist(
+                        playlistId = playlistIdOnDownload,
+                        audioMediaIdList = listOf(insertedAudioMediaId),
+                        shouldInsertAtTop = shouldInsertAtTopOnDownload,
+                    )
+                }
+                insertedAudioMediaId to totalPlaylist
             }
-            insertedAudioMediaId to totalPlaylist
         }
     }
 
     suspend fun deleteAudioMedia(audioMediaId: Int) {
-        db.withTransaction {
-            val playlistIdList = playlistTrackDao.getLinkedPlaylistIdList(audioMediaId)
-            playlistIdList.forEach { linkedPlaylistId ->
-                deleteTrackWithSyncPlaylist(linkedPlaylistId, listOf(audioMediaId))
+        db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                val playlistIdList = playlistTrackDao.getLinkedPlaylistIdList(audioMediaId)
+                playlistIdList.forEach { linkedPlaylistId ->
+                    deleteTrackWithSyncPlaylist(linkedPlaylistId, listOf(audioMediaId))
+                }
+                audioMediaDao.deleteById(audioMediaId)
             }
-            audioMediaDao.deleteById(audioMediaId)
         }
     }
 
     suspend fun deletePlaylist(playlistId: Int) {
         if (playlistId == Playlist.TOTAL || playlistId == Playlist.UNCATEGORIZED) {
-            error("?�체??미분류는 지?????�다.")
+            error("전체와 미분류는 지울 수 없다.")
         }
-        db.withTransaction {
-            val linkedAudioMediaIdList = playlistTrackDao.getLinkedAudioMediaIdList(playlistId)
-            playlistTrackDao.deletePlaylistTrackByPlaylistId(playlistId)
-            syncUncategorizedPlaylistWhenDeleteTrack(linkedAudioMediaIdList)
-            playlistDao.deleteById(playlistId)
+
+        db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                val linkedAudioMediaIdList = playlistTrackDao.getLinkedAudioMediaIdList(playlistId)
+                playlistTrackDao.deletePlaylistTrackByPlaylistId(playlistId)
+                syncUncategorizedPlaylistWhenDeleteTrack(linkedAudioMediaIdList)
+                playlistDao.deleteById(playlistId)
+            }
         }
     }
 
     suspend fun addTrack(playlistId: Int, audioMediaIdList: List<Int>): PlaylistEntity {
         if (playlistId == Playlist.TOTAL || playlistId == Playlist.UNCATEGORIZED) {
-            error("?�체??미분류는 추�??????�다.")
+            error("전체와 미분류는 추가할 수 없다.")
         }
-        return db.withTransaction {
-            // shouldInsertAtTop ?� ?�운로드 ?�에�??�용?�기 ?�문??false 고정
-            val result = addTrackWithSyncPlaylist(playlistId, audioMediaIdList, shouldInsertAtTop = false)
-            syncUncategorizedPlaylistWhenAddTrack(audioMediaIdList)
-            result
+
+        return db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                // shouldInsertAtTop은 다운로드 시에만 사용하기 때문에 false 고정
+                val result = addTrackWithSyncPlaylist(playlistId, audioMediaIdList, shouldInsertAtTop = false)
+                syncUncategorizedPlaylistWhenAddTrack(audioMediaIdList)
+                result
+            }
         }
     }
 
     suspend fun deleteTrack(playlistId: Int, audioMediaIdList: List<Int>) {
         if (playlistId == Playlist.TOTAL || playlistId == Playlist.UNCATEGORIZED) {
-            error("?�체??미분류는 지?????�다.")
+            error("전체와 미분류는 지울 수 없다.")
         }
-        db.withTransaction {
-            deleteTrackWithSyncPlaylist(playlistId, audioMediaIdList)
-            syncUncategorizedPlaylistWhenDeleteTrack(audioMediaIdList)
+        db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                deleteTrackWithSyncPlaylist(playlistId, audioMediaIdList)
+                syncUncategorizedPlaylistWhenDeleteTrack(audioMediaIdList)
+            }
         }
     }
 
     suspend fun updateTrackSequence(playlistId: Int, audioMediaId: Int, oldSequence: Int, newSequence: Int) {
-        db.withTransaction {
-            playlistTrackDao.updateSequence(playlistId, audioMediaId, oldSequence, newSequence)
-            syncPlaylistWhenUpdateTrack(playlistId)
+        db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                playlistTrackDao.updateSequence(playlistId, audioMediaId, oldSequence, newSequence)
+                syncPlaylistWhenUpdateTrack(playlistId)
+            }
         }
     }
 
@@ -236,7 +251,7 @@ class AudioMediaFacade constructor(
 
         if (targetAudioMediaIdList.isEmpty()) return
 
-        // shouldInsertAtTop ?� ?�운로드 ?�에�??�용?�기 ?�문??false 고정
+        // shouldInsertAtTop은 다운로드 시에만 사용하기 때문에 false 고정
         addTrackWithSyncPlaylist(
             playlistId = Playlist.UNCATEGORIZED,
             audioMediaIdList = targetAudioMediaIdList,

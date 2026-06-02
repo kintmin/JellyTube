@@ -18,6 +18,7 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":shared:domain"))
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.androidx.datastore.preferences.core)
             implementation(libs.room.runtime)
@@ -73,6 +74,11 @@ android {
 }
 
 chaquopy {
+    sourceSets {
+        getByName("main") {
+            srcDir("src/python")
+        }
+    }
     defaultConfig {
         version = AppConfiguration.PYTHON_VERSION
         pip {

@@ -1,6 +1,6 @@
 package com.kintmin.domain.audio_media.model
 
-import java.time.LocalDateTime
+import kotlinx.datetime.LocalDateTime
 import kotlin.time.Duration
 
 data class AudioMedia(

@@ -2,6 +2,9 @@ package com.kintmin.data.local_db.database
 
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSURL
@@ -12,9 +15,11 @@ internal fun createIosJellyTubeDatabase(): JellyTubeDatabase {
         name = databasePath(),
     )
         .setDriver(BundledSQLiteDriver())
+        .setQueryCoroutineContext(Dispatchers.IO)
         .build()
 }
 
+@OptIn(ExperimentalForeignApi::class)
 private fun databasePath(): String {
     val documentDirectory: NSURL = NSFileManager.defaultManager.URLForDirectory(
         directory = NSDocumentDirectory,

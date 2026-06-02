@@ -1,9 +1,10 @@
 package com.kintmin.domain.extension
 
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 fun Long.toLocalDateTime(): LocalDateTime {
-    return Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDateTime()
+    return Instant.fromEpochMilliseconds(this).toLocalDateTime(TimeZone.currentSystemDefault())
 }

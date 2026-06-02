@@ -31,10 +31,10 @@ internal class PythonExecutorImpl constructor(
                     module.callAttr(METHOD_DOWNLOAD_AUDIO, youtubeUrl, audioDownloadPath).asList()
 
                 YoutubeDownloadDto(
-                    title = pyResult.getOrNull(0)?.toString() ?: "?????�음",
+                    title = pyResult.getOrNull(0)?.toString() ?: "알 수 없음",
                     thumbnailDownloadUrl = pyResult.getOrNull(1)?.toString() ?: "",
                     duration = pyResult.getOrNull(2)?.toString() ?: "0",
-                    uploader = pyResult.getOrNull(3)?.toString() ?: "?????�음",
+                    uploader = pyResult.getOrNull(3)?.toString() ?: "알 수 없음",
                     description = pyResult.getOrNull(4)?.toString() ?: "",
                 )
             }

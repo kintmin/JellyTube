@@ -3,6 +3,7 @@ package com.kintmin.data.local_db.model
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
+import kotlinx.datetime.Clock
 
 @Entity(
     tableName = "PLAYLIST_TRACK",
@@ -27,6 +28,6 @@ import androidx.room.Index
 data class PlaylistTrackEntity(
     val playlistId: Int,
     val audioMediaId: Int,
-    val sequence: Int,  // 1부???�작?�며, 중복?�이 증�??�는 �? ?�랙 ??���????�이 ?�다�??�차가 ?�닐 ???�다.
-    val rawCreatedTime: Long = System.currentTimeMillis(),
+    val sequence: Int,  // 1부터 시작하며, 중복 없이 증가하는 값. 트랙 추가/삭제에 따라 순차가 아닐 수도 있다.
+    val rawCreatedTime: Long = Clock.System.now().toEpochMilliseconds(),
 )

@@ -1,4 +1,4 @@
-package com.kintmin.domain.audio_media.usecase
+ï»¿package com.kintmin.domain.audio_media.usecase
 
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
@@ -90,11 +90,11 @@ class DownloadAudioMediaUseCase constructor(
 }
 
 class AlreadyDownloadingMedia(
-    override val message: String = "°°Àº ÃâÃ³ÀÇ ¹Ìµğ¾î°¡ ÇöÀç ´Ù¿î·ÎµåÁßÀÔ´Ï´Ù."
+    override val message: String = "ê°™ì€ ì¶œì²˜ì˜ ë¯¸ë””ì–´ê°€ í˜„ì¬ ë‹¤ìš´ë¡œë“œì¤‘ì…ë‹ˆë‹¤."
 ) : Throwable()
 
 class AlreadyDownloadedMedia(
-    override val message: String = "ÀÌ¹Ì ÀúÀåµÈ ¹Ìµğ¾îÀÔ´Ï´Ù."
+    override val message: String = "ì´ë¯¸ ì €ì¥ëœ ë¯¸ë””ì–´ì…ë‹ˆë‹¤."
 ) : Throwable()
 
 data class DownloadedAudioMediaResult(

@@ -4,22 +4,25 @@ import com.kintmin.data.local_datastore.DatastoreUtil
 import com.kintmin.data.local_datastore.PreferencesKey
 import com.kintmin.data.local_db.dao.StepDao
 import com.kintmin.data.local_db.model.StepEntity
+import com.kintmin.domain.extension.parseBasicIsoDate
+import com.kintmin.domain.extension.startOfDayMillis
 import com.kintmin.domain.step.model.StepData
 import com.kintmin.domain.step.repository.StepRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
 
 class StepRepositoryImpl constructor(
     private val stepDao: StepDao,
     private val datastoreUtil: DatastoreUtil,
-): StepRepository {
+) : StepRepository {
 
     override fun getLastStepSensorForToday(today: String): Flow<Long?> {
         return combine(
@@ -50,7 +53,7 @@ class StepRepositoryImpl constructor(
                 stepDao.insert(
                     StepEntity(
                         rawCreatedTime = rawCreatedTime,
-                        stepSensor = stepSensor
+                        stepSensor = stepSensor,
                     )
                 )
             }
@@ -83,10 +86,10 @@ class StepRepositoryImpl constructor(
     }
 
     private fun dateToRangeMillis(date: String): Pair<Long, Long> {
-        val targetDate = LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE)
-        val zoneId = ZoneId.systemDefault()
-        val start = targetDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
-        val end = targetDate.plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli()
+        val timeZone = TimeZone.currentSystemDefault()
+        val targetDate = date.parseBasicIsoDate()
+        val start = targetDate.startOfDayMillis(timeZone)
+        val end = targetDate.plus(1, DateTimeUnit.DAY).startOfDayMillis(timeZone)
         return start to end
     }
 

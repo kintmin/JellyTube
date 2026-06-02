@@ -1,6 +1,6 @@
 package com.kintmin.domain.audio_track.model
 
-import java.time.LocalDateTime
+import kotlinx.datetime.LocalDateTime
 
 data class AudioTrack(
     val audioMediaId: Int,

@@ -68,7 +68,7 @@ internal class FileManagerImpl constructor(
             val uri = Uri.parse(contentUriString)
             val contentResolver = appContext.contentResolver
 
-            // ?�일명과 MIME ?�??조회
+            // 파일명과 MIME 타입 조회
             val (displayName, mimeType) = contentResolver.query(
                 uri,
                 arrayOf(OpenableColumns.DISPLAY_NAME, MediaStore.MediaColumns.MIME_TYPE),
@@ -88,7 +88,7 @@ internal class FileManagerImpl constructor(
             val fileNameWithExt = "$fileName.$targetExt"
             val targetFile = getDirectory(FileType.Audio).resolve(fileNameWithExt)
 
-            // ?�일 복사 + SHA-256 ?�시 계산
+            // 파일 복사 + SHA-256 해시 계산
             val digest = MessageDigest.getInstance("SHA-256")
             contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(targetFile).use { output ->
@@ -99,11 +99,11 @@ internal class FileManagerImpl constructor(
                         digest.update(buffer, 0, bytesRead)
                     }
                 }
-            } ?: throw Exception("content URI�??????�습?�다: $contentUriString")
+            } ?: throw Exception("content URI를 열 수 없습니다: $contentUriString")
 
             val sha256Hex = digest.digest().joinToString("") { "%02x".format(it) }
 
-            // 메�??�이??추출
+            // 메타데이터 추출
             val metadata = extractAudioMetadata(targetFile, fileName)
 
             CopiedAudioInfo(
@@ -233,7 +233,7 @@ internal class FileManagerImpl constructor(
     private fun extractExtFromFileName(fileNameWithExt: String): Pair<String, Ext> {
         val lastDotIndex = fileNameWithExt.lastIndexOf(".")
         if (lastDotIndex == -1) {
-            throw Exception("?�일명에???�일 ?�장?��? 찾을 ???�습?�다.")
+            throw Exception("파일명에서 파일 확장자를 찾을 수 없습니다.")
         }
 
         val fileName = fileNameWithExt.substring(0, lastDotIndex)
@@ -243,7 +243,7 @@ internal class FileManagerImpl constructor(
     }
 
     private fun extractExt(extName: String): Ext {
-        return Ext.entries.find { it.name.equals(extName, ignoreCase = true) } ?: throw Exception("?�바르�? ?��? ?�장?�입?�다.")
+        return Ext.entries.find { it.name.equals(extName, ignoreCase = true) } ?: throw Exception("올바르지 않은 파일 확장자입니다.")
     }
 
     private fun getDirectory(fileType: FileType): File {
@@ -252,7 +252,7 @@ internal class FileManagerImpl constructor(
             FileType.Image -> appContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         }
         return dir?.takeIf { it.exists() || it.mkdirs() }
-            ?: throw Exception("?�렉?�리�?찾을 ???�습?�다.")
+            ?: throw Exception("디렉토리를 찾을 수 없습니다.")
     }
 
     private fun getLogDirectory(): File {

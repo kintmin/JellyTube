@@ -1,11 +1,11 @@
-package com.kintmin.domain.audio_media.usecase
+ï»¿package com.kintmin.domain.audio_media.usecase
 
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.FirebaseEvent
 
 /**
- * ÀÏºÎ ¼º°ø/»èÁ¦°¡ ¹ß»ıÇÒ ¼ö ÀÖ´Ù.
+ * ì¼ë¶€ ì„±ê³µ/ì‚­ì œê°€ ë°œìƒí•  ìˆ˜ ìˆë‹¤.
  */
 class DeleteAudioMediaListUseCase constructor(
     private val audioMediaRepository: AudioMediaRepository,
