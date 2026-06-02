@@ -65,7 +65,7 @@ ksp {
 }
 
 dependencies {
-    implementation(project(":domain"))
+    implementation(project(":shared:domain"))
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
 

@@ -96,8 +96,8 @@ android {
 dependencies {
     implementation(project(":presentation"))
     implementation(project(":platform"))
-    implementation(project(":domain"))
-    implementation(project(":data"))
+    implementation(project(":shared:domain"))
+    implementation(project(":shared:data"))
     implementation(project(":log:log-api"))
     implementation(project(":log:log-impl"))
 
