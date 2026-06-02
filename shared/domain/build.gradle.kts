@@ -13,7 +13,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":log:log-api"))
+            api(project(":log:log-api"))
             implementation(libs.kotlinx.coroutines.core)
         }
     }

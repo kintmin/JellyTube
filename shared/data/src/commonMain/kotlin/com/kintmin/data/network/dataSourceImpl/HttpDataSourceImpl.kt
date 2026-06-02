@@ -1,28 +1,15 @@
 package com.kintmin.data.network.dataSourceImpl
 
 import com.kintmin.data.network.dataSource.HttpDataSource
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.io.IOException
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
 
 internal class HttpDataSourceImpl constructor(
-    private val client: OkHttpClient,
+    private val client: HttpClient,
 ) : HttpDataSource {
 
     override suspend fun downloadImage(imageUrl: String): Result<ByteArray> = runCatching {
-        withContext(Dispatchers.IO) {
-            val request = Request.Builder()
-                .url(imageUrl)
-                .build()
-
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    throw Exception("http error ${response.code}: ${response.message}")
-                }
-                response.body.bytes()
-            }
-        }
+        client.get(imageUrl).body()
     }
 }

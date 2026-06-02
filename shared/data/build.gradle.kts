@@ -19,16 +19,23 @@ kotlin {
             implementation(project(":shared:domain"))
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.androidx.datastore.preferences.core)
+            implementation(libs.room.runtime)
+            implementation(libs.androidx.sqlite.bundled)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.koin.core)
         }
 
         androidMain.dependencies {
-            implementation(libs.retrofit)
-            implementation(libs.retrofit.serialization)
-            implementation(libs.okhttp)
-            implementation(libs.okhttp.logging)
-            implementation(libs.room.runtime)
-            implementation(libs.room.ktx)
+            implementation(libs.ktor.client.android)
             implementation(libs.androidx.datastore.preferences)
+            implementation(libs.koin.android)
+        }
+
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
     }
 }
@@ -80,4 +87,7 @@ ksp {
 
 dependencies {
     add("kspAndroid", libs.room.compiler)
+    add("kspIosX64", libs.room.compiler)
+    add("kspIosArm64", libs.room.compiler)
+    add("kspIosSimulatorArm64", libs.room.compiler)
 }
