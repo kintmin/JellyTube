@@ -63,3 +63,21 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Korean comments, strings, and identifiers must be preserved as valid UTF-8.
 - If you see "The file was loaded in a wrong encoding" or garbled Korean text, the root cause is a non-UTF-8 write. Fix by rewriting the file explicitly as UTF-8.
 - Do not let the OS default encoding (e.g., Windows CP949) influence file output.
+
+## 6. Module Map
+
+**Before touching any file, read the AGENTS.md of every module involved.**
+
+| Path prefix | Read this AGENTS.md |
+|---|---|
+| `android/app/` | `android/app/AGENTS.md` |
+| `android/platform/` | `android/platform/AGENTS.md` |
+| `android/presentation/` | `android/presentation/AGENTS.md` |
+| `shared/domain/` | `shared/domain/AGENTS.md` |
+| `shared/data/` | `shared/data/AGENTS.md` |
+| `shared/log/` | `shared/log/AGENTS.md` |
+| `shared/file-share/` | `shared/file-share/AGENTS.md` |
+| `ios/app/` | `ios/app/AGENTS.md` |
+| `desktop/` | `desktop/AGENTS.md` |
+
+If a task spans multiple modules (e.g., adding a deep link, adding navigation, adding a new screen), read ALL relevant AGENTS.md files before writing a single line of code.
