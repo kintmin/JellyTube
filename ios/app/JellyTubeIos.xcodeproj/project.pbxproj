@@ -10,6 +10,20 @@
 		4A000000000000000000000A /* JellyTubeIosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000007 /* JellyTubeIosApp.swift */; };
 		4A000000000000000000000B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000008 /* ContentView.swift */; };
 		4A000000000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000009 /* Assets.xcassets */; };
+		C9E4F40D2FD13000009FB07B /* python in Resources */ = {isa = PBXBuildFile; fileRef = C9E4F40E2FD13000009FB07B /* python */; };
+		4A0000000000000000000033 /* MainFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000023 /* MainFeature.swift */; };
+		4A0000000000000000000034 /* MainScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000024 /* MainScreenView.swift */; };
+		4A0000000000000000000035 /* YoutubeSearchFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000025 /* YoutubeSearchFeature.swift */; };
+		4A0000000000000000000036 /* YoutubeSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000026 /* YoutubeSearchView.swift */; };
+		4A0000000000000000000037 /* YoutubeWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000027 /* YoutubeWebView.swift */; };
+		4A0000000000000000000038 /* PlaylistClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000028 /* PlaylistClient.swift */; };
+		4A0000000000000000000039 /* PlaylistFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000029 /* PlaylistFeature.swift */; };
+		4A000000000000000000003A /* PlaylistScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000002A /* PlaylistScreenView.swift */; };
+		4A000000000000000000003B /* GlassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000002B /* GlassComponents.swift */; };
+		4A000000000000000000003C /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 4A0000000000000000000040 /* ComposableArchitecture */; };
+		C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */ = {isa = PBXBuildFile; productRef = C9E4F4102FD14000009FB07B /* PythonKit */; };
+		C9E4F4092FD122EA009FB07B /* PlaylistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4F4082FD122E3009FB07B /* PlaylistItem.swift */; };
+		C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -17,6 +31,18 @@
 		4A0000000000000000000007 /* JellyTubeIosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyTubeIosApp.swift; sourceTree = "<group>"; };
 		4A0000000000000000000008 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4A0000000000000000000009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C9E4F40E2FD13000009FB07B /* python */ = {isa = PBXFileReference; lastKnownFileType = folder; name = python; path = ../../shared/data/src/python; sourceTree = SOURCE_ROOT; };
+		4A0000000000000000000023 /* MainFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFeature.swift; sourceTree = "<group>"; };
+		4A0000000000000000000024 /* MainScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreenView.swift; sourceTree = "<group>"; };
+		4A0000000000000000000025 /* YoutubeSearchFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeSearchFeature.swift; sourceTree = "<group>"; };
+		4A0000000000000000000026 /* YoutubeSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeSearchView.swift; sourceTree = "<group>"; };
+		4A0000000000000000000027 /* YoutubeWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeWebView.swift; sourceTree = "<group>"; };
+		4A0000000000000000000028 /* PlaylistClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistClient.swift; sourceTree = "<group>"; };
+		4A0000000000000000000029 /* PlaylistFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistFeature.swift; sourceTree = "<group>"; };
+		4A000000000000000000002A /* PlaylistScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistScreenView.swift; sourceTree = "<group>"; };
+		4A000000000000000000002B /* GlassComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassComponents.swift; sourceTree = "<group>"; };
+		C9E4F4082FD122E3009FB07B /* PlaylistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistItem.swift; sourceTree = "<group>"; };
+		C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonExecutorBridgeImpl.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -24,6 +50,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4A000000000000000000003C /* ComposableArchitecture in Frameworks */,
+				C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -43,7 +71,11 @@
 			children = (
 				4A0000000000000000000007 /* JellyTubeIosApp.swift */,
 				4A0000000000000000000008 /* ContentView.swift */,
+				4A0000000000000000000042 /* Features */,
+				C9E4F40C2FD13000009FB07B /* PythonBridgeImpl */,
+				4A0000000000000000000046 /* Shared */,
 				4A0000000000000000000009 /* Assets.xcassets */,
+				C9E4F40E2FD13000009FB07B /* python */,
 			);
 			path = JellyTubeIos;
 			sourceTree = "<group>";
@@ -56,6 +88,70 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		C9E4F40C2FD13000009FB07B /* PythonBridgeImpl */ = {
+			isa = PBXGroup;
+			children = (
+				C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */,
+			);
+			path = PythonBridgeImpl;
+			sourceTree = "<group>";
+		};
+		4A0000000000000000000042 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				4A0000000000000000000043 /* Main */,
+				4A0000000000000000000044 /* YoutubeSearch */,
+				4A0000000000000000000045 /* Playlist */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		4A0000000000000000000043 /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				4A0000000000000000000023 /* MainFeature.swift */,
+				4A0000000000000000000024 /* MainScreenView.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		4A0000000000000000000044 /* YoutubeSearch */ = {
+			isa = PBXGroup;
+			children = (
+				4A0000000000000000000025 /* YoutubeSearchFeature.swift */,
+				4A0000000000000000000026 /* YoutubeSearchView.swift */,
+				4A0000000000000000000027 /* YoutubeWebView.swift */,
+			);
+			path = YoutubeSearch;
+			sourceTree = "<group>";
+		};
+		4A0000000000000000000045 /* Playlist */ = {
+			isa = PBXGroup;
+			children = (
+				C9E4F4082FD122E3009FB07B /* PlaylistItem.swift */,
+				4A0000000000000000000028 /* PlaylistClient.swift */,
+				4A0000000000000000000029 /* PlaylistFeature.swift */,
+				4A000000000000000000002A /* PlaylistScreenView.swift */,
+			);
+			path = Playlist;
+			sourceTree = "<group>";
+		};
+		4A0000000000000000000046 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				4A0000000000000000000047 /* UI */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		4A0000000000000000000047 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				4A000000000000000000002B /* GlassComponents.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -63,6 +159,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4A0000000000000000000011 /* Build configuration list for PBXNativeTarget "JellyTubeIos" */;
 			buildPhases = (
+				4A0000000000000000000048 /* Build shared KMP framework */,
 				4A000000000000000000000D /* Sources */,
 				4A000000000000000000000F /* Frameworks */,
 				4A000000000000000000000E /* Resources */,
@@ -72,6 +169,10 @@
 			dependencies = (
 			);
 			name = JellyTubeIos;
+			packageProductDependencies = (
+				4A0000000000000000000040 /* ComposableArchitecture */,
+				C9E4F4102FD14000009FB07B /* PythonKit */,
+			);
 			productName = JellyTubeIos;
 			productReference = 4A0000000000000000000003 /* JellyTubeIos.app */;
 			productType = "com.apple.product-type.application";
@@ -102,6 +203,10 @@
 				Base,
 			);
 			mainGroup = 4A0000000000000000000004;
+			packageReferences = (
+				4A000000000000000000003F /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				C9E4F4112FD14000009FB07B /* XCRemoteSwiftPackageReference "PythonKit" */,
+			);
 			productRefGroup = 4A0000000000000000000006 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -117,10 +222,33 @@
 			buildActionMask = 2147483647;
 			files = (
 				4A000000000000000000000C /* Assets.xcassets in Resources */,
+				C9E4F40D2FD13000009FB07B /* python in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		4A0000000000000000000048 /* Build shared KMP framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build shared KMP framework";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd \"$SRCROOT/../..\"\nsh ./gradlew :shared:data:embedAndSignAppleFrameworkForXcode\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		4A000000000000000000000D /* Sources */ = {
@@ -129,6 +257,17 @@
 			files = (
 				4A000000000000000000000A /* JellyTubeIosApp.swift in Sources */,
 				4A000000000000000000000B /* ContentView.swift in Sources */,
+				4A0000000000000000000033 /* MainFeature.swift in Sources */,
+				4A0000000000000000000034 /* MainScreenView.swift in Sources */,
+				4A0000000000000000000035 /* YoutubeSearchFeature.swift in Sources */,
+				4A0000000000000000000036 /* YoutubeSearchView.swift in Sources */,
+				4A0000000000000000000037 /* YoutubeWebView.swift in Sources */,
+				4A0000000000000000000038 /* PlaylistClient.swift in Sources */,
+				4A0000000000000000000039 /* PlaylistFeature.swift in Sources */,
+				4A000000000000000000003A /* PlaylistScreenView.swift in Sources */,
+				C9E4F4092FD122EA009FB07B /* PlaylistItem.swift in Sources */,
+				C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */,
+				4A000000000000000000003B /* GlassComponents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -141,6 +280,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../shared/data/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = JellyTube;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -152,6 +295,11 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					shared,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.kintmin.JellyTubeIos;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -167,6 +315,10 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../shared/data/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = JellyTube;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -178,6 +330,11 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					shared,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.kintmin.JellyTubeIos;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -324,6 +481,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4A000000000000000000003F /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.25.5;
+			};
+		};
+		C9E4F4112FD14000009FB07B /* XCRemoteSwiftPackageReference "PythonKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pvieito/PythonKit";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4A0000000000000000000040 /* ComposableArchitecture */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4A000000000000000000003F /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			productName = ComposableArchitecture;
+		};
+		C9E4F4102FD14000009FB07B /* PythonKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C9E4F4112FD14000009FB07B /* XCRemoteSwiftPackageReference "PythonKit" */;
+			productName = PythonKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4A0000000000000000000001 /* Project object */;
 }

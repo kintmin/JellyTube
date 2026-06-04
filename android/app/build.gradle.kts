@@ -12,6 +12,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.chaquopy)
     alias(libs.plugins.google.services)
     alias(libs.plugins.crashlytics)
 }
@@ -87,6 +88,20 @@ android {
                     output.outputFileName = "JellyTube_${AppConfiguration.VERSION_NAME}(${AppConfiguration.VERSION_CODE})_${variant.name}_$timeString.apk"
                 }
             }
+        }
+    }
+}
+
+chaquopy {
+    sourceSets {
+        getByName("main") {
+            srcDir("../../shared/data/src/python")
+        }
+    }
+    defaultConfig {
+        version = AppConfiguration.PYTHON_VERSION
+        pip {
+            install("yt-dlp")
         }
     }
 }

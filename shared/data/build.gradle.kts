@@ -5,18 +5,26 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.chaquopy)
+    alias(libs.plugins.skie)
 }
 
 kotlin {
     androidTarget()
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64(),
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "shared"
+            export(project(":shared:domain"))
+            export(project(":shared:log"))
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":shared:domain"))
+            api(project(":shared:domain"))
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
@@ -69,20 +77,6 @@ android {
                 "META-INF/LICENSE*",
                 "META-INF/NOTICE*"
             )
-        }
-    }
-}
-
-chaquopy {
-    sourceSets {
-        getByName("main") {
-            srcDir("src/python")
-        }
-    }
-    defaultConfig {
-        version = AppConfiguration.PYTHON_VERSION
-        pip {
-            install("yt-dlp")
         }
     }
 }

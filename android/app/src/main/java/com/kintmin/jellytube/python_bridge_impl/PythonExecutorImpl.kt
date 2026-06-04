@@ -1,15 +1,16 @@
-package com.kintmin.data.python_bridge
+package com.kintmin.jellytube.python_bridge_impl
 
 import android.content.Context
 import android.util.Log
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
+import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.data.python_bridge.model.YoutubeDownloadDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
-internal class PythonExecutorImpl constructor(
+class PythonExecutorImpl(
     private val context: Context
 ) : PythonExecutor {
 

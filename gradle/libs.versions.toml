@@ -41,6 +41,7 @@ sqlite = "2.5.2"
 jmdns = "3.5.9"
 kotlinxDatetime = "0.6.2"
 atomicfu = "0.33.0"
+skie = "0.10.12"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -129,3 +130,4 @@ google-services = { id = "com.google.gms.google-services", version.ref = "google
 crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlytics" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }
+skie = { id = "co.touchlab.skie", version.ref = "skie" }

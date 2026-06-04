@@ -14,4 +14,5 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.crashlytics) apply false
     alias(libs.plugins.compose.multiplatform) apply false
+    alias(libs.plugins.skie) apply false
 }
