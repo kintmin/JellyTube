@@ -33,3 +33,6 @@ Thumbs.db
 !.idea/codeStyles/
 !.idea/inspectionProfiles/
 
+/.kotlin
+/android/app/release
+/buildSrc/.kotlin

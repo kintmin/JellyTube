@@ -1,0 +1,22 @@
+package com.kintmin.domain.playlist.model
+
+import kotlinx.datetime.LocalDateTime
+import kotlin.time.Duration
+
+data class Playlist(
+    val id: Int,
+    val name: String,
+    val description: String,
+    val audioMediaCount: Int,
+    val playTimeDuration: Duration,
+    val createdTime: LocalDateTime,
+    val imageFileFullPath: String?,
+    val isCustomImage: Boolean,
+) {
+    companion object {
+        const val TOTAL = 1
+        const val UNCATEGORIZED = 2
+
+        fun isBasePlaylist(playlistId: Int) = playlistId == TOTAL || playlistId == UNCATEGORIZED
+    }
+}

@@ -53,3 +53,44 @@ For multi-step tasks, state a brief plan:
 ```
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+## 5. File Encoding
+
+**Always use UTF-8 (without BOM) when writing or moving files.**
+
+- Every file write (`write`, `edit`, move, copy) must use UTF-8 encoding.
+- Never use EUC-KR, CP949, UTF-16, or any other encoding — even on Windows.
+- Korean comments, strings, and identifiers must be preserved as valid UTF-8.
+- If you see "The file was loaded in a wrong encoding" or garbled Korean text, the root cause is a non-UTF-8 write. Fix by rewriting the file explicitly as UTF-8.
+- Do not let the OS default encoding (e.g., Windows CP949) influence file output.
+
+### Mandatory post-write verification (this is what makes the rule effective)
+
+"Save as UTF-8" alone does NOT prevent corruption. There are two distinct failure modes:
+1. **Wrong save encoding** (CP949/UTF-16) → fixable by re-saving as UTF-8.
+2. **Upstream character loss**: a multi-byte sequence is broken during generation/transport and arrives as the Unicode replacement character **U+FFFD** (the black-diamond "?" glyph). Saving as UTF-8 just faithfully stores the already-broken U+FFFD — it cannot recover the lost glyph.
+
+Because mode 2 cannot be prevented by the save step, every file write that contains non-ASCII text (e.g. Korean) MUST be verified and repaired:
+
+- **After every `write`/`edit` of a file containing Korean, grep the file for U+FFFD** using the regex `\x{FFFD}` (ripgrep) or `\uFFFD`. A file is NOT "done" while any U+FFFD remains.
+- If U+FFFD is found, the text was corrupted in transit. Rewrite the affected lines from the intended source and re-grep until the count is zero. Do not just re-save.
+- **Never copy text that already contains U+FFFD into another file** (commit, new file, edit). Fix the source first, or the corruption propagates.
+- When unsure what the original glyph was, reconstruct from context/meaning rather than leaving a U+FFFD placeholder.
+
+## 6. Module Map
+
+**Before touching any file, read the AGENTS.md of every module involved.**
+
+| Path prefix | Read this AGENTS.md |
+|---|---|
+| `android/app/` | `android/app/AGENTS.md` |
+| `android/platform/` | `android/platform/AGENTS.md` |
+| `android/presentation/` | `android/presentation/AGENTS.md` |
+| `shared/domain/` | `shared/domain/AGENTS.md` |
+| `shared/data/` | `shared/data/AGENTS.md` |
+| `shared/log/` | `shared/log/AGENTS.md` |
+| `shared/file-share/` | `shared/file-share/AGENTS.md` |
+| `ios/app/` | `ios/app/AGENTS.md` |
+| `desktop/` | `desktop/AGENTS.md` |
+
+If a task spans multiple modules (e.g., adding a deep link, adding navigation, adding a new screen), read ALL relevant AGENTS.md files before writing a single line of code.
