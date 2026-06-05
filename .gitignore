@@ -35,3 +35,4 @@ Thumbs.db
 
 /.kotlin
 /android/app/release
+/buildSrc/.kotlin

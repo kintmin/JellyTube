@@ -80,7 +80,7 @@ class StepSensorProcessorTest {
     }
 
     @Test
-    fun `truncate 결과��� 초와 나노초는 항상 0이다`() {
+    fun `truncate 결과의 초와 나노초는 항상 0이다`() {
         val result = ldt(processor.truncateToUnitMillis(utcMillis(9, 47, 33), utc))
         assertEquals(0, result.second)
         assertEquals(0, result.nanosecond)
@@ -289,7 +289,7 @@ class StepSensorProcessorTest {
     // ─── 서비스 재시작 (재부팅 없음) ────────────────────────────────────
 
     @Test
-    fun `서비스 재시작 후 첫 이벤트는 prevSensor가 null(날��� 불일치 포함)이므로 forceBackup이 호출된다`() {
+    fun `서비스 재시작 후 첫 이벤트는 prevSensor가 null(날짜 불일치 포함)이므로 forceBackup이 호출된다`() {
         processor.updateStep(null, 2000L, utcMillis(9, 5)) {
             stepDeltaCalls.add(it)
         }

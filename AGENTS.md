@@ -64,6 +64,19 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - If you see "The file was loaded in a wrong encoding" or garbled Korean text, the root cause is a non-UTF-8 write. Fix by rewriting the file explicitly as UTF-8.
 - Do not let the OS default encoding (e.g., Windows CP949) influence file output.
 
+### Mandatory post-write verification (this is what makes the rule effective)
+
+"Save as UTF-8" alone does NOT prevent corruption. There are two distinct failure modes:
+1. **Wrong save encoding** (CP949/UTF-16) → fixable by re-saving as UTF-8.
+2. **Upstream character loss**: a multi-byte sequence is broken during generation/transport and arrives as the Unicode replacement character **U+FFFD** (the black-diamond "?" glyph). Saving as UTF-8 just faithfully stores the already-broken U+FFFD — it cannot recover the lost glyph.
+
+Because mode 2 cannot be prevented by the save step, every file write that contains non-ASCII text (e.g. Korean) MUST be verified and repaired:
+
+- **After every `write`/`edit` of a file containing Korean, grep the file for U+FFFD** using the regex `\x{FFFD}` (ripgrep) or `\uFFFD`. A file is NOT "done" while any U+FFFD remains.
+- If U+FFFD is found, the text was corrupted in transit. Rewrite the affected lines from the intended source and re-grep until the count is zero. Do not just re-save.
+- **Never copy text that already contains U+FFFD into another file** (commit, new file, edit). Fix the source first, or the corruption propagates.
+- When unsure what the original glyph was, reconstruct from context/meaning rather than leaving a U+FFFD placeholder.
+
 ## 6. Module Map
 
 **Before touching any file, read the AGENTS.md of every module involved.**
