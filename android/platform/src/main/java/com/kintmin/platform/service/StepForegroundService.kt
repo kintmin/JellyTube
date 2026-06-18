@@ -57,8 +57,9 @@ class StepForegroundService : Service(), KoinComponent {
     companion object {
 
         const val BACKUP_UNIT_MILLIS = 30 * 60 * 1000L
+        private const val EXTRA_STARTED_AFTER_BOOT = "started_after_boot"
 
-        fun startService(context: Context): Result<Unit> {
+        fun startService(context: Context, isStartedAfterBoot: Boolean = false): Result<Unit> {
             return runCatching {
                 val hasActivityRecognition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     ContextCompat.checkSelfPermission(context, permission.ACTIVITY_RECOGNITION) == PERMISSION_GRANTED
@@ -77,7 +78,10 @@ class StepForegroundService : Service(), KoinComponent {
                 }
 
                 NotificationManagerCompat.from(context).cancel(PushNotificationIds.SENSOR_STEP)
-                ContextCompat.startForegroundService(context, Intent(context, StepForegroundService::class.java))
+                val intent = Intent(context, StepForegroundService::class.java).apply {
+                    putExtra(EXTRA_STARTED_AFTER_BOOT, isStartedAfterBoot)
+                }
+                ContextCompat.startForegroundService(context, intent)
             }
         }
 
@@ -107,6 +111,7 @@ class StepForegroundService : Service(), KoinComponent {
 
     // 서비스 꺼진 후 재시작했을 걸음수 복원을 위해 사용
     private var todayLastSavedStepSensorWhenStarted: Long? = null
+    private var isStartedAfterBoot = false
 
     private val timeZoneFlow = MutableStateFlow(TimeZone.currentSystemDefault())
 
@@ -155,6 +160,10 @@ class StepForegroundService : Service(), KoinComponent {
     override fun onBind(p0: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.getBooleanExtra(EXTRA_STARTED_AFTER_BOOT, false) == true) {
+            isStartedAfterBoot = true
+        }
+
         runCatching {
             val notificationData = SensorStepNotification(currentStep.value)
             ServiceCompat.startForeground(
@@ -278,9 +287,17 @@ class StepForegroundService : Service(), KoinComponent {
 
     private fun updateStep(newStepSensor: Long) {
         val prevStepSensor = currentStepSensor.value
-        stepSensorProcessor.updateStep(prevStepSensor, newStepSensor, System.currentTimeMillis(), todayLastSavedStepSensorWhenStarted) { delta ->
-            currentStep.update { it + delta }
+        val currentMillis = System.currentTimeMillis()
+        if (prevStepSensor == null && isStartedAfterBoot) {
+            stepSensorProcessor.updateStepAfterBoot(newStepSensor, currentMillis) { delta ->
+                currentStep.update { it + delta }
+            }
+        } else {
+            stepSensorProcessor.updateStep(prevStepSensor, newStepSensor, currentMillis, todayLastSavedStepSensorWhenStarted) { delta ->
+                currentStep.update { it + delta }
+            }
         }
+        isStartedAfterBoot = false
         currentStepSensor.update { newStepSensor }
     }
 

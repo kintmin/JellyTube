@@ -14,7 +14,7 @@ class BootCompleteReceive : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         when(intent?.action) {
             Intent.ACTION_BOOT_COMPLETED -> {
-                StepForegroundService.startService(context)
+                StepForegroundService.startService(context, isStartedAfterBoot = true)
             }
         }
     }

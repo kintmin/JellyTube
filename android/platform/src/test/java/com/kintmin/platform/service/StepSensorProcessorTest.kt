@@ -297,4 +297,24 @@ class StepSensorProcessorTest {
         assertEquals(1, forceBackupCalls.size)
         assertEquals(0, stepDeltaCalls.size)
     }
+
+    @Test
+    fun `boot start uses new sensor as delta`() {
+        processor.updateStepAfterBoot(150L, utcMillis(9, 15)) {
+            stepDeltaCalls.add(it)
+        }
+
+        assertEquals(listOf(150), stepDeltaCalls)
+        assertEquals(1, forceBackupCalls.size)
+    }
+
+    @Test
+    fun `boot start with zero sensor does not emit delta`() {
+        processor.updateStepAfterBoot(0L, utcMillis(9, 15)) {
+            stepDeltaCalls.add(it)
+        }
+
+        assertEquals(0, stepDeltaCalls.size)
+        assertEquals(1, forceBackupCalls.size)
+    }
 }

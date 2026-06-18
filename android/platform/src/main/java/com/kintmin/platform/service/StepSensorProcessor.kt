@@ -56,6 +56,16 @@ class StepSensorProcessor(
      * - 재부팅/첫 시작: 기준 센서값이 달라진 시점이므로 즉시 저장
      * - 시간/타임존 변경: 기준 시각이 바뀌므로 즉시 저장
      */
+    fun updateStepAfterBoot(
+        newStepSensor: Long,
+        currentMillis: Long,
+        onStepDelta: (Int) -> Unit,
+    ) {
+        val delta = newStepSensor.toInt()
+        if (delta > 0) onStepDelta(delta)
+        forceBackupWithCurrentTime(newStepSensor, currentMillis)
+    }
+
     fun forceBackupWithCurrentTime(stepSensor: Long, currentMillis: Long) {
         onBackupSensor(stepSensor, currentMillis)
 
