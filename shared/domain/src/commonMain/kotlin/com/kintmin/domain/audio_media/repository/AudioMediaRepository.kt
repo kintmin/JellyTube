@@ -23,20 +23,12 @@ interface AudioMediaRepository {
 
     suspend fun saveImage(imageData: ByteArray): Result<String>
 
-    /**
-     * content URI로 공유된 오디오 파일을 내부 저장소로 복사하고 DB에 저장한다.
-     * source는 "quickShare://sha256/<hex>" 형태로 저장된다.
-     */
     suspend fun importSharedAudio(
         contentUriString: String,
         playlistIdOnDownload: Int,
         shouldInsertAtTopOnDownload: Boolean,
     ): Result<Pair<AudioMedia, Int>>
 
-    /**
-     * HTTP 스트림으로 수신된 바이트 배열을 내부 저장소에 저장하고 DB에 추가한다.
-     * source는 "fileShare://sha256/<hex>" 형태로 저장된다.
-     */
     suspend fun importUploadedAudio(
         bytes: ByteArray,
         originalFileName: String,
@@ -46,4 +38,8 @@ interface AudioMediaRepository {
 
     suspend fun deleteDownloadedFile(downloadedAudioMedia: DownloadedMedia): Result<Unit>
     suspend fun deleteAudioMedia(id: Int): Result<Unit>
+
+    suspend fun deleteOrphanAudioMedia(): Result<List<AudioMedia>>
+    suspend fun deleteFile(fileNameWithExt: String): Result<Unit>
+    suspend fun listAudioAndImageFileNames(): Result<List<String>>
 }

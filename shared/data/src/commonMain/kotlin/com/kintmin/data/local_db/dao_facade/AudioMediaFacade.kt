@@ -56,6 +56,16 @@ class AudioMediaFacade constructor(
         }
     }
 
+    suspend fun deleteOrphanAudioMedia(): List<AudioMediaEntity> {
+        return db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                val orphanList = audioMediaDao.getOrphanAudioMediaList()
+                orphanList.forEach { orphan -> audioMediaDao.deleteById(orphan.id) }
+                orphanList
+            }
+        }
+    }
+
     suspend fun deletePlaylist(playlistId: Int) {
         if (playlistId == Playlist.TOTAL || playlistId == Playlist.UNCATEGORIZED) {
             error("전체와 미분류는 지울 수 없다.")

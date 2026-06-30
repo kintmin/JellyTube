@@ -41,6 +41,8 @@ internal class FileManagerImpl : FileManager {
         NSFileManager.defaultManager.removeItemAtPath(path, error = null)
     }
 
+    override suspend fun listAudioAndImageFileNames(): Result<List<String>> = unsupported()
+
     override fun clearDiskCache(): Result<Unit> = runCatching { }
 
     override suspend fun appendAppLog(date: String, line: String): Result<Unit> = runCatching { }

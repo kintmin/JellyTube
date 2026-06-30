@@ -1,5 +1,6 @@
 package com.kintmin.platform.worker.di
 
+import com.kintmin.platform.worker.AnomalyDataCheckWorker
 import com.kintmin.platform.worker.DailyResetImmediatelyWorker
 import com.kintmin.platform.worker.LoadBalancedDailyResetWorker
 import com.kintmin.platform.worker.YoutubeDownloadWorker
@@ -11,4 +12,5 @@ val workerModule: Module = module {
     workerOf(::YoutubeDownloadWorker)
     workerOf(::LoadBalancedDailyResetWorker)
     workerOf(::DailyResetImmediatelyWorker)
+    workerOf(::AnomalyDataCheckWorker)
 }

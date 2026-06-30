@@ -64,6 +64,7 @@ val dataCommonModule: Module = module {
     factoryOf(::UpdateIsStepEnabledUseCase)
     factoryOf(::UpdatePlaylistIdOnDownloadUseCase)
     factoryOf(::UpdateShouldInsertAtTopOnDownloadUseCase)
+    factoryOf(::CleanupAnomalousDataUseCase)
     factoryOf(::DeleteAudioMediaListUseCase)
     factoryOf(::DeleteAudioMediaUseCase)
     factoryOf(::DownloadAudioMediaUseCase)

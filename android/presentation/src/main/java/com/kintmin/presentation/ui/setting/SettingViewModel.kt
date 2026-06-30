@@ -10,6 +10,7 @@ import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
 import com.kintmin.domain.app_setting.usecase.UpdateShouldInsertAtTopOnDownloadUseCase
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
+import com.kintmin.platform.worker.usecase.ExecuteAnomalyDataCheck
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,7 @@ class SettingViewModel constructor(
     private val updateShouldInsertAtTopOnDownloadUseCase: UpdateShouldInsertAtTopOnDownloadUseCase,
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
     private val updateIsStepEnabledUseCase: UpdateIsStepEnabledUseCase,
+    private val executeAnomalyDataCheck: ExecuteAnomalyDataCheck,
 ) : ViewModel() {
 
     private val isPlaylistIdOnDownloadBottomSheetVisible = MutableStateFlow(false)
@@ -96,6 +98,17 @@ class SettingViewModel constructor(
             SettingIntent.OnClickStepTile -> {
                 viewModelScope.launch {
                     _eventFlow.emit(SettingEvent.NavigateToStepScreen)
+                }
+            }
+            SettingIntent.OnClickAnomalyDataCheckTile -> {
+                viewModelScope.launch {
+                    val started = executeAnomalyDataCheck()
+                    _eventFlow.emit(
+                        SettingEvent.ShowToast(
+                            if (started) "이상 데이터 점검을 시작합니다.\n완료 시 알림이 도착합니다."
+                            else "이상 데이터 점검중입니다.",
+                        )
+                    )
                 }
             }
             SettingIntent.OnClickAppLogTile -> {

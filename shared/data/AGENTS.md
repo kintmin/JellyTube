@@ -27,6 +27,13 @@ The decision tree for where to place code:
 - Repository methods that stream data must return `Flow<T>`.
 - Repository methods that perform mutations must be `suspend fun`.
 
+### Repository scope: pure data logic only (no repository-of-repository)
+
+- **A repository MUST NOT inject another repository.** Doing so is an overreach and a violation of these conventions.
+- A repository owns only **pure data logic** over its own data sources (DAO/facade, network, file, DataStore): CRUD, plus domain logic that must be wrapped in a **single transaction** (e.g. `AudioMediaFacade.deleteOrphanAudioMedia()` — query + delete in one `immediateTransaction`).
+- **Logic that is composed of multiple repositories — or that orchestrates several independent data-source operations together (read → transform → write across sources, conditional sequencing, cross-cutting concerns like logging) — belongs in a `shared:domain` UseCase, NOT in a repository.**
+- Rule of thumb: if an implementation finds itself coordinating several repositories, sequencing independent operations, or reaching for a logging/event dependency, move that orchestration up to the use case layer. Keep each repository method a thin, single-responsibility data operation that the use case can compose.
+
 ---
 
 ## Local DB Conventions

@@ -7,4 +7,5 @@ sealed interface SettingEvent {
     data object NavigateToFileShareReceiveScreen : SettingEvent
     data object RequestActivityRecognitionPermission : SettingEvent
     data object StopStepForegroundService : SettingEvent
+    data class ShowToast(val message: String) : SettingEvent
 }

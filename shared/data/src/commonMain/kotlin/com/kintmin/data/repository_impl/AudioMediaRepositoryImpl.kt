@@ -236,4 +236,17 @@ internal class AudioMediaRepositoryImpl constructor(
             }
         }
     }
+
+    override suspend fun deleteOrphanAudioMedia(): Result<List<AudioMedia>> = runCatching {
+        withContext(Dispatchers.IO) {
+            audioMediaFacade.deleteOrphanAudioMedia()
+                .mapNotNull { entity -> entity.toDomain(fileManager).getOrNull() }
+        }
+    }
+
+    override suspend fun deleteFile(fileNameWithExt: String): Result<Unit> =
+        fileManager.deleteFile(fileNameWithExt)
+
+    override suspend fun listAudioAndImageFileNames(): Result<List<String>> =
+        fileManager.listAudioAndImageFileNames()
 }

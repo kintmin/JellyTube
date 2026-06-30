@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.setting
 
 import android.Manifest
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -75,6 +76,8 @@ fun SettingScreen(
                 SettingEvent.NavigateToShareScreen -> navigateToShare()
                 SettingEvent.NavigateToFileShareReceiveScreen -> navigateToFileShareReceive()
                 SettingEvent.StopStepForegroundService -> StepForegroundService.stopService(context)
+                is SettingEvent.ShowToast ->
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                 SettingEvent.RequestActivityRecognitionPermission -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         val permission = Manifest.permission.ACTIVITY_RECOGNITION
@@ -280,6 +283,19 @@ fun SettingScreen(
                     .background(gray80.copy(alpha = 0.5f))
                     .height(1.dp)
             )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clickable {
+                        sendIntent(SettingIntent.OnClickAnomalyDataCheckTile)
+                    }
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = "이상 데이터 점검 및 제거(음원 추가 오류 시 권장)")
+            }
 
             Row(
                 modifier = Modifier

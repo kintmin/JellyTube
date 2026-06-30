@@ -199,6 +199,20 @@ internal class FileManagerImpl constructor(
         }
     }
 
+    override suspend fun listAudioAndImageFileNames(): Result<List<String>> = runCatching {
+        withContext(Dispatchers.IO) {
+            val audioFileNames = getDirectory(FileType.Audio).listFiles()
+                ?.filter { it.isFile }
+                ?.map { it.name }
+                ?: emptyList()
+            val imageFileNames = getDirectory(FileType.Image).listFiles()
+                ?.filter { it.isFile }
+                ?.map { it.name }
+                ?: emptyList()
+            audioFileNames + imageFileNames
+        }
+    }
+
     override fun clearDiskCache(): Result<Unit> = runCatching {
         appContext.cacheDir.deleteRecursively()
     }
