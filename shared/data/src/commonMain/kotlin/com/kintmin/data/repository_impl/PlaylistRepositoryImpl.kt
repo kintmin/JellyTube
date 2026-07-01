@@ -3,7 +3,6 @@ package com.kintmin.data.repository_impl
 import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
-import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.repository.PlaylistRepository
@@ -21,15 +20,7 @@ class PlaylistRepositoryImpl constructor(
 
     override suspend fun addPlaylist(title: String): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
-            playlistDao.insertPlaylist(
-                PlaylistEntity(
-                    name = title,
-                    description = "",
-                    audioMediaCount = 0,
-                    rawPlayTimeDuration = 0,
-                    isCustomImage = false,
-                )
-            ).toInt()
+            audioMediaFacade.addPlaylist(title)
         }
     }
 
@@ -75,6 +66,14 @@ class PlaylistRepositoryImpl constructor(
         return withContext(Dispatchers.IO) {
             runCatching<Unit> {
                 audioMediaFacade.deletePlaylist(id)
+            }
+        }
+    }
+
+    override suspend fun updatePlaylistSequences(orderedPlaylistIds: List<Int>): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching<Unit> {
+                audioMediaFacade.updatePlaylistSequences(orderedPlaylistIds)
             }
         }
     }

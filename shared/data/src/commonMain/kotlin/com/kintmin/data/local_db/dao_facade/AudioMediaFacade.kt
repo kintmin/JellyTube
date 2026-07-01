@@ -66,6 +66,26 @@ class AudioMediaFacade constructor(
         }
     }
 
+    suspend fun addPlaylist(title: String): Int {
+        return db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                // 목록 맨 뒤에 오도록 현재 최대 sequence + 1을 부여한다.
+                // MAX 조회와 insert를 한 트랜잭션으로 묶어 동시 추가 시 sequence 중복을 막는다.
+                val nextSequence = playlistDao.getMaxSequence() + 1
+                playlistDao.insertPlaylist(
+                    PlaylistEntity(
+                        name = title,
+                        description = "",
+                        audioMediaCount = 0,
+                        rawPlayTimeDuration = 0,
+                        isCustomImage = false,
+                        sequence = nextSequence,
+                    )
+                ).toInt()
+            }
+        }
+    }
+
     suspend fun deletePlaylist(playlistId: Int) {
         if (playlistId == Playlist.TOTAL || playlistId == Playlist.UNCATEGORIZED) {
             error("전체와 미분류는 지울 수 없다.")
@@ -113,6 +133,17 @@ class AudioMediaFacade constructor(
             transactor.immediateTransaction {
                 playlistTrackDao.updateSequence(playlistId, audioMediaId, oldSequence, newSequence)
                 syncPlaylistWhenUpdateTrack(playlistId)
+            }
+        }
+    }
+
+    suspend fun updatePlaylistSequences(orderedPlaylistIds: List<Int>) {
+        db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                orderedPlaylistIds.forEachIndexed { index, id ->
+                    // base playlist(sequence 0)보다 뒤로 배치되도록 1부터 부여
+                    playlistDao.updateSequence(id = id, sequence = index + 1)
+                }
             }
         }
     }

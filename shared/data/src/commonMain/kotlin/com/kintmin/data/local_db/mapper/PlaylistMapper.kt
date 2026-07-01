@@ -18,5 +18,6 @@ internal fun PlaylistEntity.toDomain(fileManager: FileManager) = runCatching {
             fileManager.getFullPathWithExt(fileNameWithExt = it).getOrThrow()
         },
         isCustomImage = isCustomImage,
+        sequence = sequence,
     )
 }

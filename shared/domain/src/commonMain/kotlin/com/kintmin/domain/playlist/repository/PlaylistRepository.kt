@@ -19,4 +19,6 @@ interface PlaylistRepository {
     ): Result<Unit>
 
     suspend fun deletePlaylist(id: Int): Result<Unit>
+
+    suspend fun updatePlaylistSequences(orderedPlaylistIds: List<Int>): Result<Unit>
 }

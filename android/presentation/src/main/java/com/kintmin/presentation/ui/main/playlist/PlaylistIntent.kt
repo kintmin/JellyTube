@@ -6,4 +6,7 @@ sealed interface PlaylistIntent {
     data class OnClickModifyPlaylist(val data: PlaylistItemUiState) : PlaylistIntent
     data class OnClickDeletePlaylist(val data: PlaylistItemUiState) : PlaylistIntent
     data class OnClickAddPlaylist(val data: PlaylistItemUiState) : PlaylistIntent
+    data object OnClickShowReorderBottomSheet : PlaylistIntent
+    data object OnDismissReorderBottomSheet : PlaylistIntent
+    data class OnReorderPlaylist(val orderedIds: List<Int>) : PlaylistIntent
 }

@@ -14,7 +14,11 @@ interface PlaylistDao {
     @Query("SELECT * FROM PLAYLIST WHERE id = :id")
     suspend fun getPlaylistById(id: Int): PlaylistEntity
 
-    @Query("SELECT * FROM PLAYLIST")
+    @Query("SELECT COALESCE(MAX(sequence), 0) FROM PLAYLIST")
+    suspend fun getMaxSequence(): Int
+
+    // 정렬하지 않았다면 sequence가 0이기 때문에 id 조건 필요
+    @Query("SELECT * FROM PLAYLIST ORDER BY sequence, id")
     fun getPlaylistListFlow(): Flow<List<PlaylistEntity>>
 
     @Query("SELECT * FROM PLAYLIST WHERE id = :id")
@@ -38,6 +42,9 @@ WHERE id = :id
         rawPlayTimeDuration: Long? = null,
         imageFileNameWithExt: String? = null,
     ): Int
+
+    @Query("UPDATE PLAYLIST SET sequence = :sequence WHERE id = :id")
+    suspend fun updateSequence(id: Int, sequence: Int)
 
     @Query("DELETE FROM PLAYLIST WHERE id = :id")
     suspend fun deleteById(id: Int)

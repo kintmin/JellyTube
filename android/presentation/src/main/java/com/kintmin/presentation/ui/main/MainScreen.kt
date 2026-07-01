@@ -26,6 +26,7 @@ import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -63,6 +64,7 @@ import com.kintmin.presentation.ui.custom_ui.data_table.NameColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.PaymentColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.TempData
 import com.kintmin.presentation.ui.player_bar.PlayerBar
+import com.kintmin.presentation.ui.main.bottom_sheet.PlaylistReorderBottomSheet
 import com.kintmin.presentation.ui.main.floating_action.MainFloatingActionButton
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
@@ -93,6 +95,7 @@ fun MainScreen(
     val playerBarViewModel = koinViewModel<PlayerBarViewModel>()
 
     val playlist by playlistViewModel.playlistFlow.collectAsState()
+    val isReorderBottomSheetVisible by playlistViewModel.isReorderBottomSheetVisible.collectAsState()
     val selectedTab by mainViewModel.tabItem.collectAsState()
     val currentUrl by downloadViewModel.currentUrl.collectAsState()
     val currentMediaItem by playerBarViewModel.currentMediaItem.collectAsState()
@@ -164,6 +167,18 @@ fun MainScreen(
         sendPlaylistIntent = playlistViewModel::sendIntent,
         sendPlayerBarIntent = playerBarViewModel::sendIntent,
     )
+
+    if (isReorderBottomSheetVisible) {
+        PlaylistReorderBottomSheet(
+            playlists = playlist.filterNot { it.isBasePlaylist },
+            onReorder = { orderedIds ->
+                playlistViewModel.sendIntent(PlaylistIntent.OnReorderPlaylist(orderedIds))
+            },
+            onDismissRequest = {
+                playlistViewModel.sendIntent(PlaylistIntent.OnDismissReorderBottomSheet)
+            },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -251,6 +266,14 @@ fun MainScreen(
                             }
                         }
                         if (selectedTab == MainTabItem.Playlist) {
+                            IconButton(
+                                onClick = { sendPlaylistIntent(PlaylistIntent.OnClickShowReorderBottomSheet) },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.SwapVert,
+                                    contentDescription = "플레이리스트 순서 변경",
+                                )
+                            }
                             IconButton(
                                 onClick = navigateToSetting,
                             ) {

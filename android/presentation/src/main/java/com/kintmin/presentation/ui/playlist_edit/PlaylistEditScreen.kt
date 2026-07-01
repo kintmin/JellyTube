@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -66,7 +67,7 @@ import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListIntent
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListItemUiState
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListItemView
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListViewModel
-import com.kintmin.presentation.ui.playlist_edit.list.reorder.rememberReorderState
+import com.kintmin.presentation.remember_state.rememberReorderState
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 
@@ -106,18 +107,19 @@ fun PlaylistEditScreen(
     val scrollState = rememberLazyListState()
     val reorderState = rememberReorderState(
         listState = scrollState,
-        audioPlayDataList = dataList,
+        dataList = dataList,
+        idOf = { it.id },
         initializeItemHeightPx = 80.dp,
     )
     var consumedFocusAudioMediaId by rememberSaveable { mutableStateOf<Int?>(null) }
     var highlightedAudioMediaId by remember { mutableStateOf<Int?>(null) }
-    var focusSpreadProgress by remember { mutableStateOf(0f) }
+    var focusSpreadProgress by remember { mutableFloatStateOf(0f) }
 
     var isShowDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(dataList) {
-        reorderState.audioPlayList.clear()
-        reorderState.audioPlayList.addAll(dataList)
+        reorderState.items.clear()
+        reorderState.items.addAll(dataList)
     }
     LaunchedEffect(focusAudioMediaId, dataList) {
         if (focusAudioMediaId == null || dataList.isEmpty()) return@LaunchedEffect
@@ -134,8 +136,7 @@ fun PlaylistEditScreen(
 
         val targetItemInfo = snapshotFlow {
             scrollState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == targetItemIndex }
-        }.filter { it != null }
-            .first() ?: return@LaunchedEffect
+        }.filter { it != null }.first() ?: return@LaunchedEffect
 
         val layoutInfo = scrollState.layoutInfo
         val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
@@ -256,7 +257,7 @@ fun PlaylistEditScreen(
             }
 
             itemsIndexed(
-                items = reorderState.audioPlayList,
+                items = reorderState.items,
                 key = { _, item -> item.id },
             ) { _, item ->
                 Box(modifier = Modifier.animateItem()) {

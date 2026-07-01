@@ -6,10 +6,13 @@ import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist.usecase.DeletePlaylistUseCase
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
+import com.kintmin.domain.playlist.usecase.UpdatePlaylistSequenceUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -19,10 +22,14 @@ class PlaylistViewModel constructor(
     fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
     private val addNewPlaylistUseCase: AddNewPlaylistUseCase,
     private val deletePlaylistUseCase: DeletePlaylistUseCase,
+    private val updatePlaylistSequenceUseCase: UpdatePlaylistSequenceUseCase,
 ) : ViewModel() {
 
     private val _eventFlow = MutableSharedFlow<PlaylistEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
+
+    private val _isReorderBottomSheetVisible = MutableStateFlow(false)
+    val isReorderBottomSheetVisible: StateFlow<Boolean> = _isReorderBottomSheetVisible.asStateFlow()
 
     val playlistFlow: StateFlow<List<PlaylistItemUiState>> = fetchAllPlaylistFlowUseCase()
         .map { playlistList ->
@@ -39,6 +46,15 @@ class PlaylistViewModel constructor(
             is PlaylistIntent.OnClickDeletePlaylist -> deletePlaylist(intent.data.id)
             is PlaylistIntent.OnClickModifyPlaylist -> navigateToPlaylistEditScreen(intent.data)
             is PlaylistIntent.OnClickAddPlaylist -> navigateToAddPlaylistScreen(intent.data)
+            is PlaylistIntent.OnClickShowReorderBottomSheet -> _isReorderBottomSheetVisible.value = true
+            is PlaylistIntent.OnDismissReorderBottomSheet -> _isReorderBottomSheetVisible.value = false
+            is PlaylistIntent.OnReorderPlaylist -> reorderPlaylist(intent.orderedIds)
+        }
+    }
+
+    private fun reorderPlaylist(orderedIds: List<Int>) {
+        viewModelScope.launch {
+            updatePlaylistSequenceUseCase(orderedIds)
         }
     }
 

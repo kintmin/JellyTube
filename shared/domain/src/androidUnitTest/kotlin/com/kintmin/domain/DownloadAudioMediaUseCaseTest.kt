@@ -224,6 +224,7 @@ class DownloadAudioMediaUseCaseTest {
             createdTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
             imageFileFullPath = null,
             isCustomImage = false,
+            sequence = 0,
         )
     }
 }

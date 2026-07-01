@@ -25,14 +25,14 @@ private fun initialPlaylistCallback(): RoomDatabase.Callback {
         override fun onCreate(connection: SQLiteConnection) {
             connection.execSQL(
                 """
-INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime, imageFileNameWithExt, isCustomImage)
-VALUES (${Playlist.TOTAL}, '전체', '', 0, 0, strftime('%s','now') * 1000, null, 0)
+INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime, imageFileNameWithExt, isCustomImage, sequence)
+VALUES (${Playlist.TOTAL}, '전체', '', 0, 0, strftime('%s','now') * 1000, null, 0, 0)
                 """.trimIndent()
             )
             connection.execSQL(
                 """
-INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime, imageFileNameWithExt, isCustomImage)
-VALUES (${Playlist.UNCATEGORIZED}, '미분류', '', 0, 0, strftime('%s','now') * 1000, null, 0)
+INSERT INTO PLAYLIST (id, name, description, audioMediaCount, rawPlayTimeDuration, rawCreatedTime, imageFileNameWithExt, isCustomImage, sequence)
+VALUES (${Playlist.UNCATEGORIZED}, '미분류', '', 0, 0, strftime('%s','now') * 1000, null, 0, 0)
                 """.trimIndent()
             )
         }

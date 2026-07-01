@@ -12,6 +12,7 @@ data class Playlist(
     val createdTime: LocalDateTime,
     val imageFileFullPath: String?,
     val isCustomImage: Boolean,
+    val sequence: Int,
 ) {
     companion object {
         const val TOTAL = 1

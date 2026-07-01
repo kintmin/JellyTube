@@ -12,6 +12,7 @@ data class PlaylistItemUiState(
     val description: String,
     val playlistDuration: Duration,
     val audioMediaCount: Int,
+    val sequence: Int,
 ) {
     val durationString: String get() = "재생시간: ${playlistDuration.to_hh_colon_mm_colon_ss()}"
     val audioMediaCountString: String get() = "음원수: $audioMediaCount"
@@ -26,6 +27,7 @@ data class PlaylistItemUiState(
                 playlistDuration = 12000.seconds,
                 audioMediaCount = 999,
                 description = "",
+                sequence = id,
             )
         }
 
@@ -40,4 +42,5 @@ fun Playlist.toUiModel() = PlaylistItemUiState(
     description = description,
     audioMediaCount = audioMediaCount,
     playlistDuration = playTimeDuration,
+    sequence = sequence,
 )
