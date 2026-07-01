@@ -3,6 +3,7 @@ package com.kintmin.presentation.ui.main
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
+import android.view.ViewGroup
 import android.webkit.WebView
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -36,6 +37,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -181,6 +183,19 @@ fun MainScreen(
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     var webView: WebView? by remember { mutableStateOf(null) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            webView?.apply {
+                stopLoading()
+                (parent as? ViewGroup)?.removeView(this)
+                removeAllViews()
+                destroy()
+            }
+            webView = null
+        }
+    }
+
     var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
     var searchInput by rememberSaveable { mutableStateOf(currentUrl) }
     val tabSaveableStateHolder = rememberSaveableStateHolder()

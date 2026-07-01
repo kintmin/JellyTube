@@ -2,11 +2,14 @@ package com.kintmin.presentation.ui.main.youtube_search
 
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.URLUtil
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -23,6 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray80
+import androidx.core.net.toUri
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -69,12 +73,26 @@ fun YoutubeWebView(
                 }
 
                 webViewClient = object : WebViewClient() {
-                    override fun shouldOverrideUrlLoading(
-                        view: WebView?,
-                        url: String?
-                    ): Boolean {
-                        if (url.isNullOrBlank()) return false
-                        return handleIntentUrl(url, context)
+                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                        if (request == null) return false
+
+                        when(request.url.scheme) {
+                            "http", "https", "about", "data", "blob", "javascript" -> {
+                                return false
+                            }
+                            "intent" -> {
+                                handleIntentUrl(request.url, context) { message ->
+                                    sendIntent(YoutubeDownloadIntent.OnShowToast(message))
+                                }
+                                return true
+                            }
+                            else -> {
+                                handleDefaultScheme(request.url, context) { message ->
+                                    sendIntent(YoutubeDownloadIntent.OnShowToast(message))
+                                }
+                                return true
+                            }
+                        }
                     }
 
                     override fun doUpdateVisitedHistory(
@@ -122,40 +140,48 @@ fun YoutubeWebView(
     }
 }
 
-private fun handleIntentUrl(url: String, context: android.content.Context): Boolean {
-    if (!url.startsWith("intent://")) return false
-
-    return try {
+private fun handleIntentUrl(uri: Uri, context: Context, onError: (String) -> Unit) {
+    val url = uri.toString()
+    runCatching {
         val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
-        true
-    } catch (_: ActivityNotFoundException) {
-        val fallbackUrl = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
-            .getStringExtra("browser_fallback_url")
-        val convertedWebUrl = url.replaceFirst("intent://", "https://").substringBefore("#Intent")
+    }.onFailure { exception ->
+        if (exception is ActivityNotFoundException) {
+            val fallbackUrl = Intent.parseUri(url, Intent.URI_INTENT_SCHEME).getStringExtra("browser_fallback_url")
+            val convertedWebUrl = url.replaceFirst("intent://", "https://").substringBefore("#Intent")
 
-        when {
-            !fallbackUrl.isNullOrBlank() -> {
-                context.startActivity(
-                    Intent(Intent.ACTION_VIEW, android.net.Uri.parse(fallbackUrl)).addFlags(
-                        Intent.FLAG_ACTIVITY_NEW_TASK
+            when {
+                !fallbackUrl.isNullOrBlank() -> {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, fallbackUrl.toUri()).addFlags(
+                            Intent.FLAG_ACTIVITY_NEW_TASK
+                        )
                     )
-                )
-                true
-            }
-            URLUtil.isNetworkUrl(convertedWebUrl) -> {
-                context.startActivity(
-                    Intent(Intent.ACTION_VIEW, android.net.Uri.parse(convertedWebUrl)).addFlags(
-                        Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                URLUtil.isNetworkUrl(convertedWebUrl) -> {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, convertedWebUrl.toUri()).addFlags(
+                            Intent.FLAG_ACTIVITY_NEW_TASK
+                        )
                     )
-                )
-                true
+                }
+                else -> {
+                    onError("처리할 수 없는 intent입니다.\n${url}")
+                }
             }
-            else -> true
+        } else {
+            onError("처리할 수 없는 intent입니다.\n${url}")
         }
-    } catch (_: Exception) {
-        true
+    }
+}
+
+private fun handleDefaultScheme(uri: Uri, context: Context, onError: (String) -> Unit) {
+    runCatching {
+        val intent = Intent(Intent.ACTION_VIEW, uri)
+        context.startActivity(intent)
+    }.onFailure {
+        onError("처리할 수 없는 스킴입니다.\n${uri}")
     }
 }
 

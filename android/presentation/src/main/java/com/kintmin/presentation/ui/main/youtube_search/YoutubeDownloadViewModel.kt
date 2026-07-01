@@ -32,6 +32,9 @@ class YoutubeDownloadViewModel constructor(
         when(intent) {
             is YoutubeDownloadIntent.OnClickDownload -> startDownload(intent.url)
             is YoutubeDownloadIntent.OnChangeUrl -> _currentUrl.update { intent.url }
+            is YoutubeDownloadIntent.OnShowToast -> viewModelScope.launch {
+                _eventFlow.emit(YoutubeWebViewEvent.ShowToast(intent.message))
+            }
         }
     }
 
