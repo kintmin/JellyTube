@@ -13,16 +13,23 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray80
@@ -39,6 +46,7 @@ fun YoutubeWebView(
     onNavigateToPlaylist: () -> Unit,
 ) {
     var shouldClearHistoryAfterHomeLoad by remember { mutableStateOf(false) }
+    var creationFailed by remember { mutableStateOf(false) }
     val homeUrl = "https://m.youtube.com/"
 
     if (LocalInspectionMode.current) {
@@ -52,10 +60,37 @@ fun YoutubeWebView(
         return
     }
 
+    // 시스템 WebView(Android System WebView / Chrome) APK가 앱 실행 중 백그라운드 업데이트되거나
+    // 손상/비활성화되면, WebView(context) 생성 시 그 APK 리소스를 앱 프로세스에 병합하는 과정에서
+    // Resources$NotFoundException("failed to redirect ResourcesImpl")가 발생해 앱이 크래시한다.
+    // (WebView.<init> -> ResourcesManager.redirectAllResourcesToNewImplLocked 경로)
+    // 앱 코드로는 예방할 수 없는 시스템 측 문제라, 아래 factory의 runCatching으로 예외를 잡아
+    // creationFailed를 세우고 여기서 크래시 대신 재시도 UI를 노출한다.
+    // 시스템 WebView 업데이트가 끝나면 재시도로 정상 생성되는 경우가 많다.
+    if (creationFailed) {
+        Box(
+            modifier = modifier.background(gray80),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "웹뷰에 문제가 생겼습니다.\n다시 시도해주세요.",
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { creationFailed = false }) {
+                    Text("다시 시도")
+                }
+            }
+        }
+        return
+    }
+
     AndroidView(
         modifier = modifier,
         factory = { context ->
-            webView ?: WebView(context).apply {
+            webView ?: runCatching {
+                WebView(context).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
@@ -118,10 +153,14 @@ fun YoutubeWebView(
                     put("Referer", "https://${context.packageName.lowercase()}")
                 }
                 loadUrl(currentUrl, headers)
+                }
+            }.getOrElse { throwable ->
+                creationFailed = true
+                FrameLayout(context)
             }
         },
         update = { view ->
-            if (currentUrl.isNotBlank() && view.url != currentUrl) {
+            if (view is WebView && currentUrl.isNotBlank() && view.url != currentUrl) {
                 view.loadUrl(currentUrl)
             }
         }
