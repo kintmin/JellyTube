@@ -1,9 +1,14 @@
 package com.kintmin.presentation.ui.playlist_detail
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -19,10 +24,13 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -133,6 +141,8 @@ fun PlaylistDetailScreen(
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     val scrollState = rememberLazyListState()
+    var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
+    var searchInput by rememberSaveable { mutableStateOf("") }
     var consumedFocusAudioMediaId by rememberSaveable { mutableStateOf<Int?>(null) }
     var highlightedAudioMediaId by remember { mutableStateOf<Int?>(null) }
     var focusSpreadProgress by remember { mutableStateOf(0f) }
@@ -209,10 +219,74 @@ fun PlaylistDetailScreen(
                             )
                         }
                     },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                val showSearchBar = !isSearchFieldVisible
+                                isSearchFieldVisible = showSearchBar
+                                if (!showSearchBar) {
+                                    searchInput = ""
+                                    sendPlaylistDetailListIntent(
+                                        PlaylistDetailListIntent.OnChangeSearchText(""),
+                                    )
+                                }
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Search,
+                                contentDescription = "음원 검색",
+                            )
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = backgroundColor
                     )
                 )
+
+                AnimatedVisibility(
+                    visible = isSearchFieldVisible,
+                    enter = expandVertically(
+                        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                    ) + fadeIn(
+                        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                    ),
+                    exit = shrinkVertically(
+                        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                    ) + fadeOut(
+                        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                    ),
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        value = searchInput,
+                        onValueChange = {
+                            searchInput = it
+                            sendPlaylistDetailListIntent(
+                                PlaylistDetailListIntent.OnChangeSearchText(it),
+                            )
+                        },
+                        label = { Text("음원 제목 검색") },
+                        singleLine = true,
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    searchInput = ""
+                                    sendPlaylistDetailListIntent(
+                                        PlaylistDetailListIntent.OnChangeSearchText(""),
+                                    )
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = "검색어 전체 삭제",
+                                )
+                            }
+                        },
+                    )
+                }
             }
         },
         bottomBar = {
