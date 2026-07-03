@@ -4,33 +4,28 @@ import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCa
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
-import com.kintmin.domain.playlist.model.Playlist
-import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
 import kotlinx.coroutines.flow.first
 
 class ImportUploadedAudioMediaUseCase constructor(
     private val audioMediaRepository: AudioMediaRepository,
     private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase,
     private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase,
-    private val fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
 ) {
     suspend operator fun invoke(bytes: ByteArray, originalFileName: String): Result<ImportedAudioMediaResult> = runCatching {
         val shouldInsertAtTop = fetchShouldInsertAtTopOnDownloadFlowUseCase().first()
         val playlistId = fetchPlaylistIdOnDownloadFlowUseCase().first()
-        val allPlaylistIdSet = fetchAllPlaylistFlowUseCase().first().map { it.id }.toSet() +
-            setOf(Playlist.TOTAL, Playlist.UNCATEGORIZED)
-        val resolvedPlaylistId = if (playlistId in allPlaylistIdSet) playlistId else Playlist.UNCATEGORIZED
 
-        val (audioMedia, _) = audioMediaRepository.importUploadedAudio(
+        // 대상 해석과 시스템 플레이리스트 보장은 데이터 계층이 담당한다.
+        val added = audioMediaRepository.importUploadedAudio(
             bytes = bytes,
             originalFileName = originalFileName,
-            playlistIdOnDownload = resolvedPlaylistId,
+            playlistIdOnDownload = playlistId,
             shouldInsertAtTopOnDownload = shouldInsertAtTop,
         ).getOrThrow()
 
         ImportedAudioMediaResult(
-            audioMedia = audioMedia,
-            playlistIdOnDownload = resolvedPlaylistId,
+            audioMedia = added.audioMedia,
+            playlistIdOnDownload = added.resolvedPlaylistIdOnDownload,
         )
     }
 }

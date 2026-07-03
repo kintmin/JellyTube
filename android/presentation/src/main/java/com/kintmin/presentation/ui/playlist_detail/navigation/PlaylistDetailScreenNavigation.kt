@@ -12,13 +12,15 @@ import kotlinx.serialization.Serializable
 data class PlaylistDetailScreenRoute(
     val playlistId: Int,
     val focusAudioMediaId: Int? = null,
+    val isBasePlaylist: Boolean = false,
 )
 
 fun NavController.navigateToPlaylistDetailScreen(
     playlistId: Int,
     focusAudioMediaId: Int? = null,
     navOptions: NavOptions,
-) = navigate(PlaylistDetailScreenRoute(playlistId, focusAudioMediaId), navOptions)
+    isBasePlaylist: Boolean = false,
+) = navigate(PlaylistDetailScreenRoute(playlistId, focusAudioMediaId, isBasePlaylist), navOptions)
 
 fun NavGraphBuilder.playlistDetail(
     navigateToBack: () -> Unit,

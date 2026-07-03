@@ -1,6 +1,7 @@
 package com.kintmin.data.repository_impl
 
 import com.kintmin.data.local_db.dao.AudioMediaDao
+import com.kintmin.data.local_db.dao_facade.AddNewAudioMediaResult
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.AudioMediaEntity
@@ -8,6 +9,7 @@ import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.local_file.model.Ext
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
+import com.kintmin.domain.audio_media.model.AddedAudioMedia
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
@@ -71,9 +73,9 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun addAudioMedia(
         downloadedAudioMedia: DownloadedMedia,
-        playlistIdOnDownload: Int,
+        playlistIdOnDownload: Int?,
         shouldInsertAtTopOnDownload: Boolean,
-    ): Result<Pair<AudioMedia, Int>> {
+    ): Result<AddedAudioMedia> {
         return withContext(Dispatchers.IO) {
             runCatching {
                 val audioMediaEntityToSave = AudioMediaEntity(
@@ -85,12 +87,12 @@ internal class AudioMediaRepositoryImpl constructor(
                     audioFileNameWithExt = downloadedAudioMedia.audioFileNameWithExt,
                     imageFileNameWithExt = downloadedAudioMedia.imageFileNameWithExt,
                 )
-                val (newAudioMediaId, totalPlaylist) = audioMediaFacade.addNewAudioMedia(
+                val added = audioMediaFacade.addNewAudioMedia(
                     newAudioMedia = audioMediaEntityToSave,
-                    playlistIdOnDownload = playlistIdOnDownload,
+                    requestedPlaylistId = playlistIdOnDownload,
                     shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
                 )
-                audioMediaEntityToSave.copy(id = newAudioMediaId).toDomain(fileManager).getOrThrow() to totalPlaylist.audioMediaCount
+                added.toAddedAudioMedia(audioMediaEntityToSave)
             }
         }
     }
@@ -145,9 +147,9 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun importSharedAudio(
         contentUriString: String,
-        playlistIdOnDownload: Int,
+        playlistIdOnDownload: Int?,
         shouldInsertAtTopOnDownload: Boolean,
-    ): Result<Pair<AudioMedia, Int>> {
+    ): Result<AddedAudioMedia> {
         return withContext(Dispatchers.IO) {
             runCatching {
                 val copiedInfo = fileManager.copyAudioFromContentUri(contentUriString).getOrThrow()
@@ -168,12 +170,12 @@ internal class AudioMediaRepositoryImpl constructor(
                     audioFileNameWithExt = copiedInfo.fileNameWithExt,
                     imageFileNameWithExt = copiedInfo.imageFileNameWithExt,
                 )
-                val (newId, totalPlaylist) = audioMediaFacade.addNewAudioMedia(
+                val added = audioMediaFacade.addNewAudioMedia(
                     newAudioMedia = entity,
-                    playlistIdOnDownload = playlistIdOnDownload,
+                    requestedPlaylistId = playlistIdOnDownload,
                     shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
                 )
-                entity.copy(id = newId).toDomain(fileManager).getOrThrow() to totalPlaylist.audioMediaCount
+                added.toAddedAudioMedia(entity)
             }
         }
     }
@@ -181,9 +183,9 @@ internal class AudioMediaRepositoryImpl constructor(
     override suspend fun importUploadedAudio(
         bytes: ByteArray,
         originalFileName: String,
-        playlistIdOnDownload: Int,
+        playlistIdOnDownload: Int?,
         shouldInsertAtTopOnDownload: Boolean,
-    ): Result<Pair<AudioMedia, Int>> {
+    ): Result<AddedAudioMedia> {
         return withContext(Dispatchers.IO) {
             runCatching {
                 val copiedInfo = fileManager.saveUploadedAudio(bytes, originalFileName).getOrThrow()
@@ -203,14 +205,23 @@ internal class AudioMediaRepositoryImpl constructor(
                     audioFileNameWithExt = copiedInfo.fileNameWithExt,
                     imageFileNameWithExt = copiedInfo.imageFileNameWithExt,
                 )
-                val (newId, totalPlaylist) = audioMediaFacade.addNewAudioMedia(
+                val added = audioMediaFacade.addNewAudioMedia(
                     newAudioMedia = entity,
-                    playlistIdOnDownload = playlistIdOnDownload,
+                    requestedPlaylistId = playlistIdOnDownload,
                     shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
                 )
-                entity.copy(id = newId).toDomain(fileManager).getOrThrow() to totalPlaylist.audioMediaCount
+                added.toAddedAudioMedia(entity)
             }
         }
+    }
+
+    private fun AddNewAudioMediaResult.toAddedAudioMedia(entity: AudioMediaEntity): AddedAudioMedia {
+        return AddedAudioMedia(
+            audioMedia = entity.copy(id = audioMediaId).toDomain(fileManager).getOrThrow(),
+            totalPlaylistMediaCount = totalPlaylist.audioMediaCount,
+            totalPlaylistId = totalPlaylistId,
+            resolvedPlaylistIdOnDownload = resolvedPlaylistId,
+        )
     }
 
     override suspend fun deleteDownloadedFile(downloadedAudioMedia: DownloadedMedia): Result<Unit> {

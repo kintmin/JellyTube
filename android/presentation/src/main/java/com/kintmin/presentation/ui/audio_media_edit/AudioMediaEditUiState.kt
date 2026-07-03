@@ -22,6 +22,7 @@ data class AudioMediaEditUiState(
     data class Playlist(
         val playlistId: Int,
         val playlistName: String,
+        val isBasePlaylist: Boolean = false,
     )
 
     companion object {
@@ -60,6 +61,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaEditUiState(): AudioMediaE
             AudioMediaEditUiState.Playlist(
                 playlistId = dataList.playlist.id,
                 playlistName = dataList.playlist.name,
+                isBasePlaylist = dataList.playlist.isBasePlaylist,
             )
         }
     )

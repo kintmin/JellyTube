@@ -18,6 +18,12 @@ class PlaylistRepositoryImpl constructor(
     private val fileManager: FileManager,
 ) : PlaylistRepository {
 
+    override suspend fun ensureSystemPlaylists(): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            audioMediaFacade.ensureSystemPlaylists()
+        }
+    }
+
     override suspend fun addPlaylist(title: String): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
             audioMediaFacade.addPlaylist(title)

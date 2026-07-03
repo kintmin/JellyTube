@@ -84,7 +84,7 @@ fun PlaylistEditScreen(
 
     PlaylistEditScreen(
         navigateToBack = navigateToBack,
-        isBasePlaylist = mainViewModel.isBasePlaylist,
+        isBasePlaylist = headerData.isBasePlaylist,
         headerData = headerData,
         dataList = audioMediaList,
         checkedItemCount = checkedItemCount,

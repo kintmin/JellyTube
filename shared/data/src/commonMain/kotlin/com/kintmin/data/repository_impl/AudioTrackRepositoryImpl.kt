@@ -54,6 +54,13 @@ class AudioTrackRepositoryImpl constructor(
         return playlistTrackDao.getPlaylistIdListFlow(audioMediaId)
     }
 
+    override suspend fun setFavorite(audioMediaId: Int, isFavorite: Boolean): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                audioMediaFacade.setFavorite(audioMediaId, isFavorite)
+            }
+        }
+
     override suspend fun getPlaylistTrackCount(playlistId: Int): Result<Int> {
         return withContext(Dispatchers.IO) {
             runCatching {

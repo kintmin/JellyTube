@@ -10,13 +10,21 @@ import com.kintmin.domain.audio_play_setting.usecase.UpdateIsPlaybackShufflingUs
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackPitchSemitoneUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackSpeedUseCase
+import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
+import com.kintmin.domain.audio_track.usecase.ToggleFavoriteUseCase
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.platform.service_controller.MediaControllerManager
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -35,6 +43,8 @@ class PlayerDetailViewModel constructor(
     private val updatePlaybackSpeedUseCase: UpdatePlaybackSpeedUseCase,
     private val updatePlaybackPitchSemitoneUseCase: UpdatePlaybackPitchSemitoneUseCase,
     private val fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
+    private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
+    private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
 ) : ViewModel() {
 
     private val _eventFlow = MutableSharedFlow<PlayerDetailEvent>()
@@ -67,6 +77,7 @@ class PlayerDetailViewModel constructor(
 
     init {
         refreshPlaylistName(mediaControllerManager.currentPlaylistId)
+        observeFavorite()
         viewModelScope.launch {
             fetchIsPlaybackRepeatingFlowUseCase().collect {
                 _data.update { prev -> prev.copy(isRepeating = it) }
@@ -139,6 +150,17 @@ class PlayerDetailViewModel constructor(
                     mediaControllerManager.updateRepeatRange()
                         .onSuccess { refreshRepeatRangeState() }
                         .onFailure { _eventFlow.emit(PlayerDetailEvent.ShowToast("B 지점은 A 지점 이후로 설정해주세요.")) }
+                }
+            }
+
+            PlayerDetailIntent.OnClickFavoriteButton -> {
+                val mediaId = data.value.id.toIntOrNull()
+                viewModelScope.launch {
+                    if (mediaId == null) {
+                        _eventFlow.emit(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
+                        return@launch
+                    }
+                    toggleFavoriteUseCase(mediaId, !data.value.isFavorite)
                 }
             }
 
@@ -266,6 +288,8 @@ class PlayerDetailViewModel constructor(
                 isRepeating = data.value.isRepeating,
                 playbackSpeed = data.value.playbackSpeed,
                 playbackPitchSemitone = data.value.playbackPitchSemitone,
+                // 같은 곡이면 즐겨찾기 상태 유지, 곡이 바뀌면 observeFavorite의 flow가 새 값으로 갱신
+                isFavorite = if (isSameMedia) data.value.isFavorite else false,
                 repeatRangeStartDuration = repeatRangeState.startDuration,
                 repeatRangeEndDuration = repeatRangeState.endDuration,
                 isPlaybackSpeedMenuVisible = data.value.isPlaybackSpeedMenuVisible,
@@ -275,6 +299,27 @@ class PlayerDetailViewModel constructor(
 
         if (!isSamePlaylist) {
             refreshPlaylistName(currentPlaylistId)
+        }
+    }
+
+    // 현재 재생 곡(data.id)이 바뀔 때마다 즐겨찾기 상태를 재구독한다.
+    // flatMapLatest가 이전 곡의 구독을 자동 취소하므로 별도 Job 관리가 필요 없다.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeFavorite() {
+        viewModelScope.launch {
+            data.map { it.id.toIntOrNull() }
+                .distinctUntilChanged()
+                .flatMapLatest { mediaId ->
+                    if (mediaId == null) {
+                        flowOf(false)
+                    } else {
+                        fetchAudioMediaDetailFlowUseCase(mediaId)
+                            .map { playlists -> playlists.any { it.playlist.type == PlaylistType.FAVORITE } }
+                    }
+                }
+                .collect { isFavorite ->
+                    _data.update { it.copy(isFavorite = isFavorite) }
+                }
         }
     }
 

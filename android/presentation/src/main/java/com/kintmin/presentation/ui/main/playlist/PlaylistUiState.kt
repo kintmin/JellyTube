@@ -13,10 +13,10 @@ data class PlaylistItemUiState(
     val playlistDuration: Duration,
     val audioMediaCount: Int,
     val sequence: Int,
+    val isBasePlaylist: Boolean,
 ) {
     val durationString: String get() = "재생시간: ${playlistDuration.to_hh_colon_mm_colon_ss()}"
     val audioMediaCountString: String get() = "음원수: $audioMediaCount"
-    val isBasePlaylist: Boolean get() = Playlist.isBasePlaylist(id)
 
     companion object {
         fun getMock(id: Int = 0): PlaylistItemUiState {
@@ -28,6 +28,7 @@ data class PlaylistItemUiState(
                 audioMediaCount = 999,
                 description = "",
                 sequence = id,
+                isBasePlaylist = false,
             )
         }
 
@@ -43,4 +44,5 @@ fun Playlist.toUiModel() = PlaylistItemUiState(
     audioMediaCount = audioMediaCount,
     playlistDuration = playTimeDuration,
     sequence = sequence,
+    isBasePlaylist = isBasePlaylist,
 )

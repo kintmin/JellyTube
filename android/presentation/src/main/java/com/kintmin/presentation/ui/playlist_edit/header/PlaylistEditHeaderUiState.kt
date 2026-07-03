@@ -11,6 +11,7 @@ data class PlaylistEditHeaderUiState(
     val description: String,
     val audioMediaCount: Int,
     val playTimeDuration: String,
+    val isBasePlaylist: Boolean = false,
 ) {
     companion object {
         fun getMock() = PlaylistEditHeaderUiState(
@@ -31,4 +32,5 @@ internal fun Playlist.toPlaylistEditHeaderUiState() = PlaylistEditHeaderUiState(
     description = description,
     audioMediaCount = audioMediaCount,
     playTimeDuration = playTimeDuration.to_hh_colon_mm_colon_ss(),
+    isBasePlaylist = isBasePlaylist,
 )

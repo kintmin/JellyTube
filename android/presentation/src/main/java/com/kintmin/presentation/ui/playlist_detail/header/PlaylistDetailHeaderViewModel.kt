@@ -10,7 +10,6 @@ import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdateIsPlaybackShufflingUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
-import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.platform.service_controller.MediaControllerManager
 import com.kintmin.platform.service_controller.model.MediaControlData
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
@@ -37,12 +36,11 @@ class PlaylistDetailHeaderViewModel constructor(
     private val fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
 ) : ViewModel() {
 
-    val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
+    private val route = savedStateHandle.toRoute<PlaylistDetailScreenRoute>()
+    val playlistId = route.playlistId
 
     private val _eventFlow = MutableSharedFlow<PlaylistDetailHeaderEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
-
-    val isBasePlaylist get() = Playlist.isBasePlaylist(playlistId)
 
     val clickThrottle = Throttle(300L)
 
@@ -60,6 +58,7 @@ class PlaylistDetailHeaderViewModel constructor(
                 playlistSubtitle = "플레이리스트 · 음원수 ${playlist.audioMediaCount} · 재생시간 ${playlist.playTimeDuration.to_hh_colon_mm_colon_ss()}",
                 isRepeating = isRepeating,
                 isShuffling = isShuffling,
+                isBasePlaylist = playlist.isBasePlaylist,
             )
         }.onEach {
             mediaControllerManager.setRepeatMode(it.isRepeating)
@@ -73,6 +72,7 @@ class PlaylistDetailHeaderViewModel constructor(
                 playlistSubtitle = "",
                 isRepeating = false,
                 isShuffling = false,
+                isBasePlaylist = route.isBasePlaylist,
             )
         )
 

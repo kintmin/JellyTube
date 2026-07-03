@@ -2,14 +2,13 @@ package com.kintmin.domain
 
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.DownloadedMedia
+import com.kintmin.domain.audio_media.model.AddedAudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
-import com.kintmin.domain.playlist.model.Playlist
-import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.FirebaseEvent
 import io.mockk.clearMocks
@@ -33,7 +32,6 @@ class DownloadAudioMediaUseCaseTest {
     private val deviceStatusRepository: DeviceStatusRepository = mockk()
     private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase = mockk()
     private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase = mockk()
-    private val fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase = mockk()
     private val appLog: AppLog = mockk()
 
     private lateinit var useCase: DownloadAudioMediaUseCase
@@ -45,14 +43,7 @@ class DownloadAudioMediaUseCaseTest {
     @Before
     fun setup() {
         coEvery { fetchShouldInsertAtTopOnDownloadFlowUseCase() } returns flowOf(false)
-        coEvery { fetchPlaylistIdOnDownloadFlowUseCase() } returns flowOf(Playlist.UNCATEGORIZED)
-        coEvery { fetchAllPlaylistFlowUseCase() } returns flowOf(
-            listOf(
-                getMockPlaylist(Playlist.TOTAL, "전체"),
-                getMockPlaylist(Playlist.UNCATEGORIZED, "미분류"),
-                getMockPlaylist(3, "테스트"),
-            )
-        )
+        coEvery { fetchPlaylistIdOnDownloadFlowUseCase() } returns flowOf(UNCATEGORIZED_ID)
         coEvery { audioMediaRepository.getAudioMediaBySource(any()) } returns Result.failure(Exception())
         everyLogDefaults()
 
@@ -60,7 +51,6 @@ class DownloadAudioMediaUseCaseTest {
             audioMediaRepository = audioMediaRepository,
             fetchShouldInsertAtTopOnDownloadFlowUseCase = fetchShouldInsertAtTopOnDownloadFlowUseCase,
             fetchPlaylistIdOnDownloadFlowUseCase = fetchPlaylistIdOnDownloadFlowUseCase,
-            fetchAllPlaylistFlowUseCase = fetchAllPlaylistFlowUseCase,
             appLog = appLog,
             deviceStatusRepository = deviceStatusRepository,
         )
@@ -97,7 +87,6 @@ class DownloadAudioMediaUseCaseTest {
             deviceStatusRepository,
             fetchShouldInsertAtTopOnDownloadFlowUseCase,
             fetchPlaylistIdOnDownloadFlowUseCase,
-            fetchAllPlaylistFlowUseCase,
             appLog,
         )
     }
@@ -126,7 +115,7 @@ class DownloadAudioMediaUseCaseTest {
                 playlistIdOnDownload = 3,
                 shouldInsertAtTopOnDownload = true,
             )
-        } returns Result.success(mockAudioMedia to 10)
+        } returns Result.success(addedResult(resolvedPlaylistId = 3))
 
         val result = useCase(downloadUrl)
 
@@ -138,22 +127,23 @@ class DownloadAudioMediaUseCaseTest {
     }
 
     @Test
-    fun `선택 재생목록이 없으면 미분류로 fallback 테스트`() = runTest {
+    fun `설정 재생목록이 유효하지 않으면 데이터 계층이 해석한 미분류 id를 그대로 반환 테스트`() = runTest {
+        // 대상 유효성 검사·미분류 fallback은 데이터 계층(facade) 책임이다.
+        // UseCase는 설정값을 그대로 넘기고, 데이터 계층이 해석해 돌려준 id를 surfacing만 한다.
         coEvery { fetchPlaylistIdOnDownloadFlowUseCase() } returns flowOf(999)
-        coEvery { fetchAllPlaylistFlowUseCase() } returns flowOf(listOf(getMockPlaylist(3, "테스트")))
         coEvery { audioMediaRepository.downloadAudioMedia(downloadUrl) } returns Result.success(mockDownloadedMedia)
         coEvery {
             audioMediaRepository.addAudioMedia(
                 downloadedAudioMedia = mockDownloadedMedia,
-                playlistIdOnDownload = Playlist.UNCATEGORIZED,
+                playlistIdOnDownload = 999,
                 shouldInsertAtTopOnDownload = false,
             )
-        } returns Result.success(mockAudioMedia to 10)
+        } returns Result.success(addedResult(resolvedPlaylistId = UNCATEGORIZED_ID))
 
         val result = useCase(downloadUrl)
 
         assert(result.isSuccess)
-        assert(result.getOrThrow().playlistIdOnDownload == Playlist.UNCATEGORIZED)
+        assert(result.getOrThrow().playlistIdOnDownload == UNCATEGORIZED_ID)
     }
 
     @Test
@@ -163,7 +153,7 @@ class DownloadAudioMediaUseCaseTest {
         coEvery {
             audioMediaRepository.addAudioMedia(
                 downloadedAudioMedia = mockDownloadedMedia,
-                playlistIdOnDownload = Playlist.UNCATEGORIZED,
+                playlistIdOnDownload = UNCATEGORIZED_ID,
                 shouldInsertAtTopOnDownload = false,
             )
         } returns Result.failure(exception)
@@ -214,17 +204,16 @@ class DownloadAudioMediaUseCaseTest {
         io.mockk.every { deviceStatusRepository.getConnectionStatus() } returns Result.failure(Exception())
     }
 
-    private fun getMockPlaylist(id: Int, name: String): Playlist {
-        return Playlist(
-            id = id,
-            name = name,
-            description = "",
-            audioMediaCount = 0,
-            playTimeDuration = 0.seconds,
-            createdTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
-            imageFileFullPath = null,
-            isCustomImage = false,
-            sequence = 0,
-        )
+    private fun addedResult(resolvedPlaylistId: Int, totalPlaylistMediaCount: Int = 10) = AddedAudioMedia(
+        audioMedia = mockAudioMedia,
+        totalPlaylistMediaCount = totalPlaylistMediaCount,
+        totalPlaylistId = TOTAL_ID,
+        resolvedPlaylistIdOnDownload = resolvedPlaylistId,
+    )
+
+    private companion object {
+        // 시스템 플레이리스트는 고정 id가 없지만, 테스트에서는 편의상 관례적 id를 쓴다.
+        const val TOTAL_ID = 1
+        const val UNCATEGORIZED_ID = 2
     }
 }

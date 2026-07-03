@@ -13,11 +13,7 @@ data class Playlist(
     val imageFileFullPath: String?,
     val isCustomImage: Boolean,
     val sequence: Int,
+    val type: PlaylistType,
 ) {
-    companion object {
-        const val TOTAL = 1
-        const val UNCATEGORIZED = 2
-
-        fun isBasePlaylist(playlistId: Int) = playlistId == TOTAL || playlistId == UNCATEGORIZED
-    }
+    val isBasePlaylist: Boolean get() = type.isSystem
 }

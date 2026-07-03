@@ -116,7 +116,7 @@ fun PlaylistDetailScreen(
         navigateToBack = navigateToBack,
         headerData = headerData,
         audioPlayDataList = audioList,
-        isBasePlaylist = headerViewModel.isBasePlaylist,
+        isBasePlaylist = headerData.isBasePlaylist,
         playerBar = currentMediaItem,
         navigateToPlayerDetail = navigateToPlayerDetail,
         focusAudioMediaId = focusAudioMediaId,

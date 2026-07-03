@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
+import com.kintmin.domain.playlist.usecase.EnsureSystemPlaylistsUseCase
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
 import com.kintmin.platform.deeplink.DeepLinkConstants
 import com.kintmin.platform.service_controller.MediaControllerManager
@@ -18,10 +19,17 @@ class MainViewModel(
     private val mediaControllerManager: MediaControllerManager,
     private val registerUserUseCase: RegisterUserUseCase,
     private val importSharedAudioMediaUseCase: ImportSharedAudioMediaUseCase,
+    private val ensureSystemPlaylistsUseCase: EnsureSystemPlaylistsUseCase,
 ) : ViewModel() {
 
     private val navigationIntentChannel = Channel<NavigationIntent>(capacity = 8)
     val navigationIntentFlow = navigationIntentChannel.receiveAsFlow()
+
+    init {
+        viewModelScope.launch {
+            ensureSystemPlaylistsUseCase()
+        }
+    }
 
     fun registerUser() {
         viewModelScope.launch {

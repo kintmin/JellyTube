@@ -9,7 +9,6 @@ import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaListUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.domain.audio_track.usecase.UpdateTrackSequenceUseCase
-import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistDescriptionUseCase
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistTitleUseCase
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderUiState
@@ -39,7 +38,6 @@ class PlaylistEditListViewModel constructor(
 ) : ViewModel() {
 
     private val playlistId = savedStateHandle.toRoute<PlaylistEditScreenRoute>().playlistId
-    val isBasePlaylist = Playlist.isBasePlaylist(playlistId)
 
     private val _checkedItemIdList = MutableStateFlow(listOf<Int>())
 

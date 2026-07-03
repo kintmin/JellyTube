@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 class FetchPlaylistIdOnDownloadFlowUseCase constructor(
     private val appSettingRepository: AppSettingRepository,
 ) {
-    operator fun invoke(): Flow<Int> {
+    operator fun invoke(): Flow<Int?> {
         return appSettingRepository.getPlaylistIdOnDownloadFlow()
     }
 }

@@ -14,6 +14,12 @@ interface PlaylistDao {
     @Query("SELECT * FROM PLAYLIST WHERE id = :id")
     suspend fun getPlaylistById(id: Int): PlaylistEntity
 
+    @Query("SELECT type FROM PLAYLIST WHERE id = :id")
+    suspend fun getTypeById(id: Int): String?
+
+    @Query("SELECT id FROM PLAYLIST WHERE type = :type LIMIT 1")
+    suspend fun getPlaylistIdByType(type: String): Int?
+
     @Query("SELECT COALESCE(MAX(sequence), 0) FROM PLAYLIST")
     suspend fun getMaxSequence(): Int
 

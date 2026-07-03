@@ -8,6 +8,7 @@ data class PlaylistDetailHeaderUiState(
     val playlistSubtitle: String,
     val isRepeating: Boolean,
     val isShuffling: Boolean,
+    val isBasePlaylist: Boolean = false,
 ) {
     companion object {
         fun getMock(id: Int = 0): PlaylistDetailHeaderUiState {

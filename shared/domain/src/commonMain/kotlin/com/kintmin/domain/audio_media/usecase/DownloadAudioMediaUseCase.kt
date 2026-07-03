@@ -5,8 +5,6 @@ import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
-import com.kintmin.domain.playlist.model.Playlist
-import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.FirebaseEvent
@@ -18,7 +16,6 @@ class DownloadAudioMediaUseCase constructor(
     private val deviceStatusRepository: DeviceStatusRepository,
     private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase,
     private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase,
-    private val fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
     private val appLog: AppLog,
 ) {
     private var downloadAttemptUrlList = mutableSetOf<String>()
@@ -42,28 +39,21 @@ class DownloadAudioMediaUseCase constructor(
 
         val shouldInsertAtTopOnDownload = fetchShouldInsertAtTopOnDownloadFlowUseCase().first()
         val playlistIdOnDownload = fetchPlaylistIdOnDownloadFlowUseCase().first()
-        val allPlaylistIdSet = fetchAllPlaylistFlowUseCase().first().map { it.id }.toSet() + setOf(
-            Playlist.TOTAL,
-            Playlist.UNCATEGORIZED,
-        )
-        val resolvedPlaylistIdOnDownload = if (playlistIdOnDownload in allPlaylistIdSet) {
-            playlistIdOnDownload
-        } else {
-            Playlist.UNCATEGORIZED
-        }
 
-        val (audioMedia, totalPlaylistMediaCount) = audioMediaRepository.addAudioMedia(
+        // 대상 플레이리스트 해석(유효성 검사·미분류 fallback)과 시스템 플레이리스트 보장은 데이터 계층이 담당한다.
+        val added = audioMediaRepository.addAudioMedia(
             downloadedAudioMedia = downloadedAudioMedia,
-            playlistIdOnDownload = resolvedPlaylistIdOnDownload,
+            playlistIdOnDownload = playlistIdOnDownload,
             shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
         ).onFailure {
             audioMediaRepository.deleteDownloadedFile(downloadedAudioMedia)
         }.getOrThrow()
 
-        appLog.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(downloadUrl, totalPlaylistMediaCount))
+        appLog.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(downloadUrl, added.totalPlaylistMediaCount))
         DownloadedAudioMediaResult(
-            audioMedia = audioMedia,
-            playlistIdOnDownload = resolvedPlaylistIdOnDownload,
+            audioMedia = added.audioMedia,
+            playlistIdOnDownload = added.resolvedPlaylistIdOnDownload,
+            totalPlaylistId = added.totalPlaylistId,
             shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
         )
     }.onFailure { exception ->
@@ -100,5 +90,6 @@ class AlreadyDownloadedMedia(
 data class DownloadedAudioMediaResult(
     val audioMedia: AudioMedia,
     val playlistIdOnDownload: Int,
+    val totalPlaylistId: Int,
     val shouldInsertAtTopOnDownload: Boolean,
 )

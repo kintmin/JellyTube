@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
-import com.kintmin.domain.playlist.model.Playlist
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -33,27 +33,24 @@ class MainFloatingActionViewModel constructor(
         fetchAllPlaylistFlowUseCase(),
         isPlaylistBottomSheetVisible,
     ) { playlistIdOnDownload, playlistList, isBottomSheetVisible ->
+        // 다운로드 대상은 USER 플레이리스트 + 미분류(기본)만. 전체/즐겨찾기는 제외.
+        val uncategorizedId = playlistList.firstOrNull { it.type == PlaylistType.UNCATEGORIZED }?.id
+        val effectiveTargetId =
+            playlistIdOnDownload?.takeIf { id -> playlistList.any { it.id == id } } ?: uncategorizedId
+
         val selectablePlaylistList = playlistList
-            .filterNot { it.id == Playlist.TOTAL }
-            .map { it.id to it.name }
-            .toMutableList()
-            .apply {
-                if (none { it.first == Playlist.UNCATEGORIZED }) {
-                    add(0, Playlist.UNCATEGORIZED to "미분류")
-                }
-            }
-            .distinctBy { it.first }
-            .map { (id, name) ->
+            .filter { it.type == PlaylistType.USER || it.type == PlaylistType.UNCATEGORIZED }
+            .map { playlist ->
                 DownloadPlaylistUiState(
-                    id = id,
-                    name = toDisplayPlaylistName(id, name),
-                    isSelected = id == playlistIdOnDownload,
+                    id = playlist.id,
+                    name = if (playlist.type == PlaylistType.UNCATEGORIZED) "기본" else playlist.name,
+                    isSelected = playlist.id == effectiveTargetId,
                 )
             }
 
         MainFloatingActionUiState(
-            playlistIdOnDownload = playlistIdOnDownload,
-            playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.id == playlistIdOnDownload }?.name ?: "기본",
+            playlistIdOnDownload = effectiveTargetId,
+            playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.isSelected }?.name ?: "기본",
             selectablePlaylistList = selectablePlaylistList,
             isPlaylistBottomSheetVisible = isBottomSheetVisible,
         )
@@ -103,10 +100,6 @@ class MainFloatingActionViewModel constructor(
         val firstPathSegment = uri.pathSegments.firstOrNull() ?: return false
 
         return host in DOWNLOADABLE_YOUTUBE_HOSTS && firstPathSegment in DOWNLOADABLE_YOUTUBE_PATHS
-    }
-
-    private fun toDisplayPlaylistName(playlistId: Int, playlistName: String): String {
-        return if (playlistId == Playlist.UNCATEGORIZED) "기본" else playlistName
     }
 
     private companion object {

@@ -4,6 +4,7 @@ import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.extension.toLocalDateTime
 import com.kintmin.domain.playlist.model.Playlist
+import com.kintmin.domain.playlist.model.PlaylistType
 import kotlin.time.Duration.Companion.seconds
 
 internal fun PlaylistEntity.toDomain(fileManager: FileManager) = runCatching {
@@ -19,5 +20,6 @@ internal fun PlaylistEntity.toDomain(fileManager: FileManager) = runCatching {
         },
         isCustomImage = isCustomImage,
         sequence = sequence,
+        type = runCatching { PlaylistType.valueOf(type) }.getOrDefault(PlaylistType.USER),
     )
 }

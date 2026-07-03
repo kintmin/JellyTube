@@ -2,7 +2,7 @@
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kintmin.domain.playlist.model.Playlist
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist.usecase.DeletePlaylistUseCase
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
@@ -33,9 +33,10 @@ class PlaylistViewModel constructor(
 
     val playlistFlow: StateFlow<List<PlaylistItemUiState>> = fetchAllPlaylistFlowUseCase()
         .map { playlistList ->
-            // 미분류는 분류된 미디어가 없으면 fetch하지 않는다.
+            // 미분류·즐겨찾기는 비어있으면(음원수 0) 목록에 표시하지 않는다.
             playlistList.filterNot {
-                it.id == Playlist.UNCATEGORIZED && it.audioMediaCount == 0
+                (it.type == PlaylistType.UNCATEGORIZED || it.type == PlaylistType.FAVORITE) &&
+                    it.audioMediaCount == 0
             }.map { it.toUiModel() }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

@@ -78,8 +78,12 @@ fun MainNavHost(
         },
     ) {
         mainScreen(
-            navigateToPlaylistDetail = { playlistId ->
-                navController.navigateToPlaylistDetailScreen(playlistId, null, navOptions)
+            navigateToPlaylistDetail = { playlistId, isBasePlaylist ->
+                navController.navigateToPlaylistDetailScreen(
+                    playlistId = playlistId,
+                    navOptions = navOptions,
+                    isBasePlaylist = isBasePlaylist,
+                )
             },
             navigateToPlaylistEdit = { playlistId ->
                 navController.navigateToPlaylistEditScreen(playlistId, null, navOptions)

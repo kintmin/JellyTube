@@ -19,10 +19,11 @@ import com.kintmin.data.local_db.model.*
         StepEntity::class,
     ],
     exportSchema = true,
-    version = 3,
+    version = 4,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
+        // 3 -> 4 는 MIGRATION_3_4 참고
     ],
 )
 @ConstructedBy(JellyTubeDatabaseConstructor::class)

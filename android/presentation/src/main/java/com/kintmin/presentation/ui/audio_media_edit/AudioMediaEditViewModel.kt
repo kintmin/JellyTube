@@ -8,7 +8,6 @@ import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.AddAudioMediaListToPlaylistUseCase
 import com.kintmin.domain.audio_track.usecase.DeleteAudioTrackListUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
-import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
 import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
 import com.kintmin.presentation.util.Debounce
@@ -48,11 +47,12 @@ class AudioMediaEditViewModel constructor(
         val linkedPlaylistIds = audioMedia.playlists.map { it.playlistId }.toSet()
         audioMedia.copy(
             selectablePlaylists = allPlaylists
-                .filterNot { playlist -> Playlist.isBasePlaylist(playlist.id) || playlist.id in linkedPlaylistIds }
+                .filterNot { playlist -> playlist.isBasePlaylist || playlist.id in linkedPlaylistIds }
                 .map { playlist ->
                     AudioMediaEditUiState.Playlist(
                         playlistId = playlist.id,
                         playlistName = playlist.name,
+                        isBasePlaylist = playlist.isBasePlaylist,
                     )
                 },
             isAddPlaylistBottomSheetVisible = isBottomSheetVisible,

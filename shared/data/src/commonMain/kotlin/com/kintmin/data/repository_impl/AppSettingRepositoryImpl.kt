@@ -3,7 +3,6 @@ package com.kintmin.data.repository_impl
 import com.kintmin.data.local_datastore.DatastoreUtil
 import com.kintmin.data.local_datastore.PreferencesKey
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
-import com.kintmin.domain.playlist.model.Playlist
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -17,10 +16,8 @@ class AppSettingRepositoryImpl constructor(
         }
     }
 
-    override fun getPlaylistIdOnDownloadFlow(): Flow<Int> {
-        return datastoreUtil.getData(PreferencesKey.PlaylistIdOnDownload).map {
-            it ?: Playlist.UNCATEGORIZED
-        }
+    override fun getPlaylistIdOnDownloadFlow(): Flow<Int?> {
+        return datastoreUtil.getData(PreferencesKey.PlaylistIdOnDownload)
     }
 
     override suspend fun updateShouldInsertAtTopOnDownload(value: Boolean): Result<Unit> {

@@ -26,6 +26,8 @@ import androidx.compose.material.icons.automirrored.rounded.NavigateBefore
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
 import androidx.compose.material.icons.automirrored.rounded.Subject
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -197,35 +199,30 @@ fun PlayerDetailScreen(
                             tint = Color.White.copy(alpha = 0.82f),
                         )
                     }
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "PLAYING FROM ARTIST",
-                            color = Color.White.copy(alpha = 0.65f),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .basicMarquee(),
-                            text = data.artist,
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                        )
-                    }
-                    IconButton(
-                        modifier = Modifier.padding(start = 8.dp),
-                        onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.Subject,
-                            contentDescription = "세부 화면",
-                            tint = Color.White.copy(alpha = 0.82f),
-                        )
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickFavoriteButton) }) {
+                            Icon(
+                                imageVector = if (data.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                                contentDescription = "즐겨찾기",
+                                tint = if (data.isFavorite) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    Color.White.copy(alpha = 0.82f)
+                                },
+                            )
+                        }
+                        IconButton(
+                            modifier = Modifier.padding(start = 8.dp),
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.Subject,
+                                contentDescription = "세부 화면",
+                                tint = Color.White.copy(alpha = 0.82f),
+                            )
+                        }
                     }
                 }
 

@@ -21,7 +21,7 @@ fun NavController.navigateToMainScreen(
 ) = navigate(MainScreenRoute(tabItem, searchUrl), navOptions)
 
 fun NavGraphBuilder.mainScreen(
-    navigateToPlaylistDetail: (playlistId: Int) -> Unit,
+    navigateToPlaylistDetail: (playlistId: Int, isBasePlaylist: Boolean) -> Unit,
     navigateToPlaylistEdit: (playlistId: Int) -> Unit,
     navigateToPlaylistAdd: (playlistId: Int) -> Unit,
     navigateToSetting: () -> Unit,

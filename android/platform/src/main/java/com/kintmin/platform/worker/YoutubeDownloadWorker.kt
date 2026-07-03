@@ -7,7 +7,6 @@ import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
-import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.platform.push_notification.PushNotificationManager
@@ -77,12 +76,12 @@ class YoutubeDownloadWorker(
             withContext(Dispatchers.Main) {
                 val mediaControlData = result.audioMedia.toMediaControlData()
                 tryAddMediaItem(
-                    playlistId = Playlist.TOTAL,
+                    playlistId = result.totalPlaylistId,
                     mediaControlData = mediaControlData,
                     shouldInsertAtTop = result.shouldInsertAtTopOnDownload,
                 )
 
-                if (result.playlistIdOnDownload != Playlist.TOTAL) {
+                if (result.playlistIdOnDownload != result.totalPlaylistId) {
                     tryAddMediaItem(
                         playlistId = result.playlistIdOnDownload,
                         mediaControlData = mediaControlData,

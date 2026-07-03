@@ -81,7 +81,7 @@ import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
 
 @Composable
 fun MainScreen(
-    navigateToPlaylistDetail: (id: Int) -> Unit,
+    navigateToPlaylistDetail: (id: Int, isBasePlaylist: Boolean) -> Unit,
     navigateToPlaylistEdit: (id: Int) -> Unit,
     navigateToPlaylistAdd: (id: Int) -> Unit,
     navigateToSetting: () -> Unit,
@@ -146,7 +146,7 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         playlistViewModel.eventFlow.collect { event ->
             when (event) {
-                is PlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistInfo.id)
+                is PlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistInfo.id, event.playlistInfo.isBasePlaylist)
                 is PlaylistEvent.NavigateToPlaylistEditScreen -> navigateToPlaylistEdit(event.playlistId)
                 is PlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId)
             }

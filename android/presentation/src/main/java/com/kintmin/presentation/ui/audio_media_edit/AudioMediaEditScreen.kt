@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.sp
 import org.koin.androidx.compose.koinViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.presentation.theme.JellyTubeTheme
 import java.io.File
 
@@ -246,7 +245,7 @@ fun AudioMediaEditScreen(
                         lineHeight = 16.sp,
                     )
 
-                    if (!Playlist.isBasePlaylist(playlistData.playlistId)) {
+                    if (!playlistData.isBasePlaylist) {
                         IconButton(
                             modifier = Modifier,
                             onClick = { sendIntent(AudioMediaEditIntent.OnClickDeleteLinkedPlaylist(playlistData.playlistId)) },
