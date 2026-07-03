@@ -58,6 +58,31 @@ class AudioMediaFacade constructor(
         return if (exists) requestedPlaylistId!! else requireSystemPlaylistId(PlaylistType.UNCATEGORIZED)
     }
 
+    suspend fun updateAudioMedia(
+        id: Int,
+        name: String?,
+        artist: String?,
+        description: String?,
+        imageFileNameWithExt: String?,
+    ) {
+        db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                audioMediaDao.updateAudioMedia(
+                    id = id,
+                    name = name,
+                    artist = artist,
+                    description = description,
+                    imageFileNameWithExt = imageFileNameWithExt,
+                )
+                if (imageFileNameWithExt != null) {
+                    playlistTrackDao.getLinkedPlaylistIdList(id).forEach { playlistId ->
+                        syncPlaylistWhenUpdateTrack(playlistId)
+                    }
+                }
+            }
+        }
+    }
+
     suspend fun deleteAudioMedia(audioMediaId: Int) {
         db.useWriterConnection { transactor ->
             transactor.immediateTransaction {

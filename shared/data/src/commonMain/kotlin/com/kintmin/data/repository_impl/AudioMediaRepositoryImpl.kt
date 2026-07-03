@@ -132,15 +132,26 @@ internal class AudioMediaRepositoryImpl constructor(
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
             runCatching {
-                audioMediaDao.updateAudioMedia(
+                val newImageFileNameWithExt = imageFileFullPath?.let {
+                    fileManager.getFileNameWithExt(it).getOrThrow()
+                }
+                // 이미지를 교체하는 경우, 교체 후 orphan이 될 옛 이미지 파일명을 미리 확보한다.
+                val oldImageFileNameWithExt = newImageFileNameWithExt?.let {
+                    audioMediaDao.getDataById(id).imageFileNameWithExt
+                }
+
+                audioMediaFacade.updateAudioMedia(
                     id = id,
                     name = name,
                     artist = artist,
                     description = description,
-                    imageFileNameWithExt = imageFileFullPath?.let {
-                        fileManager.getFileNameWithExt(it).getOrThrow()
-                    },
+                    imageFileNameWithExt = newImageFileNameWithExt,
                 )
+
+                // 새 이미지로 바뀐 경우에만 옛 이미지 파일을 정리한다. 파일 삭제 실패는 무시한다.
+                if (oldImageFileNameWithExt != null && oldImageFileNameWithExt != newImageFileNameWithExt) {
+                    fileManager.deleteFile(oldImageFileNameWithExt)
+                }
             }
         }
     }
