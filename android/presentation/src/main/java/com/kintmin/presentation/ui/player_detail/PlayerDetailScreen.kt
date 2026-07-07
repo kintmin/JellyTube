@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -246,7 +245,7 @@ fun PlayerDetailScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .aspectRatio(1f)
+                            .weight(1f)
                             .clip(RoundedCornerShape(2.dp))
                             .background(Color.Black.copy(alpha = 0.25f)),
                         contentAlignment = Alignment.Center,
@@ -269,7 +268,7 @@ fun PlayerDetailScreen(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .aspectRatio(1f)
+                            .weight(1f)
                             .clip(RoundedCornerShape(2.dp))
                             .background(Color.Black.copy(alpha = 0.25f)),
                     )
@@ -441,56 +440,55 @@ fun PlayerDetailScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(96.dp))
-            }
+                Spacer(modifier = Modifier.height(48.dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PlaybackPitchChip(
-                    Modifier.width(52.dp),
-                    semitone = data.playbackPitchSemitone,
-                    onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
-                )
-                Box(
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 20.dp, end = 8.dp)
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
+                    PlaybackPitchChip(
+                        Modifier.width(52.dp),
+                        semitone = data.playbackPitchSemitone,
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
+                    )
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
-                            .padding(vertical  = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
+                            .weight(1f)
+                            .padding(start = 20.dp, end = 8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.LibraryMusic,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.82f),
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
-                            color = Color.White.copy(alpha = 0.88f),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
+                                .padding(vertical  = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.LibraryMusic,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.82f),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
+                                color = Color.White.copy(alpha = 0.88f),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
+                    PlaybackSpeedChip(
+                        Modifier.width(64.dp),
+                        speed = data.playbackSpeed,
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
+                    )
                 }
-                PlaybackSpeedChip(
-                    Modifier.width(64.dp),
-                    speed = data.playbackSpeed,
-                    onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
-                )
             }
 
             PlaybackSpeedDialog(
