@@ -28,6 +28,7 @@ android {
         versionCode = AppConfiguration.VERSION_CODE
         versionName = AppConfiguration.VERSION_NAME
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -102,6 +103,8 @@ chaquopy {
         version = AppConfiguration.PYTHON_VERSION
         pip {
             install("yt-dlp")
+            install("pykakasi")
+            install("hangulize")
         }
     }
 }
@@ -131,4 +134,10 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.splashscreen)
+
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 }

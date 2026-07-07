@@ -42,6 +42,7 @@ jmdns = "3.5.9"
 kotlinxDatetime = "0.6.2"
 atomicfu = "0.33.0"
 skie = "0.10.12"
+mlkitTranslate = "17.0.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -113,6 +114,7 @@ koin-workmanager = { group = "io.insert-koin", name = "koin-androidx-workmanager
 # Desktop mDNS NSD discovery
 jmdns = { group = "org.jmdns", name = "jmdns", version.ref = "jmdns" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
+mlkit-translate = { group = "com.google.mlkit", name = "translate", version.ref = "mlkitTranslate" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

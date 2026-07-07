@@ -41,6 +41,7 @@ kotlin {
             implementation(libs.ktor.client.android)
             implementation(libs.androidx.datastore.preferences)
             implementation(libs.koin.android)
+            implementation(libs.mlkit.translate)
         }
 
         iosMain.dependencies {
@@ -50,6 +51,15 @@ kotlin {
         val androidUnitTest by getting {
             dependencies {
                 implementation(libs.junit)
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
+
+        val androidInstrumentedTest by getting {
+            dependencies {
+                implementation(libs.androidx.test.core)
+                implementation(libs.androidx.test.runner)
+                implementation(libs.androidx.test.junit)
                 implementation(libs.kotlinx.coroutines.test)
             }
         }
@@ -64,6 +74,7 @@ android {
         minSdk = AppConfiguration.MIN_SDK
         consumerProguardFiles("consumer-rules.pro")
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
