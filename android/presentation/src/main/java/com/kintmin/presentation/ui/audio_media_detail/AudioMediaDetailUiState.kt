@@ -17,6 +17,7 @@ data class AudioMediaDetailUiState(
     val audioMediaCreationTime: String,
     val source: String,
     val audioMediaDescription: String,
+    val hasLyrics: Boolean,
     val playlists: List<Playlist>,
 ) {
     data class Playlist(
@@ -36,6 +37,7 @@ data class AudioMediaDetailUiState(
             playTime = "999:99",
             audioMediaCreationTime = "yyyy년 M월 dd일 HH:mm",
             source = "https://preview.com",
+            hasLyrics = false,
             playlists = List(5) {
                 Playlist(
                     playlistId = index * it,
@@ -60,6 +62,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
             audioMediaCreationTime = audioMedia.createdTime.toKoreanDateTimeString(),
             source = audioMedia.source,
             audioMediaDescription = audioMedia.description,
+            hasLyrics = audioMedia.lyricFileFullPath != null,
             playlists = this.map { dataList ->
                 AudioMediaDetailUiState.Playlist(
                     playlistId = dataList.playlist.id,
@@ -80,6 +83,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
             .toKoreanDateTimeString(),
         source = "",
         audioMediaDescription = "삭제되었습니다.",
+        hasLyrics = false,
         playlists = emptyList(),
     )
 }

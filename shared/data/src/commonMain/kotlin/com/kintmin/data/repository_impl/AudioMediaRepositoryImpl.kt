@@ -123,22 +123,47 @@ internal class AudioMediaRepositoryImpl constructor(
         }
     }
 
+    override suspend fun saveLyrics(text: String, synced: Boolean): Result<String> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val fileName = Uuid.random().toString()
+                val ext = fileManager.saveLyrics(text, fileName, synced).getOrThrow()
+                fileManager.getFullPathWithExt(fileName = fileName, ext = ext).getOrThrow()
+            }
+        }
+    }
+
+    override suspend fun getLyrics(lyricFileFullPath: String): Result<String> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val fileNameWithExt = fileManager.getFileNameWithExt(lyricFileFullPath).getOrThrow()
+                fileManager.fetchLyrics(fileNameWithExt).getOrThrow()
+            }
+        }
+    }
+
     override suspend fun updateAudioMedia(
         id: Int,
         name: String?,
         artist: String?,
         description: String?,
-        imageFileFullPath: String?
+        imageFileFullPath: String?,
+        lyricFileFullPath: String?,
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
             runCatching {
                 val newImageFileNameWithExt = imageFileFullPath?.let {
                     fileManager.getFileNameWithExt(it).getOrThrow()
                 }
-                // 이미지를 교체하는 경우, 교체 후 orphan이 될 옛 이미지 파일명을 미리 확보한다.
-                val oldImageFileNameWithExt = newImageFileNameWithExt?.let {
-                    audioMediaDao.getDataById(id).imageFileNameWithExt
+                val newLyricFileNameWithExt = lyricFileFullPath?.let {
+                    fileManager.getFileNameWithExt(it).getOrThrow()
                 }
+                // 이미지/가사를 교체하는 경우, 교체 후 orphan이 될 옛 파일명을 미리 확보한다.
+                val oldEntity = if (newImageFileNameWithExt != null || newLyricFileNameWithExt != null) {
+                    audioMediaDao.getDataById(id)
+                } else null
+                val oldImageFileNameWithExt = newImageFileNameWithExt?.let { oldEntity?.imageFileNameWithExt }
+                val oldLyricFileNameWithExt = newLyricFileNameWithExt?.let { oldEntity?.lyricFileNameWithExt }
 
                 audioMediaFacade.updateAudioMedia(
                     id = id,
@@ -146,11 +171,15 @@ internal class AudioMediaRepositoryImpl constructor(
                     artist = artist,
                     description = description,
                     imageFileNameWithExt = newImageFileNameWithExt,
+                    lyricFileNameWithExt = newLyricFileNameWithExt,
                 )
 
-                // 새 이미지로 바뀐 경우에만 옛 이미지 파일을 정리한다. 파일 삭제 실패는 무시한다.
+                // 새 파일로 바뀐 경우에만 옛 파일을 정리한다. 파일 삭제 실패는 무시한다.
                 if (oldImageFileNameWithExt != null && oldImageFileNameWithExt != newImageFileNameWithExt) {
                     fileManager.deleteFile(oldImageFileNameWithExt)
+                }
+                if (oldLyricFileNameWithExt != null && oldLyricFileNameWithExt != newLyricFileNameWithExt) {
+                    fileManager.deleteFile(oldLyricFileNameWithExt)
                 }
             }
         }

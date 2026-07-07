@@ -15,6 +15,7 @@ internal class FileManagerImpl : FileManager {
     private companion object {
         const val IMAGE_DIR_NAME = "images"
         const val AUDIO_DIR_NAME = "audios"
+        const val LYRIC_DIR_NAME = "lyrics"
     }
 
     override fun getFileNameWithExt(fileFullPath: String): Result<String> = runCatching {
@@ -31,6 +32,10 @@ internal class FileManagerImpl : FileManager {
     }
 
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<Ext> = unsupported()
+
+    override suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<Ext> = unsupported()
+
+    override suspend fun fetchLyrics(fileNameWithExt: String): Result<String> = unsupported()
 
     override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = unsupported()
 
@@ -60,6 +65,7 @@ internal class FileManagerImpl : FileManager {
         val dirName = when (fileType) {
             FileType.Audio -> AUDIO_DIR_NAME
             FileType.Image -> IMAGE_DIR_NAME
+            FileType.Lyric -> LYRIC_DIR_NAME
         }
         return documentDirectory().appendPathComponent(dirName).also(::ensureDirectory)
     }

@@ -38,6 +38,7 @@ class AudioMediaDetailViewModel constructor(
                 audioMediaCreationTime = "",
                 source = "",
                 audioMediaDescription = "",
+                hasLyrics = false,
                 playlists = listOf(),
             )
         )

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
@@ -98,6 +99,7 @@ fun PlayerDetailScreen(
     navigateToAudioMediaDetail: (audioMediaId: Int) -> Unit,
     navigateToAudioMediaEdit: (audioMediaId: Int) -> Unit,
     navigateToPlayingPlaylist: (playlistId: Int, audioMediaId: Int?) -> Unit,
+    navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
 ) {
     val viewModel = koinViewModel<PlayerDetailViewModel>()
     val data by viewModel.data.collectAsState()
@@ -114,6 +116,7 @@ fun PlayerDetailScreen(
             when (event) {
                 is PlayerDetailEvent.NavigateToAudioMediaDetailScreen -> navigateToAudioMediaDetail(event.audioMediaId)
                 is PlayerDetailEvent.NavigateToAudioMediaEditScreen -> navigateToAudioMediaEdit(event.audioMediaId)
+                is PlayerDetailEvent.NavigateToLyricsViewer -> navigateToLyricsViewer(event.audioMediaId)
                 is PlayerDetailEvent.NavigateToPlayingPlaylist -> navigateToPlayingPlaylist(
                     event.playlistId,
                     event.audioMediaId
@@ -213,6 +216,17 @@ fun PlayerDetailScreen(
                                     Color.White.copy(alpha = 0.82f)
                                 },
                             )
+                        }
+                        if (data.hasLyrics) {
+                            IconButton(
+                                modifier = Modifier.padding(start = 8.dp),
+                                onClick = { sendIntent(PlayerDetailIntent.OnClickLyricsButton) }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Lyrics,
+                                    contentDescription = "가사 보기",
+                                    tint = Color.White.copy(alpha = 0.82f),
+                                )
+                            }
                         }
                         IconButton(
                             modifier = Modifier.padding(start = 8.dp),

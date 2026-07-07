@@ -40,7 +40,8 @@ SET
     name = COALESCE(:name, name),
     artist = COALESCE(:artist, artist),
     description = COALESCE(:description, description),
-    imageFileNameWithExt = COALESCE(:imageFileNameWithExt, imageFileNameWithExt)
+    imageFileNameWithExt = COALESCE(:imageFileNameWithExt, imageFileNameWithExt),
+    lyricFileNameWithExt = COALESCE(:lyricFileNameWithExt, lyricFileNameWithExt)
 WHERE id = :id
 """
     )
@@ -50,6 +51,7 @@ WHERE id = :id
         artist: String? = null,
         description: String? = null,
         imageFileNameWithExt: String? = null,
+        lyricFileNameWithExt: String? = null,
     )
 
     @Query("DELETE FROM AUDIO_MEDIA WHERE id = :id")

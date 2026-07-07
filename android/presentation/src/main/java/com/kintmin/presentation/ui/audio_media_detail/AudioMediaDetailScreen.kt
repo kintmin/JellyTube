@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -58,6 +59,7 @@ fun AudioMediaDetailScreen(
     navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
+    navigateToLyricsSearch: (audioMediaId: Int, query: String) -> Unit,
 ) {
     val mainViewModel = koinViewModel<AudioMediaDetailViewModel>()
 
@@ -76,6 +78,7 @@ fun AudioMediaDetailScreen(
         navigationToAudioMediaEditScreen = navigationToAudioMediaEditScreen,
         navigateToMainSearchTab = navigateToMainSearchTab,
         navigateToPlaylistDetailScreen = navigateToPlaylistDetailScreen,
+        navigateToLyricsSearch = navigateToLyricsSearch,
         data = data,
         sendIntent = mainViewModel::sendIntent,
     )
@@ -88,6 +91,7 @@ fun AudioMediaDetailScreen(
     navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
+    navigateToLyricsSearch: (audioMediaId: Int, query: String) -> Unit,
     data: AudioMediaDetailUiState,
     sendIntent: (AudioMediaDetailIntent) -> Unit,
 ) {
@@ -274,6 +278,35 @@ fun AudioMediaDetailScreen(
                                     .background(MaterialTheme.colorScheme.outline)
                             )
                         }
+                        if (!data.hasLyrics) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .clickable {
+                                        navigateToLyricsSearch(
+                                            data.audioMediaId,
+                                            data.audioMediaName,
+                                        )
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    modifier = Modifier.weight(1f),
+                                    text = "이 음원의 가사 찾기",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                Icon(
+                                    imageVector = Icons.Rounded.ChevronRight,
+                                    contentDescription = null,
+                                )
+                            }
+                        }
+
                         Text(
                             modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
                             text = "추가된 플레이리스트 목록",
@@ -325,6 +358,7 @@ fun AudioMediaDetailScreenPreview() {
             navigationToAudioMediaEditScreen = {},
             navigateToMainSearchTab = {},
             navigateToPlaylistDetailScreen = { _, _ -> },
+            navigateToLyricsSearch = { _, _ -> },
             data = AudioMediaDetailUiState.getMock(),
             sendIntent = {}
         )

@@ -17,5 +17,6 @@ data class AudioMediaEntity(
     val rawAudioDurationSeconds: Long? = null,
     val audioFileNameWithExt: String,
     val imageFileNameWithExt: String? = null,
+    val lyricFileNameWithExt: String? = null,
     val rawCreatedTime: Long = Clock.System.now().toEpochMilliseconds(),
 )

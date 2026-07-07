@@ -20,9 +20,13 @@ interface AudioMediaRepository {
         artist: String? = null,
         description: String? = null,
         imageFileFullPath: String? = null,
+        lyricFileFullPath: String? = null,
     ): Result<Unit>
 
     suspend fun saveImage(imageData: ByteArray): Result<String>
+
+    suspend fun saveLyrics(text: String, synced: Boolean): Result<String>
+    suspend fun getLyrics(lyricFileFullPath: String): Result<String>
 
     suspend fun importSharedAudio(
         contentUriString: String,

@@ -64,6 +64,7 @@ class AudioMediaFacade constructor(
         artist: String?,
         description: String?,
         imageFileNameWithExt: String?,
+        lyricFileNameWithExt: String?,
     ) {
         db.useWriterConnection { transactor ->
             transactor.immediateTransaction {
@@ -73,6 +74,7 @@ class AudioMediaFacade constructor(
                     artist = artist,
                     description = description,
                     imageFileNameWithExt = imageFileNameWithExt,
+                    lyricFileNameWithExt = lyricFileNameWithExt,
                 )
                 if (imageFileNameWithExt != null) {
                     playlistTrackDao.getLinkedPlaylistIdList(id).forEach { playlistId ->

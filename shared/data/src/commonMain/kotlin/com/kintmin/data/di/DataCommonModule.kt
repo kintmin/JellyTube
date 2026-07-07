@@ -8,7 +8,9 @@ import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.network.createHttpClient
 import com.kintmin.data.network.dataSource.HttpDataSource
+import com.kintmin.data.network.dataSource.LyricsDataSource
 import com.kintmin.data.network.dataSourceImpl.HttpDataSourceImpl
+import com.kintmin.data.network.dataSourceImpl.LyricsDataSourceImpl
 import com.kintmin.data.repository_impl.*
 import com.kintmin.domain.app_log.repository.AppLogRepository
 import com.kintmin.domain.app_log.usecase.*
@@ -20,6 +22,8 @@ import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingReposito
 import com.kintmin.domain.audio_play_setting.usecase.*
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.audio_track.usecase.*
+import com.kintmin.domain.lyrics.repository.LyricsRepository
+import com.kintmin.domain.lyrics.usecase.*
 import com.kintmin.domain.common_usecase.FetchLoadBalancingDelaySecondUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.playlist.repository.PlaylistRepository
@@ -38,6 +42,7 @@ import org.koin.dsl.module
 val dataCommonModule: Module = module {
     single<HttpClient> { createHttpClient() }
     single<HttpDataSource> { HttpDataSourceImpl(get()) }
+    single<LyricsDataSource> { LyricsDataSourceImpl(get()) }
     single<DatastoreUtil> { DatastoreUtilImpl(get<DataStore<Preferences>>()) }
 
     single { get<JellyTubeDatabase>().audioMediaDao() }
@@ -52,6 +57,7 @@ val dataCommonModule: Module = module {
     singleOf(::AudioPlaySettingRepositoryImpl) bind AudioPlaySettingRepository::class
     singleOf(::AudioTrackRepositoryImpl) bind AudioTrackRepository::class
     singleOf(::DeviceStatusRepositoryImpl) bind DeviceStatusRepository::class
+    singleOf(::LyricsRepositoryImpl) bind LyricsRepository::class
     singleOf(::PlaylistRepositoryImpl) bind PlaylistRepository::class
     singleOf(::StepRepositoryImpl) bind StepRepository::class
     singleOf(::UserRepositoryImpl) bind UserRepository::class
@@ -72,6 +78,10 @@ val dataCommonModule: Module = module {
     factoryOf(::ImportUploadedAudioMediaUseCase)
     factoryOf(::SaveAudioMediaImageUseCase)
     factoryOf(::UpdateAudioMediaUseCase)
+    factoryOf(::SearchLyricsUseCase)
+    factoryOf(::ApplyLyricsToAudioMediaUseCase)
+    factoryOf(::GetAudioMediaLyricsUseCase)
+    factoryOf(::ParseLyricsUseCase)
     factoryOf(::FetchIsPlaybackRepeatingFlowUseCase)
     factoryOf(::FetchIsPlaybackShufflingFlowUseCase)
     factoryOf(::FetchPlaybackPitchSemitoneFlowUseCase)

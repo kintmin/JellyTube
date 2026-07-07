@@ -77,7 +77,7 @@ class PlayerDetailViewModel constructor(
 
     init {
         refreshPlaylistName(mediaControllerManager.currentPlaylistId)
-        observeFavorite()
+        observeAudioMediaDetail()
         viewModelScope.launch {
             fetchIsPlaybackRepeatingFlowUseCase().collect {
                 _data.update { prev -> prev.copy(isRepeating = it) }
@@ -161,6 +161,17 @@ class PlayerDetailViewModel constructor(
                         return@launch
                     }
                     toggleFavoriteUseCase(mediaId, !data.value.isFavorite)
+                }
+            }
+
+            PlayerDetailIntent.OnClickLyricsButton -> {
+                val mediaId = data.value.id.toIntOrNull()
+                viewModelScope.launch {
+                    if (mediaId == null) {
+                        _eventFlow.emit(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
+                    } else {
+                        _eventFlow.emit(PlayerDetailEvent.NavigateToLyricsViewer(mediaId))
+                    }
                 }
             }
 
@@ -302,23 +313,24 @@ class PlayerDetailViewModel constructor(
         }
     }
 
-    // 현재 재생 곡(data.id)이 바뀔 때마다 즐겨찾기 상태를 재구독한다.
+    // 현재 재생 곡(data.id)이 바뀔 때마다 즐겨찾기/가사 유무 상태를 재구독한다.
     // flatMapLatest가 이전 곡의 구독을 자동 취소하므로 별도 Job 관리가 필요 없다.
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun observeFavorite() {
+    private fun observeAudioMediaDetail() {
         viewModelScope.launch {
             data.map { it.id.toIntOrNull() }
                 .distinctUntilChanged()
                 .flatMapLatest { mediaId ->
                     if (mediaId == null) {
-                        flowOf(false)
+                        flowOf(null)
                     } else {
                         fetchAudioMediaDetailFlowUseCase(mediaId)
-                            .map { playlists -> playlists.any { it.playlist.type == PlaylistType.FAVORITE } }
                     }
                 }
-                .collect { isFavorite ->
-                    _data.update { it.copy(isFavorite = isFavorite) }
+                .collect { aggregates ->
+                    val isFavorite = aggregates?.any { it.playlist.type == PlaylistType.FAVORITE } ?: false
+                    val hasLyrics = aggregates?.firstOrNull()?.audioMedia?.lyricFileFullPath != null
+                    _data.update { it.copy(isFavorite = isFavorite, hasLyrics = hasLyrics) }
                 }
         }
     }

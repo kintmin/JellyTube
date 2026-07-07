@@ -12,5 +12,6 @@ data class AudioMedia(
     val audioDuration: Duration?,
     val audioFileFullPath: String,
     val imageFileFullPath: String?,
+    val lyricFileFullPath: String? = null,
     val createdTime: LocalDateTime,
 )

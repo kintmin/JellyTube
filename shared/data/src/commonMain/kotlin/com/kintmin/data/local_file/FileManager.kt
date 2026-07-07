@@ -11,6 +11,9 @@ interface FileManager {
 
     suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<Ext>
 
+    suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<Ext>
+    suspend fun fetchLyrics(fileNameWithExt: String): Result<String>
+
     suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo>
 
     suspend fun saveUploadedAudio(bytes: ByteArray, originalFileName: String): Result<CopiedAudioInfo>

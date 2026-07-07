@@ -26,6 +26,7 @@ internal class FileManagerImpl constructor(
     private companion object {
 
         const val LOG_DIR_NAME = "app_logs"
+        const val LYRIC_DIR_NAME = "lyrics"
         const val MAX_LOG_FILE_COUNT = 14
     }
 
@@ -62,6 +63,24 @@ internal class FileManagerImpl constructor(
                 targetExt
             }
         }
+
+    override suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<Ext> = runCatching {
+        withContext(Dispatchers.IO) {
+            val ext = if (synced) Ext.LRC else Ext.TXT
+            val outputFile = getDirectory(FileType.Lyric).resolve("$fileName.$ext")
+            outputFile.writeText(text)
+            ext
+        }
+    }
+
+    override suspend fun fetchLyrics(fileNameWithExt: String): Result<String> = runCatching {
+        withContext(Dispatchers.IO) {
+            val (_, ext) = extractExtFromFileName(fileNameWithExt)
+            val file = getDirectory(ext.fileType).resolve(fileNameWithExt)
+            if (!file.exists()) throw Exception("가사 파일을 찾을 수 없습니다.")
+            file.readText()
+        }
+    }
 
     override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = runCatching {
         withContext(Dispatchers.IO) {
@@ -264,6 +283,7 @@ internal class FileManagerImpl constructor(
         val dir = when (fileType) {
             FileType.Audio -> appContext.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
             FileType.Image -> appContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            FileType.Lyric -> appContext.filesDir.resolve(LYRIC_DIR_NAME)
         }
         return dir?.takeIf { it.exists() || it.mkdirs() }
             ?: throw Exception("디렉토리를 찾을 수 없습니다.")
