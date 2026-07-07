@@ -57,6 +57,12 @@ WHERE id = :id
     @Query("UPDATE AUDIO_MEDIA SET lyricFileNameWithExt = NULL WHERE id = :id")
     suspend fun clearLyricFile(id: Int)
 
+    @Query("UPDATE AUDIO_MEDIA SET tjKaraokeNumber = :tjKaraokeNumber WHERE id = :id")
+    suspend fun updateKaraokeNumber(id: Int, tjKaraokeNumber: String)
+
+    @Query("UPDATE AUDIO_MEDIA SET tjKaraokeNumber = NULL WHERE id = :id")
+    suspend fun clearKaraokeNumber(id: Int)
+
     @Query("DELETE FROM AUDIO_MEDIA WHERE id = :id")
     suspend fun deleteById(id: Int)
 }

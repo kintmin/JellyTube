@@ -13,6 +13,8 @@ import com.kintmin.presentation.ui.audio_media_detail.navigation.audioMediaDetai
 import com.kintmin.presentation.ui.audio_media_detail.navigation.navigateToAudioMediaDetailScreen
 import com.kintmin.presentation.ui.audio_media_edit.navigation.audioMediaEdit
 import com.kintmin.presentation.ui.audio_media_edit.navigation.navigateToAudioMediaEditScreen
+import com.kintmin.presentation.ui.karaoke_search.navigation.karaokeSearchScreen
+import com.kintmin.presentation.ui.karaoke_search.navigation.navigateToKaraokeSearchScreen
 import com.kintmin.presentation.ui.lyrics_detail.navigation.lyricsDetailScreen
 import com.kintmin.presentation.ui.lyrics_detail.navigation.navigateToLyricsDetailScreen
 import com.kintmin.presentation.ui.lyrics_search.navigation.lyricsSearchScreen
@@ -154,6 +156,9 @@ fun MainNavHost(
             navigateToLyricsViewer = { audioMediaId ->
                 navController.navigateToLyricsViewerScreen(audioMediaId, navOptions)
             },
+            navigateToKaraokeSearch = { audioMediaId, query ->
+                navController.navigateToKaraokeSearchScreen(audioMediaId, query, navOptions)
+            },
         )
         audioMediaEdit(
             navigateToBack = { navController.popBackStack() },
@@ -172,6 +177,9 @@ fun MainNavHost(
             },
         )
         lyricsDetailScreen(
+            navigateToBack = { navController.popBackStack() },
+        )
+        karaokeSearchScreen(
             navigateToBack = { navController.popBackStack() },
         )
 

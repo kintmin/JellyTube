@@ -6,6 +6,7 @@ import com.kintmin.presentation.ui.main.MainViewModel
 import com.kintmin.presentation.ui.main.floating_action.MainFloatingActionViewModel
 import com.kintmin.presentation.ui.main.playlist.PlaylistViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadViewModel
+import com.kintmin.presentation.ui.karaoke_search.KaraokeSearchViewModel
 import com.kintmin.presentation.ui.lyrics_detail.LyricsDetailViewModel
 import com.kintmin.presentation.ui.lyrics_edit.LyricsEditViewModel
 import com.kintmin.presentation.ui.lyrics_search.LyricsSearchViewModel
@@ -39,6 +40,7 @@ val presentationModule: Module = module {
     viewModelOf(::AudioMediaDetailViewModel)
     viewModelOf(::AudioMediaEditViewModel)
     viewModelOf(::LyricsSearchViewModel)
+    viewModelOf(::KaraokeSearchViewModel)
     viewModelOf(::LyricsDetailViewModel)
     viewModelOf(::LyricsEditViewModel)
     viewModelOf(::LyricsViewerViewModel)

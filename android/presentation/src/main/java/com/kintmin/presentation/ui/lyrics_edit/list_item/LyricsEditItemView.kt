@@ -2,7 +2,6 @@ package com.kintmin.presentation.ui.lyrics_edit.list_item
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Reorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,9 +24,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.PointerInputChange
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -55,22 +50,21 @@ fun formatTimeLabel(timeMs: Long): String {
 fun LyricsEditItemView(
     modifier: Modifier,
     row: EditRow,
-    draggingItemId: Int?,
+    showTranslation: Boolean,
+    showTransliteration: Boolean,
     onClickTime: (rowId: Int) -> Unit,
     onChangeText: (rowId: Int, text: String) -> Unit,
+    onChangeTranslation: (rowId: Int, text: String) -> Unit,
+    onChangeTransliteration: (rowId: Int, text: String) -> Unit,
     onAddRowBelow: (rowId: Int) -> Unit,
     onDeleteRow: (rowId: Int) -> Unit,
-    onDragStart: (Offset, Int) -> Unit,
-    onDrag: (PointerInputChange, Offset) -> Unit,
-    onDragEnd: () -> Unit,
 ) {
     var text by remember(row.id) { mutableStateOf(row.text) }
 
-    val isDragging = row.id == draggingItemId
-    val background = when {
-        isDragging -> MaterialTheme.colorScheme.surfaceVariant
-        row.isModified -> MaterialTheme.colorScheme.secondaryContainer
-        else -> MaterialTheme.colorScheme.surface
+    val background = if (row.isModified) {
+        MaterialTheme.colorScheme.secondaryContainer
+    } else {
+        MaterialTheme.colorScheme.surface
     }
 
     Column(
@@ -79,6 +73,7 @@ fun LyricsEditItemView(
             .background(background)
             .padding(horizontal = 8.dp, vertical = 4.dp),
     ) {
+        // x  시간설정
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { onDeleteRow(row.id) }) {
                 Icon(
@@ -98,36 +93,57 @@ fun LyricsEditItemView(
                     .clickable { onClickTime(row.id) }
                     .padding(horizontal = 6.dp, vertical = 10.dp),
             )
-
-            OutlinedTextField(
-                value = text,
-                onValueChange = {
-                    text = it
-                    onChangeText(row.id, it)
-                },
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 4.dp),
-                textStyle = MaterialTheme.typography.bodyMedium,
-            )
-
-            IconButton(
-                modifier = Modifier.pointerInput(row.id) {
-                    detectDragGestures(
-                        onDragStart = { onDragStart(it, row.id) },
-                        onDrag = { change, dragAmount -> onDrag(change, dragAmount) },
-                        onDragEnd = { onDragEnd() },
-                    )
-                },
-                onClick = {},
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Reorder,
-                    contentDescription = "순서 변경 핸들",
-                )
-            }
         }
 
+        // 원본
+        OutlinedTextField(
+            value = text,
+            onValueChange = {
+                text = it
+                onChangeText(row.id, it)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 2.dp),
+            textStyle = MaterialTheme.typography.bodyMedium,
+            label = { Text("원본", fontSize = 11.sp) },
+        )
+
+        // 번역
+        if (showTranslation) {
+            var translation by remember(row.id) { mutableStateOf(row.translation) }
+            OutlinedTextField(
+                value = translation,
+                onValueChange = {
+                    translation = it
+                    onChangeTranslation(row.id, it)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                textStyle = MaterialTheme.typography.bodySmall,
+                label = { Text("번역", fontSize = 11.sp) },
+            )
+        }
+
+        // 음차
+        if (showTransliteration) {
+            var transliteration by remember(row.id) { mutableStateOf(row.transliteration) }
+            OutlinedTextField(
+                value = transliteration,
+                onValueChange = {
+                    transliteration = it
+                    onChangeTransliteration(row.id, it)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                textStyle = MaterialTheme.typography.bodySmall,
+                label = { Text("음차", fontSize = 11.sp) },
+            )
+        }
+
+        // +
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
@@ -149,27 +165,34 @@ private fun LyricsEditItemViewPreview() {
         Column {
             LyricsEditItemView(
                 modifier = Modifier,
-                row = EditRow(id = 0, timeMs = 62_450L, text = "당신의 창 가까이 보낼게요", isModified = false),
-                draggingItemId = null,
+                row = EditRow(
+                    id = 0,
+                    timeMs = 62_450L,
+                    text = "All my troubles seemed so far away",
+                    translation = "내 모든 고민이 아주 멀게 느껴졌죠",
+                    transliteration = "올 마이 트러블스 심드 소 파 어웨이",
+                    isModified = false,
+                ),
+                showTranslation = true,
+                showTransliteration = true,
                 onClickTime = {},
                 onChangeText = { _, _ -> },
+                onChangeTranslation = { _, _ -> },
+                onChangeTransliteration = { _, _ -> },
                 onAddRowBelow = {},
                 onDeleteRow = {},
-                onDragStart = { _, _ -> },
-                onDrag = { _, _ -> },
-                onDragEnd = {},
             )
             LyricsEditItemView(
                 modifier = Modifier,
                 row = EditRow(id = 1, timeMs = 71_000L, text = "음 사랑한다는 말이에요", isModified = true),
-                draggingItemId = null,
+                showTranslation = false,
+                showTransliteration = false,
                 onClickTime = {},
                 onChangeText = { _, _ -> },
+                onChangeTranslation = { _, _ -> },
+                onChangeTransliteration = { _, _ -> },
                 onAddRowBelow = {},
                 onDeleteRow = {},
-                onDragStart = { _, _ -> },
-                onDrag = { _, _ -> },
-                onDragEnd = {},
             )
         }
     }

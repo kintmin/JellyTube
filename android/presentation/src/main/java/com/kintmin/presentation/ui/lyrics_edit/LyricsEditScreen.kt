@@ -40,8 +40,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
-import com.kintmin.presentation.remember_state.rememberReorderState
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.wheel_picker.TimePickerBottomSheet
 import com.kintmin.presentation.ui.lyrics_edit.dialog.LyricsEditExitDialog
@@ -82,18 +80,6 @@ fun LyricsEditScreen(
     sendIntent: (LyricsEditIntent) -> Unit,
 ) {
     val listState = rememberLazyListState()
-    val reorderState = rememberReorderState(
-        listState = listState,
-        dataList = data.rows,
-        idOf = { it.id },
-    )
-    // 드래그 중이 아닐 때만 외부 상태(rows)를 표시 리스트에 반영한다.
-    LaunchedEffect(data.rows) {
-        if (reorderState.draggingItemId == null) {
-            reorderState.items.clear()
-            reorderState.items.addAll(data.rows)
-        }
-    }
 
     var showExitDialog by remember { mutableStateOf(false) }
     val onBackPressed = {
@@ -198,27 +184,20 @@ fun LyricsEditScreen(
                 contentPadding = PaddingValues(vertical = 8.dp),
             ) {
                 itemsIndexed(
-                    items = reorderState.items,
+                    items = data.rows,
                     key = { _, item -> item.id },
                 ) { _, row ->
                     LyricsEditItemView(
-                        modifier = Modifier
-                            .animateItem()
-                            .zIndex(1f.takeIf { row.id == reorderState.draggingItemId } ?: 0f),
+                        modifier = Modifier.animateItem(),
                         row = row,
-                        draggingItemId = reorderState.draggingItemId,
+                        showTranslation = data.hasTranslation,
+                        showTransliteration = data.hasTransliteration,
                         onClickTime = { pickerRowId = it },
                         onChangeText = { id, text -> sendIntent(LyricsEditIntent.OnChangeText(id, text)) },
+                        onChangeTranslation = { id, text -> sendIntent(LyricsEditIntent.OnChangeTranslation(id, text)) },
+                        onChangeTransliteration = { id, text -> sendIntent(LyricsEditIntent.OnChangeTransliteration(id, text)) },
                         onAddRowBelow = { sendIntent(LyricsEditIntent.OnAddRowBelow(it)) },
                         onDeleteRow = { sendIntent(LyricsEditIntent.OnDeleteRow(it)) },
-                        onDragStart = reorderState::onDragStart,
-                        onDrag = reorderState::onDrag,
-                        onDragEnd = {
-                            if (reorderState.getDraggingItemIndex() != null) {
-                                sendIntent(LyricsEditIntent.OnReorder(reorderState.items.map { it.id }))
-                            }
-                            reorderState.onDragEnd()
-                        },
                     )
                 }
             }

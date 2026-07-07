@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
+import com.kintmin.domain.karaoke.usecase.DeleteAudioMediaKaraokeNumberUseCase
 import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,6 +20,7 @@ class AudioMediaDetailViewModel constructor(
     savedStateHandle: SavedStateHandle,
     fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
+    private val deleteAudioMediaKaraokeNumberUseCase: DeleteAudioMediaKaraokeNumberUseCase,
 ) : ViewModel() {
 
     private val audioMediaId = savedStateHandle.toRoute<AudioMediaDetailScreenRoute>().audioMediaId
@@ -39,6 +41,7 @@ class AudioMediaDetailViewModel constructor(
                 source = "",
                 audioMediaDescription = "",
                 hasLyrics = false,
+                tjKaraokeNumber = null,
                 playlists = listOf(),
             )
         )
@@ -46,6 +49,7 @@ class AudioMediaDetailViewModel constructor(
     fun sendIntent(intent: AudioMediaDetailIntent) {
         when (intent) {
             AudioMediaDetailIntent.OnClickDeleteAudioMedia -> deleteAudioMedia()
+            AudioMediaDetailIntent.OnClickUnlinkKaraokeNumber -> unlinkKaraokeNumber()
         }
     }
 
@@ -53,6 +57,12 @@ class AudioMediaDetailViewModel constructor(
         viewModelScope.launch {
             deleteAudioMediaUseCase(audioMediaId, data.value.source)
             triggerEvent(AudioMediaDetailEvent.OnNavigateToBack)
+        }
+    }
+
+    private fun unlinkKaraokeNumber() {
+        viewModelScope.launch {
+            deleteAudioMediaKaraokeNumberUseCase(audioMediaId)
         }
     }
 

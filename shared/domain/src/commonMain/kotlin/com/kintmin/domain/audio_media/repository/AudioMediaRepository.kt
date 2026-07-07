@@ -26,6 +26,12 @@ interface AudioMediaRepository {
 
     suspend fun saveImage(imageData: ByteArray): Result<String>
 
+    /** 음원에 TJ 노래방 번호를 연동한다. */
+    suspend fun updateKaraokeNumber(id: Int, tjKaraokeNumber: String): Result<Unit>
+
+    /** 음원에 연동된 TJ 노래방 번호를 해제한다. */
+    suspend fun clearKaraokeNumber(id: Int): Result<Unit>
+
     suspend fun saveLyrics(text: String, synced: Boolean): Result<String>
     suspend fun getLyrics(lyricFileFullPath: String): Result<String>
     suspend fun deleteLyrics(id: Int): Result<Unit>
@@ -35,6 +41,9 @@ interface AudioMediaRepository {
 
     /** 원본 가사 경로에서 파생한 변형 파일을 읽는다. 파일이 없으면 null. */
     suspend fun getVariantLyrics(baseLyricFileFullPath: String, variant: LyricsVariant): Result<String?>
+
+    /** 원본 가사 경로에서 파생한 변형 파일을 삭제한다. 파일이 없으면 무시한다. */
+    suspend fun deleteVariantLyrics(baseLyricFileFullPath: String, variant: LyricsVariant): Result<Unit>
 
     suspend fun importSharedAudio(
         contentUriString: String,

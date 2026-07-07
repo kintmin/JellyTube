@@ -124,6 +124,22 @@ internal class AudioMediaRepositoryImpl constructor(
         }
     }
 
+    override suspend fun updateKaraokeNumber(id: Int, tjKaraokeNumber: String): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                audioMediaDao.updateKaraokeNumber(id, tjKaraokeNumber)
+            }
+        }
+    }
+
+    override suspend fun clearKaraokeNumber(id: Int): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                audioMediaDao.clearKaraokeNumber(id)
+            }
+        }
+    }
+
     override suspend fun saveLyrics(text: String, synced: Boolean): Result<String> {
         return withContext(Dispatchers.IO) {
             runCatching {
@@ -167,6 +183,20 @@ internal class AudioMediaRepositoryImpl constructor(
                 val (baseName, extName) = splitLyricFileName(baseLyricFileFullPath)
                 val variantFileNameWithExt = "$baseName.${variant.infix()}.$extName"
                 fileManager.fetchLyrics(variantFileNameWithExt).getOrNull()
+            }
+        }
+    }
+
+    override suspend fun deleteVariantLyrics(
+        baseLyricFileFullPath: String,
+        variant: LyricsVariant,
+    ): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val (baseName, extName) = splitLyricFileName(baseLyricFileFullPath)
+                val variantFileNameWithExt = "$baseName.${variant.infix()}.$extName"
+                fileManager.deleteFile(variantFileNameWithExt).getOrThrow()
+                Unit
             }
         }
     }

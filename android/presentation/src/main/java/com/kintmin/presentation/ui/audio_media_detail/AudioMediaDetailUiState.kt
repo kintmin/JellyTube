@@ -18,6 +18,7 @@ data class AudioMediaDetailUiState(
     val source: String,
     val audioMediaDescription: String,
     val hasLyrics: Boolean,
+    val tjKaraokeNumber: String?,
     val playlists: List<Playlist>,
 ) {
     data class Playlist(
@@ -38,6 +39,7 @@ data class AudioMediaDetailUiState(
             audioMediaCreationTime = "yyyy년 M월 dd일 HH:mm",
             source = "https://preview.com",
             hasLyrics = false,
+            tjKaraokeNumber = "38087",
             playlists = List(5) {
                 Playlist(
                     playlistId = index * it,
@@ -63,6 +65,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
             source = audioMedia.source,
             audioMediaDescription = audioMedia.description,
             hasLyrics = audioMedia.lyricFileFullPath != null,
+            tjKaraokeNumber = audioMedia.tjKaraokeNumber,
             playlists = this.map { dataList ->
                 AudioMediaDetailUiState.Playlist(
                     playlistId = dataList.playlist.id,
@@ -84,6 +87,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
         source = "",
         audioMediaDescription = "삭제되었습니다.",
         hasLyrics = false,
+        tjKaraokeNumber = null,
         playlists = emptyList(),
     )
 }

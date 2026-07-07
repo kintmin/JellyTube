@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
+import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.ApplyLyricsToAudioMediaUseCase
 import com.kintmin.domain.lyrics.usecase.GetAudioMediaLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
 import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SerializeLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SplitLyricsByNewlineUseCase
@@ -26,6 +28,7 @@ class LyricsEditViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val getAudioMediaLyricsUseCase: GetAudioMediaLyricsUseCase,
+    private val getLyricsVariantUseCase: GetLyricsVariantUseCase,
     private val parseLyricsUseCase: ParseLyricsUseCase,
     private val serializeLyricsUseCase: SerializeLyricsUseCase,
     private val splitLyricsByNewlineUseCase: SplitLyricsByNewlineUseCase,
@@ -36,6 +39,7 @@ class LyricsEditViewModel constructor(
 
     private var nextRowId = 0
     private var isLoaded = false
+    private var previousLyricFileFullPath: String? = null
 
     private val _eventFlow = MutableSharedFlow<LyricsEditEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
@@ -64,6 +68,14 @@ class LyricsEditViewModel constructor(
                     if (!isLoaded) {
                         isLoaded = true
                         val lyricFileFullPath = audioMedia?.lyricFileFullPath
+                        previousLyricFileFullPath = lyricFileFullPath
+                        // 번역/음차 변형 파일이 있으면 원본 줄과 인덱스 정렬해 각 행에 붙인다.
+                        val translation = lyricFileFullPath?.let {
+                            getLyricsVariantUseCase(it, LyricsVariant.TRANSLATION).getOrNull()
+                        }
+                        val transliteration = lyricFileFullPath?.let {
+                            getLyricsVariantUseCase(it, LyricsVariant.TRANSLITERATION).getOrNull()
+                        }
                         val rows = if (lyricFileFullPath == null) {
                             emptyList()
                         } else {
@@ -73,13 +85,36 @@ class LyricsEditViewModel constructor(
                                 parsed.isEmpty() -> emptyList()
                                 // 모든 줄의 시작 시간이 0 이면 타이밍이 없는(plain) 가사로 보고 한 행에 전체를 담는다.
                                 parsed.all { (it.timeMs ?: 0L) == 0L } ->
-                                    listOf(newRow(0L, parsed.joinToString("\n") { it.text }, false))
+                                    listOf(
+                                        newRow(
+                                            timeMs = 0L,
+                                            text = parsed.joinToString("\n") { it.text },
+                                            translation = translation?.joinToString("\n") { it.text }.orEmpty(),
+                                            transliteration = transliteration?.joinToString("\n") { it.text }.orEmpty(),
+                                            isModified = false,
+                                        )
+                                    )
 
-                                else -> parsed.map { line -> newRow(line.timeMs ?: 0L, line.text, false) }
+                                else -> parsed.mapIndexed { index, line ->
+                                    newRow(
+                                        timeMs = line.timeMs ?: 0L,
+                                        text = line.text,
+                                        translation = translation?.getOrNull(index)?.text.orEmpty(),
+                                        transliteration = transliteration?.getOrNull(index)?.text.orEmpty(),
+                                        isModified = false,
+                                    )
+                                }
                             }
                         }
                         _data.update {
-                            it.copy(title = title, durationMs = durationMs, rows = rows, isLoading = false)
+                            it.copy(
+                                title = title,
+                                durationMs = durationMs,
+                                rows = rows,
+                                isLoading = false,
+                                hasTranslation = translation != null,
+                                hasTransliteration = transliteration != null,
+                            )
                         }
                     } else {
                         _data.update { it.copy(title = title, durationMs = durationMs) }
@@ -92,16 +127,30 @@ class LyricsEditViewModel constructor(
         when (intent) {
             is LyricsEditIntent.OnChangeTime -> changeTime(intent.rowId, intent.timeMs)
             is LyricsEditIntent.OnChangeText -> changeText(intent.rowId, intent.text)
+            is LyricsEditIntent.OnChangeTranslation -> changeTranslation(intent.rowId, intent.text)
+            is LyricsEditIntent.OnChangeTransliteration -> changeTransliteration(intent.rowId, intent.text)
             is LyricsEditIntent.OnAddRowBelow -> addRowBelow(intent.rowId)
             is LyricsEditIntent.OnDeleteRow -> deleteRow(intent.rowId)
-            is LyricsEditIntent.OnReorder -> reorder(intent.orderedIds)
             LyricsEditIntent.OnSplitByNewline -> splitByNewline()
             LyricsEditIntent.OnClickSave -> save()
         }
     }
 
-    private fun newRow(timeMs: Long, text: String, isModified: Boolean): EditRow =
-        EditRow(id = nextRowId++, timeMs = timeMs, text = text, isModified = isModified)
+    private fun newRow(
+        timeMs: Long,
+        text: String,
+        translation: String = "",
+        transliteration: String = "",
+        isModified: Boolean,
+    ): EditRow =
+        EditRow(
+            id = nextRowId++,
+            timeMs = timeMs,
+            text = text,
+            translation = translation,
+            transliteration = transliteration,
+            isModified = isModified,
+        )
 
     private fun changeTime(rowId: Int, timeMs: Long) {
         _data.update { state ->
@@ -121,25 +170,37 @@ class LyricsEditViewModel constructor(
         }
     }
 
+    private fun changeTranslation(rowId: Int, text: String) {
+        _data.update { state ->
+            state.copy(
+                rows = state.rows.map { if (it.id == rowId) it.copy(translation = text, isModified = true) else it },
+                isDirty = true,
+            )
+        }
+    }
+
+    private fun changeTransliteration(rowId: Int, text: String) {
+        _data.update { state ->
+            state.copy(
+                rows = state.rows.map { if (it.id == rowId) it.copy(transliteration = text, isModified = true) else it },
+                isDirty = true,
+            )
+        }
+    }
+
     private fun addRowBelow(rowId: Int) {
         _data.update { state ->
             val index = state.rows.indexOfFirst { it.id == rowId }
             if (index < 0) return@update state
             val baseTime = state.rows[index].timeMs
-            val newRows = state.rows.toMutableList().apply { add(index + 1, newRow(baseTime, "", true)) }
+            val newRows = state.rows.toMutableList()
+                .apply { add(index + 1, newRow(timeMs = baseTime, text = "", isModified = true)) }
             state.copy(rows = newRows, isDirty = true)
         }
     }
 
     private fun deleteRow(rowId: Int) {
         _data.update { state -> state.copy(rows = state.rows.filterNot { it.id == rowId }, isDirty = true) }
-    }
-
-    private fun reorder(orderedIds: List<Int>) {
-        _data.update { state ->
-            val byId = state.rows.associateBy { it.id }
-            state.copy(rows = orderedIds.mapNotNull { byId[it] }, isDirty = true)
-        }
     }
 
     private fun splitByNewline() {
@@ -151,7 +212,13 @@ class LyricsEditViewModel constructor(
             )
             val newRows = split.map { line ->
                 val kept = oldRows.firstOrNull { it.timeMs == line.timeMs && it.text == line.text }
-                newRow(line.timeMs ?: 0L, line.text, kept?.isModified ?: true)
+                newRow(
+                    timeMs = line.timeMs ?: 0L,
+                    text = line.text,
+                    translation = kept?.translation.orEmpty(),
+                    transliteration = kept?.transliteration.orEmpty(),
+                    isModified = kept?.isModified ?: true,
+                )
             }
             state.copy(rows = newRows, isDirty = state.isDirty || newRows.size != oldRows.size)
         }
@@ -161,13 +228,25 @@ class LyricsEditViewModel constructor(
         if (_data.value.isSaving) return
         viewModelScope.launch {
             _data.update { it.copy(isSaving = true) }
+            val state = _data.value
+            val rows = state.rows
             val syncedLyrics = serializeLyricsUseCase(
-                _data.value.rows.map { LyricsLine(timeMs = it.timeMs, text = it.text) },
+                rows.map { LyricsLine(timeMs = it.timeMs, text = it.text) },
             )
+            // 번역/음차는 원본과 같은 타임코드로 각각 별도 파일에 저장한다(인덱스 정렬 유지).
+            val translationLyrics = if (state.hasTranslation) {
+                serializeLyricsUseCase(rows.map { LyricsLine(timeMs = it.timeMs, text = it.translation) })
+            } else null
+            val transliterationLyrics = if (state.hasTransliteration) {
+                serializeLyricsUseCase(rows.map { LyricsLine(timeMs = it.timeMs, text = it.transliteration) })
+            } else null
             val result = applyLyricsToAudioMediaUseCase(
                 audioMediaId = audioMediaId,
                 plainLyrics = null,
                 syncedLyrics = syncedLyrics,
+                translationLyrics = translationLyrics,
+                transliterationLyrics = transliterationLyrics,
+                previousLyricFileFullPath = previousLyricFileFullPath,
             )
             _data.update { it.copy(isSaving = false) }
             if (result.isSuccess) {
