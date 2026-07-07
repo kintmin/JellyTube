@@ -11,13 +11,23 @@ class ResetDataOncePerDayUseCase constructor(
     private val registerDailyResetWorkerUseCase: RegisterDailyResetWorkerUseCase,
 ) {
 
-    internal val cachedEpochDay = atomic(
+    // atomicfu의 JVM 바이트코드 변환은 atomic 필드가 private일 때만 적용된다.
+    // private가 아니면 kotlinx.atomicfu.* 참조가 남아 release(R8)에서 missing class 오류가 난다.
+    private val cachedEpochDay = atomic(
         Clock.System.now()
             .toLocalDateTime(TimeZone.currentSystemDefault())
             .date
             .toEpochDays()
             .toLong()
     )
+
+    /** 테스트에서 시작 기준일을 주입하기 위한 생성자. private atomic 캡슐화를 유지한다. */
+    internal constructor(
+        registerDailyResetWorkerUseCase: RegisterDailyResetWorkerUseCase,
+        initialEpochDay: Long,
+    ) : this(registerDailyResetWorkerUseCase) {
+        cachedEpochDay.value = initialEpochDay
+    }
 
     /**
      * 날짜 보장:

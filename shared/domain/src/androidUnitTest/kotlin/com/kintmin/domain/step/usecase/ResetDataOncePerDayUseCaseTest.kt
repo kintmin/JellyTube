@@ -16,7 +16,7 @@ class ResetDataOncePerDayUseCaseTest {
     private val today = Clock.System.now().toLocalDateTime(zoneId).date.toEpochDays().toLong()
 
     private fun buildUseCase(initialEpochDay: Long = today): ResetDataOncePerDayUseCase =
-        ResetDataOncePerDayUseCase(registerWorker).also { it.cachedEpochDay.value = initialEpochDay }
+        ResetDataOncePerDayUseCase(registerWorker, initialEpochDay)
 
     // ─── 기본 동작 ──────────────────────────────────────────────────────
 
