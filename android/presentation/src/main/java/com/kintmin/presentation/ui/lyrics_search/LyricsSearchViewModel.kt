@@ -9,6 +9,7 @@ import com.kintmin.domain.lyrics.usecase.SearchLyricsUseCase
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.ui.lyrics_search.navigation.LyricsSearchScreenRoute
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -32,8 +33,11 @@ class LyricsSearchViewModel constructor(
     private val _eventFlow = MutableSharedFlow<LyricsSearchEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
+    // 진행 중인 검색 코루틴. 새 검색을 시작하기 전에 취소한다.
+    private var searchJob: Job? = null
+
     init {
-        viewModelScope.launch { performSearch(route.initialQuery) }
+        startSearch(route.initialQuery)
     }
 
     fun sendIntent(intent: LyricsSearchIntent) {
@@ -42,7 +46,7 @@ class LyricsSearchViewModel constructor(
                 _data.update { it.copy(query = intent.query) }
 
             LyricsSearchIntent.OnClickSearch ->
-                viewModelScope.launch { performSearch(_data.value.query) }
+                startSearch(_data.value.query)
 
             is LyricsSearchIntent.OnClickResult ->
                 viewModelScope.launch {
@@ -57,6 +61,12 @@ class LyricsSearchViewModel constructor(
                     )
                 }
         }
+    }
+
+    // 이미 로딩 중인 검색이 있으면 취소하고, 현재 상태로 새 검색을 시작한다.
+    private fun startSearch(query: String) {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch { performSearch(query) }
     }
 
     private suspend fun performSearch(query: String) {

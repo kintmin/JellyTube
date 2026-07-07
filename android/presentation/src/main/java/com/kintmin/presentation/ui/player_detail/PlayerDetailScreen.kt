@@ -314,6 +314,22 @@ fun PlayerDetailScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(22.dp)
+                        .padding(horizontal = 16.dp),
+                    text = data.currentLyricLine,
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

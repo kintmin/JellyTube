@@ -12,6 +12,10 @@ import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseC
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackSpeedUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.audio_track.usecase.ToggleFavoriteUseCase
+import com.kintmin.domain.lyrics.model.LyricsLine
+import com.kintmin.domain.lyrics.usecase.GetAudioMediaLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.platform.service_controller.MediaControllerManager
@@ -45,6 +49,8 @@ class PlayerDetailViewModel constructor(
     private val fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
+    private val getAudioMediaLyricsUseCase: GetAudioMediaLyricsUseCase,
+    private val parseLyricsUseCase: ParseLyricsUseCase,
 ) : ViewModel() {
 
     private val _eventFlow = MutableSharedFlow<PlayerDetailEvent>()
@@ -74,6 +80,12 @@ class PlayerDetailViewModel constructor(
     val data = _data.asStateFlow()
 
     private var isHandlingSlider = false
+
+    // 현재 곡의 파싱된 가사 줄(싱크 가사면 timeMs 포함). 재생 위치에 맞는 줄을 골라 표시한다.
+    private var parsedLyricLines: List<LyricsLine> = emptyList()
+
+    // 마지막으로 가사를 로드한 파일 경로. 곡이 바뀔 때만 재로드하기 위한 캐시 키.
+    private var loadedLyricPath: String? = null
 
     init {
         refreshPlaylistName(mediaControllerManager.currentPlaylistId)
@@ -281,6 +293,7 @@ class PlayerDetailViewModel constructor(
                     repeatRangeEndDuration = repeatRangeState.endDuration,
                 )
             }
+            refreshLyricLine()
             return
         }
 
@@ -308,6 +321,8 @@ class PlayerDetailViewModel constructor(
             )
         }
 
+        refreshLyricLine()
+
         if (!isSamePlaylist) {
             refreshPlaylistName(currentPlaylistId)
         }
@@ -329,9 +344,42 @@ class PlayerDetailViewModel constructor(
                 }
                 .collect { aggregates ->
                     val isFavorite = aggregates?.any { it.playlist.type == PlaylistType.FAVORITE } ?: false
-                    val hasLyrics = aggregates?.firstOrNull()?.audioMedia?.lyricFileFullPath != null
-                    _data.update { it.copy(isFavorite = isFavorite, hasLyrics = hasLyrics) }
+                    val lyricFileFullPath = aggregates?.firstOrNull()?.audioMedia?.lyricFileFullPath
+                    _data.update { it.copy(isFavorite = isFavorite, hasLyrics = lyricFileFullPath != null) }
+                    loadLyricsIfNeeded(lyricFileFullPath)
                 }
+        }
+    }
+
+    // 곡이 바뀌어 가사 파일 경로가 달라졌을 때만 가사를 로드/파싱한다.
+    private fun loadLyricsIfNeeded(lyricFileFullPath: String?) {
+        if (lyricFileFullPath == loadedLyricPath) return
+        loadedLyricPath = lyricFileFullPath
+
+        if (lyricFileFullPath == null) {
+            parsedLyricLines = emptyList()
+            _data.update { it.copy(currentLyricLine = "") }
+            return
+        }
+        viewModelScope.launch {
+            val rawLyrics = getAudioMediaLyricsUseCase(lyricFileFullPath).getOrNull().orEmpty()
+            parsedLyricLines = parseLyricsUseCase(rawLyrics)
+            refreshLyricLine()
+        }
+    }
+
+    // 현재 재생 위치에 해당하는 싱크 가사 한 줄을 UI 상태에 반영한다.
+    // 비싱크(시간정보 없음) 가사면 activeLyricIndex 가 -1 이라 빈 문자열로 둔다.
+    private fun refreshLyricLine() {
+        val line = if (parsedLyricLines.isEmpty()) {
+            ""
+        } else {
+            val positionMs = mediaControllerManager.currentPosition ?: return
+            val index = activeLyricIndex(parsedLyricLines, positionMs)
+            parsedLyricLines.getOrNull(index)?.text.orEmpty()
+        }
+        if (line != _data.value.currentLyricLine) {
+            _data.update { it.copy(currentLyricLine = line) }
         }
     }
 
