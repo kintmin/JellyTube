@@ -48,9 +48,6 @@ import com.kintmin.presentation.ui.lyrics_edit.dialog.LyricsEditExitDialog
 import com.kintmin.presentation.ui.lyrics_edit.list_item.LyricsEditItemView
 import org.koin.androidx.compose.koinViewModel
 
-/** 드래그 재정렬 시 "몇 칸 이동" 계산의 기준이 되는 한 행의 근사 높이. */
-private val REORDER_ITEM_HEIGHT = 112.dp
-
 @Composable
 fun LyricsEditScreen(
     navigateToBack: () -> Unit,
@@ -89,7 +86,6 @@ fun LyricsEditScreen(
         listState = listState,
         dataList = data.rows,
         idOf = { it.id },
-        initializeItemHeightPx = REORDER_ITEM_HEIGHT,
     )
     // 드래그 중이 아닐 때만 외부 상태(rows)를 표시 리스트에 반영한다.
     LaunchedEffect(data.rows) {

@@ -52,7 +52,6 @@ fun PlaylistReorderBottomSheet(
         listState = listState,
         dataList = playlists,
         idOf = { it.id },
-        initializeItemHeightPx = ITEM_HEIGHT,
     )
     // 부분 확장 없이 처음부터 완전히 펼친 상태로 등장한다.
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)

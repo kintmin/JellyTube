@@ -109,7 +109,6 @@ fun PlaylistEditScreen(
         listState = scrollState,
         dataList = dataList,
         idOf = { it.id },
-        initializeItemHeightPx = 80.dp,
     )
     var consumedFocusAudioMediaId by rememberSaveable { mutableStateOf<Int?>(null) }
     var highlightedAudioMediaId by remember { mutableStateOf<Int?>(null) }
