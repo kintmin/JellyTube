@@ -17,6 +17,8 @@ import com.kintmin.presentation.ui.lyrics_detail.navigation.lyricsDetailScreen
 import com.kintmin.presentation.ui.lyrics_detail.navigation.navigateToLyricsDetailScreen
 import com.kintmin.presentation.ui.lyrics_search.navigation.lyricsSearchScreen
 import com.kintmin.presentation.ui.lyrics_search.navigation.navigateToLyricsSearchScreen
+import com.kintmin.presentation.ui.lyrics_edit.navigation.lyricsEditScreen
+import com.kintmin.presentation.ui.lyrics_edit.navigation.navigateToLyricsEditScreen
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.lyricsViewerScreen
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.navigateToLyricsViewerScreen
 import com.kintmin.presentation.ui.main.MainTabItem
@@ -221,6 +223,12 @@ fun MainNavHost(
             },
         )
         lyricsViewerScreen(
+            navigateToBack = { navController.popBackStack() },
+            navigateToLyricsEdit = { audioMediaId ->
+                navController.navigateToLyricsEditScreen(audioMediaId, navOptions)
+            },
+        )
+        lyricsEditScreen(
             navigateToBack = { navController.popBackStack() },
         )
     }

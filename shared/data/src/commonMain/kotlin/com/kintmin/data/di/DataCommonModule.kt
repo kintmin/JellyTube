@@ -83,6 +83,8 @@ val dataCommonModule: Module = module {
     factoryOf(::GetAudioMediaLyricsUseCase)
     factoryOf(::DeleteAudioMediaLyricsUseCase)
     factoryOf(::ParseLyricsUseCase)
+    factoryOf(::SerializeLyricsUseCase)
+    factoryOf(::SplitLyricsByNewlineUseCase)
     factoryOf(::FetchIsPlaybackRepeatingFlowUseCase)
     factoryOf(::FetchIsPlaybackShufflingFlowUseCase)
     factoryOf(::FetchPlaybackPitchSemitoneFlowUseCase)

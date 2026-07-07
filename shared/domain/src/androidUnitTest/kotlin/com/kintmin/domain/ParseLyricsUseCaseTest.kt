@@ -52,6 +52,15 @@ class ParseLyricsUseCaseTest {
     }
 
     @Test
+    fun `100분 이상 총분 태그도 파싱한다`() {
+        val lines = useCase("[120:03.45] 긴 음원 가사")
+
+        assertEquals(1, lines.size)
+        assertEquals((120 * 60 + 3) * 1000L + 450L, lines[0].timeMs)
+        assertEquals("긴 음원 가사", lines[0].text)
+    }
+
+    @Test
     fun `현재 위치에 맞는 활성 줄 인덱스를 계산한다`() {
         val lines = useCase("[00:01.00] a\n[00:03.00] b\n[00:05.00] c")
 

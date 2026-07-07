@@ -50,6 +50,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun LyricsViewerScreen(
     navigateToBack: () -> Unit,
+    navigateToLyricsEdit: () -> Unit,
 ) {
     val viewModel = koinViewModel<LyricsViewerViewModel>()
     val data by viewModel.data.collectAsState()
@@ -68,6 +69,7 @@ fun LyricsViewerScreen(
 
     LyricsViewerScreen(
         navigateToBack = navigateToBack,
+        navigateToLyricsEdit = navigateToLyricsEdit,
         data = data,
         sendIntent = viewModel::sendIntent,
     )
@@ -77,6 +79,7 @@ fun LyricsViewerScreen(
 @Composable
 fun LyricsViewerScreen(
     navigateToBack: () -> Unit,
+    navigateToLyricsEdit: () -> Unit,
     data: LyricsViewerUiState,
     sendIntent: (LyricsViewerIntent) -> Unit,
 ) {
@@ -137,8 +140,10 @@ fun LyricsViewerScreen(
                     ) {
                         DropdownMenuItem(
                             text = { Text("편집하기") },
-                            // TODO: 편집 기능은 별도 plan에서 구현 예정
-                            onClick = { menuExpanded = false },
+                            onClick = {
+                                menuExpanded = false
+                                navigateToLyricsEdit()
+                            },
                         )
                         DropdownMenuItem(
                             text = { Text("삭제하기") },
@@ -215,6 +220,7 @@ private fun LyricsViewerScreenPreview() {
     JellyTubeTheme {
         LyricsViewerScreen(
             navigateToBack = {},
+            navigateToLyricsEdit = {},
             data = LyricsViewerUiState.getMock(),
             sendIntent = {},
         )

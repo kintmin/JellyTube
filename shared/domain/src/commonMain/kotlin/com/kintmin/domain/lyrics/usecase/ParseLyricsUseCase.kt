@@ -9,7 +9,7 @@ import com.kintmin.domain.lyrics.model.LyricsLine
  */
 class ParseLyricsUseCase {
 
-    private val timeTagRegex = Regex("""\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?]""")
+    private val timeTagRegex = Regex("""\[(\d+):(\d{2})(?:[.:](\d{1,3}))?]""")
 
     operator fun invoke(rawLyrics: String): List<LyricsLine> {
         val lines = rawLyrics.split("\n")

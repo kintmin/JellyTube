@@ -32,17 +32,19 @@ class ApplyLyricsToAudioMediaUseCaseTest {
     }
 
     @Test
-    fun `synced 가사가 없으면 plainLyrics를 일반 가사로 저장한다`() = runTest {
-        val path = "/lyrics/abc.txt"
+    fun `synced 가사가 없으면 plainLyrics 각 줄에 태그를 붙여 SYNC로 저장한다`() = runTest {
+        val path = "/lyrics/abc.lrc"
         coEvery { audioMediaRepository.saveLyrics(any(), any()) } returns Result.success(path)
         coEvery {
             audioMediaRepository.updateAudioMedia(any(), any(), any(), any(), any(), any())
         } returns Result.success(Unit)
 
-        val result = useCase(audioMediaId = 2, plainLyrics = "plain lyric", syncedLyrics = null)
+        val result = useCase(audioMediaId = 2, plainLyrics = "첫 줄\n둘째 줄", syncedLyrics = null)
 
         assertTrue(result.isSuccess)
-        coVerify(exactly = 1) { audioMediaRepository.saveLyrics("plain lyric", false) }
+        coVerify(exactly = 1) {
+            audioMediaRepository.saveLyrics("[00:00.00]첫 줄\n[00:00.00]둘째 줄", true)
+        }
     }
 
     @Test
