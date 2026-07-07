@@ -1,6 +1,7 @@
 package com.kintmin.presentation.ui.lyrics_viewer
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -138,6 +139,28 @@ fun LyricsViewerScreen(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
                     ) {
+                        if (data.showTranslateMenu) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(if (data.translationLines != null) "다시 번역하기" else "번역파일 만들기")
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    sendIntent(LyricsViewerIntent.OnClickCreateTranslation)
+                                },
+                            )
+                        }
+                        if (data.showTransliterateMenu) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(if (data.transliterationLines != null) "다시 음차 번역하기" else "음차 번역파일 만들기")
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    sendIntent(LyricsViewerIntent.OnClickCreateTransliteration)
+                                },
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text("편집하기") },
                             onClick = {
@@ -193,20 +216,43 @@ fun LyricsViewerScreen(
                 ) {
                     itemsIndexed(data.lines) { index, line ->
                         val isActiveLine = data.isSynced && index == data.activeIndex
-                        Text(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 6.dp),
-                            text = line.ifBlank { " " },
-                            fontSize = if (isActiveLine) 20.sp else 16.sp,
-                            lineHeight = if (isActiveLine) 28.sp else 24.sp,
-                            fontWeight = if (isActiveLine) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isActiveLine) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                        )
+                        ) {
+                            Text(
+                                modifier = Modifier.fillMaxWidth(),
+                                text = line.ifBlank { " " },
+                                fontSize = if (isActiveLine) 20.sp else 16.sp,
+                                lineHeight = if (isActiveLine) 28.sp else 24.sp,
+                                fontWeight = if (isActiveLine) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isActiveLine) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                            )
+                            // 원본 → 음차 → 번역 순서로 작은 글씨로 덧붙인다.
+                            data.transliterationLines?.getOrNull(index)?.takeIf { it.isNotBlank() }?.let { transliteration ->
+                                Text(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    text = transliteration,
+                                    fontSize = 13.sp,
+                                    lineHeight = 18.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            data.translationLines?.getOrNull(index)?.takeIf { it.isNotBlank() }?.let { translation ->
+                                Text(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    text = translation,
+                                    fontSize = 13.sp,
+                                    lineHeight = 18.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
                     }
                 }
             }

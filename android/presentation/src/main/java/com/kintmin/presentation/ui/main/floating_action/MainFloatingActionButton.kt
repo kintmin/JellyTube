@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
@@ -161,6 +162,7 @@ fun MainFloatingActionButton(
         Surface(
             modifier = Modifier
                 .size(56.dp)
+                .clip(MaterialTheme.shapes.extraLarge)
                 .combinedClickable(
                     role = Role.Button,
                     onLongClick = {

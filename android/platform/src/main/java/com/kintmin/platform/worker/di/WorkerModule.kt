@@ -3,6 +3,7 @@ package com.kintmin.platform.worker.di
 import com.kintmin.platform.worker.AnomalyDataCheckWorker
 import com.kintmin.platform.worker.DailyResetImmediatelyWorker
 import com.kintmin.platform.worker.LoadBalancedDailyResetWorker
+import com.kintmin.platform.worker.LyricsVariantWorker
 import com.kintmin.platform.worker.YoutubeDownloadWorker
 import org.koin.androidx.workmanager.dsl.workerOf
 import org.koin.core.module.Module
@@ -13,4 +14,5 @@ val workerModule: Module = module {
     workerOf(::LoadBalancedDailyResetWorker)
     workerOf(::DailyResetImmediatelyWorker)
     workerOf(::AnomalyDataCheckWorker)
+    workerOf(::LyricsVariantWorker)
 }

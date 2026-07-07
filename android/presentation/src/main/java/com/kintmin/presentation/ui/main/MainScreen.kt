@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -56,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import com.kintmin.presentation.BuildConfig
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.white
 import com.kintmin.presentation.ui.custom_ui.data_table.AgeColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.DataTableView
 import com.kintmin.presentation.ui.custom_ui.data_table.DepartmentColumn
@@ -333,17 +335,22 @@ fun MainScreen(
                     onClickBar = navigateToPlayerDetail,
                 )
                 NavigationBar {
+                    val navigationBarItemColors = NavigationBarItemDefaults.colors(
+                        selectedTextColor = white,
+                    )
                     NavigationBarItem(
                         icon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                         label = { Text("음원추가") },
                         selected = selectedTab == MainTabItem.Search,
                         onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) },
+                        colors = navigationBarItemColors,
                     )
                     NavigationBarItem(
                         icon = { Icon(Icons.Rounded.VideoLibrary, contentDescription = null) },
                         label = { Text("플레이리스트") },
                         selected = selectedTab == MainTabItem.Playlist,
                         onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
+                        colors = navigationBarItemColors,
                     )
                     if (BuildConfig.DEBUG) {
                         NavigationBarItem(
@@ -351,6 +358,7 @@ fun MainScreen(
                             label = { Text("테스트뷰") },
                             selected = selectedTab == MainTabItem.Debug,
                             onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Debug)) },
+                            colors = navigationBarItemColors,
                         )
                     }
                 }

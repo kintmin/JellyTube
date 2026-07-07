@@ -12,7 +12,18 @@
   예) とうきょう -> 토우쿄우, さっぽろ -> 삿포로, きみのなまえ -> 키미노 나마에
 """
 
+import os
 import pykakasi
+import pykakasi.properties as _pykakasi_properties
+
+# --- Chaquopy 대응 ---
+# pykakasi 의 Configurations.data_path 는 importlib.resources.files() 결과인데,
+# Chaquopy 에서는 이 값이 AssetPath 라 os.path.join(data_path, dbfile) 이
+# "expected str, bytes or os.PathLike object, not AssetPath" 로 실패한다.
+# build.gradle 의 extractPackages("pykakasi") 로 패키지가 실제 파일시스템에 추출되므로,
+# __file__ 기준 실제 data 디렉터리(str)로 data_path 를 교체한다.
+_real_data_path = os.path.join(os.path.dirname(pykakasi.__file__), "data")
+_pykakasi_properties.Configurations.data_path = _real_data_path
 
 # pykakasi 인스턴스는 사전 로딩 비용이 크므로 재사용한다.
 _kakasi = pykakasi.kakasi()

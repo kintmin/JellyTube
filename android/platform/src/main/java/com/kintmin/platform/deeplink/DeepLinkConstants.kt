@@ -27,6 +27,8 @@ object DeepLinkConstants {
         const val PLAYLIST_ID = "playlistId"
         const val AUDIO_MEDIAS = "audioMedias"
         const val AUDIO_MEDIA_ID = "audioMediaId"
+
+        const val LYRICS = "lyrics"
     }
 
     object QueryKey {
@@ -52,6 +54,9 @@ object DeepLinkConstants {
             "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.PLAYLISTS}/{${Path.PLAYLIST_ID}}/${Path.AUDIO_MEDIAS}?${QueryKey.FOCUS_AUDIO_MEDIA_ID}={${QueryKey.FOCUS_AUDIO_MEDIA_ID}}"
         const val AUDIO_MEDIA_SCREEN =
             "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.PLAYLISTS}/{${Path.PLAYLIST_ID}}/${Path.AUDIO_MEDIAS}/{${Path.AUDIO_MEDIA_ID}}"
+
+        const val LYRICS_VIEWER_SCREEN =
+            "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.LYRICS}/{${Path.AUDIO_MEDIA_ID}}"
     }
 
     enum class PlayerScreenEntry(val path: String) {
@@ -89,6 +94,12 @@ object DeepLinkConstants {
         fun audioMediaScreen(playlistId: Int, audioMediaId: Int): Uri {
             return UriPattern.AUDIO_MEDIA_SCREEN
                 .replace("{${Path.PLAYLIST_ID}}", playlistId.toString())
+                .replace("{${Path.AUDIO_MEDIA_ID}}", audioMediaId.toString())
+                .toUri()
+        }
+
+        fun lyricsViewerScreen(audioMediaId: Int): Uri {
+            return UriPattern.LYRICS_VIEWER_SCREEN
                 .replace("{${Path.AUDIO_MEDIA_ID}}", audioMediaId.toString())
                 .toUri()
         }

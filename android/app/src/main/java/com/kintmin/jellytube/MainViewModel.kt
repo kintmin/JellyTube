@@ -168,6 +168,11 @@ class MainViewModel(
                     navigationIntentChannel.send(NavigationIntent.NavigateToAudioMedia(audioMediaId))
                 }
             }
+            DeepLinkConstants.Path.LYRICS -> {
+                val audioMediaId = pathList.getOrNull(2)?.toIntOrNull() ?: return
+                navigationIntentChannel.send(NavigationIntent.NavigateToMainPlaylistsTab)
+                navigationIntentChannel.send(NavigationIntent.NavigateToLyricsViewer(audioMediaId))
+            }
         }
     }
 }

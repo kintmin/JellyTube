@@ -4,4 +4,7 @@ sealed interface LyricsViewerIntent {
     // 재생 위치 폴링 갱신 (싱크 가사 하이라이트용)
     data object OnRefreshPosition : LyricsViewerIntent
     data object OnClickDeleteLyrics : LyricsViewerIntent
+    // 번역/음차 변형 파일 생성 (백그라운드 Worker enqueue)
+    data object OnClickCreateTranslation : LyricsViewerIntent
+    data object OnClickCreateTransliteration : LyricsViewerIntent
 }

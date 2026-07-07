@@ -14,6 +14,7 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
+import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.coroutineScope
@@ -140,6 +141,46 @@ internal class AudioMediaRepositoryImpl constructor(
                 fileManager.fetchLyrics(fileNameWithExt).getOrThrow()
             }
         }
+    }
+
+    override suspend fun saveVariantLyrics(
+        baseLyricFileFullPath: String,
+        variant: LyricsVariant,
+        text: String,
+    ): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val (baseName, extName) = splitLyricFileName(baseLyricFileFullPath)
+                val synced = extName.equals(Ext.LRC.name, ignoreCase = true)
+                fileManager.saveLyrics(text, "$baseName.${variant.infix()}", synced).getOrThrow()
+                Unit
+            }
+        }
+    }
+
+    override suspend fun getVariantLyrics(
+        baseLyricFileFullPath: String,
+        variant: LyricsVariant,
+    ): Result<String?> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val (baseName, extName) = splitLyricFileName(baseLyricFileFullPath)
+                val variantFileNameWithExt = "$baseName.${variant.infix()}.$extName"
+                fileManager.fetchLyrics(variantFileNameWithExt).getOrNull()
+            }
+        }
+    }
+
+    private fun splitLyricFileName(baseLyricFileFullPath: String): Pair<String, String> {
+        val nameWithExt = fileManager.getFileNameWithExt(baseLyricFileFullPath).getOrThrow()
+        val dotIndex = nameWithExt.lastIndexOf('.')
+        if (dotIndex == -1) throw Exception("가사 파일명에서 확장자를 찾을 수 없습니다.")
+        return nameWithExt.substring(0, dotIndex) to nameWithExt.substring(dotIndex + 1)
+    }
+
+    private fun LyricsVariant.infix(): String = when (this) {
+        LyricsVariant.TRANSLATION -> "translate"
+        LyricsVariant.TRANSLITERATION -> "transliterate"
     }
 
     override suspend fun deleteLyrics(id: Int): Result<Unit> {

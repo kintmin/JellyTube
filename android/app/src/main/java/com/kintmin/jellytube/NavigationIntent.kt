@@ -24,4 +24,8 @@ sealed interface NavigationIntent {
     data class NavigateToAudioMedia(
         val audioMediaId: Int,
     ) : NavigationIntent
+
+    data class NavigateToLyricsViewer(
+        val audioMediaId: Int,
+    ) : NavigationIntent
 }

@@ -105,6 +105,11 @@ chaquopy {
             install("yt-dlp")
             install("pykakasi")
         }
+        // pykakasi 는 한자 사전(kanwadict4.db)을 실제 파일 경로로 연다.
+        // Chaquopy 는 기본적으로 패키지 데이터를 asset zip 에서 바로 읽어 importlib.resources 가
+        // AssetPath 를 돌려주는데, pykakasi 가 os.fspath 로 실경로를 요구해 실패한다.
+        // 해당 패키지를 파일시스템으로 추출해 실제 경로가 잡히도록 한다.
+        extractPackages("pykakasi")
     }
 }
 

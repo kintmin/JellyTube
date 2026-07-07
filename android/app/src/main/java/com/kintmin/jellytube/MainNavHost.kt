@@ -288,6 +288,12 @@ private fun consumeNavigationIntent(
                 navOptions,
             )
         }
+        is NavigationIntent.NavigateToLyricsViewer -> {
+            navController.navigateToLyricsViewerScreen(
+                navigationIntent.audioMediaId,
+                navOptions,
+            )
+        }
         NavigationIntent.NavigateToPlayer -> {
             navController.navigateToPlayerDetailScreen(navOptions)
         }

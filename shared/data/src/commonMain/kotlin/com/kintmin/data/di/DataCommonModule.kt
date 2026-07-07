@@ -23,6 +23,7 @@ import com.kintmin.domain.audio_play_setting.usecase.*
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.audio_track.usecase.*
 import com.kintmin.domain.lyrics.repository.LyricsRepository
+import com.kintmin.domain.lyrics.repository.LyricsTranslationRepository
 import com.kintmin.domain.lyrics.usecase.*
 import com.kintmin.domain.common_usecase.FetchLoadBalancingDelaySecondUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
@@ -58,6 +59,7 @@ val dataCommonModule: Module = module {
     singleOf(::AudioTrackRepositoryImpl) bind AudioTrackRepository::class
     singleOf(::DeviceStatusRepositoryImpl) bind DeviceStatusRepository::class
     singleOf(::LyricsRepositoryImpl) bind LyricsRepository::class
+    singleOf(::LyricsTranslationRepositoryImpl) bind LyricsTranslationRepository::class
     singleOf(::PlaylistRepositoryImpl) bind PlaylistRepository::class
     singleOf(::StepRepositoryImpl) bind StepRepository::class
     singleOf(::UserRepositoryImpl) bind UserRepository::class
@@ -84,6 +86,9 @@ val dataCommonModule: Module = module {
     factoryOf(::DeleteAudioMediaLyricsUseCase)
     factoryOf(::ParseLyricsUseCase)
     factoryOf(::SerializeLyricsUseCase)
+    factoryOf(::DetectLyricsLanguageUseCase)
+    factoryOf(::CreateLyricsVariantUseCase)
+    factoryOf(::GetLyricsVariantUseCase)
     factoryOf(::SplitLyricsByNewlineUseCase)
     factoryOf(::FetchIsPlaybackRepeatingFlowUseCase)
     factoryOf(::FetchIsPlaybackShufflingFlowUseCase)

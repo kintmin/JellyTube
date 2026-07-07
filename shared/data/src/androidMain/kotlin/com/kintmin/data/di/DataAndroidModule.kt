@@ -7,6 +7,8 @@ import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.database.createAndroidJellyTubeDatabase
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.local_file.FileManagerImpl
+import com.kintmin.data.translation.LyricsTranslator
+import com.kintmin.data.translation.MlKitLyricsTranslator
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -16,4 +18,5 @@ val dataAndroidModule: Module = module {
     single<JellyTubeDatabase> { createAndroidJellyTubeDatabase(androidContext()) }
     single<DeviceStatus> { DeviceStatusImpl(androidContext()) }
     single<FileManager> { FileManagerImpl(androidContext()) }
+    single<LyricsTranslator> { MlKitLyricsTranslator() }
 }

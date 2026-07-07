@@ -6,11 +6,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
+import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.DeleteAudioMediaLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.DetectLyricsLanguageUseCase
 import com.kintmin.domain.lyrics.usecase.GetAudioMediaLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
 import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.platform.service_controller.MediaControllerManager
+import com.kintmin.platform.worker.usecase.ExecuteLyricsVariantCreation
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.LyricsViewerScreenRoute
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,12 +31,17 @@ class LyricsViewerViewModel constructor(
     private val getAudioMediaLyricsUseCase: GetAudioMediaLyricsUseCase,
     private val parseLyricsUseCase: ParseLyricsUseCase,
     private val deleteAudioMediaLyricsUseCase: DeleteAudioMediaLyricsUseCase,
+    private val detectLyricsLanguageUseCase: DetectLyricsLanguageUseCase,
+    private val getLyricsVariantUseCase: GetLyricsVariantUseCase,
+    private val executeLyricsVariantCreation: ExecuteLyricsVariantCreation,
     private val mediaControllerManager: MediaControllerManager,
 ) : ViewModel() {
 
     private val audioMediaId = savedStateHandle.toRoute<LyricsViewerScreenRoute>().audioMediaId
 
     private var parsedLines: List<LyricsLine> = emptyList()
+    private var lyricFileFullPath: String? = null
+    private var sourceLanguage: String = "en"
 
     private val _eventFlow = MutableSharedFlow<LyricsViewerEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
@@ -55,15 +64,35 @@ class LyricsViewerViewModel constructor(
                 .distinctUntilChanged()
                 .collect { audioMedia ->
                     val title = audioMedia?.name.orEmpty()
-                    val lyricFileFullPath = audioMedia?.lyricFileFullPath
-                    if (lyricFileFullPath == null) {
+                    val path = audioMedia?.lyricFileFullPath
+                    lyricFileFullPath = path
+                    if (path == null) {
                         parsedLines = emptyList()
                         _data.update {
-                            it.copy(title = title, lines = emptyList(), activeIndex = -1, isSynced = false, isLoading = false)
+                            it.copy(
+                                title = title,
+                                lines = emptyList(),
+                                activeIndex = -1,
+                                isSynced = false,
+                                isLoading = false,
+                                translationLines = null,
+                                transliterationLines = null,
+                                showTranslateMenu = false,
+                                showTransliterateMenu = false,
+                            )
                         }
                     } else {
-                        val rawLyrics = getAudioMediaLyricsUseCase(lyricFileFullPath).getOrNull().orEmpty()
+                        val rawLyrics = getAudioMediaLyricsUseCase(path).getOrNull().orEmpty()
                         parsedLines = parseLyricsUseCase(rawLyrics)
+
+                        val language = detectLyricsLanguageUseCase(parsedLines)
+                        sourceLanguage = language.sourceLanguage
+
+                        val translationLines = getLyricsVariantUseCase(path, LyricsVariant.TRANSLATION)
+                            .getOrNull()?.map { line -> line.text }
+                        val transliterationLines = getLyricsVariantUseCase(path, LyricsVariant.TRANSLITERATION)
+                            .getOrNull()?.map { line -> line.text }
+
                         _data.update {
                             it.copy(
                                 title = title,
@@ -71,6 +100,10 @@ class LyricsViewerViewModel constructor(
                                 isSynced = parsedLines.any { line -> line.timeMs != null },
                                 activeIndex = -1,
                                 isLoading = false,
+                                translationLines = translationLines,
+                                transliterationLines = transliterationLines,
+                                showTranslateMenu = !language.hasKorean,
+                                showTransliterateMenu = language.hasJapanese,
                             )
                         }
                     }
@@ -82,6 +115,25 @@ class LyricsViewerViewModel constructor(
         when (intent) {
             LyricsViewerIntent.OnRefreshPosition -> refreshPosition()
             LyricsViewerIntent.OnClickDeleteLyrics -> deleteLyrics()
+            LyricsViewerIntent.OnClickCreateTranslation -> createVariant(LyricsVariant.TRANSLATION)
+            LyricsViewerIntent.OnClickCreateTransliteration -> createVariant(LyricsVariant.TRANSLITERATION)
+        }
+    }
+
+    private fun createVariant(variant: LyricsVariant) {
+        val path = lyricFileFullPath ?: return
+        executeLyricsVariantCreation(
+            audioMediaId = audioMediaId,
+            lyricFileFullPath = path,
+            variant = variant,
+            sourceLanguage = sourceLanguage,
+        )
+        val message = when (variant) {
+            LyricsVariant.TRANSLATION -> "번역을 시작했어요. 완료되면 알림으로 알려드릴게요."
+            LyricsVariant.TRANSLITERATION -> "음차 번역을 시작했어요. 완료되면 알림으로 알려드릴게요."
+        }
+        viewModelScope.launch {
+            _eventFlow.emit(LyricsViewerEvent.ShowToast(message))
         }
     }
 

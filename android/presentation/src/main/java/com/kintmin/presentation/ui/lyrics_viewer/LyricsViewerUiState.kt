@@ -6,20 +6,34 @@ data class LyricsViewerUiState(
     val activeIndex: Int,
     val isSynced: Boolean,
     val isLoading: Boolean,
+    // 번역/음차 변형 가사 (원본 lines 와 인덱스 정렬, 없으면 null)
+    val translationLines: List<String>? = null,
+    val transliterationLines: List<String>? = null,
+    // ⋮ 메뉴 노출 여부
+    val showTranslateMenu: Boolean = false,
+    val showTransliterateMenu: Boolean = false,
 ) {
     companion object {
 
         fun getMock() = LyricsViewerUiState(
-            title = "밤편지",
+            title = "Yesterday",
             lines = listOf(
-                "이 밤 그날의 반딧불을",
-                "당신의 창 가까이 보낼게요",
-                "음 사랑한다는 말이에요",
-                "나 우리의 첫 봄을 기억해요",
+                "Yesterday",
+                "All my troubles seemed so far away",
             ),
             activeIndex = 1,
             isSynced = true,
             isLoading = false,
+            transliterationLines = listOf(
+                "예스터데이",
+                "올 마이 트러블스 심드 소 파 어웨이",
+            ),
+            translationLines = listOf(
+                "어제",
+                "내 모든 고민이 아주 멀게 느껴졌죠",
+            ),
+            showTranslateMenu = true,
+            showTransliterateMenu = false,
         )
     }
 }
