@@ -99,6 +99,19 @@ class LyricsViewerViewModel constructor(
 
     private fun refreshPosition() {
         if (parsedLines.isEmpty()) return
+
+        // 이 화면의 음원이 실제로 재생 중일 때만 활성 줄을 계산한다.
+        // (컨트롤러가 연결돼 있으면 미재생 상태에서도 currentPosition 이 0 을 반환해
+        //  첫 줄 timeMs=0 이 잘못 하이라이트되는 것을 막는다.)
+        val isThisMediaPlaying = mediaControllerManager.isPlaying &&
+            mediaControllerManager.playingMediaItem?.mediaId == audioMediaId.toString()
+        if (!isThisMediaPlaying) {
+            if (_data.value.activeIndex != -1) {
+                _data.update { it.copy(activeIndex = -1) }
+            }
+            return
+        }
+
         val positionMs = mediaControllerManager.currentPosition ?: return
         val index = activeLyricIndex(parsedLines, positionMs)
         if (index != _data.value.activeIndex) {
