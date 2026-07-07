@@ -27,6 +27,7 @@ interface AudioMediaRepository {
 
     suspend fun saveLyrics(text: String, synced: Boolean): Result<String>
     suspend fun getLyrics(lyricFileFullPath: String): Result<String>
+    suspend fun deleteLyrics(id: Int): Result<Unit>
 
     suspend fun importSharedAudio(
         contentUriString: String,

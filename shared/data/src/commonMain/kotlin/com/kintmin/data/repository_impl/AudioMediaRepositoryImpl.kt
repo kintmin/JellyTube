@@ -142,6 +142,17 @@ internal class AudioMediaRepositoryImpl constructor(
         }
     }
 
+    override suspend fun deleteLyrics(id: Int): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val oldLyricFileNameWithExt = audioMediaDao.getDataById(id).lyricFileNameWithExt
+                audioMediaDao.clearLyricFile(id)
+                oldLyricFileNameWithExt?.let { fileManager.deleteFile(it) }
+                Unit
+            }
+        }
+    }
+
     override suspend fun updateAudioMedia(
         id: Int,
         name: String?,

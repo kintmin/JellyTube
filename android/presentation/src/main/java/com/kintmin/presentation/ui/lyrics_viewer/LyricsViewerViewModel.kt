@@ -6,12 +6,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
+import com.kintmin.domain.lyrics.usecase.DeleteAudioMediaLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.GetAudioMediaLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.platform.service_controller.MediaControllerManager
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.LyricsViewerScreenRoute
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -23,12 +26,16 @@ class LyricsViewerViewModel constructor(
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val getAudioMediaLyricsUseCase: GetAudioMediaLyricsUseCase,
     private val parseLyricsUseCase: ParseLyricsUseCase,
+    private val deleteAudioMediaLyricsUseCase: DeleteAudioMediaLyricsUseCase,
     private val mediaControllerManager: MediaControllerManager,
 ) : ViewModel() {
 
     private val audioMediaId = savedStateHandle.toRoute<LyricsViewerScreenRoute>().audioMediaId
 
     private var parsedLines: List<LyricsLine> = emptyList()
+
+    private val _eventFlow = MutableSharedFlow<LyricsViewerEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
 
     private val _data = MutableStateFlow(
         LyricsViewerUiState(
@@ -74,6 +81,19 @@ class LyricsViewerViewModel constructor(
     fun sendIntent(intent: LyricsViewerIntent) {
         when (intent) {
             LyricsViewerIntent.OnRefreshPosition -> refreshPosition()
+            LyricsViewerIntent.OnClickDeleteLyrics -> deleteLyrics()
+        }
+    }
+
+    private fun deleteLyrics() {
+        viewModelScope.launch {
+            val result = deleteAudioMediaLyricsUseCase(audioMediaId)
+            if (result.isSuccess) {
+                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사를 삭제했습니다."))
+                _eventFlow.emit(LyricsViewerEvent.NavigateToBack)
+            } else {
+                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사 삭제에 실패했습니다."))
+            }
         }
     }
 

@@ -60,6 +60,7 @@ fun AudioMediaDetailScreen(
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
     navigateToLyricsSearch: (audioMediaId: Int, query: String) -> Unit,
+    navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
 ) {
     val mainViewModel = koinViewModel<AudioMediaDetailViewModel>()
 
@@ -79,6 +80,7 @@ fun AudioMediaDetailScreen(
         navigateToMainSearchTab = navigateToMainSearchTab,
         navigateToPlaylistDetailScreen = navigateToPlaylistDetailScreen,
         navigateToLyricsSearch = navigateToLyricsSearch,
+        navigateToLyricsViewer = navigateToLyricsViewer,
         data = data,
         sendIntent = mainViewModel::sendIntent,
     )
@@ -92,6 +94,7 @@ fun AudioMediaDetailScreen(
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
     navigateToLyricsSearch: (audioMediaId: Int, query: String) -> Unit,
+    navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
     data: AudioMediaDetailUiState,
     sendIntent: (AudioMediaDetailIntent) -> Unit,
 ) {
@@ -278,33 +281,32 @@ fun AudioMediaDetailScreen(
                                     .background(MaterialTheme.colorScheme.outline)
                             )
                         }
-                        if (!data.hasLyrics) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .clickable {
-                                        navigateToLyricsSearch(
-                                            data.audioMediaId,
-                                            data.audioMediaName,
-                                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .clickable {
+                                    if (data.hasLyrics) {
+                                        navigateToLyricsViewer(data.audioMediaId)
+                                    } else {
+                                        navigateToLyricsSearch(data.audioMediaId, data.audioMediaName)
                                     }
-                                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    modifier = Modifier.weight(1f),
-                                    text = "이 음원의 가사 찾기",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                Icon(
-                                    imageVector = Icons.Rounded.ChevronRight,
-                                    contentDescription = null,
-                                )
-                            }
+                                }
+                                .padding(horizontal = 16.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                modifier = Modifier.weight(1f),
+                                text = if (data.hasLyrics) "이 음원의 가사 보기" else "이 음원의 가사 찾기",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Icon(
+                                imageVector = Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                            )
                         }
 
                         Text(
@@ -359,6 +361,7 @@ fun AudioMediaDetailScreenPreview() {
             navigateToMainSearchTab = {},
             navigateToPlaylistDetailScreen = { _, _ -> },
             navigateToLyricsSearch = { _, _ -> },
+            navigateToLyricsViewer = {},
             data = AudioMediaDetailUiState.getMock(),
             sendIntent = {}
         )
