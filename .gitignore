@@ -36,3 +36,4 @@ Thumbs.db
 /.kotlin
 /android/app/release
 /buildSrc/.kotlin
+/shared/data/src/python/__pycache__

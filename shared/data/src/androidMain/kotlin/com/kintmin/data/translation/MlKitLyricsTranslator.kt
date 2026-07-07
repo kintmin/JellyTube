@@ -28,9 +28,13 @@ internal class MlKitLyricsTranslator : LyricsTranslator {
             translator.downloadModelIfNeeded(DownloadConditions.Builder().build()).await()
 
             // 줄 단위로 번역해 가사 라인 구조를 보존한다.
-            text.split("\n").joinToString("\n") { line ->
-                if (line.isBlank()) line else translator.translate(line).await()
-            }
+            text.split("\n").map { line ->
+                if (line.isBlank()) {
+                    line
+                } else {
+                    translator.translate(line).await()
+                }
+            }.joinToString("\n")
         } finally {
             translator.close()
         }

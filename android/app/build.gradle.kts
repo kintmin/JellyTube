@@ -104,7 +104,6 @@ chaquopy {
         pip {
             install("yt-dlp")
             install("pykakasi")
-            install("hangulize")
         }
     }
 }
