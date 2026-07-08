@@ -37,6 +37,7 @@ class AudioMediaDetailViewModel constructor(
                 audioMediaName = "",
                 artist = "",
                 playTime = "",
+                audioDurationSeconds = null,
                 audioMediaCreationTime = "",
                 source = "",
                 audioMediaDescription = "",

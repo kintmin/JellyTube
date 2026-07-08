@@ -21,18 +21,17 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/android" />
+            <option value="$PROJECT_DIR$/android/app" />
+            <option value="$PROJECT_DIR$/android/platform" />
+            <option value="$PROJECT_DIR$/android/presentation" />
             <option value="$PROJECT_DIR$/buildSrc" />
-            <option value="$PROJECT_DIR$/data" />
             <option value="$PROJECT_DIR$/desktop" />
-            <option value="$PROJECT_DIR$/domain" />
-            <option value="$PROJECT_DIR$/log" />
-            <option value="$PROJECT_DIR$/log/log-api" />
-            <option value="$PROJECT_DIR$/log/log-impl" />
-            <option value="$PROJECT_DIR$/platform" />
-            <option value="$PROJECT_DIR$/presentation" />
             <option value="$PROJECT_DIR$/shared" />
+            <option value="$PROJECT_DIR$/shared/data" />
+            <option value="$PROJECT_DIR$/shared/domain" />
             <option value="$PROJECT_DIR$/shared/file-share" />
+            <option value="$PROJECT_DIR$/shared/log" />
           </set>
         </option>
       </GradleProjectSettings>

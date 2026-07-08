@@ -11,13 +11,15 @@ import kotlinx.serialization.Serializable
 data class LyricsSearchScreenRoute(
     val audioMediaId: Int,
     val initialQuery: String,
+    val durationSeconds: Double? = null,
 )
 
 fun NavController.navigateToLyricsSearchScreen(
     audioMediaId: Int,
     initialQuery: String,
+    durationSeconds: Double?,
     navOptions: NavOptions,
-) = navigate(LyricsSearchScreenRoute(audioMediaId, initialQuery), navOptions)
+) = navigate(LyricsSearchScreenRoute(audioMediaId, initialQuery, durationSeconds), navOptions)
 
 fun NavGraphBuilder.lyricsSearchScreen(
     navigateToBack: () -> Unit,

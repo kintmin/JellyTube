@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.lyrics.model.LyricsSearchResult
+import com.kintmin.domain.lyrics.usecase.BuildLyricsSearchQueryUseCase
 import com.kintmin.domain.lyrics.usecase.SearchLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.SortLyricsSearchResultsUseCase
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.ui.lyrics_search.navigation.LyricsSearchScreenRoute
 import kotlin.time.Duration.Companion.seconds
@@ -20,13 +22,18 @@ import kotlinx.coroutines.launch
 class LyricsSearchViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val searchLyricsUseCase: SearchLyricsUseCase,
+    private val buildLyricsSearchQueryUseCase: BuildLyricsSearchQueryUseCase,
+    private val sortLyricsSearchResultsUseCase: SortLyricsSearchResultsUseCase,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<LyricsSearchScreenRoute>()
     private val audioMediaId = route.audioMediaId
 
+    // 제목 원문을 검색어 규칙(괄호 제거 + 3단어)으로 정제해 초기 쿼리로 쓴다.
+    private val initialQuery = buildLyricsSearchQueryUseCase(route.initialQuery)
+
     private val _data = MutableStateFlow(
-        LyricsSearchUiState(query = route.initialQuery, isLoading = false, results = emptyList())
+        LyricsSearchUiState(query = initialQuery, isLoading = false, results = emptyList())
     )
     val data = _data.asStateFlow()
 
@@ -37,7 +44,7 @@ class LyricsSearchViewModel constructor(
     private var searchJob: Job? = null
 
     init {
-        startSearch(route.initialQuery)
+        startSearch(initialQuery)
     }
 
     fun sendIntent(intent: LyricsSearchIntent) {
@@ -80,7 +87,9 @@ class LyricsSearchViewModel constructor(
             return
         }
         _data.update { it.copy(isLoading = true) }
-        val results = searchLyricsUseCase(query).getOrNull().orEmpty().map { it.toItem() }
+        val results = searchLyricsUseCase(query).getOrNull().orEmpty()
+            .let { sortLyricsSearchResultsUseCase(it, route.durationSeconds) }
+            .map { it.toItem() }
         _data.update { it.copy(isLoading = false, results = results) }
     }
 }

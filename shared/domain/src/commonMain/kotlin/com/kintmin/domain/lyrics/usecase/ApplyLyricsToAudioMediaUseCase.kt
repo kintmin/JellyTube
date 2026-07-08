@@ -11,6 +11,8 @@ import com.kintmin.domain.lyrics.model.LyricsVariant
  *
  * 번역/음차 변형 가사가 함께 넘어오면 새 원본 파일명에서 파생한 별도 파일로 각각 저장한다.
  * 원본 파일명이 바뀌면 옛 변형 파일은 orphan 이 되므로 정리한다.
+ *
+ * 저장된 원본 가사 파일 경로(lyricFileFullPath)를 반환한다. (변형 가사 생성 등 후속 처리에 사용)
  */
 class ApplyLyricsToAudioMediaUseCase(
     private val audioMediaRepository: AudioMediaRepository,
@@ -22,7 +24,7 @@ class ApplyLyricsToAudioMediaUseCase(
         translationLyrics: String? = null,
         transliterationLyrics: String? = null,
         previousLyricFileFullPath: String? = null,
-    ): Result<Unit> = runCatching {
+    ): Result<String> = runCatching {
         val text = when {
             !syncedLyrics.isNullOrBlank() -> syncedLyrics
             !plainLyrics.isNullOrBlank() -> plainLyrics.lines().joinToString("\n") { "[00:00.00]$it" }
@@ -48,5 +50,7 @@ class ApplyLyricsToAudioMediaUseCase(
             audioMediaRepository.deleteVariantLyrics(old, LyricsVariant.TRANSLATION)
             audioMediaRepository.deleteVariantLyrics(old, LyricsVariant.TRANSLITERATION)
         }
+
+        lyricFileFullPath
     }
 }

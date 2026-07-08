@@ -7,6 +7,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 data class AudioMediaDetailUiState(
     val audioMediaId: Int,
@@ -14,6 +15,7 @@ data class AudioMediaDetailUiState(
     val audioMediaName: String,
     val artist: String,
     val playTime: String,
+    val audioDurationSeconds: Double?,
     val audioMediaCreationTime: String,
     val source: String,
     val audioMediaDescription: String,
@@ -36,6 +38,7 @@ data class AudioMediaDetailUiState(
             audioMediaName = "새로운 미디어 새로운 미디어 새로운 미디어 새로운 미디어 새로운 미디어",
             artist = "아티스트",
             playTime = "999:99",
+            audioDurationSeconds = 222.0,
             audioMediaCreationTime = "yyyy년 M월 dd일 HH:mm",
             source = "https://preview.com",
             hasLyrics = false,
@@ -61,6 +64,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
             audioMediaName = audioMedia.name,
             artist = audioMedia.artist,
             playTime = (audioMedia.audioDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
+            audioDurationSeconds = audioMedia.audioDuration?.toDouble(DurationUnit.SECONDS),
             audioMediaCreationTime = audioMedia.createdTime.toKoreanDateTimeString(),
             source = audioMedia.source,
             audioMediaDescription = audioMedia.description,
@@ -81,6 +85,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
         audioMediaName = "삭제된 음원",
         artist = "",
         playTime = 0.seconds.to_hh_colon_mm_colon_ss(),
+        audioDurationSeconds = null,
         audioMediaCreationTime = Clock.System.now()
             .toLocalDateTime(TimeZone.currentSystemDefault())
             .toKoreanDateTimeString(),

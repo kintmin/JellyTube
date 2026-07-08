@@ -61,7 +61,7 @@ fun AudioMediaDetailScreen(
     navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
-    navigateToLyricsSearch: (audioMediaId: Int, query: String) -> Unit,
+    navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
     navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
     navigateToKaraokeSearch: (audioMediaId: Int, query: String) -> Unit,
 ) {
@@ -97,7 +97,7 @@ fun AudioMediaDetailScreen(
     navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
-    navigateToLyricsSearch: (audioMediaId: Int, query: String) -> Unit,
+    navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
     navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
     navigateToKaraokeSearch: (audioMediaId: Int, query: String) -> Unit,
     data: AudioMediaDetailUiState,
@@ -303,7 +303,7 @@ fun AudioMediaDetailScreen(
                                     if (data.hasLyrics) {
                                         navigateToLyricsViewer(data.audioMediaId)
                                     } else {
-                                        navigateToLyricsSearch(data.audioMediaId, data.audioMediaName)
+                                        navigateToLyricsSearch(data.audioMediaId, data.audioMediaName, data.audioDurationSeconds)
                                     }
                                 }
                                 .padding(horizontal = 16.dp, vertical = 16.dp),
@@ -421,7 +421,7 @@ fun AudioMediaDetailScreenPreview() {
             navigationToAudioMediaEditScreen = {},
             navigateToMainSearchTab = {},
             navigateToPlaylistDetailScreen = { _, _ -> },
-            navigateToLyricsSearch = { _, _ -> },
+            navigateToLyricsSearch = { _, _, _ -> },
             navigateToLyricsViewer = {},
             navigateToKaraokeSearch = { _, _ -> },
             data = AudioMediaDetailUiState.getMock(),
