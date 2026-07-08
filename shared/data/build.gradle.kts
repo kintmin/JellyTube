@@ -52,8 +52,7 @@ kotlin {
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.kotlinx.coroutines.test)
-                // Tier 0 PoC: 피치(음정) 감지. 순수 JVM 라이브러리라 단위 테스트에서만 사용.
-                implementation("com.github.axet:TarsosDSP:2.4-1")
+                implementation("com.github.axet:TarsosDSP:2.4-1@jar")
             }
         }
 

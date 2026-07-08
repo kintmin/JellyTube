@@ -41,3 +41,4 @@ The decision tree for where to place code:
 - Database schema changes require a migration. Do not increment the version without providing a migration strategy.
 - Entity models live in `local_db/model/`. They must NOT be exposed outside this module — map to domain models in `local_db/mapper/`.
 - DAO interfaces live in `local_db/dao/`. Facades that compose multiple DAOs live in `local_db/dao_facade/`.
+- **관찰 중 삭제될 수 있는 단일 행 `Flow` 쿼리는 반드시 nullable(`Flow<T?>`)로 선언한다.** Room은 관찰 중 테이블이 변경되면 재쿼리하는데, 반환형이 non-null 단일 객체(`Flow<T>`)면 결과가 0행일 때 `IllegalStateException("query result was empty...")`을 던진다. 관찰 도중 해당 행이 삭제될 수 있으면(예: 재생/상세 화면에서 트랙·플레이리스트 삭제) `Flow<T?>`로 선언하고 소비 측(RepositoryImpl)에서 `filterNotNull()`로 삭제 순간의 null emission을 흘려보낸다. 일회성 `suspend` 단일행 쿼리는 무효화 재실행이 없어 이 레이스와 무관하지만, 호출 시점에 행이 없을 수 있으면 nullable 또는 `runCatching` 방어가 필요하다.

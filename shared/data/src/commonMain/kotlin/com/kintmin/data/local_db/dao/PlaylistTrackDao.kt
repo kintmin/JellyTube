@@ -21,7 +21,7 @@ interface PlaylistTrackDao {
 
     @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
-    fun getPlaylistTrackFullFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackFullDto>
+    fun getPlaylistTrackFullFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackFullDto?>
 
     /**
      * withTransaction 에서 실행하기 위해 Dto지만 Transaction 없이 값을 가져온다

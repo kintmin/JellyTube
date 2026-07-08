@@ -9,6 +9,7 @@ import com.kintmin.domain.playlist.repository.PlaylistRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
@@ -39,9 +40,13 @@ class PlaylistRepositoryImpl constructor(
     }
 
     override fun getPlaylistFlow(playlistId: Int): Flow<Playlist> {
-        return playlistDao.getPlaylistFlow(playlistId).map { playlist ->
-            playlist.toDomain(fileManager).getOrThrow()
-        }
+        // 관찰 도중 플레이리스트가 삭제되면 쿼리가 0행을 반환한다.
+        // 이 삭제 순간의 null emission 은 흘려보낸다 (화면은 곧 이탈).
+        return playlistDao.getPlaylistFlow(playlistId)
+            .filterNotNull()
+            .map { playlist ->
+                playlist.toDomain(fileManager).getOrThrow()
+            }
     }
 
     override suspend fun updatePlaylist(

@@ -9,6 +9,7 @@ import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
@@ -37,9 +38,11 @@ class AudioTrackRepositoryImpl constructor(
     }
 
     override fun getPlaylistTrackAggregateFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackAggregate> {
-        return playlistTrackDao.getPlaylistTrackFullFlow(playlistId, audioMediaId).map {
-            it.toDomain(fileManager).getOrThrow()
-        }
+        // 관찰 도중 해당 트랙이 플레이리스트에서 제거되면 쿼리가 0행을 반환한다.
+        // 이 삭제 순간의 null emission 은 흘려보낸다 (flatMapLatest 가 곧 재시작).
+        return playlistTrackDao.getPlaylistTrackFullFlow(playlistId, audioMediaId)
+            .filterNotNull()
+            .map { it.toDomain(fileManager).getOrThrow() }
     }
 
     override fun getPlaylistTrackAggregateListFlow(playlistId: Int): Flow<List<PlaylistTrackAggregate>> {
