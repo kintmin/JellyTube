@@ -165,6 +165,9 @@ fun MainNavHost(
         )
         lyricsSearchScreen(
             navigateToBack = { navController.popBackStack() },
+            navigateToLyricsEdit = { audioMediaId ->
+                navController.navigateToLyricsEditScreen(audioMediaId, navOptions)
+            },
             navigateToLyricsDetail = { audioMediaId, trackName, artistName, plainLyrics, syncedLyrics ->
                 navController.navigateToLyricsDetailScreen(
                     audioMediaId = audioMediaId,

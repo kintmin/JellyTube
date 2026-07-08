@@ -8,4 +8,6 @@ sealed interface LyricsSearchEvent {
         val plainLyrics: String,
         val syncedLyrics: String,
     ) : LyricsSearchEvent
+
+    data class NavigateToLyricsEdit(val audioMediaId: Int) : LyricsSearchEvent
 }

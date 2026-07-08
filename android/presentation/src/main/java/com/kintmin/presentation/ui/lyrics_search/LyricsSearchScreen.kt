@@ -1,9 +1,12 @@
 package com.kintmin.presentation.ui.lyrics_search
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,6 +49,7 @@ fun LyricsSearchScreen(
         plainLyrics: String,
         syncedLyrics: String,
     ) -> Unit,
+    navigateToLyricsEdit: (audioMediaId: Int) -> Unit,
 ) {
     val viewModel = koinViewModel<LyricsSearchViewModel>()
     val data by viewModel.data.collectAsState()
@@ -59,6 +64,8 @@ fun LyricsSearchScreen(
                     event.plainLyrics,
                     event.syncedLyrics,
                 )
+
+                is LyricsSearchEvent.NavigateToLyricsEdit -> navigateToLyricsEdit(event.audioMediaId)
             }
         }
     }
@@ -93,6 +100,24 @@ fun LyricsSearchScreen(
                     }
                 },
             )
+        },
+        bottomBar = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .navigationBarsPadding()
+                    .padding(16.dp),
+            ) {
+                Button(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    onClick = { sendIntent(LyricsSearchIntent.OnClickAddLyricsManually) },
+                ) {
+                    Text(text = "가사 직접 추가하기")
+                }
+            }
         },
     ) { innerPadding ->
         LazyColumn(

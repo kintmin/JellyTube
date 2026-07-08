@@ -76,7 +76,7 @@ class LyricsEditViewModel constructor(
                         val transliteration = lyricFileFullPath?.let {
                             getLyricsVariantUseCase(it, LyricsVariant.TRANSLITERATION).getOrNull()
                         }
-                        val rows = if (lyricFileFullPath == null) {
+                        val loadedRows = if (lyricFileFullPath == null) {
                             emptyList()
                         } else {
                             val rawLyrics = getAudioMediaLyricsUseCase(lyricFileFullPath).getOrNull().orEmpty()
@@ -105,6 +105,10 @@ class LyricsEditViewModel constructor(
                                     )
                                 }
                             }
+                        }
+                        // 가사 파일이 없거나 비어 있으면 바로 입력할 수 있도록 빈 편집 행 1개를 시드한다.
+                        val rows = loadedRows.ifEmpty {
+                            listOf(newRow(timeMs = 0L, text = "", isModified = false))
                         }
                         _data.update {
                             it.copy(

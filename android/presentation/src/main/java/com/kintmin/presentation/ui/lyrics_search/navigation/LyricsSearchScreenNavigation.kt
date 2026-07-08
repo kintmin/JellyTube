@@ -28,11 +28,13 @@ fun NavGraphBuilder.lyricsSearchScreen(
         plainLyrics: String,
         syncedLyrics: String,
     ) -> Unit,
+    navigateToLyricsEdit: (audioMediaId: Int) -> Unit,
 ) {
     composable<LyricsSearchScreenRoute> {
         LyricsSearchScreen(
             navigateToBack = navigateToBack,
             navigateToLyricsDetail = navigateToLyricsDetail,
+            navigateToLyricsEdit = navigateToLyricsEdit,
         )
     }
 }

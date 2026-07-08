@@ -60,6 +60,11 @@ class LyricsSearchViewModel constructor(
                         )
                     )
                 }
+
+            LyricsSearchIntent.OnClickAddLyricsManually ->
+                viewModelScope.launch {
+                    _eventFlow.emit(LyricsSearchEvent.NavigateToLyricsEdit(audioMediaId))
+                }
         }
     }
 
