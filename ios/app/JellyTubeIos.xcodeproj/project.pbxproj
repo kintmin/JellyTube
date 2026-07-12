@@ -25,6 +25,9 @@
 		C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */ = {isa = PBXBuildFile; productRef = C9E4F4102FD14000009FB07B /* PythonKit */; };
 		C9E4F4092FD122EA009FB07B /* PlaylistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4F4082FD122E3009FB07B /* PlaylistItem.swift */; };
 		C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */; };
+		4A0000000000000000000061 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000060 /* Python.xcframework */; };
+		4A0000000000000000000062 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000060 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4A0000000000000000000064 /* app_packages in Resources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000063 /* app_packages */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +48,8 @@
 		4A000000000000000000002B /* GlassComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassComponents.swift; sourceTree = "<group>"; };
 		C9E4F4082FD122E3009FB07B /* PlaylistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistItem.swift; sourceTree = "<group>"; };
 		C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonExecutorBridgeImpl.swift; sourceTree = "<group>"; };
+		4A0000000000000000000060 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Python.xcframework; path = Vendor/Python/Python.xcframework; sourceTree = SOURCE_ROOT; };
+		4A0000000000000000000063 /* app_packages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = app_packages; path = Vendor/Python/app-packages; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,18 +59,51 @@
 			files = (
 				4A000000000000000000003C /* ComposableArchitecture in Frameworks */,
 				C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */,
+				4A0000000000000000000061 /* Python.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4A0000000000000000000065 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				4A0000000000000000000062 /* Python.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXGroup section */
 		4A0000000000000000000004 = {
 			isa = PBXGroup;
 			children = (
 				4A0000000000000000000005 /* JellyTubeIos */,
+				4A0000000000000000000067 /* Vendor */,
 				4A0000000000000000000006 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		4A0000000000000000000067 /* Vendor */ = {
+			isa = PBXGroup;
+			children = (
+				4A0000000000000000000068 /* Python */,
+			);
+			name = Vendor;
+			sourceTree = "<group>";
+		};
+		4A0000000000000000000068 /* Python */ = {
+			isa = PBXGroup;
+			children = (
+				4A0000000000000000000060 /* Python.xcframework */,
+				4A0000000000000000000063 /* app_packages */,
+			);
+			name = Python;
 			sourceTree = "<group>";
 		};
 		4A0000000000000000000005 /* JellyTubeIos */ = {
@@ -166,6 +204,8 @@
 				4A000000000000000000000D /* Sources */,
 				4A000000000000000000000F /* Frameworks */,
 				4A000000000000000000000E /* Resources */,
+				4A0000000000000000000066 /* Install Python (stdlib + app_packages) */,
+				4A0000000000000000000065 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -226,6 +266,7 @@
 			files = (
 				4A000000000000000000000C /* Assets.xcassets in Resources */,
 				C9E4F40D2FD13000009FB07B /* python in Resources */,
+				4A0000000000000000000064 /* app_packages in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,6 +291,25 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "cd \"$SRCROOT/../..\"\nsh ./gradlew :shared:data:embedAndSignAppleFrameworkForXcode\n";
+		};
+		4A0000000000000000000066 /* Install Python (stdlib + app_packages) */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Install Python (stdlib + app_packages)";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nsource \"$PROJECT_DIR/Vendor/Python/Python.xcframework/build/utils.sh\"\ninstall_python Vendor/Python/Python.xcframework app-packages/yt_dlp\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

@@ -36,4 +36,27 @@ Thumbs.db
 /.kotlin
 /android/app/release
 /buildSrc/.kotlin
-/shared/data/src/python/__pycache__
+
+# Python
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Xcode / iOS
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.xcresult
+DerivedData/
+.swiftpm/xcode/xcuserdata/
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+
+# iOS vendored artifacts (Python.xcframework, app-packages) — downloaded, not tracked
+/ios/app/Vendor/

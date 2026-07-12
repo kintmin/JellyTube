@@ -80,8 +80,23 @@ private final class PythonRuntime {
         let function = module[dynamicMember: functionName]
         let result = function.dynamicallyCall(withArguments: arguments.map(PythonObject.init))
 
-        guard let list = Array<String>(result) else {
-            throw PythonExecutorBridgeError.invalidPlaylistResult
+        return convertPythonSequenceToStrings(result)
+    }
+
+    // Python이 반환하는 튜플/리스트가 str/int/None 혼합일 수 있어 각 원소를 문자열로 관대하게 변환한다.
+    private func convertPythonSequenceToStrings(_ result: PythonObject) -> [String] {
+        guard let count = Int(Python.len(result)) else { return [] }
+        var list: [String] = []
+        list.reserveCapacity(count)
+        for index in 0..<count {
+            let item = result[PythonObject(index)]
+            if item == Python.None {
+                list.append("")
+            } else if let str = String(item) {
+                list.append(str)
+            } else {
+                list.append(String(Python.str(item)) ?? "")
+            }
         }
         return list
     }
@@ -89,11 +104,23 @@ private final class PythonRuntime {
     private func configurePythonIfNeeded() {
         guard !didConfigurePython else { return }
 
-        if let pythonLibraryPath {
-            PythonLibrary.useLibrary(at: pythonLibraryPath)
+        let bundlePath = Bundle.main.bundlePath
+        let pythonHome = "\(bundlePath)/python"
+        let appPackages = "\(bundlePath)/app-packages"
+
+        setenv("PYTHONHOME", pythonHome, 1)
+        setenv("PYTHONPATH", "\(pythonHome):\(appPackages)", 1)
+        setenv("PYTHONDONTWRITEBYTECODE", "1", 1)
+        setenv("PYTHONUNBUFFERED", "1", 1)
+
+        if let libPath = pythonLibraryPath,
+           FileManager.default.fileExists(atPath: libPath) {
+            PythonLibrary.useLibrary(at: libPath)
         }
 
         let sys = Python.import("sys")
+        sys.path.insert(0, PythonObject(pythonHome))
+        sys.path.insert(0, PythonObject(appPackages))
         sys.path.insert(0, PythonObject(pythonSourcePath()))
         didConfigurePython = true
     }
@@ -110,6 +137,7 @@ private final class PythonRuntime {
         let bundlePath = Bundle.main.bundlePath
         let processPath = ProcessInfo.processInfo.environment["PWD"]
         let candidates = [
+            "\(bundlePath)/python",
             processPath?.components(separatedBy: "/ios/app").first.map { "\($0)/shared/data/src/python" },
             "\(bundlePath)/shared/data/src/python",
             "\(bundlePath)/src/python",
