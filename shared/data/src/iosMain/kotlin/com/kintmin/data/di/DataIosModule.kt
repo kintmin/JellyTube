@@ -1,5 +1,7 @@
 package com.kintmin.data.di
 
+import com.kintmin.data.device_status.DeviceStatus
+import com.kintmin.data.device_status.DeviceStatusImpl
 import com.kintmin.data.local_datastore.createIosPreferencesDataStore
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.database.createIosJellyTubeDatabase
@@ -9,4 +11,5 @@ import org.koin.dsl.module
 val dataIosModule: Module = module {
     single { createIosPreferencesDataStore() }
     single<JellyTubeDatabase> { createIosJellyTubeDatabase() }
+    single<DeviceStatus> { DeviceStatusImpl() }
 }

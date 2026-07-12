@@ -16,6 +16,7 @@
 		4A0000000000000000000035 /* YoutubeSearchFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000025 /* YoutubeSearchFeature.swift */; };
 		4A0000000000000000000036 /* YoutubeSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000026 /* YoutubeSearchView.swift */; };
 		4A0000000000000000000037 /* YoutubeWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000027 /* YoutubeWebView.swift */; };
+		4A000000000000000000004A /* YoutubeDownloadClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000049 /* YoutubeDownloadClient.swift */; };
 		4A0000000000000000000038 /* PlaylistClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000028 /* PlaylistClient.swift */; };
 		4A0000000000000000000039 /* PlaylistFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000029 /* PlaylistFeature.swift */; };
 		4A000000000000000000003A /* PlaylistScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000002A /* PlaylistScreenView.swift */; };
@@ -37,6 +38,7 @@
 		4A0000000000000000000025 /* YoutubeSearchFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeSearchFeature.swift; sourceTree = "<group>"; };
 		4A0000000000000000000026 /* YoutubeSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeSearchView.swift; sourceTree = "<group>"; };
 		4A0000000000000000000027 /* YoutubeWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeWebView.swift; sourceTree = "<group>"; };
+		4A0000000000000000000049 /* YoutubeDownloadClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeDownloadClient.swift; sourceTree = "<group>"; };
 		4A0000000000000000000028 /* PlaylistClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistClient.swift; sourceTree = "<group>"; };
 		4A0000000000000000000029 /* PlaylistFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistFeature.swift; sourceTree = "<group>"; };
 		4A000000000000000000002A /* PlaylistScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistScreenView.swift; sourceTree = "<group>"; };
@@ -118,6 +120,7 @@
 		4A0000000000000000000044 /* YoutubeSearch */ = {
 			isa = PBXGroup;
 			children = (
+				4A0000000000000000000049 /* YoutubeDownloadClient.swift */,
 				4A0000000000000000000025 /* YoutubeSearchFeature.swift */,
 				4A0000000000000000000026 /* YoutubeSearchView.swift */,
 				4A0000000000000000000027 /* YoutubeWebView.swift */,
@@ -262,6 +265,7 @@
 				4A0000000000000000000035 /* YoutubeSearchFeature.swift in Sources */,
 				4A0000000000000000000036 /* YoutubeSearchView.swift in Sources */,
 				4A0000000000000000000037 /* YoutubeWebView.swift in Sources */,
+				4A000000000000000000004A /* YoutubeDownloadClient.swift in Sources */,
 				4A0000000000000000000038 /* PlaylistClient.swift in Sources */,
 				4A0000000000000000000039 /* PlaylistFeature.swift in Sources */,
 				4A000000000000000000003A /* PlaylistScreenView.swift in Sources */,
