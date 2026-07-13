@@ -9,6 +9,11 @@ struct PlaylistFeature {
         case uncategorized
     }
 
+    @Reducer(state: .equatable, action: .equatable)
+    enum Path {
+        case detail(PlaylistDetailFeature)
+    }
+
     @ObservableState
     struct State: Equatable {
         var playlists: [PlaylistItem] = []
@@ -18,6 +23,7 @@ struct PlaylistFeature {
         var isLoading = false
         @Presents var alert: AlertState<Action.Alert>?
         var isPlaylistSubscriptionActive = false
+        var path = StackState<Path.State>()
 
         var trimmedNewPlaylistTitle: String {
             newPlaylistTitle.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -58,6 +64,7 @@ struct PlaylistFeature {
         case operationFailed(String)
         case topTabSelected(PlaylistTopTab)
         case settingsTapped
+        case path(StackActionOf<Path>)
 
         enum Alert: Equatable {}
     }
@@ -148,9 +155,13 @@ struct PlaylistFeature {
 
             case .settingsTapped:
                 return .none
+
+            case .path:
+                return .none
             }
         }
         .ifLet(\.$alert, action: \.alert)
+        .forEach(\.path, action: \.path)
     }
 
     private enum CancelID {

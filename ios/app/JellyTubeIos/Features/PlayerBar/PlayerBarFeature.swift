@@ -10,6 +10,7 @@ struct PlayerBarFeature {
         var currentSeconds: Int = 22 * 60 + 30
         var totalSeconds: Int = 43 * 60 + 35
         var isPlaying: Bool = false
+        var nowPlayingAudioMediaId: Int? = nil
 
         var progress: Double {
             guard totalSeconds > 0 else { return 0 }

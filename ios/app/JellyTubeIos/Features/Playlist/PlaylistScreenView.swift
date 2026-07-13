@@ -5,7 +5,7 @@ struct PlaylistScreenView: View {
     @Bindable var store: StoreOf<PlaylistFeature>
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
             ZStack {
                 GlassBackground()
                 content
@@ -19,6 +19,11 @@ struct PlaylistScreenView: View {
             .alert($store.scope(state: \.alert, action: \.alert))
             .task {
                 store.send(.task)
+            }
+        } destination: { store in
+            switch store.case {
+            case let .detail(detailStore):
+                PlaylistDetailScreenView(store: detailStore)
             }
         }
     }
@@ -75,12 +80,19 @@ struct PlaylistScreenView: View {
                 ) {
                     ForEach(store.displayedPlaylists) { item in
                         let canDelete = store.deletablePlaylistIDs.contains(item.id)
-                        PlaylistCard(
-                            item: item,
-                            onDelete: canDelete
-                                ? { store.send(.deletePlaylist(item.id)) }
-                                : nil
-                        )
+                        NavigationLink(
+                            state: PlaylistFeature.Path.State.detail(
+                                PlaylistDetailFeature.State(playlistId: item.id)
+                            )
+                        ) {
+                            PlaylistCard(
+                                item: item,
+                                onDelete: canDelete
+                                    ? { store.send(.deletePlaylist(item.id)) }
+                                    : nil
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 16)

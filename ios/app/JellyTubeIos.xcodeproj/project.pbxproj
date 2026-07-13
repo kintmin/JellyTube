@@ -33,6 +33,11 @@
 		4A0000000000000000000076 /* PlayerBarScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000075 /* PlayerBarScreenView.swift */; };
 		4A0000000000000000000078 /* PlaylistTopSegment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000077 /* PlaylistTopSegment.swift */; };
 		4A000000000000000000007A /* PlaylistCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000079 /* PlaylistCard.swift */; };
+		4A000000000000000000007D /* PlaylistDetailItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000007C /* PlaylistDetailItem.swift */; };
+		4A000000000000000000007F /* PlaylistDetailClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000007E /* PlaylistDetailClient.swift */; };
+		4A0000000000000000000081 /* PlaylistDetailFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000080 /* PlaylistDetailFeature.swift */; };
+		4A0000000000000000000083 /* PlaylistDetailRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000082 /* PlaylistDetailRow.swift */; };
+		4A0000000000000000000085 /* PlaylistDetailScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000084 /* PlaylistDetailScreenView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -60,6 +65,11 @@
 		4A0000000000000000000075 /* PlayerBarScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBarScreenView.swift; sourceTree = "<group>"; };
 		4A0000000000000000000077 /* PlaylistTopSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistTopSegment.swift; sourceTree = "<group>"; };
 		4A0000000000000000000079 /* PlaylistCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistCard.swift; sourceTree = "<group>"; };
+		4A000000000000000000007C /* PlaylistDetailItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailItem.swift; sourceTree = "<group>"; };
+		4A000000000000000000007E /* PlaylistDetailClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailClient.swift; sourceTree = "<group>"; };
+		4A0000000000000000000080 /* PlaylistDetailFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailFeature.swift; sourceTree = "<group>"; };
+		4A0000000000000000000082 /* PlaylistDetailRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailRow.swift; sourceTree = "<group>"; };
+		4A0000000000000000000084 /* PlaylistDetailScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailScreenView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -153,8 +163,21 @@
 				4A0000000000000000000072 /* PlayerBar */,
 				4A0000000000000000000044 /* YoutubeSearch */,
 				4A0000000000000000000045 /* Playlist */,
+				4A000000000000000000007B /* PlaylistDetail */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		4A000000000000000000007B /* PlaylistDetail */ = {
+			isa = PBXGroup;
+			children = (
+				4A000000000000000000007C /* PlaylistDetailItem.swift */,
+				4A000000000000000000007E /* PlaylistDetailClient.swift */,
+				4A0000000000000000000080 /* PlaylistDetailFeature.swift */,
+				4A0000000000000000000082 /* PlaylistDetailRow.swift */,
+				4A0000000000000000000084 /* PlaylistDetailScreenView.swift */,
+			);
+			path = PlaylistDetail;
 			sourceTree = "<group>";
 		};
 		4A0000000000000000000043 /* Main */ = {
@@ -358,6 +381,11 @@
 				4A0000000000000000000078 /* PlaylistTopSegment.swift in Sources */,
 				4A000000000000000000007A /* PlaylistCard.swift in Sources */,
 				C9E4F4092FD122EA009FB07B /* PlaylistItem.swift in Sources */,
+				4A000000000000000000007D /* PlaylistDetailItem.swift in Sources */,
+				4A000000000000000000007F /* PlaylistDetailClient.swift in Sources */,
+				4A0000000000000000000081 /* PlaylistDetailFeature.swift in Sources */,
+				4A0000000000000000000083 /* PlaylistDetailRow.swift in Sources */,
+				4A0000000000000000000085 /* PlaylistDetailScreenView.swift in Sources */,
 				C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */,
 				4A000000000000000000003B /* GlassComponents.swift in Sources */,
 			);
