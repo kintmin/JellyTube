@@ -11,22 +11,38 @@ struct MainScreenView: View {
     }
 
     var body: some View {
-        TabView(selection: $store.selectedTab) {
+        ZStack {
+            GlassBackground()
+            currentScreen
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 8) {
+                PlayerBarScreenView(
+                    store: store.scope(state: \.playerBar, action: \.playerBar)
+                )
+                CustomBottomBar(
+                    selection: Binding(
+                        get: { store.selectedTab },
+                        set: { store.send(.binding(.set(\.selectedTab, $0))) }
+                    )
+                )
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 4)
+        }
+    }
+
+    @ViewBuilder
+    private var currentScreen: some View {
+        switch store.selectedTab {
+        case .playlist:
             PlaylistScreenView(
                 store: store.scope(state: \.playlist, action: \.playlist)
             )
-            .tabItem {
-                Label("Playlist", systemImage: "music.note.list")
-            }
-            .tag(MainTab.playlist)
-
+        case .youtubeSearch:
             YoutubeSearchView(
                 store: store.scope(state: \.youtubeSearch, action: \.youtubeSearch)
             )
-            .tabItem {
-                Label("YouTube", systemImage: "play.rectangle")
-            }
-            .tag(MainTab.youtubeSearch)
         }
     }
 }

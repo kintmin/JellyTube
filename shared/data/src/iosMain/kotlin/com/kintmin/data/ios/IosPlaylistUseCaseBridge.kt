@@ -49,6 +49,10 @@ fun createIosAddNewPlaylistUseCaseBridge(): IosAddNewPlaylistUseCaseBridge =
 fun createIosDeletePlaylistUseCaseBridge(): IosDeletePlaylistUseCaseBridge =
     IosDeletePlaylistUseCaseBridge()
 
+// Swift 측에서 kotlin.time.Duration 접근이 SKIE 매핑 상 번거로우므로 초 단위 Long 헬퍼를 노출한다.
+fun playlistPlayTimeDurationSeconds(playlist: Playlist): Long =
+    playlist.playTimeDuration.inWholeSeconds
+
 private val iosAppScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
 private class IosSystemPlaylistInitializer : KoinComponent {

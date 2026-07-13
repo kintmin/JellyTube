@@ -3,9 +3,16 @@ import Foundation
 
 @Reducer
 struct PlaylistFeature {
+    enum PlaylistTopTab: Hashable, CaseIterable, Sendable {
+        case myPlaylists
+        case all
+        case uncategorized
+    }
+
     @ObservableState
     struct State: Equatable {
         var playlists: [PlaylistItem] = []
+        var selectedTopTab: PlaylistTopTab = .myPlaylists
         var newPlaylistTitle = ""
         var isAddSheetPresented = false
         var isLoading = false
@@ -24,6 +31,15 @@ struct PlaylistFeature {
             Set(playlists.filter { Self.isPlaylistDeletable(id: $0.id) }.map(\.id))
         }
 
+        var displayedPlaylists: [PlaylistItem] {
+            switch selectedTopTab {
+            case .myPlaylists:
+                return playlists
+            case .all, .uncategorized:
+                return []
+            }
+        }
+
         static func isPlaylistDeletable(id: Int) -> Bool {
             id > 2
         }
@@ -40,6 +56,8 @@ struct PlaylistFeature {
         case addPlaylistConfirmed
         case deletePlaylist(Int)
         case operationFailed(String)
+        case topTabSelected(PlaylistTopTab)
+        case settingsTapped
 
         enum Alert: Equatable {}
     }
@@ -122,6 +140,13 @@ struct PlaylistFeature {
                     TextState(message)
                 }
                 state.isLoading = false
+                return .none
+
+            case let .topTabSelected(tab):
+                state.selectedTopTab = tab
+                return .none
+
+            case .settingsTapped:
                 return .none
             }
         }

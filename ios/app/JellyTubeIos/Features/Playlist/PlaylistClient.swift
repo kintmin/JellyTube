@@ -37,7 +37,13 @@ extension PlaylistClient {
                                             id: Int(playlist.id),
                                             title: playlist.name,
                                             description: playlist.description_,
-                                            audioMediaCount: Int(playlist.audioMediaCount)
+                                            audioMediaCount: Int(playlist.audioMediaCount),
+                                            coverImageURL: playlist.imageFileFullPath.flatMap { path in
+                                                path.isEmpty ? nil : URL(fileURLWithPath: path)
+                                            },
+                                            totalDurationSeconds: Int(
+                                                IosPlaylistUseCaseBridgeKt.playlistPlayTimeDurationSeconds(playlist: playlist)
+                                            )
                                         )
                                     }
                                 )

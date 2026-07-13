@@ -28,6 +28,11 @@
 		4A0000000000000000000061 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000060 /* Python.xcframework */; };
 		4A0000000000000000000062 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000060 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4A0000000000000000000064 /* app_packages in Resources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000063 /* app_packages */; };
+		4A0000000000000000000071 /* CustomBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000070 /* CustomBottomBar.swift */; };
+		4A0000000000000000000074 /* PlayerBarFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000073 /* PlayerBarFeature.swift */; };
+		4A0000000000000000000076 /* PlayerBarScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000075 /* PlayerBarScreenView.swift */; };
+		4A0000000000000000000078 /* PlaylistTopSegment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000077 /* PlaylistTopSegment.swift */; };
+		4A000000000000000000007A /* PlaylistCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000079 /* PlaylistCard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +55,11 @@
 		C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonExecutorBridgeImpl.swift; sourceTree = "<group>"; };
 		4A0000000000000000000060 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Python.xcframework; path = Vendor/Python/Python.xcframework; sourceTree = SOURCE_ROOT; };
 		4A0000000000000000000063 /* app_packages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = app_packages; path = Vendor/Python/app-packages; sourceTree = SOURCE_ROOT; };
+		4A0000000000000000000070 /* CustomBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomBottomBar.swift; sourceTree = "<group>"; };
+		4A0000000000000000000073 /* PlayerBarFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBarFeature.swift; sourceTree = "<group>"; };
+		4A0000000000000000000075 /* PlayerBarScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBarScreenView.swift; sourceTree = "<group>"; };
+		4A0000000000000000000077 /* PlaylistTopSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistTopSegment.swift; sourceTree = "<group>"; };
+		4A0000000000000000000079 /* PlaylistCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,6 +150,7 @@
 			isa = PBXGroup;
 			children = (
 				4A0000000000000000000043 /* Main */,
+				4A0000000000000000000072 /* PlayerBar */,
 				4A0000000000000000000044 /* YoutubeSearch */,
 				4A0000000000000000000045 /* Playlist */,
 			);
@@ -151,8 +162,18 @@
 			children = (
 				4A0000000000000000000023 /* MainFeature.swift */,
 				4A0000000000000000000024 /* MainScreenView.swift */,
+				4A0000000000000000000070 /* CustomBottomBar.swift */,
 			);
 			path = Main;
+			sourceTree = "<group>";
+		};
+		4A0000000000000000000072 /* PlayerBar */ = {
+			isa = PBXGroup;
+			children = (
+				4A0000000000000000000073 /* PlayerBarFeature.swift */,
+				4A0000000000000000000075 /* PlayerBarScreenView.swift */,
+			);
+			path = PlayerBar;
 			sourceTree = "<group>";
 		};
 		4A0000000000000000000044 /* YoutubeSearch */ = {
@@ -173,6 +194,8 @@
 				4A0000000000000000000028 /* PlaylistClient.swift */,
 				4A0000000000000000000029 /* PlaylistFeature.swift */,
 				4A000000000000000000002A /* PlaylistScreenView.swift */,
+				4A0000000000000000000077 /* PlaylistTopSegment.swift */,
+				4A0000000000000000000079 /* PlaylistCard.swift */,
 			);
 			path = Playlist;
 			sourceTree = "<group>";
@@ -322,6 +345,9 @@
 				4A000000000000000000000B /* ContentView.swift in Sources */,
 				4A0000000000000000000033 /* MainFeature.swift in Sources */,
 				4A0000000000000000000034 /* MainScreenView.swift in Sources */,
+				4A0000000000000000000071 /* CustomBottomBar.swift in Sources */,
+				4A0000000000000000000074 /* PlayerBarFeature.swift in Sources */,
+				4A0000000000000000000076 /* PlayerBarScreenView.swift in Sources */,
 				4A0000000000000000000035 /* YoutubeSearchFeature.swift in Sources */,
 				4A0000000000000000000036 /* YoutubeSearchView.swift in Sources */,
 				4A0000000000000000000037 /* YoutubeWebView.swift in Sources */,
@@ -329,6 +355,8 @@
 				4A0000000000000000000038 /* PlaylistClient.swift in Sources */,
 				4A0000000000000000000039 /* PlaylistFeature.swift in Sources */,
 				4A000000000000000000003A /* PlaylistScreenView.swift in Sources */,
+				4A0000000000000000000078 /* PlaylistTopSegment.swift in Sources */,
+				4A000000000000000000007A /* PlaylistCard.swift in Sources */,
 				C9E4F4092FD122EA009FB07B /* PlaylistItem.swift in Sources */,
 				C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */,
 				4A000000000000000000003B /* GlassComponents.swift in Sources */,
