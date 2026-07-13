@@ -40,7 +40,8 @@ extension PlaylistDetailClient {
                                             durationSeconds: seconds,
                                             coverImageURL: audioMedia.imageFileFullPath.flatMap { path in
                                                 path.isEmpty ? nil : URL(fileURLWithPath: path)
-                                            }
+                                            },
+                                            audioFileURL: URL(fileURLWithPath: audioMedia.audioFileFullPath)
                                         )
                                     }
                                 )

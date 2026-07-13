@@ -38,6 +38,9 @@
 		4A0000000000000000000081 /* PlaylistDetailFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000080 /* PlaylistDetailFeature.swift */; };
 		4A0000000000000000000083 /* PlaylistDetailRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000082 /* PlaylistDetailRow.swift */; };
 		4A0000000000000000000085 /* PlaylistDetailScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000084 /* PlaylistDetailScreenView.swift */; };
+		4A0000000000000000000088 /* MediaControllerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000087 /* MediaControllerItem.swift */; };
+		4A000000000000000000008A /* MediaControllerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000089 /* MediaControllerEngine.swift */; };
+		4A000000000000000000008C /* MediaControllerClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008B /* MediaControllerClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -70,6 +73,9 @@
 		4A0000000000000000000080 /* PlaylistDetailFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailFeature.swift; sourceTree = "<group>"; };
 		4A0000000000000000000082 /* PlaylistDetailRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailRow.swift; sourceTree = "<group>"; };
 		4A0000000000000000000084 /* PlaylistDetailScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailScreenView.swift; sourceTree = "<group>"; };
+		4A0000000000000000000087 /* MediaControllerItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerItem.swift; sourceTree = "<group>"; };
+		4A0000000000000000000089 /* MediaControllerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerEngine.swift; sourceTree = "<group>"; };
+		4A000000000000000000008B /* MediaControllerClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -227,6 +233,7 @@
 			isa = PBXGroup;
 			children = (
 				4A0000000000000000000047 /* UI */,
+				4A0000000000000000000086 /* MediaController */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -237,6 +244,16 @@
 				4A000000000000000000002B /* GlassComponents.swift */,
 			);
 			path = UI;
+			sourceTree = "<group>";
+		};
+		4A0000000000000000000086 /* MediaController */ = {
+			isa = PBXGroup;
+			children = (
+				4A0000000000000000000087 /* MediaControllerItem.swift */,
+				4A0000000000000000000089 /* MediaControllerEngine.swift */,
+				4A000000000000000000008B /* MediaControllerClient.swift */,
+			);
+			path = MediaController;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -388,6 +405,9 @@
 				4A0000000000000000000085 /* PlaylistDetailScreenView.swift in Sources */,
 				C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */,
 				4A000000000000000000003B /* GlassComponents.swift in Sources */,
+				4A0000000000000000000088 /* MediaControllerItem.swift in Sources */,
+				4A000000000000000000008A /* MediaControllerEngine.swift in Sources */,
+				4A000000000000000000008C /* MediaControllerClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -408,6 +428,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = JellyTube;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -443,6 +464,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = JellyTube;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (

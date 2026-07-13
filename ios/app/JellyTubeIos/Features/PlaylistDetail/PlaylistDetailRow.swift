@@ -3,6 +3,7 @@ import SwiftUI
 struct PlaylistDetailRow: View {
     let item: PlaylistDetailItem
     let isNowPlaying: Bool
+    let onTap: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
@@ -32,6 +33,7 @@ struct PlaylistDetailRow: View {
         }
         .padding(.vertical, 10)
         .contentShape(Rectangle())
+        .onTapGesture { onTap() }
     }
 
     private var subtitle: String {
@@ -80,23 +82,29 @@ struct PlaylistDetailRow: View {
             PlaylistDetailRow(
                 item: PlaylistDetailItem(
                     id: 1, title: "추억속의 그대", artist: "dosii",
-                    durationSeconds: 233, coverImageURL: nil
+                    durationSeconds: 233, coverImageURL: nil,
+                    audioFileURL: URL(fileURLWithPath: "/dev/null")
                 ),
-                isNowPlaying: false
+                isNowPlaying: false,
+                onTap: {}
             )
             PlaylistDetailRow(
                 item: PlaylistDetailItem(
                     id: 5, title: "Yunomix vol.4", artist: "Yunomi",
-                    durationSeconds: 233, coverImageURL: nil
+                    durationSeconds: 233, coverImageURL: nil,
+                    audioFileURL: URL(fileURLWithPath: "/dev/null")
                 ),
-                isNowPlaying: true
+                isNowPlaying: true,
+                onTap: {}
             )
             PlaylistDetailRow(
                 item: PlaylistDetailItem(
                     id: 6, title: "아주 긴 곡 제목이 한 줄에 안 들어가는 예시입니다",
-                    artist: "긴 아티스트 이름", durationSeconds: nil, coverImageURL: nil
+                    artist: "긴 아티스트 이름", durationSeconds: nil, coverImageURL: nil,
+                    audioFileURL: URL(fileURLWithPath: "/dev/null")
                 ),
-                isNowPlaying: false
+                isNowPlaying: false,
+                onTap: {}
             )
         }
         .padding(.horizontal, 16)

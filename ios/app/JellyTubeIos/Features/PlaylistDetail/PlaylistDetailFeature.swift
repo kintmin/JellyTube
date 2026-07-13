@@ -19,12 +19,14 @@ struct PlaylistDetailFeature {
         case task
         case subscriptionFinished
         case tracksUpdated([PlaylistDetailItem])
+        case rowTapped(Int)
         case operationFailed(String)
 
         enum Alert: Equatable {}
     }
 
     @Dependency(\.playlistDetailClient) var playlistDetailClient
+    @Dependency(\.mediaControllerClient) var mediaControllerClient
 
     var body: some ReducerOf<Self> {
         BindingReducer()
@@ -59,6 +61,22 @@ struct PlaylistDetailFeature {
                 state.tracks = tracks
                 state.isLoading = false
                 return .none
+
+            case let .rowTapped(audioMediaId):
+                let playlistId = state.playlistId
+                let items = state.tracks.map { track in
+                    MediaControllerItem(
+                        id: track.id,
+                        title: track.title,
+                        artist: track.artist,
+                        fileURL: track.audioFileURL,
+                        artworkURL: track.coverImageURL,
+                        durationSeconds: track.durationSeconds
+                    )
+                }
+                return .run { [mediaControllerClient] _ in
+                    await mediaControllerClient.play(playlistId, audioMediaId, items)
+                }
 
             case let .operationFailed(message):
                 state.alert = AlertState {

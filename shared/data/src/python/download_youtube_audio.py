@@ -15,7 +15,7 @@ def test_extract(url, audio_path):
 def download_audio(url, audio_path):
     try:
         ydl_opts = {
-            'format': 'bestaudio/best',
+            'format': 'bestaudio[ext=m4a]/bestaudio[acodec=aac]/bestaudio/best',
             'force_generic_extractor': True,
             'outtmpl': audio_path,
             'cachedir': False,

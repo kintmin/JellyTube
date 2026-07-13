@@ -6,4 +6,5 @@ struct PlaylistDetailItem: Identifiable, Equatable, Sendable {
     let artist: String
     let durationSeconds: Int?
     let coverImageURL: URL?
+    let audioFileURL: URL
 }

@@ -37,6 +37,9 @@ struct PlayerBarScreenView: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(.primary.opacity(0.12), lineWidth: 1)
         }
+        .task {
+            store.send(.task)
+        }
     }
 
     private var progressLine: some View {
@@ -92,8 +95,15 @@ struct PlayerBarScreenView: View {
     ZStack {
         GlassBackground()
         PlayerBarScreenView(
-            store: Store(initialState: PlayerBarFeature.State()) {
-                PlayerBarFeature()
+            store: Store(
+                initialState: PlayerBarFeature.State(
+                    title: "Yunomix vol.4",
+                    currentSeconds: 22 * 60 + 30,
+                    totalSeconds: 43 * 60 + 35,
+                    isPlaying: false
+                )
+            ) {
+                EmptyReducer()
             }
         )
         .padding(.horizontal, 12)
@@ -112,7 +122,7 @@ struct PlayerBarScreenView: View {
                     isPlaying: true
                 )
             ) {
-                PlayerBarFeature()
+                EmptyReducer()
             }
         )
         .padding(.horizontal, 12)
