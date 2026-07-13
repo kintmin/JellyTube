@@ -7,6 +7,7 @@ private let mcLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "Med
 @MainActor
 final class MediaControllerEngine {
     private let player = AVQueuePlayer()
+    private let nowPlaying = NowPlayingCoordinator()
     private var queue: [MediaControllerItem] = []
     private var currentPlaylistId: Int?
     private var didConfigureAudioSession = false
@@ -21,6 +22,7 @@ final class MediaControllerEngine {
 
     init() {
         player.actionAtItemEnd = .advance
+        wireRemoteCommands()
 
         currentItemObservation = player.observe(\.currentItem, options: [.new]) { [weak self] _, change in
             guard let self else { return }
@@ -51,6 +53,22 @@ final class MediaControllerEngine {
             guard let self else { return }
             Task { @MainActor in self.broadcast() }
         }
+    }
+
+    private func wireRemoteCommands() {
+        nowPlaying.onPlay = { [weak self] in self?.resume() }
+        nowPlaying.onPause = { [weak self] in self?.pause() }
+        nowPlaying.onTogglePlayPause = { [weak self] in
+            guard let self else { return }
+            if self.player.timeControlStatus == .playing {
+                self.pause()
+            } else {
+                self.resume()
+            }
+        }
+        nowPlaying.onNext = { [weak self] in self?.next() }
+        nowPlaying.onPrevious = { [weak self] in self?.previous() }
+        nowPlaying.onSeek = { [weak self] seconds in self?.seek(seconds: seconds) }
     }
 
     private func observeCurrentItem(_ item: AVPlayerItem?) {
@@ -168,10 +186,12 @@ final class MediaControllerEngine {
         } catch {
             mcLog.error("audioSession setup failed: \(error.localizedDescription, privacy: .public)")
         }
+        nowPlaying.configureCommandsIfNeeded()
     }
 
     private func broadcast() {
         let snapshot = currentSnapshot()
+        nowPlaying.update(snapshot: snapshot)
         for continuation in continuations.values {
             continuation.yield(snapshot)
         }
