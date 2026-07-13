@@ -11,6 +11,8 @@ struct PlayerBarFeature {
         var totalSeconds: Int = 0
         var isPlaying: Bool = false
         var nowPlayingAudioMediaId: Int? = nil
+        var playbackSpeed: Float = 1.0
+        var playbackPitchSemitone: Int = 0
         var isSubscriptionActive: Bool = false
 
         var progress: Double {
@@ -37,11 +39,14 @@ struct PlayerBarFeature {
         case binding(BindingAction<State>)
         case task
         case snapshotUpdated(MediaControllerSnapshot)
+        case playbackSpeedChanged(Float)
+        case playbackPitchSemitoneChanged(Int)
         case subscriptionFinished
         case playPauseTapped
     }
 
     @Dependency(\.mediaControllerClient) var mediaControllerClient
+    @Dependency(\.audioPlaySettingClient) var audioPlaySettingClient
 
     var body: some ReducerOf<Self> {
         BindingReducer()
@@ -53,13 +58,29 @@ struct PlayerBarFeature {
             case .task:
                 guard !state.isSubscriptionActive else { return .none }
                 state.isSubscriptionActive = true
-                return .run { [mediaControllerClient] send in
-                    for await snapshot in await mediaControllerClient.snapshots() {
-                        await send(.snapshotUpdated(snapshot))
+                return .merge(
+                    .run { [mediaControllerClient] send in
+                        for await snapshot in await mediaControllerClient.snapshots() {
+                            await send(.snapshotUpdated(snapshot))
+                        }
+                        await send(.subscriptionFinished)
                     }
-                    await send(.subscriptionFinished)
-                }
-                .cancellable(id: CancelID.snapshots, cancelInFlight: true)
+                    .cancellable(id: CancelID.snapshots, cancelInFlight: true),
+                    .run { [audioPlaySettingClient, mediaControllerClient] send in
+                        for await speed in audioPlaySettingClient.speedFlow() {
+                            await mediaControllerClient.setSpeed(speed)
+                            await send(.playbackSpeedChanged(speed))
+                        }
+                    }
+                    .cancellable(id: CancelID.speed, cancelInFlight: true),
+                    .run { [audioPlaySettingClient, mediaControllerClient] send in
+                        for await semitone in audioPlaySettingClient.pitchSemitoneFlow() {
+                            await mediaControllerClient.setPitchSemitone(semitone)
+                            await send(.playbackPitchSemitoneChanged(semitone))
+                        }
+                    }
+                    .cancellable(id: CancelID.pitch, cancelInFlight: true)
+                )
 
             case let .snapshotUpdated(snapshot):
                 state.title = snapshot.title
@@ -68,6 +89,14 @@ struct PlayerBarFeature {
                 state.totalSeconds = Int(snapshot.durationSeconds)
                 state.isPlaying = snapshot.isPlaying
                 state.nowPlayingAudioMediaId = snapshot.currentMediaId
+                return .none
+
+            case let .playbackSpeedChanged(speed):
+                state.playbackSpeed = speed
+                return .none
+
+            case let .playbackPitchSemitoneChanged(semitone):
+                state.playbackPitchSemitone = semitone
                 return .none
 
             case .subscriptionFinished:
@@ -89,5 +118,7 @@ struct PlayerBarFeature {
 
     private enum CancelID {
         case snapshots
+        case speed
+        case pitch
     }
 }

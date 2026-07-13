@@ -18,6 +18,8 @@ struct MediaControllerSnapshot: Equatable, Sendable {
     let isPlaying: Bool
     let positionSeconds: Double
     let durationSeconds: Double
+    let playbackSpeed: Float
+    let playbackPitchSemitone: Int
 
     static let empty = MediaControllerSnapshot(
         currentPlaylistId: nil,
@@ -27,6 +29,8 @@ struct MediaControllerSnapshot: Equatable, Sendable {
         artworkURL: nil,
         isPlaying: false,
         positionSeconds: 0,
-        durationSeconds: 0
+        durationSeconds: 0,
+        playbackSpeed: 1.0,
+        playbackPitchSemitone: 0
     )
 }

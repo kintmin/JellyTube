@@ -8,6 +8,8 @@ struct MediaControllerClient: Sendable {
     var next: @Sendable () async -> Void
     var previous: @Sendable () async -> Void
     var seek: @Sendable (_ seconds: Double) async -> Void
+    var setSpeed: @Sendable (_ speed: Float) async -> Void
+    var setPitchSemitone: @Sendable (_ semitone: Int) async -> Void
     var snapshots: @Sendable () async -> AsyncStream<MediaControllerSnapshot>
 }
 
@@ -37,6 +39,12 @@ extension MediaControllerClient {
             previous: { await MainActor.run { holder.engine.previous() } },
             seek: { seconds in
                 await MainActor.run { holder.engine.seek(seconds: seconds) }
+            },
+            setSpeed: { speed in
+                await MainActor.run { holder.engine.setSpeed(speed) }
+            },
+            setPitchSemitone: { semitone in
+                await MainActor.run { holder.engine.setPitchSemitone(semitone) }
             },
             snapshots: {
                 await MainActor.run { holder.engine.snapshotStream() }

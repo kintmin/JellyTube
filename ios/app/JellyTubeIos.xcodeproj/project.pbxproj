@@ -42,6 +42,7 @@
 		4A000000000000000000008A /* MediaControllerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000089 /* MediaControllerEngine.swift */; };
 		4A000000000000000000008C /* MediaControllerClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008B /* MediaControllerClient.swift */; };
 		4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008D /* NowPlayingCoordinator.swift */; };
+		4A0000000000000000000090 /* AudioPlaySettingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008F /* AudioPlaySettingClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -78,6 +79,7 @@
 		4A0000000000000000000089 /* MediaControllerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerEngine.swift; sourceTree = "<group>"; };
 		4A000000000000000000008B /* MediaControllerClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerClient.swift; sourceTree = "<group>"; };
 		4A000000000000000000008D /* NowPlayingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingCoordinator.swift; sourceTree = "<group>"; };
+		4A000000000000000000008F /* AudioPlaySettingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaySettingClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -255,6 +257,7 @@
 				4A0000000000000000000089 /* MediaControllerEngine.swift */,
 				4A000000000000000000008B /* MediaControllerClient.swift */,
 				4A000000000000000000008D /* NowPlayingCoordinator.swift */,
+				4A000000000000000000008F /* AudioPlaySettingClient.swift */,
 			);
 			path = MediaController;
 			sourceTree = "<group>";
@@ -412,6 +415,7 @@
 				4A000000000000000000008A /* MediaControllerEngine.swift in Sources */,
 				4A000000000000000000008C /* MediaControllerClient.swift in Sources */,
 				4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */,
+				4A0000000000000000000090 /* AudioPlaySettingClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
