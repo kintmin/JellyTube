@@ -16,7 +16,7 @@ internal fun PlaylistEntity.toDomain(fileManager: FileManager) = runCatching {
         playTimeDuration = rawPlayTimeDuration.seconds,
         createdTime = rawCreatedTime.toLocalDateTime(),
         imageFileFullPath = imageFileNameWithExt?.let {
-            fileManager.getFullPathWithExt(fileNameWithExt = it).getOrThrow()
+            fileManager.getImageFileFullPath(fileNameWithExt = it).getOrThrow()
         },
         isCustomImage = isCustomImage,
         sequence = sequence,

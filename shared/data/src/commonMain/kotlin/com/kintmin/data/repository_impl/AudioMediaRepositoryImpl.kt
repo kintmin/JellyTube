@@ -6,7 +6,6 @@ import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_file.FileManager
-import com.kintmin.data.local_file.model.Ext
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.domain.audio_media.model.AddedAudioMedia
@@ -40,15 +39,18 @@ internal class AudioMediaRepositoryImpl constructor(
 
                 val fileName = Uuid.random().toString()
 
-                val audioFileFullPath = fileManager.getFullPathWithExt(
+                val audioDownloadBasePath = fileManager.getAudioDownloadBasePath(
                     fileName = fileName,
-                    ext = Ext.MP3,
                 ).getOrThrow()
 
                 val downloadDto = pythonExecutor.downloadYoutubeMedia(
                     youtubeUrl = downloadUrl,
-                    audioDownloadPath = audioFileFullPath,
+                    audioDownloadPath = audioDownloadBasePath,
                 ).getOrThrow()
+
+                val audioFileNameWithExt = downloadDto.audioFileNameWithExt.ifBlank {
+                    throw Exception("다운로드한 오디오 파일명을 확인할 수 없습니다.")
+                }
 
                 val imageFileExt = httpDataSource.downloadImage(
                     imageUrl = downloadDto.thumbnailDownloadUrl
@@ -62,7 +64,7 @@ internal class AudioMediaRepositoryImpl constructor(
                 DownloadedMedia(
                     downloadUrl = downloadUrl,
                     title = downloadDto.title,
-                    audioFileNameWithExt = "${fileName}.${Ext.MP3}",
+                    audioFileNameWithExt = audioFileNameWithExt,
                     imageFileNameWithExt = imageFileExt?.let { "${fileName}.${it}" },
                     duration = downloadDto.duration,
                     uploader = downloadDto.uploader,
@@ -119,7 +121,7 @@ internal class AudioMediaRepositoryImpl constructor(
             runCatching {
                 val fileName = Uuid.random().toString()
                 val ext = fileManager.saveImageWithCompression(imageData, fileName).getOrThrow()
-                fileManager.getFullPathWithExt(fileName = fileName, ext = ext).getOrThrow()
+                fileManager.getImageFileFullPath(fileNameWithExt = "$fileName.$ext").getOrThrow()
             }
         }
     }
@@ -145,7 +147,7 @@ internal class AudioMediaRepositoryImpl constructor(
             runCatching {
                 val fileName = Uuid.random().toString()
                 val ext = fileManager.saveLyrics(text, fileName, synced).getOrThrow()
-                fileManager.getFullPathWithExt(fileName = fileName, ext = ext).getOrThrow()
+                fileManager.getLyricFileFullPath(fileNameWithExt = "$fileName.$ext").getOrThrow()
             }
         }
     }
@@ -167,7 +169,7 @@ internal class AudioMediaRepositoryImpl constructor(
         return withContext(Dispatchers.IO) {
             runCatching {
                 val (baseName, extName) = splitLyricFileName(baseLyricFileFullPath)
-                val synced = extName.equals(Ext.LRC.name, ignoreCase = true)
+                val synced = extName.equals("lrc", ignoreCase = true)
                 fileManager.saveLyrics(text, "$baseName.${variant.infix()}", synced).getOrThrow()
                 Unit
             }
@@ -195,7 +197,7 @@ internal class AudioMediaRepositoryImpl constructor(
             runCatching {
                 val (baseName, extName) = splitLyricFileName(baseLyricFileFullPath)
                 val variantFileNameWithExt = "$baseName.${variant.infix()}.$extName"
-                fileManager.deleteFile(variantFileNameWithExt).getOrThrow()
+                deleteLyricFile(variantFileNameWithExt).getOrThrow()
                 Unit
             }
         }
@@ -218,7 +220,7 @@ internal class AudioMediaRepositoryImpl constructor(
             runCatching {
                 val oldLyricFileNameWithExt = audioMediaDao.getDataById(id).lyricFileNameWithExt
                 audioMediaDao.clearLyricFile(id)
-                oldLyricFileNameWithExt?.let { fileManager.deleteFile(it) }
+                oldLyricFileNameWithExt?.let { deleteLyricFile(it) }
                 Unit
             }
         }
@@ -258,10 +260,10 @@ internal class AudioMediaRepositoryImpl constructor(
 
                 // 새 파일로 바뀐 경우에만 옛 파일을 정리한다. 파일 삭제 실패는 무시한다.
                 if (oldImageFileNameWithExt != null && oldImageFileNameWithExt != newImageFileNameWithExt) {
-                    fileManager.deleteFile(oldImageFileNameWithExt)
+                    deleteImageFile(oldImageFileNameWithExt)
                 }
                 if (oldLyricFileNameWithExt != null && oldLyricFileNameWithExt != newLyricFileNameWithExt) {
-                    fileManager.deleteFile(oldLyricFileNameWithExt)
+                    deleteLyricFile(oldLyricFileNameWithExt)
                 }
             }
         }
@@ -279,7 +281,7 @@ internal class AudioMediaRepositoryImpl constructor(
 
                 // 중복 파일 확인: 같은 SHA-256이 이미 저장된 경우 복사본을 삭제하고 에러 반환
                 runCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
-                    fileManager.deleteFile(copiedInfo.fileNameWithExt)
+                    deleteAudioFile(copiedInfo.fileNameWithExt)
                     throw AlreadyDownloadedMedia()
                 }
 
@@ -314,7 +316,7 @@ internal class AudioMediaRepositoryImpl constructor(
                 val source = "fileShare://sha256/${copiedInfo.sha256Hex}"
 
                 runCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
-                    fileManager.deleteFile(copiedInfo.fileNameWithExt)
+                    deleteAudioFile(copiedInfo.fileNameWithExt)
                     throw AlreadyDownloadedMedia()
                 }
 
@@ -348,8 +350,8 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun deleteDownloadedFile(downloadedAudioMedia: DownloadedMedia): Result<Unit> {
        return runCatching {
-           fileManager.deleteFile(downloadedAudioMedia.audioFileNameWithExt).getOrThrow()
-           downloadedAudioMedia.imageFileNameWithExt?.let { fileManager.deleteFile(it).getOrThrow() }
+           deleteAudioFile(downloadedAudioMedia.audioFileNameWithExt).getOrThrow()
+           downloadedAudioMedia.imageFileNameWithExt?.let { deleteImageFile(it).getOrThrow() }
        }
     }
 
@@ -360,10 +362,10 @@ internal class AudioMediaRepositoryImpl constructor(
 
             // 파일 삭제 실패해도 에러를 발생시키지 않는다
             coroutineScope {
-                launch { fileManager.deleteFile(data.audioFileNameWithExt) }
+                launch { deleteAudioFile(data.audioFileNameWithExt) }
                 data.imageFileNameWithExt?.let {
                     launch {
-                        fileManager.deleteFile(it)
+                        deleteImageFile(it)
                     }
                 }
             }
@@ -377,9 +379,25 @@ internal class AudioMediaRepositoryImpl constructor(
         }
     }
 
-    override suspend fun deleteFile(fileNameWithExt: String): Result<Unit> =
-        fileManager.deleteFile(fileNameWithExt)
+    override suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit> =
+        fileManager.deleteFileAtFullPath(fileFullPath)
 
-    override suspend fun listAudioAndImageFileNames(): Result<List<String>> =
-        fileManager.listAudioAndImageFileNames()
+    override suspend fun listAudioAndImageFileFullPaths(): Result<List<String>> =
+        fileManager.listAudioAndImageFileFullPaths()
+
+    // 저장 파일명(WithExt)과 카테고리를 아는 호출부에서만 사용한다. 카테고리별 디렉토리로 경로를 해석해 삭제한다.
+    private suspend fun deleteAudioFile(fileNameWithExt: String): Result<Unit> =
+        fileManager.getAudioFileFullPath(fileNameWithExt).mapCatching {
+            fileManager.deleteFileAtFullPath(it).getOrThrow()
+        }
+
+    private suspend fun deleteImageFile(fileNameWithExt: String): Result<Unit> =
+        fileManager.getImageFileFullPath(fileNameWithExt).mapCatching {
+            fileManager.deleteFileAtFullPath(it).getOrThrow()
+        }
+
+    private suspend fun deleteLyricFile(fileNameWithExt: String): Result<Unit> =
+        fileManager.getLyricFileFullPath(fileNameWithExt).mapCatching {
+            fileManager.deleteFileAtFullPath(it).getOrThrow()
+        }
 }

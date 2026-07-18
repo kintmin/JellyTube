@@ -6,4 +6,5 @@ data class YoutubeDownloadDto(
     val duration: String,
     val uploader: String,
     val description: String,
+    val audioFileNameWithExt: String,
 )

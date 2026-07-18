@@ -23,7 +23,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                     arguments: [youtubeUrl, audioDownloadPath]
                 )
 
-                guard result.count >= 5 else {
+                guard result.count >= 6 else {
                     throw PythonExecutorBridgeError.invalidDownloadResult
                 }
 
@@ -33,7 +33,8 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                         thumbnailDownloadUrl: result[safe: 1] ?? "",
                         duration: result[safe: 2] ?? "0",
                         uploader: result[safe: 3] ?? "알 수 없음",
-                        description: result[safe: 4] ?? ""
+                        description: result[safe: 4] ?? "",
+                        audioFileNameWithExt: result[safe: 5] ?? ""
                     ),
                     nil
                 )

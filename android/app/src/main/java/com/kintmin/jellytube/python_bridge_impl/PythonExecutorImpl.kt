@@ -37,6 +37,7 @@ class PythonExecutorImpl(
                     duration = pyResult.getOrNull(2)?.toString() ?: "0",
                     uploader = pyResult.getOrNull(3)?.toString() ?: "알 수 없음",
                     description = pyResult.getOrNull(4)?.toString() ?: "",
+                    audioFileNameWithExt = pyResult.getOrNull(5)?.toString().orEmpty(),
                 )
             }
         }

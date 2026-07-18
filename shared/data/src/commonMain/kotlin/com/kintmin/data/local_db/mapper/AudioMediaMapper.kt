@@ -14,12 +14,12 @@ internal fun AudioMediaEntity.toDomain(fileManager: FileManager) = runCatching {
         artist = artist,
         description = description,
         audioDuration = rawAudioDurationSeconds?.seconds,
-        audioFileFullPath = fileManager.getFullPathWithExt(fileNameWithExt = audioFileNameWithExt).getOrThrow(),
+        audioFileFullPath = fileManager.getAudioFileFullPath(fileNameWithExt = audioFileNameWithExt).getOrThrow(),
         imageFileFullPath = imageFileNameWithExt?.let {
-            fileManager.getFullPathWithExt(fileNameWithExt = it).getOrThrow()
+            fileManager.getImageFileFullPath(fileNameWithExt = it).getOrThrow()
         },
         lyricFileFullPath = lyricFileNameWithExt?.let {
-            fileManager.getFullPathWithExt(fileNameWithExt = it).getOrThrow()
+            fileManager.getLyricFileFullPath(fileNameWithExt = it).getOrThrow()
         },
         tjKaraokeNumber = tjKaraokeNumber,
         createdTime = rawCreatedTime.toLocalDateTime(),

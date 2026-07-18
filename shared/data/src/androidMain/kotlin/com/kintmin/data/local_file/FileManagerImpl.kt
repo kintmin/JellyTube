@@ -4,22 +4,20 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import com.kintmin.data.local_file.model.CopiedAudioInfo
-import com.kintmin.data.local_file.model.Ext
-import com.kintmin.data.local_file.model.FileType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.UUID
+import androidx.core.net.toUri
 
-internal class FileManagerImpl constructor(
+internal class FileManagerImpl(
     private val appContext: Context,
 ) : FileManager {
 
@@ -34,14 +32,20 @@ internal class FileManagerImpl constructor(
         File(fileFullPath).name
     }
 
-    override fun getFullPathWithExt(fileNameWithExt: String) = runCatching {
-        val (_, ext) = extractExtFromFileName(fileNameWithExt)
-        getDirectory(ext.fileType).resolve(fileNameWithExt).absolutePath
+    override fun getAudioDownloadBasePath(fileName: String) = runCatching {
+        audioDir().resolve(fileName).absolutePath
     }
 
-    override fun getFullPathWithExt(fileName: String, ext: Ext) = runCatching {
-        val fileNameWithExt = "$fileName.$ext"
-        getDirectory(ext.fileType).resolve(fileNameWithExt).absolutePath
+    override fun getAudioFileFullPath(fileNameWithExt: String) = runCatching {
+        audioDir().resolve(fileNameWithExt).absolutePath
+    }
+
+    override fun getImageFileFullPath(fileNameWithExt: String) = runCatching {
+        imageDir().resolve(fileNameWithExt).absolutePath
+    }
+
+    override fun getLyricFileFullPath(fileNameWithExt: String) = runCatching {
+        lyricDir().resolve(fileNameWithExt).absolutePath
     }
 
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String) =
@@ -49,25 +53,26 @@ internal class FileManagerImpl constructor(
             withContext(Dispatchers.IO) {
                 val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
 
-                val (targetExt, format) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    Ext.WEBP to Bitmap.CompressFormat.WEBP_LOSSY
+                val format = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    Bitmap.CompressFormat.WEBP_LOSSY
                 } else {
-                    Ext.JPEG to Bitmap.CompressFormat.JPEG
+                    @Suppress("DEPRECATION")
+                    Bitmap.CompressFormat.WEBP
                 }
 
-                val outputFile = getDirectory(FileType.Image).resolve("$fileName.$targetExt")
+                val outputFile = imageDir().resolve("$fileName.webp")
                 FileOutputStream(outputFile).use { outputStream ->
                     bitmap.compress(format, 60, outputStream)
                 }
 
-                targetExt
+                "webp"
             }
         }
 
-    override suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<Ext> = runCatching {
+    override suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<String> = runCatching {
         withContext(Dispatchers.IO) {
-            val ext = if (synced) Ext.LRC else Ext.TXT
-            val outputFile = getDirectory(FileType.Lyric).resolve("$fileName.$ext")
+            val ext = if (synced) "lrc" else "txt"
+            val outputFile = lyricDir().resolve("$fileName.$ext")
             outputFile.writeText(text)
             ext
         }
@@ -75,8 +80,7 @@ internal class FileManagerImpl constructor(
 
     override suspend fun fetchLyrics(fileNameWithExt: String): Result<String> = runCatching {
         withContext(Dispatchers.IO) {
-            val (_, ext) = extractExtFromFileName(fileNameWithExt)
-            val file = getDirectory(ext.fileType).resolve(fileNameWithExt)
+            val file = lyricDir().resolve(fileNameWithExt)
             if (!file.exists()) throw Exception("가사 파일을 찾을 수 없습니다.")
             file.readText()
         }
@@ -84,7 +88,7 @@ internal class FileManagerImpl constructor(
 
     override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = runCatching {
         withContext(Dispatchers.IO) {
-            val uri = Uri.parse(contentUriString)
+            val uri = contentUriString.toUri()
             val contentResolver = appContext.contentResolver
 
             // 파일명과 MIME 타입 조회
@@ -105,7 +109,7 @@ internal class FileManagerImpl constructor(
             val targetExt = resolveAudioExt(mimeType, displayName)
             val fileName = UUID.randomUUID().toString()
             val fileNameWithExt = "$fileName.$targetExt"
-            val targetFile = getDirectory(FileType.Audio).resolve(fileNameWithExt)
+            val targetFile = audioDir().resolve(fileNameWithExt)
 
             // 파일 복사 + SHA-256 해시 계산
             val digest = MessageDigest.getInstance("SHA-256")
@@ -138,11 +142,10 @@ internal class FileManagerImpl constructor(
 
     override suspend fun saveUploadedAudio(bytes: ByteArray, originalFileName: String): Result<CopiedAudioInfo> = runCatching {
         withContext(Dispatchers.IO) {
-            val extName = originalFileName.substringAfterLast(".", "")
-            val ext = Ext.entries.find { it.fileType == FileType.Audio && it.name.equals(extName, ignoreCase = true) } ?: Ext.MP3
+            val ext = originalFileName.substringAfterLast(".", "").ifBlank { "mp3" }
             val fileName = UUID.randomUUID().toString()
             val fileNameWithExt = "$fileName.$ext"
-            val targetFile = getDirectory(FileType.Audio).resolve(fileNameWithExt)
+            val targetFile = audioDir().resolve(fileNameWithExt)
 
             val digest = MessageDigest.getInstance("SHA-256")
             FileOutputStream(targetFile).use { output ->
@@ -191,44 +194,62 @@ internal class FileManagerImpl constructor(
         val imageFileNameWithExt: String? = null,
     )
 
-    private fun resolveAudioExt(mimeType: String?, displayName: String?): Ext {
+    /**
+     * 외부 공유/파일선택기로 들어온 content URI 오디오를 저장할 실제 확장자를 결정한다.
+     *
+     * content URI는 임의의 외부 ContentProvider가 만든 것이라 displayName(OpenableColumns.DISPLAY_NAME)에
+     * 확장자가 포함된다는 보장이 없다(값 자체가 없거나 "audio"처럼 확장자 없는 이름일 수 있다). 이때 파일을
+     * 잘못된 확장자로 저장하면 확장자를 신뢰하는 iOS(AVFoundation)/파일공유 대상에서 재생이 실패한다.
+     * 그래서 형식의 authoritative 소스인 MIME 타입을 우선 사용하고, 없으면 displayName의 확장자,
+     * 그것도 없으면 mp3로 폴백한다.
+     *
+     * 주의: 아래 MIME 표는 흔한 타입만 담은 부분 목록이라 모든 코덱을 커버하지 못한다. 표에 없는 MIME은
+     * displayName의 확장자로 처리되고, displayName에도 확장자가 없으면 mp3로 폴백된다 — 이 마지막 경우엔
+     * 확장자가 틀릴 수 있으므로, 특정 코덱이 실제로 문제되면 그 MIME을 표에 한 줄 추가한다.
+     * 목록 참고: https://www.iana.org/assignments/media-types/media-types.xhtml
+     *
+     * 표의 키는 IANA 정식 등록명이 아니라 Android provider가 현실에서 실제로 내보내는 값 기준이다. 그래서
+     * 정식 등록 전 관례였던 x- 변형(audio/x-flac 등, RFC 6648에서 deprecated지만 여전히 통용)도 함께 매칭한다.
+     */
+    private fun resolveAudioExt(mimeType: String?, displayName: String?): String {
         val fromMime = when (mimeType) {
-            "audio/mpeg", "audio/mp3" -> Ext.MP3
-            "audio/wav", "audio/x-wav", "audio/wave" -> Ext.WAV
-            "audio/flac", "audio/x-flac" -> Ext.FLAC
-            "audio/ogg", "audio/vorbis", "audio/x-ogg" -> Ext.OGG
-            "audio/mp4", "audio/x-m4a", "audio/m4a" -> Ext.M4A
-            "audio/aac", "audio/x-aac" -> Ext.AAC
+            "audio/mpeg", "audio/mp3" -> "mp3"
+            "audio/wav", "audio/x-wav", "audio/wave" -> "wav"
+            "audio/flac", "audio/x-flac" -> "flac"
+            "audio/ogg", "audio/vorbis", "audio/x-ogg" -> "ogg"
+            "audio/opus" -> "opus"
+            "audio/webm" -> "webm"
+            "audio/mp4", "audio/x-m4a", "audio/m4a" -> "m4a"
+            "audio/aac", "audio/x-aac" -> "aac"
+            "audio/x-ms-wma", "audio/wma" -> "wma"
+            "audio/aiff", "audio/x-aiff" -> "aiff"
             else -> null
         }
         if (fromMime != null) return fromMime
 
-        val extName = displayName?.substringAfterLast(".", "").orEmpty()
-        return Ext.entries.find { it.fileType == FileType.Audio && it.name.equals(extName, ignoreCase = true) }
-            ?: Ext.MP3
+        return displayName?.substringAfterLast(".", "")?.ifBlank { null } ?: "mp3"
     }
 
-    override suspend fun deleteFile(fileNameWithExt: String): Result<Unit> = runCatching {
+    override suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit> = runCatching {
         withContext(Dispatchers.IO) {
-            val (_, ext) = extractExtFromFileName(fileNameWithExt)
-            val file = getDirectory(ext.fileType).resolve(fileNameWithExt)
+            val file = File(fileFullPath)
             if (file.exists()) {
                 file.delete()
             }
         }
     }
 
-    override suspend fun listAudioAndImageFileNames(): Result<List<String>> = runCatching {
+    override suspend fun listAudioAndImageFileFullPaths(): Result<List<String>> = runCatching {
         withContext(Dispatchers.IO) {
-            val audioFileNames = getDirectory(FileType.Audio).listFiles()
+            val audioFilePaths = audioDir().listFiles()
                 ?.filter { it.isFile }
-                ?.map { it.name }
+                ?.map { it.absolutePath }
                 ?: emptyList()
-            val imageFileNames = getDirectory(FileType.Image).listFiles()
+            val imageFilePaths = imageDir().listFiles()
                 ?.filter { it.isFile }
-                ?.map { it.name }
+                ?.map { it.absolutePath }
                 ?: emptyList()
-            audioFileNames + imageFileNames
+            audioFilePaths + imageFilePaths
         }
     }
 
@@ -263,28 +284,16 @@ internal class FileManagerImpl constructor(
         }
     }
 
-    private fun extractExtFromFileName(fileNameWithExt: String): Pair<String, Ext> {
-        val lastDotIndex = fileNameWithExt.lastIndexOf(".")
-        if (lastDotIndex == -1) {
-            throw Exception("파일명에서 파일 확장자를 찾을 수 없습니다.")
-        }
+    private fun audioDir(): File =
+        resolveDirectory(appContext.getExternalFilesDir(Environment.DIRECTORY_MUSIC))
 
-        val fileName = fileNameWithExt.substring(0, lastDotIndex)
-        val extName = fileNameWithExt.substring(lastDotIndex + 1)
-        val ext = extractExt(extName)
-        return fileName to ext
-    }
+    private fun imageDir(): File =
+        resolveDirectory(appContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES))
 
-    private fun extractExt(extName: String): Ext {
-        return Ext.entries.find { it.name.equals(extName, ignoreCase = true) } ?: throw Exception("올바르지 않은 파일 확장자입니다.")
-    }
+    private fun lyricDir(): File =
+        resolveDirectory(appContext.filesDir.resolve(LYRIC_DIR_NAME))
 
-    private fun getDirectory(fileType: FileType): File {
-        val dir = when (fileType) {
-            FileType.Audio -> appContext.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
-            FileType.Image -> appContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-            FileType.Lyric -> appContext.filesDir.resolve(LYRIC_DIR_NAME)
-        }
+    private fun resolveDirectory(dir: File?): File {
         return dir?.takeIf { it.exists() || it.mkdirs() }
             ?: throw Exception("디렉토리를 찾을 수 없습니다.")
     }

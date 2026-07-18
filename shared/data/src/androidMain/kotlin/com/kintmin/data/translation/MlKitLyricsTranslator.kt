@@ -23,7 +23,7 @@ internal class MlKitLyricsTranslator : LyricsTranslator {
             .setTargetLanguage(TranslateLanguage.KOREAN)
             .build()
         val translator = Translation.getClient(options)
-        try {
+        translator.use { translator ->
             // 최초 1회 온디바이스 모델 다운로드 (네트워크 필요). 이후엔 캐시된 모델로 오프라인 동작.
             translator.downloadModelIfNeeded(DownloadConditions.Builder().build()).await()
 
@@ -35,8 +35,6 @@ internal class MlKitLyricsTranslator : LyricsTranslator {
                     translator.translate(line).await()
                 }
             }.joinToString("\n")
-        } finally {
-            translator.close()
         }
     }
 }

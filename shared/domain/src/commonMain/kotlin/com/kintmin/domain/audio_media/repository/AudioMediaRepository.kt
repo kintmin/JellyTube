@@ -62,6 +62,6 @@ interface AudioMediaRepository {
     suspend fun deleteAudioMedia(id: Int): Result<Unit>
 
     suspend fun deleteOrphanAudioMedia(): Result<List<AudioMedia>>
-    suspend fun deleteFile(fileNameWithExt: String): Result<Unit>
-    suspend fun listAudioAndImageFileNames(): Result<List<String>>
+    suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit>
+    suspend fun listAudioAndImageFileFullPaths(): Result<List<String>>
 }

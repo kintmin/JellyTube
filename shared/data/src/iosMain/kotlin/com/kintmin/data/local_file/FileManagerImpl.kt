@@ -1,8 +1,6 @@
 package com.kintmin.data.local_file
 
 import com.kintmin.data.local_file.model.CopiedAudioInfo
-import com.kintmin.data.local_file.model.Ext
-import com.kintmin.data.local_file.model.FileType
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
@@ -22,18 +20,25 @@ internal class FileManagerImpl : FileManager {
         fileFullPath.substringAfterLast("/")
     }
 
-    override fun getFullPathWithExt(fileName: String, ext: Ext): Result<String> = runCatching {
-        directory(ext.fileType) + "/$fileName.$ext"
+    override fun getAudioDownloadBasePath(fileName: String): Result<String> = runCatching {
+        audioDir() + "/$fileName"
     }
 
-    override fun getFullPathWithExt(fileNameWithExt: String): Result<String> = runCatching {
-        val ext = extractExt(fileNameWithExt.substringAfterLast("."))
-        directory(ext.fileType) + "/$fileNameWithExt"
+    override fun getAudioFileFullPath(fileNameWithExt: String): Result<String> = runCatching {
+        audioDir() + "/$fileNameWithExt"
     }
 
-    override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<Ext> = unsupported()
+    override fun getImageFileFullPath(fileNameWithExt: String): Result<String> = runCatching {
+        imageDir() + "/$fileNameWithExt"
+    }
 
-    override suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<Ext> = unsupported()
+    override fun getLyricFileFullPath(fileNameWithExt: String): Result<String> = runCatching {
+        lyricDir() + "/$fileNameWithExt"
+    }
+
+    override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<String> = unsupported()
+
+    override suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<String> = unsupported()
 
     override suspend fun fetchLyrics(fileNameWithExt: String): Result<String> = unsupported()
 
@@ -41,12 +46,11 @@ internal class FileManagerImpl : FileManager {
 
     override suspend fun saveUploadedAudio(bytes: ByteArray, originalFileName: String): Result<CopiedAudioInfo> = unsupported()
 
-    override suspend fun deleteFile(fileNameWithExt: String): Result<Unit> = runCatching {
-        val path = getFullPathWithExt(fileNameWithExt).getOrThrow()
-        NSFileManager.defaultManager.removeItemAtPath(path, error = null)
+    override suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit> = runCatching {
+        NSFileManager.defaultManager.removeItemAtPath(fileFullPath, error = null)
     }
 
-    override suspend fun listAudioAndImageFileNames(): Result<List<String>> = unsupported()
+    override suspend fun listAudioAndImageFileFullPaths(): Result<List<String>> = unsupported()
 
     override fun clearDiskCache(): Result<Unit> = runCatching { }
 
@@ -56,17 +60,13 @@ internal class FileManagerImpl : FileManager {
 
     override suspend fun fetchAppLogLineList(date: String): Result<List<String>> = runCatching { emptyList() }
 
-    private fun extractExt(extName: String): Ext {
-        return Ext.entries.find { it.name.equals(extName, ignoreCase = true) }
-            ?: error("올바르지 않은 파일 확장자입니다.")
-    }
+    private fun audioDir(): String = directory(AUDIO_DIR_NAME)
 
-    private fun directory(fileType: FileType): String {
-        val dirName = when (fileType) {
-            FileType.Audio -> AUDIO_DIR_NAME
-            FileType.Image -> IMAGE_DIR_NAME
-            FileType.Lyric -> LYRIC_DIR_NAME
-        }
+    private fun imageDir(): String = directory(IMAGE_DIR_NAME)
+
+    private fun lyricDir(): String = directory(LYRIC_DIR_NAME)
+
+    private fun directory(dirName: String): String {
         return documentDirectory().appendPathComponent(dirName).also(::ensureDirectory)
     }
 
