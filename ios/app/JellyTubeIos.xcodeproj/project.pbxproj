@@ -8,78 +8,30 @@
 
 /* Begin PBXBuildFile section */
 		4A000000000000000000000A /* JellyTubeIosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000007 /* JellyTubeIosApp.swift */; };
-		4A000000000000000000000B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000008 /* ContentView.swift */; };
 		4A000000000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000009 /* Assets.xcassets */; };
 		C9E4F40D2FD13000009FB07B /* python in Resources */ = {isa = PBXBuildFile; fileRef = C9E4F40E2FD13000009FB07B /* python */; };
-		4A0000000000000000000033 /* MainFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000023 /* MainFeature.swift */; };
-		4A0000000000000000000034 /* MainScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000024 /* MainScreenView.swift */; };
-		4A0000000000000000000035 /* YoutubeSearchFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000025 /* YoutubeSearchFeature.swift */; };
-		4A0000000000000000000036 /* YoutubeSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000026 /* YoutubeSearchView.swift */; };
-		4A0000000000000000000037 /* YoutubeWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000027 /* YoutubeWebView.swift */; };
-		4A000000000000000000004A /* YoutubeDownloadClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000049 /* YoutubeDownloadClient.swift */; };
-		4A0000000000000000000038 /* PlaylistClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000028 /* PlaylistClient.swift */; };
-		4A0000000000000000000039 /* PlaylistFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000029 /* PlaylistFeature.swift */; };
-		4A000000000000000000003A /* PlaylistScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000002A /* PlaylistScreenView.swift */; };
-		4A000000000000000000003B /* GlassComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000002B /* GlassComponents.swift */; };
 		4A000000000000000000003C /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 4A0000000000000000000040 /* ComposableArchitecture */; };
 		C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */ = {isa = PBXBuildFile; productRef = C9E4F4102FD14000009FB07B /* PythonKit */; };
-		C9E4F4092FD122EA009FB07B /* PlaylistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4F4082FD122E3009FB07B /* PlaylistItem.swift */; };
 		C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */; };
 		4A0000000000000000000061 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000060 /* Python.xcframework */; };
 		4A0000000000000000000062 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000060 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4A0000000000000000000064 /* app_packages in Resources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000063 /* app_packages */; };
-		4A0000000000000000000071 /* CustomBottomBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000070 /* CustomBottomBar.swift */; };
-		4A0000000000000000000074 /* PlayerBarFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000073 /* PlayerBarFeature.swift */; };
-		4A0000000000000000000076 /* PlayerBarScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000075 /* PlayerBarScreenView.swift */; };
-		4A0000000000000000000078 /* PlaylistTopSegment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000077 /* PlaylistTopSegment.swift */; };
-		4A000000000000000000007A /* PlaylistCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000079 /* PlaylistCard.swift */; };
-		4A000000000000000000007D /* PlaylistDetailItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000007C /* PlaylistDetailItem.swift */; };
-		4A000000000000000000007F /* PlaylistDetailClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000007E /* PlaylistDetailClient.swift */; };
-		4A0000000000000000000081 /* PlaylistDetailFeature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000080 /* PlaylistDetailFeature.swift */; };
-		4A0000000000000000000083 /* PlaylistDetailRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000082 /* PlaylistDetailRow.swift */; };
-		4A0000000000000000000085 /* PlaylistDetailScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000084 /* PlaylistDetailScreenView.swift */; };
 		4A0000000000000000000088 /* MediaControllerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000087 /* MediaControllerItem.swift */; };
 		4A000000000000000000008A /* MediaControllerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000089 /* MediaControllerEngine.swift */; };
-		4A000000000000000000008C /* MediaControllerClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008B /* MediaControllerClient.swift */; };
 		4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008D /* NowPlayingCoordinator.swift */; };
-		4A0000000000000000000090 /* AudioPlaySettingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008F /* AudioPlaySettingClient.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		4A0000000000000000000003 /* JellyTubeIos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JellyTubeIos.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A0000000000000000000007 /* JellyTubeIosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyTubeIosApp.swift; sourceTree = "<group>"; };
-		4A0000000000000000000008 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4A0000000000000000000009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C9E4F40E2FD13000009FB07B /* python */ = {isa = PBXFileReference; lastKnownFileType = folder; name = python; path = ../../shared/data/src/python; sourceTree = SOURCE_ROOT; };
-		4A0000000000000000000023 /* MainFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFeature.swift; sourceTree = "<group>"; };
-		4A0000000000000000000024 /* MainScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainScreenView.swift; sourceTree = "<group>"; };
-		4A0000000000000000000025 /* YoutubeSearchFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeSearchFeature.swift; sourceTree = "<group>"; };
-		4A0000000000000000000026 /* YoutubeSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeSearchView.swift; sourceTree = "<group>"; };
-		4A0000000000000000000027 /* YoutubeWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeWebView.swift; sourceTree = "<group>"; };
-		4A0000000000000000000049 /* YoutubeDownloadClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeDownloadClient.swift; sourceTree = "<group>"; };
-		4A0000000000000000000028 /* PlaylistClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistClient.swift; sourceTree = "<group>"; };
-		4A0000000000000000000029 /* PlaylistFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistFeature.swift; sourceTree = "<group>"; };
-		4A000000000000000000002A /* PlaylistScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistScreenView.swift; sourceTree = "<group>"; };
-		4A000000000000000000002B /* GlassComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassComponents.swift; sourceTree = "<group>"; };
-		C9E4F4082FD122E3009FB07B /* PlaylistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistItem.swift; sourceTree = "<group>"; };
 		C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonExecutorBridgeImpl.swift; sourceTree = "<group>"; };
 		4A0000000000000000000060 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Python.xcframework; path = Vendor/Python/Python.xcframework; sourceTree = SOURCE_ROOT; };
 		4A0000000000000000000063 /* app_packages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = app_packages; path = Vendor/Python/app-packages; sourceTree = SOURCE_ROOT; };
-		4A0000000000000000000070 /* CustomBottomBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomBottomBar.swift; sourceTree = "<group>"; };
-		4A0000000000000000000073 /* PlayerBarFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBarFeature.swift; sourceTree = "<group>"; };
-		4A0000000000000000000075 /* PlayerBarScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerBarScreenView.swift; sourceTree = "<group>"; };
-		4A0000000000000000000077 /* PlaylistTopSegment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistTopSegment.swift; sourceTree = "<group>"; };
-		4A0000000000000000000079 /* PlaylistCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistCard.swift; sourceTree = "<group>"; };
-		4A000000000000000000007C /* PlaylistDetailItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailItem.swift; sourceTree = "<group>"; };
-		4A000000000000000000007E /* PlaylistDetailClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailClient.swift; sourceTree = "<group>"; };
-		4A0000000000000000000080 /* PlaylistDetailFeature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailFeature.swift; sourceTree = "<group>"; };
-		4A0000000000000000000082 /* PlaylistDetailRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailRow.swift; sourceTree = "<group>"; };
-		4A0000000000000000000084 /* PlaylistDetailScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaylistDetailScreenView.swift; sourceTree = "<group>"; };
 		4A0000000000000000000087 /* MediaControllerItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerItem.swift; sourceTree = "<group>"; };
 		4A0000000000000000000089 /* MediaControllerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerEngine.swift; sourceTree = "<group>"; };
-		4A000000000000000000008B /* MediaControllerClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerClient.swift; sourceTree = "<group>"; };
 		4A000000000000000000008D /* NowPlayingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingCoordinator.swift; sourceTree = "<group>"; };
-		4A000000000000000000008F /* AudioPlaySettingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaySettingClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,8 +92,6 @@
 			isa = PBXGroup;
 			children = (
 				4A0000000000000000000007 /* JellyTubeIosApp.swift */,
-				4A0000000000000000000008 /* ContentView.swift */,
-				4A0000000000000000000042 /* Features */,
 				C9E4F40C2FD13000009FB07B /* PythonBridgeImpl */,
 				4A0000000000000000000046 /* Shared */,
 				4A0000000000000000000009 /* Assets.xcassets */,
@@ -166,88 +116,12 @@
 			path = PythonBridgeImpl;
 			sourceTree = "<group>";
 		};
-		4A0000000000000000000042 /* Features */ = {
-			isa = PBXGroup;
-			children = (
-				4A0000000000000000000043 /* Main */,
-				4A0000000000000000000072 /* PlayerBar */,
-				4A0000000000000000000044 /* YoutubeSearch */,
-				4A0000000000000000000045 /* Playlist */,
-				4A000000000000000000007B /* PlaylistDetail */,
-			);
-			path = Features;
-			sourceTree = "<group>";
-		};
-		4A000000000000000000007B /* PlaylistDetail */ = {
-			isa = PBXGroup;
-			children = (
-				4A000000000000000000007C /* PlaylistDetailItem.swift */,
-				4A000000000000000000007E /* PlaylistDetailClient.swift */,
-				4A0000000000000000000080 /* PlaylistDetailFeature.swift */,
-				4A0000000000000000000082 /* PlaylistDetailRow.swift */,
-				4A0000000000000000000084 /* PlaylistDetailScreenView.swift */,
-			);
-			path = PlaylistDetail;
-			sourceTree = "<group>";
-		};
-		4A0000000000000000000043 /* Main */ = {
-			isa = PBXGroup;
-			children = (
-				4A0000000000000000000023 /* MainFeature.swift */,
-				4A0000000000000000000024 /* MainScreenView.swift */,
-				4A0000000000000000000070 /* CustomBottomBar.swift */,
-			);
-			path = Main;
-			sourceTree = "<group>";
-		};
-		4A0000000000000000000072 /* PlayerBar */ = {
-			isa = PBXGroup;
-			children = (
-				4A0000000000000000000073 /* PlayerBarFeature.swift */,
-				4A0000000000000000000075 /* PlayerBarScreenView.swift */,
-			);
-			path = PlayerBar;
-			sourceTree = "<group>";
-		};
-		4A0000000000000000000044 /* YoutubeSearch */ = {
-			isa = PBXGroup;
-			children = (
-				4A0000000000000000000049 /* YoutubeDownloadClient.swift */,
-				4A0000000000000000000025 /* YoutubeSearchFeature.swift */,
-				4A0000000000000000000026 /* YoutubeSearchView.swift */,
-				4A0000000000000000000027 /* YoutubeWebView.swift */,
-			);
-			path = YoutubeSearch;
-			sourceTree = "<group>";
-		};
-		4A0000000000000000000045 /* Playlist */ = {
-			isa = PBXGroup;
-			children = (
-				C9E4F4082FD122E3009FB07B /* PlaylistItem.swift */,
-				4A0000000000000000000028 /* PlaylistClient.swift */,
-				4A0000000000000000000029 /* PlaylistFeature.swift */,
-				4A000000000000000000002A /* PlaylistScreenView.swift */,
-				4A0000000000000000000077 /* PlaylistTopSegment.swift */,
-				4A0000000000000000000079 /* PlaylistCard.swift */,
-			);
-			path = Playlist;
-			sourceTree = "<group>";
-		};
 		4A0000000000000000000046 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
-				4A0000000000000000000047 /* UI */,
 				4A0000000000000000000086 /* MediaController */,
 			);
 			path = Shared;
-			sourceTree = "<group>";
-		};
-		4A0000000000000000000047 /* UI */ = {
-			isa = PBXGroup;
-			children = (
-				4A000000000000000000002B /* GlassComponents.swift */,
-			);
-			path = UI;
 			sourceTree = "<group>";
 		};
 		4A0000000000000000000086 /* MediaController */ = {
@@ -255,9 +129,7 @@
 			children = (
 				4A0000000000000000000087 /* MediaControllerItem.swift */,
 				4A0000000000000000000089 /* MediaControllerEngine.swift */,
-				4A000000000000000000008B /* MediaControllerClient.swift */,
 				4A000000000000000000008D /* NowPlayingCoordinator.swift */,
-				4A000000000000000000008F /* AudioPlaySettingClient.swift */,
 			);
 			path = MediaController;
 			sourceTree = "<group>";
@@ -388,34 +260,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				4A000000000000000000000A /* JellyTubeIosApp.swift in Sources */,
-				4A000000000000000000000B /* ContentView.swift in Sources */,
-				4A0000000000000000000033 /* MainFeature.swift in Sources */,
-				4A0000000000000000000034 /* MainScreenView.swift in Sources */,
-				4A0000000000000000000071 /* CustomBottomBar.swift in Sources */,
-				4A0000000000000000000074 /* PlayerBarFeature.swift in Sources */,
-				4A0000000000000000000076 /* PlayerBarScreenView.swift in Sources */,
-				4A0000000000000000000035 /* YoutubeSearchFeature.swift in Sources */,
-				4A0000000000000000000036 /* YoutubeSearchView.swift in Sources */,
-				4A0000000000000000000037 /* YoutubeWebView.swift in Sources */,
-				4A000000000000000000004A /* YoutubeDownloadClient.swift in Sources */,
-				4A0000000000000000000038 /* PlaylistClient.swift in Sources */,
-				4A0000000000000000000039 /* PlaylistFeature.swift in Sources */,
-				4A000000000000000000003A /* PlaylistScreenView.swift in Sources */,
-				4A0000000000000000000078 /* PlaylistTopSegment.swift in Sources */,
-				4A000000000000000000007A /* PlaylistCard.swift in Sources */,
-				C9E4F4092FD122EA009FB07B /* PlaylistItem.swift in Sources */,
-				4A000000000000000000007D /* PlaylistDetailItem.swift in Sources */,
-				4A000000000000000000007F /* PlaylistDetailClient.swift in Sources */,
-				4A0000000000000000000081 /* PlaylistDetailFeature.swift in Sources */,
-				4A0000000000000000000083 /* PlaylistDetailRow.swift in Sources */,
-				4A0000000000000000000085 /* PlaylistDetailScreenView.swift in Sources */,
 				C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */,
-				4A000000000000000000003B /* GlassComponents.swift in Sources */,
 				4A0000000000000000000088 /* MediaControllerItem.swift in Sources */,
 				4A000000000000000000008A /* MediaControllerEngine.swift in Sources */,
-				4A000000000000000000008C /* MediaControllerClient.swift in Sources */,
 				4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */,
-				4A0000000000000000000090 /* AudioPlaySettingClient.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
