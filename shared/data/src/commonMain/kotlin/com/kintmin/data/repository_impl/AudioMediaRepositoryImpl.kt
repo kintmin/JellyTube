@@ -304,21 +304,31 @@ internal class AudioMediaRepositoryImpl constructor(
         }
     }
 
+    override suspend fun createUploadedAudioStagingFilePath(): Result<String> {
+        return withContext(Dispatchers.IO) { fileManager.createUploadStagingFilePath() }
+    }
+
     override suspend fun importUploadedAudio(
-        bytes: ByteArray,
+        stagingFilePath: String,
+        sha256Hex: String,
         originalFileName: String,
         playlistIdOnDownload: Int?,
         shouldInsertAtTopOnDownload: Boolean,
     ): Result<AddedAudioMedia> {
         return withContext(Dispatchers.IO) {
             runCatching {
-                val copiedInfo = fileManager.saveUploadedAudio(bytes, originalFileName).getOrThrow()
-                val source = "fileShare://sha256/${copiedInfo.sha256Hex}"
+                val source = "fileShare://sha256/$sha256Hex"
 
+                // 파일을 옮기기 전에 중복을 판정한다. 스테이징 파일 정리는 호출 측이 담당한다.
                 runCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
-                    deleteAudioFile(copiedInfo.fileNameWithExt)
                     throw AlreadyDownloadedMedia()
                 }
+
+                val copiedInfo = fileManager.commitUploadedAudio(
+                    stagingFilePath = stagingFilePath,
+                    sha256Hex = sha256Hex,
+                    originalFileName = originalFileName,
+                ).getOrThrow()
 
                 val entity = AudioMediaEntity(
                     source = source,

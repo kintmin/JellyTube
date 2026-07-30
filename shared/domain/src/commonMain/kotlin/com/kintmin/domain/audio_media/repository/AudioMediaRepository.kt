@@ -51,8 +51,17 @@ interface AudioMediaRepository {
         shouldInsertAtTopOnDownload: Boolean,
     ): Result<AddedAudioMedia>
 
+    /**
+     * 업로드 수신용 스테이징 파일 경로를 발급한다.
+     * 발급된 경로는 오디오 보관 디렉터리와 같은 볼륨이므로 [importUploadedAudio]는 복사 없이 이동만 한다.
+     * 수신 측은 이 경로에 바이트를 흘려 쓰면서 SHA-256을 함께 계산한다.
+     */
+    suspend fun createUploadedAudioStagingFilePath(): Result<String>
+
+    /** [stagingFilePath]의 파일을 오디오 보관 디렉터리로 이동시켜 등록한다. */
     suspend fun importUploadedAudio(
-        bytes: ByteArray,
+        stagingFilePath: String,
+        sha256Hex: String,
         originalFileName: String,
         playlistIdOnDownload: Int?,
         shouldInsertAtTopOnDownload: Boolean,

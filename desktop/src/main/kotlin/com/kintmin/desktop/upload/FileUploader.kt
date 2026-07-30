@@ -12,8 +12,11 @@ import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.util.cio.readChannel
+import io.ktor.utils.io.ByteReadChannel
 import kotlinx.serialization.json.Json
 import java.io.File
 
@@ -33,10 +36,17 @@ class FileUploader(
     suspend fun uploadFile(file: File): Result<UploadResponse> = runCatching {
         val response = client.post("http://$hostAddress:$port${FileShareConstants.HTTP_UPLOAD_PATH}") {
             header(FileShareConstants.HEADER_FILE_NAME, file.name)
-            contentType(ContentType.Application.OctetStream)
-            setBody(file.readBytes())
+            // 긴 음원(1시간 이상)을 통째로 메모리에 올리지 않고 스트리밍으로 전송한다.
+            setBody(StreamingFileContent(file))
         }
         response.body<UploadResponse>()
+    }
+
+    /** 파일을 메모리에 적재하지 않고 Content-Length를 명시해 스트리밍 전송하는 본문. */
+    private class StreamingFileContent(private val file: File) : OutgoingContent.ReadChannelContent() {
+        override val contentType: ContentType = ContentType.Application.OctetStream
+        override val contentLength: Long = file.length()
+        override fun readFrom(): ByteReadChannel = file.readChannel()
     }
 
     suspend fun updateArtist(audioMediaIds: List<Int>, artist: String): Result<FileShareResponse> = runCatching {
