@@ -44,7 +44,9 @@ internal class FileManagerImpl : FileManager {
 
     override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = unsupported()
 
-    override fun createUploadStagingFilePath(): Result<String> = unsupported()
+    override suspend fun createUploadStagingFilePath(): Result<String> = unsupported()
+
+    override suspend fun cleanupExpiredUploadStagingFiles(): Result<Int> = unsupported()
 
     override suspend fun commitUploadedAudio(
         stagingFilePath: String,

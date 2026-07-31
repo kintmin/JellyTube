@@ -304,9 +304,11 @@ internal class AudioMediaRepositoryImpl constructor(
         }
     }
 
-    override suspend fun createUploadedAudioStagingFilePath(): Result<String> {
-        return withContext(Dispatchers.IO) { fileManager.createUploadStagingFilePath() }
-    }
+    override suspend fun createUploadedAudioStagingFilePath(): Result<String> =
+        fileManager.createUploadStagingFilePath()
+
+    override suspend fun cleanupUploadedAudioStagingFiles(): Result<Int> =
+        fileManager.cleanupExpiredUploadStagingFiles()
 
     override suspend fun importUploadedAudio(
         stagingFilePath: String,

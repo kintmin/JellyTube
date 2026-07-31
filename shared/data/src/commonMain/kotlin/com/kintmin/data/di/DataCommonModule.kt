@@ -84,6 +84,8 @@ val dataCommonModule: Module = module {
     factoryOf(::DownloadAudioMediaUseCase)
     factoryOf(::ImportSharedAudioMediaUseCase)
     factoryOf(::CreateUploadedAudioStagingFileUseCase)
+    factoryOf(::CleanupUploadedAudioStagingFilesUseCase)
+    factoryOf(::ValidateUploadedAudioFileNameUseCase)
     factoryOf(::ImportUploadedAudioMediaUseCase)
     factoryOf(::SaveAudioMediaImageUseCase)
     factoryOf(::UpdateAudioMediaUseCase)

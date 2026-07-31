@@ -143,14 +143,22 @@ internal class FileManagerImpl(
         }
     }
 
-    override fun createUploadStagingFilePath(): Result<String> = runCatching {
-        val stagingDir = getUploadStagingDirectory()
-        // 프로세스가 수신 도중 종료되면 스테이징 파일이 남는다. 외부 저장소라 자동 회수되지 않으므로 오래된 것만 정리한다.
-        val expiredAt = System.currentTimeMillis() - STAGING_FILE_RETENTION_MILLIS
-        stagingDir.listFiles()?.forEach { file ->
-            if (file.isFile && file.lastModified() < expiredAt) file.delete()
+    override suspend fun createUploadStagingFilePath(): Result<String> = runCatching {
+        withContext(Dispatchers.IO) {
+            getUploadStagingDirectory().resolve("${UUID.randomUUID()}.part").absolutePath
         }
-        stagingDir.resolve("${UUID.randomUUID()}.part").absolutePath
+    }
+
+    override suspend fun cleanupExpiredUploadStagingFiles(): Result<Int> = runCatching {
+        withContext(Dispatchers.IO) {
+            // 프로세스가 수신 도중 종료되면 스테이징 파일이 남는다. 외부 저장소라 자동 회수되지 않고,
+            // 고아 파일 정리도 audioDir 하위 디렉터리는 보지 않으므로 여기서 직접 지운다.
+            val expiredAt = System.currentTimeMillis() - STAGING_FILE_RETENTION_MILLIS
+            val expiredFiles = getUploadStagingDirectory().listFiles()
+                ?.filter { file -> file.isFile && file.lastModified() < expiredAt }
+                ?: emptyList()
+            expiredFiles.count { file -> file.delete() }
+        }
     }
 
     override suspend fun commitUploadedAudio(
@@ -159,7 +167,11 @@ internal class FileManagerImpl(
         originalFileName: String,
     ): Result<CopiedAudioInfo> = runCatching {
         withContext(Dispatchers.IO) {
-            val ext = originalFileName.substringAfterLast(".", "").ifBlank { "mp3" }
+            // 호출 전에 검증된 이름이 들어온다. mp3로 추측해 저장하면 확장자를 신뢰하는 iOS 재생이
+            // 조용히 깨지므로 폴백 없이 실패시킨다.
+            val ext = originalFileName.substringAfterLast(".", "")
+            if (ext.isEmpty()) throw Exception("확장자가 없는 파일 이름입니다: $originalFileName")
+
             val fileName = UUID.randomUUID().toString()
             val fileNameWithExt = "$fileName.$ext"
             val targetFile = audioDir().resolve(fileNameWithExt)
@@ -319,7 +331,7 @@ internal class FileManagerImpl(
 
     /** 오디오 디렉터리 하위에 둬야 커밋 시 같은 볼륨 내 이동이 된다. */
     private fun getUploadStagingDirectory(): File {
-        val dir = getDirectory(FileType.Audio).resolve(UPLOAD_STAGING_DIR_NAME)
+        val dir = audioDir().resolve(UPLOAD_STAGING_DIR_NAME)
         if (!dir.exists()) {
             dir.mkdirs()
         }

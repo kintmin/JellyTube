@@ -58,6 +58,13 @@ interface AudioMediaRepository {
      */
     suspend fun createUploadedAudioStagingFilePath(): Result<String>
 
+    /**
+     * 보관 기간이 지나 버려진 스테이징 파일을 정리하고 삭제한 개수를 반환한다.
+     * 수신 도중 프로세스가 죽으면 남는 파일이 [listAudioAndImageFileFullPaths] 기반 고아 정리에
+     * 잡히지 않으므로, 파일공유 서버가 켜질 때마다 이 경로로 회수한다.
+     */
+    suspend fun cleanupUploadedAudioStagingFiles(): Result<Int>
+
     /** [stagingFilePath]의 파일을 오디오 보관 디렉터리로 이동시켜 등록한다. */
     suspend fun importUploadedAudio(
         stagingFilePath: String,

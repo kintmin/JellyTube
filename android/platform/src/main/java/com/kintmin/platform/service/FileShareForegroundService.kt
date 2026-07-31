@@ -12,10 +12,13 @@ import android.os.SystemClock
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.usecase.CleanupUploadedAudioStagingFilesUseCase
 import com.kintmin.domain.audio_media.usecase.CreateUploadedAudioStagingFileUseCase
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
+import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
+import com.kintmin.domain.extension.suspendRunCatching
 import com.kintmin.domain.hash.Sha256
 import com.kintmin.fileshare.BulkArtistUpdateRequest
 import com.kintmin.fileshare.FileShareConstants
@@ -27,13 +30,13 @@ import com.kintmin.platform.push_notification.PushNotificationIds
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.DownloadResultNotification
 import com.kintmin.platform.push_notification.notifications.FileShareServerNotification
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.request.contentLength
 import io.ktor.server.request.header
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveChannel
@@ -64,6 +67,8 @@ import java.io.FileOutputStream
 class FileShareForegroundService : Service(), KoinComponent {
 
     private val createUploadedAudioStagingFileUseCase: CreateUploadedAudioStagingFileUseCase by inject()
+    private val cleanupUploadedAudioStagingFilesUseCase: CleanupUploadedAudioStagingFilesUseCase by inject()
+    private val validateUploadedAudioFileNameUseCase: ValidateUploadedAudioFileNameUseCase by inject()
     private val importUploadedAudioMediaUseCase: ImportUploadedAudioMediaUseCase by inject()
     private val updateAudioMediaUseCase: UpdateAudioMediaUseCase by inject()
     private val saveAudioMediaImageUseCase: SaveAudioMediaImageUseCase by inject()
@@ -94,6 +99,7 @@ class FileShareForegroundService : Service(), KoinComponent {
             )
         }.onSuccess {
             _isRunning.update { true }
+            cleanupExpiredStagingFiles()
             startKtorServer()
             registerNsdService()
         }.onFailure { error ->
@@ -118,9 +124,24 @@ class FileShareForegroundService : Service(), KoinComponent {
         super.onDestroy()
     }
 
+    /**
+     * 수신 도중 프로세스가 죽어 남은 스테이징 파일을 회수한다.
+     * 다음 업로드가 영원히 없을 수도 있으므로 서버가 켜지는 시점에 정리한다.
+     */
+    private fun cleanupExpiredStagingFiles() {
+        serviceScope.launch {
+            cleanupUploadedAudioStagingFilesUseCase()
+                .onSuccess { deletedCount ->
+                    if (deletedCount > 0) log("만료된 스테이징 파일 정리: count=$deletedCount")
+                }
+                .onFailure { error -> log("스테이징 파일 정리 실패: ${error.describe()}") }
+        }
+    }
+
     private fun startKtorServer() {
         serviceScope.launch {
-            runCatching {
+            suspendRunCatching {
+                val validateFileNameUseCase = validateUploadedAudioFileNameUseCase
                 val createStagingUseCase = createUploadedAudioStagingFileUseCase
                 val importUseCase = importUploadedAudioMediaUseCase
                 val updateUseCase = updateAudioMediaUseCase
@@ -146,9 +167,19 @@ class FileShareForegroundService : Service(), KoinComponent {
                          * Body: raw audio bytes
                          */
                         post(FileShareConstants.HTTP_UPLOAD_PATH) {
-                            val originalFileName = call.request.header(FileShareConstants.HEADER_FILE_NAME)
-                                ?: "upload.mp3"
-                            val declaredLength = call.request.header(HttpHeaders.ContentLength)
+                            // 헤더는 클라이언트가 임의로 채우는 값이다. 수신을 시작하기 전에 걸러
+                            // 대용량을 다 받고 나서 저장 단계에서 실패하는 일을 막는다.
+                            val originalFileName = validateFileNameUseCase(
+                                call.request.header(FileShareConstants.HEADER_FILE_NAME),
+                            ).getOrElse { error ->
+                                log("업로드 거절: ${error.describe()}")
+                                call.respond(
+                                    HttpStatusCode.BadRequest,
+                                    UploadResponse(success = false, message = error.message ?: "파일 이름이 올바르지 않습니다."),
+                                )
+                                return@post
+                            }
+                            val declaredLength = call.request.contentLength()
                             log("업로드 수신 시작: name=$originalFileName, contentLength=${declaredLength ?: "unknown"}")
 
                             // 최종 보관 위치와 같은 볼륨의 스테이징 파일로 곧장 흘려 쓴다.
@@ -167,7 +198,7 @@ class FileShareForegroundService : Service(), KoinComponent {
                                 // 수신하면서 SHA-256을 함께 계산해 파일을 다시 읽지 않는다.
                                 val hasher = Sha256()
                                 val receiveStartedAt = SystemClock.elapsedRealtime()
-                                val receivedBytes = runCatching {
+                                val receivedBytes = suspendRunCatching {
                                     withContext(Dispatchers.IO) {
                                         // 블로킹 InputStream 어댑터를 거치지 않고 채널에서 직접 읽는다.
                                         val channel = call.receiveChannel()
@@ -177,7 +208,6 @@ class FileShareForegroundService : Service(), KoinComponent {
                                             while (true) {
                                                 val read = channel.readAvailable(buffer, 0, buffer.size)
                                                 if (read == -1) break
-                                                if (read == 0) continue
                                                 output.write(buffer, 0, read)
                                                 hasher.update(buffer, 0, read)
                                                 total += read
@@ -199,12 +229,22 @@ class FileShareForegroundService : Service(), KoinComponent {
                                 }
 
                                 // Content-Length가 있으면 수신량과 대조해 잘린 파일이 등록되는 것을 막는다.
-                                val expectedBytes = declaredLength?.toLongOrNull()
-                                if (expectedBytes != null && expectedBytes != receivedBytes) {
-                                    log("업로드 수신 불완전: name=$originalFileName, expected=$expectedBytes, received=$receivedBytes")
+                                if (declaredLength != null && declaredLength != receivedBytes) {
+                                    log("업로드 수신 불완전: name=$originalFileName, expected=$declaredLength, received=$receivedBytes")
                                     call.respond(
                                         HttpStatusCode.BadRequest,
                                         UploadResponse(success = false, message = "파일이 온전히 전송되지 않았습니다."),
+                                    )
+                                    return@post
+                                }
+
+                                // 빈 본문은 Content-Length 대조를 통과한다. 메타데이터도 없는 0바이트 항목이
+                                // DB에 등록되는 것을 막으려면 여기서 걸러야 한다.
+                                if (receivedBytes == 0L) {
+                                    log("업로드 수신 거절: name=$originalFileName, 빈 파일")
+                                    call.respond(
+                                        HttpStatusCode.BadRequest,
+                                        UploadResponse(success = false, message = "빈 파일은 저장할 수 없습니다."),
                                     )
                                     return@post
                                 }
@@ -264,7 +304,7 @@ class FileShareForegroundService : Service(), KoinComponent {
                         }
 
                         post(FileShareConstants.HTTP_BULK_ARTIST_PATH) {
-                            val request = runCatching { call.receive<BulkArtistUpdateRequest>() }
+                            val request = suspendRunCatching { call.receive<BulkArtistUpdateRequest>() }
                                 .getOrElse {
                                     call.respond(
                                         HttpStatusCode.BadRequest,
@@ -280,7 +320,7 @@ class FileShareForegroundService : Service(), KoinComponent {
                                 return@post
                             }
 
-                            val result = runCatching {
+                            val result = suspendRunCatching {
                                 request.audioMediaIds.forEach { id ->
                                     updateUseCase(id = id, artist = request.artist).getOrThrow()
                                 }
@@ -309,7 +349,7 @@ class FileShareForegroundService : Service(), KoinComponent {
                                 return@post
                             }
 
-                            val bytes = runCatching {
+                            val bytes = suspendRunCatching {
                                 call.receiveChannel().toInputStream().readBytes()
                             }.getOrElse { error ->
                                 log("썸네일 수신 실패: ids=$ids, ${error.describe()}")
@@ -319,7 +359,7 @@ class FileShareForegroundService : Service(), KoinComponent {
                                 )
                                 return@post
                             }
-                            val result = runCatching {
+                            val result = suspendRunCatching {
                                 ids.forEach { id ->
                                     val imageFileFullPath = saveImageUseCase(bytes).getOrThrow()
                                     updateUseCase(id = id, imageFileFullPath = imageFileFullPath).getOrThrow()
