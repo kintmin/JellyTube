@@ -13,6 +13,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.util.cio.readChannel
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -34,7 +35,7 @@ class FileUploader(
         val response = client.post("http://$hostAddress:$port${FileShareConstants.HTTP_UPLOAD_PATH}") {
             header(FileShareConstants.HEADER_FILE_NAME, file.name)
             contentType(ContentType.Application.OctetStream)
-            setBody(file.readBytes())
+            setBody(file.readChannel())
         }
         response.body<UploadResponse>()
     }

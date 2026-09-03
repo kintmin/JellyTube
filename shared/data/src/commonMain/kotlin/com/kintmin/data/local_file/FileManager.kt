@@ -18,7 +18,7 @@ interface FileManager {
 
     suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo>
 
-    suspend fun saveUploadedAudio(bytes: ByteArray, originalFileName: String): Result<CopiedAudioInfo>
+    suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo>
 
     suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit>
 

@@ -50,6 +50,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.io.File
+import java.io.FileOutputStream
 
 class FileShareForegroundService : Service(), KoinComponent {
 
@@ -111,6 +113,7 @@ class FileShareForegroundService : Service(), KoinComponent {
                 val updateUseCase = updateAudioMediaUseCase
                 val saveImageUseCase = saveAudioMediaImageUseCase
                 val notificationManager = pushNotificationManager
+                val uploadCacheDir = cacheDir
 
                 ktorServer = embeddedServer(CIO, port = FileShareConstants.DEFAULT_PORT) {
                     install(WebSockets)
@@ -134,46 +137,54 @@ class FileShareForegroundService : Service(), KoinComponent {
                             val originalFileName = call.request.header(FileShareConstants.HEADER_FILE_NAME)
                                 ?: "upload.mp3"
 
-                            val bytes = runCatching {
-                                call.receiveChannel().toInputStream().readBytes()
-                            }.getOrElse {
-                                call.respond(
-                                    HttpStatusCode.BadRequest,
-                                    UploadResponse(success = false, message = "파일을 읽을 수 없습니다."),
-                                )
-                                return@post
-                            }
-
-                            importUseCase(bytes, originalFileName)
-                                .onSuccess { result ->
-                                    notificationManager.sendNotification(
-                                        DownloadResultNotification(
-                                            resultType = DownloadResultNotification.ResultType.Success,
-                                            contentText = "${result.audioMedia.artist} - ${result.audioMedia.name}",
-                                            playlistId = result.playlistIdOnDownload,
-                                            audioMediaId = result.audioMedia.id,
-                                        ),
-                                    )
-                                    call.respond(
-                                        HttpStatusCode.OK,
-                                        UploadResponse(
-                                            success = true,
-                                            message = "업로드 성공",
-                                            audioMediaId = result.audioMedia.id,
-                                            title = result.audioMedia.name,
-                                        ),
-                                    )
-                                }
-                                .onFailure { error ->
-                                    val message = when (error) {
-                                        is AlreadyDownloadedMedia -> "이미 저장된 파일입니다."
-                                        else -> error.message ?: "업로드 실패"
+                            // 대용량 WAV도 힙에 통째로 올리지 않도록 임시 파일로 스트리밍 수신한다.
+                            val tempFile = File.createTempFile(TEMP_UPLOAD_PREFIX, null, uploadCacheDir)
+                            try {
+                                runCatching {
+                                    call.receiveChannel().toInputStream().use { input ->
+                                        FileOutputStream(tempFile).use { output -> input.copyTo(output) }
                                     }
+                                }.getOrElse {
                                     call.respond(
-                                        HttpStatusCode.UnprocessableEntity,
-                                        UploadResponse(success = false, message = message),
+                                        HttpStatusCode.BadRequest,
+                                        UploadResponse(success = false, message = "파일을 읽을 수 없습니다."),
                                     )
+                                    return@post
                                 }
+
+                                importUseCase(tempFile.absolutePath, originalFileName)
+                                    .onSuccess { result ->
+                                        notificationManager.sendNotification(
+                                            DownloadResultNotification(
+                                                resultType = DownloadResultNotification.ResultType.Success,
+                                                contentText = "${result.audioMedia.artist} - ${result.audioMedia.name}",
+                                                playlistId = result.playlistIdOnDownload,
+                                                audioMediaId = result.audioMedia.id,
+                                            ),
+                                        )
+                                        call.respond(
+                                            HttpStatusCode.OK,
+                                            UploadResponse(
+                                                success = true,
+                                                message = "업로드 성공",
+                                                audioMediaId = result.audioMedia.id,
+                                                title = result.audioMedia.name,
+                                            ),
+                                        )
+                                    }
+                                    .onFailure { error ->
+                                        val message = when (error) {
+                                            is AlreadyDownloadedMedia -> "이미 저장된 파일입니다."
+                                            else -> error.message ?: "업로드 실패"
+                                        }
+                                        call.respond(
+                                            HttpStatusCode.UnprocessableEntity,
+                                            UploadResponse(success = false, message = message),
+                                        )
+                                    }
+                            } finally {
+                                tempFile.delete()
+                            }
                         }
 
                         post(FileShareConstants.HTTP_BULK_ARTIST_PATH) {
@@ -283,6 +294,8 @@ class FileShareForegroundService : Service(), KoinComponent {
 
     companion object {
         const val ACTION_STOP = "com.kintmin.platform.FILE_SHARE_STOP"
+
+        private const val TEMP_UPLOAD_PREFIX = "upload_"
 
         private val _isRunning = MutableStateFlow(false)
         val isRunning = _isRunning.asStateFlow()

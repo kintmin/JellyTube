@@ -52,7 +52,7 @@ interface AudioMediaRepository {
     ): Result<AddedAudioMedia>
 
     suspend fun importUploadedAudio(
-        bytes: ByteArray,
+        uploadedFileFullPath: String,
         originalFileName: String,
         playlistIdOnDownload: Int?,
         shouldInsertAtTopOnDownload: Boolean,

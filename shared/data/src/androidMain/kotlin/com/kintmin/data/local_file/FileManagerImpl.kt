@@ -12,6 +12,7 @@ import com.kintmin.data.local_file.model.CopiedAudioInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.UUID
@@ -140,17 +141,24 @@ internal class FileManagerImpl(
         }
     }
 
-    override suspend fun saveUploadedAudio(bytes: ByteArray, originalFileName: String): Result<CopiedAudioInfo> = runCatching {
+    override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = runCatching {
         withContext(Dispatchers.IO) {
             val ext = originalFileName.substringAfterLast(".", "").ifBlank { "mp3" }
             val fileName = UUID.randomUUID().toString()
             val fileNameWithExt = "$fileName.$ext"
             val targetFile = audioDir().resolve(fileNameWithExt)
 
+            // 파일 복사 + SHA-256 해시 계산 (대용량 파일도 메모리에 올리지 않는다)
             val digest = MessageDigest.getInstance("SHA-256")
-            FileOutputStream(targetFile).use { output ->
-                output.write(bytes)
-                digest.update(bytes)
+            FileInputStream(File(sourceFileFullPath)).use { input ->
+                FileOutputStream(targetFile).use { output ->
+                    val buffer = ByteArray(8192)
+                    var bytesRead: Int
+                    while (input.read(buffer).also { bytesRead = it } != -1) {
+                        output.write(buffer, 0, bytesRead)
+                        digest.update(buffer, 0, bytesRead)
+                    }
+                }
             }
             val sha256Hex = digest.digest().joinToString("") { "%02x".format(it) }
 

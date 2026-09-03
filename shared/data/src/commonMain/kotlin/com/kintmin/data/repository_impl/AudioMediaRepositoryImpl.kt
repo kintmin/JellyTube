@@ -305,14 +305,14 @@ internal class AudioMediaRepositoryImpl constructor(
     }
 
     override suspend fun importUploadedAudio(
-        bytes: ByteArray,
+        uploadedFileFullPath: String,
         originalFileName: String,
         playlistIdOnDownload: Int?,
         shouldInsertAtTopOnDownload: Boolean,
     ): Result<AddedAudioMedia> {
         return withContext(Dispatchers.IO) {
             runCatching {
-                val copiedInfo = fileManager.saveUploadedAudio(bytes, originalFileName).getOrThrow()
+                val copiedInfo = fileManager.saveUploadedAudio(uploadedFileFullPath, originalFileName).getOrThrow()
                 val source = "fileShare://sha256/${copiedInfo.sha256Hex}"
 
                 runCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
