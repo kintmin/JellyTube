@@ -1,5 +1,6 @@
 package com.kintmin.platform.service
 
+import com.kintmin.domain.extension.startOfDayMillis
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -26,20 +27,31 @@ class StepSensorProcessor(
         prevStepSensor: Long?,
         newStepSensor: Long,
         currentMillis: Long,
-        todayLastSavedStepSensor: Long? = null,
+        todayLastSavedStepSensor: Long?,
+        bootMillis: Long,
         onStepDelta: (Int) -> Unit,
     ) {
         // prevStepSensor는 in-memory 캐시로, 서비스 시작 직후에는 항상 null
         val isNewlyStartedForeground = prevStepSensor == null
         if (isNewlyStartedForeground) {
-            if (todayLastSavedStepSensor != null) {
-                val delta = if (newStepSensor >= todayLastSavedStepSensor) {
-                    (newStepSensor - todayLastSavedStepSensor).toInt()  // 서비스 꺼짐 ~ 재시작: 센서 기반 복원
-                } else {
-                    newStepSensor.toInt()  // 재부팅: 센서가 0부터 리셋됨
+            val delta = when {
+                todayLastSavedStepSensor != null -> {
+                    if (newStepSensor >= todayLastSavedStepSensor) {
+                        (newStepSensor - todayLastSavedStepSensor).toInt()  // 서비스 꺼짐 ~ 재시작: 센서 기반 복원
+                    } else {
+                        newStepSensor.toInt()  // 센서 리셋(재부팅)으로 간주. 리셋 이후 누적값 전체를 delta로
+                    }
                 }
-                if (delta > 0) onStepDelta(delta)
+                // Known Issue: 오늘 기준점이 없다면 (자정에 Foreground가 안 켜져 있었다면), 당일 걸음수는 누락될 수 있음.
+                else -> {
+                    if (bootMillis >= todayStartMillis(currentMillis)) {
+                        newStepSensor.toInt()   // 부팅이 오늘이면, 부팅 이후 누적값 전체를 delta로 (부팅 전 걸음수는 누락)
+                    } else {
+                        0   // 기준점도 없고 부팅도 어제 이전이면 센서 누적값 중 오늘 몫을 알 수 없다. (완전 누락)
+                    }
+                }
             }
+            if (delta > 0) onStepDelta(delta)
             forceBackupWithCurrentTime(newStepSensor, currentMillis)
         } else {
             val stepDelta = (newStepSensor - prevStepSensor).toInt()
@@ -56,16 +68,6 @@ class StepSensorProcessor(
      * - 재부팅/첫 시작: 기준 센서값이 달라진 시점이므로 즉시 저장
      * - 시간/타임존 변경: 기준 시각이 바뀌므로 즉시 저장
      */
-    fun updateStepAfterBoot(
-        newStepSensor: Long,
-        currentMillis: Long,
-        onStepDelta: (Int) -> Unit,
-    ) {
-        val delta = newStepSensor.toInt()
-        if (delta > 0) onStepDelta(delta)
-        forceBackupWithCurrentTime(newStepSensor, currentMillis)
-    }
-
     fun forceBackupWithCurrentTime(stepSensor: Long, currentMillis: Long) {
         onBackupSensor(stepSensor, currentMillis)
 
@@ -95,6 +97,14 @@ class StepSensorProcessor(
         }
 
         lastBackupUnitMillis = currentUnitMillis
+    }
+
+    private fun todayStartMillis(currentMillis: Long): Long {
+        val timeZone = getTimeZone()
+        return Instant.fromEpochMilliseconds(currentMillis)
+            .toLocalDateTime(timeZone)
+            .date
+            .startOfDayMillis(timeZone)
     }
 
     fun truncateToUnitMillis(millis: Long, timeZone: TimeZone): Long {

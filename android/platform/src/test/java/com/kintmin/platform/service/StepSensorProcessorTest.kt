@@ -14,6 +14,15 @@ class StepSensorProcessorTest {
     private val utc: TimeZone = TimeZone.UTC
     private val backupUnit = 30 * 60 * 1000L
 
+    // 테스트 기준일은 2024-01-15.
+    // 부팅이 어제 이전이면 오늘 기준점이 없을 때 오늘 몫을 산정할 수 없다.
+    private val bootBeforeToday: Long =
+        LocalDateTime(2024, 1, 14, 20, 0, 0, 0).toInstant(utc).toEpochMilliseconds()
+
+    // 부팅이 오늘이면 센서 누적값 전체가 오늘 걸음수다.
+    private val bootToday: Long =
+        LocalDateTime(2024, 1, 15, 1, 0, 0, 0).toInstant(utc).toEpochMilliseconds()
+
     private val stepDeltaCalls = mutableListOf<Int>()
     private val forceBackupCalls = mutableListOf<Pair<Long, Long>>()
     private val backupSensorCalls = mutableListOf<Pair<Long, Long>>()
@@ -90,7 +99,7 @@ class StepSensorProcessorTest {
 
     @Test
     fun `prevSensor가 null이면(hasNoPrevSensor) forceBackup이 호출된다`() {
-        processor.updateStep(null, 100L, utcMillis(9, 15)) {
+        processor.updateStep(null, 100L, utcMillis(9, 15), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -102,7 +111,7 @@ class StepSensorProcessorTest {
 
     @Test
     fun `재시작 케이스 - newSensor가 lastSaved 이상이면 차이만큼 delta가 호출된다`() {
-        processor.updateStep(null, 5350L, utcMillis(9, 15), todayLastSavedStepSensor = 5300L) {
+        processor.updateStep(null, 5350L, utcMillis(9, 15), todayLastSavedStepSensor = 5300L, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -112,7 +121,7 @@ class StepSensorProcessorTest {
 
     @Test
     fun `재부팅 케이스 - newSensor가 lastSaved 미만이면 newSensor 자체가 delta로 호출된다`() {
-        processor.updateStep(null, 100L, utcMillis(9, 15), todayLastSavedStepSensor = 5300L) {
+        processor.updateStep(null, 100L, utcMillis(9, 15), todayLastSavedStepSensor = 5300L, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -122,7 +131,7 @@ class StepSensorProcessorTest {
 
     @Test
     fun `lastSavedStepSensor가 null이면 delta 복원 없이 forceBackup만 호출된다`() {
-        processor.updateStep(null, 5350L, utcMillis(9, 15), todayLastSavedStepSensor = null) {
+        processor.updateStep(null, 5350L, utcMillis(9, 15), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -132,7 +141,7 @@ class StepSensorProcessorTest {
 
     @Test
     fun `newSensor와 lastSaved가 같으면 delta가 0이라 stepDelta는 호출되지 않는다`() {
-        processor.updateStep(null, 5300L, utcMillis(9, 15), todayLastSavedStepSensor = 5300L) {
+        processor.updateStep(null, 5300L, utcMillis(9, 15), todayLastSavedStepSensor = 5300L, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -142,7 +151,7 @@ class StepSensorProcessorTest {
 
     @Test
     fun `prevSensor가 null이 아니면 lastSavedStepSensor가 있어도 delta 복원이 적용되지 않는다`() {
-        processor.updateStep(5000L, 5350L, utcMillis(9, 15), todayLastSavedStepSensor = 5300L) {
+        processor.updateStep(5000L, 5350L, utcMillis(9, 15), todayLastSavedStepSensor = 5300L, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -153,7 +162,7 @@ class StepSensorProcessorTest {
 
     @Test
     fun `정상 이벤트에서 stepDelta가 누적된다`() {
-        processor.updateStep(100L, 250L, utcMillis(9, 5)) {
+        processor.updateStep(100L, 250L, utcMillis(9, 5), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -165,10 +174,10 @@ class StepSensorProcessorTest {
 
     @Test
     fun `같은 버킷 내 두 번 이벤트는 onBackupSensor가 1회만 호출된다`() {
-        processor.updateStep(100L, 110L, utcMillis(9, 5)) {
+        processor.updateStep(100L, 110L, utcMillis(9, 5), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
-        processor.updateStep(110L, 120L, utcMillis(9, 10)) {
+        processor.updateStep(110L, 120L, utcMillis(9, 10), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -177,13 +186,13 @@ class StepSensorProcessorTest {
 
     @Test
     fun `버킷이 바뀔 때마다 onBackupSensor가 호출된다`() {
-        processor.updateStep(100L, 110L, utcMillis(9, 5)) {
+        processor.updateStep(100L, 110L, utcMillis(9, 5), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
-        processor.updateStep(110L, 120L, utcMillis(9, 35)) {
+        processor.updateStep(110L, 120L, utcMillis(9, 35), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
-        processor.updateStep(120L, 130L, utcMillis(10, 5)) {
+        processor.updateStep(120L, 130L, utcMillis(10, 5), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -193,7 +202,7 @@ class StepSensorProcessorTest {
     @Test
     fun `lastBackupUnitMillis가 null일 때 첫 버킷 변경 시 saveMillis는 currentUnitMillis다`() {
         val eventMillis = utcMillis(9, 35)
-        processor.updateStep(100L, 120L, eventMillis) {
+        processor.updateStep(100L, 120L, eventMillis, todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -203,10 +212,10 @@ class StepSensorProcessorTest {
 
     @Test
     fun `backupStepSensor에 저장되는 값은 prevStepSensor다`() {
-        processor.updateStep(100L, 150L, utcMillis(9, 5)) {
+        processor.updateStep(100L, 150L, utcMillis(9, 5), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
-        processor.updateStep(150L, 200L, utcMillis(9, 35)) {
+        processor.updateStep(150L, 200L, utcMillis(9, 35), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -215,10 +224,10 @@ class StepSensorProcessorTest {
 
     @Test
     fun `saveMillis는 lastBackupUnitMillis에 backupUnit을 더한 값이다`() {
-        processor.updateStep(100L, 110L, utcMillis(9, 5)) { // lastBackupUnitMillis = 09:00
+        processor.updateStep(100L, 110L, utcMillis(9, 5), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) { // lastBackupUnitMillis = 09:00
             stepDeltaCalls.add(it)
         }
-        processor.updateStep(110L, 120L, utcMillis(9, 35)) { // saveMillis = 09:00 + 30min = 09:30
+        processor.updateStep(110L, 120L, utcMillis(9, 35), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) { // saveMillis = 09:00 + 30min = 09:30
             stepDeltaCalls.add(it)
         }
 
@@ -230,11 +239,11 @@ class StepSensorProcessorTest {
 
     @Test
     fun `forceBackup 직후 같은 버킷 이벤트에서 onBackupSensor가 호출되지 않는다`() {
-        processor.updateStep(null, 50L, utcMillis(9, 15)) { // forceBackup, lastBackupUnitMillis = 09:30
+        processor.updateStep(null, 50L, utcMillis(9, 15), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) { // forceBackup, lastBackupUnitMillis = 09:30
             stepDeltaCalls.add(it)
         }
 
-        processor.updateStep(50L, 80L, utcMillis(9, 20)) { // 09:30 버킷 → skip
+        processor.updateStep(50L, 80L, utcMillis(9, 20), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) { // 09:30 버킷 → skip
             stepDeltaCalls.add(it)
         }
 
@@ -243,13 +252,13 @@ class StepSensorProcessorTest {
 
     @Test
     fun `forceBackup 직후 다음 버킷 이벤트에서 onBackupSensor가 호출되고 prevStepSensor가 저장된다`() {
-        processor.updateStep(null, 50L, utcMillis(9, 15)) { // forceBackup, lastBackupUnitMillis=09:00
+        processor.updateStep(null, 50L, utcMillis(9, 15), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) { // forceBackup, lastBackupUnitMillis=09:00
             stepDeltaCalls.add(it)
         }
-        processor.updateStep(50L, 100L, utcMillis(9, 32)) { // 09:30 버킷 → 저장, prevSensor=50
+        processor.updateStep(50L, 100L, utcMillis(9, 32), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) { // 09:30 버킷 → 저장, prevSensor=50
             stepDeltaCalls.add(it)
         }
-        processor.updateStep(100L, 150L, utcMillis(10, 2)) { // 10:00 버킷 → 저장, prevSensor=100
+        processor.updateStep(100L, 150L, utcMillis(10, 2), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) { // 10:00 버킷 → 저장, prevSensor=100
             stepDeltaCalls.add(it)
         }
 
@@ -271,7 +280,7 @@ class StepSensorProcessorTest {
     @Test
     fun `서비스 재시작 시 자정 버킷이어도 onDailyReset은 호출되지 않는다`() {
         // ResetDataOncePerDayUseCase.cachedEpochDay는 프로세스 시작 시 오늘로 초기화되므로 항상 no-op
-        processor.updateStep(null, 50L, utcMillis(0, 15)) {
+        processor.updateStep(null, 50L, utcMillis(0, 15), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -290,7 +299,7 @@ class StepSensorProcessorTest {
 
     @Test
     fun `서비스 재시작 후 첫 이벤트는 prevSensor가 null(날짜 불일치 포함)이므로 forceBackup이 호출된다`() {
-        processor.updateStep(null, 2000L, utcMillis(9, 5)) {
+        processor.updateStep(null, 2000L, utcMillis(9, 5), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -298,9 +307,11 @@ class StepSensorProcessorTest {
         assertEquals(0, stepDeltaCalls.size)
     }
 
+    // ─── 기준점이 없을 때의 부팅 시점 판정 ──────────────────────────────
+
     @Test
-    fun `boot start uses new sensor as delta`() {
-        processor.updateStepAfterBoot(150L, utcMillis(9, 15)) {
+    fun `기준점이 없고 부팅이 오늘이면 센서 누적값 전체가 delta로 호출된다`() {
+        processor.updateStep(null, 150L, utcMillis(9, 15), todayLastSavedStepSensor = null, bootMillis = bootToday) {
             stepDeltaCalls.add(it)
         }
 
@@ -309,8 +320,33 @@ class StepSensorProcessorTest {
     }
 
     @Test
-    fun `boot start with zero sensor does not emit delta`() {
-        processor.updateStepAfterBoot(0L, utcMillis(9, 15)) {
+    fun `기준점이 없고 부팅이 오늘이어도 센서가 0이면 delta는 호출되지 않는다`() {
+        processor.updateStep(null, 0L, utcMillis(9, 15), todayLastSavedStepSensor = null, bootMillis = bootToday) {
+            stepDeltaCalls.add(it)
+        }
+
+        assertEquals(0, stepDeltaCalls.size)
+        assertEquals(1, forceBackupCalls.size)
+    }
+
+    @Test
+    fun `기준점이 없고 부팅이 어제 이전이면 지난 날들의 걸음이 섞이지 않도록 delta가 호출되지 않는다`() {
+        processor.updateStep(null, 80166L, utcMillis(9, 15), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
+            stepDeltaCalls.add(it)
+        }
+
+        assertEquals(0, stepDeltaCalls.size)
+        assertEquals(1, forceBackupCalls.size)
+    }
+
+    /**
+     * Android 15(API 35)부터 앱이 Stopped 상태에서 해제되면 ACTION_BOOT_COMPLETED가 다시 전달된다.
+     * 강제종료 후 첫 실행이 대표 사례로, 재부팅이 아니므로 센서는 리셋되지 않는다.
+     * 이때 기준점과 센서값이 같으므로 delta는 0이어야 한다.
+     */
+    @Test
+    fun `강제종료 후 재시작으로 센서값이 기준점과 같으면 누적값이 더해지지 않는다`() {
+        processor.updateStep(null, 80166L, utcMillis(9, 15), todayLastSavedStepSensor = 80166L, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }
 
