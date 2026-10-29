@@ -49,13 +49,6 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
 
-/**
- * 오디오 파일만 복수 선택하는 문서 선택기.
- *
- * 기본 [ActivityResultContracts.OpenMultipleDocuments]는 사용자가 마지막으로 열었던 위치에서
- * 시작해서 Quick Share로 받은 폴더 같은 엉뚱한 곳이 먼저 보인다. 처음부터 기기의 "오디오"
- * 목록에서 열리도록 시작 위치를 지정한다.
- */
 private class OpenMultipleAudioDocuments : ActivityResultContracts.OpenMultipleDocuments() {
 
     override fun createIntent(context: Context, input: Array<String>): Intent =
@@ -163,7 +156,6 @@ fun SettingScreen(
         )
     }
 
-    // 위 시트는 전역 설정을 바꾸고, 이 시트는 방금 고른 파일을 넣을 재생목록만 정한다.
     if (uiState.isImportPlaylistBottomSheetVisible) {
         DownloadPlaylistSelectorBottomSheet(
             playlistList = uiState.selectablePlaylistList,

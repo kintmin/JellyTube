@@ -35,7 +35,6 @@ class SettingDeviceSaveSelectViewModel constructor(
 
     private val changeSearchTextDebounce = Debounce(200L)
 
-    /** 저장 대상으로 넘길 도메인 모델. UiState에는 표시용 필드만 있어서 원본을 따로 들고 있는다. */
     private val audioMediaListFlow: StateFlow<List<AudioMedia>> = fetchAllAudioMediaListFlowUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

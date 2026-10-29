@@ -67,12 +67,6 @@ interface AudioMediaRepository {
     suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit>
     suspend fun listAudioAndImageFileFullPaths(): Result<List<String>>
 
-    /**
-     * 앱 내부 음원 1개를 기기 공용 저장소로 내보낸다.
-     *
-     * 공용 저장소의 파일명은 [title]/[artist]로 만든다 — 디스크 파일명이 UUID이고 MediaStore의
-     * TITLE 컬럼이 readOnly라서, 알람음/벨소리 목록에 보일 이름을 파일명으로만 정할 수 있다.
-     */
     suspend fun exportAudioMediaToDevice(
         audioFileFullPath: String,
         title: String,

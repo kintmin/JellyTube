@@ -12,13 +12,8 @@ data class SettingDeviceSaveSelectUiState(
     val isSaveEnabled: Boolean get() = !isSaving && checkedItemCount > 0 && selectedTargetList.isNotEmpty()
 
     companion object {
-        /**
-         * 기본 저장 용도.
-         *
-         * 용도 하나가 복사본 하나라서 전부 켜두면 디스크를 4배로 쓴다. 알람음으로 쓰려는 사용자가
-         * 많고 음악 앱 노출은 기본적으로 기대되는 동작이라 이 둘만 기본으로 켠다.
-         */
-        val DEFAULT_TARGET_LIST = listOf(AudioExportTarget.ALARM, AudioExportTarget.MUSIC)
+
+        val DEFAULT_TARGET_LIST = listOf(AudioExportTarget.MUSIC)
 
         fun getMock() = SettingDeviceSaveSelectUiState(
             audioMediaList = SettingDeviceSaveSelectListItemUiState.getMockList(),

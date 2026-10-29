@@ -94,8 +94,6 @@ fun SettingDeviceSaveSelectScreen(
         uiState = uiState,
         navigateToBack = navigateToBack,
         onClickSave = {
-            // API 29+는 앱이 만든 미디어를 권한 없이 MediaStore에 넣을 수 있다.
-            // 28 이하만 공용 디렉토리에 직접 쓰므로 WRITE_EXTERNAL_STORAGE가 필요하다.
             val needsLegacyPermission = Build.VERSION.SDK_INT <= Build.VERSION_CODES.P &&
                 context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
                 PackageManager.PERMISSION_GRANTED

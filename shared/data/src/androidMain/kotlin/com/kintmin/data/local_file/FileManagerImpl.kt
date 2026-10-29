@@ -32,7 +32,6 @@ internal class FileManagerImpl(
         const val LYRIC_DIR_NAME = "lyrics"
         const val MAX_LOG_FILE_COUNT = 14
 
-        /** 공용 저장소의 각 미디어 디렉토리 안에서 이 앱이 쓰는 하위 디렉토리명. */
         const val EXPORT_DIR_NAME = "JellyTube"
 
         /**
@@ -315,7 +314,6 @@ internal class FileManagerImpl(
         AudioExportTarget.RINGTONE -> Environment.DIRECTORY_RINGTONES
     }
 
-    /** MediaStore RELATIVE_PATH는 끝 슬래시를 포함한 형태로 저장되므로 조회 인자도 같은 형태여야 한다. */
     private fun exportRelativePath(dirType: String): String = "$dirType/$EXPORT_DIR_NAME/"
 
     private fun exportCollection(): Uri =
@@ -327,8 +325,6 @@ internal class FileManagerImpl(
         }
 
     /**
-     * API 29+ 경로. IS_PENDING으로 항목을 선점하고 스트림에 쓴 뒤 publish 한다.
-     *
      * TITLE/ARTIST/DURATION과 IS_MUSIC/IS_ALARM/IS_NOTIFICATION/IS_RINGTONE은 모두 readOnly
      * 컬럼이라 넣어도 MediaProvider가 버린다. 앞의 셋은 파일 태그에서, 뒤의 넷은 파일이 놓인
      * 경로에서 재계산되므로 여기서 제어할 수 있는 것은 DISPLAY_NAME과 RELATIVE_PATH뿐이다.

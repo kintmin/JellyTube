@@ -8,12 +8,6 @@ import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 
-/**
- * 선택한 음원들을 기기 공용 저장소로 내보낸다.
- *
- * 곡 단위 실패가 정상 결과(일부만 성공)라서 실패를 예외로 올리지 않고 집계해서 돌려준다.
- * 같은 디렉토리에서 파일명이 경합하지 않도록 순차로 처리한다.
- */
 class ExportAudioMediaListToDeviceUseCase constructor(
     private val audioMediaRepository: AudioMediaRepository,
     private val appLog: AppLog,

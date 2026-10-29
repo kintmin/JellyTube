@@ -54,9 +54,6 @@ fun SettingDeviceSaveScreen(
         navigateToBack = navigateToBack,
         onClickGoToSave = navigateToDeviceSaveSelect,
         onClickGoToAlarm = {
-            // 시계 앱의 알람 목록까지만 열 수 있다. 개별 알람의 알람음 선택 화면과 그 안의
-            // 소리 추가 버튼은 시계 앱 내부 화면이라 OS가 진입 경로를 제공하지 않는다.
-            //
             // SHOW_ALARMS를 처리하지 않는 기기가 있어서 알람 생성 화면(SET_ALARM)으로 폴백한다.
             // SET_ALARM은 EXTRA_SKIP_UI를 false로 둬야 알람을 바로 만들지 않고 화면을 보여준다.
             startFirstAvailableActivity(

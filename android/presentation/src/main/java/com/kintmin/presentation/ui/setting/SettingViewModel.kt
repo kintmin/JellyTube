@@ -43,7 +43,6 @@ class SettingViewModel constructor(
 
     private val isStepEnabledFlow = fetchIsStepEnabledFlowUseCase()
 
-    /** 파일 선택기에서 고른 음원. 재생목록 BottomSheet에서 대상이 정해질 때까지 들고 있는다. */
     private var pendingImportUriStringList: List<String> = emptyList()
 
     val uiState: StateFlow<SettingUiState> = combine(
@@ -139,7 +138,6 @@ class SettingViewModel constructor(
                 importPendingAudioFiles(intent.playlistId)
             }
             SettingIntent.OnDismissImportPlaylistBottomSheet -> {
-                // 대상 재생목록을 고르지 않았으면 가져오기를 취소한다.
                 pendingImportUriStringList = emptyList()
                 isImportPlaylistBottomSheetVisible.value = false
             }

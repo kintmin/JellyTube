@@ -11,10 +11,7 @@ class ImportSharedAudioMediaUseCase constructor(
     private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase,
     private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase,
 ) {
-    /**
-     * @param playlistIdOverride 이번 가져오기에만 적용할 대상 재생목록. null이면 "다운로드 시 재생목록"
-     * 전역 설정값을 쓴다. 가져오기 직전에 재생목록을 고르는 화면에서만 넘긴다(전역 설정은 바뀌지 않는다).
-     */
+
     suspend operator fun invoke(
         contentUriString: String,
         playlistIdOverride: Int? = null,
