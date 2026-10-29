@@ -39,6 +39,10 @@ import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.navigateToAppLogScreen
 import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
 import com.kintmin.presentation.ui.setting.navigation.settingGraph
+import com.kintmin.presentation.ui.setting.device_save.navigation.navigateToSettingDeviceSaveScreen
+import com.kintmin.presentation.ui.setting.device_save.navigation.settingDeviceSaveScreen
+import com.kintmin.presentation.ui.setting.device_save_select.navigation.navigateToSettingDeviceSaveSelectScreen
+import com.kintmin.presentation.ui.setting.device_save_select.navigation.settingDeviceSaveSelectScreen
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.navigateToSettingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.settingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.quick_share.navigation.navigateToSettingShareScreen
@@ -200,6 +204,9 @@ fun MainNavHost(
             navigateToFileShareReceive = {
                 navController.navigateToSettingFileShareReceiveScreen(navOptions)
             },
+            navigateToDeviceSave = {
+                navController.navigateToSettingDeviceSaveScreen(navOptions)
+            },
         ) {
             appLogScreen(
                 navigateToBack = { navController.popBackStack() },
@@ -214,6 +221,17 @@ fun MainNavHost(
             )
 
             settingFileShareReceiveScreen(
+                navigateToBack = { navController.popBackStack() },
+            )
+
+            settingDeviceSaveScreen(
+                navigateToBack = { navController.popBackStack() },
+                navigateToDeviceSaveSelect = {
+                    navController.navigateToSettingDeviceSaveSelectScreen(navOptions)
+                },
+            )
+
+            settingDeviceSaveSelectScreen(
                 navigateToBack = { navController.popBackStack() },
             )
         }

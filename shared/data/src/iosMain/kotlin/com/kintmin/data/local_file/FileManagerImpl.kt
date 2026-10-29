@@ -1,6 +1,8 @@
 package com.kintmin.data.local_file
 
 import com.kintmin.data.local_file.model.CopiedAudioInfo
+import com.kintmin.data.local_file.model.ExportedAudioInfo
+import com.kintmin.domain.audio_media.model.AudioExportTarget
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
@@ -45,6 +47,13 @@ internal class FileManagerImpl : FileManager {
     override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = unsupported()
 
     override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = unsupported()
+
+    override suspend fun exportAudioToPublicStorage(
+        sourceAudioFileFullPath: String,
+        title: String,
+        artist: String?,
+        targetList: List<AudioExportTarget>,
+    ): Result<ExportedAudioInfo> = unsupported()
 
     override suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit> = runCatching {
         NSFileManager.defaultManager.removeItemAtPath(fileFullPath, error = null)

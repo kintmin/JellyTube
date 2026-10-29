@@ -1,7 +1,11 @@
 package com.kintmin.presentation.ui.setting
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.DocumentsContract
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,10 +18,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,11 +42,33 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import org.koin.androidx.compose.koinViewModel
 import com.kintmin.platform.service.StepForegroundService
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
+
+/**
+ * 오디오 파일만 복수 선택하는 문서 선택기.
+ *
+ * 기본 [ActivityResultContracts.OpenMultipleDocuments]는 사용자가 마지막으로 열었던 위치에서
+ * 시작해서 Quick Share로 받은 폴더 같은 엉뚱한 곳이 먼저 보인다. 처음부터 기기의 "오디오"
+ * 목록에서 열리도록 시작 위치를 지정한다.
+ */
+private class OpenMultipleAudioDocuments : ActivityResultContracts.OpenMultipleDocuments() {
+
+    override fun createIntent(context: Context, input: Array<String>): Intent =
+        super.createIntent(context, input).apply {
+            putExtra(DocumentsContract.EXTRA_INITIAL_URI, AUDIO_ROOT_URI)
+        }
+
+    private companion object {
+        /** DocumentsUI의 "오디오" 루트. MediaDocumentsProvider가 제공한다. */
+        val AUDIO_ROOT_URI: Uri =
+            "content://com.android.providers.media.documents/root/audio_root".toUri()
+    }
+}
 
 @Composable
 fun SettingScreen(
@@ -49,10 +77,17 @@ fun SettingScreen(
     navigateToAppLog: () -> Unit,
     navigateToShare: () -> Unit,
     navigateToFileShareReceive: () -> Unit,
+    navigateToDeviceSave: () -> Unit,
 ) {
     val viewModel = koinViewModel<SettingViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    val audioFileLauncher = rememberLauncherForActivityResult(
+        contract = OpenMultipleAudioDocuments(),
+    ) { uris ->
+        viewModel.sendIntent(SettingIntent.OnAudioFilesSelected(uris.map { it.toString() }))
+    }
 
     val activityRecognitionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -75,6 +110,8 @@ fun SettingScreen(
                 SettingEvent.NavigateToAppLogScreen -> navigateToAppLog()
                 SettingEvent.NavigateToShareScreen -> navigateToShare()
                 SettingEvent.NavigateToFileShareReceiveScreen -> navigateToFileShareReceive()
+                SettingEvent.NavigateToDeviceSaveScreen -> navigateToDeviceSave()
+                SettingEvent.LaunchAudioFilePicker -> audioFileLauncher.launch(arrayOf("audio/*"))
                 SettingEvent.StopStepForegroundService -> StepForegroundService.stopService(context)
                 is SettingEvent.ShowToast ->
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
@@ -122,6 +159,19 @@ fun SettingScreen(
             },
             onDismissRequest = {
                 sendIntent(SettingIntent.OnDismissPlaylistIdOnDownloadBottomSheet)
+            },
+        )
+    }
+
+    // 위 시트는 전역 설정을 바꾸고, 이 시트는 방금 고른 파일을 넣을 재생목록만 정한다.
+    if (uiState.isImportPlaylistBottomSheetVisible) {
+        DownloadPlaylistSelectorBottomSheet(
+            playlistList = uiState.selectablePlaylistList,
+            onSelectPlaylist = { playlistId ->
+                sendIntent(SettingIntent.OnSelectImportPlaylist(playlistId))
+            },
+            onDismissRequest = {
+                sendIntent(SettingIntent.OnDismissImportPlaylistBottomSheet)
             },
         )
     }
@@ -195,6 +245,47 @@ fun SettingScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
+                    .clickable(enabled = !uiState.isImporting) {
+                        sendIntent(SettingIntent.OnClickImportAudioTile)
+                    }
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = "음원 파일 선택해서 가져오기",
+                )
+                if (uiState.isImporting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clickable {
+                        sendIntent(SettingIntent.OnClickDeviceSaveTile)
+                    }
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = "파일 기기에 저장하기")
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = "기기에 저장하기 화면으로 이동",
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
                     .clickable {
                         sendIntent(SettingIntent.OnClickShareTile)
                     }
@@ -220,10 +311,10 @@ fun SettingScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(text = "데스크톱에서 파일 공유받기")
+                Text(text = "PC에서 공유받기")
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = "파일 공유 받기 화면으로 이동",
+                    contentDescription = "PC에서 공유받기 화면으로 이동",
                 )
             }
 

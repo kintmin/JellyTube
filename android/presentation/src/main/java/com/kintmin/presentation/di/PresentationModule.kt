@@ -20,6 +20,7 @@ import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListViewModel
 import com.kintmin.presentation.ui.setting.SettingViewModel
 import com.kintmin.presentation.ui.setting.app_log.AppLogViewModel
 import com.kintmin.presentation.ui.setting.file_share_receive.SettingFileShareReceiveViewModel
+import com.kintmin.presentation.ui.setting.device_save_select.SettingDeviceSaveSelectViewModel
 import com.kintmin.presentation.ui.setting.quick_share.SettingShareViewModel
 import com.kintmin.presentation.ui.step.StepViewModel
 import org.koin.core.module.Module
@@ -32,6 +33,7 @@ val presentationModule: Module = module {
     viewModelOf(::PlayerBarViewModel)
     viewModelOf(::SettingFileShareReceiveViewModel)
     viewModelOf(::SettingShareViewModel)
+    viewModelOf(::SettingDeviceSaveSelectViewModel)
     viewModelOf(::AppLogViewModel)
     viewModelOf(::PlayerDetailViewModel)
     viewModelOf(::MainFloatingActionViewModel)

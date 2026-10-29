@@ -120,7 +120,7 @@ fun MainFloatingActionButton(
                         hoveredElevation = 0.dp,
                     ),
                 ) {
-                    Text(text = "데스크톱에서 추가하기")
+                    Text(text = "PC에서 공유받기")
                 }
 
                 ExtendedFloatingActionButton(
