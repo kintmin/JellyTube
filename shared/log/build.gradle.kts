@@ -11,7 +11,6 @@ kotlin {
         compileSdk = AppConfiguration.COMPILE_SDK
         minSdk = AppConfiguration.MIN_SDK
     }
-    iosX64()
     iosArm64()
     iosSimulatorArm64()
 

@@ -15,7 +15,6 @@ kotlin {
         // AGP KMP 플러그인에서 호스트(단위) 테스트는 opt-in 이다.
         withHostTestBuilder { }.configure { }
     }
-    iosX64()
     iosArm64()
     iosSimulatorArm64()
 
