@@ -35,7 +35,7 @@ class GetHalfHourlyStepsUseCase constructor(
         return stepDataList.toMutableList().apply {
             add(
                 StepData(
-                    rawCreatedTime = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+                    rawCreatedTime = kotlin.time.Clock.System.now().toEpochMilliseconds(),
                     stepSensor = latestStepSensor,
                 )
             )

@@ -3,7 +3,7 @@ package com.kintmin.data.local_db.model
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 /**
  * 기본값 설정 시 DB에 addCallback 설정 필요

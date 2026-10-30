@@ -2,7 +2,7 @@ package com.kintmin.domain.step.usecase
 
 import com.kintmin.domain.extension.toBasicIsoString
 import kotlinx.atomicfu.atomic
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime

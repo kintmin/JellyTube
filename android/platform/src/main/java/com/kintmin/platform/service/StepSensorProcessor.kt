@@ -1,7 +1,7 @@
 package com.kintmin.platform.service
 
 import com.kintmin.domain.extension.startOfDayMillis
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -111,7 +111,7 @@ class StepSensorProcessor(
         val unitMinutes = (backupUnitMillis / 60_000L).toInt()
         val ldt = Instant.fromEpochMilliseconds(millis).toLocalDateTime(timeZone)
         val truncatedMinute = (ldt.minute / unitMinutes) * unitMinutes
-        val truncatedLdt = LocalDateTime(ldt.year, ldt.month, ldt.dayOfMonth, ldt.hour, truncatedMinute, 0, 0)
+        val truncatedLdt = LocalDateTime(ldt.year, ldt.month, ldt.day, ldt.hour, truncatedMinute, 0, 0)
         return truncatedLdt.toInstant(timeZone).toEpochMilliseconds()
     }
 }

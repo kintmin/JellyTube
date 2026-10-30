@@ -2,7 +2,7 @@ package com.kintmin.data.local_db.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 /**
  * id와 source가 고유한 Entity.
