@@ -395,7 +395,7 @@ fun AudioMediaDetailScreen(
                             ) {
                                 Text(
                                     modifier = Modifier.weight(1f),
-                                    text = "음원 편집하기",
+                                    text = if (data.isAudioEditSaving) "편집본 저장 중..." else "음원 편집하기",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -418,11 +418,19 @@ fun AudioMediaDetailScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clickable { navigateToAudioEdit(data.audioMediaId) },
-                                    text = "편집본 사용 중 · ${data.playTime}",
+                                    text = if (data.isAudioEditSaving) {
+                                        "편집본 저장 중..."
+                                    } else {
+                                        "편집본 사용 중 · ${data.playTime}"
+                                    },
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
-                                IconButton(onClick = { isShowAudioEditRevertDialog = true }) {
+                                // 저장이 끝나면 편집본이 다시 연결되므로 저장 중에는 되돌릴 수 없다
+                                IconButton(
+                                    enabled = !data.isAudioEditSaving,
+                                    onClick = { isShowAudioEditRevertDialog = true },
+                                ) {
                                     Icon(
                                         imageVector = Icons.Rounded.Close,
                                         contentDescription = "원본으로 되돌리기",

@@ -37,6 +37,11 @@ class ApplyAudioEditUseCase constructor(
     }
 }
 
+/** 같은 음원의 편집본을 이미 저장하고 있다. 저장 중에는 다시 저장하거나 되돌릴 수 없다. */
+class AudioEditAlreadySaving(
+    override val message: String = "이미 편집본을 저장하고 있습니다. 끝난 뒤 다시 시도해주세요."
+) : Throwable()
+
 class EmptyAudioEditSegment(
     override val message: String = "소리가 남은 조각이 하나 이상 있어야 합니다."
 ) : Throwable()

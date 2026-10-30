@@ -26,6 +26,8 @@ data class AudioMediaDetailUiState(
     val tjKaraokeNumber: String?,
     val hasEditedAudio: Boolean,
     val playlists: List<Playlist>,
+    /** 편집본을 백그라운드에서 저장하고 있는지. 저장 중에는 되돌리면 결과가 뒤엉켜 막는다. */
+    val isAudioEditSaving: Boolean = false,
 ) {
     data class Playlist(
         val playlistId: Int,

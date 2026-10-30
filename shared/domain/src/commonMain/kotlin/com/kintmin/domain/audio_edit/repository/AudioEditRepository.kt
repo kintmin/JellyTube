@@ -9,6 +9,14 @@ import kotlinx.coroutines.flow.Flow
 interface AudioEditRepository {
 
     /**
+     * 지금 편집본을 저장(렌더)하고 있는 음원 id들.
+     *
+     * 저장은 백그라운드에서 수십 초 걸리므로, 화면은 이 값으로 저장·되돌리기를 막는다.
+     * 같은 음원은 동시에 하나만 저장되고, 저장 중에는 되돌릴 수 없다.
+     */
+    fun observeSavingAudioMediaIds(): Flow<Set<Int>>
+
+    /**
      * 파형 표시용 진폭. 편집은 항상 원본을 기준으로 하므로 원본 경로를 넘긴다.
      *
      * 앞에서부터 읽는 대로 채워진 파형을 여러 번 흘려보내고, 다 읽으면 완료된 파형을 끝으로 닫힌다.

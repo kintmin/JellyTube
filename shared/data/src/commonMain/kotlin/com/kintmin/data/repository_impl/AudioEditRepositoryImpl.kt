@@ -14,10 +14,15 @@ import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
+import com.kintmin.domain.audio_edit.usecase.AudioEditAlreadySaving
 import com.kintmin.domain.audio_media.model.AudioMedia
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -37,6 +42,31 @@ internal class AudioEditRepositoryImpl constructor(
         const val EDITED_AUDIO_EXT = "m4a"
     }
 
+    /**
+     * 저장 중인 음원 id. repository가 앱에 하나뿐이라 메모리에만 둔다.
+     *
+     * 저장은 앱 프로세스 안의 Worker에서 돌기 때문에, 프로세스가 죽으면 저장도 이 값도 같이 사라져
+     * 서로 어긋나지 않는다. WorkManager가 저장을 다시 실행하면 그때 다시 표시된다.
+     */
+    private val savingAudioMediaIds = MutableStateFlow<Set<Int>>(emptySet())
+
+    override fun observeSavingAudioMediaIds(): Flow<Set<Int>> = savingAudioMediaIds.asStateFlow()
+
+    /**
+     * [audioMediaId]를 저장 중으로 표시한 채 [block]을 실행한다. 성공·실패·취소 모두 끝나면 표시를 지운다.
+     * 같은 음원을 이미 저장하고 있으면 실행하지 않고 실패를 돌려준다.
+     */
+    private suspend fun <T> withSavingMark(audioMediaId: Int, block: suspend () -> Result<T>): Result<T> {
+        val before = savingAudioMediaIds.getAndUpdate { it + audioMediaId }
+        if (audioMediaId in before) return Result.failure(AudioEditAlreadySaving())
+
+        return try {
+            block()
+        } finally {
+            savingAudioMediaIds.update { it - audioMediaId }
+        }
+    }
+
     override fun extractWaveform(
         audioFileFullPath: String,
         bucketCount: Int,
@@ -53,6 +83,11 @@ internal class AudioEditRepositoryImpl constructor(
         }
 
     override suspend fun applyEditedAudio(
+        audioMediaId: Int,
+        timeline: AudioEditTimeline,
+    ): Result<AudioMedia> = withSavingMark(audioMediaId) { applyEditedAudioInternal(audioMediaId, timeline) }
+
+    private suspend fun applyEditedAudioInternal(
         audioMediaId: Int,
         timeline: AudioEditTimeline,
     ): Result<AudioMedia> = withContext(Dispatchers.IO) {
@@ -94,7 +129,13 @@ internal class AudioEditRepositoryImpl constructor(
         }
     }
 
-    override suspend fun revertEditedAudio(audioMediaId: Int): Result<AudioMedia> =
+    override suspend fun revertEditedAudio(audioMediaId: Int): Result<AudioMedia> {
+        // 저장이 끝나면 편집본이 다시 연결되므로, 저장 중 되돌리기는 결과가 뒤엉킨다
+        if (audioMediaId in savingAudioMediaIds.value) return Result.failure(AudioEditAlreadySaving())
+        return revertEditedAudioInternal(audioMediaId)
+    }
+
+    private suspend fun revertEditedAudioInternal(audioMediaId: Int): Result<AudioMedia> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val editedFileNameWithExt = audioMediaDao
@@ -111,6 +152,22 @@ internal class AudioEditRepositoryImpl constructor(
         }
 
     override suspend fun saveEditedAudioAsNewMedia(
+        audioMediaId: Int,
+        parts: List<AudioEditPart>,
+        name: String,
+        playlistIdOnDownload: Int?,
+        shouldInsertAtTopOnDownload: Boolean,
+    ): Result<AudioMedia> = withSavingMark(audioMediaId) {
+        saveEditedAudioAsNewMediaInternal(
+            audioMediaId = audioMediaId,
+            parts = parts,
+            name = name,
+            playlistIdOnDownload = playlistIdOnDownload,
+            shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
+        )
+    }
+
+    private suspend fun saveEditedAudioAsNewMediaInternal(
         audioMediaId: Int,
         parts: List<AudioEditPart>,
         name: String,

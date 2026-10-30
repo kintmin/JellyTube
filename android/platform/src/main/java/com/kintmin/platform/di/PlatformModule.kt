@@ -9,6 +9,7 @@ import com.kintmin.platform.push_notification.PushNotificationManagerImpl
 import com.kintmin.platform.service_controller.MediaControllerManager
 import com.kintmin.platform.service_controller.MediaControllerManagerImpl
 import com.kintmin.platform.worker.usecase.ExecuteAnomalyDataCheck
+import com.kintmin.platform.worker.usecase.ExecuteAudioEditSave
 import com.kintmin.platform.worker.usecase.ExecuteLyricsVariantCreation
 import com.kintmin.platform.worker.usecase.ExecuteYoutubeDownload
 import com.kintmin.platform.worker.usecase.RegisterDailyResetImmediatelyWorkerImpl
@@ -32,4 +33,5 @@ val platformModule: Module = module {
     single { ExecuteYoutubeDownload(androidContext()) }
     single { ExecuteAnomalyDataCheck(androidContext()) }
     single { ExecuteLyricsVariantCreation(androidContext()) }
+    single { ExecuteAudioEditSave(androidContext()) }
 }

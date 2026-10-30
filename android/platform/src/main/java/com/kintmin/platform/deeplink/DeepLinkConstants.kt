@@ -55,6 +55,10 @@ object DeepLinkConstants {
         const val AUDIO_MEDIA_SCREEN =
             "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.PLAYLISTS}/{${Path.PLAYLIST_ID}}/${Path.AUDIO_MEDIAS}/{${Path.AUDIO_MEDIA_ID}}"
 
+        /** 재생목록을 거치지 않고 음원 상세로 바로 간다. 재생목록이 정해지지 않는 경우(편집본 저장 완료 등)에 쓴다. */
+        const val AUDIO_MEDIA_DETAIL_SCREEN =
+            "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.AUDIO_MEDIAS}/{${Path.AUDIO_MEDIA_ID}}"
+
         const val LYRICS_VIEWER_SCREEN =
             "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.LYRICS}/{${Path.AUDIO_MEDIA_ID}}"
     }
@@ -94,6 +98,12 @@ object DeepLinkConstants {
         fun audioMediaScreen(playlistId: Int, audioMediaId: Int): Uri {
             return UriPattern.AUDIO_MEDIA_SCREEN
                 .replace("{${Path.PLAYLIST_ID}}", playlistId.toString())
+                .replace("{${Path.AUDIO_MEDIA_ID}}", audioMediaId.toString())
+                .toUri()
+        }
+
+        fun audioMediaDetailScreen(audioMediaId: Int): Uri {
+            return UriPattern.AUDIO_MEDIA_DETAIL_SCREEN
                 .replace("{${Path.AUDIO_MEDIA_ID}}", audioMediaId.toString())
                 .toUri()
         }

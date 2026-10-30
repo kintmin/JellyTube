@@ -168,6 +168,12 @@ class MainViewModel(
                     navigationIntentChannel.send(NavigationIntent.NavigateToAudioMedia(audioMediaId))
                 }
             }
+            // 재생목록을 거치지 않는 음원 상세. 편집본 저장 완료처럼 재생목록이 정해지지 않을 때 쓴다.
+            DeepLinkConstants.Path.AUDIO_MEDIAS -> {
+                val audioMediaId = pathList.getOrNull(2)?.toIntOrNull() ?: return
+                navigationIntentChannel.send(NavigationIntent.NavigateToMainPlaylistsTab)
+                navigationIntentChannel.send(NavigationIntent.NavigateToAudioMedia(audioMediaId))
+            }
             DeepLinkConstants.Path.LYRICS -> {
                 val audioMediaId = pathList.getOrNull(2)?.toIntOrNull() ?: return
                 navigationIntentChannel.send(NavigationIntent.NavigateToMainPlaylistsTab)

@@ -1,9 +1,10 @@
-﻿package com.kintmin.presentation.ui.audio_media_detail
+package com.kintmin.presentation.ui.audio_media_detail
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.kintmin.domain.audio_edit.usecase.ObserveAudioEditSavingUseCase
 import com.kintmin.domain.audio_edit.usecase.RevertAudioEditUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
@@ -16,13 +17,14 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class AudioMediaDetailViewModel constructor(
     savedStateHandle: SavedStateHandle,
     fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
+    observeAudioEditSavingUseCase: ObserveAudioEditSavingUseCase,
     private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
     private val deleteAudioMediaKaraokeNumberUseCase: DeleteAudioMediaKaraokeNumberUseCase,
     private val revertAudioEditUseCase: RevertAudioEditUseCase,
@@ -34,8 +36,12 @@ class AudioMediaDetailViewModel constructor(
     private val _eventFlow = MutableSharedFlow<AudioMediaDetailEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
-    val data: StateFlow<AudioMediaDetailUiState> = fetchAudioMediaDetailFlowUseCase(audioMediaId)
-        .map { it.toAudioMediaDetailUiState() }
+    val data: StateFlow<AudioMediaDetailUiState> = combine(
+        fetchAudioMediaDetailFlowUseCase(audioMediaId),
+        observeAudioEditSavingUseCase(audioMediaId),
+    ) { detail, isAudioEditSaving ->
+        detail.toAudioMediaDetailUiState().copy(isAudioEditSaving = isAudioEditSaving)
+    }
         .stateIn(
             viewModelScope, SharingStarted.WhileSubscribed(5000), AudioMediaDetailUiState(
                 audioMediaId = audioMediaId,
@@ -77,6 +83,8 @@ class AudioMediaDetailViewModel constructor(
     }
 
     private fun revertAudioEdit() {
+        if (data.value.isAudioEditSaving) return
+
         viewModelScope.launch {
             revertAudioEditUseCase(audioMediaId).onSuccess { audioMedia ->
                 // 재생 큐는 같은 플레이리스트를 다시 재생할 때 갱신되지 않아 직접 교체해야 한다

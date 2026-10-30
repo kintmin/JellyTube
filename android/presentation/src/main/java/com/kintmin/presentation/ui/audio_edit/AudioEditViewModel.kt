@@ -6,15 +6,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
-import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
 import com.kintmin.domain.audio_edit.usecase.ExtractAudioWaveformUseCase
 import com.kintmin.domain.audio_edit.usecase.FetchAudioEditTimelineUseCase
-import com.kintmin.domain.audio_edit.usecase.SaveEditedAudioAsNewMediaUseCase
+import com.kintmin.domain.audio_edit.usecase.ObserveAudioEditSavingUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.platform.audio_preview.AudioPreviewPlayer
-import com.kintmin.platform.service_controller.MediaControllerManager
-import com.kintmin.platform.service_controller.model.MediaControlData
+import com.kintmin.platform.worker.usecase.ExecuteAudioEditSave
 import com.kintmin.presentation.ui.audio_edit.navigation.AudioEditScreenRoute
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,10 +32,9 @@ class AudioEditViewModel constructor(
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val extractAudioWaveformUseCase: ExtractAudioWaveformUseCase,
     private val fetchAudioEditTimelineUseCase: FetchAudioEditTimelineUseCase,
-    private val applyAudioEditUseCase: ApplyAudioEditUseCase,
-    private val saveEditedAudioAsNewMediaUseCase: SaveEditedAudioAsNewMediaUseCase,
+    observeAudioEditSavingUseCase: ObserveAudioEditSavingUseCase,
+    private val executeAudioEditSave: ExecuteAudioEditSave,
     private val audioPreviewPlayer: AudioPreviewPlayer,
-    private val mediaControllerManager: MediaControllerManager,
 ) : ViewModel() {
 
     private companion object {
@@ -71,6 +68,11 @@ class AudioEditViewModel constructor(
     init {
         collectAudioMedia()
         pollPreviewPosition()
+
+        // 저장은 화면을 닫은 뒤에도 백그라운드에서 이어지므로, 다시 들어와도 저장 중이면 막는다
+        observeAudioEditSavingUseCase(audioMediaId)
+            .onEach { isSaving -> _data.update { it.copy(isSaving = isSaving) } }
+            .launchIn(viewModelScope)
     }
 
     private fun collectAudioMedia() {
@@ -257,59 +259,35 @@ class AudioEditViewModel constructor(
         )
     }
 
-    private fun overwrite() {
-        val state = _data.value
-        if (!state.canSave) return
-
-        audioPreviewPlayer.pause()
-        _data.update { it.copy(isSaving = true) }
-
-        viewModelScope.launch {
-            applyAudioEditUseCase(
-                audioMediaId = audioMediaId,
-                timeline = state.timeline,
-            ).onSuccess { audioMedia ->
-                // 재생 큐는 같은 플레이리스트를 다시 재생할 때 갱신되지 않는다. 직접 교체해야 편집본이 재생된다.
-                mediaControllerManager.tryReplaceMediaItem(
-                    mediaId = audioMedia.id,
-                    mediaItem = audioMedia.toMediaControlData(),
-                )
-                _data.update { it.copy(isSaving = false) }
-                _eventFlow.emit(AudioEditEvent.ShowToast("편집한 음원을 저장했습니다."))
-                _eventFlow.emit(AudioEditEvent.NavigateToBack)
-            }.onFailure { throwable ->
-                _data.update { it.copy(isSaving = false) }
-                _eventFlow.emit(
-                    AudioEditEvent.ShowToast(throwable.message ?: "음원 편집에 실패했습니다.")
-                )
-            }
-        }
+    private fun overwrite() = enqueueSave { state ->
+        executeAudioEditSave.overwrite(audioMediaId = audioMediaId, timeline = state.timeline)
     }
 
-    private fun saveAsNewMedia(name: String) {
+    private fun saveAsNewMedia(name: String) = enqueueSave { state ->
+        executeAudioEditSave.saveAsNewMedia(audioMediaId = audioMediaId, timeline = state.timeline, name = name.trim())
+    }
+
+    /**
+     * 렌더가 수십 초 걸려 백그라운드 작업에 맡기고 화면을 닫는다. 끝나면 알림으로 알려준다.
+     * 저장 중 표시([AudioEditUiState.isSaving])는 실제로 저장하는 쪽이 올리므로 여기서 바꾸지 않는다.
+     */
+    private fun enqueueSave(enqueue: (AudioEditUiState) -> Result<Unit>) {
         val state = _data.value
         if (!state.canSave) return
 
         audioPreviewPlayer.pause()
-        _data.update { it.copy(isSaving = true) }
-
-        viewModelScope.launch {
-            saveEditedAudioAsNewMediaUseCase(
-                audioMediaId = audioMediaId,
-                parts = state.timeline.toParts(),
-                name = name,
-            ).onSuccess {
-                // 새 음원은 재생 큐에 없으므로 교체할 것이 없다(다운로드 경로와 동일하다)
-                _data.update { it.copy(isSaving = false) }
-                _eventFlow.emit(AudioEditEvent.ShowToast("편집한 음원을 새로 저장했습니다."))
-                _eventFlow.emit(AudioEditEvent.NavigateToBack)
-            }.onFailure { throwable ->
-                _data.update { it.copy(isSaving = false) }
-                _eventFlow.emit(
-                    AudioEditEvent.ShowToast(throwable.message ?: "음원 저장에 실패했습니다.")
-                )
+        enqueue(state)
+            .onSuccess {
+                viewModelScope.launch {
+                    _eventFlow.emit(AudioEditEvent.ShowToast("저장을 시작했어요. 완료되면 알림으로 알려드릴게요."))
+                    _eventFlow.emit(AudioEditEvent.NavigateToBack)
+                }
             }
-        }
+            .onFailure { throwable ->
+                viewModelScope.launch {
+                    _eventFlow.emit(AudioEditEvent.ShowToast(throwable.message ?: "저장을 시작하지 못했습니다."))
+                }
+            }
     }
 
     override fun onCleared() {
@@ -317,13 +295,3 @@ class AudioEditViewModel constructor(
         super.onCleared()
     }
 }
-
-private fun AudioMedia.toMediaControlData() = MediaControlData(
-    mediaId = id.toString(),
-    mediaFileUri = playbackFileFullPath,
-    mediaTitle = name,
-    mediaDescription = description,
-    mediaArtist = artist,
-    mediaDurationMs = playbackDuration?.inWholeMilliseconds ?: 0L,
-    mediaArtworkFileUri = imageFileFullPath,
-)
