@@ -11,10 +11,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_edit.model.AudioEditClip
@@ -22,7 +20,7 @@ import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.black
-import com.kintmin.presentation.theme.bloodyRed60
+import com.kintmin.presentation.theme.bloodyRed100
 import com.kintmin.presentation.theme.deepSea40
 import com.kintmin.presentation.theme.deepSea80
 import com.kintmin.presentation.theme.gray10
@@ -48,17 +46,19 @@ fun TimelineWaveformView(
     waveform: AudioWaveform,
     timeline: AudioEditTimeline,
     selectedClipIndex: Int?,
+    grab: TimelineGrab?,
     baselineMs: Long,
     previewPositionMs: Long?,
     onClipSelected: (Int?) -> Unit,
     onClipEdgeDragged: (index: Int, edge: AudioEditTimeline.Edge, ms: Long) -> Unit,
     onClipMoved: (index: Int, positionMs: Long) -> Unit,
+    onGrabChanged: (TimelineGrab?) -> Unit,
 ) {
-    val hapticFeedback = LocalHapticFeedback.current
     val currentTimeline by rememberUpdatedState(timeline)
     val currentOnClipSelected by rememberUpdatedState(onClipSelected)
     val currentOnClipEdgeDragged by rememberUpdatedState(onClipEdgeDragged)
     val currentOnClipMoved by rememberUpdatedState(onClipMoved)
+    val currentOnGrabChanged by rememberUpdatedState(onGrabChanged)
 
     Canvas(
         modifier = modifier
@@ -70,7 +70,12 @@ fun TimelineWaveformView(
                     viewport = viewport,
                     timeline = { currentTimeline },
                     onTap = { ms -> currentOnClipSelected(currentTimeline.clipIndexAt(ms)) },
-                    onGrabbed = { hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },
+                    onGrabStarted = { grab ->
+                        // 잡은 조각을 바로 선택해 두면 놓은 뒤 곧장 삭제할 수 있다
+                        currentOnClipSelected(grab.clipIndex)
+                        currentOnGrabChanged(grab)
+                    },
+                    onGrabEnded = { currentOnGrabChanged(null) },
                     onEdgeDragged = { index, edge, ms -> currentOnClipEdgeDragged(index, edge, ms) },
                     onClipMoved = { index, positionMs -> currentOnClipMoved(index, positionMs) },
                 )
@@ -115,6 +120,8 @@ fun TimelineWaveformView(
         }
 
         drawWaveformBars(viewport = viewport, waveform = waveform, timeline = timeline)
+        drawClipGrips(viewport = viewport, timeline = timeline, selectedClipIndex = selectedClipIndex, grab = grab)
+        drawGrabHighlight(viewport = viewport, timeline = timeline, grab = grab)
 
         // 결과물 끝 뒤는 저장되지 않는다
         if (endX < size.width) {
@@ -125,7 +132,7 @@ fun TimelineWaveformView(
                 size = Size(width = size.width - dimLeft, height = size.height),
             )
             drawRect(
-                color = bloodyRed60,
+                color = bloodyRed100,
                 topLeft = Offset(x = endX - 1.dp.toPx(), y = 0f),
                 size = Size(width = 2.dp.toPx(), height = size.height),
             )
@@ -171,11 +178,13 @@ fun TimelineWaveformViewPreview() {
                 endMs = 310_000,
             ),
             selectedClipIndex = 1,
+            grab = TimelineGrab(clipIndex = 1, edge = null),
             baselineMs = 30_000,
             previewPositionMs = 220_000,
             onClipSelected = {},
             onClipEdgeDragged = { _, _, _ -> },
             onClipMoved = { _, _ -> },
+            onGrabChanged = {},
         )
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -15,17 +16,20 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.bloodyRed60
+import com.kintmin.presentation.theme.bloodyRed100
 import com.kintmin.presentation.theme.gray40
 import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.white
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 
 /** 눈금 간격 후보. 라벨이 겹치지 않을 만큼 넓은 것 중 가장 촘촘한 것을 고른다. */
 private val TICK_INTERVAL_MS_LIST = listOf(
@@ -55,6 +59,8 @@ fun TimelineRulerView(
     onEndChanged: (Long) -> Unit,
 ) {
     val textMeasurer = rememberTextMeasurer()
+    // 끝 라벨 뒤를 배경색으로 덮어 눈금 라벨과 겹쳐도 읽히게 한다
+    val backgroundColor = MaterialTheme.colorScheme.background
     val currentEndMs by rememberUpdatedState(endMs)
     val currentOnBaselineChanged by rememberUpdatedState(onBaselineChanged)
     val currentOnEndChanged by rememberUpdatedState(onEndChanged)
@@ -106,14 +112,39 @@ fun TimelineRulerView(
             tickMs += intervalMs
         }
 
-        // 끝 표시 손잡이
+        // 끝 표시 손잡이 — 조각 손잡이처럼 세로 줄을 넣어 잡아 끄는 곳으로 보이게 한다
         val endX = viewport.xOf(endMs)
-        val handleWidth = 10.dp.toPx()
+        val handleWidth = 12.dp.toPx()
         drawRect(
-            color = bloodyRed60,
+            color = bloodyRed100,
             topLeft = Offset(x = endX - handleWidth, y = 0f),
             size = Size(width = handleWidth, height = size.height),
         )
+        val gripLineHeight = size.height * 0.5f
+        listOf(endX - handleWidth * 0.65f, endX - handleWidth * 0.35f).forEach { lineX ->
+            drawRect(
+                color = white.copy(alpha = 0.8f),
+                topLeft = Offset(x = lineX - 0.5.dp.toPx(), y = (size.height - gripLineHeight) / 2f),
+                size = Size(width = 1.dp.toPx(), height = gripLineHeight),
+            )
+        }
+
+        // 끝 라벨 — 빨간 손잡이가 결과물의 끝이고 지금 몇 초인지 손잡이 자체가 말하게 한다.
+        // 손잡이 왼쪽에 두되, 화면 왼쪽 밖으로 나가면 오른쪽에 붙인다.
+        val endLabel = textMeasurer.measure(
+            text = "끝 ${endMs.milliseconds.to_hh_colon_mm_colon_ss()}",
+            style = TextStyle(color = bloodyRed100, fontSize = 11.sp, fontWeight = FontWeight.Bold),
+        )
+        val labelGap = 4.dp.toPx()
+        val labelLeftX = endX - handleWidth - labelGap - endLabel.size.width
+        val labelX = if (labelLeftX >= 0f) labelLeftX else endX + labelGap
+        val labelY = (size.height * 0.6f - endLabel.size.height).coerceAtLeast(0f)
+        drawRect(
+            color = backgroundColor,
+            topLeft = Offset(x = labelX - 2.dp.toPx(), y = labelY),
+            size = Size(width = endLabel.size.width + 4.dp.toPx(), height = endLabel.size.height.toFloat()),
+        )
+        drawText(textLayoutResult = endLabel, topLeft = Offset(x = labelX, y = labelY))
 
         // 기준선 머리
         val baselineX = viewport.xOf(baselineMs)

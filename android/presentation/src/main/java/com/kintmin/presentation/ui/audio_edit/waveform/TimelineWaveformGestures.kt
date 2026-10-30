@@ -13,8 +13,17 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import kotlin.math.abs
 
-/** 이 거리 안에서 길게 누르면 조각 경계를 잡는다. */
-private val EDGE_TOUCH_RADIUS = 24.dp
+/** 이 거리 안에서 길게 누르면 조각 경계를 잡는다. 손잡이 그리기와 같은 값을 쓴다. */
+internal val EDGE_TOUCH_RADIUS = 24.dp
+
+/**
+ * 조각 하나의 경계를 잡는 범위.
+ *
+ * 축소해서 조각이 좁아지면 양쪽 경계 범위가 조각 전체를 덮어 옮길 자리가 없어진다.
+ * 그래서 조각 폭의 1/4까지만 쓰고, 가운데 절반은 항상 옮기기용으로 남긴다.
+ */
+internal fun edgeTouchRadiusPx(clipWidthPx: Float, maxRadiusPx: Float): Float =
+    minOf(maxRadiusPx, clipWidthPx / 4f)
 
 /** 손가락을 내린 뒤 어떤 제스처인지 갈린 결과. */
 private sealed interface WaveformGesture {
@@ -38,7 +47,8 @@ internal suspend fun PointerInputScope.timelineWaveformGestures(
     viewport: TimelineViewportState,
     timeline: () -> AudioEditTimeline,
     onTap: (ms: Long) -> Unit,
-    onGrabbed: () -> Unit,
+    onGrabStarted: (TimelineGrab) -> Unit,
+    onGrabEnded: () -> Unit,
     onEdgeDragged: (index: Int, edge: AudioEditTimeline.Edge, ms: Long) -> Unit,
     onClipMoved: (index: Int, positionMs: Long) -> Unit,
 ) {
@@ -91,6 +101,11 @@ internal suspend fun PointerInputScope.timelineWaveformGestures(
                 val grabbedClipIndex = currentTimeline.clipIndexAt(downMs)
 
                 // 경계를 먼저 본다. 경계도 조각도 아닌 빈칸이면 할 일이 없다.
+                val grab = when {
+                    grabbedEdge != null -> TimelineGrab(clipIndex = grabbedEdge.first, edge = grabbedEdge.second)
+                    grabbedClipIndex != null -> TimelineGrab(clipIndex = grabbedClipIndex, edge = null)
+                    else -> null
+                }
                 val onDrag: (Long) -> Unit = when {
                     grabbedEdge != null -> fun(ms: Long) {
                         onEdgeDragged(grabbedEdge.first, grabbedEdge.second, ms)
@@ -104,15 +119,20 @@ internal suspend fun PointerInputScope.timelineWaveformGestures(
 
                     else -> return@awaitEachGesture
                 }
-                onGrabbed()
+                onGrabStarted(grab ?: return@awaitEachGesture)
 
-                while (true) {
-                    val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-                    if (!change.pressed) break
-                    if (change.positionChange() != Offset.Zero) {
-                        onDrag(viewport.msAt(change.position.x))
+                // 제스처가 취소돼도 잡힘 표시가 남지 않도록 반드시 놓아 준다
+                try {
+                    while (true) {
+                        val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                        if (!change.pressed) break
+                        if (change.positionChange() != Offset.Zero) {
+                            onDrag(viewport.msAt(change.position.x))
+                        }
+                        change.consume()
                     }
-                    change.consume()
+                } finally {
+                    onGrabEnded()
                 }
             }
         }
@@ -131,18 +151,25 @@ private fun findGrabbedEdge(
     touchX: Float,
     radiusPx: Float,
 ): Pair<Int, AudioEditTimeline.Edge>? {
-    data class Candidate(val index: Int, val edge: AudioEditTimeline.Edge, val distance: Float, val isInside: Boolean)
+    data class Candidate(
+        val index: Int,
+        val edge: AudioEditTimeline.Edge,
+        val distance: Float,
+        val isInside: Boolean,
+        val radiusPx: Float,
+    )
 
     return timeline.clips
         .flatMapIndexed { index, clip ->
             val startX = viewport.xOf(clip.positionMs)
             val endX = viewport.xOf(clip.positionEndMs)
+            val clipRadiusPx = edgeTouchRadiusPx(clipWidthPx = endX - startX, maxRadiusPx = radiusPx)
             listOf(
-                Candidate(index, AudioEditTimeline.Edge.Start, abs(touchX - startX), touchX >= startX),
-                Candidate(index, AudioEditTimeline.Edge.End, abs(touchX - endX), touchX <= endX),
+                Candidate(index, AudioEditTimeline.Edge.Start, abs(touchX - startX), touchX >= startX, clipRadiusPx),
+                Candidate(index, AudioEditTimeline.Edge.End, abs(touchX - endX), touchX <= endX, clipRadiusPx),
             )
         }
-        .filter { it.distance <= radiusPx }
+        .filter { it.distance <= it.radiusPx }
         .minWithOrNull(compareBy<Candidate> { it.distance }.thenBy { !it.isInside })
         ?.let { it.index to it.edge }
 }
