@@ -96,7 +96,7 @@ import kotlin.time.Duration.Companion.seconds
 fun PlayerDetailScreen(
     navigateToBack: () -> Unit,
     navigateToAudioMediaDetail: (audioMediaId: Int) -> Unit,
-    navigateToAudioMediaEdit: (audioMediaId: Int) -> Unit,
+    navigateToAudioMediaInformationEdit: (audioMediaId: Int) -> Unit,
     navigateToPlayingPlaylist: (playlistId: Int, audioMediaId: Int?) -> Unit,
     navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
 ) {
@@ -114,7 +114,7 @@ fun PlayerDetailScreen(
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is PlayerDetailEvent.NavigateToAudioMediaDetailScreen -> navigateToAudioMediaDetail(event.audioMediaId)
-                is PlayerDetailEvent.NavigateToAudioMediaEditScreen -> navigateToAudioMediaEdit(event.audioMediaId)
+                is PlayerDetailEvent.NavigateToAudioMediaInformationEditScreen -> navigateToAudioMediaInformationEdit(event.audioMediaId)
                 is PlayerDetailEvent.NavigateToLyricsViewer -> navigateToLyricsViewer(event.audioMediaId)
                 is PlayerDetailEvent.NavigateToPlayingPlaylist -> navigateToPlayingPlaylist(
                     event.playlistId,

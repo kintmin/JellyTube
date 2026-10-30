@@ -13,8 +13,8 @@ import com.kintmin.presentation.ui.audio_edit.navigation.audioEditScreen
 import com.kintmin.presentation.ui.audio_edit.navigation.navigateToAudioEditScreen
 import com.kintmin.presentation.ui.audio_media_detail.navigation.audioMediaDetailScreen
 import com.kintmin.presentation.ui.audio_media_detail.navigation.navigateToAudioMediaDetailScreen
-import com.kintmin.presentation.ui.audio_media_edit.navigation.audioMediaEdit
-import com.kintmin.presentation.ui.audio_media_edit.navigation.navigateToAudioMediaEditScreen
+import com.kintmin.presentation.ui.audio_media_information_edit.navigation.audioMediaInformationEdit
+import com.kintmin.presentation.ui.audio_media_information_edit.navigation.navigateToAudioMediaInformationEditScreen
 import com.kintmin.presentation.ui.karaoke_search.navigation.karaokeSearchScreen
 import com.kintmin.presentation.ui.karaoke_search.navigation.navigateToKaraokeSearchScreen
 import com.kintmin.presentation.ui.lyrics_detail.navigation.lyricsDetailScreen
@@ -129,7 +129,7 @@ fun MainNavHost(
                 navController.navigateToAudioMediaDetailScreen(audioMediaId, navOptions)
             },
             navigateToAudioEditScreen = { audioMediaId ->
-                navController.navigateToAudioMediaEditScreen(audioMediaId, navOptions)
+                navController.navigateToAudioMediaInformationEditScreen(audioMediaId, navOptions)
             },
             navigateToPlayerDetail = {
                 navController.navigateToPlayerDetailScreen(navOptions)
@@ -143,8 +143,8 @@ fun MainNavHost(
         )
         audioMediaDetailScreen(
             navigateToBack = { navController.popBackStack() },
-            navigationToAudioMediaEditScreen = { audioMediaId ->
-                navController.navigateToAudioMediaEditScreen(audioMediaId, navOptions)
+            navigationToAudioMediaInformationEditScreen = { audioMediaId ->
+                navController.navigateToAudioMediaInformationEditScreen(audioMediaId, navOptions)
             },
             navigateToMainSearchTab = { url ->
                 navController.navigateToMainScreen(
@@ -169,7 +169,7 @@ fun MainNavHost(
                 navController.navigateToAudioEditScreen(audioMediaId, navOptions)
             },
         )
-        audioMediaEdit(
+        audioMediaInformationEdit(
             navigateToBack = { navController.popBackStack() },
         )
         audioEditScreen(
@@ -249,8 +249,8 @@ fun MainNavHost(
             navigateToAudioMediaDetail = { audioMediaId ->
                 navController.navigateToAudioMediaDetailScreen(audioMediaId, navOptions)
             },
-            navigateToAudioMediaEdit = { audioMediaId ->
-                navController.navigateToAudioMediaEditScreen(audioMediaId, navOptions)
+            navigateToAudioMediaInformationEdit = { audioMediaId ->
+                navController.navigateToAudioMediaInformationEditScreen(audioMediaId, navOptions)
             },
             navigateToPlayingPlaylist = { playlistId, audioMediaId ->
                 onDeepLink(DeepLinkConstants.UriBuilder.playlistContentScreen(playlistId, audioMediaId))

@@ -60,7 +60,7 @@ import java.io.File
 @Composable
 fun AudioMediaDetailScreen(
     navigateToBack: () -> Unit,
-    navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
+    navigationToAudioMediaInformationEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
     navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
@@ -85,7 +85,7 @@ fun AudioMediaDetailScreen(
 
     AudioMediaDetailScreen(
         navigateToBack = navigateToBack,
-        navigationToAudioMediaEditScreen = navigationToAudioMediaEditScreen,
+        navigationToAudioMediaInformationEditScreen = navigationToAudioMediaInformationEditScreen,
         navigateToMainSearchTab = navigateToMainSearchTab,
         navigateToPlaylistDetailScreen = navigateToPlaylistDetailScreen,
         navigateToLyricsSearch = navigateToLyricsSearch,
@@ -101,7 +101,7 @@ fun AudioMediaDetailScreen(
 @Composable
 fun AudioMediaDetailScreen(
     navigateToBack: () -> Unit,
-    navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
+    navigationToAudioMediaInformationEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
     navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
@@ -184,7 +184,7 @@ fun AudioMediaDetailScreen(
                             .weight(1f)
                             .fillMaxSize(),
                         shape = RectangleShape,
-                        onClick = { navigationToAudioMediaEditScreen(data.audioMediaId) }) {
+                        onClick = { navigationToAudioMediaInformationEditScreen(data.audioMediaId) }) {
                         Text(
                             text = "수정",
                             fontSize = 16.sp,
@@ -490,7 +490,7 @@ fun AudioMediaDetailScreenPreview() {
     JellyTubeTheme {
         AudioMediaDetailScreen(
             navigateToBack = {},
-            navigationToAudioMediaEditScreen = {},
+            navigationToAudioMediaInformationEditScreen = {},
             navigateToMainSearchTab = {},
             navigateToPlaylistDetailScreen = { _, _ -> },
             navigateToLyricsSearch = { _, _, _ -> },

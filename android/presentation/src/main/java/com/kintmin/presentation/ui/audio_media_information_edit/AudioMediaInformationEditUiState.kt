@@ -1,11 +1,11 @@
-package com.kintmin.presentation.ui.audio_media_edit
+package com.kintmin.presentation.ui.audio_media_information_edit
 
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.extension.toKoreanDateTimeString
 import kotlin.time.Duration.Companion.seconds
 
-data class AudioMediaEditUiState(
+data class AudioMediaInformationEditUiState(
     val audioMediaId: Int,
     val imageFileFullPath: String?,
     val audioMediaName: String,
@@ -27,7 +27,7 @@ data class AudioMediaEditUiState(
 
     companion object {
 
-        fun getMock() = AudioMediaEditUiState(
+        fun getMock() = AudioMediaInformationEditUiState(
             audioMediaId = 1,
             imageFileFullPath = null,
             audioMediaName = "",
@@ -46,9 +46,9 @@ data class AudioMediaEditUiState(
     }
 }
 
-internal fun List<PlaylistTrackAggregate>.toAudioMediaEditUiState(): AudioMediaEditUiState {
+internal fun List<PlaylistTrackAggregate>.toAudioMediaInformationEditUiState(): AudioMediaInformationEditUiState {
     val audioMedia = first().audioMedia
-    return AudioMediaEditUiState(
+    return AudioMediaInformationEditUiState(
         audioMediaId = audioMedia.id,
         imageFileFullPath = audioMedia.imageFileFullPath,
         audioMediaName = audioMedia.name,
@@ -58,7 +58,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaEditUiState(): AudioMediaE
         source = audioMedia.source,
         audioMediaDescription = audioMedia.description,
         playlists = this.map { dataList ->
-            AudioMediaEditUiState.Playlist(
+            AudioMediaInformationEditUiState.Playlist(
                 playlistId = dataList.playlist.id,
                 playlistName = dataList.playlist.name,
                 isBasePlaylist = dataList.playlist.isBasePlaylist,

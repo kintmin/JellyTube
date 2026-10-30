@@ -52,7 +52,7 @@ object DeepLinkConstants {
 
         const val PLAYLIST_CONTENT_SCREEN =
             "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.PLAYLISTS}/{${Path.PLAYLIST_ID}}/${Path.AUDIO_MEDIAS}?${QueryKey.FOCUS_AUDIO_MEDIA_ID}={${QueryKey.FOCUS_AUDIO_MEDIA_ID}}"
-        const val AUDIO_MEDIA_SCREEN =
+        const val PLAYLIST_AUDIO_MEDIA_DETAIL_SCREEN =
             "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.PLAYLISTS}/{${Path.PLAYLIST_ID}}/${Path.AUDIO_MEDIAS}/{${Path.AUDIO_MEDIA_ID}}"
 
         const val AUDIO_MEDIA_DETAIL_SCREEN =
@@ -94,8 +94,8 @@ object DeepLinkConstants {
             else base.buildUpon().appendQueryParameter(QueryKey.FOCUS_AUDIO_MEDIA_ID, audioMediaId.toString()).build()
         }
 
-        fun audioMediaScreen(playlistId: Int, audioMediaId: Int): Uri {
-            return UriPattern.AUDIO_MEDIA_SCREEN
+        fun playlistAudioMediaDetailScreen(playlistId: Int, audioMediaId: Int): Uri {
+            return UriPattern.PLAYLIST_AUDIO_MEDIA_DETAIL_SCREEN
                 .replace("{${Path.PLAYLIST_ID}}", playlistId.toString())
                 .replace("{${Path.AUDIO_MEDIA_ID}}", audioMediaId.toString())
                 .toUri()

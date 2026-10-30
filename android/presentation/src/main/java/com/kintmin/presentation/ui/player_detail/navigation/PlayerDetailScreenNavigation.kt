@@ -17,7 +17,7 @@ fun NavController.navigateToPlayerDetailScreen(
 fun NavGraphBuilder.playerDetailScreen(
     navigateToBack: () -> Unit,
     navigateToAudioMediaDetail: (audioMediaId: Int) -> Unit,
-    navigateToAudioMediaEdit: (audioMediaId: Int) -> Unit,
+    navigateToAudioMediaInformationEdit: (audioMediaId: Int) -> Unit,
     navigateToPlayingPlaylist: (playlistId: Int, audioMediaId: Int?) -> Unit,
     navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
 ) {
@@ -25,7 +25,7 @@ fun NavGraphBuilder.playerDetailScreen(
         PlayerDetailScreen(
             navigateToBack = navigateToBack,
             navigateToAudioMediaDetail = navigateToAudioMediaDetail,
-            navigateToAudioMediaEdit = navigateToAudioMediaEdit,
+            navigateToAudioMediaInformationEdit = navigateToAudioMediaInformationEdit,
             navigateToPlayingPlaylist = navigateToPlayingPlaylist,
             navigateToLyricsViewer = navigateToLyricsViewer,
         )
