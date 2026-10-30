@@ -132,7 +132,7 @@ fun SettingFileShareReceiveScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                text = "Windows PC에서 음원 파일을\nJellyTube로 전송하는 방법",
+                text = "PC에서 음원 파일을 JellyTube로 전송하는 방법",
                 style = MaterialTheme.typography.titleMedium,
             )
 
@@ -150,7 +150,7 @@ fun SettingFileShareReceiveScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    FlowNode(icon = Icons.Rounded.Computer, label = "Windows PC")
+                    FlowNode(icon = Icons.Rounded.Computer, label = "PC JellyTube")
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                         contentDescription = null,
@@ -208,7 +208,7 @@ fun SettingFileShareReceiveScreen(
             StepCard(
                 stepNumber = 2,
                 title = "PC에서 JellyTube 앱 실행",
-                description = "Windows PC에서 JellyTube 파일 공유 앱을 실행합니다. 이 기기를 자동으로 검색합니다.",
+                description = "PC에서 JellyTube 파일 공유 앱을 실행합니다. 이 기기를 자동으로 검색합니다.",
             )
             StepCard(
                 stepNumber = 3,

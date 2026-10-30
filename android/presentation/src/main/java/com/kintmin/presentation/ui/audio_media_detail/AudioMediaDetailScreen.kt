@@ -443,7 +443,7 @@ fun AudioMediaDetailScreen(
                         }
 
                         Text(
-                            modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
+                            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp, start = 16.dp, end = 16.dp),
                             text = "추가된 플레이리스트 목록",
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,

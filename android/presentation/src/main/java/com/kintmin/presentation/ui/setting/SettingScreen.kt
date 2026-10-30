@@ -3,31 +3,36 @@ package com.kintmin.presentation.ui.setting
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.AudioFile
+import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.CleaningServices
+import androidx.compose.material.icons.rounded.Computer
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.DirectionsWalk
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.SaveAlt
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -36,7 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,8 +51,10 @@ import androidx.core.net.toUri
 import org.koin.androidx.compose.koinViewModel
 import com.kintmin.platform.service.StepForegroundService
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
+import com.kintmin.presentation.ui.setting.section.SettingItemView
+import com.kintmin.presentation.ui.setting.section.SettingNavigateIcon
+import com.kintmin.presentation.ui.setting.section.SettingSectionView
 
 private class OpenMultipleAudioDocuments : ActivityResultContracts.OpenMultipleDocuments() {
 
@@ -75,6 +82,7 @@ fun SettingScreen(
     val viewModel = koinViewModel<SettingViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val appVersion = remember(context) { context.getAppVersionName() }
 
     val audioFileLauncher = rememberLauncherForActivityResult(
         contract = OpenMultipleAudioDocuments(),
@@ -112,7 +120,7 @@ fun SettingScreen(
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         val permission = Manifest.permission.ACTIVITY_RECOGNITION
                         val alreadyGranted = ContextCompat.checkSelfPermission(context, permission) ==
-                            android.content.pm.PackageManager.PERMISSION_GRANTED
+                            PackageManager.PERMISSION_GRANTED
                         if (alreadyGranted) {
                             viewModel.sendIntent(SettingIntent.OnActivityRecognitionGranted)
                             StepForegroundService.startService(context)
@@ -130,9 +138,19 @@ fun SettingScreen(
 
     SettingScreen(
         uiState = uiState,
+        appVersion = appVersion,
         navigateToBack = navigateToBack,
         sendIntent = viewModel::sendIntent,
     )
+}
+
+private fun Context.getAppVersionName(): String {
+    val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+    } else {
+        packageManager.getPackageInfo(packageName, 0)
+    }
+    return packageInfo.versionName.orEmpty()
 }
 
 
@@ -141,6 +159,7 @@ fun SettingScreen(
 @Composable
 fun SettingScreen(
     uiState: SettingUiState,
+    appVersion: String,
     navigateToBack: () -> Unit,
     sendIntent: (SettingIntent) -> Unit,
 ) {
@@ -187,210 +206,112 @@ fun SettingScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState()),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable {
-                        sendIntent(SettingIntent.OnClickShouldInsertAtTopOnDownloadTile)
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = "다운로드 시 맨 위에 추가",
-                )
-                Switch(
-                    checked = uiState.shouldInsertAtTopOnDownload,
-                    onCheckedChange = { isChecked ->
-                        sendIntent(SettingIntent.OnToggleShouldInsertAtTopOnDownload(isChecked))
+            SettingSectionView(title = "다운로드", showDivider = false) {
+                SettingItemView(
+                    title = "다운로드 시 맨 위에 추가",
+                    icon = Icons.Rounded.VerticalAlignTop,
+                    onClick = { sendIntent(SettingIntent.OnClickShouldInsertAtTopOnDownloadTile) },
+                    trailing = {
+                        Switch(
+                            checked = uiState.shouldInsertAtTopOnDownload,
+                            onCheckedChange = { isChecked ->
+                                sendIntent(SettingIntent.OnToggleShouldInsertAtTopOnDownload(isChecked))
+                            },
+                        )
                     },
                 )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable {
-                        sendIntent(SettingIntent.OnClickPlaylistIdOnDownloadTile)
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = "다운로드 시 재생목록",
-                )
-                Text(
-                    text = uiState.playlistIdOnDownloadName,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                SettingItemView(
+                    title = "다운로드 시 재생목록",
+                    icon = Icons.Rounded.LibraryMusic,
+                    description = uiState.playlistIdOnDownloadName,
+                    onClick = { sendIntent(SettingIntent.OnClickPlaylistIdOnDownloadTile) },
                 )
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable(enabled = !uiState.isImporting) {
-                        sendIntent(SettingIntent.OnClickImportAudioTile)
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = "음원 파일 선택해서 가져오기",
-                )
-                if (uiState.isImporting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable {
-                        sendIntent(SettingIntent.OnClickDeviceSaveTile)
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(text = "파일 기기에 저장하기")
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = "기기에 저장하기 화면으로 이동",
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable {
-                        sendIntent(SettingIntent.OnClickShareTile)
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(text = "Quick Share로 공유받기")
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = "Quick Share 화면으로 이동",
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable {
-                        sendIntent(SettingIntent.OnClickFileShareReceiveTile)
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(text = "PC에서 공유받기")
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = "PC에서 공유받기 화면으로 이동",
-                )
-            }
-
-             Box(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
-                    .fillMaxWidth()
-                    .background(gray80.copy(alpha = 0.5f))
-                    .height(1.dp)
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable {
-                        sendIntent(SettingIntent.OnToggleIsStepEnabled(!uiState.isStepEnabled))
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = "걸음수 이용",
-                )
-                Switch(
-                    checked = uiState.isStepEnabled,
-                    onCheckedChange = { isChecked ->
-                        sendIntent(SettingIntent.OnToggleIsStepEnabled(isChecked))
+            SettingSectionView(title = "가져오기 및 내보내기") {
+                SettingItemView(
+                    title = "음원 파일 선택해서 가져오기",
+                    icon = Icons.Rounded.AudioFile,
+                    enabled = !uiState.isImporting,
+                    onClick = { sendIntent(SettingIntent.OnClickImportAudioTile) },
+                    trailing = if (uiState.isImporting) {
+                        {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        }
+                    } else {
+                        null
                     },
                 )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable {
-                        sendIntent(SettingIntent.OnClickStepTile)
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(text = "걸음수 현황 보기")
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = "걸음수 현황 화면으로 이동",
+                SettingItemView(
+                    title = "Quick Share로 공유받기",
+                    icon = Icons.Rounded.Share,
+                    onClick = { sendIntent(SettingIntent.OnClickShareTile) },
+                    trailing = { SettingNavigateIcon(contentDescription = "Quick Share 화면으로 이동") },
+                )
+                SettingItemView(
+                    title = "PC에서 공유받기",
+                    icon = Icons.Rounded.Computer,
+                    onClick = { sendIntent(SettingIntent.OnClickFileShareReceiveTile) },
+                    trailing = { SettingNavigateIcon(contentDescription = "PC에서 공유받기 화면으로 이동") },
+                )
+                SettingItemView(
+                    title = "파일 기기에 저장하기",
+                    icon = Icons.Rounded.SaveAlt,
+                    onClick = { sendIntent(SettingIntent.OnClickDeviceSaveTile) },
+                    trailing = { SettingNavigateIcon(contentDescription = "기기에 저장하기 화면으로 이동") },
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
-                    .fillMaxWidth()
-                    .background(gray80.copy(alpha = 0.5f))
-                    .height(1.dp)
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable {
-                        sendIntent(SettingIntent.OnClickAnomalyDataCheckTile)
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(text = "이상 데이터 점검 및 제거(음원 추가 오류 시 권장)")
+            SettingSectionView(title = "걸음수") {
+                SettingItemView(
+                    title = "걸음수 이용",
+                    icon = Icons.Rounded.DirectionsWalk,
+                    onClick = { sendIntent(SettingIntent.OnToggleIsStepEnabled(!uiState.isStepEnabled)) },
+                    trailing = {
+                        Switch(
+                            checked = uiState.isStepEnabled,
+                            onCheckedChange = { isChecked ->
+                                sendIntent(SettingIntent.OnToggleIsStepEnabled(isChecked))
+                            },
+                        )
+                    },
+                )
+                SettingItemView(
+                    title = "걸음수 현황 보기",
+                    icon = Icons.Rounded.BarChart,
+                    onClick = { sendIntent(SettingIntent.OnClickStepTile) },
+                    trailing = { SettingNavigateIcon(contentDescription = "걸음수 현황 화면으로 이동") },
+                )
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clickable {
-                        sendIntent(SettingIntent.OnClickAppLogTile)
-                    }
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(text = "앱 로그 보기")
+            SettingSectionView(title = "문제 해결") {
+                SettingItemView(
+                    title = "이상 데이터 점검 및 제거",
+                    icon = Icons.Rounded.CleaningServices,
+                    description = "음원 추가 오류 시 권장",
+                    onClick = { sendIntent(SettingIntent.OnClickAnomalyDataCheckTile) },
+                )
+                SettingItemView(
+                    title = "앱 로그 보기",
+                    icon = Icons.Rounded.Description,
+                    onClick = { sendIntent(SettingIntent.OnClickAppLogTile) },
+                    trailing = { SettingNavigateIcon(contentDescription = "앱 로그 화면으로 이동") },
+                )
+            }
+
+            SettingSectionView(title = "앱 정보") {
+                SettingItemView(
+                    title = "버전",
+                    icon = Icons.Rounded.Info,
+                    description = appVersion,
+                    onClick = null,
+                )
             }
         }
     }
@@ -402,6 +323,7 @@ fun SettingScreenPreview() {
     JellyTubeTheme {
         SettingScreen(
             uiState = SettingUiState(),
+            appVersion = "1.2.2",
             navigateToBack = {},
             sendIntent = {},
         )
