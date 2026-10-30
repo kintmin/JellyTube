@@ -24,9 +24,13 @@ interface AudioMediaDao {
     @Query("SELECT * FROM AUDIO_MEDIA WHERE id NOT IN (SELECT audioMediaId FROM PLAYLIST_TRACK)")
     suspend fun getOrphanAudioMediaList(): List<AudioMediaEntity>
 
+    /**
+     * 플레이리스트 재생시간 합계는 증분으로 누적되므로(AudioMediaFacade 참고) 이 값이 곧 가감 delta다.
+     * 편집본이 있는 음원은 편집본 길이가 실제 재생 길이라서 반드시 그쪽을 집계해야 한다.
+     */
     @Query(
         """
-SELECT COALESCE(SUM(rawAudioDurationSeconds), 0)
+SELECT COALESCE(SUM(COALESCE(editedAudioDurationSeconds, rawAudioDurationSeconds)), 0)
 FROM AUDIO_MEDIA
 WHERE id IN (:idList)
     """

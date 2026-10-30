@@ -24,6 +24,7 @@ class CleanupAnomalousDataUseCase constructor(
         // 커밋 후 orphan row가 참조하던 파일 삭제
         orphanMediaList.forEach { media ->
             deleteFileSafely(media.audioFileFullPath)
+            media.editedAudioFileFullPath?.let { deleteFileSafely(it) }
             media.imageFileFullPath?.let { deleteFileSafely(it) }
         }
 
@@ -32,10 +33,12 @@ class CleanupAnomalousDataUseCase constructor(
         appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "DB 연결 없는 파일 정리 시작"))
 
         // 2) DB 어디에도 매칭되지 않는 고아 파일 삭제
-        // 화이트리스트 = 남아있는 모든 음원의 오디오/이미지 전체경로 ∪ 플레이리스트 커스텀 이미지 전체경로
+        // 화이트리스트 = 남아있는 모든 음원의 오디오(원본+편집본)/이미지 전체경로 ∪ 플레이리스트 커스텀 이미지 전체경로
         val referencedFileFullPaths = buildSet {
             audioMediaRepository.getAudioMediaListFlow().first().forEach { media ->
                 add(media.audioFileFullPath)
+                // 편집본도 오디오 디렉토리에 있어 파일 목록에 잡힌다. 빠뜨리면 정리 때 삭제된다.
+                media.editedAudioFileFullPath?.let { add(it) }
                 media.imageFileFullPath?.let { add(it) }
             }
             playlistRepository.getAllPlaylistFlow().first().forEach { playlist ->
