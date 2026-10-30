@@ -248,6 +248,7 @@ fun AudioEditScreen(
                 viewport = viewport,
                 baselineMs = data.baselineMs,
                 endMs = data.resultDurationMs,
+                snapEndMs = data.timeline.clips.maxOfOrNull { it.positionEndMs },
                 onBaselineChanged = { ms -> sendIntent(AudioEditIntent.OnBaselineChanged(ms)) },
                 onEndChanged = { ms -> sendIntent(AudioEditIntent.OnTimelineEndChanged(ms)) },
             )

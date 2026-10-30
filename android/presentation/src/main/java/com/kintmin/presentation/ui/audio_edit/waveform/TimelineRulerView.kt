@@ -43,11 +43,15 @@ private val MIN_TICK_SPACING = 72.dp
 /** 이 거리 안에서 누르면 기준선 대신 끝 표시를 잡는다. */
 private val END_MARKER_TOUCH_RADIUS = 24.dp
 
+/** 끝 표시를 끌다가 소리 끝에서 이 거리 안에 들어오면 그 자리에 붙는다. */
+private val END_MARKER_SNAP_RADIUS = 12.dp
+
 /**
  * 파형 위의 눈금 줄. 기준선과 끝 표시를 옮기는 영역이다.
  *
  * - 한 손가락으로 누르거나 끌면 기준선이 손가락을 따라온다
- * - 끝 표시 손잡이 근처에서 시작한 끌기는 끝 표시를 옮긴다
+ * - 끝 표시 손잡이 근처에서 시작한 끌기는 끝 표시를 옮긴다. 소리 끝([snapEndMs]) 근처에서는
+ *   그 자리에 붙어, 뒤에 무음도 잘린 소리도 없이 딱 맞추기 쉽다
  */
 @Composable
 fun TimelineRulerView(
@@ -55,6 +59,8 @@ fun TimelineRulerView(
     viewport: TimelineViewportState,
     baselineMs: Long,
     endMs: Long,
+    /** 끝 표시가 달라붙는 위치. 마지막 조각이 끝나는 곳이다. 조각이 없으면 null. */
+    snapEndMs: Long?,
     onBaselineChanged: (Long) -> Unit,
     onEndChanged: (Long) -> Unit,
 ) {
@@ -62,6 +68,7 @@ fun TimelineRulerView(
     // 끝 라벨 뒤를 배경색으로 덮어 눈금 라벨과 겹쳐도 읽히게 한다
     val backgroundColor = MaterialTheme.colorScheme.background
     val currentEndMs by rememberUpdatedState(endMs)
+    val currentSnapEndMs by rememberUpdatedState(snapEndMs)
     val currentOnBaselineChanged by rememberUpdatedState(onBaselineChanged)
     val currentOnEndChanged by rememberUpdatedState(onEndChanged)
 
@@ -75,17 +82,25 @@ fun TimelineRulerView(
                     val down = awaitFirstDown()
                     val isEndMarker =
                         abs(down.position.x - viewport.xOf(currentEndMs)) <= END_MARKER_TOUCH_RADIUS.toPx()
-                    val onMove: (Long) -> Unit = if (isEndMarker) currentOnEndChanged else currentOnBaselineChanged
 
                     down.consume()
                     // 누르는 순간 기준선이 그 자리로 온다. 끝 표시는 끌어야 움직인다.
-                    if (!isEndMarker) onMove(viewport.msAt(down.position.x))
+                    if (!isEndMarker) currentOnBaselineChanged(viewport.msAt(down.position.x))
 
                     while (true) {
                         val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
                         if (!change.pressed) break
                         change.consume()
-                        onMove(viewport.msAt(change.position.x))
+
+                        val x = change.position.x
+                        if (isEndMarker) {
+                            // 확대 정도와 상관없이 손에 같은 범위로 느껴지도록 화면 거리로 잰다
+                            val snapMs = currentSnapEndMs
+                                ?.takeIf { abs(viewport.xOf(it) - x) <= END_MARKER_SNAP_RADIUS.toPx() }
+                            currentOnEndChanged(snapMs ?: viewport.msAt(x))
+                        } else {
+                            currentOnBaselineChanged(viewport.msAt(x))
+                        }
                     }
                 }
             },
@@ -183,6 +198,7 @@ fun TimelineRulerViewPreview() {
             viewport = viewport,
             baselineMs = 60_000,
             endMs = 300_000,
+            snapEndMs = 300_000,
             onBaselineChanged = {},
             onEndChanged = {},
         )
