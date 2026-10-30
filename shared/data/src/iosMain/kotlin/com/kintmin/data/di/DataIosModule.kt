@@ -1,5 +1,7 @@
 package com.kintmin.data.di
 
+import com.kintmin.data.audio_edit.AudioEditor
+import com.kintmin.data.audio_edit.AudioEditorImpl
 import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.device_status.DeviceStatusImpl
 import com.kintmin.data.local_datastore.createIosPreferencesDataStore
@@ -12,4 +14,5 @@ val dataIosModule: Module = module {
     single { createIosPreferencesDataStore() }
     single<JellyTubeDatabase> { createIosJellyTubeDatabase() }
     single<DeviceStatus> { DeviceStatusImpl() }
+    single<AudioEditor> { AudioEditorImpl() }
 }

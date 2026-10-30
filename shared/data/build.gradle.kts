@@ -69,6 +69,7 @@ kotlin {
             implementation(libs.androidx.datastore.preferences)
             implementation(libs.koin.android)
             implementation(libs.mlkit.translate)
+            implementation(libs.androidx.media3.transformer)
         }
 
         iosMain.dependencies {
