@@ -9,7 +9,8 @@ package com.kintmin.domain.audio_edit.model
  *   조각을 옮기거나 늘려 끝을 넘기면 넘긴 만큼 끝이 따라 늘어난다. 줄어드는 쪽으로는 따라가지 않는다.
  * - 조각끼리는 겹칠 수 없고 0초 앞으로 갈 수 없다.
  * - 병합한 조각들은 묶음 하나로 다룬다. 같이 움직이고, 묶음 양 끝 경계만 끌 수 있으며,
- *   선택·삭제도 묶음 단위다. 묶음 안에서 자르면 그 자리에서 묶음이 둘로 나뉜다.
+ *   선택·삭제도 묶음 단위다. 묶음 안에서 자르면 그 자리에서 묶음이 둘로 나뉘고,
+ *   병합했던 이음매([seamPositionsMs])에서 자르면 병합이 풀려 원래 두 조각으로 돌아간다.
  *
  * 모든 조작은 새 인스턴스를 돌려준다. 규칙을 어기는 값은 가능한 범위로 맞추거나 무시한다.
  */
@@ -57,6 +58,10 @@ data class AudioEditTimeline(
             .filter { !clips[it].isLinkedToPrevious }
             .map { first -> first..groupLastIndex(first) }
 
+    /** 원본에서 이어지지 않은 조각을 병합한 이음매 위치들. 화면에 점선으로 보이고, 여기서 자르면 병합이 풀린다. */
+    val seamPositionsMs: List<Long>
+        get() = clips.filter { it.isLinkedToPrevious }.map { it.positionMs }
+
     /** [index] 조각이 속한 묶음의 index 범위. */
     fun groupRangeOf(index: Int): IntRange {
         var first = index
@@ -76,9 +81,23 @@ data class AudioEditTimeline(
             atMs - it.positionMs >= MIN_CLIP_MS && it.positionEndMs - atMs >= MIN_CLIP_MS
         }.takeIf { it >= 0 }
 
-    fun canSplit(atMs: Long): Boolean = splittableClipIndex(atMs) != null
+    /** [atMs]가 병합 이음매면 그 뒤 조각의 index. */
+    private fun seamClipIndex(atMs: Long): Int? =
+        clips.indexOfFirst { it.isLinkedToPrevious && it.positionMs == atMs }.takeIf { it >= 0 }
 
+    fun canSplit(atMs: Long): Boolean = splittableClipIndex(atMs) != null || seamClipIndex(atMs) != null
+
+    /**
+     * [atMs]에서 조각을 둘로 나눈다. 병합 이음매에서 자르면 조각은 그대로 두고 병합만 푼다.
+     */
     fun split(atMs: Long): AudioEditTimeline {
+        seamClipIndex(atMs)?.let { seamIndex ->
+            return copy(
+                clips = clips.toMutableList().apply {
+                    set(seamIndex, clips[seamIndex].copy(isLinkedToPrevious = false))
+                }
+            )
+        }
         val index = splittableClipIndex(atMs) ?: return this
         val clip = clips[index]
         val splitSourceMs = clip.sourceMsAt(atMs)

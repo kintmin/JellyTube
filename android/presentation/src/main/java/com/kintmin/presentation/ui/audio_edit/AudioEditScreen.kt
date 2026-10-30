@@ -218,11 +218,12 @@ fun AudioEditScreen(
         val baselineSnapTargetsMs = remember(data.timeline) {
             buildList {
                 add(0L)
-                // 병합한 묶음 안쪽 이음매는 보이지 않으므로 묶음 양 끝에만 붙는다
+                // 묶음 안쪽은 점선으로 보이는 이음매에만 붙는다. 거기서 자르면 병합이 풀린다.
                 data.timeline.groupRanges.forEach { group ->
                     add(data.timeline.clips[group.first].positionMs)
                     add(data.timeline.clips[group.last].positionEndMs)
                 }
+                addAll(data.timeline.seamPositionsMs)
                 add(data.timeline.endMs)
             }
         }

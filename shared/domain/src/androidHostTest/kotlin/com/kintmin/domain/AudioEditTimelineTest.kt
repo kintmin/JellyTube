@@ -345,4 +345,29 @@ class AudioEditTimelineTest {
 
         assertEquals(350_000, result.endMs)
     }
+
+    @Test
+    fun `원본이 이어진 조각끼리 병합하면 이음매가 남지 않는다`() {
+        val result = initial.split(100_000).merge(100_000)
+
+        assertTrue(result.seamPositionsMs.isEmpty())
+    }
+
+    @Test
+    fun `원본이 이어지지 않은 조각을 병합하면 그 자리가 이음매로 남는다`() {
+        val merged = touchingNonContiguous.merge(100_000)
+
+        assertEquals(listOf(100_000L), merged.seamPositionsMs)
+    }
+
+    @Test
+    fun `이음매에서 자르면 병합이 풀려 원래 두 조각으로 돌아간다`() {
+        val merged = touchingNonContiguous.merge(100_000)
+
+        assertTrue(merged.canSplit(100_000))
+        val result = merged.split(100_000)
+
+        assertEquals(touchingNonContiguous, result)
+        assertTrue(result.canMerge(100_000))
+    }
 }

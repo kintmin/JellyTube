@@ -34,7 +34,7 @@ import com.kintmin.presentation.theme.white
  *
  * - 0초~끝 표시는 트랙 배경을 깔아, 빈칸과 뒤에 붙인 무음도 "비어 있는 트랙"으로 보이게 한다
  * - 조각은 양옆을 조금씩 띄운 둥근 블록으로 그려, 맞닿은 조각도 경계가 보이게 한다.
- *   병합한 묶음은 이음매 없이 블록 하나로 그린다
+ *   병합한 묶음은 블록 하나로 그리고, 원본이 이어지지 않는 이음매만 흐린 점선으로 남긴다
  * - 결과물 끝 뒤는 어둡게 덮고 끝 표시(빨간 선)를 긋는다
  * - 기준선(흰색)과 미리듣기선(파란색)은 별개다
  *
@@ -123,6 +123,7 @@ fun TimelineWaveformView(
         }
 
         drawWaveformBars(viewport = viewport, waveform = waveform, timeline = timeline)
+        drawMergeSeams(viewport = viewport, timeline = timeline)
         drawClipGrips(viewport = viewport, timeline = timeline, selectedClipIndex = selectedClipIndex, grab = grab)
         drawGrabHighlight(viewport = viewport, timeline = timeline, grab = grab)
 

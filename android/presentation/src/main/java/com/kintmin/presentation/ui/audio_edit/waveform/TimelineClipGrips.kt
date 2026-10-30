@@ -3,6 +3,7 @@ package com.kintmin.presentation.ui.audio_edit.waveform
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
@@ -58,5 +59,29 @@ internal fun DrawScope.drawClipGrips(
                 cornerRadius = CornerRadius(width / 2f),
             )
         }
+    }
+}
+
+/**
+ * 원본에서 이어지지 않은 조각을 병합한 이음매를 흐린 점선으로 보여 준다.
+ *
+ * 묶음은 한 덩이로 움직이지만, 여기서 자르면 병합이 풀린다는 것을 알 수 있게 자리를 남긴다.
+ * 원본에서 이어진 조각끼리 병합하면 아예 한 조각이 되어 이음매가 없다.
+ */
+internal fun DrawScope.drawMergeSeams(
+    viewport: TimelineViewportState,
+    timeline: AudioEditTimeline,
+) {
+    val dashPx = 4.dp.toPx()
+    timeline.seamPositionsMs.forEach { seamMs ->
+        val x = viewport.xOf(seamMs)
+        if (x < 0f || x > size.width) return@forEach
+        drawLine(
+            color = gray60.copy(alpha = 0.7f),
+            start = Offset(x = x, y = 0f),
+            end = Offset(x = x, y = size.height),
+            strokeWidth = 1.dp.toPx(),
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(dashPx, dashPx)),
+        )
     }
 }
