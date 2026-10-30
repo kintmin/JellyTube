@@ -25,13 +25,6 @@ import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-/**
- * 편집한 음원을 백그라운드에서 렌더해 저장하고, 끝나면 결과 알림을 보낸다.
- * (성공 알림 탭 시 저장된 음원의 상세 화면으로 딥링크)
- *
- * 렌더가 수십 초 걸려 앱을 나가도 이어지도록 포그라운드로 돈다.
- * 저장 중 표시와 같은 음원 중복 저장 방지는 저장을 실제로 하는 AudioEditRepository가 맡는다.
- */
 class AudioEditSaveWorker(
     private val appContext: Context,
     workerParams: WorkerParameters,
@@ -90,8 +83,7 @@ class AudioEditSaveWorker(
         return result.fold(
             onSuccess = { audioMedia ->
                 if (newMediaName == null) {
-                    // 재생 큐는 같은 플레이리스트를 다시 재생할 때 갱신되지 않는다. 직접 교체해야 편집본이 재생된다.
-                    // 새 음원은 재생 큐에 없으므로 교체할 것이 없다.
+                    // 재생 큐는 같은 플레이리스트를 다시 재생할 때 갱신되지 않아서 직접 교체해야 편집본이 재생된다.
                     withContext(Dispatchers.Main) {
                         mediaControllerManager.tryReplaceMediaItem(
                             mediaId = audioMedia.id,

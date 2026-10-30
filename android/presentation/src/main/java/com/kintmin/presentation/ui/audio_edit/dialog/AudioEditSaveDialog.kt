@@ -39,12 +39,6 @@ private enum class SaveMode { Overwrite, NewMedia }
 /** 새 음원으로 저장할 때 이름 길이 상한. */
 private const val MAX_NAME_LENGTH = 100
 
-/**
- * 편집본 저장 방식을 고르는 다이얼로그.
- *
- * 덮어쓰기는 플레이리스트·가사·노래방 번호를 그대로 유지하고 되돌릴 수 있다.
- * 새 음원으로 저장하면 원본과 완전히 분리돼 둘 다 남는다.
- */
 @Composable
 fun AudioEditSaveDialog(
     isShow: Boolean,
@@ -59,7 +53,6 @@ fun AudioEditSaveDialog(
     var saveMode by remember { mutableStateOf(SaveMode.Overwrite) }
     var newMediaName by remember { mutableStateOf(defaultNewMediaName) }
 
-    // 다이얼로그를 다시 열 때마다 기본 이름으로 되돌린다
     LaunchedEffect(isShow) {
         if (isShow) {
             saveMode = SaveMode.Overwrite
@@ -70,8 +63,6 @@ fun AudioEditSaveDialog(
     JellyTubeDialog(
         showDialog = isShow,
         onDismiss = onDismiss,
-        // 다이얼로그가 화면 전체를 쓰는 방식이라 키보드를 비켜 주지 않는다. 새 음원 이름을 입력할 때
-        // 키보드 위로 올라오도록 키보드 높이만큼 비운다.
         modifier = Modifier.imePadding(),
     ) {
         Column(
@@ -157,7 +148,6 @@ fun AudioEditSaveDialog(
     }
 }
 
-/** 라디오 버튼뿐 아니라 제목·설명 글자까지 줄 전체를 눌러 고를 수 있다. */
 @Composable
 private fun SaveModeRow(
     isSelected: Boolean,
@@ -176,10 +166,8 @@ private fun SaveModeRow(
                 role = Role.RadioButton,
             )
             .padding(vertical = 4.dp),
-        // 설명이 여러 줄이라 위쪽 맞춤이면 버튼이 제목 줄에 붙어 위로 치우쳐 보인다
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 클릭은 줄 전체가 받으므로 버튼 자체는 표시만 한다
         RadioButton(
             selected = isSelected,
             onClick = null,

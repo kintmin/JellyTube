@@ -37,9 +37,6 @@ import com.kintmin.presentation.theme.white
  *   병합한 묶음은 블록 하나로 그리고, 원본이 이어지지 않는 이음매만 흐린 점선으로 남긴다
  * - 결과물 끝 뒤는 어둡게 덮고 끝 표시(빨간 선)를 긋는다
  * - 기준선(흰색)과 미리듣기선(파란색)은 별개다
- *
- * 높이는 화면 높이에 따라 달라지므로 호출하는 쪽에서 정한다.
- * 제스처 구분은 [timelineWaveformGestures]에 있다.
  */
 @Composable
 fun TimelineWaveformView(

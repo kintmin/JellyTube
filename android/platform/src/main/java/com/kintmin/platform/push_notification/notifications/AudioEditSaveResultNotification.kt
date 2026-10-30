@@ -7,12 +7,6 @@ import com.kintmin.platform.intent.audioMediaDetailPendingIntent
 import com.kintmin.platform.push_notification.PushNotificationIdGenerator
 import com.kintmin.platform.push_notification.channels.AudioEditSaveResultChannel
 
-/**
- * 편집한 음원 저장 결과 알림.
- *
- * 성공은 저장된 음원(덮어쓰기면 그 음원, 새 음원 저장이면 새로 생긴 음원)의 상세 화면으로,
- * 실패는 앱 로그 화면으로 연결한다.
- */
 data class AudioEditSaveResultNotification(
     val resultType: ResultType,
     val contentText: String,

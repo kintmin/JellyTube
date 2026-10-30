@@ -11,9 +11,7 @@ import kotlin.math.abs
 
 /**
  * 눈금 줄과 파형이 함께 쓰는 화면 범위(어디부터 얼마나 확대해서 보는지).
- *
- * 화면에만 필요한 상태라 ViewModel이 아니라 Composable에 둔다. 제스처마다 바뀌어서
- * UiState에 넣으면 매 프레임 상태가 복사된다.
+ * Composable에 둔다. 제스처마다 바뀌어서 UiState에 넣으면 매 프레임 상태가 복사된다.
  */
 @Stable
 class TimelineViewportState {

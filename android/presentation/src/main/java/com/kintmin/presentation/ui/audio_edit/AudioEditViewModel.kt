@@ -269,7 +269,6 @@ class AudioEditViewModel constructor(
 
     /**
      * 렌더가 수십 초 걸려 백그라운드 작업에 맡기고 화면을 닫는다. 끝나면 알림으로 알려준다.
-     * 저장 중 표시([AudioEditUiState.isSaving])는 실제로 저장하는 쪽이 올리므로 여기서 바꾸지 않는다.
      */
     private fun enqueueSave(enqueue: (AudioEditUiState) -> Result<Unit>) {
         val state = _data.value

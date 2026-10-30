@@ -8,43 +8,19 @@ import kotlinx.coroutines.flow.Flow
 
 interface AudioEditRepository {
 
-    /**
-     * 지금 편집본을 저장(렌더)하고 있는 음원 id들.
-     *
-     * 저장은 백그라운드에서 수십 초 걸리므로, 화면은 이 값으로 저장·되돌리기를 막는다.
-     * 같은 음원은 동시에 하나만 저장되고, 저장 중에는 되돌릴 수 없다.
-     */
     fun observeSavingAudioMediaIds(): Flow<Set<Int>>
 
-    /**
-     * 파형 표시용 진폭. 편집은 항상 원본을 기준으로 하므로 원본 경로를 넘긴다.
-     *
-     * 앞에서부터 읽는 대로 채워진 파형을 여러 번 흘려보내고, 다 읽으면 완료된 파형을 끝으로 닫힌다.
-     * 읽지 못하면 예외로 끝난다.
-     */
     fun extractWaveform(audioFileFullPath: String, bucketCount: Int): Flow<AudioWaveform>
 
-    /** 편집본을 만든 편집 상태. 다시 편집할 때 이어서 고칠 수 있게 쓴다. 편집본이 없으면 null. */
     suspend fun fetchEditTimeline(audioMediaId: Int): Result<AudioEditTimeline?>
 
-    /**
-     * [timeline]을 렌더한 편집본을 만들어 해당 음원에 연결하고, 다시 편집할 수 있게 [timeline]도 저장한다.
-     * 이미 편집본이 있으면 교체한다. 원본 파일은 지우지 않는다.
-     */
     suspend fun applyEditedAudio(
         audioMediaId: Int,
         timeline: AudioEditTimeline,
     ): Result<AudioMedia>
 
-    /** 편집본 연결을 해제해 원본으로 되돌리고 편집본 파일과 편집 상태를 지운다. */
     suspend fun revertEditedAudio(audioMediaId: Int): Result<AudioMedia>
 
-    /**
-     * 소리·무음 조각을 이어붙인 결과를 **별 음원으로** 저장한다. 원본 음원은 그대로 남는다.
-     *
-     * 썸네일은 복사하고 노래방 번호는 물려받되 가사는 가져오지 않는다. 길이가 달라져
-     * 시간이 맞춰진 가사는 어차피 맞지 않는다.
-     */
     suspend fun saveEditedAudioAsNewMedia(
         audioMediaId: Int,
         parts: List<AudioEditPart>,

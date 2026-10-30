@@ -14,7 +14,6 @@ import com.kintmin.presentation.theme.white
 /**
  * 파형에서 꾹 눌러 잡은 대상. 손가락을 떼면 null이 된다.
  *
- * 잡혔다는 것을 화면에 보여주기 위한 표시 전용 상태라 ViewModel이 아니라 화면에 둔다.
  * [edge]가 null이면 조각(병합했으면 그 묶음)을 통째로 옮기는 중이고, 아니면 그 경계로 길이를 조절하는 중이다.
  */
 data class TimelineGrab(

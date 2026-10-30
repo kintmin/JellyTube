@@ -12,7 +12,6 @@ import androidx.media3.exoplayer.source.SilenceMediaSource
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 import java.io.File
 
-// 무음 조각(SilenceMediaSource)과 조각별 MediaSource 구성은 Media3의 unstable API다
 @OptIn(UnstableApi::class)
 internal class AudioPreviewPlayerImpl constructor(
     private val appContext: Context,
@@ -20,7 +19,7 @@ internal class AudioPreviewPlayerImpl constructor(
 
     private var player: ExoPlayer? = null
 
-    /** 재생 중인 조각마다 타임라인 시작 시각. 플레이어 위치를 타임라인으로 환산할 때 쓴다. */
+    /** 재생 중인 조각마다 타임라인 시작 시각 */
     private var partStartMsList: List<Long> = emptyList()
 
     override val isPlaying: Boolean
@@ -45,7 +44,6 @@ internal class AudioPreviewPlayerImpl constructor(
             parts.map { part -> part.toMediaSource(sourceUri, mediaSourceFactory) }
         )
 
-        // 시작 위치가 들어 있는 조각과 그 안의 오프셋으로 옮긴다
         val startIndex = partStartMsList
             .indexOfLast { it <= startAtMs }
             .coerceAtLeast(0)

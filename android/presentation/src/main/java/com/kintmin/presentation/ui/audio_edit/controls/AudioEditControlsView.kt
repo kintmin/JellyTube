@@ -33,13 +33,8 @@ import com.kintmin.presentation.ui.audio_edit.AudioEditUiState
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineGrab
 import kotlin.time.Duration.Companion.milliseconds
 
-/** 남은 소리가 없을 때 알려주는 문구. 이때는 저장할 수 없다. */
 internal const val NO_AUDIO_MESSAGE = "남은 소리가 없어 저장할 수 없습니다. 조각 경계를 꾹 눌러 끌어 되살려주세요."
 
-/**
- * 제스처는 화면에 드러나지 않아, 지금 할 수 있는 조작만 한 자리에서 바꿔 가며 알려준다.
- * 꾹 눌러 잡고 있는 동안에는 지금 하는 조작과 그 위치를 보여준다.
- */
 internal fun AudioEditUiState.gestureHint(grab: TimelineGrab?): String {
     val grabbedClip = grab?.let { timeline.clips.getOrNull(it.clipIndex) }
     return when {
@@ -103,7 +98,6 @@ fun AudioEditControlsView(
             }
         }
 
-        // 버튼 셋을 같은 폭으로 나누면 기본 좌우 여백(24dp)으로는 좁은 폰에서 글자가 줄바꿈된다
         val buttonPadding = PaddingValues(horizontal = 8.dp)
         Row(
             modifier = Modifier

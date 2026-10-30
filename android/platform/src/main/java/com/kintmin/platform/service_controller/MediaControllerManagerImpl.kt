@@ -205,7 +205,6 @@ class MediaControllerManagerImpl(
         mediaController.replaceMediaItem(targetIndex, mediaItem.toMediaItem())
 
         // 길이가 바뀌면 옛 길이 기준으로 잡아둔 구간반복은 더 이상 유효하지 않다.
-        // mediaId는 그대로라서 clearRepeatRangeIfMediaChanged로는 걸러지지 않는다.
         if (repeatRangeMediaId == mediaId.toString()) {
             clearRepeatRange()
         }

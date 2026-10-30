@@ -365,7 +365,7 @@ internal class AudioMediaRepositoryImpl constructor(
             // 파일 삭제 실패해도 에러를 발생시키지 않는다
             coroutineScope {
                 launch { deleteAudioFile(data.audioFileNameWithExt) }
-                // 편집본은 원본과 별 파일이라 같이 지워야 한다
+                // 편집본은 원본과 같이 지워야 한다
                 data.editedAudioFileNameWithExt?.let {
                     launch {
                         deleteAudioFile(it)

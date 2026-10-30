@@ -50,7 +50,6 @@ internal fun DrawScope.drawClipGrips(
             val height = if (isGrabbed) grabbedGripHeight else gripHeight
             drawRoundRect(
                 color = if (isGrabbed) white else color,
-                // 끝 쪽 손잡이는 오른쪽 가장자리를 기준으로 안쪽에 그린다
                 topLeft = Offset(
                     x = if (edge == AudioEditTimeline.Edge.Start) edgeX else edgeX - width,
                     y = (size.height - height) / 2f,

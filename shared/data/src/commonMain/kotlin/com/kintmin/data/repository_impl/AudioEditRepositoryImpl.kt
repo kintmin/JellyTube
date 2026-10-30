@@ -24,10 +24,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
 internal class AudioEditRepositoryImpl constructor(
     private val audioMediaFacade: AudioMediaFacade,
     private val audioMediaDao: AudioMediaDao,
@@ -42,12 +40,6 @@ internal class AudioEditRepositoryImpl constructor(
         const val EDITED_AUDIO_EXT = "m4a"
     }
 
-    /**
-     * 저장 중인 음원 id. repository가 앱에 하나뿐이라 메모리에만 둔다.
-     *
-     * 저장은 앱 프로세스 안의 Worker에서 돌기 때문에, 프로세스가 죽으면 저장도 이 값도 같이 사라져
-     * 서로 어긋나지 않는다. WorkManager가 저장을 다시 실행하면 그때 다시 표시된다.
-     */
     private val savingAudioMediaIds = MutableStateFlow<Set<Int>>(emptySet())
 
     override fun observeSavingAudioMediaIds(): Flow<Set<Int>> = savingAudioMediaIds.asStateFlow()

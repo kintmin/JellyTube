@@ -4,11 +4,6 @@ import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import kotlinx.coroutines.flow.Flow
 
-/**
- * 음원 파형 추출과 구간 편집(자르기 + 이어붙이기)을 담당한다.
- *
- * 오디오 디코딩·인코딩은 플랫폼 코덱이 필요해 구현은 각 플랫폼 소스셋에 있다.
- */
 interface AudioEditor {
 
     /**

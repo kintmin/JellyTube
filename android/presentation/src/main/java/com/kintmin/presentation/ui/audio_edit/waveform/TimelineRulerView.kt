@@ -37,11 +37,6 @@ private val TICK_INTERVAL_MS_LIST = listOf(
 /** 눈금 라벨 사이 최소 간격. */
 private val MIN_TICK_SPACING = 72.dp
 
-/**
- * 파형 위의 눈금 줄. 기준선과 끝 표시를 옮기는 영역이다.
- *
- * 제스처 구분은 [timelineRulerGestures]에 있다.
- */
 @Composable
 fun TimelineRulerView(
     modifier: Modifier,

@@ -27,12 +27,6 @@ import com.kintmin.presentation.ui.audio_edit.AudioEditUiState
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineGrab
 import kotlin.time.Duration.Companion.milliseconds
 
-/**
- * 파형 아래 조작 영역(가로 화면처럼 높이가 낮을 때).
- *
- * 파형에 높이를 최대한 남기려고 기준선 위치, 한 줄 힌트, 아이콘 버튼을 한 줄에 모은다.
- * 소리가 남지 않았으면 힌트 자리에 경고를 띄운다.
- */
 @Composable
 fun AudioEditCompactControlsView(
     data: AudioEditUiState,

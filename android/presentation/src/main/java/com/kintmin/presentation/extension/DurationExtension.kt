@@ -12,7 +12,6 @@ fun Duration.to_hh_colon_mm_colon_ss() = toComponents { hours, minutes, seconds,
     }
 }
 
-/** 밀리초까지 보여준다. 편집 화면처럼 정확한 위치가 필요한 곳에서 쓴다. */
 fun Duration.to_hh_colon_mm_colon_ss_dot_sss() = toComponents { hours, minutes, seconds, nanoseconds ->
     val milliseconds = (nanoseconds / 1_000_000).toString().padStart(3, '0')
     if (hours != 0L) {

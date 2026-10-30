@@ -270,7 +270,6 @@ fun AudioMediaDetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    // 편집본으로 만든 음원은 출처에 원본 주소가 들어 있어 그 주소로 연다
                                     data.webViewUrl?.let { url -> navigateToMainSearchTab(url) }
                                 }
                                 .padding(horizontal = 16.dp),

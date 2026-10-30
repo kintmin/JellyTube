@@ -11,9 +11,7 @@ import kotlinx.coroutines.flow.first
 
 /**
  * 편집 결과를 원본과 별개인 새 음원으로 저장한다.
- *
  * 새로 생긴 음원이 어느 플레이리스트로 들어갈지는 다운로드 설정을 그대로 따른다.
- * 편집본만의 규칙을 따로 두면 설정이 두 벌이 된다.
  */
 class SaveEditedAudioAsNewMediaUseCase constructor(
     private val audioEditRepository: AudioEditRepository,

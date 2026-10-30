@@ -303,7 +303,6 @@ fun AudioEditScreen(
 }
 
 /**
- * "원본 5:00 → 결과 5:10". 세로·가로 화면이 같은 문구를 쓴다.
  * 결과 시간은 끝 표시(빨간 손잡이)와 같은 색으로 칠해, 그걸 끌면 이 값이 바뀐다는 연결을 보여준다.
  */
 private fun AudioEditUiState.durationSummary(): AnnotatedString = buildAnnotatedString {
