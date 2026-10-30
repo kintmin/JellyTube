@@ -1,6 +1,8 @@
 package com.kintmin.data.local_file
 
 import com.kintmin.data.local_file.model.CopiedAudioInfo
+import com.kintmin.data.local_file.model.ExportedAudioInfo
+import com.kintmin.domain.audio_media.model.AudioExportTarget
 
 interface FileManager {
     fun getFileNameWithExt(fileFullPath: String): Result<String>
@@ -19,6 +21,13 @@ interface FileManager {
     suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo>
 
     suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo>
+
+    suspend fun exportAudioToPublicStorage(
+        sourceAudioFileFullPath: String,
+        title: String,
+        artist: String?,
+        targetList: List<AudioExportTarget>,
+    ): Result<ExportedAudioInfo>
 
     suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit>
 

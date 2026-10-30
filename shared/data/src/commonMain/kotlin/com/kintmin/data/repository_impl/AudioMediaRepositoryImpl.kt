@@ -9,7 +9,9 @@ import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.domain.audio_media.model.AddedAudioMedia
+import com.kintmin.domain.audio_media.model.AudioExportTarget
 import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
@@ -384,6 +386,24 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun listAudioAndImageFileFullPaths(): Result<List<String>> =
         fileManager.listAudioAndImageFileFullPaths()
+
+    override suspend fun exportAudioMediaToDevice(
+        audioFileFullPath: String,
+        title: String,
+        artist: String,
+        targetList: List<AudioExportTarget>,
+    ): Result<AudioMediaExportStatus> = fileManager.exportAudioToPublicStorage(
+        sourceAudioFileFullPath = audioFileFullPath,
+        title = title,
+        artist = artist.takeIf { it.isNotBlank() },
+        targetList = targetList,
+    ).map { exported ->
+        if (exported.alreadyExported) {
+            AudioMediaExportStatus.ALREADY_EXPORTED
+        } else {
+            AudioMediaExportStatus.EXPORTED
+        }
+    }
 
     // 저장 파일명(WithExt)과 카테고리를 아는 호출부에서만 사용한다. 카테고리별 디렉토리로 경로를 해석해 삭제한다.
     private suspend fun deleteAudioFile(fileNameWithExt: String): Result<Unit> =

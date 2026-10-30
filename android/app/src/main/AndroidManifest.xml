@@ -2,6 +2,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 기기 저장 안내 화면에서 시계 앱의 알람 화면으로 보낼 때 필요(Android 11+ 패키지 가시성) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.SHOW_ALARMS" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SET_ALARM" />
+        </intent>
+    </queries>
+
+    <!-- 시계 앱의 알람 화면(SHOW_ALARMS)으로 보낼 때 필요 -->
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

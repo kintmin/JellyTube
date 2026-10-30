@@ -72,7 +72,7 @@ fun SettingFileShareReceiveScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("데스크톱에서 파일 공유받기") },
+                title = { Text("PC에서 공유받기") },
                 navigationIcon = {
                     IconButton(onClick = navigateToBack) {
                         Icon(

@@ -1,7 +1,9 @@
 package com.kintmin.domain.audio_media.repository
 
 import com.kintmin.domain.audio_media.model.AddedAudioMedia
+import com.kintmin.domain.audio_media.model.AudioExportTarget
 import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlinx.coroutines.flow.Flow
@@ -64,4 +66,11 @@ interface AudioMediaRepository {
     suspend fun deleteOrphanAudioMedia(): Result<List<AudioMedia>>
     suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit>
     suspend fun listAudioAndImageFileFullPaths(): Result<List<String>>
+
+    suspend fun exportAudioMediaToDevice(
+        audioFileFullPath: String,
+        title: String,
+        artist: String,
+        targetList: List<AudioExportTarget>,
+    ): Result<AudioMediaExportStatus>
 }

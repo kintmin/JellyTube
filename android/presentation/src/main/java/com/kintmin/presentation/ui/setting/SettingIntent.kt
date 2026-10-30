@@ -10,6 +10,11 @@ sealed interface SettingIntent {
     data object OnClickStepTile : SettingIntent
     data object OnClickAnomalyDataCheckTile : SettingIntent
     data object OnClickAppLogTile : SettingIntent
+    data object OnClickImportAudioTile : SettingIntent
+    data class OnAudioFilesSelected(val uriStrings: List<String>) : SettingIntent
+    data class OnSelectImportPlaylist(val playlistId: Int) : SettingIntent
+    data object OnDismissImportPlaylistBottomSheet : SettingIntent
+    data object OnClickDeviceSaveTile : SettingIntent
     data object OnClickShareTile : SettingIntent
     data object OnClickFileShareReceiveTile : SettingIntent
     data class OnToggleIsStepEnabled(val value: Boolean) : SettingIntent

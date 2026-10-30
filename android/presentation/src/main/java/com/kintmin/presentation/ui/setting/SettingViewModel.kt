@@ -8,6 +8,8 @@ import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFl
 import com.kintmin.domain.app_setting.usecase.UpdateIsStepEnabledUseCase
 import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
 import com.kintmin.domain.app_setting.usecase.UpdateShouldInsertAtTopOnDownloadUseCase
+import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
 import com.kintmin.platform.worker.usecase.ExecuteAnomalyDataCheck
@@ -30,13 +32,18 @@ class SettingViewModel constructor(
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
     private val updateIsStepEnabledUseCase: UpdateIsStepEnabledUseCase,
     private val executeAnomalyDataCheck: ExecuteAnomalyDataCheck,
+    private val importSharedAudioMediaUseCase: ImportSharedAudioMediaUseCase,
 ) : ViewModel() {
 
     private val isPlaylistIdOnDownloadBottomSheetVisible = MutableStateFlow(false)
+    private val isImportPlaylistBottomSheetVisible = MutableStateFlow(false)
+    private val isImporting = MutableStateFlow(false)
     private val _eventFlow = MutableSharedFlow<SettingEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
     private val isStepEnabledFlow = fetchIsStepEnabledFlowUseCase()
+
+    private var pendingImportUriStringList: List<String> = emptyList()
 
     val uiState: StateFlow<SettingUiState> = combine(
         fetchShouldInsertAtTopOnDownloadFlowUseCase(),
@@ -68,6 +75,10 @@ class SettingViewModel constructor(
         )
     }.combine(isStepEnabledFlow) { state, isStepEnabled ->
         state.copy(isStepEnabled = isStepEnabled)
+    }.combine(isImportPlaylistBottomSheetVisible) { state, isVisible ->
+        state.copy(isImportPlaylistBottomSheetVisible = isVisible)
+    }.combine(isImporting) { state, isImportingNow ->
+        state.copy(isImporting = isImportingNow)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
@@ -113,6 +124,28 @@ class SettingViewModel constructor(
                     _eventFlow.emit(SettingEvent.NavigateToAppLogScreen)
                 }
             }
+            SettingIntent.OnClickImportAudioTile -> {
+                viewModelScope.launch {
+                    _eventFlow.emit(SettingEvent.LaunchAudioFilePicker)
+                }
+            }
+            is SettingIntent.OnAudioFilesSelected -> {
+                if (intent.uriStrings.isEmpty()) return
+                pendingImportUriStringList = intent.uriStrings
+                isImportPlaylistBottomSheetVisible.value = true
+            }
+            is SettingIntent.OnSelectImportPlaylist -> {
+                importPendingAudioFiles(intent.playlistId)
+            }
+            SettingIntent.OnDismissImportPlaylistBottomSheet -> {
+                pendingImportUriStringList = emptyList()
+                isImportPlaylistBottomSheetVisible.value = false
+            }
+            SettingIntent.OnClickDeviceSaveTile -> {
+                viewModelScope.launch {
+                    _eventFlow.emit(SettingEvent.NavigateToDeviceSaveScreen)
+                }
+            }
             SettingIntent.OnClickShareTile -> {
                 viewModelScope.launch {
                     _eventFlow.emit(SettingEvent.NavigateToShareScreen)
@@ -140,6 +173,38 @@ class SettingViewModel constructor(
             }
             SettingIntent.OnActivityRecognitionDenied -> {
                 updateIsStepEnabled(false)
+            }
+        }
+    }
+
+    private fun importPendingAudioFiles(playlistId: Int) {
+        val uriStringList = pendingImportUriStringList
+        pendingImportUriStringList = emptyList()
+        isImportPlaylistBottomSheetVisible.value = false
+        if (uriStringList.isEmpty()) return
+
+        viewModelScope.launch {
+            isImporting.value = true
+            var successCount = 0
+            val errorList = mutableListOf<String>()
+
+            uriStringList.forEach { uriString ->
+                importSharedAudioMediaUseCase(uriString, playlistIdOverride = playlistId)
+                    .onSuccess { successCount++ }
+                    .onFailure { throwable ->
+                        errorList += when (throwable) {
+                            is AlreadyDownloadedMedia -> "이미 저장된 파일입니다."
+                            else -> throwable.message ?: "알 수 없는 오류"
+                        }
+                    }
+            }
+            isImporting.value = false
+
+            if (successCount > 0) {
+                _eventFlow.emit(SettingEvent.ShowToast("${successCount}개 파일을 가져왔습니다."))
+            }
+            errorList.distinct().forEach { error ->
+                _eventFlow.emit(SettingEvent.ShowToast(error))
             }
         }
     }
