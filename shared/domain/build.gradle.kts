@@ -2,12 +2,19 @@ import com.kintmin.buildSrc.AppConfiguration
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.atomicfu)
 }
 
 kotlin {
-    androidTarget()
+    android {
+        namespace = "com.kintmin.domain"
+        compileSdk = AppConfiguration.COMPILE_SDK
+        minSdk = AppConfiguration.MIN_SDK
+
+        // AGP KMP 플러그인에서 호스트(단위) 테스트는 opt-in 이다.
+        withHostTestBuilder { }.configure { }
+    }
     iosX64()
     iosArm64()
     iosSimulatorArm64()
@@ -18,21 +25,12 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
         }
-        val androidUnitTest by getting {
+        getByName("androidHostTest") {
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.mockk)
                 implementation(libs.kotlinx.coroutines.test)
             }
         }
-    }
-}
-
-android {
-    namespace = "com.kintmin.domain"
-    compileSdk = AppConfiguration.COMPILE_SDK
-
-    defaultConfig {
-        minSdk = AppConfiguration.MIN_SDK
     }
 }
