@@ -42,10 +42,11 @@ internal fun PlaylistTrackAggregate.toPlaylistDetailListItemUiState() = Playlist
     id = audioMedia.id,
     mediaName = audioMedia.name,
     artist = audioMedia.artist,
-    audioDuration = audioMedia.audioDuration,
+    // 재생·표시 모두 편집본이 있으면 편집본 기준이다
+    audioDuration = audioMedia.playbackDuration,
     description = audioMedia.description,
     source = audioMedia.source,
-    audioFileFullPath = audioMedia.audioFileFullPath,
+    audioFileFullPath = audioMedia.playbackFileFullPath,
     imageFileFullPath = audioMedia.imageFileFullPath,
     sequence = audioTrack.trackSequence,
 )

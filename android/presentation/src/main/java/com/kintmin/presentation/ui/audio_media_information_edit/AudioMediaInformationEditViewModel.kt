@@ -1,4 +1,4 @@
-﻿package com.kintmin.presentation.ui.audio_media_edit
+package com.kintmin.presentation.ui.audio_media_information_edit
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class AudioMediaEditViewModel constructor(
+class AudioMediaInformationEditViewModel constructor(
     savedStateHandle: SavedStateHandle,
     fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
@@ -39,8 +39,8 @@ class AudioMediaEditViewModel constructor(
     private val addThrottle = Throttle(500)
     private val isAddPlaylistBottomSheetVisible = MutableStateFlow(false)
 
-    val data: StateFlow<AudioMediaEditUiState> = combine(
-        fetchAudioMediaDetailFlowUseCase(audioMediaId).map { it.toAudioMediaEditUiState() },
+    val data: StateFlow<AudioMediaInformationEditUiState> = combine(
+        fetchAudioMediaDetailFlowUseCase(audioMediaId).map { it.toAudioMediaInformationEditUiState() },
         fetchAllPlaylistFlowUseCase(),
         isAddPlaylistBottomSheetVisible,
     ) { audioMedia, allPlaylists, isBottomSheetVisible ->
@@ -49,7 +49,7 @@ class AudioMediaEditViewModel constructor(
             selectablePlaylists = allPlaylists
                 .filterNot { playlist -> playlist.isBasePlaylist || playlist.id in linkedPlaylistIds }
                 .map { playlist ->
-                    AudioMediaEditUiState.Playlist(
+                    AudioMediaInformationEditUiState.Playlist(
                         playlistId = playlist.id,
                         playlistName = playlist.name,
                         isBasePlaylist = playlist.isBasePlaylist,
@@ -59,7 +59,7 @@ class AudioMediaEditViewModel constructor(
         )
     }
         .stateIn(
-            viewModelScope, SharingStarted.WhileSubscribed(5000), AudioMediaEditUiState(
+            viewModelScope, SharingStarted.WhileSubscribed(5000), AudioMediaInformationEditUiState(
                 audioMediaId = audioMediaId,
                 imageFileFullPath = null,
                 audioMediaName = "",
@@ -72,15 +72,15 @@ class AudioMediaEditViewModel constructor(
             )
         )
 
-    fun sendIntent(intent: AudioMediaEditIntent) {
+    fun sendIntent(intent: AudioMediaInformationEditIntent) {
         when (intent) {
-            is AudioMediaEditIntent.OnAudioMediaArtistChanged -> updateAudioArtist(artist = intent.text)
-            is AudioMediaEditIntent.OnAudioMediaDescriptionChanged -> updateAudioDescription(description = intent.text)
-            is AudioMediaEditIntent.OnAudioMediaNameChanged -> updateAudioMediaName(name = intent.text)
-            is AudioMediaEditIntent.OnClickDeleteLinkedPlaylist -> deleteLinkedPlaylist(intent.playlistId)
-            AudioMediaEditIntent.OnClickShowAddPlaylistBottomSheet -> isAddPlaylistBottomSheetVisible.value = true
-            AudioMediaEditIntent.OnDismissAddPlaylistBottomSheet -> isAddPlaylistBottomSheetVisible.value = false
-            is AudioMediaEditIntent.OnClickAddLinkedPlaylist -> addLinkedPlaylist(intent.playlistId)
+            is AudioMediaInformationEditIntent.OnAudioMediaArtistChanged -> updateAudioArtist(artist = intent.text)
+            is AudioMediaInformationEditIntent.OnAudioMediaDescriptionChanged -> updateAudioDescription(description = intent.text)
+            is AudioMediaInformationEditIntent.OnAudioMediaNameChanged -> updateAudioMediaName(name = intent.text)
+            is AudioMediaInformationEditIntent.OnClickDeleteLinkedPlaylist -> deleteLinkedPlaylist(intent.playlistId)
+            AudioMediaInformationEditIntent.OnClickShowAddPlaylistBottomSheet -> isAddPlaylistBottomSheetVisible.value = true
+            AudioMediaInformationEditIntent.OnDismissAddPlaylistBottomSheet -> isAddPlaylistBottomSheetVisible.value = false
+            is AudioMediaInformationEditIntent.OnClickAddLinkedPlaylist -> addLinkedPlaylist(intent.playlistId)
         }
     }
 

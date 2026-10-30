@@ -1,5 +1,6 @@
 package com.kintmin.presentation.ui.audio_media_detail
 
+import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.extension.toKoreanDateTimeString
@@ -18,10 +19,15 @@ data class AudioMediaDetailUiState(
     val audioDurationSeconds: Double?,
     val audioMediaCreationTime: String,
     val source: String,
+    /** 출처를 눌렀을 때 열 수 있는 웹 주소. 편집본은 원본 주소를 꺼내 쓰고, 기기에서 가져온 음원은 null. */
+    val webViewUrl: String?,
     val audioMediaDescription: String,
     val hasLyrics: Boolean,
     val tjKaraokeNumber: String?,
+    val hasEditedAudio: Boolean,
     val playlists: List<Playlist>,
+    /** 편집본을 백그라운드에서 저장하고 있는지. 저장 중에는 되돌리면 결과가 뒤엉켜 막는다. */
+    val isAudioEditSaving: Boolean = false,
 ) {
     data class Playlist(
         val playlistId: Int,
@@ -41,8 +47,10 @@ data class AudioMediaDetailUiState(
             audioDurationSeconds = 222.0,
             audioMediaCreationTime = "yyyy년 M월 dd일 HH:mm",
             source = "https://preview.com",
+            webViewUrl = "https://preview.com",
             hasLyrics = false,
             tjKaraokeNumber = "38087",
+            hasEditedAudio = true,
             playlists = List(5) {
                 Playlist(
                     playlistId = index * it,
@@ -63,13 +71,17 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
             imageFileFullPath = audioMedia.imageFileFullPath,
             audioMediaName = audioMedia.name,
             artist = audioMedia.artist,
-            playTime = (audioMedia.audioDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
+            // 화면에 보여주는 길이는 편집본 기준
+            playTime = (audioMedia.playbackDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
+            // 가사 검색은 음원 길이로 후보를 매칭하므로 편집본이 아니라 원본 길이를 넘긴다
             audioDurationSeconds = audioMedia.audioDuration?.toDouble(DurationUnit.SECONDS),
             audioMediaCreationTime = audioMedia.createdTime.toKoreanDateTimeString(),
             source = audioMedia.source,
+            webViewUrl = EditedAudioSource.webViewUrlOrNull(audioMedia.source),
             audioMediaDescription = audioMedia.description,
             hasLyrics = audioMedia.lyricFileFullPath != null,
             tjKaraokeNumber = audioMedia.tjKaraokeNumber,
+            hasEditedAudio = audioMedia.editedAudioFileFullPath != null,
             playlists = this.map { dataList ->
                 AudioMediaDetailUiState.Playlist(
                     playlistId = dataList.playlist.id,
@@ -90,9 +102,11 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
             .toLocalDateTime(TimeZone.currentSystemDefault())
             .toKoreanDateTimeString(),
         source = "",
+        webViewUrl = null,
         audioMediaDescription = "삭제되었습니다.",
         hasLyrics = false,
         tjKaraokeNumber = null,
+        hasEditedAudio = false,
         playlists = emptyList(),
     )
 }

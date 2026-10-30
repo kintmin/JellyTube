@@ -5,6 +5,7 @@ import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
+import com.kintmin.data.local_db.dao.AudioEditProjectDao
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
@@ -17,9 +18,10 @@ import com.kintmin.data.local_db.model.*
         PlaylistEntity::class,
         PlaylistTrackEntity::class,
         StepEntity::class,
+        AudioEditProjectEntity::class,
     ],
     exportSchema = true,
-    version = 6,
+    version = 7,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -27,6 +29,10 @@ import com.kintmin.data.local_db.model.*
         AutoMigration(from = 4, to = 5),
         // 5 -> 6: AUDIO_MEDIA에 tjKaraokeNumber 컬럼(nullable) 추가
         AutoMigration(from = 5, to = 6),
+        // 6 -> 7: 음원 편집
+        //  - AUDIO_MEDIA에 editedAudioFileNameWithExt, editedAudioDurationSeconds 컬럼(nullable) 추가
+        //  - 편집 상태를 담는 AUDIO_EDIT_PROJECT 테이블 추가(AUDIO_MEDIA와 1:1, 삭제 시 CASCADE)
+        AutoMigration(from = 6, to = 7),
     ],
 )
 @ConstructedBy(JellyTubeDatabaseConstructor::class)
@@ -36,6 +42,7 @@ abstract class JellyTubeDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
     abstract fun playlistTrackDao(): PlaylistTrackDao
     abstract fun stepDao(): StepDao
+    abstract fun audioEditProjectDao(): AudioEditProjectDao
 
     companion object {
 

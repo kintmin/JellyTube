@@ -22,6 +22,10 @@ internal fun AudioMediaEntity.toDomain(fileManager: FileManager) = runCatching {
             fileManager.getLyricFileFullPath(fileNameWithExt = it).getOrThrow()
         },
         tjKaraokeNumber = tjKaraokeNumber,
+        editedAudioFileFullPath = editedAudioFileNameWithExt?.let {
+            fileManager.getAudioFileFullPath(fileNameWithExt = it).getOrThrow()
+        },
+        editedAudioDuration = editedAudioDurationSeconds?.seconds,
         createdTime = rawCreatedTime.toLocalDateTime(),
     )
 }

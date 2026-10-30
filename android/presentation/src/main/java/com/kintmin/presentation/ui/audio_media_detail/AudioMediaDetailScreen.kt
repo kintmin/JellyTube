@@ -1,5 +1,6 @@
 package com.kintmin.presentation.ui.audio_media_detail
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -50,6 +51,7 @@ import org.koin.androidx.compose.koinViewModel
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.audio_media_detail.dialog.AudioEditRevertDialog
 import com.kintmin.presentation.ui.audio_media_detail.dialog.KaraokeUnlinkDialog
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
@@ -58,33 +60,38 @@ import java.io.File
 @Composable
 fun AudioMediaDetailScreen(
     navigateToBack: () -> Unit,
-    navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
+    navigationToAudioMediaInformationEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
     navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
     navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
     navigateToKaraokeSearch: (audioMediaId: Int, query: String) -> Unit,
+    navigateToAudioEdit: (audioMediaId: Int) -> Unit,
 ) {
     val mainViewModel = koinViewModel<AudioMediaDetailViewModel>()
 
     val data by mainViewModel.data.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         mainViewModel.eventFlow.collect { event ->
             when (event) {
                 AudioMediaDetailEvent.OnNavigateToBack -> navigateToBack()
+                is AudioMediaDetailEvent.ShowToast ->
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     AudioMediaDetailScreen(
         navigateToBack = navigateToBack,
-        navigationToAudioMediaEditScreen = navigationToAudioMediaEditScreen,
+        navigationToAudioMediaInformationEditScreen = navigationToAudioMediaInformationEditScreen,
         navigateToMainSearchTab = navigateToMainSearchTab,
         navigateToPlaylistDetailScreen = navigateToPlaylistDetailScreen,
         navigateToLyricsSearch = navigateToLyricsSearch,
         navigateToLyricsViewer = navigateToLyricsViewer,
         navigateToKaraokeSearch = navigateToKaraokeSearch,
+        navigateToAudioEdit = navigateToAudioEdit,
         data = data,
         sendIntent = mainViewModel::sendIntent,
     )
@@ -94,17 +101,19 @@ fun AudioMediaDetailScreen(
 @Composable
 fun AudioMediaDetailScreen(
     navigateToBack: () -> Unit,
-    navigationToAudioMediaEditScreen: (audioMediaId: Int) -> Unit,
+    navigationToAudioMediaInformationEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
     navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
     navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
     navigateToKaraokeSearch: (audioMediaId: Int, query: String) -> Unit,
+    navigateToAudioEdit: (audioMediaId: Int) -> Unit,
     data: AudioMediaDetailUiState,
     sendIntent: (AudioMediaDetailIntent) -> Unit,
 ) {
     var isShowDialog by remember { mutableStateOf(false) }
     var isShowKaraokeUnlinkDialog by remember { mutableStateOf(false) }
+    var isShowAudioEditRevertDialog by remember { mutableStateOf(false) }
     var isShowFullScreenImageViewer by remember { mutableStateOf(false) }
 
     FullScreenImageViewer(
@@ -123,6 +132,12 @@ fun AudioMediaDetailScreen(
         isShow = isShowKaraokeUnlinkDialog,
         onDismiss = { isShowKaraokeUnlinkDialog = false },
         onConfirmUnlink = { sendIntent(AudioMediaDetailIntent.OnClickUnlinkKaraokeNumber) },
+    )
+
+    AudioEditRevertDialog(
+        isShow = isShowAudioEditRevertDialog,
+        onDismiss = { isShowAudioEditRevertDialog = false },
+        onConfirmRevert = { sendIntent(AudioMediaDetailIntent.OnClickRevertAudioEdit) },
     )
 
     Scaffold(
@@ -169,7 +184,7 @@ fun AudioMediaDetailScreen(
                             .weight(1f)
                             .fillMaxSize(),
                         shape = RectangleShape,
-                        onClick = { navigationToAudioMediaEditScreen(data.audioMediaId) }) {
+                        onClick = { navigationToAudioMediaInformationEditScreen(data.audioMediaId) }) {
                         Text(
                             text = "수정",
                             fontSize = 16.sp,
@@ -259,12 +274,10 @@ fun AudioMediaDetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    if (data.source.startsWith("http://") || data.source.startsWith("https://")) {
-                                        navigateToMainSearchTab(data.source)
-                                    }
+                                    data.webViewUrl?.let { url -> navigateToMainSearchTab(url) }
                                 }
                                 .padding(horizontal = 16.dp),
-                            text = "출처: ${data.source}",
+                            text = "출처: ${data.webViewUrl ?: data.source}",
                             fontSize = 16.sp,
                         )
 
@@ -370,6 +383,65 @@ fun AudioMediaDetailScreen(
                             }
                         }
 
+                        if (!data.hasEditedAudio) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .clickable {
+                                        navigateToAudioEdit(data.audioMediaId)
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    modifier = Modifier.weight(1f),
+                                    text = if (data.isAudioEditSaving) "편집본 저장 중..." else "음원 편집하기",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                Icon(
+                                    imageVector = Icons.Rounded.ChevronRight,
+                                    contentDescription = null,
+                                )
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { navigateToAudioEdit(data.audioMediaId) },
+                                    text = if (data.isAudioEditSaving) {
+                                        "편집본 저장 중..."
+                                    } else {
+                                        "편집본 사용 중 · ${data.playTime}"
+                                    },
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                // 저장이 끝나면 편집본이 다시 연결되므로 저장 중에는 되돌릴 수 없다
+                                IconButton(
+                                    enabled = !data.isAudioEditSaving,
+                                    onClick = { isShowAudioEditRevertDialog = true },
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Close,
+                                        contentDescription = "원본으로 되돌리기",
+                                    )
+                                }
+                            }
+                        }
+
                         Text(
                             modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
                             text = "추가된 플레이리스트 목록",
@@ -418,12 +490,13 @@ fun AudioMediaDetailScreenPreview() {
     JellyTubeTheme {
         AudioMediaDetailScreen(
             navigateToBack = {},
-            navigationToAudioMediaEditScreen = {},
+            navigationToAudioMediaInformationEditScreen = {},
             navigateToMainSearchTab = {},
             navigateToPlaylistDetailScreen = { _, _ -> },
             navigateToLyricsSearch = { _, _, _ -> },
             navigateToLyricsViewer = {},
             navigateToKaraokeSearch = { _, _ -> },
+            navigateToAudioEdit = {},
             data = AudioMediaDetailUiState.getMock(),
             sendIntent = {}
         )

@@ -37,10 +37,10 @@ internal fun MediaItem.toMediaControlData() = MediaControlData(
 
 internal fun AudioMedia.toMediaControlData() = MediaControlData(
     mediaId = id.toString(),
-    mediaFileUri = audioFileFullPath,
+    mediaFileUri = playbackFileFullPath,
     mediaTitle = name,
     mediaDescription = description,
     mediaArtist = artist,
-    mediaDurationMs = audioDuration?.inWholeMilliseconds ?: 0L,
+    mediaDurationMs = playbackDuration?.inWholeMilliseconds ?: 0L,
     mediaArtworkFileUri = imageFileFullPath,
 )

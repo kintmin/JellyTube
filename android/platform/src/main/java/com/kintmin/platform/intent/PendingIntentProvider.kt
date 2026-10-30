@@ -72,6 +72,22 @@ internal fun Context.lyricsViewerPendingIntent(
     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
 )
 
+internal fun Context.audioMediaDetailPendingIntent(
+    audioMediaId: Int,
+) = PendingIntent.getActivity(
+    this,
+    IntentRequestCode.AUDIO_EDIT_SAVE_RESULT_NOTIFICATION,
+    Intent().apply {
+        action = Intent.ACTION_VIEW
+        data = DeepLinkConstants.UriBuilder.audioMediaDetailScreen(audioMediaId)
+        component = ComponentName(
+            packageName,
+            TARGET_ACTIVITY_NAME,
+        )
+    },
+    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+)
+
 internal fun Context.appLogPendingIntent() = PendingIntent.getActivity(
     this,
     IntentRequestCode.APP_LOG_NOTIFICATION,

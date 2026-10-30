@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.audio_media_edit
+package com.kintmin.presentation.ui.audio_media_information_edit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,14 +48,14 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import java.io.File
 
 @Composable
-fun AudioMediaEditScreen(
+fun AudioMediaInformationEditScreen(
     navigateToBack: () -> Unit,
 ) {
-    val mainViewModel = koinViewModel<AudioMediaEditViewModel>()
+    val mainViewModel = koinViewModel<AudioMediaInformationEditViewModel>()
 
     val data by mainViewModel.data.collectAsState()
 
-    AudioMediaEditScreen(
+    AudioMediaInformationEditScreen(
         navigateToBack = navigateToBack,
         data = data,
         sendIntent = mainViewModel::sendIntent,
@@ -64,10 +64,10 @@ fun AudioMediaEditScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AudioMediaEditScreen(
+fun AudioMediaInformationEditScreen(
     navigateToBack: () -> Unit,
-    data: AudioMediaEditUiState,
-    sendIntent: (AudioMediaEditIntent) -> Unit,
+    data: AudioMediaInformationEditUiState,
+    sendIntent: (AudioMediaInformationEditIntent) -> Unit,
 ) {
     var audioMediaName by remember { mutableStateOf(data.audioMediaName) }
     var artist by remember { mutableStateOf(data.artist) }
@@ -83,10 +83,10 @@ fun AudioMediaEditScreen(
         AddPlaylistBottomSheet(
             playlists = data.selectablePlaylists,
             onClickPlaylist = { playlistId ->
-                sendIntent(AudioMediaEditIntent.OnClickAddLinkedPlaylist(playlistId))
+                sendIntent(AudioMediaInformationEditIntent.OnClickAddLinkedPlaylist(playlistId))
             },
             onDismissRequest = {
-                sendIntent(AudioMediaEditIntent.OnDismissAddPlaylistBottomSheet)
+                sendIntent(AudioMediaInformationEditIntent.OnDismissAddPlaylistBottomSheet)
             },
         )
     }
@@ -162,7 +162,7 @@ fun AudioMediaEditScreen(
                         if (newText.length > 100) return@OutlinedTextField
                         audioMediaName = newText
                         if (audioMediaName.isNotEmpty()) {
-                            sendIntent(AudioMediaEditIntent.OnAudioMediaNameChanged(newText))
+                            sendIntent(AudioMediaInformationEditIntent.OnAudioMediaNameChanged(newText))
                         }
                     },
                     isError = audioMediaName.isEmpty(),
@@ -186,7 +186,7 @@ fun AudioMediaEditScreen(
                     onValueChange = { newText ->
                         if (newText.length > 100) return@OutlinedTextField
                         artist = newText
-                        sendIntent(AudioMediaEditIntent.OnAudioMediaArtistChanged(newText))
+                        sendIntent(AudioMediaInformationEditIntent.OnAudioMediaArtistChanged(newText))
                     },
                     maxLines = 2,
                     label = {
@@ -208,7 +208,7 @@ fun AudioMediaEditScreen(
                     onValueChange = { newText ->
                         if (newText.length > 100) return@OutlinedTextField
                         audioMediaDescription = newText
-                        sendIntent(AudioMediaEditIntent.OnAudioMediaDescriptionChanged(newText))
+                        sendIntent(AudioMediaInformationEditIntent.OnAudioMediaDescriptionChanged(newText))
                     },
                     label = {
                         Text(
@@ -248,7 +248,7 @@ fun AudioMediaEditScreen(
                     if (!playlistData.isBasePlaylist) {
                         IconButton(
                             modifier = Modifier,
-                            onClick = { sendIntent(AudioMediaEditIntent.OnClickDeleteLinkedPlaylist(playlistData.playlistId)) },
+                            onClick = { sendIntent(AudioMediaInformationEditIntent.OnClickDeleteLinkedPlaylist(playlistData.playlistId)) },
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Cancel,
@@ -262,7 +262,7 @@ fun AudioMediaEditScreen(
                 Text(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { sendIntent(AudioMediaEditIntent.OnClickShowAddPlaylistBottomSheet) }
+                        .clickable { sendIntent(AudioMediaInformationEditIntent.OnClickShowAddPlaylistBottomSheet) }
                         .padding(16.dp),
                     text = "+",
                     textAlign = TextAlign.Center,
@@ -278,7 +278,7 @@ fun AudioMediaEditScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddPlaylistBottomSheet(
-    playlists: List<AudioMediaEditUiState.Playlist>,
+    playlists: List<AudioMediaInformationEditUiState.Playlist>,
     onClickPlaylist: (playlistId: Int) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
@@ -323,11 +323,11 @@ private fun AddPlaylistBottomSheet(
 
 @Preview(showBackground = true)
 @Composable
-fun AudioMediaEditScreenPreview() {
+fun AudioMediaInformationEditScreenPreview() {
     JellyTubeTheme {
-        AudioMediaEditScreen(
+        AudioMediaInformationEditScreen(
             navigateToBack = {},
-            data = AudioMediaEditUiState.getMock(),
+            data = AudioMediaInformationEditUiState.getMock(),
             sendIntent = {},
         )
     }

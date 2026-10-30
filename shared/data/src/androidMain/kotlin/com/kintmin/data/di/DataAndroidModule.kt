@@ -1,5 +1,7 @@
 package com.kintmin.data.di
 
+import com.kintmin.data.audio_edit.AudioEditor
+import com.kintmin.data.audio_edit.AudioEditorImpl
 import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.device_status.DeviceStatusImpl
 import com.kintmin.data.local_datastore.createAndroidPreferencesDataStore
@@ -19,4 +21,5 @@ val dataAndroidModule: Module = module {
     single<DeviceStatus> { DeviceStatusImpl(androidContext()) }
     single<FileManager> { FileManagerImpl(androidContext()) }
     single<LyricsTranslator> { MlKitLyricsTranslator() }
+    single<AudioEditor> { AudioEditorImpl(androidContext()) }
 }

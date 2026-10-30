@@ -1,4 +1,4 @@
-﻿package com.kintmin.presentation.ui.player_detail
+package com.kintmin.presentation.ui.player_detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -193,7 +193,7 @@ class PlayerDetailViewModel constructor(
                     if (mediaId == null) {
                         _eventFlow.emit(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
                     } else {
-                        _eventFlow.emit(PlayerDetailEvent.NavigateToAudioMediaEditScreen(mediaId))
+                        _eventFlow.emit(PlayerDetailEvent.NavigateToAudioMediaInformationEditScreen(mediaId))
                     }
                 }
             }

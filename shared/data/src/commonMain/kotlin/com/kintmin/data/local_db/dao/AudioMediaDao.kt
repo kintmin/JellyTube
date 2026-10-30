@@ -24,9 +24,12 @@ interface AudioMediaDao {
     @Query("SELECT * FROM AUDIO_MEDIA WHERE id NOT IN (SELECT audioMediaId FROM PLAYLIST_TRACK)")
     suspend fun getOrphanAudioMediaList(): List<AudioMediaEntity>
 
+    /**
+     * 편집본이 있는 음원은 편집본 길이가 실제 재생 길이다.
+     */
     @Query(
         """
-SELECT COALESCE(SUM(rawAudioDurationSeconds), 0)
+SELECT COALESCE(SUM(COALESCE(editedAudioDurationSeconds, rawAudioDurationSeconds)), 0)
 FROM AUDIO_MEDIA
 WHERE id IN (:idList)
     """
@@ -56,6 +59,34 @@ WHERE id = :id
 
     @Query("UPDATE AUDIO_MEDIA SET lyricFileNameWithExt = NULL WHERE id = :id")
     suspend fun clearLyricFile(id: Int)
+
+    /** 편집본을 연결한다. 두 컬럼은 항상 같이 채운다. */
+    @Query(
+        """
+UPDATE AUDIO_MEDIA
+SET
+    editedAudioFileNameWithExt = :editedAudioFileNameWithExt,
+    editedAudioDurationSeconds = :editedAudioDurationSeconds
+WHERE id = :id
+"""
+    )
+    suspend fun applyEditedAudio(
+        id: Int,
+        editedAudioFileNameWithExt: String,
+        editedAudioDurationSeconds: Long,
+    )
+
+    /** 편집본 연결을 해제해 원본으로 되돌린다. 두 컬럼은 항상 같이 비운다. */
+    @Query(
+        """
+UPDATE AUDIO_MEDIA
+SET
+    editedAudioFileNameWithExt = NULL,
+    editedAudioDurationSeconds = NULL
+WHERE id = :id
+"""
+    )
+    suspend fun clearEditedAudio(id: Int)
 
     @Query("UPDATE AUDIO_MEDIA SET tjKaraokeNumber = :tjKaraokeNumber WHERE id = :id")
     suspend fun updateKaraokeNumber(id: Int, tjKaraokeNumber: String)

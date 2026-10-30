@@ -2,11 +2,14 @@ package com.kintmin.platform.di
 
 import com.kintmin.domain.step.worker.RegisterDailyResetImmediatelyWorker
 import com.kintmin.domain.step.worker.RegisterLoadBalancedDailyResetWorker
+import com.kintmin.platform.audio_preview.AudioPreviewPlayer
+import com.kintmin.platform.audio_preview.AudioPreviewPlayerImpl
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.PushNotificationManagerImpl
 import com.kintmin.platform.service_controller.MediaControllerManager
 import com.kintmin.platform.service_controller.MediaControllerManagerImpl
 import com.kintmin.platform.worker.usecase.ExecuteAnomalyDataCheck
+import com.kintmin.platform.worker.usecase.ExecuteAudioEditSave
 import com.kintmin.platform.worker.usecase.ExecuteLyricsVariantCreation
 import com.kintmin.platform.worker.usecase.ExecuteYoutubeDownload
 import com.kintmin.platform.worker.usecase.RegisterDailyResetImmediatelyWorkerImpl
@@ -20,6 +23,7 @@ import org.koin.dsl.module
 val platformModule: Module = module {
     single<PushNotificationManager> { PushNotificationManagerImpl(androidContext()) }
     single<MediaControllerManager> { MediaControllerManagerImpl(androidContext()) }
+    single<AudioPreviewPlayer> { AudioPreviewPlayerImpl(androidContext()) }
     single<RegisterDailyResetImmediatelyWorker> {
         RegisterDailyResetImmediatelyWorkerImpl(androidContext())
     }
@@ -29,4 +33,5 @@ val platformModule: Module = module {
     single { ExecuteYoutubeDownload(androidContext()) }
     single { ExecuteAnomalyDataCheck(androidContext()) }
     single { ExecuteLyricsVariantCreation(androidContext()) }
+    single { ExecuteAudioEditSave(androidContext()) }
 }

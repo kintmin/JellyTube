@@ -196,6 +196,20 @@ class MediaControllerManagerImpl(
         }
     }
 
+    override fun tryReplaceMediaItem(
+        mediaId: Int,
+        mediaItem: MediaControlData,
+    ): Result<Unit> = runCatching {
+        val mediaController = getMediaController() ?: return@runCatching
+        val targetIndex = findMediaItem(mediaId).getOrNull() ?: return@runCatching
+        mediaController.replaceMediaItem(targetIndex, mediaItem.toMediaItem())
+
+        // 길이가 바뀌면 옛 길이 기준으로 잡아둔 구간반복은 더 이상 유효하지 않다.
+        if (repeatRangeMediaId == mediaId.toString()) {
+            clearRepeatRange()
+        }
+    }
+
     override fun setShuffleMode(isShuffle: Boolean) {
         val mediaController = getMediaController() ?: return
         if (mediaController.shuffleModeEnabled == isShuffle) return

@@ -8,4 +8,5 @@ object IntentRequestCode {
     const val APP_LOG_NOTIFICATION = 3
     const val FILE_SHARE_STOP_NOTIFICATION = 4
     const val LYRICS_VARIANT_RESULT_NOTIFICATION = 5
+    const val AUDIO_EDIT_SAVE_RESULT_NOTIFICATION = 6
 }

@@ -52,6 +52,11 @@ interface MediaControllerManager {
         mediaItem: MediaControlData,
     ): Result<Unit>
 
+    fun tryReplaceMediaItem(
+        mediaId: Int,
+        mediaItem: MediaControlData,
+    ): Result<Unit>
+
     fun setShuffleMode(isShuffle: Boolean)
     fun setRepeatMode(isRepeat: Boolean)
     fun setPlaybackSpeed(speed: Float)

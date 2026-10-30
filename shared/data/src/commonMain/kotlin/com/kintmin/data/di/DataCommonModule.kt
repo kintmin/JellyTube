@@ -18,6 +18,8 @@ import com.kintmin.domain.app_log.repository.AppLogRepository
 import com.kintmin.domain.app_log.usecase.*
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.app_setting.usecase.*
+import com.kintmin.domain.audio_edit.repository.AudioEditRepository
+import com.kintmin.domain.audio_edit.usecase.*
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.*
 import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingRepository
@@ -55,10 +57,12 @@ val dataCommonModule: Module = module {
     single { get<JellyTubeDatabase>().playlistDao() }
     single { get<JellyTubeDatabase>().playlistTrackDao() }
     single { get<JellyTubeDatabase>().stepDao() }
+    single { get<JellyTubeDatabase>().audioEditProjectDao() }
     singleOf(::AudioMediaFacade)
 
     singleOf(::AppLogRepositoryImpl) bind AppLogRepository::class
     singleOf(::AppSettingRepositoryImpl) bind AppSettingRepository::class
+    singleOf(::AudioEditRepositoryImpl) bind AudioEditRepository::class
     singleOf(::AudioMediaRepositoryImpl) bind AudioMediaRepository::class
     singleOf(::AudioPlaySettingRepositoryImpl) bind AudioPlaySettingRepository::class
     singleOf(::AudioTrackRepositoryImpl) bind AudioTrackRepository::class
@@ -78,6 +82,16 @@ val dataCommonModule: Module = module {
     factoryOf(::UpdateIsStepEnabledUseCase)
     factoryOf(::UpdatePlaylistIdOnDownloadUseCase)
     factoryOf(::UpdateShouldInsertAtTopOnDownloadUseCase)
+    factoryOf(::ExtractAudioWaveformUseCase)
+    factoryOf(::ApplyAudioEditUseCase)
+    factoryOf(::FetchAudioEditTimelineUseCase)
+    factoryOf(::ObserveAudioEditSavingUseCase)
+    factoryOf(::ReserveAudioEditSaveUseCase)
+    factoryOf(::ReleaseAudioEditSaveUseCase)
+    factoryOf(::MeasureAudioDurationUseCase)
+    factoryOf(::RevertAudioEditUseCase)
+    factoryOf(::SaveEditedAudioAsNewMediaUseCase)
+
     factoryOf(::CleanupAnomalousDataUseCase)
     factoryOf(::DeleteAudioMediaListUseCase)
     factoryOf(::DeleteAudioMediaUseCase)

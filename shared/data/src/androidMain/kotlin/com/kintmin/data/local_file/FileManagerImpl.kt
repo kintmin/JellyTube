@@ -91,6 +91,20 @@ internal class FileManagerImpl(
             }
         }
 
+    override suspend fun copyImageFile(
+        sourceFileNameWithExt: String,
+        targetFileName: String,
+    ): Result<String> = runCatching {
+        withContext(Dispatchers.IO) {
+            val sourceFile = imageDir().resolve(sourceFileNameWithExt)
+            if (!sourceFile.exists()) throw Exception("원본 이미지 파일을 찾을 수 없습니다.")
+
+            val ext = sourceFile.extension.ifBlank { "webp" }
+            sourceFile.copyTo(imageDir().resolve("$targetFileName.$ext"), overwrite = true)
+            ext
+        }
+    }
+
     override suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<String> = runCatching {
         withContext(Dispatchers.IO) {
             val ext = if (synced) "lrc" else "txt"
