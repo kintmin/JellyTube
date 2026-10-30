@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlin.math.abs
 
 /**
  * 눈금 줄과 파형이 함께 쓰는 화면 범위(어디부터 얼마나 확대해서 보는지).
@@ -77,6 +78,19 @@ class TimelineViewportState {
     fun xOf(ms: Long): Float = (ms - visibleStartMs) / msPerPx
 
     fun msAt(x: Float): Long = (visibleStartMs + x * msPerPx).toLong()
+
+    /**
+     * [x] 위치의 시각. [targetsMs] 중 화면 거리로 [radiusPx] 안에 있는 것이 있으면 가장 가까운 그 시각에 붙인다.
+     *
+     * 화면 거리로 재야 확대 정도와 상관없이 손에 같은 범위로 느껴진다.
+     */
+    fun snapMsAt(x: Float, targetsMs: List<Long>, radiusPx: Float): Long =
+        targetsMs
+            .map { it to abs(xOf(it) - x) }
+            .filter { (_, distancePx) -> distancePx <= radiusPx }
+            .minByOrNull { (_, distancePx) -> distancePx }
+            ?.first
+            ?: msAt(x)
 
     /** 손가락이 [dxPx]만큼 움직였을 때 화면을 따라 옮긴다. */
     fun pan(dxPx: Float) {

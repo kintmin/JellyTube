@@ -1,8 +1,6 @@
 package com.kintmin.presentation.ui.audio_edit.waveform
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +26,6 @@ import com.kintmin.presentation.theme.bloodyRed100
 import com.kintmin.presentation.theme.gray40
 import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.white
-import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
 
 /** 눈금 간격 후보. 라벨이 겹치지 않을 만큼 넓은 것 중 가장 촘촘한 것을 고른다. */
@@ -40,18 +37,10 @@ private val TICK_INTERVAL_MS_LIST = listOf(
 /** 눈금 라벨 사이 최소 간격. */
 private val MIN_TICK_SPACING = 72.dp
 
-/** 이 거리 안에서 누르면 기준선 대신 끝 표시를 잡는다. */
-private val END_MARKER_TOUCH_RADIUS = 24.dp
-
-/** 끝 표시를 끌다가 소리 끝에서 이 거리 안에 들어오면 그 자리에 붙는다. */
-private val END_MARKER_SNAP_RADIUS = 12.dp
-
 /**
  * 파형 위의 눈금 줄. 기준선과 끝 표시를 옮기는 영역이다.
  *
- * - 한 손가락으로 누르거나 끌면 기준선이 손가락을 따라온다
- * - 끝 표시 손잡이 근처에서 시작한 끌기는 끝 표시를 옮긴다. 소리 끝([snapEndMs]) 근처에서는
- *   그 자리에 붙어, 뒤에 무음도 잘린 소리도 없이 딱 맞추기 쉽다
+ * 제스처 구분은 [timelineRulerGestures]에 있다.
  */
 @Composable
 fun TimelineRulerView(
@@ -59,8 +48,10 @@ fun TimelineRulerView(
     viewport: TimelineViewportState,
     baselineMs: Long,
     endMs: Long,
-    /** 끝 표시가 달라붙는 위치. 마지막 조각이 끝나는 곳이다. 조각이 없으면 null. */
-    snapEndMs: Long?,
+    /** 기준선이 달라붙는 위치들. */
+    baselineSnapTargetsMs: List<Long>,
+    /** 끝 표시가 달라붙는 위치들. */
+    endSnapTargetsMs: List<Long>,
     onBaselineChanged: (Long) -> Unit,
     onEndChanged: (Long) -> Unit,
 ) {
@@ -68,7 +59,8 @@ fun TimelineRulerView(
     // 끝 라벨 뒤를 배경색으로 덮어 눈금 라벨과 겹쳐도 읽히게 한다
     val backgroundColor = MaterialTheme.colorScheme.background
     val currentEndMs by rememberUpdatedState(endMs)
-    val currentSnapEndMs by rememberUpdatedState(snapEndMs)
+    val currentBaselineSnapTargetsMs by rememberUpdatedState(baselineSnapTargetsMs)
+    val currentEndSnapTargetsMs by rememberUpdatedState(endSnapTargetsMs)
     val currentOnBaselineChanged by rememberUpdatedState(onBaselineChanged)
     val currentOnEndChanged by rememberUpdatedState(onEndChanged)
 
@@ -78,31 +70,14 @@ fun TimelineRulerView(
             .height(36.dp)
             .onSizeChanged { viewport.updateWidth(it.width.toFloat()) }
             .pointerInput(viewport) {
-                awaitEachGesture {
-                    val down = awaitFirstDown()
-                    val isEndMarker =
-                        abs(down.position.x - viewport.xOf(currentEndMs)) <= END_MARKER_TOUCH_RADIUS.toPx()
-
-                    down.consume()
-                    // 누르는 순간 기준선이 그 자리로 온다. 끝 표시는 끌어야 움직인다.
-                    if (!isEndMarker) currentOnBaselineChanged(viewport.msAt(down.position.x))
-
-                    while (true) {
-                        val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-                        if (!change.pressed) break
-                        change.consume()
-
-                        val x = change.position.x
-                        if (isEndMarker) {
-                            // 확대 정도와 상관없이 손에 같은 범위로 느껴지도록 화면 거리로 잰다
-                            val snapMs = currentSnapEndMs
-                                ?.takeIf { abs(viewport.xOf(it) - x) <= END_MARKER_SNAP_RADIUS.toPx() }
-                            currentOnEndChanged(snapMs ?: viewport.msAt(x))
-                        } else {
-                            currentOnBaselineChanged(viewport.msAt(x))
-                        }
-                    }
-                }
+                timelineRulerGestures(
+                    viewport = viewport,
+                    endMs = { currentEndMs },
+                    baselineSnapTargetsMs = { currentBaselineSnapTargetsMs },
+                    endSnapTargetsMs = { currentEndSnapTargetsMs },
+                    onBaselineChanged = { ms -> currentOnBaselineChanged(ms) },
+                    onEndChanged = { ms -> currentOnEndChanged(ms) },
+                )
             },
     ) {
         val minSpacingMs = MIN_TICK_SPACING.toPx() * viewport.msPerPx
@@ -198,7 +173,8 @@ fun TimelineRulerViewPreview() {
             viewport = viewport,
             baselineMs = 60_000,
             endMs = 300_000,
-            snapEndMs = 300_000,
+            baselineSnapTargetsMs = listOf(0L, 300_000L),
+            endSnapTargetsMs = listOf(300_000L),
             onBaselineChanged = {},
             onEndChanged = {},
         )

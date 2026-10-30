@@ -214,6 +214,20 @@ fun AudioEditScreen(
 
         val viewport = rememberTimelineViewportState()
         var grab by remember { mutableStateOf<TimelineGrab?>(null) }
+        // 기준선은 0초(손가락으로 정확히 닿기 어렵다)·조각 경계·끝 표시에, 끝 표시는 소리 끝에 달라붙는다
+        val baselineSnapTargetsMs = remember(data.timeline) {
+            buildList {
+                add(0L)
+                data.timeline.clips.forEach { clip ->
+                    add(clip.positionMs)
+                    add(clip.positionEndMs)
+                }
+                add(data.timeline.endMs)
+            }
+        }
+        val endSnapTargetsMs = remember(data.timeline) {
+            listOfNotNull(data.timeline.clips.maxOfOrNull { it.positionEndMs })
+        }
         SideEffect {
             viewport.updateContent(maxOf(data.originDurationMs, data.resultDurationMs))
         }
@@ -248,7 +262,8 @@ fun AudioEditScreen(
                 viewport = viewport,
                 baselineMs = data.baselineMs,
                 endMs = data.resultDurationMs,
-                snapEndMs = data.timeline.clips.maxOfOrNull { it.positionEndMs },
+                baselineSnapTargetsMs = baselineSnapTargetsMs,
+                endSnapTargetsMs = endSnapTargetsMs,
                 onBaselineChanged = { ms -> sendIntent(AudioEditIntent.OnBaselineChanged(ms)) },
                 onEndChanged = { ms -> sendIntent(AudioEditIntent.OnTimelineEndChanged(ms)) },
             )
