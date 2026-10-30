@@ -18,6 +18,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.AudioFile
+import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.CleaningServices
+import androidx.compose.material.icons.rounded.Computer
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.DirectionsWalk
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.SaveAlt
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -198,9 +209,10 @@ fun SettingScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
-            SettingSectionView(title = "다운로드") {
+            SettingSectionView(title = "다운로드", showDivider = false) {
                 SettingItemView(
                     title = "다운로드 시 맨 위에 추가",
+                    icon = Icons.Rounded.VerticalAlignTop,
                     onClick = { sendIntent(SettingIntent.OnClickShouldInsertAtTopOnDownloadTile) },
                     trailing = {
                         Switch(
@@ -213,6 +225,7 @@ fun SettingScreen(
                 )
                 SettingItemView(
                     title = "다운로드 시 재생목록",
+                    icon = Icons.Rounded.LibraryMusic,
                     description = uiState.playlistIdOnDownloadName,
                     onClick = { sendIntent(SettingIntent.OnClickPlaylistIdOnDownloadTile) },
                 )
@@ -221,6 +234,7 @@ fun SettingScreen(
             SettingSectionView(title = "가져오기 및 내보내기") {
                 SettingItemView(
                     title = "음원 파일 선택해서 가져오기",
+                    icon = Icons.Rounded.AudioFile,
                     enabled = !uiState.isImporting,
                     onClick = { sendIntent(SettingIntent.OnClickImportAudioTile) },
                     trailing = if (uiState.isImporting) {
@@ -236,16 +250,19 @@ fun SettingScreen(
                 )
                 SettingItemView(
                     title = "Quick Share로 공유받기",
+                    icon = Icons.Rounded.Share,
                     onClick = { sendIntent(SettingIntent.OnClickShareTile) },
                     trailing = { SettingNavigateIcon(contentDescription = "Quick Share 화면으로 이동") },
                 )
                 SettingItemView(
                     title = "PC에서 공유받기",
+                    icon = Icons.Rounded.Computer,
                     onClick = { sendIntent(SettingIntent.OnClickFileShareReceiveTile) },
                     trailing = { SettingNavigateIcon(contentDescription = "PC에서 공유받기 화면으로 이동") },
                 )
                 SettingItemView(
                     title = "파일 기기에 저장하기",
+                    icon = Icons.Rounded.SaveAlt,
                     onClick = { sendIntent(SettingIntent.OnClickDeviceSaveTile) },
                     trailing = { SettingNavigateIcon(contentDescription = "기기에 저장하기 화면으로 이동") },
                 )
@@ -254,6 +271,7 @@ fun SettingScreen(
             SettingSectionView(title = "걸음수") {
                 SettingItemView(
                     title = "걸음수 이용",
+                    icon = Icons.Rounded.DirectionsWalk,
                     onClick = { sendIntent(SettingIntent.OnToggleIsStepEnabled(!uiState.isStepEnabled)) },
                     trailing = {
                         Switch(
@@ -266,6 +284,7 @@ fun SettingScreen(
                 )
                 SettingItemView(
                     title = "걸음수 현황 보기",
+                    icon = Icons.Rounded.BarChart,
                     onClick = { sendIntent(SettingIntent.OnClickStepTile) },
                     trailing = { SettingNavigateIcon(contentDescription = "걸음수 현황 화면으로 이동") },
                 )
@@ -274,11 +293,13 @@ fun SettingScreen(
             SettingSectionView(title = "문제 해결") {
                 SettingItemView(
                     title = "이상 데이터 점검 및 제거",
+                    icon = Icons.Rounded.CleaningServices,
                     description = "음원 추가 오류 시 권장",
                     onClick = { sendIntent(SettingIntent.OnClickAnomalyDataCheckTile) },
                 )
                 SettingItemView(
                     title = "앱 로그 보기",
+                    icon = Icons.Rounded.Description,
                     onClick = { sendIntent(SettingIntent.OnClickAppLogTile) },
                     trailing = { SettingNavigateIcon(contentDescription = "앱 로그 화면으로 이동") },
                 )
@@ -287,6 +308,7 @@ fun SettingScreen(
             SettingSectionView(title = "앱 정보") {
                 SettingItemView(
                     title = "버전",
+                    icon = Icons.Rounded.Info,
                     description = appVersion,
                     onClick = null,
                 )
