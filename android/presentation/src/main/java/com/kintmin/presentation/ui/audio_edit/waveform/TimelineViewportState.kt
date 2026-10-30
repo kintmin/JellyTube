@@ -30,6 +30,9 @@ class TimelineViewportState {
          * 시스템 뒤로 가기 제스처와도 겹친다.
          */
         const val INITIAL_RIGHT_MARGIN_RATIO = 0.15f
+
+        /** 미리듣기선을 따라 화면을 넘길 때, 선을 화면 왼쪽에서 이만큼(화면 폭 비율) 띄워 둔다. */
+        const val FOLLOW_LEFT_MARGIN_RATIO = 0.05f
     }
 
     var widthPx by mutableFloatStateOf(0f)
@@ -47,6 +50,9 @@ class TimelineViewportState {
         private set
 
     private var isFitted = false
+
+    /** 재생 중 사용자가 직접 화면을 움직이면 따라가기를 멈춘다. 손가락과 자동 이동이 싸우지 않게 한다. */
+    private var isFollowPaused = false
 
     val visibleEndMs: Float get() = visibleStartMs + widthPx * msPerPx
 
@@ -74,16 +80,41 @@ class TimelineViewportState {
 
     /** 손가락이 [dxPx]만큼 움직였을 때 화면을 따라 옮긴다. */
     fun pan(dxPx: Float) {
+        isFollowPaused = true
         visibleStartMs = (visibleStartMs - dxPx * msPerPx).coerceIn(0f, maxStartMs())
     }
 
     /** 손가락 사이 중심([focusX])이 가리키는 시각을 고정한 채 [zoom]배 확대한다. */
     fun zoom(zoom: Float, focusX: Float) {
         if (widthPx <= 0f || zoom <= 0f) return
+        isFollowPaused = true
         val focusMs = visibleStartMs + focusX * msPerPx
         val maxVisibleMs = (contentMs * MAX_VISIBLE_RATIO).coerceAtLeast(MIN_VISIBLE_MS)
         msPerPx = (msPerPx / zoom).coerceIn(MIN_VISIBLE_MS / widthPx, maxVisibleMs / widthPx)
         visibleStartMs = (focusMs - focusX * msPerPx).coerceIn(0f, maxStartMs())
+    }
+
+    /** 미리듣기를 새로 시작하면 다시 따라간다. */
+    fun resumeFollow() {
+        isFollowPaused = false
+    }
+
+    /**
+     * 미리듣기선 [positionMs]가 화면 밖으로 나가면 한 화면 넘긴다.
+     *
+     * 사용자가 화면을 옮겨 따라가기가 멈춘 상태면 넘기지 않는다. 선이 다시 화면 안으로 들어오면
+     * 사용자가 그 자리를 보고 있다는 뜻이라 다시 따라간다.
+     */
+    fun follow(positionMs: Long) {
+        if (widthPx <= 0f) return
+        if (positionMs >= visibleStartMs && positionMs <= visibleEndMs) {
+            isFollowPaused = false
+            return
+        }
+        if (isFollowPaused) return
+
+        val leftMarginMs = widthPx * msPerPx * FOLLOW_LEFT_MARGIN_RATIO
+        visibleStartMs = (positionMs - leftMarginMs).coerceIn(0f, maxStartMs())
     }
 
     /** 0초 앞은 보여주지 않고, 오른쪽은 최대 축소 범위까지만 이동한다. */

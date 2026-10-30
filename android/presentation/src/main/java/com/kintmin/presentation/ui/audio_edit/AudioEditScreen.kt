@@ -171,6 +171,12 @@ fun AudioEditScreen(
         SideEffect {
             viewport.updateContent(maxOf(data.originDurationMs, data.resultDurationMs))
         }
+        LaunchedEffect(data.isPreviewPlaying) {
+            if (data.isPreviewPlaying) viewport.resumeFollow()
+        }
+        LaunchedEffect(data.previewPositionMs) {
+            data.previewPositionMs?.let(viewport::follow)
+        }
 
         Column(
             modifier = Modifier
