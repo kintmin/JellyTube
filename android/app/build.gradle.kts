@@ -1,8 +1,12 @@
+import com.android.build.api.artifact.ArtifactTransformationRequest
+import com.android.build.api.artifact.SingleArtifact
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 import com.kintmin.buildSrc.AppConfiguration
 import com.kintmin.buildSrc.ManifestPlaceholdersKey
 import com.kintmin.buildSrc.PropertyName
 import com.kintmin.buildSrc.SigningConfigName
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -49,6 +53,10 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName(SigningConfigName.RELEASE)
+            // Crashlytics 확장은 android{} 가 아니라 buildType 에 등록된다.
+            configure<CrashlyticsExtension> {
+                mappingFileUploadEnabled = true
+            }
         }
         debug {
             ndk { abiFilters += listOf("x86_64") }
@@ -74,21 +82,54 @@ android {
         compose = true
         buildConfig = true
     }
+}
 
-    firebaseCrashlytics {
-        mappingFileUploadEnabled = true
-    }
+/**
+ * 산출 APK 파일명을 "JellyTube_<versionName>(<versionCode>)_<variant>_<시각>.apk" 로 바꾼다.
+ *
+ * AGP 9 부터 variant.outputs 의 outputFileName 을 직접 고치던 internal API(VariantOutputImpl)가
+ * 사라져서, 공개 API 인 Artifacts transform 으로 APK 를 복사하며 이름을 붙인다.
+ */
+abstract class RenameApkTask : DefaultTask() {
 
-    androidComponents {
-        onVariants { variant ->
-            variant.outputs.forEach { output ->
-                if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
-                    val time = Instant.now().atZone(ZoneId.systemDefault()).toLocalDateTime()
-                    val timeString = DateTimeFormatter.ofPattern("yyyy.MM.dd_HH.mm.ss").format(time)
-                    output.outputFileName = "JellyTube_${AppConfiguration.VERSION_NAME}(${AppConfiguration.VERSION_CODE})_${variant.name}_$timeString.apk"
-                }
-            }
+    @get:InputFiles
+    abstract val apkFolder: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val outFolder: DirectoryProperty
+
+    @get:Input
+    abstract val variantName: Property<String>
+
+    @get:Internal
+    abstract val transformationRequest: Property<ArtifactTransformationRequest<RenameApkTask>>
+
+    @TaskAction
+    fun taskAction() {
+        val time = Instant.now().atZone(ZoneId.systemDefault()).toLocalDateTime()
+        val timeString = DateTimeFormatter.ofPattern("yyyy.MM.dd_HH.mm.ss").format(time)
+        transformationRequest.get().submit(this) { builtArtifact ->
+            val target = File(
+                outFolder.get().asFile,
+                "JellyTube_${AppConfiguration.VERSION_NAME}(${AppConfiguration.VERSION_CODE})_${variantName.get()}_$timeString.apk"
+            )
+            File(builtArtifact.outputFile).copyTo(target, overwrite = true)
+            target
         }
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        val renameApk = tasks.register<RenameApkTask>(
+            "rename${variant.name.replaceFirstChar(Char::uppercaseChar)}Apk"
+        ) {
+            variantName.set(variant.name)
+        }
+        val request = variant.artifacts.use(renameApk)
+            .wiredWithDirectories(RenameApkTask::apkFolder, RenameApkTask::outFolder)
+            .toTransformMany(SingleArtifact.APK)
+        renameApk.configure { transformationRequest.set(request) }
     }
 }
 
