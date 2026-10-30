@@ -218,9 +218,10 @@ fun AudioEditScreen(
         val baselineSnapTargetsMs = remember(data.timeline) {
             buildList {
                 add(0L)
-                data.timeline.clips.forEach { clip ->
-                    add(clip.positionMs)
-                    add(clip.positionEndMs)
+                // 병합한 묶음 안쪽 이음매는 보이지 않으므로 묶음 양 끝에만 붙는다
+                data.timeline.groupRanges.forEach { group ->
+                    add(data.timeline.clips[group.first].positionMs)
+                    add(data.timeline.clips[group.last].positionEndMs)
                 }
                 add(data.timeline.endMs)
             }

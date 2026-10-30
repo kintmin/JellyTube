@@ -15,7 +15,7 @@ import com.kintmin.presentation.theme.white
  * 파형에서 꾹 눌러 잡은 대상. 손가락을 떼면 null이 된다.
  *
  * 잡혔다는 것을 화면에 보여주기 위한 표시 전용 상태라 ViewModel이 아니라 화면에 둔다.
- * [edge]가 null이면 조각을 통째로 옮기는 중이고, 아니면 그 경계로 길이를 조절하는 중이다.
+ * [edge]가 null이면 조각(병합했으면 그 묶음)을 통째로 옮기는 중이고, 아니면 그 경계로 길이를 조절하는 중이다.
  */
 data class TimelineGrab(
     val clipIndex: Int,
@@ -39,13 +39,15 @@ internal fun DrawScope.drawGrabHighlight(
 
     when (grab.edge) {
         null -> {
-            timeline.clips.forEachIndexed { index, clip ->
-                val left = viewport.xOf(clip.positionMs) + clipInset
-                val right = viewport.xOf(clip.positionEndMs) - clipInset
-                if (right < 0f || left > size.width) return@forEachIndexed
+            // 병합한 묶음은 같이 움직이므로 묶음 전체를 강조한다
+            val grabbedGroup = timeline.groupRangeOf(grab.clipIndex)
+            timeline.groupRanges.forEach { group ->
+                val left = viewport.xOf(timeline.clips[group.first].positionMs) + clipInset
+                val right = viewport.xOf(timeline.clips[group.last].positionEndMs) - clipInset
+                if (right < 0f || left > size.width) return@forEach
                 val clipSize = Size(width = (right - left).coerceAtLeast(1f), height = size.height)
 
-                if (index == grab.clipIndex) {
+                if (group == grabbedGroup) {
                     drawRoundRect(
                         color = white.copy(alpha = 0.12f),
                         topLeft = Offset(x = left, y = 0f),

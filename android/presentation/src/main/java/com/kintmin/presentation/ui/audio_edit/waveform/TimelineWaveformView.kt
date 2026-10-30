@@ -33,7 +33,8 @@ import com.kintmin.presentation.theme.white
  * 편집 타임라인의 파형 영역. 조각을 고르고, 화면을 옮기고, 경계를 끌고, 조각을 옮기는 곳이다.
  *
  * - 0초~끝 표시는 트랙 배경을 깔아, 빈칸과 뒤에 붙인 무음도 "비어 있는 트랙"으로 보이게 한다
- * - 조각은 양옆을 조금씩 띄운 둥근 블록으로 그려, 맞닿은 조각도 경계가 보이게 한다
+ * - 조각은 양옆을 조금씩 띄운 둥근 블록으로 그려, 맞닿은 조각도 경계가 보이게 한다.
+ *   병합한 묶음은 이음매 없이 블록 하나로 그린다
  * - 결과물 끝 뒤는 어둡게 덮고 끝 표시(빨간 선)를 긋는다
  * - 기준선(흰색)과 미리듣기선(파란색)은 별개다
  *
@@ -99,12 +100,12 @@ fun TimelineWaveformView(
         // 조각 블록 — 맞닿은 조각도 틈이 보이도록 양옆을 띄운다
         val clipInset = 1.5.dp.toPx()
         val clipCorner = CornerRadius(4.dp.toPx())
-        timeline.clips.forEachIndexed { index, clip ->
-            val left = viewport.xOf(clip.positionMs) + clipInset
-            val right = viewport.xOf(clip.positionEndMs) - clipInset
-            if (right < 0f || left > size.width) return@forEachIndexed
+        timeline.groupRanges.forEach { group ->
+            val left = viewport.xOf(timeline.clips[group.first].positionMs) + clipInset
+            val right = viewport.xOf(timeline.clips[group.last].positionEndMs) - clipInset
+            if (right < 0f || left > size.width) return@forEach
 
-            val isSelected = index == selectedClipIndex
+            val isSelected = selectedClipIndex in group
             val clipSize = Size(width = (right - left).coerceAtLeast(1f), height = size.height)
             drawRoundRect(
                 color = if (isSelected) deepSea40 else deepSea80,

@@ -37,6 +37,9 @@ data class AudioEditUiState(
 
     val canSplit: Boolean get() = timeline.canSplit(baselineMs)
 
+    /** 기준선이 맞닿은 두 조각 사이에 있으면 자르기 버튼이 병합 버튼으로 바뀐다. */
+    val canMerge: Boolean get() = timeline.canMerge(baselineMs)
+
     val canDelete: Boolean get() = selectedClipIndex != null
 
     /** 파형을 읽는 중이면 진행률(0~99), 다 읽었거나 아직 시작 전이면 null. */

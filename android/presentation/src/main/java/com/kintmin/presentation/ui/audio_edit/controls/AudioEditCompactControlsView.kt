@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Merge
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
@@ -69,10 +70,14 @@ fun AudioEditCompactControlsView(
         )
 
         IconButton(
-            enabled = data.canSplit,
-            onClick = { sendIntent(AudioEditIntent.OnClickSplit) },
+            enabled = data.canMerge || data.canSplit,
+            onClick = { sendIntent(data.splitOrMergeIntent()) },
         ) {
-            Icon(imageVector = Icons.Rounded.ContentCut, contentDescription = "자르기")
+            if (data.canMerge) {
+                Icon(imageVector = Icons.Rounded.Merge, contentDescription = "병합")
+            } else {
+                Icon(imageVector = Icons.Rounded.ContentCut, contentDescription = "자르기")
+            }
         }
         IconButton(
             enabled = data.canDelete,

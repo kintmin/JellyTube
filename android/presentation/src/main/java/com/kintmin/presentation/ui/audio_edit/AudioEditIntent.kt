@@ -26,6 +26,9 @@ sealed interface AudioEditIntent {
     /** 기준선 위치에서 조각을 나눈다. */
     data object OnClickSplit : AudioEditIntent
 
+    /** 기준선 위치에서 맞닿은 두 조각을 한 덩이로 병합한다. */
+    data object OnClickMerge : AudioEditIntent
+
     /** 선택한 조각을 지워 빈칸으로 만든다. */
     data object OnClickDeleteClip : AudioEditIntent
 

@@ -8,6 +8,8 @@ package com.kintmin.domain.audio_edit.model
  * - [endMs]가 결과물의 끝이다. 마지막 조각보다 뒤면 무음이 붙고, 앞이면 그 뒤 소리가 잘린다.
  *   조각을 옮기거나 늘려 끝을 넘기면 넘긴 만큼 끝이 따라 늘어난다. 줄어드는 쪽으로는 따라가지 않는다.
  * - 조각끼리는 겹칠 수 없고 0초 앞으로 갈 수 없다.
+ * - 병합한 조각들은 묶음 하나로 다룬다. 같이 움직이고, 묶음 양 끝 경계만 끌 수 있으며,
+ *   선택·삭제도 묶음 단위다. 묶음 안에서 자르면 그 자리에서 묶음이 둘로 나뉜다.
  *
  * 모든 조작은 새 인스턴스를 돌려준다. 규칙을 어기는 값은 가능한 범위로 맞추거나 무시한다.
  */
@@ -49,6 +51,25 @@ data class AudioEditTimeline(
     fun clipIndexAt(ms: Long): Int? =
         clips.indexOfFirst { ms >= it.positionMs && ms < it.positionEndMs }.takeIf { it >= 0 }
 
+    /** 병합된 조각 묶음들. 각 묶음은 [clips]의 index 범위이며, 병합하지 않은 조각은 혼자 한 묶음이다. */
+    val groupRanges: List<IntRange>
+        get() = clips.indices
+            .filter { !clips[it].isLinkedToPrevious }
+            .map { first -> first..groupLastIndex(first) }
+
+    /** [index] 조각이 속한 묶음의 index 범위. */
+    fun groupRangeOf(index: Int): IntRange {
+        var first = index
+        while (first > 0 && clips[first].isLinkedToPrevious) first--
+        return first..groupLastIndex(index)
+    }
+
+    private fun groupLastIndex(index: Int): Int {
+        var last = index
+        while (clips.getOrNull(last + 1)?.isLinkedToPrevious == true) last++
+        return last
+    }
+
     /** [atMs]에서 나눴을 때 양쪽이 모두 최소 길이 이상인 조각의 index. */
     private fun splittableClipIndex(atMs: Long): Int? =
         clips.indexOfFirst {
@@ -64,14 +85,52 @@ data class AudioEditTimeline(
         return copy(
             clips = clips.toMutableList().apply {
                 set(index, clip.copy(sourceEndMs = splitSourceMs))
-                add(index + 1, clip.copy(sourceStartMs = splitSourceMs, positionMs = atMs))
+                // 뒤쪽은 앞과 끊어 새 묶음을 시작한다. 그 뒤에 붙어 있던 조각들은 뒤쪽과 같이 간다.
+                add(
+                    index + 1,
+                    clip.copy(sourceStartMs = splitSourceMs, positionMs = atMs, isLinkedToPrevious = false),
+                )
             }
         )
     }
 
+    /** [atMs]에서 맞닿아 있고 아직 병합되지 않은 두 조각 중 앞 조각의 index. */
+    private fun mergeableClipIndex(atMs: Long): Int? =
+        (0 until clips.lastIndex).firstOrNull { index ->
+            val next = clips[index + 1]
+            clips[index].positionEndMs == atMs && next.positionMs == atMs && !next.isLinkedToPrevious
+        }
+
+    /** 처음(0초)과 마지막 조각의 끝, 빈칸과 맞닿은 경계에서는 붙일 조각이 없어 병합할 수 없다. */
+    fun canMerge(atMs: Long): Boolean = mergeableClipIndex(atMs) != null
+
+    /**
+     * [atMs]에서 맞닿은 두 조각을 한 덩이로 병합한다.
+     *
+     * 원본에서 이어진 구간이면(자른 것을 다시 붙이는 경우) 한 조각으로 합치고,
+     * 아니면(옮겨서 다른 부분 옆에 붙인 경우) 묶음으로 엮어 같이 움직이게 한다.
+     */
+    fun merge(atMs: Long): AudioEditTimeline {
+        val index = mergeableClipIndex(atMs) ?: return this
+        val clip = clips[index]
+        val next = clips[index + 1]
+        return copy(
+            clips = clips.toMutableList().apply {
+                if (clip.sourceEndMs == next.sourceStartMs) {
+                    set(index, clip.copy(sourceEndMs = next.sourceEndMs))
+                    removeAt(index + 1)
+                } else {
+                    set(index + 1, next.copy(isLinkedToPrevious = true))
+                }
+            }
+        )
+    }
+
+    /** [index] 조각이 속한 묶음을 통째로 지운다. */
     fun delete(index: Int): AudioEditTimeline {
         if (index !in clips.indices) return this
-        return copy(clips = clips.filterIndexed { clipIndex, _ -> clipIndex != index })
+        val group = groupRangeOf(index)
+        return copy(clips = clips.filterIndexed { clipIndex, _ -> clipIndex !in group })
     }
 
     /**
@@ -79,12 +138,18 @@ data class AudioEditTimeline(
      *
      * 이웃 조각과 겹치거나, 0초 앞으로 가거나, 원본에 없는 소리를 끌어오거나,
      * 최소 길이보다 짧아지거나, 끝 표시 상한을 넘지 않게 맞춘다.
+     * 묶음 안쪽 경계는 한 덩이의 일부라 끌 수 없고, 묶음 양 끝만 끌 수 있다.
      */
     fun resizeEdge(index: Int, edge: Edge, toMs: Long): AudioEditTimeline {
         if (index !in clips.indices) return this
         val clip = clips[index]
         // 최소 길이보다 짧은 원본이면 움직일 여지가 없다
         if (clip.durationMs < MIN_CLIP_MS) return this
+        val isInnerEdge = when (edge) {
+            Edge.Start -> clip.isLinkedToPrevious
+            Edge.End -> clips.getOrNull(index + 1)?.isLinkedToPrevious == true
+        }
+        if (isInnerEdge) return this
 
         val resized = when (edge) {
             Edge.Start -> {
@@ -107,31 +172,44 @@ data class AudioEditTimeline(
                 clip.copy(sourceEndMs = clip.sourceMsAt(newEndMs))
             }
         }
-        return replaceClip(index, resized)
-    }
-
-    /** 조각을 통째로 타임라인 [toPositionMs]로 옮긴다. 양옆 조각 사이 빈칸 안에서만 움직인다. */
-    fun move(index: Int, toPositionMs: Long): AudioEditTimeline {
-        if (index !in clips.indices) return this
-        val clip = clips[index]
-
-        val lowerMs = clips.getOrNull(index - 1)?.positionEndMs ?: 0L
-        val upperMs = (clips.getOrNull(index + 1)?.positionMs ?: maxEndMs) - clip.durationMs
-        if (upperMs < lowerMs) return this
-
-        return replaceClip(index, clip.copy(positionMs = toPositionMs.coerceIn(lowerMs, upperMs)))
+        return replaceClips(firstIndex = index, replaced = listOf(resized))
     }
 
     /**
-     * 조각을 바꾸고, 바뀐 조각이 끝 표시를 넘었으면 끝 표시를 그만큼 늘린다.
+     * [index] 조각이 타임라인 [toPositionMs]에 오도록 그 조각이 속한 묶음을 통째로 옮긴다.
+     * 묶음 양옆 조각 사이 빈칸 안에서만 움직인다.
+     */
+    fun move(index: Int, toPositionMs: Long): AudioEditTimeline {
+        if (index !in clips.indices) return this
+        val group = groupRangeOf(index)
+        val groupStartMs = clips[group.first].positionMs
+        val groupDurationMs = clips[group.last].positionEndMs - groupStartMs
+
+        val lowerMs = clips.getOrNull(group.first - 1)?.positionEndMs ?: 0L
+        val upperMs = (clips.getOrNull(group.last + 1)?.positionMs ?: maxEndMs) - groupDurationMs
+        if (upperMs < lowerMs) return this
+
+        val newGroupStartMs = (groupStartMs + (toPositionMs - clips[index].positionMs)).coerceIn(lowerMs, upperMs)
+        val shiftMs = newGroupStartMs - groupStartMs
+        return replaceClips(
+            firstIndex = group.first,
+            replaced = group.map { clipIndex -> clips[clipIndex].let { it.copy(positionMs = it.positionMs + shiftMs) } },
+        )
+    }
+
+    /**
+     * [firstIndex]부터 연속된 조각들을 바꾸고, 바뀐 조각이 끝 표시를 넘었으면 끝 표시를 그만큼 늘린다.
      *
      * 끝 표시로 이미 뒤가 잘린 조각은 원래 끝보다 더 나간 만큼만 늘린다. 그래야 다른 조작을 해도
      * 사용자가 잘라 둔 길이가 풀리지 않는다.
      */
-    private fun replaceClip(index: Int, clip: AudioEditClip): AudioEditTimeline {
-        val overflowMs = clip.positionEndMs - maxOf(clips[index].positionEndMs, endMs)
+    private fun replaceClips(firstIndex: Int, replaced: List<AudioEditClip>): AudioEditTimeline {
+        val lastIndex = firstIndex + replaced.lastIndex
+        val overflowMs = replaced.last().positionEndMs - maxOf(clips[lastIndex].positionEndMs, endMs)
         return copy(
-            clips = clips.toMutableList().apply { set(index, clip) },
+            clips = clips.toMutableList().apply {
+                replaced.forEachIndexed { offset, clip -> set(firstIndex + offset, clip) }
+            },
             endMs = (endMs + overflowMs.coerceAtLeast(0)).coerceAtMost(maxEndMs),
         )
     }

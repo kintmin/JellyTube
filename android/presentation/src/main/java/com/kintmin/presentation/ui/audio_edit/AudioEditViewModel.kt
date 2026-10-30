@@ -157,6 +157,7 @@ class AudioEditViewModel constructor(
                 it.move(index = intent.index, toPositionMs = intent.positionMs)
             }
             AudioEditIntent.OnClickSplit -> splitAtBaseline()
+            AudioEditIntent.OnClickMerge -> mergeAtBaseline()
             AudioEditIntent.OnClickDeleteClip -> deleteSelectedClip()
             AudioEditIntent.OnClickTogglePreview -> togglePreview()
             AudioEditIntent.OnConfirmOverwrite -> overwrite()
@@ -176,6 +177,15 @@ class AudioEditViewModel constructor(
 
         updateTimeline { it.split(state.baselineMs) }
         // 나누면 조각 index가 밀려 이전 선택이 다른 조각을 가리킬 수 있다
+        _data.update { it.copy(selectedClipIndex = null) }
+    }
+
+    private fun mergeAtBaseline() {
+        val state = _data.value
+        if (!state.canMerge) return
+
+        updateTimeline { it.merge(state.baselineMs) }
+        // 합치면 조각 index가 당겨져 이전 선택이 다른 조각을 가리킬 수 있다
         _data.update { it.copy(selectedClipIndex = null) }
     }
 

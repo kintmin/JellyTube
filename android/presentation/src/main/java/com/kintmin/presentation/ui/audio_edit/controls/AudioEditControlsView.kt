@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Merge
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Button
@@ -48,8 +49,10 @@ internal fun AudioEditUiState.gestureHint(grab: TimelineGrab?): String {
         grabbedClip == null ->
             "위 눈금을 누르거나 끌면 기준선 이동 · 파형을 누르면 조각 선택 · 두 손가락으로 확대/축소"
 
-        grab.edge == null ->
-            "이동 중 · 시작 ${grabbedClip.positionMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss()}"
+        grab.edge == null -> {
+            val groupStartMs = timeline.clips[timeline.groupRangeOf(grab.clipIndex).first].positionMs
+            "이동 중 · 시작 ${groupStartMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss()}"
+        }
 
         grab.edge == AudioEditTimeline.Edge.Start ->
             "길이 조절 중 · 시작 ${grabbedClip.positionMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss()}"
@@ -58,6 +61,14 @@ internal fun AudioEditUiState.gestureHint(grab: TimelineGrab?): String {
             "길이 조절 중 · 끝 ${grabbedClip.positionEndMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss()}"
     }
 }
+
+/**
+ * 자르기 버튼이 할 일. 기준선이 맞닿은 두 조각 사이에 있으면 병합으로 바뀐다.
+ *
+ * 조각 경계에서는 원래 자를 수 없어(양쪽 최소 길이) 두 동작이 겹치는 위치가 없다.
+ */
+internal fun AudioEditUiState.splitOrMergeIntent(): AudioEditIntent =
+    if (canMerge) AudioEditIntent.OnClickMerge else AudioEditIntent.OnClickSplit
 
 /**
  * 파형 아래 조작 영역(세로 화면처럼 높이가 넉넉할 때).
@@ -103,15 +114,19 @@ fun AudioEditControlsView(
             Button(
                 modifier = Modifier.weight(1f),
                 contentPadding = buttonPadding,
-                enabled = data.canSplit,
-                onClick = { sendIntent(AudioEditIntent.OnClickSplit) },
+                enabled = data.canMerge || data.canSplit,
+                onClick = { sendIntent(data.splitOrMergeIntent()) },
             ) {
                 Icon(
                     modifier = Modifier.size(ButtonDefaults.IconSize),
-                    imageVector = Icons.Rounded.ContentCut,
+                    imageVector = if (data.canMerge) Icons.Rounded.Merge else Icons.Rounded.ContentCut,
                     contentDescription = null,
                 )
-                Text(modifier = Modifier.padding(start = 4.dp), text = "자르기", maxLines = 1)
+                Text(
+                    modifier = Modifier.padding(start = 4.dp),
+                    text = if (data.canMerge) "병합" else "자르기",
+                    maxLines = 1,
+                )
             }
             OutlinedButton(
                 modifier = Modifier.weight(1f),

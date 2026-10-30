@@ -259,4 +259,90 @@ class AudioEditTimelineTest {
 
         assertEquals(160_000, result.endMs)
     }
+
+    /** 원본 0~100초 조각과, 원본 200~300초 조각을 100초로 옮겨 맞붙인 상태. 원본에서 이어지지 않는다. */
+    private val touchingNonContiguous = initial.split(100_000).split(200_000).delete(1)
+        .move(index = 1, toPositionMs = 100_000)
+
+    @Test
+    fun `자른 자리에서 병합하면 원래 한 조각으로 돌아간다`() {
+        val result = initial.split(100_000).merge(100_000)
+
+        assertEquals(initial, result)
+    }
+
+    @Test
+    fun `처음과 끝, 빈칸과 맞닿은 경계에서는 병합할 수 없다`() {
+        val split = initial.split(100_000)
+        assertFalse(split.canMerge(0))
+        assertFalse(split.canMerge(ORIGIN_DURATION_MS))
+
+        val withGap = initial.split(100_000).split(200_000).delete(1)
+        assertFalse(withGap.canMerge(100_000))
+        assertFalse(withGap.canMerge(200_000))
+    }
+
+    @Test
+    fun `원본이 이어지지 않은 두 조각을 병합하면 한 묶음이 되고 소리는 그대로 이어진다`() {
+        val result = touchingNonContiguous.merge(100_000)
+
+        assertTrue(result.clips[1].isLinkedToPrevious)
+        assertEquals(listOf(0..1), result.groupRanges)
+        assertFalse(result.canMerge(100_000))
+        assertEquals(
+            listOf(audio(0, 100_000), audio(200_000, ORIGIN_DURATION_MS), silence(100_000)),
+            result.toParts(),
+        )
+    }
+
+    @Test
+    fun `묶음은 같이 움직인다`() {
+        val merged = touchingNonContiguous.merge(100_000)
+
+        val result = merged.move(index = 1, toPositionMs = 150_000)
+
+        assertEquals(50_000, result.clips[0].positionMs)
+        assertEquals(150_000, result.clips[1].positionMs)
+    }
+
+    @Test
+    fun `묶음 안쪽 경계는 끌 수 없고 바깥 경계만 끌 수 있다`() {
+        val merged = touchingNonContiguous.merge(100_000)
+
+        assertEquals(merged, merged.resizeEdge(index = 0, edge = Edge.End, toMs = 50_000))
+        assertEquals(merged, merged.resizeEdge(index = 1, edge = Edge.Start, toMs = 150_000))
+        assertEquals(
+            clip(20_000, 100_000),
+            merged.resizeEdge(index = 0, edge = Edge.Start, toMs = 20_000).clips[0],
+        )
+    }
+
+    @Test
+    fun `묶음 안에서 자르면 그 자리에서 묶음이 둘로 나뉜다`() {
+        val merged = touchingNonContiguous.merge(100_000)
+
+        val result = merged.split(150_000)
+
+        assertEquals(listOf(0..1, 2..2), result.groupRanges)
+        assertEquals(
+            AudioEditClip(sourceStartMs = 250_000, sourceEndMs = ORIGIN_DURATION_MS, positionMs = 150_000),
+            result.clips[2],
+        )
+    }
+
+    @Test
+    fun `묶음은 통째로 지워진다`() {
+        val merged = touchingNonContiguous.merge(100_000)
+
+        assertTrue(merged.delete(1).clips.isEmpty())
+    }
+
+    @Test
+    fun `묶음을 끝 표시 너머로 옮기면 넘긴 만큼 끝 표시가 따라 늘어난다`() {
+        val merged = touchingNonContiguous.merge(100_000)
+
+        val result = merged.move(index = 0, toPositionMs = 150_000)
+
+        assertEquals(350_000, result.endMs)
+    }
 }

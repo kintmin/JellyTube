@@ -9,6 +9,13 @@ data class AudioEditClip(
     val sourceStartMs: Long,
     val sourceEndMs: Long,
     val positionMs: Long,
+    /**
+     * 바로 앞 조각과 병합되어 한 덩이로 움직이는지. 이어진 조각들이 하나의 묶음이 된다.
+     *
+     * 원본에서 이어진 두 조각은 병합하면 아예 한 조각으로 합치므로, 이 값이 true인 조각은
+     * 앞 조각과 원본 구간이 이어지지 않는다. 저장·미리듣기는 조각을 순서대로 이을 뿐이라 이 값을 보지 않는다.
+     */
+    val isLinkedToPrevious: Boolean = false,
 ) {
 
     val durationMs: Long get() = sourceEndMs - sourceStartMs

@@ -30,20 +30,21 @@ internal fun DrawScope.drawClipGrips(
     val grabbedGripHeight = 40.dp.toPx()
     val maxRadiusPx = EDGE_TOUCH_RADIUS.toPx()
 
-    timeline.clips.forEachIndexed { index, clip ->
-        val left = viewport.xOf(clip.positionMs)
-        val right = viewport.xOf(clip.positionEndMs)
-        if (right < 0f || left > size.width) return@forEachIndexed
+    // 병합한 묶음은 한 덩이라 안쪽 경계에는 손잡이가 없다
+    timeline.groupRanges.forEach { group ->
+        val left = viewport.xOf(timeline.clips[group.first].positionMs)
+        val right = viewport.xOf(timeline.clips[group.last].positionEndMs)
+        if (right < 0f || left > size.width) return@forEach
 
         val radiusPx = edgeTouchRadiusPx(clipWidthPx = right - left, maxRadiusPx = maxRadiusPx)
-        if (radiusPx < gripInset + gripWidth) return@forEachIndexed
+        if (radiusPx < gripInset + gripWidth) return@forEach
 
-        val color = if (index == selectedClipIndex) seaBlue100 else gray60.copy(alpha = 0.7f)
+        val color = if (selectedClipIndex in group) seaBlue100 else gray60.copy(alpha = 0.7f)
         listOf(
-            AudioEditTimeline.Edge.Start to left + gripInset,
-            AudioEditTimeline.Edge.End to right - gripInset,
-        ).forEach { (edge, edgeX) ->
-            val isGrabbed = grab?.clipIndex == index && grab.edge == edge
+            Triple(AudioEditTimeline.Edge.Start, group.first, left + gripInset),
+            Triple(AudioEditTimeline.Edge.End, group.last, right - gripInset),
+        ).forEach { (edge, clipIndex, edgeX) ->
+            val isGrabbed = grab?.clipIndex == clipIndex && grab.edge == edge
             val width = if (isGrabbed) grabbedGripWidth else gripWidth
             val height = if (isGrabbed) grabbedGripHeight else gripHeight
             drawRoundRect(

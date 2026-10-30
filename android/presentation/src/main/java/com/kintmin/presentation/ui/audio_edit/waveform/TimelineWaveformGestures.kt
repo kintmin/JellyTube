@@ -164,14 +164,15 @@ private fun findGrabbedEdge(
         val radiusPx: Float,
     )
 
-    return timeline.clips
-        .flatMapIndexed { index, clip ->
-            val startX = viewport.xOf(clip.positionMs)
-            val endX = viewport.xOf(clip.positionEndMs)
+    // 병합한 묶음은 한 덩이라 양 끝 경계만 잡힌다
+    return timeline.groupRanges
+        .flatMap { group ->
+            val startX = viewport.xOf(timeline.clips[group.first].positionMs)
+            val endX = viewport.xOf(timeline.clips[group.last].positionEndMs)
             val clipRadiusPx = edgeTouchRadiusPx(clipWidthPx = endX - startX, maxRadiusPx = radiusPx)
             listOf(
-                Candidate(index, AudioEditTimeline.Edge.Start, abs(touchX - startX), touchX >= startX, clipRadiusPx),
-                Candidate(index, AudioEditTimeline.Edge.End, abs(touchX - endX), touchX <= endX, clipRadiusPx),
+                Candidate(group.first, AudioEditTimeline.Edge.Start, abs(touchX - startX), touchX >= startX, clipRadiusPx),
+                Candidate(group.last, AudioEditTimeline.Edge.End, abs(touchX - endX), touchX <= endX, clipRadiusPx),
             )
         }
         .filter { it.distance <= it.radiusPx }
