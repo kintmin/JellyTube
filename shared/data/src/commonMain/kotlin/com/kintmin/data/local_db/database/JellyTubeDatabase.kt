@@ -19,7 +19,7 @@ import com.kintmin.data.local_db.model.*
         StepEntity::class,
     ],
     exportSchema = true,
-    version = 6,
+    version = 7,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -27,6 +27,8 @@ import com.kintmin.data.local_db.model.*
         AutoMigration(from = 4, to = 5),
         // 5 -> 6: AUDIO_MEDIA에 tjKaraokeNumber 컬럼(nullable) 추가
         AutoMigration(from = 5, to = 6),
+        // 6 -> 7: AUDIO_MEDIA에 editedAudioFileNameWithExt, editedAudioDurationSeconds 컬럼(nullable) 추가
+        AutoMigration(from = 6, to = 7),
     ],
 )
 @ConstructedBy(JellyTubeDatabaseConstructor::class)
