@@ -60,6 +60,7 @@ fun TimelineWaveformView(
     val currentOnClipEdgeDragged by rememberUpdatedState(onClipEdgeDragged)
     val currentOnClipMoved by rememberUpdatedState(onClipMoved)
     val currentOnGrabChanged by rememberUpdatedState(onGrabChanged)
+    val autoScroller = rememberTimelineEdgeAutoScroller(viewport)
 
     Canvas(
         modifier = modifier
@@ -68,6 +69,7 @@ fun TimelineWaveformView(
             .pointerInput(viewport) {
                 timelineWaveformGestures(
                     viewport = viewport,
+                    autoScroller = autoScroller,
                     timeline = { currentTimeline },
                     onTap = { ms -> currentOnClipSelected(currentTimeline.clipIndexAt(ms)) },
                     onGrabStarted = { grab ->

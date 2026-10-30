@@ -61,6 +61,7 @@ fun TimelineRulerView(
     val currentEndMs by rememberUpdatedState(endMs)
     val currentBaselineSnapTargetsMs by rememberUpdatedState(baselineSnapTargetsMs)
     val currentEndSnapTargetsMs by rememberUpdatedState(endSnapTargetsMs)
+    val autoScroller = rememberTimelineEdgeAutoScroller(viewport)
     val currentOnBaselineChanged by rememberUpdatedState(onBaselineChanged)
     val currentOnEndChanged by rememberUpdatedState(onEndChanged)
 
@@ -72,6 +73,7 @@ fun TimelineRulerView(
             .pointerInput(viewport) {
                 timelineRulerGestures(
                     viewport = viewport,
+                    autoScroller = autoScroller,
                     endMs = { currentEndMs },
                     baselineSnapTargetsMs = { currentBaselineSnapTargetsMs },
                     endSnapTargetsMs = { currentEndSnapTargetsMs },

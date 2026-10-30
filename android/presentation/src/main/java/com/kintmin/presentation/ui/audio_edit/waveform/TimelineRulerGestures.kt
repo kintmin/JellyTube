@@ -19,9 +19,11 @@ private val SNAP_RADIUS = 12.dp
  *   그 자리에 붙는다. 손가락으로는 0초에 정확히 닿기 어렵다
  * - 끝 표시 손잡이 근처에서 시작한 끌기는 끝 표시를 옮긴다. [endSnapTargetsMs] 근처에서는
  *   그 자리에 붙어, 뒤에 무음도 잘린 소리도 없이 딱 맞추기 쉽다
+ * - 끄는 중 화면 가장자리에 닿으면 그쪽으로 화면이 밀린다([TimelineEdgeAutoScroller])
  */
 internal suspend fun PointerInputScope.timelineRulerGestures(
     viewport: TimelineViewportState,
+    autoScroller: TimelineEdgeAutoScroller,
     endMs: () -> Long,
     baselineSnapTargetsMs: () -> List<Long>,
     endSnapTargetsMs: () -> List<Long>,
@@ -43,11 +45,17 @@ internal suspend fun PointerInputScope.timelineRulerGestures(
         // 누르는 순간 기준선이 그 자리로 온다. 끝 표시는 끌어야 움직인다.
         if (!isEndMarker) moveTo(down.position.x)
 
-        while (true) {
-            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-            if (!change.pressed) break
-            change.consume()
-            moveTo(change.position.x)
+        autoScroller.start(pointerX = down.position.x, onScrolled = moveTo)
+        try {
+            while (true) {
+                val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                if (!change.pressed) break
+                change.consume()
+                moveTo(change.position.x)
+                autoScroller.update(change.position.x)
+            }
+        } finally {
+            autoScroller.stop()
         }
     }
 }

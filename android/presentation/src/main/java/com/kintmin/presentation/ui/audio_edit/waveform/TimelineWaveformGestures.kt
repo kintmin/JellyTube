@@ -38,13 +38,15 @@ private sealed interface WaveformGesture {
  * - 짧게 누르기: 조각 선택(빈칸이면 선택 해제)
  * - 한 손가락으로 끌기: 화면 좌우 이동
  * - 두 손가락: 확대/축소와 이동
- * - 길게 누른 뒤 끌기: 경계 근처면 그 조각 끝을 늘리거나 줄이고, 조각 안쪽이면 조각을 통째로 옮긴다
+ * - 길게 누른 뒤 끌기: 경계 근처면 그 조각 끝을 늘리거나 줄이고, 조각 안쪽이면 조각을 통째로 옮긴다.
+ *   끄는 중 화면 가장자리에 닿으면 그쪽으로 화면이 밀린다([TimelineEdgeAutoScroller])
  *
  * 탭·이동·길게 누르기는 서로 배타적이다. 터치 슬롭을 넘으면 이동, 넘기 전에 떼면 탭,
  * 움직이지 않고 길게 누르고 있으면 길게 누르기로 갈린다.
  */
 internal suspend fun PointerInputScope.timelineWaveformGestures(
     viewport: TimelineViewportState,
+    autoScroller: TimelineEdgeAutoScroller,
     timeline: () -> AudioEditTimeline,
     onTap: (ms: Long) -> Unit,
     onGrabStarted: (TimelineGrab) -> Unit,
@@ -120,6 +122,7 @@ internal suspend fun PointerInputScope.timelineWaveformGestures(
                     else -> return@awaitEachGesture
                 }
                 onGrabStarted(grab ?: return@awaitEachGesture)
+                autoScroller.start(pointerX = down.position.x, onScrolled = { x -> onDrag(viewport.msAt(x)) })
 
                 // 제스처가 취소돼도 잡힘 표시가 남지 않도록 반드시 놓아 준다
                 try {
@@ -128,10 +131,12 @@ internal suspend fun PointerInputScope.timelineWaveformGestures(
                         if (!change.pressed) break
                         if (change.positionChange() != Offset.Zero) {
                             onDrag(viewport.msAt(change.position.x))
+                            autoScroller.update(change.position.x)
                         }
                         change.consume()
                     }
                 } finally {
+                    autoScroller.stop()
                     onGrabEnded()
                 }
             }
