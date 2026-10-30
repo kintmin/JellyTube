@@ -1,6 +1,7 @@
 package com.kintmin.domain.audio_edit.repository
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
+import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_media.model.AudioMedia
 import kotlinx.coroutines.flow.Flow
@@ -15,16 +16,19 @@ interface AudioEditRepository {
      */
     fun extractWaveform(audioFileFullPath: String, bucketCount: Int): Flow<AudioWaveform>
 
+    /** 편집본을 만든 편집 상태. 다시 편집할 때 이어서 고칠 수 있게 쓴다. 편집본이 없으면 null. */
+    suspend fun fetchEditTimeline(audioMediaId: Int): Result<AudioEditTimeline?>
+
     /**
-     * 소리·무음 조각을 이어붙인 편집본을 만들어 해당 음원에 연결한다. 이미 편집본이 있으면 교체한다.
-     * 원본 파일은 지우지 않는다.
+     * [timeline]을 렌더한 편집본을 만들어 해당 음원에 연결하고, 다시 편집할 수 있게 [timeline]도 저장한다.
+     * 이미 편집본이 있으면 교체한다. 원본 파일은 지우지 않는다.
      */
     suspend fun applyEditedAudio(
         audioMediaId: Int,
-        parts: List<AudioEditPart>,
+        timeline: AudioEditTimeline,
     ): Result<AudioMedia>
 
-    /** 편집본 연결을 해제해 원본으로 되돌리고 편집본 파일을 지운다. */
+    /** 편집본 연결을 해제해 원본으로 되돌리고 편집본 파일과 편집 상태를 지운다. */
     suspend fun revertEditedAudio(audioMediaId: Int): Result<AudioMedia>
 
     /**

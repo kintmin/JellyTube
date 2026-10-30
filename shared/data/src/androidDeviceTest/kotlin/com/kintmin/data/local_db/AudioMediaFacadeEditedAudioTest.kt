@@ -11,12 +11,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * 편집본 적용/해제 시 플레이리스트 재생시간 합계가 어긋나지 않는지 검증하는 계측 테스트.
+ * 편집본 적용/해제 시 플레이리스트 재생시간 합계와 편집 상태(AUDIO_EDIT_PROJECT)가 어긋나지 않는지
+ * 검증하는 계측 테스트.
  *
  * 이 합계(PLAYLIST.rawPlayTimeDuration)는 트랙을 넣고 뺄 때 가감되는 누적값이고 재계산 경로가 없어서,
  * 한 번 틀어지면 복구되지 않는다. 그래서 delta 보정이 이 기능의 유일한 영구 손상 지점이다.
@@ -34,6 +36,7 @@ class AudioMediaFacadeEditedAudioTest {
 
         const val ORIGIN_DURATION_SECONDS = 300L
         const val EDITED_DURATION_SECONDS = 120L
+        const val TIMELINE_JSON = "{\"version\":1,\"originDurationMs\":300000,\"endMs\":120000,\"clips\":[]}"
     }
 
     @Before
@@ -50,6 +53,7 @@ class AudioMediaFacadeEditedAudioTest {
             audioMediaDao = db.audioMediaDao(),
             playlistDao = db.playlistDao(),
             playlistTrackDao = db.playlistTrackDao(),
+            audioEditProjectDao = db.audioEditProjectDao(),
         )
     }
 
@@ -93,6 +97,7 @@ class AudioMediaFacadeEditedAudioTest {
             audioMediaId = audioMediaId,
             editedAudioFileNameWithExt = "edited.m4a",
             editedAudioDurationSeconds = EDITED_DURATION_SECONDS,
+            timelineJson = TIMELINE_JSON,
         )
 
         linkedPlaylistIds.forEach { playlistId ->
@@ -112,6 +117,7 @@ class AudioMediaFacadeEditedAudioTest {
             audioMediaId = audioMediaId,
             editedAudioFileNameWithExt = "edited.m4a",
             editedAudioDurationSeconds = EDITED_DURATION_SECONDS,
+            timelineJson = TIMELINE_JSON,
         )
         facade.clearEditedAudio(audioMediaId = audioMediaId)
 
@@ -128,9 +134,9 @@ class AudioMediaFacadeEditedAudioTest {
     fun 편집본을_여러_번_덮어써도_재생시간이_누적되지_않는다() = runTest {
         val (audioMediaId, linkedPlaylistIds) = addAudioMedia()
 
-        facade.applyEditedAudio(audioMediaId, "edited1.m4a", 200L)
-        facade.applyEditedAudio(audioMediaId, "edited2.m4a", 90L)
-        facade.applyEditedAudio(audioMediaId, "edited3.m4a", EDITED_DURATION_SECONDS)
+        facade.applyEditedAudio(audioMediaId, "edited1.m4a", 200L, TIMELINE_JSON)
+        facade.applyEditedAudio(audioMediaId, "edited2.m4a", 90L, TIMELINE_JSON)
+        facade.applyEditedAudio(audioMediaId, "edited3.m4a", EDITED_DURATION_SECONDS, TIMELINE_JSON)
 
         linkedPlaylistIds.forEach { playlistId ->
             assertEquals(
@@ -150,6 +156,7 @@ class AudioMediaFacadeEditedAudioTest {
             audioMediaId = audioMediaId,
             editedAudioFileNameWithExt = "edited.m4a",
             editedAudioDurationSeconds = EDITED_DURATION_SECONDS,
+            timelineJson = TIMELINE_JSON,
         )
         facade.addTrack(playlistId = userPlaylistId, audioMediaIdList = listOf(audioMediaId))
 
@@ -166,5 +173,40 @@ class AudioMediaFacadeEditedAudioTest {
         linkedPlaylistIds.forEach { playlistId ->
             assertEquals(EDITED_DURATION_SECONDS, playTimeDurationOf(playlistId))
         }
+    }
+
+    private suspend fun timelineJsonOf(audioMediaId: Int): String? =
+        db.audioEditProjectDao().getByAudioMediaId(audioMediaId)?.timelineJson
+
+    @Test
+    fun 편집본을_적용하면_편집_상태가_저장되고_다시_적용하면_덮어쓴다() = runTest {
+        val (audioMediaId, _) = addAudioMedia()
+
+        facade.applyEditedAudio(audioMediaId, "edited1.m4a", 200L, "{\"first\":true}")
+        assertEquals("{\"first\":true}", timelineJsonOf(audioMediaId))
+
+        facade.applyEditedAudio(audioMediaId, "edited2.m4a", 90L, TIMELINE_JSON)
+        assertEquals(TIMELINE_JSON, timelineJsonOf(audioMediaId))
+    }
+
+    @Test
+    fun 편집본을_해제하면_편집_상태도_지워진다() = runTest {
+        val (audioMediaId, _) = addAudioMedia()
+
+        facade.applyEditedAudio(audioMediaId, "edited.m4a", EDITED_DURATION_SECONDS, TIMELINE_JSON)
+        facade.clearEditedAudio(audioMediaId = audioMediaId)
+
+        assertNull(timelineJsonOf(audioMediaId))
+    }
+
+    @Test
+    fun 음원을_지우면_편집_상태도_같이_지워진다() = runTest {
+        val (audioMediaId, _) = addAudioMedia()
+
+        facade.applyEditedAudio(audioMediaId, "edited.m4a", EDITED_DURATION_SECONDS, TIMELINE_JSON)
+        facade.deleteAudioMedia(audioMediaId = audioMediaId)
+
+        // 외래키 ON DELETE CASCADE
+        assertNull(timelineJsonOf(audioMediaId))
     }
 }

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 7,
-    "identityHash": "a18bf96eebd643188a605269bd7ce713",
+    "identityHash": "9e192d887cdedcb218ef492c5fc3081c",
     "entities": [
       {
         "tableName": "AUDIO_MEDIA",
@@ -266,11 +266,48 @@
             "rawCreatedTime"
           ]
         }
+      },
+      {
+        "tableName": "AUDIO_EDIT_PROJECT",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`audioMediaId` INTEGER NOT NULL, `timelineJson` TEXT NOT NULL, PRIMARY KEY(`audioMediaId`), FOREIGN KEY(`audioMediaId`) REFERENCES `AUDIO_MEDIA`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "audioMediaId",
+            "columnName": "audioMediaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timelineJson",
+            "columnName": "timelineJson",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "audioMediaId"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "AUDIO_MEDIA",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "audioMediaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a18bf96eebd643188a605269bd7ce713')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9e192d887cdedcb218ef492c5fc3081c')"
     ]
   }
 }

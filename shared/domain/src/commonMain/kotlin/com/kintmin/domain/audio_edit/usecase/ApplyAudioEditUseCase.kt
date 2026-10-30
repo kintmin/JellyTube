@@ -1,6 +1,6 @@
 package com.kintmin.domain.audio_edit.usecase
 
-import com.kintmin.domain.audio_edit.model.AudioEditPart
+import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.log.AppLog
@@ -13,23 +13,23 @@ class ApplyAudioEditUseCase constructor(
 ) {
     suspend operator fun invoke(
         audioMediaId: Int,
-        parts: List<AudioEditPart>,
+        timeline: AudioEditTimeline,
     ): Result<AudioMedia> {
-        if (parts.none { it is AudioEditPart.Audio }) {
+        if (!timeline.hasAudio) {
             return Result.failure(EmptyAudioEditSegment())
         }
 
         val timedValue = measureTimedValue {
             audioEditRepository.applyEditedAudio(
                 audioMediaId = audioMediaId,
-                parts = parts,
+                timeline = timeline,
             )
         }
 
         appLog.sendDebugLog(
             DebugLog(
                 tag = "ApplyAudioEditUseCase",
-                message = "편집본 적용: 조각 ${parts.size}개, 소요 ${timedValue.duration}, " +
+                message = "편집본 적용: 조각 ${timeline.clips.size}개, 소요 ${timedValue.duration}, " +
                     "결과 ${timedValue.value.exceptionOrNull() ?: "성공"}",
             )
         )

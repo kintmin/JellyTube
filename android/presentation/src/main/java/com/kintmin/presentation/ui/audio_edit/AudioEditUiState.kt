@@ -13,6 +13,8 @@ data class AudioEditUiState(
     val waveform: AudioWaveform,
     /** 남길 조각들과 결과물 끝 위치. */
     val timeline: AudioEditTimeline,
+    /** 마지막으로 저장된 편집 상태. 편집본이 없으면 원본 그대로의 초기 상태다. */
+    val savedTimeline: AudioEditTimeline,
     /** 사용자가 눈금 줄에서 정한 기준선. 자르기와 미리듣기 시작 위치가 된다. */
     val baselineMs: Long,
     val selectedClipIndex: Int?,
@@ -28,12 +30,17 @@ data class AudioEditUiState(
 
     val originDurationMs: Long get() = timeline.originDurationMs
 
-    val isDirty: Boolean get() = timeline.isDirty
+    /** 저장하지 않은 변경이 있는지. 나갈 때 확인창을 띄우는 기준이다. */
+    val isDirty: Boolean get() = timeline != savedTimeline
 
     /** 편집 결과 길이. 실제 파일 길이는 렌더 후 측정값이라 수십 ms 차이가 날 수 있다. */
     val resultDurationMs: Long get() = timeline.endMs
 
-    val canSave: Boolean get() = isDirty && timeline.hasAudio && !isSaving && !isLoading
+    /**
+     * 원본과 달라진 편집이 있으면 저장할 수 있다. 불러온 편집 상태를 그대로 새 음원으로 저장할 수도 있게
+     * [isDirty]가 아니라 원본 기준으로 판단한다.
+     */
+    val canSave: Boolean get() = timeline.isDirty && timeline.hasAudio && !isSaving && !isLoading
 
     val canSplit: Boolean get() = timeline.canSplit(baselineMs)
 
@@ -71,6 +78,7 @@ data class AudioEditUiState(
                 ),
                 endMs = 330_000,
             ),
+            savedTimeline = AudioEditTimeline.initial(originDurationMs = 300_000),
             baselineMs = 60_000,
             selectedClipIndex = 1,
             hasEditedAudio = false,
@@ -87,6 +95,7 @@ data class AudioEditUiState(
             originAudioFileFullPath = "",
             waveform = AudioWaveform.EMPTY,
             timeline = AudioEditTimeline.initial(originDurationMs = 0),
+            savedTimeline = AudioEditTimeline.initial(originDurationMs = 0),
             baselineMs = 0,
             selectedClipIndex = null,
             hasEditedAudio = false,

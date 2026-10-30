@@ -57,6 +57,7 @@ val dataCommonModule: Module = module {
     single { get<JellyTubeDatabase>().playlistDao() }
     single { get<JellyTubeDatabase>().playlistTrackDao() }
     single { get<JellyTubeDatabase>().stepDao() }
+    single { get<JellyTubeDatabase>().audioEditProjectDao() }
     singleOf(::AudioMediaFacade)
 
     singleOf(::AppLogRepositoryImpl) bind AppLogRepository::class
@@ -83,6 +84,7 @@ val dataCommonModule: Module = module {
     factoryOf(::UpdateShouldInsertAtTopOnDownloadUseCase)
     factoryOf(::ExtractAudioWaveformUseCase)
     factoryOf(::ApplyAudioEditUseCase)
+    factoryOf(::FetchAudioEditTimelineUseCase)
     factoryOf(::RevertAudioEditUseCase)
     factoryOf(::SaveEditedAudioAsNewMediaUseCase)
 

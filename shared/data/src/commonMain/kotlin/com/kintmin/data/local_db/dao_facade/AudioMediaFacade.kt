@@ -2,10 +2,12 @@ package com.kintmin.data.local_db.dao_facade
 
 import androidx.room.immediateTransaction
 import androidx.room.useWriterConnection
+import com.kintmin.data.local_db.dao.AudioEditProjectDao
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
 import com.kintmin.data.local_db.database.JellyTubeDatabase
+import com.kintmin.data.local_db.model.AudioEditProjectEntity
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_db.model.PlaylistTrackEntity
@@ -16,6 +18,7 @@ class AudioMediaFacade constructor(
     private val audioMediaDao: AudioMediaDao,
     private val playlistDao: PlaylistDao,
     private val playlistTrackDao: PlaylistTrackDao,
+    private val audioEditProjectDao: AudioEditProjectDao,
 ) {
 
     suspend fun addNewAudioMedia(
@@ -87,11 +90,13 @@ class AudioMediaFacade constructor(
 
     /**
      * 편집본을 음원에 연결한다. 재생 길이가 바뀌므로 플레이리스트 재생시간 합계까지 한 트랜잭션에서 보정한다.
+     * 다시 편집할 수 있도록 편집 상태([timelineJson])도 같은 트랜잭션에서 저장한다.
      */
     suspend fun applyEditedAudio(
         audioMediaId: Int,
         editedAudioFileNameWithExt: String,
         editedAudioDurationSeconds: Long,
+        timelineJson: String,
     ) {
         db.useWriterConnection { transactor ->
             transactor.immediateTransaction {
@@ -105,11 +110,14 @@ class AudioMediaFacade constructor(
                         editedAudioDurationSeconds = editedAudioDurationSeconds,
                     )
                 }
+                audioEditProjectDao.upsert(
+                    AudioEditProjectEntity(audioMediaId = audioMediaId, timelineJson = timelineJson)
+                )
             }
         }
     }
 
-    /** 편집본 연결을 해제해 원본으로 되돌린다. 길이도 원본 길이로 되돌아간다. */
+    /** 편집본 연결을 해제해 원본으로 되돌린다. 길이도 원본 길이로 되돌아가고, 편집 상태도 지운다. */
     suspend fun clearEditedAudio(audioMediaId: Int) {
         db.useWriterConnection { transactor ->
             transactor.immediateTransaction {
@@ -120,6 +128,7 @@ class AudioMediaFacade constructor(
                 ) {
                     audioMediaDao.clearEditedAudio(id = audioMediaId)
                 }
+                audioEditProjectDao.deleteByAudioMediaId(audioMediaId)
             }
         }
     }

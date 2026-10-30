@@ -1,12 +1,16 @@
 package com.kintmin.data.repository_impl
 
 import com.kintmin.data.audio_edit.AudioEditor
+import com.kintmin.data.local_db.dao.AudioEditProjectDao
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
+import com.kintmin.data.local_db.mapper.toAudioEditTimelineOrNull
 import com.kintmin.data.local_db.mapper.toDomain
+import com.kintmin.data.local_db.mapper.toTimelineJson
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.audio_edit.model.AudioEditPart
+import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
@@ -22,6 +26,7 @@ import kotlin.uuid.Uuid
 internal class AudioEditRepositoryImpl constructor(
     private val audioMediaFacade: AudioMediaFacade,
     private val audioMediaDao: AudioMediaDao,
+    private val audioEditProjectDao: AudioEditProjectDao,
     private val fileManager: FileManager,
     private val audioEditor: AudioEditor,
 ) : AudioEditRepository {
@@ -40,9 +45,16 @@ internal class AudioEditRepositoryImpl constructor(
         bucketCount = bucketCount,
     )
 
+    override suspend fun fetchEditTimeline(audioMediaId: Int): Result<AudioEditTimeline?> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                audioEditProjectDao.getByAudioMediaId(audioMediaId)?.timelineJson?.toAudioEditTimelineOrNull()
+            }
+        }
+
     override suspend fun applyEditedAudio(
         audioMediaId: Int,
-        parts: List<AudioEditPart>,
+        timeline: AudioEditTimeline,
     ): Result<AudioMedia> = withContext(Dispatchers.IO) {
         runCatching {
             val entity = audioMediaDao.getDataById(audioMediaId)
@@ -57,7 +69,7 @@ internal class AudioEditRepositoryImpl constructor(
 
             val editedDurationMs = audioEditor.render(
                 sourceFileFullPath = sourceFileFullPath,
-                parts = parts,
+                parts = timeline.toParts(),
                 outputFileFullPath = editedFileFullPath,
             ).getOrThrow()
 
@@ -66,6 +78,7 @@ internal class AudioEditRepositoryImpl constructor(
                     audioMediaId = audioMediaId,
                     editedAudioFileNameWithExt = editedFileNameWithExt,
                     editedAudioDurationSeconds = editedDurationMs / 1000,
+                    timelineJson = timeline.toTimelineJson(),
                 )
             }.onFailure {
                 // DB 연결에 실패한 편집본 파일은 아무도 참조하지 않으므로 바로 지운다

@@ -8,6 +8,7 @@ import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
 import com.kintmin.domain.audio_edit.usecase.ExtractAudioWaveformUseCase
+import com.kintmin.domain.audio_edit.usecase.FetchAudioEditTimelineUseCase
 import com.kintmin.domain.audio_edit.usecase.SaveEditedAudioAsNewMediaUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
@@ -32,6 +33,7 @@ class AudioEditViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val extractAudioWaveformUseCase: ExtractAudioWaveformUseCase,
+    private val fetchAudioEditTimelineUseCase: FetchAudioEditTimelineUseCase,
     private val applyAudioEditUseCase: ApplyAudioEditUseCase,
     private val saveEditedAudioAsNewMediaUseCase: SaveEditedAudioAsNewMediaUseCase,
     private val audioPreviewPlayer: AudioPreviewPlayer,
@@ -63,6 +65,9 @@ class AudioEditViewModel constructor(
     /** 파형은 원본 파일이 바뀌지 않는 한 한 번만 뽑는다. */
     private var isWaveformRequested = false
 
+    /** 저장된 편집 상태는 처음 한 번만 불러온다. 저장 후 음원 정보가 다시 흘러와도 편집 중인 상태를 덮지 않는다. */
+    private var isSavedTimelineRequested = false
+
     init {
         collectAudioMedia()
         pollPreviewPosition()
@@ -90,15 +95,23 @@ class AudioEditViewModel constructor(
                 hasEditedAudio = audioMedia.editedAudioFileFullPath != null,
                 // 싱크 가사(.lrc)만 편집으로 타임스탬프가 어긋난다
                 hasSyncedLyrics = audioMedia.lyricFileFullPath?.endsWith(".lrc") == true,
-                // 파형은 따로 채워지므로 음원 정보만 오면 바로 편집할 수 있다
-                isLoading = false,
                 // 저장 후 다시 흘러와도 편집 중인 타임라인은 유지한다. 원본 길이가 바뀔 때만 새로 시작한다.
                 timeline = if (state.timeline.originDurationMs == originDurationMs) {
                     state.timeline
                 } else {
                     AudioEditTimeline.initial(originDurationMs)
                 },
+                savedTimeline = if (state.savedTimeline.originDurationMs == originDurationMs) {
+                    state.savedTimeline
+                } else {
+                    AudioEditTimeline.initial(originDurationMs)
+                },
             )
+        }
+
+        if (!isSavedTimelineRequested) {
+            isSavedTimelineRequested = true
+            restoreSavedTimeline(originDurationMs)
         }
 
         if (!isWaveformRequested && audioMedia.audioFileFullPath.isNotBlank()) {
@@ -109,6 +122,30 @@ class AudioEditViewModel constructor(
                     .coerceIn(MIN_WAVEFORM_BUCKET_COUNT, MAX_WAVEFORM_BUCKET_COUNT)
                     .toInt(),
             )
+        }
+    }
+
+    /**
+     * 편집본을 만든 적 있으면 그때의 편집 상태로 시작해 이어서 고칠 수 있게 한다.
+     *
+     * 원본 상태가 잠깐 보였다가 바뀌지 않도록, 불러오기가 끝난 뒤에 로딩을 끝낸다.
+     * 파형은 따로 채워지므로 기다리지 않는다.
+     */
+    private fun restoreSavedTimeline(originDurationMs: Long) {
+        viewModelScope.launch {
+            val savedTimeline = fetchAudioEditTimelineUseCase(audioMediaId)
+                .getOrNull()
+                // 원본 길이가 다르면 다른 원본으로 만든 편집 상태라 조각 위치를 믿을 수 없다
+                ?.takeIf { it.originDurationMs == originDurationMs }
+
+            _data.update { state ->
+                if (savedTimeline == null) {
+                    // 불러오지 못해도 원본에서 새로 편집하면 되므로 화면은 그대로 쓴다
+                    state.copy(isLoading = false)
+                } else {
+                    state.copy(timeline = savedTimeline, savedTimeline = savedTimeline, isLoading = false)
+                }
+            }
         }
     }
 
@@ -230,7 +267,7 @@ class AudioEditViewModel constructor(
         viewModelScope.launch {
             applyAudioEditUseCase(
                 audioMediaId = audioMediaId,
-                parts = state.timeline.toParts(),
+                timeline = state.timeline,
             ).onSuccess { audioMedia ->
                 // 재생 큐는 같은 플레이리스트를 다시 재생할 때 갱신되지 않는다. 직접 교체해야 편집본이 재생된다.
                 mediaControllerManager.tryReplaceMediaItem(
