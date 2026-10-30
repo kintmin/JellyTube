@@ -165,6 +165,9 @@ fun MainNavHost(
             navigateToKaraokeSearch = { audioMediaId, query ->
                 navController.navigateToKaraokeSearchScreen(audioMediaId, query, navOptions)
             },
+            navigateToAudioEdit = { audioMediaId ->
+                navController.navigateToAudioEditScreen(audioMediaId, navOptions)
+            },
         )
         audioMediaEdit(
             navigateToBack = { navController.popBackStack() },
