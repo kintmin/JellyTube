@@ -1,5 +1,6 @@
 package com.kintmin.presentation.di
 
+import com.kintmin.presentation.ui.audio_edit.AudioEditViewModel
 import com.kintmin.presentation.ui.audio_media_detail.AudioMediaDetailViewModel
 import com.kintmin.presentation.ui.audio_media_edit.AudioMediaEditViewModel
 import com.kintmin.presentation.ui.main.MainViewModel
@@ -39,6 +40,7 @@ val presentationModule: Module = module {
     viewModelOf(::MainFloatingActionViewModel)
     viewModelOf(::PlaylistViewModel)
     viewModelOf(::MainViewModel)
+    viewModelOf(::AudioEditViewModel)
     viewModelOf(::AudioMediaDetailViewModel)
     viewModelOf(::AudioMediaEditViewModel)
     viewModelOf(::LyricsSearchViewModel)

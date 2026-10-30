@@ -9,6 +9,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
 import com.kintmin.platform.deeplink.DeepLinkConstants
+import com.kintmin.presentation.ui.audio_edit.navigation.audioEditScreen
+import com.kintmin.presentation.ui.audio_edit.navigation.navigateToAudioEditScreen
 import com.kintmin.presentation.ui.audio_media_detail.navigation.audioMediaDetailScreen
 import com.kintmin.presentation.ui.audio_media_detail.navigation.navigateToAudioMediaDetailScreen
 import com.kintmin.presentation.ui.audio_media_edit.navigation.audioMediaEdit
@@ -165,6 +167,9 @@ fun MainNavHost(
             },
         )
         audioMediaEdit(
+            navigateToBack = { navController.popBackStack() },
+        )
+        audioEditScreen(
             navigateToBack = { navController.popBackStack() },
         )
         lyricsSearchScreen(
