@@ -7,11 +7,13 @@ import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.audio_edit.model.AudioEditPart
+import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_media.model.AudioMedia
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -30,10 +32,10 @@ internal class AudioEditRepositoryImpl constructor(
         const val EDITED_AUDIO_EXT = "m4a"
     }
 
-    override suspend fun extractWaveform(
+    override fun extractWaveform(
         audioFileFullPath: String,
         bucketCount: Int,
-    ): Result<List<Int>> = audioEditor.extractWaveform(
+    ): Flow<AudioWaveform> = audioEditor.extractWaveform(
         audioFileFullPath = audioFileFullPath,
         bucketCount = bucketCount,
     )

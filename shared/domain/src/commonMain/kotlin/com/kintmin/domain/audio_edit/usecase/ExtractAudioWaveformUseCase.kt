@@ -1,14 +1,16 @@
 package com.kintmin.domain.audio_edit.usecase
 
+import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
+import kotlinx.coroutines.flow.Flow
 
 class ExtractAudioWaveformUseCase constructor(
     private val audioEditRepository: AudioEditRepository,
 ) {
-    suspend operator fun invoke(
+    operator fun invoke(
         audioFileFullPath: String,
         bucketCount: Int,
-    ): Result<List<Int>> = audioEditRepository.extractWaveform(
+    ): Flow<AudioWaveform> = audioEditRepository.extractWaveform(
         audioFileFullPath = audioFileFullPath,
         bucketCount = bucketCount,
     )

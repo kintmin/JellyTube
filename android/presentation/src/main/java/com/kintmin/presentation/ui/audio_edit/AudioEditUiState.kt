@@ -2,14 +2,15 @@ package com.kintmin.presentation.ui.audio_edit
 
 import com.kintmin.domain.audio_edit.model.AudioEditClip
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
+import com.kintmin.domain.audio_edit.model.AudioWaveform
 
 data class AudioEditUiState(
     val audioMediaId: Int,
     val audioMediaName: String,
     /** 편집은 항상 원본을 기준으로 한다. 편집본을 또 편집해 손실이 쌓이는 것을 막는다. */
     val originAudioFileFullPath: String,
-    /** 파형 진폭. 원본 전체를 고르게 나눈 값이며, 그릴 때 최대값으로 정규화한다. */
-    val waveform: List<Int>,
+    /** 파형 진폭. 긴 음원은 앞에서부터 읽힌 만큼씩 채워진다. */
+    val waveform: AudioWaveform,
     /** 남길 조각들과 결과물 끝 위치. */
     val timeline: AudioEditTimeline,
     /** 사용자가 눈금 줄에서 정한 기준선. 자르기와 미리듣기 시작 위치가 된다. */
@@ -38,16 +39,26 @@ data class AudioEditUiState(
 
     val canDelete: Boolean get() = selectedClipIndex != null
 
+    /** 파형을 읽는 중이면 진행률(0~99), 다 읽었거나 아직 시작 전이면 null. */
+    val waveformLoadingPercent: Int?
+        get() = waveform
+            .takeIf { it.peaks.isNotEmpty() && !it.isComplete }
+            ?.let { (it.loadedBucketCount * 100 / it.peaks.size).coerceIn(0, 99) }
+
     companion object {
 
         fun getMock() = AudioEditUiState(
             audioMediaId = 1,
             audioMediaName = "음원 제목",
             originAudioFileFullPath = "/audio/origin.m4a",
-            waveform = List(3_000) { index ->
-                // 미리보기용으로 들쭉날쭉한 파형을 만든다
-                (3000 + (index * 37 % 29_000))
-            },
+            waveform = AudioWaveform(
+                peaks = List(3_000) { index ->
+                    // 미리보기용으로 들쭉날쭉한 파형을 만든다
+                    (3000 + (index * 37 % 29_000))
+                },
+                // 뒤쪽은 아직 읽는 중인 상태를 보여준다
+                loadedBucketCount = 2_400,
+            ),
             timeline = AudioEditTimeline(
                 originDurationMs = 300_000,
                 clips = listOf(
@@ -71,7 +82,7 @@ data class AudioEditUiState(
             audioMediaId = audioMediaId,
             audioMediaName = "",
             originAudioFileFullPath = "",
-            waveform = emptyList(),
+            waveform = AudioWaveform.EMPTY,
             timeline = AudioEditTimeline.initial(originDurationMs = 0),
             baselineMs = 0,
             selectedClipIndex = null,

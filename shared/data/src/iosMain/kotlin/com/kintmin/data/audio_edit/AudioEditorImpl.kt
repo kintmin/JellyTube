@@ -1,6 +1,9 @@
 package com.kintmin.data.audio_edit
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
+import com.kintmin.domain.audio_edit.model.AudioWaveform
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * iOS 음원 편집 미구현 스텁.
@@ -14,10 +17,10 @@ import com.kintmin.domain.audio_edit.model.AudioEditPart
  */
 internal class AudioEditorImpl : AudioEditor {
 
-    override suspend fun extractWaveform(
+    override fun extractWaveform(
         audioFileFullPath: String,
         bucketCount: Int,
-    ): Result<List<Int>> = unsupported()
+    ): Flow<AudioWaveform> = flow { throw unsupportedException() }
 
     override suspend fun render(
         sourceFileFullPath: String,
@@ -25,7 +28,7 @@ internal class AudioEditorImpl : AudioEditor {
         outputFileFullPath: String,
     ): Result<Long> = unsupported()
 
-    private fun <T> unsupported(): Result<T> = Result.failure(
-        UnsupportedOperationException("iOS에서는 음원 편집을 지원하지 않습니다.")
-    )
+    private fun <T> unsupported(): Result<T> = Result.failure(unsupportedException())
+
+    private fun unsupportedException() = UnsupportedOperationException("iOS에서는 음원 편집을 지원하지 않습니다.")
 }

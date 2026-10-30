@@ -19,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_edit.model.AudioEditClip
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
+import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.black
 import com.kintmin.presentation.theme.bloodyRed60
@@ -44,7 +45,7 @@ import com.kintmin.presentation.theme.white
 fun TimelineWaveformView(
     modifier: Modifier,
     viewport: TimelineViewportState,
-    waveform: List<Int>,
+    waveform: AudioWaveform,
     timeline: AudioEditTimeline,
     selectedClipIndex: Int?,
     baselineMs: Long,
@@ -156,7 +157,10 @@ fun TimelineWaveformViewPreview() {
         TimelineWaveformView(
             modifier = Modifier,
             viewport = viewport,
-            waveform = List(3_000) { index -> 3000 + (index * 37 % 29_000) },
+            waveform = AudioWaveform(
+                peaks = List(3_000) { index -> 3000 + (index * 37 % 29_000) },
+                loadedBucketCount = 2_400,
+            ),
             timeline = AudioEditTimeline(
                 originDurationMs = 300_000,
                 clips = listOf(

@@ -1,12 +1,19 @@
 package com.kintmin.domain.audio_edit.repository
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
+import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_media.model.AudioMedia
+import kotlinx.coroutines.flow.Flow
 
 interface AudioEditRepository {
 
-    /** 파형 표시용 진폭 배열. 편집은 항상 원본을 기준으로 하므로 원본 경로를 넘긴다. */
-    suspend fun extractWaveform(audioFileFullPath: String, bucketCount: Int): Result<List<Int>>
+    /**
+     * 파형 표시용 진폭. 편집은 항상 원본을 기준으로 하므로 원본 경로를 넘긴다.
+     *
+     * 앞에서부터 읽는 대로 채워진 파형을 여러 번 흘려보내고, 다 읽으면 완료된 파형을 끝으로 닫힌다.
+     * 읽지 못하면 예외로 끝난다.
+     */
+    fun extractWaveform(audioFileFullPath: String, bucketCount: Int): Flow<AudioWaveform>
 
     /**
      * 소리·무음 조각을 이어붙인 편집본을 만들어 해당 음원에 연결한다. 이미 편집본이 있으면 교체한다.

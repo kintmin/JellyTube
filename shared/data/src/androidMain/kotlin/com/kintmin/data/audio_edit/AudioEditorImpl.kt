@@ -6,6 +6,7 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.SystemClock
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
@@ -16,8 +17,13 @@ import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.Transformer
 import com.kintmin.domain.audio_edit.model.AudioEditPart
+import com.kintmin.domain.audio_edit.model.AudioWaveform
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -38,25 +44,27 @@ internal class AudioEditorImpl constructor(
 
         /** 길이를 못 읽는 음원의 파형을 뽑을 때 쓰는 상한. */
         const val FALLBACK_DURATION_US = 10 * 60 * 1_000_000L
+
+        /** 읽는 중간 결과를 내보내는 최소 간격. 너무 잦으면 매번 배열 복사와 다시 그리기가 일어난다. */
+        const val PROGRESS_EMIT_INTERVAL_MS = 300L
     }
 
-    override suspend fun extractWaveform(
+    override fun extractWaveform(
         audioFileFullPath: String,
         bucketCount: Int,
-    ): Result<List<Int>> = withContext(Dispatchers.IO) {
-        runCatching {
-            require(bucketCount > 0) { "파형 버킷 수는 1 이상이어야 합니다." }
-            decodePeaks(audioFileFullPath = audioFileFullPath, bucketCount = bucketCount)
-        }
-    }
+    ): Flow<AudioWaveform> = flow {
+        require(bucketCount > 0) { "파형 버킷 수는 1 이상이어야 합니다." }
+        decodePeaks(audioFileFullPath = audioFileFullPath, bucketCount = bucketCount)
+    }.flowOn(Dispatchers.IO)
 
     /**
-     * 음원을 PCM으로 디코딩하면서 버킷별 최대 진폭만 남긴다.
+     * 음원을 PCM으로 디코딩하면서 버킷별 최대 진폭만 남긴다. 읽는 도중에도 주기적으로 내보낸다.
      *
      * 샘플을 전부 메모리에 들고 있지 않아 길이에 상관없이 메모리 사용이 일정하다.
      * 버킷 인덱스는 샘플의 표시 시각으로 계산해서, 가변 비트레이트여도 시간축이 어긋나지 않는다.
+     * 수집이 취소되면 emit에서 멈추고 finally에서 코덱을 정리한다.
      */
-    private fun decodePeaks(audioFileFullPath: String, bucketCount: Int): List<Int> {
+    private suspend fun FlowCollector<AudioWaveform>.decodePeaks(audioFileFullPath: String, bucketCount: Int) {
         val extractor = MediaExtractor()
         var codec: MediaCodec? = null
 
@@ -88,6 +96,8 @@ internal class AudioEditorImpl constructor(
             val peaks = IntArray(bucketCount)
             val bufferInfo = MediaCodec.BufferInfo()
             var isInputDone = false
+            var loadedBucketCount = 0
+            var lastEmitTimeMs = SystemClock.elapsedRealtime()
 
             while (true) {
                 if (!isInputDone) {
@@ -126,8 +136,16 @@ internal class AudioEditorImpl constructor(
                             pcmEncoding = codec.outputFormat.pcmEncoding(),
                         )
                         if (peak > peaks[bucketIndex]) peaks[bucketIndex] = peak
+                        // 디코딩은 앞에서부터 순서대로라 지금 버킷 앞까지는 다 채워졌다
+                        loadedBucketCount = maxOf(loadedBucketCount, bucketIndex)
                     }
                     codec.releaseOutputBuffer(outputIndex, false)
+
+                    val nowMs = SystemClock.elapsedRealtime()
+                    if (nowMs - lastEmitTimeMs >= PROGRESS_EMIT_INTERVAL_MS) {
+                        lastEmitTimeMs = nowMs
+                        emit(AudioWaveform(peaks = peaks.toList(), loadedBucketCount = loadedBucketCount))
+                    }
 
                     if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) break
                 } else if (outputIndex == MediaCodec.INFO_TRY_AGAIN_LATER && isInputDone) {
@@ -136,7 +154,7 @@ internal class AudioEditorImpl constructor(
                 }
             }
 
-            return peaks.toList()
+            emit(AudioWaveform(peaks = peaks.toList(), loadedBucketCount = bucketCount))
         } finally {
             runCatching { codec?.stop() }
             runCatching { codec?.release() }

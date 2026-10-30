@@ -1,6 +1,8 @@
 package com.kintmin.data.audio_edit
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
+import com.kintmin.domain.audio_edit.model.AudioWaveform
+import kotlinx.coroutines.flow.Flow
 
 /**
  * 음원 파형 추출과 구간 편집(자르기 + 이어붙이기)을 담당한다.
@@ -10,12 +12,12 @@ import com.kintmin.domain.audio_edit.model.AudioEditPart
 interface AudioEditor {
 
     /**
-     * 파형 표시용 진폭 배열을 뽑는다. 음원을 [bucketCount]개 구간으로 나눠 구간별 최대 진폭을 담는다.
+     * 파형 표시용 진폭을 뽑는다. 음원을 [bucketCount]개 구간으로 나눠 구간별 최대 진폭을 담는다.
      *
-     * 반환값의 크기는 [bucketCount]와 같고, 각 값은 0 이상이다. 상대적인 크기만 의미가 있어
-     * 화면에 그릴 때는 최대값으로 정규화해서 쓴다.
+     * 긴 음원도 바로 그리기 시작할 수 있게, 읽는 도중 앞에서부터 채워진 파형을 주기적으로 내보내고
+     * 다 읽으면 완료된 파형을 마지막으로 내보낸다. 읽지 못하면 예외로 끝난다.
      */
-    suspend fun extractWaveform(audioFileFullPath: String, bucketCount: Int): Result<List<Int>>
+    fun extractWaveform(audioFileFullPath: String, bucketCount: Int): Flow<AudioWaveform>
 
     /**
      * [parts]를 순서대로 이어붙인 편집본을 [outputFileFullPath]에 만든다.

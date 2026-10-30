@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
+import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
 import com.kintmin.domain.audio_edit.usecase.ExtractAudioWaveformUseCase
 import com.kintmin.domain.audio_edit.usecase.SaveEditedAudioAsNewMediaUseCase
@@ -18,6 +19,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -36,8 +40,11 @@ class AudioEditViewModel constructor(
 
     private companion object {
 
-        /** 파형 한 칸의 길이. 확대해도 세밀하게 보이도록 10ms 단위로 뽑고, 그릴 때 화면 폭에 맞춰 묶는다. */
-        const val WAVEFORM_BUCKET_MS = 10L
+        /**
+         * 파형 한 칸의 길이. 그릴 때 화면 폭에 맞춰 묶는다.
+         * 최대 확대(화면 폭 1초)에서도 칸이 충분하고, 1시간짜리 음원도 7만 칸 정도라 가볍다.
+         */
+        const val WAVEFORM_BUCKET_MS = 50L
         const val MIN_WAVEFORM_BUCKET_COUNT = 400L
         const val MAX_WAVEFORM_BUCKET_COUNT = 100_000L
 
@@ -83,6 +90,8 @@ class AudioEditViewModel constructor(
                 hasEditedAudio = audioMedia.editedAudioFileFullPath != null,
                 // 싱크 가사(.lrc)만 편집으로 타임스탬프가 어긋난다
                 hasSyncedLyrics = audioMedia.lyricFileFullPath?.endsWith(".lrc") == true,
+                // 파형은 따로 채워지므로 음원 정보만 오면 바로 편집할 수 있다
+                isLoading = false,
                 // 저장 후 다시 흘러와도 편집 중인 타임라인은 유지한다. 원본 길이가 바뀔 때만 새로 시작한다.
                 timeline = if (state.timeline.originDurationMs == originDurationMs) {
                     state.timeline
@@ -103,19 +112,18 @@ class AudioEditViewModel constructor(
         }
     }
 
+    /** 긴 음원은 다 읽는 데 오래 걸려, 앞에서부터 읽힌 만큼씩 파형을 채운다. */
     private fun extractWaveform(audioFileFullPath: String, bucketCount: Int) {
-        viewModelScope.launch {
-            extractAudioWaveformUseCase(
-                audioFileFullPath = audioFileFullPath,
-                bucketCount = bucketCount,
-            ).onSuccess { waveform ->
-                _data.update { it.copy(waveform = waveform, isLoading = false) }
-            }.onFailure {
-                // 파형이 없어도 시간으로 편집할 수 있으므로 화면은 계속 쓸 수 있게 둔다
-                _data.update { it.copy(isLoading = false) }
-                _eventFlow.emit(AudioEditEvent.ShowToast("파형을 그리지 못했습니다. 시간으로 편집할 수 있습니다."))
-            }
-        }
+        extractAudioWaveformUseCase(
+            audioFileFullPath = audioFileFullPath,
+            bucketCount = bucketCount,
+        ).onEach { waveform ->
+            _data.update { it.copy(waveform = waveform) }
+        }.catch {
+            // 파형이 없어도 시간으로 편집할 수 있으므로 화면은 계속 쓸 수 있게 둔다
+            _data.update { it.copy(waveform = AudioWaveform.EMPTY) }
+            _eventFlow.emit(AudioEditEvent.ShowToast("파형을 그리지 못했습니다. 시간으로 편집할 수 있습니다."))
+        }.launchIn(viewModelScope)
     }
 
     /**

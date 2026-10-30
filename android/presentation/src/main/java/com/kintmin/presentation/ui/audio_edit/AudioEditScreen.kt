@@ -160,7 +160,7 @@ fun AudioEditScreen(
                     CircularProgressIndicator()
                     Text(
                         modifier = Modifier.padding(top = 12.dp),
-                        text = "파형을 읽고 있습니다...",
+                        text = "음원 정보를 불러오고 있습니다...",
                     )
                 }
             }
@@ -214,11 +214,25 @@ fun AudioEditScreen(
                 },
             )
 
-            Text(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                text = "기준선 ${data.baselineMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss()}",
-                fontSize = 15.sp,
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = "기준선 ${data.baselineMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss()}",
+                    fontSize = 15.sp,
+                )
+                data.waveformLoadingPercent?.let { percent ->
+                    Text(
+                        text = "파형 불러오는 중 $percent%",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
 
             Row(
                 modifier = Modifier
