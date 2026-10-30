@@ -28,7 +28,7 @@ Room DB 변경은 `shared:data`의 `local_db/` 안에서 이뤄진다. 단일 �
 - [ ] android/iOS 양쪽 빌더에 migration 등록(공통이면 commonMain에서 공유)
 
 ## 완료 확인
-1. `./gradlew.bat :shared:data:compileDebugKotlin` (KSP/Room 컴파일러 통과).
-2. `:shared:data:testDebugUnitTest` — 가능하면 `MigrationTestHelper`로 N→N+1 마이그레이션 테스트.
+1. `./gradlew.bat :shared:data:compileAndroidMain` (KSP/Room 컴파일러 통과).
+2. `:shared:data:testAndroidHostTest` — 가능하면 `MigrationTestHelper`로 N→N+1 마이그레이션 테스트.
 3. 구버전 설치본에서 업그레이드 시나리오를 점검(크래시 없이 데이터 보존).
 - 모든 파일 UTF-8(BOM 없음), 한글 주석/문자열 보존.
