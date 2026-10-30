@@ -2,6 +2,8 @@ package com.kintmin.platform.di
 
 import com.kintmin.domain.step.worker.RegisterDailyResetImmediatelyWorker
 import com.kintmin.domain.step.worker.RegisterLoadBalancedDailyResetWorker
+import com.kintmin.platform.audio_preview.AudioPreviewPlayer
+import com.kintmin.platform.audio_preview.AudioPreviewPlayerImpl
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.PushNotificationManagerImpl
 import com.kintmin.platform.service_controller.MediaControllerManager
@@ -20,6 +22,7 @@ import org.koin.dsl.module
 val platformModule: Module = module {
     single<PushNotificationManager> { PushNotificationManagerImpl(androidContext()) }
     single<MediaControllerManager> { MediaControllerManagerImpl(androidContext()) }
+    single<AudioPreviewPlayer> { AudioPreviewPlayerImpl(androidContext()) }
     single<RegisterDailyResetImmediatelyWorker> {
         RegisterDailyResetImmediatelyWorkerImpl(androidContext())
     }
