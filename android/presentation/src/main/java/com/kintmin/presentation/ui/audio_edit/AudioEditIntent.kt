@@ -1,20 +1,35 @@
 package com.kintmin.presentation.ui.audio_edit
 
+import com.kintmin.domain.audio_edit.model.AudioEditTimeline
+
 sealed interface AudioEditIntent {
 
-    /** 파형에서 잘라낼 범위를 고르거나 미세조정했다. */
-    data class OnSelectionChanged(val startMs: Long, val endMs: Long) : AudioEditIntent
+    /** 눈금 줄을 누르거나 끌어 기준선을 옮겼다. */
+    data class OnBaselineChanged(val ms: Long) : AudioEditIntent
 
-    /** 선택한 범위를 잘라낸다. */
-    data object OnClickCutSelection : AudioEditIntent
+    /** 끝 표시를 끌었다. 뒤로 끌면 무음이 붙고 앞으로 당기면 소리가 잘린다. */
+    data class OnTimelineEndChanged(val ms: Long) : AudioEditIntent
 
-    /** 잘라낸 구간 하나를 되살린다. */
-    data class OnClickRestoreCut(val index: Int) : AudioEditIntent
+    /** 파형에서 조각을 눌렀다. 빈칸을 누르면 null로 선택이 풀린다. */
+    data class OnClipSelected(val index: Int?) : AudioEditIntent
 
-    /** 잘라낸 구간을 모두 되살린다. */
-    data object OnClickResetCuts : AudioEditIntent
+    /** 조각 경계를 꾹 눌러 끌었다. */
+    data class OnClipEdgeDragged(
+        val index: Int,
+        val edge: AudioEditTimeline.Edge,
+        val ms: Long,
+    ) : AudioEditIntent
 
-    /** 편집 결과를 들어본다. 재생 중이면 멈춘다. */
+    /** 조각 안쪽을 꾹 눌러 끌었다. 조각을 [positionMs]로 옮긴다. */
+    data class OnClipMoved(val index: Int, val positionMs: Long) : AudioEditIntent
+
+    /** 기준선 위치에서 조각을 나눈다. */
+    data object OnClickSplit : AudioEditIntent
+
+    /** 선택한 조각을 지워 빈칸으로 만든다. */
+    data object OnClickDeleteClip : AudioEditIntent
+
+    /** 기준선부터 편집 결과를 들어본다. 재생 중이면 멈춘다. */
     data object OnClickTogglePreview : AudioEditIntent
 
     /** 편집본을 만들어 이 음원에 적용한다. */

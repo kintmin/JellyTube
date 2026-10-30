@@ -6,7 +6,7 @@ import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_file.FileManager
-import com.kintmin.domain.audio_edit.model.AudioEditSegment
+import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_media.model.AudioMedia
@@ -40,7 +40,7 @@ internal class AudioEditRepositoryImpl constructor(
 
     override suspend fun applyEditedAudio(
         audioMediaId: Int,
-        segments: List<AudioEditSegment>,
+        parts: List<AudioEditPart>,
     ): Result<AudioMedia> = withContext(Dispatchers.IO) {
         runCatching {
             val entity = audioMediaDao.getDataById(audioMediaId)
@@ -55,7 +55,7 @@ internal class AudioEditRepositoryImpl constructor(
 
             val editedDurationMs = audioEditor.render(
                 sourceFileFullPath = sourceFileFullPath,
-                segments = segments,
+                parts = parts,
                 outputFileFullPath = editedFileFullPath,
             ).getOrThrow()
 
@@ -97,7 +97,7 @@ internal class AudioEditRepositoryImpl constructor(
 
     override suspend fun saveEditedAudioAsNewMedia(
         audioMediaId: Int,
-        segments: List<AudioEditSegment>,
+        parts: List<AudioEditPart>,
         name: String,
         playlistIdOnDownload: Int?,
         shouldInsertAtTopOnDownload: Boolean,
@@ -116,7 +116,7 @@ internal class AudioEditRepositoryImpl constructor(
 
             val durationMs = audioEditor.render(
                 sourceFileFullPath = sourceFileFullPath,
-                segments = segments,
+                parts = parts,
                 outputFileFullPath = newFileFullPath,
             ).getOrThrow()
 

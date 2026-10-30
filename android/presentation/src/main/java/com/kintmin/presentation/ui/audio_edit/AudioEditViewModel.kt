@@ -4,9 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.kintmin.domain.audio_edit.model.AudioEditSegment
+import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
-import com.kintmin.domain.audio_edit.usecase.BuildAudioEditSegmentsUseCase
 import com.kintmin.domain.audio_edit.usecase.ExtractAudioWaveformUseCase
 import com.kintmin.domain.audio_edit.usecase.SaveEditedAudioAsNewMediaUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
@@ -29,7 +28,6 @@ class AudioEditViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val extractAudioWaveformUseCase: ExtractAudioWaveformUseCase,
-    private val buildAudioEditSegmentsUseCase: BuildAudioEditSegmentsUseCase,
     private val applyAudioEditUseCase: ApplyAudioEditUseCase,
     private val saveEditedAudioAsNewMediaUseCase: SaveEditedAudioAsNewMediaUseCase,
     private val audioPreviewPlayer: AudioPreviewPlayer,
@@ -38,14 +36,13 @@ class AudioEditViewModel constructor(
 
     private companion object {
 
-        /** 파형 버킷 수. 화면 폭보다 넉넉히 잡아두고 그릴 때 폭에 맞춰 묶는다. */
-        const val WAVEFORM_BUCKET_COUNT = 400
+        /** 파형 한 칸의 길이. 확대해도 세밀하게 보이도록 10ms 단위로 뽑고, 그릴 때 화면 폭에 맞춰 묶는다. */
+        const val WAVEFORM_BUCKET_MS = 10L
+        const val MIN_WAVEFORM_BUCKET_COUNT = 400L
+        const val MAX_WAVEFORM_BUCKET_COUNT = 100_000L
 
         /** 미리듣기 커서 갱신 주기. */
         const val PREVIEW_POLLING_INTERVAL_MS = 100L
-
-        /** 초기 선택 구간 길이. 앞부분을 자르는 경우가 가장 많아 앞쪽에 둔다. */
-        const val INITIAL_SELECTION_MS = 10_000L
     }
 
     private val audioMediaId = savedStateHandle.toRoute<AudioEditScreenRoute>().audioMediaId
@@ -83,30 +80,34 @@ class AudioEditViewModel constructor(
             state.copy(
                 audioMediaName = audioMedia.name,
                 originAudioFileFullPath = audioMedia.audioFileFullPath,
-                originDurationMs = originDurationMs,
                 hasEditedAudio = audioMedia.editedAudioFileFullPath != null,
                 // 싱크 가사(.lrc)만 편집으로 타임스탬프가 어긋난다
                 hasSyncedLyrics = audioMedia.lyricFileFullPath?.endsWith(".lrc") == true,
-                selectionStartMs = state.selectionStartMs,
-                selectionEndMs = if (state.hasSelection) {
-                    state.selectionEndMs
+                // 저장 후 다시 흘러와도 편집 중인 타임라인은 유지한다. 원본 길이가 바뀔 때만 새로 시작한다.
+                timeline = if (state.timeline.originDurationMs == originDurationMs) {
+                    state.timeline
                 } else {
-                    minOf(INITIAL_SELECTION_MS, originDurationMs)
+                    AudioEditTimeline.initial(originDurationMs)
                 },
             )
         }
 
         if (!isWaveformRequested && audioMedia.audioFileFullPath.isNotBlank()) {
             isWaveformRequested = true
-            extractWaveform(audioMedia.audioFileFullPath)
+            extractWaveform(
+                audioFileFullPath = audioMedia.audioFileFullPath,
+                bucketCount = (originDurationMs / WAVEFORM_BUCKET_MS)
+                    .coerceIn(MIN_WAVEFORM_BUCKET_COUNT, MAX_WAVEFORM_BUCKET_COUNT)
+                    .toInt(),
+            )
         }
     }
 
-    private fun extractWaveform(audioFileFullPath: String) {
+    private fun extractWaveform(audioFileFullPath: String, bucketCount: Int) {
         viewModelScope.launch {
             extractAudioWaveformUseCase(
                 audioFileFullPath = audioFileFullPath,
-                bucketCount = WAVEFORM_BUCKET_COUNT,
+                bucketCount = bucketCount,
             ).onSuccess { waveform ->
                 _data.update { it.copy(waveform = waveform, isLoading = false) }
             }.onFailure {
@@ -118,8 +119,8 @@ class AudioEditViewModel constructor(
     }
 
     /**
-     * 미리듣기 커서 갱신. 플레이어는 위치를 흘려보내지 않아 주기적으로 읽는다.
-     * 재생이 끝나면 isPlaying이 false가 되어 커서도 사라진다.
+     * 미리듣기선 갱신. 플레이어는 위치를 흘려보내지 않아 주기적으로 읽는다.
+     * 재생이 끝나면 isPlaying이 false가 되어 미리듣기선도 사라진다. 기준선은 건드리지 않는다.
      */
     private fun pollPreviewPosition() {
         viewModelScope.launch {
@@ -138,58 +139,49 @@ class AudioEditViewModel constructor(
 
     fun sendIntent(intent: AudioEditIntent) {
         when (intent) {
-            is AudioEditIntent.OnSelectionChanged -> updateSelection(intent.startMs, intent.endMs)
-            AudioEditIntent.OnClickCutSelection -> cutSelection()
-            is AudioEditIntent.OnClickRestoreCut -> restoreCut(intent.index)
-            AudioEditIntent.OnClickResetCuts -> updateCutRanges(emptyList())
+            is AudioEditIntent.OnBaselineChanged -> updateBaseline(intent.ms)
+            is AudioEditIntent.OnTimelineEndChanged -> updateTimeline { it.withEnd(intent.ms) }
+            is AudioEditIntent.OnClipSelected -> _data.update { it.copy(selectedClipIndex = intent.index) }
+            is AudioEditIntent.OnClipEdgeDragged -> updateTimeline {
+                it.resizeEdge(index = intent.index, edge = intent.edge, toMs = intent.ms)
+            }
+            is AudioEditIntent.OnClipMoved -> updateTimeline {
+                it.move(index = intent.index, toPositionMs = intent.positionMs)
+            }
+            AudioEditIntent.OnClickSplit -> splitAtBaseline()
+            AudioEditIntent.OnClickDeleteClip -> deleteSelectedClip()
             AudioEditIntent.OnClickTogglePreview -> togglePreview()
             AudioEditIntent.OnConfirmOverwrite -> overwrite()
             is AudioEditIntent.OnConfirmSaveAsNew -> saveAsNewMedia(intent.name)
         }
     }
 
-    private fun updateSelection(startMs: Long, endMs: Long) {
-        val durationMs = _data.value.originDurationMs
+    private fun updateBaseline(ms: Long) {
         _data.update { state ->
-            state.copy(
-                selectionStartMs = startMs.coerceIn(0, durationMs),
-                selectionEndMs = endMs.coerceIn(0, durationMs),
-            )
+            state.copy(baselineMs = ms.coerceIn(0L, state.timeline.maxEndMs))
         }
     }
 
-    private fun cutSelection() {
+    private fun splitAtBaseline() {
         val state = _data.value
-        if (!state.hasSelection) return
+        if (!state.canSplit) return
 
-        updateCutRanges(
-            state.cutRanges + AudioEditSegment(
-                startMs = state.selectionStartMs,
-                endMs = state.selectionEndMs,
-            )
-        )
+        updateTimeline { it.split(state.baselineMs) }
+        // 나누면 조각 index가 밀려 이전 선택이 다른 조각을 가리킬 수 있다
+        _data.update { it.copy(selectedClipIndex = null) }
     }
 
-    private fun restoreCut(index: Int) {
-        val cutRanges = _data.value.cutRanges
-        if (index !in cutRanges.indices) return
+    private fun deleteSelectedClip() {
+        val index = _data.value.selectedClipIndex ?: return
 
-        updateCutRanges(cutRanges.filterIndexed { cutIndex, _ -> cutIndex != index })
+        updateTimeline { it.delete(index) }
+        _data.update { it.copy(selectedClipIndex = null) }
     }
 
-    /** 잘라낸 구간이 바뀌면 남길 구간을 다시 계산한다. 미리듣기는 옛 구간을 재생하므로 멈춘다. */
-    private fun updateCutRanges(cutRanges: List<AudioEditSegment>) {
+    /** 타임라인이 바뀌면 미리듣기는 옛 조각을 재생하고 있으므로 멈춘다. */
+    private fun updateTimeline(transform: (AudioEditTimeline) -> AudioEditTimeline) {
         audioPreviewPlayer.pause()
-
-        _data.update { state ->
-            state.copy(
-                cutRanges = cutRanges,
-                keepSegments = buildAudioEditSegmentsUseCase(
-                    originDurationMs = state.originDurationMs,
-                    cutRanges = cutRanges,
-                ),
-            )
-        }
+        _data.update { state -> state.copy(timeline = transform(state.timeline)) }
     }
 
     private fun togglePreview() {
@@ -199,15 +191,14 @@ class AudioEditViewModel constructor(
         }
 
         val state = _data.value
-        // 아직 자른 게 없으면 원본 전체를 들려준다
-        val segments = state.keepSegments.ifEmpty {
-            listOf(AudioEditSegment(startMs = 0, endMs = state.originDurationMs))
-        }
-        if (segments.none { it.durationMs > 0 }) return
+        val parts = state.timeline.toParts()
+        if (parts.isEmpty()) return
 
         audioPreviewPlayer.play(
             audioFileFullPath = state.originAudioFileFullPath,
-            segments = segments,
+            parts = parts,
+            // 기준선이 결과물 끝 뒤에 있으면 들을 것이 없으니 처음부터 들려준다
+            startAtMs = state.baselineMs.takeIf { it < state.timeline.endMs } ?: 0L,
         )
     }
 
@@ -221,7 +212,7 @@ class AudioEditViewModel constructor(
         viewModelScope.launch {
             applyAudioEditUseCase(
                 audioMediaId = audioMediaId,
-                segments = state.keepSegments,
+                parts = state.timeline.toParts(),
             ).onSuccess { audioMedia ->
                 // 재생 큐는 같은 플레이리스트를 다시 재생할 때 갱신되지 않는다. 직접 교체해야 편집본이 재생된다.
                 mediaControllerManager.tryReplaceMediaItem(
@@ -250,7 +241,7 @@ class AudioEditViewModel constructor(
         viewModelScope.launch {
             saveEditedAudioAsNewMediaUseCase(
                 audioMediaId = audioMediaId,
-                segments = state.keepSegments,
+                parts = state.timeline.toParts(),
                 name = name,
             ).onSuccess {
                 // 새 음원은 재생 큐에 없으므로 교체할 것이 없다(다운로드 경로와 동일하다)

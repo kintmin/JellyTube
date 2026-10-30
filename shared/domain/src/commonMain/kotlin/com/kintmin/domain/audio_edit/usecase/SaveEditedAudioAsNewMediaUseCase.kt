@@ -2,7 +2,7 @@ package com.kintmin.domain.audio_edit.usecase
 
 import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
-import com.kintmin.domain.audio_edit.model.AudioEditSegment
+import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.log.AppLog
@@ -23,10 +23,10 @@ class SaveEditedAudioAsNewMediaUseCase constructor(
 ) {
     suspend operator fun invoke(
         audioMediaId: Int,
-        segments: List<AudioEditSegment>,
+        parts: List<AudioEditPart>,
         name: String,
     ): Result<AudioMedia> {
-        if (segments.isEmpty()) {
+        if (parts.none { it is AudioEditPart.Audio }) {
             return Result.failure(EmptyAudioEditSegment())
         }
         if (name.isBlank()) {
@@ -35,7 +35,7 @@ class SaveEditedAudioAsNewMediaUseCase constructor(
 
         val result = audioEditRepository.saveEditedAudioAsNewMedia(
             audioMediaId = audioMediaId,
-            segments = segments,
+            parts = parts,
             name = name.trim(),
             playlistIdOnDownload = fetchPlaylistIdOnDownloadFlowUseCase().first(),
             shouldInsertAtTopOnDownload = fetchShouldInsertAtTopOnDownloadFlowUseCase().first(),
@@ -44,7 +44,7 @@ class SaveEditedAudioAsNewMediaUseCase constructor(
         appLog.sendDebugLog(
             DebugLog(
                 tag = "SaveEditedAudioAsNewMediaUseCase",
-                message = "편집본을 새 음원으로 저장: 원본 id $audioMediaId, 구간 ${segments.size}개, " +
+                message = "편집본을 새 음원으로 저장: 원본 id $audioMediaId, 조각 ${parts.size}개, " +
                     "결과 ${result.exceptionOrNull() ?: "성공"}",
             )
         )

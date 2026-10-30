@@ -1,6 +1,6 @@
 package com.kintmin.data.audio_edit
 
-import com.kintmin.domain.audio_edit.model.AudioEditSegment
+import com.kintmin.domain.audio_edit.model.AudioEditPart
 
 /**
  * 음원 파형 추출과 구간 편집(자르기 + 이어붙이기)을 담당한다.
@@ -18,14 +18,14 @@ interface AudioEditor {
     suspend fun extractWaveform(audioFileFullPath: String, bucketCount: Int): Result<List<Int>>
 
     /**
-     * [segments]를 순서대로 이어붙인 편집본을 [outputFileFullPath]에 만든다.
+     * [parts]를 순서대로 이어붙인 편집본을 [outputFileFullPath]에 만든다.
      *
-     * @return 만들어진 파일의 **실제 측정 길이(ms)**. 구간 길이의 합은 코덱 프레임 경계 때문에
+     * @return 만들어진 파일의 **실제 측정 길이(ms)**. 조각 길이의 합은 코덱 프레임 경계 때문에
      *   실제 파일과 수십 ms 차이가 날 수 있는데, 플레이어 탐색바가 이 값을 쓰므로 실측값이어야 한다.
      */
     suspend fun render(
         sourceFileFullPath: String,
-        segments: List<AudioEditSegment>,
+        parts: List<AudioEditPart>,
         outputFileFullPath: String,
     ): Result<Long>
 }

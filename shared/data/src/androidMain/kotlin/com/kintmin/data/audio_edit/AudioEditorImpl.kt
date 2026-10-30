@@ -6,6 +6,7 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.transformer.Composition
@@ -14,7 +15,7 @@ import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.Transformer
-import com.kintmin.domain.audio_edit.model.AudioEditSegment
+import com.kintmin.domain.audio_edit.model.AudioEditPart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -188,13 +189,13 @@ internal class AudioEditorImpl constructor(
 
     override suspend fun render(
         sourceFileFullPath: String,
-        segments: List<AudioEditSegment>,
+        parts: List<AudioEditPart>,
         outputFileFullPath: String,
     ): Result<Long> = runCatching {
-        require(segments.isNotEmpty()) { "편집할 구간이 없습니다." }
-        require(segments.all { it.durationMs > 0 }) { "길이가 0인 구간은 편집할 수 없습니다." }
+        require(parts.any { it is AudioEditPart.Audio }) { "소리가 남은 조각이 없습니다." }
+        require(parts.all { it.durationMs > 0 }) { "길이가 0인 조각은 편집할 수 없습니다." }
 
-        val composition = buildComposition(sourceFileFullPath, segments)
+        val composition = buildComposition(sourceFileFullPath, parts)
 
         // Transformer는 Looper가 있는 스레드에서 만들고 시작해야 한다
         withContext(Dispatchers.Main) {
@@ -231,36 +232,46 @@ internal class AudioEditorImpl constructor(
     }
 
     /**
-     * 같은 파일의 구간들을 시간순으로 이어붙인 Composition.
+     * 같은 파일의 구간과 무음을 시간순으로 이어붙인 Composition.
      *
-     * 구간마다 클리핑만 다른 EditedMediaItem을 만들어 하나의 시퀀스에 넣으면
+     * 소리 조각은 클리핑만 다른 EditedMediaItem으로, 무음은 시퀀스의 gap으로 넣으면
      * Transformer가 순서대로 연결해준다.
      */
     private fun buildComposition(
         sourceFileFullPath: String,
-        segments: List<AudioEditSegment>,
+        parts: List<AudioEditPart>,
     ): Composition {
         val sourceUri = Uri.fromFile(File(sourceFileFullPath))
 
-        val editedMediaItemList = segments.map { segment ->
-            val mediaItem = MediaItem.Builder()
-                .setUri(sourceUri)
-                .setClippingConfiguration(
-                    MediaItem.ClippingConfiguration.Builder()
-                        .setStartPositionMs(segment.startMs)
-                        .setEndPositionMs(segment.endMs)
-                        .build()
-                )
-                .build()
+        // 시퀀스가 오디오 트랙만 낸다고 밝혀 둔다. 그래야 gap이 무음 오디오로 채워지고,
+        // 맨 앞이 무음이어도 출력에 오디오 트랙이 생긴다.
+        val sequenceBuilder = EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_AUDIO))
 
-            EditedMediaItem.Builder(mediaItem)
-                .setRemoveVideo(true)
-                .build()
+        parts.forEach { part ->
+            when (part) {
+                is AudioEditPart.Audio -> {
+                    val mediaItem = MediaItem.Builder()
+                        .setUri(sourceUri)
+                        .setClippingConfiguration(
+                            MediaItem.ClippingConfiguration.Builder()
+                                .setStartPositionMs(part.startMs)
+                                .setEndPositionMs(part.endMs)
+                                .build()
+                        )
+                        .build()
+
+                    sequenceBuilder.addItem(
+                        EditedMediaItem.Builder(mediaItem)
+                            .setRemoveVideo(true)
+                            .build()
+                    )
+                }
+
+                is AudioEditPart.Silence -> sequenceBuilder.addGap(part.durationMs * 1_000)
+            }
         }
 
-        return Composition.Builder(
-            EditedMediaItemSequence.Builder(editedMediaItemList).build()
-        ).build()
+        return Composition.Builder(sequenceBuilder.build()).build()
     }
 
     /** 만들어진 파일의 실제 길이(ms). */

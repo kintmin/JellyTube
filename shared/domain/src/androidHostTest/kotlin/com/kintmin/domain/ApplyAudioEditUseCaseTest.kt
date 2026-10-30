@@ -1,6 +1,6 @@
 package com.kintmin.domain
 
-import com.kintmin.domain.audio_edit.model.AudioEditSegment
+import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
 import com.kintmin.domain.audio_edit.usecase.EmptyAudioEditSegment
@@ -63,10 +63,10 @@ class ApplyAudioEditUseCaseTest {
     }
 
     @Test
-    fun `구간이 비어있으면 리포지토리를 호출하지 않고 실패한다`() = runTest {
+    fun `소리 조각이 없으면 리포지토리를 호출하지 않고 실패한다`() = runTest {
         val result = applyAudioEditUseCase(
             audioMediaId = AUDIO_MEDIA_ID,
-            segments = emptyList(),
+            parts = emptyList(),
         )
 
         assert(result.exceptionOrNull() is EmptyAudioEditSegment)
@@ -74,18 +74,29 @@ class ApplyAudioEditUseCaseTest {
     }
 
     @Test
-    fun `구간이 있으면 편집본을 적용하고 갱신된 음원을 반환한다`() = runTest {
-        val segments = listOf(
-            AudioEditSegment(startMs = 0, endMs = 60_000),
-            AudioEditSegment(startMs = 120_000, endMs = 180_000),
+    fun `무음 조각만 있으면 리포지토리를 호출하지 않고 실패한다`() = runTest {
+        val result = applyAudioEditUseCase(
+            audioMediaId = AUDIO_MEDIA_ID,
+            parts = listOf(AudioEditPart.Silence(durationMs = 10_000)),
+        )
+
+        assert(result.exceptionOrNull() is EmptyAudioEditSegment)
+        coVerify(inverse = true) { audioEditRepository.applyEditedAudio(any(), any()) }
+    }
+
+    @Test
+    fun `소리 조각이 있으면 편집본을 적용하고 갱신된 음원을 반환한다`() = runTest {
+        val parts = listOf(
+            AudioEditPart.Audio(startMs = 0, endMs = 60_000),
+            AudioEditPart.Audio(startMs = 120_000, endMs = 180_000),
         )
         coEvery {
-            audioEditRepository.applyEditedAudio(AUDIO_MEDIA_ID, segments)
+            audioEditRepository.applyEditedAudio(AUDIO_MEDIA_ID, parts)
         } returns Result.success(editedAudioMedia)
 
         val result = applyAudioEditUseCase(
             audioMediaId = AUDIO_MEDIA_ID,
-            segments = segments,
+            parts = parts,
         )
 
         assert(result.isSuccess)
@@ -93,19 +104,19 @@ class ApplyAudioEditUseCaseTest {
         assert(result.getOrThrow().playbackFileFullPath == "/audio/edited.m4a")
         assert(result.getOrThrow().playbackDuration == 120.seconds)
         assert(result.getOrThrow().audioDuration == 300.seconds)
-        coVerify(exactly = 1) { audioEditRepository.applyEditedAudio(AUDIO_MEDIA_ID, segments) }
+        coVerify(exactly = 1) { audioEditRepository.applyEditedAudio(AUDIO_MEDIA_ID, parts) }
     }
 
     @Test
     fun `적용 실패를 그대로 전달한다`() = runTest {
-        val segments = listOf(AudioEditSegment(startMs = 0, endMs = 1_000))
+        val parts = listOf(AudioEditPart.Audio(startMs = 0, endMs = 1_000))
         coEvery {
-            audioEditRepository.applyEditedAudio(AUDIO_MEDIA_ID, segments)
+            audioEditRepository.applyEditedAudio(AUDIO_MEDIA_ID, parts)
         } returns Result.failure(Exception("렌더 실패"))
 
         val result = applyAudioEditUseCase(
             audioMediaId = AUDIO_MEDIA_ID,
-            segments = segments,
+            parts = parts,
         )
 
         assert(result.isFailure)

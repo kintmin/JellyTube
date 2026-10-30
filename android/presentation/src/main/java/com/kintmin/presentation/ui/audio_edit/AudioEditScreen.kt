@@ -12,12 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCut
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Button
@@ -32,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,15 +44,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
+import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss_dot_sss
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_edit.dialog.AudioEditExitDialog
 import com.kintmin.presentation.ui.audio_edit.dialog.AudioEditSaveDialog
-import com.kintmin.presentation.ui.audio_edit.waveform.AudioWaveformView
-import org.koin.androidx.compose.koinViewModel
+import com.kintmin.presentation.ui.audio_edit.waveform.TimelineRulerView
+import com.kintmin.presentation.ui.audio_edit.waveform.TimelineWaveformView
+import com.kintmin.presentation.ui.audio_edit.waveform.rememberTimelineViewportState
 import kotlin.time.Duration.Companion.milliseconds
-
-/** 미세조정 단위. 핸들 드래그로는 잡기 어려운 짧은 간격을 버튼으로 맞춘다. */
-private const val FINE_TUNE_STEP_MS = 500L
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AudioEditScreen(
@@ -112,6 +111,9 @@ fun AudioEditScreen(
         onConfirmExit = navigateToBack,
     )
 
+    val durationSummary = "원본 ${data.originDurationMs.milliseconds.to_hh_colon_mm_colon_ss()} " +
+        "→ 편집 결과 ${data.resultDurationMs.milliseconds.to_hh_colon_mm_colon_ss()}"
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -165,11 +167,15 @@ fun AudioEditScreen(
             return@Scaffold
         }
 
+        val viewport = rememberTimelineViewportState()
+        SideEffect {
+            viewport.updateContent(maxOf(data.originDurationMs, data.resultDurationMs))
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState()),
+                .padding(innerPadding),
         ) {
             Text(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -179,67 +185,65 @@ fun AudioEditScreen(
             )
             Text(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                text = "원본 ${data.originDurationMs.milliseconds.to_hh_colon_mm_colon_ss()} " +
-                    "→ 편집 결과 ${data.resultDurationMs.milliseconds.to_hh_colon_mm_colon_ss()}",
+                text = durationSummary,
                 fontSize = 15.sp,
             )
 
-            AudioWaveformView(
-                modifier = Modifier.padding(vertical = 16.dp),
+            TimelineRulerView(
+                modifier = Modifier.padding(top = 16.dp),
+                viewport = viewport,
+                baselineMs = data.baselineMs,
+                endMs = data.resultDurationMs,
+                onBaselineChanged = { ms -> sendIntent(AudioEditIntent.OnBaselineChanged(ms)) },
+                onEndChanged = { ms -> sendIntent(AudioEditIntent.OnTimelineEndChanged(ms)) },
+            )
+            TimelineWaveformView(
+                modifier = Modifier,
+                viewport = viewport,
                 waveform = data.waveform,
-                durationMs = data.originDurationMs,
-                selectionStartMs = data.selectionStartMs,
-                selectionEndMs = data.selectionEndMs,
-                cutRanges = data.cutRanges,
+                timeline = data.timeline,
+                selectedClipIndex = data.selectedClipIndex,
+                baselineMs = data.baselineMs,
                 previewPositionMs = data.previewPositionMs,
-                onSelectionChanged = { startMs, endMs ->
-                    sendIntent(AudioEditIntent.OnSelectionChanged(startMs, endMs))
+                onClipSelected = { index -> sendIntent(AudioEditIntent.OnClipSelected(index)) },
+                onClipEdgeDragged = { index, edge, ms ->
+                    sendIntent(AudioEditIntent.OnClipEdgeDragged(index = index, edge = edge, ms = ms))
+                },
+                onClipMoved = { index, positionMs ->
+                    sendIntent(AudioEditIntent.OnClipMoved(index = index, positionMs = positionMs))
                 },
             )
 
-            SelectionRangeRow(
-                label = "자를 구간 시작",
-                valueMs = data.selectionStartMs,
-                onChange = { newStartMs ->
-                    sendIntent(
-                        AudioEditIntent.OnSelectionChanged(
-                            startMs = newStartMs.coerceAtMost(data.selectionEndMs),
-                            endMs = data.selectionEndMs,
-                        )
-                    )
-                },
-            )
-            SelectionRangeRow(
-                label = "자를 구간 끝",
-                valueMs = data.selectionEndMs,
-                onChange = { newEndMs ->
-                    sendIntent(
-                        AudioEditIntent.OnSelectionChanged(
-                            startMs = data.selectionStartMs,
-                            endMs = newEndMs.coerceAtLeast(data.selectionStartMs),
-                        )
-                    )
-                },
+            Text(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                text = "기준선 ${data.baselineMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss()}",
+                fontSize = 15.sp,
             )
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(
                     modifier = Modifier.weight(1f),
-                    enabled = data.hasSelection,
-                    onClick = { sendIntent(AudioEditIntent.OnClickCutSelection) },
+                    enabled = data.canSplit,
+                    onClick = { sendIntent(AudioEditIntent.OnClickSplit) },
                 ) {
                     Icon(imageVector = Icons.Rounded.ContentCut, contentDescription = null)
-                    Text(
-                        modifier = Modifier.padding(start = 8.dp),
-                        text = "선택 구간 자르기",
-                    )
+                    Text(modifier = Modifier.padding(start = 4.dp), text = "자르기")
                 }
                 OutlinedButton(
+                    modifier = Modifier.weight(1f),
+                    enabled = data.canDelete,
+                    onClick = { sendIntent(AudioEditIntent.OnClickDeleteClip) },
+                ) {
+                    Icon(imageVector = Icons.Rounded.Delete, contentDescription = null)
+                    Text(modifier = Modifier.padding(start = 4.dp), text = "삭제")
+                }
+                OutlinedButton(
+                    modifier = Modifier.weight(1f),
                     onClick = { sendIntent(AudioEditIntent.OnClickTogglePreview) },
                 ) {
                     Icon(
@@ -248,96 +252,20 @@ fun AudioEditScreen(
                         } else {
                             Icons.Rounded.PlayArrow
                         },
-                        contentDescription = "미리듣기",
+                        contentDescription = null,
                     )
-                    Text(
-                        modifier = Modifier.padding(start = 4.dp),
-                        text = "미리듣기",
-                    )
+                    Text(modifier = Modifier.padding(start = 4.dp), text = "미리듣기")
                 }
             }
 
-            if (data.cutRanges.isNotEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        modifier = Modifier.weight(1f),
-                        text = "잘라낸 구간",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    OutlinedButton(onClick = { sendIntent(AudioEditIntent.OnClickResetCuts) }) {
-                        Text(text = "전체 되살리기")
-                    }
-                }
-
-                data.cutRanges.forEachIndexed { index, cutRange ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 16.dp, end = 4.dp, top = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            modifier = Modifier.weight(1f),
-                            text = "${cutRange.startMs.milliseconds.to_hh_colon_mm_colon_ss()} ~ " +
-                                cutRange.endMs.milliseconds.to_hh_colon_mm_colon_ss(),
-                            fontSize = 16.sp,
-                        )
-                        IconButton(
-                            onClick = { sendIntent(AudioEditIntent.OnClickRestoreCut(index)) },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Close,
-                                contentDescription = "이 구간 되살리기",
-                            )
-                        }
-                    }
-                }
-            }
-
-            if (data.isDirty && data.keepSegments.isEmpty()) {
+            if (!data.timeline.hasAudio) {
                 Text(
                     modifier = Modifier.padding(16.dp),
-                    text = "남는 구간이 없어 저장할 수 없습니다. 잘라낸 구간을 일부 되살려주세요.",
+                    text = "남은 소리가 없어 저장할 수 없습니다. 조각 경계를 꾹 눌러 끌어 되살려주세요.",
                     fontSize = 15.sp,
                     color = MaterialTheme.colorScheme.error,
                 )
             }
-        }
-    }
-}
-
-/** 선택 구간의 한쪽 경계를 수치로 미세조정하는 줄. */
-@Composable
-private fun SelectionRangeRow(
-    label: String,
-    valueMs: Long,
-    onChange: (Long) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            modifier = Modifier.weight(1f),
-            text = "$label  ${valueMs.milliseconds.to_hh_colon_mm_colon_ss()}",
-            fontSize = 16.sp,
-        )
-        OutlinedButton(onClick = { onChange(valueMs - FINE_TUNE_STEP_MS) }) {
-            Text(text = "-0.5초")
-        }
-        OutlinedButton(
-            modifier = Modifier.padding(start = 8.dp),
-            onClick = { onChange(valueMs + FINE_TUNE_STEP_MS) },
-        ) {
-            Text(text = "+0.5초")
         }
     }
 }

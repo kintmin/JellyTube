@@ -1,6 +1,6 @@
 package com.kintmin.data.audio_edit
 
-import com.kintmin.domain.audio_edit.model.AudioEditSegment
+import com.kintmin.domain.audio_edit.model.AudioEditPart
 
 /**
  * iOS 음원 편집 미구현 스텁.
@@ -21,7 +21,7 @@ internal class AudioEditorImpl : AudioEditor {
 
     override suspend fun render(
         sourceFileFullPath: String,
-        segments: List<AudioEditSegment>,
+        parts: List<AudioEditPart>,
         outputFileFullPath: String,
     ): Result<Long> = unsupported()
 
