@@ -37,6 +37,7 @@ import com.kintmin.presentation.theme.white
  * - 결과물 끝 뒤는 어둡게 덮고 끝 표시(빨간 선)를 긋는다
  * - 기준선(흰색)과 미리듣기선(파란색)은 별개다
  *
+ * 높이는 화면 높이에 따라 달라지므로 호출하는 쪽에서 정한다.
  * 제스처 구분은 [timelineWaveformGestures]에 있다.
  */
 @Composable
@@ -63,7 +64,6 @@ fun TimelineWaveformView(
     Canvas(
         modifier = modifier
             .fillMaxWidth()
-            .height(160.dp)
             .onSizeChanged { viewport.updateWidth(it.width.toFloat()) }
             .pointerInput(viewport) {
                 timelineWaveformGestures(
@@ -162,7 +162,7 @@ fun TimelineWaveformViewPreview() {
     JellyTubeTheme {
         val viewport = rememberTimelineViewportState().apply { updateContent(330_000) }
         TimelineWaveformView(
-            modifier = Modifier,
+            modifier = Modifier.height(160.dp),
             viewport = viewport,
             waveform = AudioWaveform(
                 peaks = List(3_000) { index -> 3000 + (index * 37 % 29_000) },

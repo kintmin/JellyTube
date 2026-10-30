@@ -2,15 +2,18 @@ package com.kintmin.presentation.ui.audio_edit.controls
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -57,9 +60,10 @@ internal fun AudioEditUiState.gestureHint(grab: TimelineGrab?): String {
 }
 
 /**
- * 파형 아래 조작 영역.
+ * 파형 아래 조작 영역(세로 화면처럼 높이가 넉넉할 때).
  *
  * 기준선 위치, 자르기·삭제·미리듣기 버튼, 조작 힌트를 위아래로 쌓는다.
+ * 높이가 낮을 때는 [AudioEditCompactControlsView]를 쓴다.
  */
 @Composable
 fun AudioEditControlsView(
@@ -88,6 +92,8 @@ fun AudioEditControlsView(
             }
         }
 
+        // 버튼 셋을 같은 폭으로 나누면 기본 좌우 여백(24dp)으로는 좁은 폰에서 글자가 줄바꿈된다
+        val buttonPadding = PaddingValues(horizontal = 8.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -96,29 +102,41 @@ fun AudioEditControlsView(
         ) {
             Button(
                 modifier = Modifier.weight(1f),
+                contentPadding = buttonPadding,
                 enabled = data.canSplit,
                 onClick = { sendIntent(AudioEditIntent.OnClickSplit) },
             ) {
-                Icon(imageVector = Icons.Rounded.ContentCut, contentDescription = null)
-                Text(modifier = Modifier.padding(start = 4.dp), text = "자르기")
+                Icon(
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                    imageVector = Icons.Rounded.ContentCut,
+                    contentDescription = null,
+                )
+                Text(modifier = Modifier.padding(start = 4.dp), text = "자르기", maxLines = 1)
             }
             OutlinedButton(
                 modifier = Modifier.weight(1f),
+                contentPadding = buttonPadding,
                 enabled = data.canDelete,
                 onClick = { sendIntent(AudioEditIntent.OnClickDeleteClip) },
             ) {
-                Icon(imageVector = Icons.Rounded.Delete, contentDescription = null)
-                Text(modifier = Modifier.padding(start = 4.dp), text = "삭제")
+                Icon(
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                    imageVector = Icons.Rounded.Delete,
+                    contentDescription = null,
+                )
+                Text(modifier = Modifier.padding(start = 4.dp), text = "삭제", maxLines = 1)
             }
             OutlinedButton(
                 modifier = Modifier.weight(1f),
+                contentPadding = buttonPadding,
                 onClick = { sendIntent(AudioEditIntent.OnClickTogglePreview) },
             ) {
                 Icon(
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
                     imageVector = if (data.isPreviewPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                     contentDescription = null,
                 )
-                Text(modifier = Modifier.padding(start = 4.dp), text = "미리듣기")
+                Text(modifier = Modifier.padding(start = 4.dp), text = "미리듣기", maxLines = 1)
             }
         }
 
