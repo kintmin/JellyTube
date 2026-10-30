@@ -4,7 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -19,6 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
@@ -62,9 +70,15 @@ fun AudioEditSaveDialog(
     JellyTubeDialog(
         showDialog = isShow,
         onDismiss = onDismiss,
+        // 다이얼로그가 화면 전체를 쓰는 방식이라 키보드를 비켜 주지 않는다. 새 음원 이름을 입력할 때
+        // 키보드 위로 올라오도록 키보드 높이만큼 비운다.
+        modifier = Modifier.imePadding(),
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 24.dp),
+            modifier = Modifier
+                // 키보드가 올라와 남은 높이보다 내용이 길면 스크롤해서 입력칸과 버튼을 볼 수 있게 한다
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 12.dp, horizontal = 24.dp),
         ) {
             Text(
                 modifier = Modifier.padding(vertical = 12.dp),
@@ -76,19 +90,21 @@ fun AudioEditSaveDialog(
                 style = MaterialTheme.typography.bodyMedium,
             )
 
-            SaveModeRow(
-                isSelected = saveMode == SaveMode.Overwrite,
-                title = "이 음원 덮어쓰기",
-                description = "플레이리스트·가사·노래방 번호가 그대로 유지되고 언제든 되돌릴 수 있습니다." +
-                    if (hasEditedAudio) " 기존 편집본은 교체됩니다." else "",
-                onClick = { saveMode = SaveMode.Overwrite },
-            )
-            SaveModeRow(
-                isSelected = saveMode == SaveMode.NewMedia,
-                title = "새 음원으로 저장",
-                description = "원본과 별개인 음원이 하나 더 생깁니다. 썸네일과 노래방 번호는 물려받고 가사는 가져오지 않습니다.",
-                onClick = { saveMode = SaveMode.NewMedia },
-            )
+            Column(modifier = Modifier.selectableGroup()) {
+                SaveModeRow(
+                    isSelected = saveMode == SaveMode.Overwrite,
+                    title = "이 음원 덮어쓰기",
+                    description = "플레이리스트·가사·노래방 번호가 그대로 유지되고 언제든 되돌릴 수 있습니다." +
+                        if (hasEditedAudio) " 기존 편집본은 교체됩니다." else "",
+                    onClick = { saveMode = SaveMode.Overwrite },
+                )
+                SaveModeRow(
+                    isSelected = saveMode == SaveMode.NewMedia,
+                    title = "새 음원으로 저장",
+                    description = "원본과 별개인 음원이 하나 더 생깁니다. 썸네일과 노래방 번호는 물려받고 가사는 가져오지 않습니다.",
+                    onClick = { saveMode = SaveMode.NewMedia },
+                )
+            }
 
             if (saveMode == SaveMode.NewMedia) {
                 OutlinedTextField(
@@ -141,6 +157,7 @@ fun AudioEditSaveDialog(
     }
 }
 
+/** 라디오 버튼뿐 아니라 제목·설명 글자까지 줄 전체를 눌러 고를 수 있다. */
 @Composable
 private fun SaveModeRow(
     isSelected: Boolean,
@@ -151,11 +168,22 @@ private fun SaveModeRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 12.dp),
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .selectable(
+                selected = isSelected,
+                onClick = onClick,
+                role = Role.RadioButton,
+            )
+            .padding(vertical = 4.dp),
+        // 설명이 여러 줄이라 위쪽 맞춤이면 버튼이 제목 줄에 붙어 위로 치우쳐 보인다
+        verticalAlignment = Alignment.CenterVertically,
     ) {
+        // 클릭은 줄 전체가 받으므로 버튼 자체는 표시만 한다
         RadioButton(
             selected = isSelected,
-            onClick = onClick,
+            onClick = null,
+            modifier = Modifier.padding(12.dp),
         )
         Column(modifier = Modifier.padding(start = 4.dp)) {
             Text(
