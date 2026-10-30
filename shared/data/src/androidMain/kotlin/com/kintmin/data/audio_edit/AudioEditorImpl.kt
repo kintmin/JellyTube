@@ -6,6 +6,8 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -47,7 +49,13 @@ internal class AudioEditorImpl constructor(
 
         /** 읽는 중간 결과를 내보내는 최소 간격. 너무 잦으면 매번 배열 복사와 다시 그리기가 일어난다. */
         const val PROGRESS_EMIT_INTERVAL_MS = 300L
+
+        /** 입력이 끝난 뒤 출력을 기다리는 최대 횟수. [CODEC_TIMEOUT_US]씩이라 약 1초다. */
+        const val MAX_EMPTY_POLL_COUNT_AFTER_INPUT_DONE = 100
     }
+
+    override suspend fun measureDurationMs(audioFileFullPath: String): Result<Long> =
+        withContext(Dispatchers.IO) { runCatching { readDurationMs(audioFileFullPath) } }
 
     override fun extractWaveform(
         audioFileFullPath: String,
@@ -96,6 +104,7 @@ internal class AudioEditorImpl constructor(
             val peaks = IntArray(bucketCount)
             val bufferInfo = MediaCodec.BufferInfo()
             var isInputDone = false
+            var emptyPollCountAfterInputDone = 0
             var loadedBucketCount = 0
             var lastEmitTimeMs = SystemClock.elapsedRealtime()
 
@@ -123,6 +132,7 @@ internal class AudioEditorImpl constructor(
 
                 val outputIndex = codec.dequeueOutputBuffer(bufferInfo, CODEC_TIMEOUT_US)
                 if (outputIndex >= 0) {
+                    emptyPollCountAfterInputDone = 0
                     if (bufferInfo.size > 0) {
                         val outputBuffer = codec.getOutputBuffer(outputIndex)!!
                         val bucketIndex = (bufferInfo.presentationTimeUs * bucketCount / durationUs)
@@ -149,8 +159,9 @@ internal class AudioEditorImpl constructor(
 
                     if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) break
                 } else if (outputIndex == MediaCodec.INFO_TRY_AGAIN_LATER && isInputDone) {
-                    // 입력이 끝났는데도 출력이 없으면 더 기다릴 이유가 없다
-                    break
+                    // 입력이 끝나도 디코더에 남은 출력이 늦게 나올 수 있어 끝 표시를 기다린다.
+                    // 끝 표시를 주지 않는 디코더에서 멈추지 않도록 한동안 출력이 없으면 끝낸다.
+                    if (++emptyPollCountAfterInputDone >= MAX_EMPTY_POLL_COUNT_AFTER_INPUT_DONE) break
                 }
             }
 
@@ -236,14 +247,19 @@ internal class AudioEditorImpl constructor(
                     })
                     .build()
 
+                // 취소는 아무 스레드에서나 올 수 있는데 Transformer는 만든 스레드에서만 다룰 수 있다.
+                // 멈춘 뒤에 지워야 남은 쓰기가 출력 파일을 다시 만들지 않는다.
                 continuation.invokeOnCancellation {
-                    runCatching { transformer.cancel() }
+                    Handler(Looper.getMainLooper()).post {
+                        runCatching { transformer.cancel() }
+                        runCatching { File(outputFileFullPath).delete() }
+                    }
                 }
                 transformer.start(composition, outputFileFullPath)
             }
         }
 
-        measureDurationMs(outputFileFullPath)
+        readDurationMs(outputFileFullPath)
     }.onFailure {
         // 실패한 출력 파일을 남겨두면 고아 파일이 된다
         runCatching { File(outputFileFullPath).delete() }
@@ -292,14 +308,13 @@ internal class AudioEditorImpl constructor(
         return Composition.Builder(sequenceBuilder.build()).build()
     }
 
-    /** 만들어진 파일의 실제 길이(ms). */
-    private fun measureDurationMs(fileFullPath: String): Long {
+    private fun readDurationMs(fileFullPath: String): Long {
         val retriever = MediaMetadataRetriever()
         return try {
             retriever.setDataSource(fileFullPath)
             retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
                 ?.toLongOrNull()
-                ?: throw Exception("편집한 음원의 길이를 확인할 수 없습니다.")
+                ?: throw Exception("음원 길이를 확인할 수 없습니다.")
         } finally {
             runCatching { retriever.release() }
         }

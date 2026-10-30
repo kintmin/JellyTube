@@ -12,6 +12,9 @@ interface AudioEditor {
      * 긴 음원도 바로 그리기 시작할 수 있게, 읽는 도중 앞에서부터 채워진 파형을 주기적으로 내보내고
      * 다 읽으면 완료된 파형을 마지막으로 내보낸다. 읽지 못하면 예외로 끝난다.
      */
+    /** 파일의 실제 길이(ms). DB에는 초 단위로만 남아 있어 편집에는 이 값을 쓴다. */
+    suspend fun measureDurationMs(audioFileFullPath: String): Result<Long>
+
     fun extractWaveform(audioFileFullPath: String, bucketCount: Int): Flow<AudioWaveform>
 
     /**

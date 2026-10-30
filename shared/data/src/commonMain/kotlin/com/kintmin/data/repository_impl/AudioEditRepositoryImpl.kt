@@ -44,14 +44,25 @@ internal class AudioEditRepositoryImpl constructor(
 
     override fun observeSavingAudioMediaIds(): Flow<Set<Int>> = savingAudioMediaIds.asStateFlow()
 
+    override fun reserveSaving(audioMediaId: Int): Boolean {
+        val before = savingAudioMediaIds.getAndUpdate { it + audioMediaId }
+        return audioMediaId !in before
+    }
+
+    override fun releaseSaving(audioMediaId: Int) {
+        savingAudioMediaIds.update { it - audioMediaId }
+    }
+
+    override suspend fun measureAudioDurationMs(audioFileFullPath: String): Result<Long> =
+        audioEditor.measureDurationMs(audioFileFullPath)
+
     /**
-     * [audioMediaId]를 저장 중으로 표시한 채 [block]을 실행한다. 성공·실패·취소 모두 끝나면 표시를 지운다.
-     * 같은 음원을 이미 저장하고 있으면 실행하지 않고 실패를 돌려준다.
+     * [audioMediaId]를 저장 중으로 표시한 채 [block]을 실행하고, 끝나면 표시를 지운다.
+     * 중복 저장은 [reserveSaving]에서 막는다. 예약 없이 실행되는 경우(프로세스가 죽은 뒤 작업이 다시 도는 등)도
+     * 여기서 표시한다.
      */
     private suspend fun <T> withSavingMark(audioMediaId: Int, block: suspend () -> Result<T>): Result<T> {
-        val before = savingAudioMediaIds.getAndUpdate { it + audioMediaId }
-        if (audioMediaId in before) return Result.failure(AudioEditAlreadySaving())
-
+        savingAudioMediaIds.update { it + audioMediaId }
         return try {
             block()
         } finally {

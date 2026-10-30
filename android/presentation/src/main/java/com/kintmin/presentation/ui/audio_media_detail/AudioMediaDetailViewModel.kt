@@ -92,6 +92,8 @@ class AudioMediaDetailViewModel constructor(
                     mediaId = audioMedia.id,
                     mediaItem = audioMedia.toMediaControlData(),
                 )
+            }.onFailure { throwable ->
+                _eventFlow.emit(AudioMediaDetailEvent.ShowToast(throwable.message ?: "원본으로 되돌리지 못했습니다."))
             }
         }
     }

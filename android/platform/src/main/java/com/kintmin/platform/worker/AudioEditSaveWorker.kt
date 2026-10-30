@@ -11,6 +11,7 @@ import androidx.work.workDataOf
 import com.kintmin.domain.audio_edit.model.AudioEditClip
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
+import com.kintmin.domain.audio_edit.usecase.ReleaseAudioEditSaveUseCase
 import com.kintmin.domain.audio_edit.usecase.SaveEditedAudioAsNewMediaUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
@@ -32,6 +33,7 @@ class AudioEditSaveWorker(
 
     private val applyAudioEditUseCase: ApplyAudioEditUseCase by inject()
     private val saveEditedAudioAsNewMediaUseCase: SaveEditedAudioAsNewMediaUseCase by inject()
+    private val releaseAudioEditSaveUseCase: ReleaseAudioEditSaveUseCase by inject()
     private val mediaControllerManager: MediaControllerManager by inject()
     private val pushNotificationManager: PushNotificationManager by inject()
     private val appLog: AppLog by inject()
@@ -50,16 +52,21 @@ class AudioEditSaveWorker(
     }
 
     override suspend fun doWork(): Result {
+        val audioMediaId = inputData.getInt(INPUT_DATA_AUDIO_MEDIA_ID, -1)
+
+        // 저장을 시작하기 전에 끝나면 화면이 걸어 둔 저장 중 예약을 직접 푼다.
+        // 저장을 시작하면 끝날 때 저장하는 쪽이 푼다.
         val foregroundResult = runCatching { setForegroundAsync(getForegroundInfo()) }
         if (foregroundResult.isFailure) {
             val errorMessage = "포그라운드 서비스 시작 실패: ${foregroundResult.exceptionOrNull()?.message ?: "알 수 없는 오류"}"
+            releaseAudioEditSaveUseCase(audioMediaId)
             notifyFailure(errorMessage)
             return Result.failure()
         }
 
-        val audioMediaId = inputData.getInt(INPUT_DATA_AUDIO_MEDIA_ID, -1)
         val timeline = inputData.readTimeline()
         if (audioMediaId == -1 || timeline == null) {
+            releaseAudioEditSaveUseCase(audioMediaId)
             notifyFailure("저장할 편집 정보를 읽지 못했습니다.")
             return Result.failure()
         }

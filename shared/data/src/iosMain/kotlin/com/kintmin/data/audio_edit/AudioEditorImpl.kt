@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.flow
  */
 internal class AudioEditorImpl : AudioEditor {
 
+    override suspend fun measureDurationMs(audioFileFullPath: String): Result<Long> = unsupported()
+
     override fun extractWaveform(
         audioFileFullPath: String,
         bucketCount: Int,

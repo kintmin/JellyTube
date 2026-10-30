@@ -8,7 +8,10 @@ import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_edit.usecase.ExtractAudioWaveformUseCase
 import com.kintmin.domain.audio_edit.usecase.FetchAudioEditTimelineUseCase
+import com.kintmin.domain.audio_edit.usecase.MeasureAudioDurationUseCase
 import com.kintmin.domain.audio_edit.usecase.ObserveAudioEditSavingUseCase
+import com.kintmin.domain.audio_edit.usecase.ReleaseAudioEditSaveUseCase
+import com.kintmin.domain.audio_edit.usecase.ReserveAudioEditSaveUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.platform.audio_preview.AudioPreviewPlayer
@@ -32,7 +35,10 @@ class AudioEditViewModel constructor(
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val extractAudioWaveformUseCase: ExtractAudioWaveformUseCase,
     private val fetchAudioEditTimelineUseCase: FetchAudioEditTimelineUseCase,
+    private val measureAudioDurationUseCase: MeasureAudioDurationUseCase,
     observeAudioEditSavingUseCase: ObserveAudioEditSavingUseCase,
+    private val reserveAudioEditSaveUseCase: ReserveAudioEditSaveUseCase,
+    private val releaseAudioEditSaveUseCase: ReleaseAudioEditSaveUseCase,
     private val executeAudioEditSave: ExecuteAudioEditSave,
     private val audioPreviewPlayer: AudioPreviewPlayer,
 ) : ViewModel() {
@@ -59,11 +65,8 @@ class AudioEditViewModel constructor(
     private val _data = MutableStateFlow(AudioEditUiState.getEmpty(audioMediaId))
     val data = _data.asStateFlow()
 
-    /** 파형은 원본 파일이 바뀌지 않는 한 한 번만 뽑는다. */
-    private var isWaveformRequested = false
-
-    /** 저장된 편집 상태는 처음 한 번만 불러온다. 저장 후 음원 정보가 다시 흘러와도 편집 중인 상태를 덮지 않는다. */
-    private var isSavedTimelineRequested = false
+    /** 원본 길이·편집 상태·파형은 처음 한 번만 불러온다. 저장 후 음원 정보가 다시 흘러와도 편집 중인 상태를 덮지 않는다. */
+    private var isSourceRequested = false
 
     init {
         collectAudioMedia()
@@ -88,8 +91,6 @@ class AudioEditViewModel constructor(
     }
 
     private fun applyAudioMedia(audioMedia: AudioMedia) {
-        val originDurationMs = audioMedia.audioDuration?.inWholeMilliseconds ?: 0L
-
         _data.update { state ->
             state.copy(
                 audioMediaName = audioMedia.name,
@@ -97,56 +98,48 @@ class AudioEditViewModel constructor(
                 hasEditedAudio = audioMedia.editedAudioFileFullPath != null,
                 // 싱크 가사(.lrc)만 편집으로 타임스탬프가 어긋난다
                 hasSyncedLyrics = audioMedia.lyricFileFullPath?.endsWith(".lrc") == true,
-                // 저장 후 다시 흘러와도 편집 중인 타임라인은 유지한다. 원본 길이가 바뀔 때만 새로 시작한다.
-                timeline = if (state.timeline.originDurationMs == originDurationMs) {
-                    state.timeline
-                } else {
-                    AudioEditTimeline.initial(originDurationMs)
-                },
-                savedTimeline = if (state.savedTimeline.originDurationMs == originDurationMs) {
-                    state.savedTimeline
-                } else {
-                    AudioEditTimeline.initial(originDurationMs)
-                },
             )
         }
 
-        if (!isSavedTimelineRequested) {
-            isSavedTimelineRequested = true
-            restoreSavedTimeline(originDurationMs)
-        }
-
-        if (!isWaveformRequested && audioMedia.audioFileFullPath.isNotBlank()) {
-            isWaveformRequested = true
-            extractWaveform(
-                audioFileFullPath = audioMedia.audioFileFullPath,
-                bucketCount = (originDurationMs / WAVEFORM_BUCKET_MS)
-                    .coerceIn(MIN_WAVEFORM_BUCKET_COUNT, MAX_WAVEFORM_BUCKET_COUNT)
-                    .toInt(),
-            )
+        if (!isSourceRequested) {
+            isSourceRequested = true
+            loadSource(audioMedia)
         }
     }
 
     /**
-     * 편집본을 만든 적 있으면 그때의 편집 상태로 시작해 이어서 고칠 수 있게 한다.
+     * 실제 길이로 타임라인을 만들고, 편집본을 만든 적 있으면 그때의 편집 상태로 시작한다.
      *
-     * 원본 상태가 잠깐 보였다가 바뀌지 않도록, 불러오기가 끝난 뒤에 로딩을 끝낸다.
+     * 원본 상태가 잠깐 보였다가 바뀌지 않도록 다 불러온 뒤에 로딩을 끝낸다.
      * 파형은 따로 채워지므로 기다리지 않는다.
      */
-    private fun restoreSavedTimeline(originDurationMs: Long) {
+    private fun loadSource(audioMedia: AudioMedia) {
         viewModelScope.launch {
+            // DB 길이는 초 단위라 그대로 쓰면 끝 1초 미만을 편집할 수 없고, 길이가 없는 음원은 편집할 수 없다
+            val originDurationMs = measureAudioDurationUseCase(audioMedia.audioFileFullPath).getOrNull()
+                ?: audioMedia.audioDuration?.inWholeMilliseconds
+                ?: 0L
+            val initialTimeline = AudioEditTimeline.initial(originDurationMs)
             val savedTimeline = fetchAudioEditTimelineUseCase(audioMediaId)
                 .getOrNull()
                 // 원본 길이가 다르면 다른 원본으로 만든 편집 상태라 조각 위치를 믿을 수 없다
                 ?.takeIf { it.originDurationMs == originDurationMs }
 
             _data.update { state ->
-                if (savedTimeline == null) {
-                    // 불러오지 못해도 원본에서 새로 편집하면 되므로 화면은 그대로 쓴다
-                    state.copy(isLoading = false)
-                } else {
-                    state.copy(timeline = savedTimeline, savedTimeline = savedTimeline, isLoading = false)
-                }
+                state.copy(
+                    timeline = savedTimeline ?: initialTimeline,
+                    savedTimeline = savedTimeline ?: initialTimeline,
+                    isLoading = false,
+                )
+            }
+
+            if (audioMedia.audioFileFullPath.isNotBlank()) {
+                extractWaveform(
+                    audioFileFullPath = audioMedia.audioFileFullPath,
+                    bucketCount = (originDurationMs / WAVEFORM_BUCKET_MS)
+                        .coerceIn(MIN_WAVEFORM_BUCKET_COUNT, MAX_WAVEFORM_BUCKET_COUNT)
+                        .toInt(),
+                )
             }
         }
     }
@@ -274,6 +267,12 @@ class AudioEditViewModel constructor(
         val state = _data.value
         if (!state.canSave) return
 
+        // 작업이 시작되기 전에도 중복 저장과 되돌리기를 막도록 맡기기 전에 저장 중으로 예약한다
+        reserveAudioEditSaveUseCase(audioMediaId).onFailure { throwable ->
+            viewModelScope.launch { _eventFlow.emit(AudioEditEvent.ShowToast(throwable.message.toString())) }
+            return
+        }
+
         audioPreviewPlayer.pause()
         enqueue(state)
             .onSuccess {
@@ -283,6 +282,7 @@ class AudioEditViewModel constructor(
                 }
             }
             .onFailure { throwable ->
+                releaseAudioEditSaveUseCase(audioMediaId)
                 viewModelScope.launch {
                     _eventFlow.emit(AudioEditEvent.ShowToast(throwable.message ?: "저장을 시작하지 못했습니다."))
                 }

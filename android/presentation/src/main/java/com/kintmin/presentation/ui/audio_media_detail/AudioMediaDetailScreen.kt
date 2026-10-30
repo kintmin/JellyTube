@@ -1,5 +1,6 @@
 package com.kintmin.presentation.ui.audio_media_detail
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -70,11 +71,14 @@ fun AudioMediaDetailScreen(
     val mainViewModel = koinViewModel<AudioMediaDetailViewModel>()
 
     val data by mainViewModel.data.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         mainViewModel.eventFlow.collect { event ->
             when (event) {
                 AudioMediaDetailEvent.OnNavigateToBack -> navigateToBack()
+                is AudioMediaDetailEvent.ShowToast ->
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
             }
         }
     }
