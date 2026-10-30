@@ -85,6 +85,7 @@ val dataCommonModule: Module = module {
     factoryOf(::ExtractAudioWaveformUseCase)
     factoryOf(::ApplyAudioEditUseCase)
     factoryOf(::RevertAudioEditUseCase)
+    factoryOf(::SaveEditedAudioAsNewMediaUseCase)
 
     factoryOf(::CleanupAnomalousDataUseCase)
     factoryOf(::DeleteAudioMediaListUseCase)

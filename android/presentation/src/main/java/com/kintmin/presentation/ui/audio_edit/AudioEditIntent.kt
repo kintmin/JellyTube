@@ -19,4 +19,7 @@ sealed interface AudioEditIntent {
 
     /** 편집본을 만들어 이 음원에 적용한다. */
     data object OnConfirmOverwrite : AudioEditIntent
+
+    /** 편집본을 원본과 별개인 새 음원으로 저장한다. */
+    data class OnConfirmSaveAsNew(val name: String) : AudioEditIntent
 }

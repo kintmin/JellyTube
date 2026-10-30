@@ -4,8 +4,10 @@ import com.kintmin.data.audio_edit.AudioEditor
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
+import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.audio_edit.model.AudioEditSegment
+import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_media.model.AudioMedia
 import kotlinx.coroutines.Dispatchers
@@ -92,6 +94,77 @@ internal class AudioEditRepositoryImpl constructor(
                 audioMediaDao.getDataById(audioMediaId).toDomain(fileManager).getOrThrow()
             }
         }
+
+    override suspend fun saveEditedAudioAsNewMedia(
+        audioMediaId: Int,
+        segments: List<AudioEditSegment>,
+        name: String,
+        playlistIdOnDownload: Int?,
+        shouldInsertAtTopOnDownload: Boolean,
+    ): Result<AudioMedia> = withContext(Dispatchers.IO) {
+        runCatching {
+            val originEntity = audioMediaDao.getDataById(audioMediaId)
+            val sourceFileFullPath = fileManager
+                .getAudioFileFullPath(fileNameWithExt = originEntity.audioFileNameWithExt)
+                .getOrThrow()
+
+            val newFileName = Uuid.random().toString()
+            val newFileNameWithExt = "$newFileName.$EDITED_AUDIO_EXT"
+            val newFileFullPath = fileManager
+                .getAudioFileFullPath(fileNameWithExt = newFileNameWithExt)
+                .getOrThrow()
+
+            val durationMs = audioEditor.render(
+                sourceFileFullPath = sourceFileFullPath,
+                segments = segments,
+                outputFileFullPath = newFileFullPath,
+            ).getOrThrow()
+
+            // 썸네일은 파일을 복사해서 물려준다. 파일명을 공유하면 한쪽을 지울 때 다른 쪽 썸네일이 사라진다.
+            val newImageFileNameWithExt = originEntity.imageFileNameWithExt?.let { originImage ->
+                fileManager.copyImageFile(
+                    sourceFileNameWithExt = originImage,
+                    targetFileName = newFileName,
+                ).getOrNull()?.let { ext -> "$newFileName.$ext" }
+            }
+
+            val entity = AudioMediaEntity(
+                source = EditedAudioSource.build(
+                    uniqueId = newFileName,
+                    originSource = originEntity.source,
+                ),
+                name = name,
+                artist = originEntity.artist,
+                description = originEntity.description,
+                rawAudioDurationSeconds = durationMs / 1000,
+                audioFileNameWithExt = newFileNameWithExt,
+                imageFileNameWithExt = newImageFileNameWithExt,
+                // 가사는 길이가 달라져 맞지 않으므로 가져오지 않는다
+                lyricFileNameWithExt = null,
+                tjKaraokeNumber = originEntity.tjKaraokeNumber,
+            )
+
+            val added = runCatching {
+                audioMediaFacade.addNewAudioMedia(
+                    newAudioMedia = entity,
+                    requestedPlaylistId = playlistIdOnDownload,
+                    shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
+                )
+            }.onFailure {
+                // 등록되지 않은 파일은 아무도 참조하지 않으므로 바로 지운다
+                fileManager.deleteFileAtFullPath(newFileFullPath)
+                newImageFileNameWithExt?.let { deleteImageFileSafely(it) }
+            }.getOrThrow()
+
+            entity.copy(id = added.audioMediaId).toDomain(fileManager).getOrThrow()
+        }
+    }
+
+    private suspend fun deleteImageFileSafely(fileNameWithExt: String) {
+        fileManager.getImageFileFullPath(fileNameWithExt).onSuccess { fileFullPath ->
+            fileManager.deleteFileAtFullPath(fileFullPath)
+        }
+    }
 
     private suspend fun deleteAudioFileSafely(fileNameWithExt: String) {
         fileManager.getAudioFileFullPath(fileNameWithExt).onSuccess { fileFullPath ->

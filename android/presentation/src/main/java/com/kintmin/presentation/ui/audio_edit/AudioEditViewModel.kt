@@ -8,6 +8,7 @@ import com.kintmin.domain.audio_edit.model.AudioEditSegment
 import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
 import com.kintmin.domain.audio_edit.usecase.BuildAudioEditSegmentsUseCase
 import com.kintmin.domain.audio_edit.usecase.ExtractAudioWaveformUseCase
+import com.kintmin.domain.audio_edit.usecase.SaveEditedAudioAsNewMediaUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.platform.audio_preview.AudioPreviewPlayer
@@ -30,6 +31,7 @@ class AudioEditViewModel constructor(
     private val extractAudioWaveformUseCase: ExtractAudioWaveformUseCase,
     private val buildAudioEditSegmentsUseCase: BuildAudioEditSegmentsUseCase,
     private val applyAudioEditUseCase: ApplyAudioEditUseCase,
+    private val saveEditedAudioAsNewMediaUseCase: SaveEditedAudioAsNewMediaUseCase,
     private val audioPreviewPlayer: AudioPreviewPlayer,
     private val mediaControllerManager: MediaControllerManager,
 ) : ViewModel() {
@@ -142,6 +144,7 @@ class AudioEditViewModel constructor(
             AudioEditIntent.OnClickResetCuts -> updateCutRanges(emptyList())
             AudioEditIntent.OnClickTogglePreview -> togglePreview()
             AudioEditIntent.OnConfirmOverwrite -> overwrite()
+            is AudioEditIntent.OnConfirmSaveAsNew -> saveAsNewMedia(intent.name)
         }
     }
 
@@ -232,6 +235,32 @@ class AudioEditViewModel constructor(
                 _data.update { it.copy(isSaving = false) }
                 _eventFlow.emit(
                     AudioEditEvent.ShowToast(throwable.message ?: "음원 편집에 실패했습니다.")
+                )
+            }
+        }
+    }
+
+    private fun saveAsNewMedia(name: String) {
+        val state = _data.value
+        if (!state.canSave) return
+
+        audioPreviewPlayer.pause()
+        _data.update { it.copy(isSaving = true) }
+
+        viewModelScope.launch {
+            saveEditedAudioAsNewMediaUseCase(
+                audioMediaId = audioMediaId,
+                segments = state.keepSegments,
+                name = name,
+            ).onSuccess {
+                // 새 음원은 재생 큐에 없으므로 교체할 것이 없다(다운로드 경로와 동일하다)
+                _data.update { it.copy(isSaving = false) }
+                _eventFlow.emit(AudioEditEvent.ShowToast("편집한 음원을 새로 저장했습니다."))
+                _eventFlow.emit(AudioEditEvent.NavigateToBack)
+            }.onFailure { throwable ->
+                _data.update { it.copy(isSaving = false) }
+                _eventFlow.emit(
+                    AudioEditEvent.ShowToast(throwable.message ?: "음원 저장에 실패했습니다.")
                 )
             }
         }

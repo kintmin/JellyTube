@@ -99,10 +99,12 @@ fun AudioEditScreen(
     AudioEditSaveDialog(
         isShow = isShowSaveDialog,
         resultPlayTime = data.resultDurationMs.milliseconds.to_hh_colon_mm_colon_ss(),
+        defaultNewMediaName = "${data.audioMediaName} (편집본)",
         hasEditedAudio = data.hasEditedAudio,
         hasSyncedLyrics = data.hasSyncedLyrics,
         onDismiss = { isShowSaveDialog = false },
         onConfirmOverwrite = { sendIntent(AudioEditIntent.OnConfirmOverwrite) },
+        onConfirmSaveAsNew = { name -> sendIntent(AudioEditIntent.OnConfirmSaveAsNew(name)) },
     )
     AudioEditExitDialog(
         isShow = isShowExitDialog,

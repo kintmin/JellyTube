@@ -19,4 +19,18 @@ interface AudioEditRepository {
 
     /** 편집본 연결을 해제해 원본으로 되돌리고 편집본 파일을 지운다. */
     suspend fun revertEditedAudio(audioMediaId: Int): Result<AudioMedia>
+
+    /**
+     * 구간을 이어붙인 결과를 **별 음원으로** 저장한다. 원본 음원은 그대로 남는다.
+     *
+     * 썸네일은 복사하고 노래방 번호는 물려받되 가사는 가져오지 않는다. 길이가 달라져
+     * 시간이 맞춰진 가사는 어차피 맞지 않는다.
+     */
+    suspend fun saveEditedAudioAsNewMedia(
+        audioMediaId: Int,
+        segments: List<AudioEditSegment>,
+        name: String,
+        playlistIdOnDownload: Int?,
+        shouldInsertAtTopOnDownload: Boolean,
+    ): Result<AudioMedia>
 }
