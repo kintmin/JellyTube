@@ -36,6 +36,7 @@ import com.kintmin.presentation.theme.deepSea40
 import com.kintmin.presentation.theme.seaBlue10
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.number
 
 @Composable
 fun StepCalendarView(
@@ -104,7 +105,7 @@ fun StepCalendarView(
             }
 
             Text(
-                text = "${selectedDate.year}년 ${selectedDate.monthNumber}월",
+                text = "${selectedDate.year}년 ${selectedDate.month.number}월",
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
@@ -176,7 +177,7 @@ fun StepCalendarView(
                     ) {
                         if (date != null) {
                             Text(
-                                text = date.dayOfMonth.toString(),
+                                text = date.day.toString(),
                                 color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else dayColor,
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,

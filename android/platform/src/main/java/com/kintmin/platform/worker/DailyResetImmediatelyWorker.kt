@@ -7,7 +7,7 @@ import com.kintmin.domain.extension.parseBasicIsoDate
 import com.kintmin.domain.extension.startOfDayMillis
 import com.kintmin.domain.extension.toBasicIsoString
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus

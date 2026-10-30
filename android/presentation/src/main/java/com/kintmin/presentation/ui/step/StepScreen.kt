@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.number
 import org.koin.androidx.compose.koinViewModel
 import com.kintmin.domain.step.model.YearMonth
 import com.kintmin.presentation.theme.JellyTubeTheme
@@ -67,7 +68,7 @@ fun StepScreen(
         peakEndHour, peakEndMin % 60,
     )
     val d = uiState.selectedDate
-    val dateText = "${d.year}년 ${d.monthNumber}월 ${d.dayOfMonth}일"
+    val dateText = "${d.year}년 ${d.month.number}월 ${d.day}일"
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -118,7 +119,7 @@ fun StepScreen(
                     sendIntent(StepIntent.OnSelectDate(date))
                 },
                 onChangeMonth = { yearMonth ->
-                    val currentDay = uiState.selectedDate.dayOfMonth
+                    val currentDay = uiState.selectedDate.day
                     val safeDay = currentDay.coerceAtMost(yearMonth.lengthOfMonth)
                     sendIntent(StepIntent.OnSelectDate(yearMonth.atDay(safeDay)))
                 },

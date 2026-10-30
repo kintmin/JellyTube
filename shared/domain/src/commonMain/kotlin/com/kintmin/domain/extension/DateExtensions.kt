@@ -1,10 +1,11 @@
 package com.kintmin.domain.extension
 
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.number
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
@@ -20,7 +21,7 @@ fun LocalDate.startOfDayMillis(timeZone: TimeZone = TimeZone.currentSystemDefaul
 
 /** BASIC_ISO_DATE(yyyyMMdd) 포맷으로 직렬화한다. */
 fun LocalDate.toBasicIsoString(): String {
-    return "$year${monthNumber.toString().padStart(2, '0')}${dayOfMonth.toString().padStart(2, '0')}"
+    return "$year${month.number.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}"
 }
 
 /** BASIC_ISO_DATE(yyyyMMdd) 문자열을 LocalDate로 파싱한다. */
@@ -28,7 +29,7 @@ fun String.parseBasicIsoDate(): LocalDate {
     require(length == 8) { "Expected yyyyMMdd format, got: $this" }
     return LocalDate(
         year = substring(0, 4).toInt(),
-        monthNumber = substring(4, 6).toInt(),
-        dayOfMonth = substring(6, 8).toInt(),
+        month = substring(4, 6).toInt(),
+        day = substring(6, 8).toInt(),
     )
 }

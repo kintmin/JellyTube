@@ -3,7 +3,7 @@ package com.kintmin.data.local_db.model
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 @Entity(
     tableName = "PLAYLIST_TRACK",

@@ -19,8 +19,8 @@ You are the Build & Test Verifier for the **JellyTube** KMP project. You are a s
 3. Run the narrowest meaningful task first, widen only if needed.
 
 ### Gradle (Android / shared / desktop)
-- Compile one module: `./gradlew.bat :shared:domain:compileDebugKotlin` (KMP) / `:android:presentation:compileDebugKotlin` / `:desktop:compileKotlin`.
-- Unit tests: `./gradlew.bat :shared:data:testDebugUnitTest` (KMP) or `:android:presentation:testDebugUnitTest`. Domain tests live in `androidUnitTest`.
+- Compile one module: `./gradlew.bat :shared:domain:compileAndroidMain` (KMP) / `:android:presentation:compileDebugKotlin` / `:desktop:compileKotlin`.
+- Unit tests: `./gradlew.bat :shared:data:testAndroidHostTest` (KMP) or `:android:presentation:testDebugUnitTest`. Domain tests live in `androidHostTest`.
 - Assemble app only when app-level wiring changed: `./gradlew.bat :android:app:assembleDebug`.
 - Prefer `--offline` if deps already resolved; drop it on resolution errors.
 - Do NOT run a full clean build unless narrower tasks pass and the task explicitly needs it.

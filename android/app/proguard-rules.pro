@@ -31,10 +31,14 @@
 -keep class androidx.compose.** { *; }
 
 # Application을 상속받은 Public 클래스는 난독화 제외
--keep public class * extends android.app.Application
+-keep public class * extends android.app.Application {
+    <init>();
+}
 
 # Activity를 상속받은 Public 클래스는 난독화 제외
--keep public class * extends android.app.Activity
+-keep public class * extends android.app.Activity {
+    <init>();
+}
 
 # JDK 호환
 -dontwarn java.lang.invoke.StringConcatFactory

@@ -2,16 +2,43 @@ import com.kintmin.buildSrc.AppConfiguration
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.skie)
 }
 
 kotlin {
-    androidTarget()
+    android {
+        namespace = "com.kintmin.data"
+        compileSdk = AppConfiguration.COMPILE_SDK
+        minSdk = AppConfiguration.MIN_SDK
+
+        // AGP KMP 플러그인에서 테스트는 opt-in 이다.
+        withHostTestBuilder { }.configure { }
+        withDeviceTestBuilder {
+            sourceSetTreeName = "test"
+        }.configure {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+
+        optimization {
+            consumerKeepRules.apply {
+                publish = true
+                file("consumer-rules.pro")
+            }
+        }
+
+        packaging {
+            resources {
+                excludes += setOf(
+                    "META-INF/LICENSE*",
+                    "META-INF/NOTICE*"
+                )
+            }
+        }
+    }
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64(),
     ).forEach { iosTarget ->
@@ -48,7 +75,7 @@ kotlin {
             implementation(libs.ktor.client.darwin)
         }
 
-        val androidUnitTest by getting {
+        getByName("androidHostTest") {
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.kotlinx.coroutines.test)
@@ -56,7 +83,7 @@ kotlin {
             }
         }
 
-        val androidInstrumentedTest by getting {
+        getByName("androidDeviceTest") {
             dependencies {
                 implementation(libs.androidx.test.core)
                 implementation(libs.androidx.test.runner)
@@ -67,46 +94,12 @@ kotlin {
     }
 }
 
-android {
-    namespace = "com.kintmin.data"
-    compileSdk = AppConfiguration.COMPILE_SDK
-
-    defaultConfig {
-        minSdk = AppConfiguration.MIN_SDK
-        consumerProguardFiles("consumer-rules.pro")
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    buildTypes {
-        release {
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-        debug {
-            ndk { abiFilters += listOf("x86_64") }
-        }
-    }
-
-    packaging {
-        resources {
-            excludes += setOf(
-                "META-INF/LICENSE*",
-                "META-INF/NOTICE*"
-            )
-        }
-    }
-}
-
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
     add("kspAndroid", libs.room.compiler)
-    add("kspIosX64", libs.room.compiler)
     add("kspIosArm64", libs.room.compiler)
     add("kspIosSimulatorArm64", libs.room.compiler)
 }

@@ -1,6 +1,6 @@
 package com.kintmin.domain.step.model
 
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
@@ -26,7 +26,7 @@ data class YearMonth(val year: Int, val month: Month) {
             return LocalDate(nextYear, nextMonth, 1).minus(1, DateTimeUnit.DAY)
         }
 
-    val lengthOfMonth: Int get() = atEndOfMonth.dayOfMonth
+    val lengthOfMonth: Int get() = atEndOfMonth.day
 
     fun plusMonths(count: Int): YearMonth {
         val totalMonths = (monthNumber - 1) + count

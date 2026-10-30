@@ -4,8 +4,8 @@ object AppConfiguration {
     const val APPLICATION_ID = "com.kintmin.jellytube"
     const val RELEASE_APP_NAME = "JellyTube"
     const val DEBUG_APP_NAME = "JellyTube(개발)"
-    const val COMPILE_SDK = 35
-    const val TARGET_SDK = 35
+    const val COMPILE_SDK = 36
+    const val TARGET_SDK = 36
     const val MIN_SDK = 26
     const val VERSION_CODE = 19
     const val VERSION_NAME = "1.2.2"

@@ -42,10 +42,10 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import coil.compose.AsyncImage
-import coil.compose.AsyncImagePainter
-import coil.request.CachePolicy
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.custom_ui.zoomable.ZoomContentAlignment
 import com.kintmin.presentation.ui.custom_ui.zoomable.ZoomLimitMode
@@ -127,9 +127,9 @@ fun FullScreenImageViewer(
                 contentDescription = null,
                 contentScale = ContentScale.Fit,
                 onState = { state ->
-                    val drawable = (state as? AsyncImagePainter.State.Success)?.result?.drawable
-                    if (drawable != null) {
-                        imageSize = drawable.intrinsicWidth to drawable.intrinsicHeight
+                    val image = (state as? AsyncImagePainter.State.Success)?.result?.image
+                    if (image != null) {
+                        imageSize = image.width to image.height
                     }
                 },
                 modifier = imageModifier,
