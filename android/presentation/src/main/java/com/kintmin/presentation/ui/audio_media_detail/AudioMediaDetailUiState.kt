@@ -63,7 +63,9 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
             imageFileFullPath = audioMedia.imageFileFullPath,
             audioMediaName = audioMedia.name,
             artist = audioMedia.artist,
-            playTime = (audioMedia.audioDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
+            // 화면에 보여주는 길이는 편집본 기준
+            playTime = (audioMedia.playbackDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
+            // 가사 검색은 음원 길이로 후보를 매칭하므로 편집본이 아니라 원본 길이를 넘긴다
             audioDurationSeconds = audioMedia.audioDuration?.toDouble(DurationUnit.SECONDS),
             audioMediaCreationTime = audioMedia.createdTime.toKoreanDateTimeString(),
             source = audioMedia.source,

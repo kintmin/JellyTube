@@ -96,11 +96,11 @@ class PlaylistDetailHeaderViewModel constructor(
             val mediaControlDataList = fetchAudioMediaListFlowUseCase(playlistId).first().map {
                 MediaControlData(
                     mediaId = it.audioMedia.id.toString(),
-                    mediaFileUri = it.audioMedia.audioFileFullPath,
+                    mediaFileUri = it.audioMedia.playbackFileFullPath,
                     mediaTitle = it.audioMedia.name,
                     mediaDescription = it.audioMedia.description,
                     mediaArtist = it.audioMedia.artist,
-                    mediaDurationMs = it.audioMedia.audioDuration?.inWholeMilliseconds ?: 0L,
+                    mediaDurationMs = it.audioMedia.playbackDuration?.inWholeMilliseconds ?: 0L,
                     mediaArtworkFileUri = it.audioMedia.imageFileFullPath,
                 )
             }

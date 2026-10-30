@@ -44,7 +44,7 @@ internal fun PlaylistTrackAggregate.toPlaylistEditListItemUiState(isChecked: Boo
     id = audioMedia.id,
     mediaName = audioMedia.name,
     artist = audioMedia.artist,
-    audioDuration = audioMedia.audioDuration,
+    audioDuration = audioMedia.playbackDuration,
     description = audioMedia.description,
     audioFileFullPath = audioMedia.audioFileFullPath,
     imageFileFullPath = audioMedia.imageFileFullPath,

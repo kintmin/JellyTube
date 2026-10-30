@@ -53,7 +53,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaEditUiState(): AudioMediaE
         imageFileFullPath = audioMedia.imageFileFullPath,
         audioMediaName = audioMedia.name,
         artist = audioMedia.artist,
-        playTime = (audioMedia.audioDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
+        playTime = (audioMedia.playbackDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
         audioMediaCreationTime = audioMedia.createdTime.toKoreanDateTimeString(),
         source = audioMedia.source,
         audioMediaDescription = audioMedia.description,

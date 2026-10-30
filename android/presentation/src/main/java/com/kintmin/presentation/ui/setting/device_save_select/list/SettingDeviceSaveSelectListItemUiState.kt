@@ -37,7 +37,8 @@ internal fun AudioMedia.toSettingDeviceSaveSelectListItemUiState(isChecked: Bool
         id = id,
         mediaName = name,
         artist = artist,
-        audioDuration = audioDuration,
+        // 기기 저장은 편집본을 내보내므로 길이도 편집본 기준으로 보여준다
+        audioDuration = playbackDuration,
         imageFileFullPath = imageFileFullPath,
         isChecked = isChecked,
     )

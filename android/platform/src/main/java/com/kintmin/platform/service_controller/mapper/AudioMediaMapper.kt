@@ -37,10 +37,11 @@ internal fun MediaItem.toMediaControlData() = MediaControlData(
 
 internal fun AudioMedia.toMediaControlData() = MediaControlData(
     mediaId = id.toString(),
-    mediaFileUri = audioFileFullPath,
+    // 편집본이 있으면 편집본을 재생한다
+    mediaFileUri = playbackFileFullPath,
     mediaTitle = name,
     mediaDescription = description,
     mediaArtist = artist,
-    mediaDurationMs = audioDuration?.inWholeMilliseconds ?: 0L,
+    mediaDurationMs = playbackDuration?.inWholeMilliseconds ?: 0L,
     mediaArtworkFileUri = imageFileFullPath,
 )

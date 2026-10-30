@@ -24,7 +24,8 @@ class ExportAudioMediaListToDeviceUseCase constructor(
 
         audioMediaList.forEach { audioMedia ->
             audioMediaRepository.exportAudioMediaToDevice(
-                audioFileFullPath = audioMedia.audioFileFullPath,
+                // 편집본이 있으면 편집본을 내보낸다
+                audioFileFullPath = audioMedia.playbackFileFullPath,
                 title = audioMedia.name,
                 artist = audioMedia.artist,
                 targetList = targetList,
