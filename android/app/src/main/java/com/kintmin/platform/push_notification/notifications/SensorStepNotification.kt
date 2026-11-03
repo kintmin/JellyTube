@@ -23,10 +23,10 @@ data class SensorStepNotification(
         } else {
             Color.BLACK
         }
-        val remoteViews = RemoteViews(context.packageName, com.kintmin.platform.R.layout.notification_sensor_steps).apply {
-            setTextViewText(com.kintmin.platform.R.id.tv_step_sensor_value, "%,d".format(stepSensorStepCount))
-            setTextColor(com.kintmin.platform.R.id.tv_step_sensor_label, textColor)
-            setTextColor(com.kintmin.platform.R.id.tv_step_sensor_value, textColor)
+        val remoteViews = RemoteViews(context.packageName, com.kintmin.jellytube.R.layout.notification_sensor_steps).apply {
+            setTextViewText(com.kintmin.jellytube.R.id.tv_step_sensor_value, "%,d".format(stepSensorStepCount))
+            setTextColor(com.kintmin.jellytube.R.id.tv_step_sensor_label, textColor)
+            setTextColor(com.kintmin.jellytube.R.id.tv_step_sensor_value, textColor)
         }
 
         return NotificationCompat.Builder(context, channel.id)

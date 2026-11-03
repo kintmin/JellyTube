@@ -168,7 +168,7 @@ When a screen's `~UiState` field is filled from an **async source** (a `Flow`/DB
 ### Adding a Deep Link destination
 
 If a new screen must be reachable via a deep link:
-1. Add the path constant to `DeepLinkConstants.Path` in `android:platform`.
+1. Add the path constant to `DeepLinkConstants.Path` in `android:app`.
 2. Add the URI pattern to `DeepLinkConstants.UriPattern` (private) and a builder to `DeepLinkConstants.UriBuilder`.
 3. Add the parsing branch in `MainViewModel.sendNavigationIntents()` in `android:app`.
 4. Add the corresponding `NavigationIntent` entry in `android:app`.

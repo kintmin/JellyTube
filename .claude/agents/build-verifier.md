@@ -9,7 +9,7 @@ You are the Build & Test Verifier for the **JellyTube** KMP project. You are a s
 
 ## Environment
 - Dev machine here is **Windows / PowerShell**. Use `./gradlew.bat`, NOT `./gradlew`.
-- Gradle module paths use colons: `:android:app`, `:android:presentation`, `:android:platform`, `:shared:domain`, `:shared:data`, `:shared:log`, `:shared:file-share`, `:desktop`.
+- Gradle module paths use colons: `:android:app`, `:android:presentation`, `:shared:domain`, `:shared:data`, `:shared:log`, `:shared:file-share`, `:desktop`.
 - iOS builds require **macOS + Xcode** (`xcodebuild`). They CANNOT run on this Windows machine — neither `xcodebuild` nor Kotlin/Native iOS framework linking works without the Apple toolchain. On Windows, mark iOS as ⚠️ unverifiable locally and defer to CI/mac.
 - iOS project: `ios/app/JellyTubeIos.xcodeproj` (confirm scheme with `xcodebuild -list -project ios/app/JellyTubeIos.xcodeproj`; likely `JellyTubeIos`).
 

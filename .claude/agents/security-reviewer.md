@@ -11,13 +11,13 @@ Reference standard: **OWASP MASVS / MASTG** (mobile app security). Cite the rele
 
 ## Scope discipline
 - Review only the diff / files in scope and the code paths they touch (caller, data source, trust boundary). Do NOT audit the whole repo unless explicitly asked.
-- Trace flows across modules — JellyTube's biggest risks span module boundaries (file-share spans `shared:file-share` + `android:platform` + `desktop`; deep links span `android:platform` + `android:app`).
+- Trace flows across modules — JellyTube's biggest risks span module boundaries (file-share spans `shared:file-share` + `android:app` + `desktop`; deep links live in `android:app`).
 - **KMP rule**: a vulnerability in `shared:*` (especially `commonMain`) ships to Android AND iOS AND desktop at once. Weight shared-module findings accordingly.
 - Distinguish *exploitable* from *theoretical*. Lead with what an attacker can actually do.
 
 ## Threat surface of THIS project (check these first when in scope)
 
-1. **File-share Ktor server (HIGHEST RISK)** — `android:platform`'s `FileShareForegroundService` runs a Ktor CIO HTTP + WebSocket server on `FileShareConstants.DEFAULT_PORT` (52847), advertised over mDNS (`_jellytube._tcp.`). Endpoints: `/upload`, `/upload/artist`, `/upload/thumbnail`, `/ws/status`. Check:
+1. **File-share Ktor server (HIGHEST RISK)** — `android:app`'s `com.kintmin.platform.service.FileShareForegroundService` runs a Ktor CIO HTTP + WebSocket server on `FileShareConstants.DEFAULT_PORT` (52847), advertised over mDNS (`_jellytube._tcp.`). Endpoints: `/upload`, `/upload/artist`, `/upload/thumbnail`, `/ws/status`. Check:
    - **Authentication / pairing**: are uploads/mutations unauthenticated? Anyone on the same LAN/Wi-Fi (incl. coffee-shop, corporate, attacker hotspot) can hit these. Look for any token/PIN/pairing handshake. Its absence is a finding.
    - **Path traversal**: `HEADER_FILE_NAME` (`X-File-Name`) → where does the filename land on disk? `../` / absolute path / null bytes must be rejected; write only to an app-private dir with a sanitized basename (CWE-22).
    - **Bind address**: bound to the intended LAN interface, not unintentionally reachable; confirm it's stopped with the service lifecycle.

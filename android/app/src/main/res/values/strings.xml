@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">JellyTube</string>
+    <string name="step_count">걸음수</string>
 </resources>

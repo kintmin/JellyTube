@@ -84,7 +84,6 @@ Because mode 2 cannot be prevented by the save step, every file write that conta
 | Path prefix | Read this AGENTS.md |
 |---|---|
 | `android/app/` | `android/app/AGENTS.md` |
-| `android/platform/` | `android/platform/AGENTS.md` |
 | `android/presentation/` | `android/presentation/AGENTS.md` |
 | `shared/domain/` | `shared/domain/AGENTS.md` |
 | `shared/data/` | `shared/data/AGENTS.md` |

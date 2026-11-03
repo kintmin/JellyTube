@@ -15,7 +15,7 @@
 ## What does NOT belong here
 
 - Business logic of any kind
-- Network transport code (HTTP client, socket handling) → `android:platform` or `desktop`
+- Network transport code (HTTP client, socket handling) → `android:app` or `desktop`
 - File I/O → app modules
 - UI → `android:presentation` or `desktop`
 - Platform-specific types (`android.*`, `java.io.*`) — keep it pure Kotlin so `desktop` can also depend on it
