@@ -30,13 +30,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
@@ -45,7 +45,7 @@ import com.kintmin.presentation.ui.main.MainTabItem
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistDeleteDialog
-import java.io.File
+import okio.Path.Companion.toPath
 
 @Composable
 fun PlaylistItemView(
@@ -90,8 +90,8 @@ fun PlaylistItemView(
                 }
             } else {
                 AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(File(data.imageFileFullPath))
+                    model = ImageRequest.Builder(LocalPlatformContext.current)
+                        .data(data.imageFileFullPath.toPath())
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .diskCachePolicy(CachePolicy.DISABLED)
                         .build(),

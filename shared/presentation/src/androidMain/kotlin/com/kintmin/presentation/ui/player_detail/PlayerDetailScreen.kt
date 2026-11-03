@@ -47,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,12 +65,10 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
@@ -88,6 +87,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import okio.Path.Companion.toPath
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Duration.Companion.seconds
@@ -133,16 +133,17 @@ fun PlayerDetailScreen(
     data: PlayerDetailUiState,
     sendIntent: (PlayerDetailIntent) -> Unit,
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(Unit) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            lifecycleOwner.lifecycleScope.launch {
-                while (isActive) {
-                    delay(300)
-                    sendIntent(PlayerDetailIntent.OnRefreshMediaData)
-                }
+    val scope = rememberCoroutineScope()
+    // RESUMED 동안만 폴링한다. repeatOnLifecycle 안에서 lifecycleScope.launch 로
+    // 빠져나가면 화면을 벗어나도 루프가 취소되지 않아 백그라운드에서 계속 돈다.
+    LifecycleResumeEffect(Unit) {
+        val job = scope.launch {
+            while (isActive) {
+                delay(300)
+                sendIntent(PlayerDetailIntent.OnRefreshMediaData)
             }
         }
+        onPauseOrDispose { job.cancel() }
     }
 
     val playbackSeconds = max(1L, data.playbackDuration.inWholeSeconds)
@@ -259,8 +260,8 @@ fun PlayerDetailScreen(
                     }
                 } else {
                     AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(File(data.imageFileFullPath))
+                        model = ImageRequest.Builder(LocalPlatformContext.current)
+                            .data(data.imageFileFullPath.toPath())
                             .memoryCachePolicy(CachePolicy.ENABLED)
                             .diskCachePolicy(CachePolicy.DISABLED)
                             .build(),

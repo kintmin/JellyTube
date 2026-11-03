@@ -43,6 +43,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -51,7 +52,7 @@ import com.kintmin.presentation.ui.custom_ui.zoomable.ZoomContentAlignment
 import com.kintmin.presentation.ui.custom_ui.zoomable.ZoomLimitMode
 import com.kintmin.presentation.ui.custom_ui.zoomable.ZoomableView
 import kotlinx.coroutines.delay
-import java.io.File
+import okio.Path.Companion.toPath
 
 @Composable
 fun FullScreenImageViewer(
@@ -104,10 +105,10 @@ fun FullScreenImageViewer(
             isShowCloseButton = false
         }
 
-        val context = LocalContext.current
-        val imageFile = remember(imageFileFullPath) { File(imageFileFullPath) }
-        val imageRequest = remember(context, imageFile) {
-            ImageRequest.Builder(context)
+        val platformContext = LocalPlatformContext.current
+        val imageFile = remember(imageFileFullPath) { imageFileFullPath.toPath() }
+        val imageRequest = remember(platformContext, imageFile) {
+            ImageRequest.Builder(platformContext)
                 .data(imageFile)
                 .memoryCachePolicy(CachePolicy.ENABLED)
                 .diskCachePolicy(CachePolicy.DISABLED)

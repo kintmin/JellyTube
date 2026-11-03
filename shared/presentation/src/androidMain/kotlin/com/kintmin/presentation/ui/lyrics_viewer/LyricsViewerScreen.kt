@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,10 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.lyrics_viewer.dialog.LyricsDeleteDialog
 import kotlinx.coroutines.delay
@@ -84,7 +82,6 @@ fun LyricsViewerScreen(
     data: LyricsViewerUiState,
     sendIntent: (LyricsViewerIntent) -> Unit,
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     LyricsDeleteDialog(
@@ -95,15 +92,17 @@ fun LyricsViewerScreen(
     )
 
     // 재생 위치는 Flow가 없으므로 300ms 폴링으로 현재 가사 줄을 갱신한다.
-    LaunchedEffect(Unit) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            lifecycleOwner.lifecycleScope.launch {
-                while (isActive) {
-                    delay(300)
-                    sendIntent(LyricsViewerIntent.OnRefreshPosition)
-                }
+    // RESUMED 동안만 돈다. repeatOnLifecycle 안에서 lifecycleScope.launch 로 빠져나가면
+    // 화면을 벗어나도 루프가 취소되지 않아 백그라운드에서 계속 돌았다.
+    val scope = rememberCoroutineScope()
+    LifecycleResumeEffect(Unit) {
+        val job = scope.launch {
+            while (isActive) {
+                delay(300)
+                sendIntent(LyricsViewerIntent.OnRefreshPosition)
             }
         }
+        onPauseOrDispose { job.cancel() }
     }
 
     Scaffold(

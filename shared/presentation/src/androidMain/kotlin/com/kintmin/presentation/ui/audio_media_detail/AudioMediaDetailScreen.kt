@@ -49,13 +49,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_media_detail.dialog.AudioEditRevertDialog
 import com.kintmin.presentation.ui.audio_media_detail.dialog.KaraokeUnlinkDialog
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
-import java.io.File
+import okio.Path.Companion.toPath
 
 @Composable
 fun AudioMediaDetailScreen(
@@ -216,8 +217,8 @@ fun AudioMediaDetailScreen(
                 }
             } else {
                 AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(File(data.imageFileFullPath))
+                    model = ImageRequest.Builder(LocalPlatformContext.current)
+                        .data(data.imageFileFullPath.toPath())
                         .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
                         .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
                         .build(),

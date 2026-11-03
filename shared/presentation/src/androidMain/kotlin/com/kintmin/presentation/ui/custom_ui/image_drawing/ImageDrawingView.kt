@@ -43,9 +43,10 @@ import androidx.compose.ui.platform.LocalContext
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
-import java.io.File
+import okio.Path.Companion.toPath
 
 @Composable
 fun ImageDrawingView(
@@ -98,8 +99,8 @@ fun ImageDrawingView(
 
             AsyncImage(
                 model = if (imageModel is String && imageModel.isNotEmpty()) {
-                    ImageRequest.Builder(context)
-                        .data(File(imageModel))
+                    ImageRequest.Builder(LocalPlatformContext.current)
+                        .data(imageModel.toPath())
                         .build()
                 } else {
                     imageModel

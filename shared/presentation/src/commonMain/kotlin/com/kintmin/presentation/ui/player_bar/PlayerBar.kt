@@ -23,23 +23,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
@@ -48,7 +46,7 @@ import com.kintmin.presentation.theme.gray60
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.io.File
+import okio.Path.Companion.toPath
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,16 +55,17 @@ fun PlayerBar(
     sendIntent: (PlayerBarIntent) -> Unit,
     onClickBar: () -> Unit = {},
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(Unit) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            lifecycleOwner.lifecycleScope.launch {
-                while(isActive) {
-                    delay(300)
-                    sendIntent(PlayerBarIntent.OnRefreshMediaData)
-                }
+    val scope = rememberCoroutineScope()
+    // RESUMED 동안만 폴링한다. repeatOnLifecycle 안에서 lifecycleScope.launch 로
+    // 빠져나가면 화면을 벗어나도 루프가 취소되지 않아 백그라운드에서 계속 돈다.
+    LifecycleResumeEffect(Unit) {
+        val job = scope.launch {
+            while (isActive) {
+                delay(300)
+                sendIntent(PlayerBarIntent.OnRefreshMediaData)
             }
         }
+        onPauseOrDispose { job.cancel() }
     }
 
     if (data.id == "") return
@@ -135,8 +134,8 @@ fun PlayerBar(
                 }
             } else {
                 AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(File(data.imageFileFullPath))
+                    model = ImageRequest.Builder(LocalPlatformContext.current)
+                        .data(data.imageFileFullPath.toPath())
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .diskCachePolicy(CachePolicy.DISABLED)
                         .build(),

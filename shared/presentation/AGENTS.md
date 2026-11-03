@@ -17,27 +17,34 @@
 
 ```powershell
 rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
-  "^import (android\.|java\.|javax\.|androidx\.(activity|core|palette|work|webkit|compose\.ui\.viewinterop)\.)|androidx\.compose\.ui\.platform\.Local(Context|View)|androidx\.lifecycle\.(lifecycleScope|repeatOnLifecycle)|String\.format|\bMath\.|System\.currentTimeMillis|org\.koin\.androidx"
+  "^import (android\.|java\.|javax\.|androidx\.(activity|core|palette|work|webkit|compose\.ui\.viewinterop)\.)|^import androidx\.compose\.ui\.platform\.Local(Context|View)|^import androidx\.lifecycle\.(lifecycleScope|repeatOnLifecycle)|^import org\.koin\.androidx|\bString\.format\(|[^.\w]Math\.|System\.currentTimeMillis\("
 ```
+
+`^import` 로 묶은 항목은 import 줄만, 나머지는 호출 형태(`String.format(` / `System.currentTimeMillis(`)만 집는다. KDoc 에 API 이름을 적는 경우를 오탐하지 않기 위해서다.
 
 결과가 **0줄**이어야 한다. `androidx.compose.*` / `androidx.navigation.*` / `androidx.lifecycle.compose.*` 는 CMP·JetBrains 포크가 같은 패키지명을 쓰므로 **허용**이다. 위 정규식은 Android 전용 하위 패키지와 심볼만 집어서 금지한다.
 
-### 아직 commonMain 으로 올리지 못한 것 (승격 대기)
+### 승격 현황
 
-CMP 전환 2단계에서 전 소스를 `androidMain` 에 둔 상태다. 아래 순서로 `commonMain` 으로 옮긴다.
+CMP 전환 시점에 전 소스를 `androidMain` 에 뒀고, 1차 승격으로 **152 / 208 파일이 `commonMain`** 에 올라갔다.
 
-| 묶음 | 대상 | 선행 작업 |
+`androidMain` 에 남은 56개의 사유는 셋뿐이다.
+
+| 사유 | 대상 | 해소 조건 |
 |---|---|---|
-| W1 | `theme/`, `extension/`, `util/`, `remember_state/`, `animation/`, 전체 `*Intent.kt`/`*Event.kt`/`*UiState.kt`, `di/`, `port/` | 없음 |
-| W2 | 포트만 쓰는 ViewModel, `*Navigation.kt`, 아이콘/Coil 안 쓰는 `~View.kt` | 없음 |
-| W3 | Coil(`LocalPlatformContext` + okio.Path), 다이얼로그/바텀시트(`PlatformFullScreenDialog`), lifecycle 폴링(`LifecycleResumeEffect`) | 탈출구 신설 |
-| W4 | `SettingScreen`, `SettingDeviceSaveSelectScreen`, `SettingShareScreen`, `MainScreen`+`YoutubeWebView`, `PlayerDetailScreen`, `AudioEditScreen`, `LyricsEditScreen` | 탈출구 전부 |
+| **플랫폼 탈출구 미구현** | `MainScreen`+`YoutubeWebView`(WebView), `SettingScreen`·`AppLogScreen`·`SettingDeviceSaveScreen`·`SettingDeviceSaveSelectScreen`·`SettingShareScreen`(ActivityResult·권한·FileProvider·Intent), `PlayerDetailScreen`(Palette), 바텀시트 3종·`FullScreenImageViewer`(`DialogWindowProvider` 시스템바), Toast 를 쓰는 화면들 | 해당 탈출구 신설 |
+| **공통화 불가(의도적)** | `ImageDrawingView`(S펜 `MotionEvent.BUTTON_STYLUS_PRIMARY`), `FloatingComponentEditor`(`pointerInteropFilter`) | 없음. `expect` 를 만들면 iOS actual 이 죽은 코드가 된다 |
+| **위 파일의 이웃** | 해당 `~Navigation.kt`(= `~ScreenRoute` 선언처)와 그 Route 를 `toRoute()` 로 읽는 ViewModel, 그리고 `di/PresentationModule.kt` | 짝이 되는 Screen 이 올라가면 함께 올라간다 |
 
-**의도적으로 `androidMain` 에 남기는 것** — `expect` 를 만들면 iOS actual 이 영구히 죽은 코드가 되므로 추상화하지 않는다.
-- `ui/custom_ui/image_drawing/ImageDrawingView.kt` — S펜 측면 버튼(`MotionEvent.BUTTON_STYLUS_PRIMARY`). CMP common 에 대응 API 가 없고 Apple Pencil 에는 그 버튼이 아예 없다
-- `ui/custom_ui/floating_component/FloatingComponentEditor.kt` — `pointerInteropFilter` 기반 회전 제스처
-- `ui/setting/app_log/AppLogScreen.kt` 의 `sendAppLogByEmail` — `filesDir` + FileProvider + `ACTION_SEND_MULTIPLE`
-- `ui/setting/device_save/SettingDeviceSaveScreen.kt` 의 `startFirstAvailableActivity` — AlarmClock/Settings 액션 폴백 체인
+`~Navigation.kt` 는 `@Serializable` Route 와 `NavGraphBuilder` 등록을 한 파일에 담는다(프로젝트 규약). 등록부가 Screen 을 참조하므로 **Screen 이 `androidMain` 이면 Route 도 `androidMain` 이고, 그 Route 를 읽는 ViewModel 도 따라간다.** 파일을 쪼개 Route 만 올리는 선택지가 있으나, 규약을 깨고 파일 수를 늘리는 대가가 Screen 승격 뒤 자동으로 해소되는 문제보다 크다고 판단해 하지 않았다.
+
+**이미 적용한 탈출구**
+
+- `platform/PlatformFullScreenDialog`(expect/actual) — `JellyTubeDialog` 가 쓴다. Android 는 창 배경·DIM·decor 를 직접 만지고 iOS 는 `Dialog(usePlatformDefaultWidth = false)` 로 끝난다. `JellyTubeDialog` 의 공개 시그니처가 불변이라 호출부 22곳이 그대로 동작한다.
+- Coil: `LocalContext.current` → `coil3.compose.LocalPlatformContext.current`, `File(path)` → `path.toPath()`(okio). 13파일.
+- 폴링: `repeatOnLifecycle` + `lifecycleScope.launch` → `LifecycleResumeEffect` + `onPauseOrDispose { job.cancel() }`. 3파일. **원래 코드는 RESUMED 를 벗어나도 루프가 취소되지 않는 버그였고 이 치환으로 함께 고쳐졌다.**
+- 유튜브 URL 판정: `androidx.core.net.toUri` → `shared:domain` 의 `YoutubeUrl`(순수 문자열 파싱 + 단위테스트 6개).
+
 
 ### 미결 사항 — iOS framework 구성
 

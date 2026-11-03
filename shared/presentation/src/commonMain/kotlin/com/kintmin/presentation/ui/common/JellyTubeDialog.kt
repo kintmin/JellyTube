@@ -1,7 +1,5 @@
 package com.kintmin.presentation.ui.common
 
-import android.graphics.Color as AndroidColor
-import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -13,20 +11,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
-import androidx.core.graphics.drawable.toDrawable
-import androidx.core.view.WindowCompat
+import com.kintmin.presentation.platform.PlatformFullScreenDialog
 
 @Composable
 fun JellyTubeDialog(
@@ -45,26 +37,8 @@ fun JellyTubeDialog(
 ) {
     if (!showDialog) return
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false,
-        ),
-    ) {
-        val view = LocalView.current
+    PlatformFullScreenDialog(onDismissRequest = onDismiss) {
         val interactionSource = remember { MutableInteractionSource() }
-
-        SideEffect {
-            val window = (view.parent as? DialogWindowProvider)?.window ?: return@SideEffect
-            window.setBackgroundDrawable(AndroidColor.TRANSPARENT.toDrawable())
-            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            window.setLayout(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.MATCH_PARENT,
-            )
-            WindowCompat.setDecorFitsSystemWindows(window, false)
-        }
 
         Box(
             modifier = modifier

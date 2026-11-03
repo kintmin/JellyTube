@@ -27,17 +27,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.ui.playlist_add.PlaylistAddIntent
-import java.io.File
+import okio.Path.Companion.toPath
 
 @Composable
 fun PlaylistAddListItemView(
@@ -103,8 +103,8 @@ fun PlaylistAddListItemView(
                 }
             } else {
                 AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(File(data.imageFileFullPath))
+                    model = ImageRequest.Builder(LocalPlatformContext.current)
+                        .data(data.imageFileFullPath.toPath())
                         .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
                         .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
                         .build(),

@@ -1,12 +1,12 @@
 package com.kintmin.presentation.ui.main.floating_action
 
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
+import com.kintmin.domain.youtube.YoutubeUrl
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,30 +86,12 @@ class MainFloatingActionViewModel constructor(
 
     private fun handleClickDownload(url: String) {
         viewModelScope.launch {
-            if (url.isDownloadableYoutubeUrl()) {
+            if (YoutubeUrl.isDownloadable(url)) {
                 _eventFlow.emit(MainFloatingActionEvent.Download(url))
             } else {
                 _eventFlow.emit(MainFloatingActionEvent.ShowToast("다운받을 영상을 골라주세요."))
             }
         }
-    }
-
-    private fun String.isDownloadableYoutubeUrl(): Boolean {
-        val uri = runCatching { toUri() }.getOrNull() ?: return false
-        val host = uri.host?.lowercase() ?: return false
-        val firstPathSegment = uri.pathSegments.firstOrNull() ?: return false
-
-        return host in DOWNLOADABLE_YOUTUBE_HOSTS && firstPathSegment in DOWNLOADABLE_YOUTUBE_PATHS
-    }
-
-    private companion object {
-        val DOWNLOADABLE_YOUTUBE_HOSTS = setOf(
-            "youtube.com",
-            "www.youtube.com",
-            "m.youtube.com",
-            "youtu.be",
-        )
-        val DOWNLOADABLE_YOUTUBE_PATHS = setOf("watch", "shorts")
     }
 }
 

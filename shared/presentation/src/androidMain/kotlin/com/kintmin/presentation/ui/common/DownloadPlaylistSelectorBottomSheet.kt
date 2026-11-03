@@ -109,9 +109,3 @@ private fun DownloadPlaylistSelectorBottomSheetPreview() {
         )
     }
 }
-
-data class DownloadPlaylistUiState(
-    val id: Int,
-    val name: String,
-    val isSelected: Boolean,
-)
