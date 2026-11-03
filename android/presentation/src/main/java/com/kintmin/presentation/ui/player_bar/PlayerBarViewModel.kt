@@ -1,4 +1,4 @@
-﻿package com.kintmin.presentation.ui.player_bar
+package com.kintmin.presentation.ui.player_bar
 
 import androidx.lifecycle.ViewModel
 import com.kintmin.presentation.port.MediaControllerManager

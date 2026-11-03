@@ -1,4 +1,4 @@
-﻿package com.kintmin.presentation.ui.main
+package com.kintmin.presentation.ui.main
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel

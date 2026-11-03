@@ -1,4 +1,4 @@
-﻿package com.kintmin.presentation.ui.playlist_detail.header
+package com.kintmin.presentation.ui.playlist_detail.header
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel

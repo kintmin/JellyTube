@@ -1,4 +1,4 @@
-﻿package com.kintmin.presentation.ui.main.youtube_search
+package com.kintmin.presentation.ui.main.youtube_search
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel

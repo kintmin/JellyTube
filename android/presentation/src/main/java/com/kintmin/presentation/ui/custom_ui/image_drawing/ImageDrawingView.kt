@@ -1,4 +1,4 @@
-﻿package com.kintmin.presentation.ui.custom_ui.image_drawing
+package com.kintmin.presentation.ui.custom_ui.image_drawing
 
 import android.view.MotionEvent
 import androidx.compose.foundation.Canvas

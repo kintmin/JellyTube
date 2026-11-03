@@ -1,4 +1,4 @@
-﻿package com.kintmin.presentation.ui.setting
+package com.kintmin.presentation.ui.setting
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

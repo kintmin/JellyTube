@@ -1,4 +1,4 @@
-﻿package com.kintmin.presentation.ui.main.floating_action
+package com.kintmin.presentation.ui.main.floating_action
 
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel

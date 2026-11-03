@@ -1,4 +1,4 @@
-﻿package com.kintmin.presentation.ui.setting.app_log
+package com.kintmin.presentation.ui.setting.app_log
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

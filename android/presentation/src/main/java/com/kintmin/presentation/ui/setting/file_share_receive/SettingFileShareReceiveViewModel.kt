@@ -1,4 +1,4 @@
-﻿package com.kintmin.presentation.ui.setting.file_share_receive
+package com.kintmin.presentation.ui.setting.file_share_receive
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

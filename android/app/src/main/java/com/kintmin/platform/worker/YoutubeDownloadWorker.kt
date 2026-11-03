@@ -1,4 +1,4 @@
-﻿package com.kintmin.platform.worker
+package com.kintmin.platform.worker
 
 import android.content.Context
 import android.content.pm.ServiceInfo
