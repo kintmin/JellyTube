@@ -55,7 +55,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
-import com.kintmin.presentation.BuildConfig
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.white
 import com.kintmin.presentation.ui.custom_ui.data_table.AgeColumn
@@ -83,6 +82,7 @@ import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
 
 @Composable
 fun MainScreen(
+    isDebugTabVisible: Boolean,
     navigateToPlaylistDetail: (id: Int, isBasePlaylist: Boolean) -> Unit,
     navigateToPlaylistEdit: (id: Int) -> Unit,
     navigateToPlaylistAdd: (id: Int) -> Unit,
@@ -156,6 +156,7 @@ fun MainScreen(
     }
 
     MainScreen(
+        isDebugTabVisible = isDebugTabVisible,
         selectedTab = selectedTab,
         playlist = playlist,
         playerBar = currentMediaItem,
@@ -186,6 +187,7 @@ fun MainScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
+    isDebugTabVisible: Boolean,
     selectedTab: MainTabItem,
     playlist: List<PlaylistItemUiState>,
     playerBar: PlayerBarUiState,
@@ -352,7 +354,7 @@ fun MainScreen(
                         onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
                         colors = navigationBarItemColors,
                     )
-                    if (BuildConfig.DEBUG) {
+                    if (isDebugTabVisible) {
                         NavigationBarItem(
                             icon = { Icon(Icons.Rounded.BugReport, contentDescription = null) },
                             label = { Text("테스트뷰") },
@@ -408,6 +410,7 @@ fun MainScreen(
 fun MainScreenSearchTabPreview() {
     JellyTubeTheme {
         MainScreen(
+            isDebugTabVisible = true,
             selectedTab = MainTabItem.Search,
             playlist = PlaylistItemUiState.getMockList(),
             playerBar = PlayerBarUiState.getMock(),
@@ -429,6 +432,7 @@ fun MainScreenSearchTabPreview() {
 fun MainScreenPlayTabPreview() {
     JellyTubeTheme {
         MainScreen(
+            isDebugTabVisible = true,
             selectedTab = MainTabItem.Playlist,
             playlist = PlaylistItemUiState.getMockList(),
             playerBar = PlayerBarUiState.getMock(),

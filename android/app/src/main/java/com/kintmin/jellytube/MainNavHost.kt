@@ -94,6 +94,7 @@ fun MainNavHost(
         },
     ) {
         mainScreen(
+            isDebugTabVisible = BuildConfig.DEBUG,
             navigateToPlaylistDetail = { playlistId, isBasePlaylist ->
                 navController.navigateToPlaylistDetailScreen(
                     playlistId = playlistId,

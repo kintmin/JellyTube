@@ -21,6 +21,7 @@ fun NavController.navigateToMainScreen(
 ) = navigate(MainScreenRoute(tabItem, searchUrl), navOptions)
 
 fun NavGraphBuilder.mainScreen(
+    isDebugTabVisible: Boolean,
     navigateToPlaylistDetail: (playlistId: Int, isBasePlaylist: Boolean) -> Unit,
     navigateToPlaylistEdit: (playlistId: Int) -> Unit,
     navigateToPlaylistAdd: (playlistId: Int) -> Unit,
@@ -30,6 +31,7 @@ fun NavGraphBuilder.mainScreen(
 ) {
     composable<MainScreenRoute> { backStackEntry ->
         MainScreen(
+            isDebugTabVisible = isDebugTabVisible,
             navigateToPlaylistDetail = navigateToPlaylistDetail,
             navigateToPlaylistEdit = navigateToPlaylistEdit,
             navigateToPlaylistAdd = navigateToPlaylistAdd,
