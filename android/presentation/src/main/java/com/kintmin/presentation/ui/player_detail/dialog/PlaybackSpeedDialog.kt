@@ -31,8 +31,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kintmin.presentation.extension.toFixed
 import com.kintmin.presentation.ui.common.JellyTubeDialog
-import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
@@ -200,8 +200,8 @@ private fun Float.roundToPlaybackSpeedStep(): Float {
 
 private fun Float.formatPlaybackSpeed(): String {
     return if (this % 1.0f == 0f) {
-        String.format(Locale.ROOT, "%.1f", this)
+        toFixed(1)
     } else {
-        String.format(Locale.ROOT, "%.2f", this).trimEnd('0')
+        toFixed(2).trimEnd('0')
     }
 }

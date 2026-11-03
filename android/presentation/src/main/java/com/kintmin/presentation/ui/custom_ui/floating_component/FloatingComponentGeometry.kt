@@ -1,15 +1,15 @@
 package com.kintmin.presentation.ui.custom_ui.floating_component
 
 import androidx.compose.ui.geometry.Offset
+import kotlin.math.PI
 import kotlin.math.atan2
 
 internal fun angleDeg(center: Offset, point: Offset): Float {
-    return Math.toDegrees(
-        atan2(
-            y = (point.y - center.y).toDouble(),
-            x = (point.x - center.x).toDouble(),
-        )
-    ).toFloat()
+    val radian = atan2(
+        y = (point.y - center.y).toDouble(),
+        x = (point.x - center.x).toDouble(),
+    )
+    return (radian * 180.0 / PI).toFloat()
 }
 
 internal fun shortestAngleDeltaDeg(from: Float, to: Float): Float {

@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.IntSize
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -320,7 +321,7 @@ class FloatingComponentViewState {
         localY: Float,
         rotationDeg: Float,
     ): Pair<Float, Float> {
-        val rad = Math.toRadians(rotationDeg.toDouble())
+        val rad = rotationDeg.toDouble() * PI / 180.0
         val c = cos(rad).toFloat()
         val s = sin(rad).toFloat()
         val screenX = localX * c - localY * s
@@ -413,7 +414,7 @@ class FloatingComponentViewState {
         height: Float,
         rotationDeg: Float,
     ): Pair<Float, Float> {
-        val rad = Math.toRadians(rotationDeg.toDouble())
+        val rad = rotationDeg.toDouble() * PI / 180.0
         val c = abs(cos(rad)).toFloat()
         val s = abs(sin(rad)).toFloat()
         return (width * c + height * s) to (width * s + height * c)

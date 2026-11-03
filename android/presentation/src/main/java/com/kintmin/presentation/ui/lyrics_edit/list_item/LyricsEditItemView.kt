@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.lyrics_edit.LyricsEditUiState.EditRow
-import java.util.Locale
 
 /** timeMs 를 화면 표시용 문자열로 만든다. 1시간 이상이면 시를 포함한다. */
 fun formatTimeLabel(timeMs: Long): String {
@@ -39,10 +38,13 @@ fun formatTimeLabel(timeMs: Long): String {
     val minutes = (safe % 3_600_000L) / 60_000L
     val seconds = (safe % 60_000L) / 1_000L
     val centiseconds = (safe % 1_000L) / 10L
+    val mm = minutes.toString().padStart(2, '0')
+    val ss = seconds.toString().padStart(2, '0')
+    val cc = centiseconds.toString().padStart(2, '0')
     return if (hours > 0) {
-        String.format(Locale.US, "%d:%02d:%02d.%02d", hours, minutes, seconds, centiseconds)
+        "$hours:$mm:$ss.$cc"
     } else {
-        String.format(Locale.US, "%02d:%02d.%02d", minutes, seconds, centiseconds)
+        "$mm:$ss.$cc"
     }
 }
 
