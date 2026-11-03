@@ -36,7 +36,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import com.kintmin.presentation.platform.Toaster
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
 
@@ -49,7 +49,7 @@ fun MainFloatingActionButton(
 ) {
     val viewModel = koinViewModel<MainFloatingActionViewModel>()
     val uiState by viewModel.uiState.collectAsState()
-    val toaster = koinInject<Toaster>()
+    val toaster = rememberToaster()
 
     LaunchedEffect(viewModel) {
         viewModel.eventFlow.collect { event ->

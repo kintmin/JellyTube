@@ -37,7 +37,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import com.kintmin.presentation.platform.Toaster
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.lyrics_viewer.dialog.LyricsDeleteDialog
 import kotlinx.coroutines.delay
@@ -53,7 +53,7 @@ fun LyricsViewerScreen(
 ) {
     val viewModel = koinViewModel<LyricsViewerViewModel>()
     val data by viewModel.data.collectAsState()
-    val toaster = koinInject<Toaster>()
+    val toaster = rememberToaster()
 
     LaunchedEffect(viewModel) {
         viewModel.eventFlow.collect { event ->

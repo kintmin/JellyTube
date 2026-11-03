@@ -49,7 +49,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import com.kintmin.presentation.platform.Toaster
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
 import com.kintmin.presentation.ui.setting.section.SettingItemView
@@ -82,7 +82,7 @@ fun SettingScreen(
     val viewModel = koinViewModel<SettingViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val toaster = koinInject<Toaster>()
+    val toaster = rememberToaster()
     val appVersion = remember(context) { context.getAppVersionName() }
 
     val audioFileLauncher = rememberLauncherForActivityResult(

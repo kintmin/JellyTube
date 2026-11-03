@@ -58,7 +58,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_media.model.AudioExportTarget
-import com.kintmin.presentation.platform.Toaster
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.device_save_select.list.SettingDeviceSaveSelectListItemView
 import org.koin.compose.koinInject
@@ -71,7 +71,7 @@ fun SettingDeviceSaveSelectScreen(
     val viewModel = koinViewModel<SettingDeviceSaveSelectViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val toaster = koinInject<Toaster>()
+    val toaster = rememberToaster()
 
     val legacyStoragePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),

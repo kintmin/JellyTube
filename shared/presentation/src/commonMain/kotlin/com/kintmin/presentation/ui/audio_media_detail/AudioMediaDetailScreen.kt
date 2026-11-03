@@ -50,7 +50,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
-import com.kintmin.presentation.platform.Toaster
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_media_detail.dialog.AudioEditRevertDialog
 import com.kintmin.presentation.ui.audio_media_detail.dialog.KaraokeUnlinkDialog
@@ -72,7 +72,7 @@ fun AudioMediaDetailScreen(
     val mainViewModel = koinViewModel<AudioMediaDetailViewModel>()
 
     val data by mainViewModel.data.collectAsState()
-    val toaster = koinInject<Toaster>()
+    val toaster = rememberToaster()
 
     LaunchedEffect(Unit) {
         mainViewModel.eventFlow.collect { event ->

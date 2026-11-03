@@ -28,7 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kintmin.presentation.platform.Toaster
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -39,7 +39,7 @@ fun LyricsDetailScreen(
 ) {
     val viewModel = koinViewModel<LyricsDetailViewModel>()
     val data by viewModel.data.collectAsState()
-    val toaster = koinInject<Toaster>()
+    val toaster = rememberToaster()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->

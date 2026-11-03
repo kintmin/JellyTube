@@ -55,7 +55,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import com.kintmin.presentation.platform.Toaster
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.white
 import com.kintmin.presentation.ui.custom_ui.data_table.AgeColumn
@@ -92,7 +92,7 @@ fun MainScreen(
     navigateToFileShareReceive: () -> Unit,
 ) {
     val context = LocalContext.current
-    val toaster = koinInject<Toaster>()
+    val toaster = rememberToaster()
     val mainViewModel = koinViewModel<MainViewModel>()
     val downloadViewModel = koinViewModel<YoutubeDownloadViewModel>()
     val playlistViewModel = koinViewModel<PlaylistViewModel>()

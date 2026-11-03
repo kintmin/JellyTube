@@ -71,7 +71,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
-import com.kintmin.presentation.platform.Toaster
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.deepSea60
 import com.kintmin.presentation.theme.deepSea80
@@ -102,7 +102,7 @@ fun PlayerDetailScreen(
 ) {
     val viewModel = koinViewModel<PlayerDetailViewModel>()
     val data by viewModel.data.collectAsState()
-    val toaster = koinInject<Toaster>()
+    val toaster = rememberToaster()
 
     PlayerDetailScreen(
         navigateToBack = navigateToBack,

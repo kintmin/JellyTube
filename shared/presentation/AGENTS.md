@@ -38,15 +38,30 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 
 `~Navigation.kt` 는 `@Serializable` Route 와 `NavGraphBuilder` 등록을 한 파일에 담는다(프로젝트 규약). 등록부가 Screen 을 참조하므로 **Screen 이 `androidMain` 이면 Route 도 `androidMain` 이고, 그 Route 를 읽는 ViewModel 도 따라간다.** 파일을 쪼개 Route 만 올리는 선택지가 있으나, 규약을 깨고 파일 수를 늘리는 대가가 Screen 승격 뒤 자동으로 해소되는 문제보다 크다고 판단해 하지 않았다.
 
-### 이미 적용한 탈출구
+## 플랫폼 탈출구
+
+### 분기 기준은 "구현이 어느 모듈에 있나" 하나다
+
+| 구현 위치 | 방식 | 왜 |
+|---|---|---|
+| `presentation` 안의 `androidMain`/`iosMain` | **`expect`/`actual`** (`platform/` 패키지) | 컴파일 타임에 actual 누락을 잡는다. Koin 은 런타임에 터진다 |
+| **다른 모듈**(`android:app`) | **`interface` + Koin** (`port/` 패키지) | `expect`/`actual` 은 한 모듈 안의 소스셋 분기라 다른 모듈의 구현에 닿을 수 없다 |
+
+- Compose 로컬(`LocalContext` 등)이 필요하면 `@Composable expect fun remember~()` 로 생성만 `expect` 한다.
+- **`expect class` 는 쓰지 않는다.** 공통 테스트에서 인스턴스를 만들 수 없어 그 타입을 쓰는 로직이 통째로 테스트 불가가 된다. 계약은 `interface`, 생성만 `expect`.
+- **커스텀 `CompositionLocal` 은 만들지 않는다.** 위 두 가지로 충분하고, 세 번째 경로가 생기면 "이건 어느 쪽이냐"를 매번 따져야 한다.
+
+### 현재 탈출구 목록
 
 | 탈출구 | 방식 | 쓰는 곳 |
 |---|---|---|
-| `platform/PlatformFullScreenDialog(onDismissRequest, hideSystemBars, content)` | `expect/actual`. Android 는 창 배경·DIM·decor 와 `WindowInsetsControllerCompat` 를 직접 만진다(`DialogProperties.decorFitsSystemWindows` 는 Android 전용). iOS 는 `Dialog(usePlatformDefaultWidth = false)` | `JellyTubeDialog`(호출부 22곳, 공개 시그니처 불변), `FullScreenImageViewer`(`hideSystemBars = true`) |
-| `platform/PlatformBottomSheetSystemBarEffect(lightNavigationBarIcons)` | `expect/actual`. Android 만 실동작, iOS no-op(내비게이션바가 없다) | 바텀시트 3종 |
-| `platform/Toaster` | `interface` + Koin. Application 컨텍스트로 충분해 `remember~()` 가 필요 없다. 등록은 `androidMain` 의 `presentationAndroidModule` | Composable 문맥 Toast 11곳. MVI `Event.ShowToast` 계층은 순수 Kotlin 이라 무변경 |
+| `platform/PlatformFullScreenDialog(onDismissRequest, hideSystemBars, content)` | `expect`/`actual`. Android 는 창 배경·DIM·decor 와 `WindowInsetsControllerCompat` 를 직접 만진다(`DialogProperties.decorFitsSystemWindows` 는 Android 전용). iOS 는 `Dialog(usePlatformDefaultWidth = false)` | `JellyTubeDialog`(호출부 22곳, 공개 시그니처 불변), `FullScreenImageViewer`(`hideSystemBars = true`) |
+| `platform/PlatformBottomSheetSystemBarEffect(lightNavigationBarIcons)` | `expect`/`actual`. Android 만 실동작, iOS no-op(내비게이션바가 없다) | 바텀시트 3종 |
+| `platform/Toaster` + `@Composable expect fun rememberToaster()` | `interface` + `expect`/`actual`. Android actual 이 `LocalContext` 를 집어 만든다. iOS actual 은 메시지를 로그로만 남긴다 | Composable 문맥 Toast 10곳. MVI `Event.ShowToast` 계층은 순수 Kotlin 이라 무변경 |
 
-**추상화 없이 치환만으로 끝낸 것**
+`port/` 의 포트 9개(`MediaControllerManager`, `AudioPreviewPlayer`, `Execute*` 4종, `StepMeasurementController`, `FileShareServerController`)는 후자이며 `android:app` 의 `platform/di/PlatformModule.kt` 가 바인딩한다. 배치 규칙은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
+
+### 추상화 없이 치환만으로 끝낸 것
 
 - Coil 13파일: `LocalContext.current` → `coil3.compose.LocalPlatformContext.current`, `File(path)` → `path.toPath()`(okio). 경로에 공백·`#` 이 있으면 깨지는 `"file://$path"` 문자열 방식은 쓰지 않았다.
 - 폴링 3파일: `repeatOnLifecycle` + `lifecycleScope.launch` → `LifecycleResumeEffect` + `onPauseOrDispose { job.cancel() }`. **원래 코드는 RESUMED 를 벗어나도 루프가 취소되지 않는 버그였고 이 치환으로 함께 고쳐졌다.**

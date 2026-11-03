@@ -45,7 +45,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
-import com.kintmin.presentation.platform.Toaster
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.bloodyRed100
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditCompactControlsView
@@ -72,7 +72,7 @@ fun AudioEditScreen(
 ) {
     val viewModel = koinViewModel<AudioEditViewModel>()
     val data by viewModel.data.collectAsState()
-    val toaster = koinInject<Toaster>()
+    val toaster = rememberToaster()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
