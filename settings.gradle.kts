@@ -16,7 +16,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "JellyTube"
 include(":android:app")
-include(":android:presentation")
+include(":shared:presentation")
 include(":shared:log")
 include(":shared:domain")
 include(":shared:data")

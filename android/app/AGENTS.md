@@ -39,7 +39,7 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 
 ### Port implementations (`presentation`의 포트 구현)
 
-`android:presentation`이 `com.kintmin.presentation.port`에 **인터페이스만** 선언하고, 구현체는 이 모듈에 둔다. `presentation`은 CMP(KMP) 모듈이라 Android API를 직접 쓸 수 없고, `app`은 이미 `presentation`을 의존하므로 순환이 생기지 않는다.
+`shared:presentation`이 `com.kintmin.presentation.port`에 **인터페이스만** 선언하고, 구현체는 이 모듈에 둔다. `presentation`은 CMP(KMP) 모듈이라 Android API를 직접 쓸 수 없고, `app`은 이미 `presentation`을 의존하므로 순환이 생기지 않는다.
 
 현재 포트와 구현체:
 
@@ -65,7 +65,7 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 
 - Business logic → `shared:domain`
 - Repository implementations → `shared:data`
-- UI composables / ViewModel → `android:presentation`
+- UI composables / ViewModel → `shared:presentation`
 
 ---
 
@@ -87,7 +87,7 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 
 - Every foreground service must call `startForeground()` with a valid notification before Android OS enforces it.
 - Services that can be started/stopped externally expose a `companion object` with `startService(context)` / `stopService(context)` static helpers (see `StepForegroundService` for reference).
-- **`android:presentation`에서 서비스를 직접 시작하지 않는다.** Composable이 `startService(context)`를 부르는 구조는 금지다. `presentation/port/`의 컨트롤러 포트(예: `StepMeasurementController`)를 ViewModel에 주입해 거기서 제어한다.
+- **`shared:presentation`에서 서비스를 직접 시작하지 않는다.** Composable이 `startService(context)`를 부르는 구조는 금지다. `presentation/port/`의 컨트롤러 포트(예: `StepMeasurementController`)를 ViewModel에 주입해 거기서 제어한다.
 - `MainActivity`는 이 모듈 소속이므로 서비스 companion을 직접 불러도 된다.
 
 ---

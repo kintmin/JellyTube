@@ -30,6 +30,15 @@ splash = "1.2.0"
 junit = "4.13.2"
 mockk = "1.14.11"
 composeMultiplatform = "1.12.2"
+# CMP 1.10부터 material3 는 별도 버전 라인이다. CMP 1.12.2 가 끌어오는 값.
+composeMaterial3Mp = "1.9.0"
+# CMP 가 material-icons-extended 를 마지막으로 퍼블리시한 버전.
+composeMaterialIconsMp = "1.7.3"
+# CMP 1.12.2 가 끌어오는 JetBrains androidx 포크 버전. 어긋나면 디스패처가 둘이 된다.
+jetbrainsLifecycle = "2.9.6"
+jetbrainsNavigation = "2.10.0"
+navigationevent = "1.1.0"
+okio = "3.18.1"
 ktor = "3.6.1"
 sqlite = "2.6.2"
 jmdns = "3.6.4"
@@ -65,6 +74,32 @@ androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx"
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "uiTooling" }
 io-coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coilCompose" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+
+# --- Compose Multiplatform ---
+# CMP 1.12부터 compose.runtime 같은 DSL 접근자가 제거돼 좌표를 직접 적는다.
+compose-runtime = { group = "org.jetbrains.compose.runtime", name = "runtime", version.ref = "composeMultiplatform" }
+compose-foundation = { group = "org.jetbrains.compose.foundation", name = "foundation", version.ref = "composeMultiplatform" }
+compose-ui = { group = "org.jetbrains.compose.ui", name = "ui", version.ref = "composeMultiplatform" }
+# 멀티플랫폼 @Preview 어노테이션(org.jetbrains.compose.ui.tooling.preview.Preview)은
+# ui:ui-tooling-preview 가 아니라 components 쪽에 있다. 전자는 androidx 미러다.
+compose-components-ui-tooling-preview = { group = "org.jetbrains.compose.components", name = "components-ui-tooling-preview", version.ref = "composeMultiplatform" }
+compose-ui-tooling = { group = "org.jetbrains.compose.ui", name = "ui-tooling", version.ref = "composeMultiplatform" }
+compose-material3 = { group = "org.jetbrains.compose.material3", name = "material3", version.ref = "composeMaterial3Mp" }
+compose-material-icons-extended = { group = "org.jetbrains.compose.material", name = "material-icons-extended", version.ref = "composeMaterialIconsMp" }
+
+# --- JetBrains 포크(멀티플랫폼) androidx ---
+jetbrains-lifecycle-viewmodel-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "jetbrainsLifecycle" }
+jetbrains-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "jetbrainsLifecycle" }
+jetbrains-lifecycle-viewmodel-savedstate = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel-savedstate", version.ref = "jetbrainsLifecycle" }
+jetbrains-navigation-compose = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "jetbrainsNavigation" }
+jetbrains-navigationevent-compose = { group = "org.jetbrains.androidx.navigationevent", name = "navigationevent-compose", version.ref = "navigationevent" }
+
+# --- Koin KMP (BOM 없이 버전 직접 기입 — 기존 koin 항목과 동일 스타일) ---
+koin-compose = { group = "io.insert-koin", name = "koin-compose", version.ref = "koin" }
+koin-compose-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmodel", version.ref = "koin" }
+koin-compose-viewmodel-navigation = { group = "io.insert-koin", name = "koin-compose-viewmodel-navigation", version.ref = "koin" }
+
+okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
 androidx-compose-material = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 androidx-datastore-preferences-core = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "datastore" }

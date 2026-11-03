@@ -11,8 +11,8 @@
 
 ## 프로젝트 개요
 Kotlin Multiplatform(KMP) 멀티플랫폼 앱. 하나의 공유 코어를 Android / iOS / Desktop이 공유한다.
-- **공유 코어 `shared/`**: `domain`(순수 비즈니스 로직 — 모델/Repository 인터페이스/UseCase), `data`(구현 — RepositoryImpl/Room/네트워크/Python 브릿지), `log`(로깅 API), `file-share`(파일공유 상수/DTO)
-- **Android `android/`**: `app`(진입점/DI/네비/딥링크 + OS 기능 — Service/Worker/Receiver/Notification/DeepLinkConstants), `presentation`(Compose UI, MVI)
+- **공유 코어 `shared/`**: `domain`(순수 비즈니스 로직 — 모델/Repository 인터페이스/UseCase), `data`(구현 — RepositoryImpl/Room/네트워크/Python 브릿지), `presentation`(Compose Multiplatform UI, MVI), `log`(로깅 API), `file-share`(파일공유 상수/DTO)
+- **Android `android/`**: `app`(진입점/DI/네비/딥링크 + OS 기능 — Service/Worker/Receiver/Notification/DeepLinkConstants + `shared:presentation` 포트 구현)
 - **iOS `ios/app/`**: 진입점 + TCA(Client/Feature/Item/ScreenView) + SKIE로 KMP 브릿지
 - **Desktop `desktop/`**: Compose Desktop, 파일 전송 sender + mDNS
 
@@ -21,7 +21,7 @@ Kotlin Multiplatform(KMP) 멀티플랫폼 앱. 하나의 공유 코어를 Androi
 |---|---|
 | 루트 공통 규율 | `AGENTS.md` |
 | `android/app/` | `android/app/AGENTS.md` |
-| `android/presentation/` | `android/presentation/AGENTS.md` |
+| `shared/presentation/` | `shared/presentation/AGENTS.md` |
 | `shared/domain/` | `shared/domain/AGENTS.md` |
 | `shared/data/` | `shared/data/AGENTS.md` |
 | `shared/log/` | `shared/log/AGENTS.md` |

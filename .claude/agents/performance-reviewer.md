@@ -15,7 +15,7 @@ You are a performance reviewer for the **JellyTube** Kotlin Multiplatform projec
 
 ## Focus areas for THIS project
 
-### Compose UI (`android:presentation`) — recomposition & list rendering
+### Compose UI (`shared:presentation`) — recomposition & list rendering
 - **Unstable params** forcing recomposition: non-`@Immutable`/`@Stable` types, unstable lambdas, `List` from a module without strong-skipping — check `UiState` and `~View` params. Track lists (playlist/track) and the `playlist_edit` reorder list are the hottest.
 - **`LazyColumn`/`LazyRow`**: stable `key =` on items (esp. reorderable lists — missing keys break item identity and recycle perf); avoid heavy work in item composition; don't allocate/sort/filter inside composition — hoist to ViewModel or `remember`.
 - **State reads**: read state as late as possible; use `derivedStateOf` for computed values; `remember` expensive objects; avoid reading scroll/animation state high in the tree (triggers wide recomposition).
