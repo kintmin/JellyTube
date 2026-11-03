@@ -1,14 +1,5 @@
 package com.kintmin.presentation.ui.setting
 
-import android.Manifest
-import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
-import android.provider.DocumentsContract
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -42,13 +33,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.platform.AppPermission
+import com.kintmin.presentation.platform.rememberAppVersionName
+import com.kintmin.presentation.platform.rememberAudioFilePicker
+import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
@@ -56,19 +48,6 @@ import com.kintmin.presentation.ui.setting.section.SettingItemView
 import com.kintmin.presentation.ui.setting.section.SettingNavigateIcon
 import com.kintmin.presentation.ui.setting.section.SettingSectionView
 
-private class OpenMultipleAudioDocuments : ActivityResultContracts.OpenMultipleDocuments() {
-
-    override fun createIntent(context: Context, input: Array<String>): Intent =
-        super.createIntent(context, input).apply {
-            putExtra(DocumentsContract.EXTRA_INITIAL_URI, AUDIO_ROOT_URI)
-        }
-
-    private companion object {
-        /** DocumentsUI의 "오디오" 루트. MediaDocumentsProvider가 제공한다. */
-        val AUDIO_ROOT_URI: Uri =
-            "content://com.android.providers.media.documents/root/audio_root".toUri()
-    }
-}
 
 @Composable
 fun SettingScreen(
@@ -81,24 +60,12 @@ fun SettingScreen(
 ) {
     val viewModel = koinViewModel<SettingViewModel>()
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
     val toaster = rememberToaster()
-    val appVersion = remember(context) { context.getAppVersionName() }
-
-    val audioFileLauncher = rememberLauncherForActivityResult(
-        contract = OpenMultipleAudioDocuments(),
-    ) { uris ->
-        viewModel.sendIntent(SettingIntent.OnAudioFilesSelected(uris.map { it.toString() }))
-    }
-
-    val activityRecognitionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        if (granted) {
-            viewModel.sendIntent(SettingIntent.OnActivityRecognitionGranted)
-        } else {
-            viewModel.sendIntent(SettingIntent.OnActivityRecognitionDenied)
-        }
+    val appVersion = rememberAppVersionName()
+    val permissionController = rememberPermissionController()
+    // 음원 가져오기는 선택기를 "오디오" 루트에서 연다.
+    val audioFilePicker = rememberAudioFilePicker(startAtAudioRoot = true) { fileIdentifiers ->
+        viewModel.sendIntent(SettingIntent.OnAudioFilesSelected(fileIdentifiers))
     }
 
     LaunchedEffect(Unit) {
@@ -112,21 +79,23 @@ fun SettingScreen(
                 SettingEvent.NavigateToShareScreen -> navigateToShare()
                 SettingEvent.NavigateToFileShareReceiveScreen -> navigateToFileShareReceive()
                 SettingEvent.NavigateToDeviceSaveScreen -> navigateToDeviceSave()
-                SettingEvent.LaunchAudioFilePicker -> audioFileLauncher.launch(arrayOf("audio/*"))
+                SettingEvent.LaunchAudioFilePicker -> audioFilePicker.launch()
                 is SettingEvent.ShowToast ->
                     toaster.show(event.message)
                 SettingEvent.RequestActivityRecognitionPermission -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        val permission = Manifest.permission.ACTIVITY_RECOGNITION
-                        val alreadyGranted = ContextCompat.checkSelfPermission(context, permission) ==
-                            PackageManager.PERMISSION_GRANTED
-                        if (alreadyGranted) {
-                            viewModel.sendIntent(SettingIntent.OnActivityRecognitionGranted)
-                        } else {
-                            activityRecognitionLauncher.launch(permission)
-                        }
-                    } else {
+                    // 이 권한이 OS 버전별로 필요한지는 구현이 판단한다.
+                    if (permissionController.isGranted(AppPermission.ActivityRecognition)) {
                         viewModel.sendIntent(SettingIntent.OnActivityRecognitionGranted)
+                    } else {
+                        permissionController.request(
+                            listOf(AppPermission.ActivityRecognition),
+                        ) { result ->
+                            if (result[AppPermission.ActivityRecognition] == true) {
+                                viewModel.sendIntent(SettingIntent.OnActivityRecognitionGranted)
+                            } else {
+                                viewModel.sendIntent(SettingIntent.OnActivityRecognitionDenied)
+                            }
+                        }
                     }
                 }
             }
@@ -141,14 +110,6 @@ fun SettingScreen(
     )
 }
 
-private fun Context.getAppVersionName(): String {
-    val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
-    } else {
-        packageManager.getPackageInfo(packageName, 0)
-    }
-    return packageInfo.versionName.orEmpty()
-}
 
 
 

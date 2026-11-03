@@ -1,10 +1,5 @@
 package com.kintmin.presentation.ui.setting.device_save_select
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,13 +46,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_media.model.AudioExportTarget
+import com.kintmin.presentation.platform.AppPermission
+import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.device_save_select.list.SettingDeviceSaveSelectListItemView
@@ -70,18 +66,8 @@ fun SettingDeviceSaveSelectScreen(
 ) {
     val viewModel = koinViewModel<SettingDeviceSaveSelectViewModel>()
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
     val toaster = rememberToaster()
-
-    val legacyStoragePermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { isGranted ->
-        if (isGranted) {
-            viewModel.sendIntent(SettingDeviceSaveSelectIntent.OnClickSaveToDevice)
-        } else {
-            toaster.show("저장 권한이 없어 기기에 저장할 수 없습니다.")
-        }
-    }
+    val permissionController = rememberPermissionController()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
@@ -96,14 +82,17 @@ fun SettingDeviceSaveSelectScreen(
         uiState = uiState,
         navigateToBack = navigateToBack,
         onClickSave = {
-            val needsLegacyPermission = Build.VERSION.SDK_INT <= Build.VERSION_CODES.P &&
-                context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
-                PackageManager.PERMISSION_GRANTED
-
-            if (needsLegacyPermission) {
-                legacyStoragePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            } else {
+            // 저장 권한이 OS 버전별로 필요한지는 구현이 판단한다.
+            if (permissionController.isGranted(AppPermission.MediaStorage)) {
                 viewModel.sendIntent(SettingDeviceSaveSelectIntent.OnClickSaveToDevice)
+            } else {
+                permissionController.request(listOf(AppPermission.MediaStorage)) { result ->
+                    if (result[AppPermission.MediaStorage] == true) {
+                        viewModel.sendIntent(SettingDeviceSaveSelectIntent.OnClickSaveToDevice)
+                    } else {
+                        toaster.show("저장 권한이 없어 기기에 저장할 수 없습니다.")
+                    }
+                }
             }
         },
         sendIntent = viewModel::sendIntent,

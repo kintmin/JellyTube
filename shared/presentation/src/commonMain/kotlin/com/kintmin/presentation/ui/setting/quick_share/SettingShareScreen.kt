@@ -1,7 +1,5 @@
 package com.kintmin.presentation.ui.setting.quick_share
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,6 +44,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.platform.rememberAudioFilePicker
 import com.kintmin.presentation.theme.JellyTubeTheme
 
 @Composable
@@ -55,16 +54,14 @@ fun SettingShareScreen(
     val viewModel = koinViewModel<SettingShareViewModel>()
     val uiState by viewModel.uiState.collectAsState()
 
-    val fileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(),
-    ) { uris ->
-        viewModel.onFilesSelected(uris.map { it.toString() })
+    val audioFilePicker = rememberAudioFilePicker { fileIdentifiers ->
+        viewModel.onFilesSelected(fileIdentifiers)
     }
 
     SettingShareScreen(
         uiState = uiState,
         navigateToBack = navigateToBack,
-        onClickPickFiles = { fileLauncher.launch(arrayOf("audio/*")) },
+        onClickPickFiles = audioFilePicker::launch,
     )
 }
 

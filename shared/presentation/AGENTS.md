@@ -26,17 +26,18 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 
 ### 승격 현황
 
-**178 / 212 파일이 `commonMain`** 이다(84%). `androidMain` 33, `iosMain` 1.
+**187 / 221 파일이 `commonMain`** 이다(85%). `androidMain` 29, `iosMain` 5.
 
-`androidMain` 에 남은 33개의 사유는 셋뿐이다.
+`androidMain` 에 남은 29개의 사유는 셋뿐이다.
 
 | 사유 | 대상 | 해소 조건 |
 |---|---|---|
-| **플랫폼 탈출구 미구현** | `MainScreen`+`YoutubeWebView`(WebView·권한·ActivityResult), `SettingScreen`(커스텀 ActivityResultContract·권한), `AppLogScreen`(filesDir·FileProvider·ACTION_SEND_MULTIPLE), `SettingDeviceSaveScreen`(AlarmClock/Settings 폴백), `SettingDeviceSaveSelectScreen`(권한), `SettingShareScreen`(파일 피커), `PlayerDetailScreen`(Palette·BitmapFactory), `AudioEditScreen`·`LyricsEditScreen`·`PlaylistEditScreen` | 파일피커·권한·WebView·도미넌트색 탈출구 신설 |
+| **플랫폼 탈출구 미구현** | `MainScreen`+`YoutubeWebView`(WebView), `PlayerDetailScreen`(Palette·BitmapFactory 도미넌트색), `AppLogScreen`(filesDir·FileProvider·`ACTION_SEND_MULTIPLE`), `SettingDeviceSaveScreen`(AlarmClock/Settings 액션 폴백), `AudioEditScreen`·`LyricsEditScreen`·`PlaylistEditScreen`(`BackHandler`) | WebView·도미넌트색·파일공유·외부앱열기·`NavigationBackHandler` 탈출구 |
 | **공통화 불가(의도적)** | `ImageDrawingView`(S펜 `MotionEvent.BUTTON_STYLUS_PRIMARY`), `FloatingComponentEditor`·`FloatingComponentView`(`pointerInteropFilter`) | 없음. `expect` 를 만들면 iOS actual 이 죽은 코드가 된다 |
 | **위 파일의 이웃** | 해당 `~Navigation.kt`(= `~ScreenRoute` 선언처)와 그 Route 를 `toRoute()` 로 읽는 ViewModel, 그리고 `di/PresentationModule.kt` | 짝이 되는 Screen 이 올라가면 함께 올라간다 |
 
 `~Navigation.kt` 는 `@Serializable` Route 와 `NavGraphBuilder` 등록을 한 파일에 담는다(프로젝트 규약). 등록부가 Screen 을 참조하므로 **Screen 이 `androidMain` 이면 Route 도 `androidMain` 이고, 그 Route 를 읽는 ViewModel 도 따라간다.** 파일을 쪼개 Route 만 올리는 선택지가 있으나, 규약을 깨고 파일 수를 늘리는 대가가 Screen 승격 뒤 자동으로 해소되는 문제보다 크다고 판단해 하지 않았다.
+
 
 ## 플랫폼 탈출구
 
@@ -58,6 +59,9 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 | `platform/PlatformFullScreenDialog(onDismissRequest, hideSystemBars, content)` | `expect`/`actual`. Android 는 창 배경·DIM·decor 와 `WindowInsetsControllerCompat` 를 직접 만진다(`DialogProperties.decorFitsSystemWindows` 는 Android 전용). iOS 는 `Dialog(usePlatformDefaultWidth = false)` | `JellyTubeDialog`(호출부 22곳, 공개 시그니처 불변), `FullScreenImageViewer`(`hideSystemBars = true`) |
 | `platform/PlatformBottomSheetSystemBarEffect(lightNavigationBarIcons)` | `expect`/`actual`. Android 만 실동작, iOS no-op(내비게이션바가 없다) | 바텀시트 3종 |
 | `platform/Toaster` + `@Composable expect fun rememberToaster()` | `interface` + `expect`/`actual`. Android actual 이 `LocalContext` 를 집어 만든다. iOS actual 은 메시지를 로그로만 남긴다 | Composable 문맥 Toast 10곳. MVI `Event.ShowToast` 계층은 순수 Kotlin 이라 무변경 |
+| `platform/rememberAudioFilePicker(startAtAudioRoot, onPicked)` | `expect`/`actual`. Android actual 이 `ActivityResultContracts.OpenMultipleDocuments` 와 "오디오" 루트용 커스텀 contract(`DocumentsContract.EXTRA_INITIAL_URI`)를 품는다. iOS 는 `UIDocumentPickerViewController` 가 필요해 아직 no-op | `MainScreen`, `SettingScreen`(`startAtAudioRoot = true`), `SettingShareScreen` |
+| `platform/PermissionController` + `rememberPermissionController()` | `interface` + `expect`/`actual`. **원시 권한 문자열을 노출하지 않는다** — `AppPermission` enum(`Notification`/`MediaStorage`/`ActivityRecognition`)만 받고, OS 버전별로 어떤 권한이 실제 필요한지는 actual 이 판단한다(저장: SDK 28 이하 WRITE, 32 이하 READ, 그 위 불필요). iOS 는 권한 모델이 달라 "필요 없음"으로 답한다 | `MainScreen`(시작 시 일괄 요청), `SettingScreen`(신체 활동 인식), `SettingDeviceSaveSelectScreen`(저장) |
+| `platform/rememberAppVersionName()` | `expect`/`actual`. Android 는 `PackageManager`(SDK 33 분기), iOS 는 `NSBundle` 의 `CFBundleShortVersionString` | `SettingScreen` |
 
 `port/` 의 포트 9개(`MediaControllerManager`, `AudioPreviewPlayer`, `Execute*` 4종, `StepMeasurementController`, `FileShareServerController`)는 후자이며 `android:app` 의 `platform/di/PlatformModule.kt` 가 바인딩한다. 배치 규칙은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
 

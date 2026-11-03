@@ -1,12 +1,7 @@
 package com.kintmin.presentation.ui.main
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import android.view.ViewGroup
 import android.webkit.WebView
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -48,13 +43,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.platform.AppPermission
+import com.kintmin.presentation.platform.rememberAudioFilePicker
+import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.white
@@ -91,7 +88,6 @@ fun MainScreen(
     navigateToPlayerDetail: () -> Unit,
     navigateToFileShareReceive: () -> Unit,
 ) {
-    val context = LocalContext.current
     val toaster = rememberToaster()
     val mainViewModel = koinViewModel<MainViewModel>()
     val downloadViewModel = koinViewModel<YoutubeDownloadViewModel>()
@@ -104,31 +100,15 @@ fun MainScreen(
     val currentUrl by downloadViewModel.currentUrl.collectAsState()
     val currentMediaItem by playerBarViewModel.currentMediaItem.collectAsState()
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions(),
-        onResult = { _ -> },
-    )
-    val fileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(),
-    ) { uris ->
-        mainViewModel.sendIntent(MainScreenIntent.ImportMediaFiles(uris.map { it.toString() }))
+    val permissionController = rememberPermissionController()
+    val audioFilePicker = rememberAudioFilePicker { fileIdentifiers ->
+        mainViewModel.sendIntent(MainScreenIntent.ImportMediaFiles(fileIdentifiers))
     }
     LaunchedEffect(Unit) {
-        val permissions = buildList {
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
-                add(Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                add(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }.filter {
-            context.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
-        }
-        if (permissions.isNotEmpty()) {
-            permissionLauncher.launch(permissions.toTypedArray())
-        }
+        // 어떤 권한이 OS 버전별로 실제 필요한지는 구현이 판단한다.
+        permissionController.request(
+            listOf(AppPermission.MediaStorage, AppPermission.Notification),
+        )
     }
 
     LaunchedEffect(Unit) {
@@ -166,7 +146,7 @@ fun MainScreen(
         navigateToSetting = navigateToSetting,
         navigateToPlayerDetail = navigateToPlayerDetail,
         navigateToFileShareReceive = navigateToFileShareReceive,
-        onClickPickMedia = { fileLauncher.launch(arrayOf("audio/*")) },
+        onClickPickMedia = { audioFilePicker.launch() },
         sendMainIntent = mainViewModel::sendIntent,
         sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
         sendPlaylistIntent = playlistViewModel::sendIntent,
