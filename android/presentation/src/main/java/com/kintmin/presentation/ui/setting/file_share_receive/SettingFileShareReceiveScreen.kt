@@ -40,11 +40,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
-import com.kintmin.platform.service.FileShareForegroundService
 import com.kintmin.presentation.theme.JellyTubeTheme
 
 @Composable
@@ -57,6 +55,7 @@ fun SettingFileShareReceiveScreen(
     SettingFileShareReceiveScreen(
         uiState = uiState,
         navigateToBack = navigateToBack,
+        sendIntent = viewModel::sendIntent,
     )
 }
 
@@ -65,8 +64,8 @@ fun SettingFileShareReceiveScreen(
 fun SettingFileShareReceiveScreen(
     uiState: SettingFileShareReceiveUiState,
     navigateToBack: () -> Unit,
+    sendIntent: (SettingFileShareReceiveIntent) -> Unit,
 ) {
-    val context = LocalContext.current
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -101,7 +100,7 @@ fun SettingFileShareReceiveScreen(
                 when (uiState.serverStatus) {
                     ServerStatus.STOPPED -> Button(
                         onClick = {
-                            FileShareForegroundService.startService(context)
+                            sendIntent(SettingFileShareReceiveIntent.OnClickStartServer)
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -109,7 +108,7 @@ fun SettingFileShareReceiveScreen(
                     }
                     ServerStatus.RUNNING -> Button(
                         onClick = {
-                            FileShareForegroundService.stopService(context)
+                            sendIntent(SettingFileShareReceiveIntent.OnClickStopServer)
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
@@ -297,6 +296,7 @@ private fun SettingFileShareReceiveScreenIdlePreview() {
         SettingFileShareReceiveScreen(
             uiState = SettingFileShareReceiveUiState(),
             navigateToBack = {},
+            sendIntent = {},
         )
     }
 }
@@ -308,6 +308,7 @@ private fun SettingFileShareReceiveScreenRunningPreview() {
         SettingFileShareReceiveScreen(
             uiState = SettingFileShareReceiveUiState(serverStatus = ServerStatus.RUNNING),
             navigateToBack = {},
+            sendIntent = {},
         )
     }
 }

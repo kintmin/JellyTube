@@ -1,7 +1,7 @@
 ﻿package com.kintmin.presentation.ui.player_bar
 
 import androidx.lifecycle.ViewModel
-import com.kintmin.platform.service_controller.MediaControllerManager
+import com.kintmin.presentation.port.MediaControllerManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update

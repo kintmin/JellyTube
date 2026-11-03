@@ -7,17 +7,18 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.platform.worker.AudioEditSaveWorker
+import com.kintmin.presentation.port.ExecuteAudioEditSave
 
-class ExecuteAudioEditSave(
+class ExecuteAudioEditSaveImpl(
     private val appContext: Context,
-) {
+) : ExecuteAudioEditSave {
 
     /** 편집본을 만들어 이 음원에 적용한다. */
-    fun overwrite(audioMediaId: Int, timeline: AudioEditTimeline): Result<Unit> =
+    override fun overwrite(audioMediaId: Int, timeline: AudioEditTimeline): Result<Unit> =
         enqueue(audioMediaId = audioMediaId, timeline = timeline, newMediaName = null)
 
     /** 편집본을 원본과 별개인 새 음원으로 저장한다. */
-    fun saveAsNewMedia(audioMediaId: Int, timeline: AudioEditTimeline, name: String): Result<Unit> =
+    override fun saveAsNewMedia(audioMediaId: Int, timeline: AudioEditTimeline, name: String): Result<Unit> =
         enqueue(audioMediaId = audioMediaId, timeline = timeline, newMediaName = name)
 
     private fun enqueue(audioMediaId: Int, timeline: AudioEditTimeline, newMediaName: String?): Result<Unit> {

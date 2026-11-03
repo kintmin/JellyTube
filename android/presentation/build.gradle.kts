@@ -41,8 +41,6 @@ android {
 
 dependencies {
     implementation(project(":shared:domain"))
-    implementation(project(":android:platform"))
-    implementation(project(":shared:log"))
 
     implementation(libs.kotlinx.datetime)
     implementation(libs.material3.android)

@@ -1,4 +1,4 @@
-package com.kintmin.platform.audio_preview
+package com.kintmin.presentation.port
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 

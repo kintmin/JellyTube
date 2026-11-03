@@ -12,7 +12,8 @@ import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
-import com.kintmin.platform.worker.usecase.ExecuteAnomalyDataCheck
+import com.kintmin.presentation.port.ExecuteAnomalyDataCheck
+import com.kintmin.presentation.port.StepMeasurementController
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,7 @@ class SettingViewModel constructor(
     private val updateIsStepEnabledUseCase: UpdateIsStepEnabledUseCase,
     private val executeAnomalyDataCheck: ExecuteAnomalyDataCheck,
     private val importSharedAudioMediaUseCase: ImportSharedAudioMediaUseCase,
+    private val stepMeasurementController: StepMeasurementController,
 ) : ViewModel() {
 
     private val isPlaylistIdOnDownloadBottomSheetVisible = MutableStateFlow(false)
@@ -164,12 +166,13 @@ class SettingViewModel constructor(
                 } else {
                     viewModelScope.launch {
                         updateIsStepEnabledUseCase(false)
-                        _eventFlow.emit(SettingEvent.StopStepForegroundService)
+                        stepMeasurementController.stop()
                     }
                 }
             }
             SettingIntent.OnActivityRecognitionGranted -> {
                 updateIsStepEnabled(true)
+                stepMeasurementController.start()
             }
             SettingIntent.OnActivityRecognitionDenied -> {
                 updateIsStepEnabled(false)

@@ -5,13 +5,14 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.kintmin.platform.worker.AnomalyDataCheckWorker
+import com.kintmin.presentation.port.ExecuteAnomalyDataCheck
 import kotlinx.coroutines.flow.first
 
-class ExecuteAnomalyDataCheck(
+class ExecuteAnomalyDataCheckImpl(
     private val appContext: Context,
-) {
+) : ExecuteAnomalyDataCheck {
 
-    suspend operator fun invoke(): Boolean {
+    override suspend operator fun invoke(): Boolean {
         val workManager = WorkManager.getInstance(appContext)
 
         val isAlreadyRunning = workManager.getWorkInfosForUniqueWorkFlow(WORK_NAME).first()

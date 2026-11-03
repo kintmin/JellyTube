@@ -12,7 +12,9 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.kintmin.platform.service_controller.mapper.toMediaItem
 import com.kintmin.platform.service.PlaybackService
 import com.kintmin.platform.service_controller.mapper.toMediaControlData
-import com.kintmin.platform.service_controller.model.MediaControlData
+import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.RepeatRangeState
+import com.kintmin.presentation.port.model.MediaControlData
 import kotlin.math.pow
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds

@@ -19,7 +19,7 @@ import com.kintmin.platform.push_notification.PushNotificationIdGenerator
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.AudioEditSaveNotification
 import com.kintmin.platform.push_notification.notifications.AudioEditSaveResultNotification
-import com.kintmin.platform.service_controller.MediaControllerManager
+import com.kintmin.presentation.port.MediaControllerManager
 import com.kintmin.platform.service_controller.mapper.toMediaControlData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

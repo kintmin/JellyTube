@@ -13,8 +13,8 @@ import com.kintmin.domain.lyrics.usecase.GetAudioMediaLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
 import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
-import com.kintmin.platform.service_controller.MediaControllerManager
-import com.kintmin.platform.worker.usecase.ExecuteLyricsVariantCreation
+import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.ExecuteLyricsVariantCreation
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.LyricsViewerScreenRoute
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -10,8 +10,8 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.karaoke.usecase.DeleteAudioMediaKaraokeNumberUseCase
-import com.kintmin.platform.service_controller.MediaControllerManager
-import com.kintmin.platform.service_controller.model.MediaControlData
+import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.model.MediaControlData
 import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted

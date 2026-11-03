@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import com.kintmin.domain.audio_media.model.AudioMedia
-import com.kintmin.platform.service_controller.model.MediaControlData
+import com.kintmin.presentation.port.model.MediaControlData
 import java.io.File
 
 internal fun MediaControlData.toMediaItem() = MediaItem.Builder()

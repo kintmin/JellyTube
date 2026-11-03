@@ -38,6 +38,9 @@ android {
 dependencies {
     implementation(project(":shared:domain"))
     implementation(project(":shared:log"))
+    // presentation 이 선언한 포트 인터페이스를 구현한다.
+    // :android:platform 을 :android:app 으로 병합하면 이 줄은 사라진다.
+    implementation(project(":android:presentation"))
     implementation(libs.kotlinx.datetime)
     implementation(libs.koin.android)
     implementation(libs.koin.workmanager)

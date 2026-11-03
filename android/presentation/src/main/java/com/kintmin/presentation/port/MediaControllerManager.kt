@@ -1,6 +1,6 @@
-package com.kintmin.platform.service_controller
+package com.kintmin.presentation.port
 
-import com.kintmin.platform.service_controller.model.MediaControlData
+import com.kintmin.presentation.port.model.MediaControlData
 import kotlin.time.Duration
 
 data class RepeatRangeState(

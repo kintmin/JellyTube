@@ -6,8 +6,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
-import com.kintmin.platform.service_controller.MediaControllerManager
-import com.kintmin.platform.service_controller.model.MediaControlData
+import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.model.MediaControlData
 import com.kintmin.presentation.extension.matchKorean
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.util.Debounce

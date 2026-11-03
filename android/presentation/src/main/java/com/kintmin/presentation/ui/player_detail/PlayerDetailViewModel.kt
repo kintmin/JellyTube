@@ -18,7 +18,7 @@ import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
-import com.kintmin.platform.service_controller.MediaControllerManager
+import com.kintmin.presentation.port.MediaControllerManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow

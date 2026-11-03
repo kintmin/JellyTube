@@ -6,12 +6,13 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.platform.worker.LyricsVariantWorker
+import com.kintmin.presentation.port.ExecuteLyricsVariantCreation
 
-class ExecuteLyricsVariantCreation(
+class ExecuteLyricsVariantCreationImpl(
     private val appContext: Context,
-) {
+) : ExecuteLyricsVariantCreation {
 
-    operator fun invoke(
+    override operator fun invoke(
         audioMediaId: Int,
         lyricFileFullPath: String,
         variant: LyricsVariant,

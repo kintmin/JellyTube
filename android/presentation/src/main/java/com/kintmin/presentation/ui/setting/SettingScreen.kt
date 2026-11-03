@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import org.koin.androidx.compose.koinViewModel
-import com.kintmin.platform.service.StepForegroundService
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
 import com.kintmin.presentation.ui.setting.section.SettingItemView
@@ -95,7 +94,6 @@ fun SettingScreen(
     ) { granted ->
         if (granted) {
             viewModel.sendIntent(SettingIntent.OnActivityRecognitionGranted)
-            StepForegroundService.startService(context)
         } else {
             viewModel.sendIntent(SettingIntent.OnActivityRecognitionDenied)
         }
@@ -113,7 +111,6 @@ fun SettingScreen(
                 SettingEvent.NavigateToFileShareReceiveScreen -> navigateToFileShareReceive()
                 SettingEvent.NavigateToDeviceSaveScreen -> navigateToDeviceSave()
                 SettingEvent.LaunchAudioFilePicker -> audioFileLauncher.launch(arrayOf("audio/*"))
-                SettingEvent.StopStepForegroundService -> StepForegroundService.stopService(context)
                 is SettingEvent.ShowToast ->
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                 SettingEvent.RequestActivityRecognitionPermission -> {
@@ -123,13 +120,11 @@ fun SettingScreen(
                             PackageManager.PERMISSION_GRANTED
                         if (alreadyGranted) {
                             viewModel.sendIntent(SettingIntent.OnActivityRecognitionGranted)
-                            StepForegroundService.startService(context)
                         } else {
                             activityRecognitionLauncher.launch(permission)
                         }
                     } else {
                         viewModel.sendIntent(SettingIntent.OnActivityRecognitionGranted)
-                        StepForegroundService.startService(context)
                     }
                 }
             }
