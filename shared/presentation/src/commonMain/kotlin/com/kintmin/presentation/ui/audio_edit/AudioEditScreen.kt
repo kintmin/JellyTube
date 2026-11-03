@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.audio_edit
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,11 +38,13 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
@@ -56,9 +57,10 @@ import com.kintmin.presentation.ui.audio_edit.waveform.TimelineGrab
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineRulerView
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineWaveformView
 import com.kintmin.presentation.ui.audio_edit.waveform.rememberTimelineViewportState
+import kotlin.time.Duration.Companion.milliseconds
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.time.Duration.Companion.milliseconds
 
 /** 이 높이(dp)보다 낮으면 가로 화면용 압축 배치를 쓴다. */
 private const val COMPACT_HEIGHT_DP = 480
@@ -105,7 +107,12 @@ fun AudioEditScreen(
     val onBackPressed = {
         if (data.isDirty) isShowExitDialog = true else navigateToBack()
     }
-    BackHandler(enabled = data.isDirty) { isShowExitDialog = true }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = data.isDirty,
+    ) {
+        isShowExitDialog = true
+    }
 
     AudioEditSaveDialog(
         isShow = isShowSaveDialog,

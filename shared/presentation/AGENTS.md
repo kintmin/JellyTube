@@ -26,15 +26,18 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 
 ### 승격 현황
 
-**187 / 221 파일이 `commonMain`** 이다(85%). `androidMain` 29, `iosMain` 5.
+**196 / 216 파일이 `commonMain`** 이다(91%). `androidMain` 20(그중 5개는 `platform/` actual), `iosMain` 5.
 
-`androidMain` 에 남은 29개의 사유는 셋뿐이다.
+`androidMain` 에 남은 **화면 코드 15개**의 사유는 셋뿐이다.
 
-| 사유 | 대상 | 해소 조건 |
+| 사유 | 대상 | 필요한 탈출구 |
 |---|---|---|
-| **플랫폼 탈출구 미구현** | `MainScreen`+`YoutubeWebView`(WebView), `PlayerDetailScreen`(Palette·BitmapFactory 도미넌트색), `AppLogScreen`(filesDir·FileProvider·`ACTION_SEND_MULTIPLE`), `SettingDeviceSaveScreen`(AlarmClock/Settings 액션 폴백), `AudioEditScreen`·`LyricsEditScreen`·`PlaylistEditScreen`(`BackHandler`) | WebView·도미넌트색·파일공유·외부앱열기·`NavigationBackHandler` 탈출구 |
+| **탈출구 미구현** | `MainScreen` + `YoutubeWebView` | WebView (`PlatformWebView` + `WebViewHandle`) |
+| | `PlayerDetailScreen` | 도미넌트색 추출(`Palette` + `BitmapFactory`) |
+| | `AppLogScreen` | 로그 파일 공유(`filesDir` + FileProvider + `ACTION_SEND_MULTIPLE`) |
+| | `SettingDeviceSaveScreen` | 외부 앱 열기(AlarmClock/Settings 액션 폴백 체인) |
 | **공통화 불가(의도적)** | `ImageDrawingView`(S펜 `MotionEvent.BUTTON_STYLUS_PRIMARY`), `FloatingComponentEditor`·`FloatingComponentView`(`pointerInteropFilter`) | 없음. `expect` 를 만들면 iOS actual 이 죽은 코드가 된다 |
-| **위 파일의 이웃** | 해당 `~Navigation.kt`(= `~ScreenRoute` 선언처)와 그 Route 를 `toRoute()` 로 읽는 ViewModel, 그리고 `di/PresentationModule.kt` | 짝이 되는 Screen 이 올라가면 함께 올라간다 |
+| **위 파일의 이웃** | 해당 `~Navigation.kt`(= `~ScreenRoute` 선언처), 그 Route 를 `toRoute()` 로 읽는 `MainViewModel`·`YoutubeDownloadViewModel`, 그리고 `di/PresentationModule.kt` | 짝이 되는 Screen 이 올라가면 함께 올라간다 |
 
 `~Navigation.kt` 는 `@Serializable` Route 와 `NavGraphBuilder` 등록을 한 파일에 담는다(프로젝트 규약). 등록부가 Screen 을 참조하므로 **Screen 이 `androidMain` 이면 Route 도 `androidMain` 이고, 그 Route 를 읽는 ViewModel 도 따라간다.** 파일을 쪼개 Route 만 올리는 선택지가 있으나, 규약을 깨고 파일 수를 늘리는 대가가 Screen 승격 뒤 자동으로 해소되는 문제보다 크다고 판단해 하지 않았다.
 
@@ -69,6 +72,7 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 
 - Coil 13파일: `LocalContext.current` → `coil3.compose.LocalPlatformContext.current`, `File(path)` → `path.toPath()`(okio). 경로에 공백·`#` 이 있으면 깨지는 `"file://$path"` 문자열 방식은 쓰지 않았다.
 - 폴링 3파일: `repeatOnLifecycle` + `lifecycleScope.launch` → `LifecycleResumeEffect` + `onPauseOrDispose { job.cancel() }`. **원래 코드는 RESUMED 를 벗어나도 루프가 취소되지 않는 버그였고 이 치환으로 함께 고쳐졌다.**
+- 뒤로가기 3곳: `androidx.activity.compose.BackHandler` → `androidx.navigationevent.compose.NavigationBackHandler`(`state = rememberNavigationEventState(NavigationEventInfo.None)`, `isBackEnabled = ...`). CMP 1.12 에서 `ui-backhandler` 가 deprecated 되어 이쪽이 공통 경로다. `YoutubeWebView` 의 `BackHandler` 는 그 파일이 `androidMain` 잔류라 손대지 않았다.
 - 유튜브 URL 판정: `androidx.core.net.toUri` → `shared:domain` 의 `YoutubeUrl`(순수 문자열 파싱 + 단위테스트 6개). 플랫폼 URI 파서는 관용적이라 판정 결과가 플랫폼마다 달라질 수 있다.
 
 **비-Composable Android 헬퍼 안의 Toast 5곳은 그대로 뒀다** — `AppLogScreen.sendAppLogByEmail`, `SettingDeviceSaveScreen.startFirstAvailableActivity`. 그 함수 자체가 `androidMain` 잔류라 추상화할 이유가 없다.
