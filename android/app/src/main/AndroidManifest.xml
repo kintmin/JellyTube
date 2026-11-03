@@ -44,10 +44,17 @@
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
 
+    <!--
+        enableOnBackInvokedCallback 을 끈다. targetSdk 36 이면 기본값이 true 인데,
+        navigation-compose 2.10 이 OnBackInvokedCallback 으로 predictive back 을 처리하면서
+        NavHost 에 선언한 popEnterTransition / popExitTransition(300ms 슬라이드)이 돌지 않는다.
+        끄면 legacy onBackPressed 경로를 타서 뒤로가기도 앞으로가기와 같은 슬라이드로 움직인다.
+    -->
     <application
         android:name="com.kintmin.jellytube.JellyTubeApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="false"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="${appLabel}"
