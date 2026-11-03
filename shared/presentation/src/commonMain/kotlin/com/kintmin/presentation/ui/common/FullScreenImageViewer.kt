@@ -1,8 +1,5 @@
 package com.kintmin.presentation.ui.common
 
-import android.graphics.Color as AndroidColor
-import android.view.WindowManager
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -22,7 +19,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,22 +27,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
-import androidx.core.graphics.drawable.toDrawable
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.compose.AsyncImagePainter
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import com.kintmin.presentation.platform.PlatformFullScreenDialog
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.custom_ui.zoomable.ZoomContentAlignment
 import com.kintmin.presentation.ui.custom_ui.zoomable.ZoomLimitMode
@@ -62,42 +50,8 @@ fun FullScreenImageViewer(
 ) {
     if (imageFileFullPath == null) return
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false,
-        ),
-    ) {
-        val view = LocalView.current
+    PlatformFullScreenDialog(onDismissRequest = onDismiss, hideSystemBars = true) {
         var isShowCloseButton by remember { mutableStateOf(true) }
-
-        val window = (view.parent as? DialogWindowProvider)?.window
-
-        SideEffect {
-            window ?: return@SideEffect
-            window.setBackgroundDrawable(AndroidColor.TRANSPARENT.toDrawable())
-            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            window.setLayout(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.MATCH_PARENT,
-            )
-        }
-
-        DisposableEffect(window) {
-            if (window == null) return@DisposableEffect onDispose {}
-
-            val originalDecorFitsSystemWindows = true
-            val controller = WindowCompat.getInsetsController(window, window.decorView)
-            WindowCompat.setDecorFitsSystemWindows(window, false)
-            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            controller.hide(WindowInsetsCompat.Type.systemBars())
-
-            onDispose {
-                controller.show(WindowInsetsCompat.Type.systemBars())
-                WindowCompat.setDecorFitsSystemWindows(window, originalDecorFitsSystemWindows)
-            }
-        }
 
         LaunchedEffect(isShowCloseButton) {
             if (!isShowCloseButton) return@LaunchedEffect

@@ -3,7 +3,6 @@ package com.kintmin.presentation.ui.setting.device_save_select
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -59,8 +58,10 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_media.model.AudioExportTarget
+import com.kintmin.presentation.platform.Toaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.device_save_select.list.SettingDeviceSaveSelectListItemView
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -70,6 +71,7 @@ fun SettingDeviceSaveSelectScreen(
     val viewModel = koinViewModel<SettingDeviceSaveSelectViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val toaster = koinInject<Toaster>()
 
     val legacyStoragePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -77,7 +79,7 @@ fun SettingDeviceSaveSelectScreen(
         if (isGranted) {
             viewModel.sendIntent(SettingDeviceSaveSelectIntent.OnClickSaveToDevice)
         } else {
-            Toast.makeText(context, "저장 권한이 없어 기기에 저장할 수 없습니다.", Toast.LENGTH_SHORT).show()
+            toaster.show("저장 권한이 없어 기기에 저장할 수 없습니다.")
         }
     }
 
@@ -85,7 +87,7 @@ fun SettingDeviceSaveSelectScreen(
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is SettingDeviceSaveSelectEvent.ShowToast ->
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    toaster.show(event.message)
             }
         }
     }

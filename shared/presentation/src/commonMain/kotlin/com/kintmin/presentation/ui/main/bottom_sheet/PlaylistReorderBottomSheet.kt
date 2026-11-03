@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.main.bottom_sheet
 
-import android.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Row
@@ -21,19 +20,16 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.zIndex
-import androidx.core.view.WindowCompat
+import com.kintmin.presentation.platform.PlatformBottomSheetSystemBarEffect
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.remember_state.rememberReorderState
@@ -152,14 +148,7 @@ private fun PlaylistReorderItemView(
 
 @Composable
 private fun KeepBottomSheetNavigationBarDark() {
-    val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
-    SideEffect {
-        dialogWindow?.let { window ->
-            WindowCompat.getInsetsController(window, window.decorView).apply {
-                isAppearanceLightNavigationBars = false
-            }
-        }
-    }
+    PlatformBottomSheetSystemBarEffect(lightNavigationBarIcons = false)
 }
 
 @Preview

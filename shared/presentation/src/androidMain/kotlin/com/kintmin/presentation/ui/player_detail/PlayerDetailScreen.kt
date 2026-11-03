@@ -1,7 +1,6 @@
 package com.kintmin.presentation.ui.player_detail
 
 import android.graphics.BitmapFactory
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
@@ -56,7 +55,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -64,6 +62,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.palette.graphics.Palette
@@ -72,6 +71,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
+import com.kintmin.presentation.platform.Toaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.deepSea60
 import com.kintmin.presentation.theme.deepSea80
@@ -102,7 +102,7 @@ fun PlayerDetailScreen(
 ) {
     val viewModel = koinViewModel<PlayerDetailViewModel>()
     val data by viewModel.data.collectAsState()
-    val context = LocalContext.current
+    val toaster = koinInject<Toaster>()
 
     PlayerDetailScreen(
         navigateToBack = navigateToBack,
@@ -121,7 +121,7 @@ fun PlayerDetailScreen(
                     event.audioMediaId
                 )
 
-                is PlayerDetailEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                is PlayerDetailEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }

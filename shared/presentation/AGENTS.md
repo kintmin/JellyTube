@@ -26,24 +26,33 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 
 ### 승격 현황
 
-CMP 전환 시점에 전 소스를 `androidMain` 에 뒀고, 1차 승격으로 **152 / 208 파일이 `commonMain`** 에 올라갔다.
+**178 / 212 파일이 `commonMain`** 이다(84%). `androidMain` 33, `iosMain` 1.
 
-`androidMain` 에 남은 56개의 사유는 셋뿐이다.
+`androidMain` 에 남은 33개의 사유는 셋뿐이다.
 
 | 사유 | 대상 | 해소 조건 |
 |---|---|---|
-| **플랫폼 탈출구 미구현** | `MainScreen`+`YoutubeWebView`(WebView), `SettingScreen`·`AppLogScreen`·`SettingDeviceSaveScreen`·`SettingDeviceSaveSelectScreen`·`SettingShareScreen`(ActivityResult·권한·FileProvider·Intent), `PlayerDetailScreen`(Palette), 바텀시트 3종·`FullScreenImageViewer`(`DialogWindowProvider` 시스템바), Toast 를 쓰는 화면들 | 해당 탈출구 신설 |
-| **공통화 불가(의도적)** | `ImageDrawingView`(S펜 `MotionEvent.BUTTON_STYLUS_PRIMARY`), `FloatingComponentEditor`(`pointerInteropFilter`) | 없음. `expect` 를 만들면 iOS actual 이 죽은 코드가 된다 |
+| **플랫폼 탈출구 미구현** | `MainScreen`+`YoutubeWebView`(WebView·권한·ActivityResult), `SettingScreen`(커스텀 ActivityResultContract·권한), `AppLogScreen`(filesDir·FileProvider·ACTION_SEND_MULTIPLE), `SettingDeviceSaveScreen`(AlarmClock/Settings 폴백), `SettingDeviceSaveSelectScreen`(권한), `SettingShareScreen`(파일 피커), `PlayerDetailScreen`(Palette·BitmapFactory), `AudioEditScreen`·`LyricsEditScreen`·`PlaylistEditScreen` | 파일피커·권한·WebView·도미넌트색 탈출구 신설 |
+| **공통화 불가(의도적)** | `ImageDrawingView`(S펜 `MotionEvent.BUTTON_STYLUS_PRIMARY`), `FloatingComponentEditor`·`FloatingComponentView`(`pointerInteropFilter`) | 없음. `expect` 를 만들면 iOS actual 이 죽은 코드가 된다 |
 | **위 파일의 이웃** | 해당 `~Navigation.kt`(= `~ScreenRoute` 선언처)와 그 Route 를 `toRoute()` 로 읽는 ViewModel, 그리고 `di/PresentationModule.kt` | 짝이 되는 Screen 이 올라가면 함께 올라간다 |
 
 `~Navigation.kt` 는 `@Serializable` Route 와 `NavGraphBuilder` 등록을 한 파일에 담는다(프로젝트 규약). 등록부가 Screen 을 참조하므로 **Screen 이 `androidMain` 이면 Route 도 `androidMain` 이고, 그 Route 를 읽는 ViewModel 도 따라간다.** 파일을 쪼개 Route 만 올리는 선택지가 있으나, 규약을 깨고 파일 수를 늘리는 대가가 Screen 승격 뒤 자동으로 해소되는 문제보다 크다고 판단해 하지 않았다.
 
-**이미 적용한 탈출구**
+### 이미 적용한 탈출구
 
-- `platform/PlatformFullScreenDialog`(expect/actual) — `JellyTubeDialog` 가 쓴다. Android 는 창 배경·DIM·decor 를 직접 만지고 iOS 는 `Dialog(usePlatformDefaultWidth = false)` 로 끝난다. `JellyTubeDialog` 의 공개 시그니처가 불변이라 호출부 22곳이 그대로 동작한다.
-- Coil: `LocalContext.current` → `coil3.compose.LocalPlatformContext.current`, `File(path)` → `path.toPath()`(okio). 13파일.
-- 폴링: `repeatOnLifecycle` + `lifecycleScope.launch` → `LifecycleResumeEffect` + `onPauseOrDispose { job.cancel() }`. 3파일. **원래 코드는 RESUMED 를 벗어나도 루프가 취소되지 않는 버그였고 이 치환으로 함께 고쳐졌다.**
-- 유튜브 URL 판정: `androidx.core.net.toUri` → `shared:domain` 의 `YoutubeUrl`(순수 문자열 파싱 + 단위테스트 6개).
+| 탈출구 | 방식 | 쓰는 곳 |
+|---|---|---|
+| `platform/PlatformFullScreenDialog(onDismissRequest, hideSystemBars, content)` | `expect/actual`. Android 는 창 배경·DIM·decor 와 `WindowInsetsControllerCompat` 를 직접 만진다(`DialogProperties.decorFitsSystemWindows` 는 Android 전용). iOS 는 `Dialog(usePlatformDefaultWidth = false)` | `JellyTubeDialog`(호출부 22곳, 공개 시그니처 불변), `FullScreenImageViewer`(`hideSystemBars = true`) |
+| `platform/PlatformBottomSheetSystemBarEffect(lightNavigationBarIcons)` | `expect/actual`. Android 만 실동작, iOS no-op(내비게이션바가 없다) | 바텀시트 3종 |
+| `platform/Toaster` | `interface` + Koin. Application 컨텍스트로 충분해 `remember~()` 가 필요 없다. 등록은 `androidMain` 의 `presentationAndroidModule` | Composable 문맥 Toast 11곳. MVI `Event.ShowToast` 계층은 순수 Kotlin 이라 무변경 |
+
+**추상화 없이 치환만으로 끝낸 것**
+
+- Coil 13파일: `LocalContext.current` → `coil3.compose.LocalPlatformContext.current`, `File(path)` → `path.toPath()`(okio). 경로에 공백·`#` 이 있으면 깨지는 `"file://$path"` 문자열 방식은 쓰지 않았다.
+- 폴링 3파일: `repeatOnLifecycle` + `lifecycleScope.launch` → `LifecycleResumeEffect` + `onPauseOrDispose { job.cancel() }`. **원래 코드는 RESUMED 를 벗어나도 루프가 취소되지 않는 버그였고 이 치환으로 함께 고쳐졌다.**
+- 유튜브 URL 판정: `androidx.core.net.toUri` → `shared:domain` 의 `YoutubeUrl`(순수 문자열 파싱 + 단위테스트 6개). 플랫폼 URI 파서는 관용적이라 판정 결과가 플랫폼마다 달라질 수 있다.
+
+**비-Composable Android 헬퍼 안의 Toast 5곳은 그대로 뒀다** — `AppLogScreen.sendAppLogByEmail`, `SettingDeviceSaveScreen.startFirstAvailableActivity`. 그 함수 자체가 `androidMain` 잔류라 추상화할 이유가 없다.
 
 
 ### 미결 사항 — iOS framework 구성

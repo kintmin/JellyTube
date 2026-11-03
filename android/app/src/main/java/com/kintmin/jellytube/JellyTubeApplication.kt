@@ -8,6 +8,7 @@ import com.kintmin.jellytube.di.logModule
 import com.kintmin.platform.di.platformModule
 import com.kintmin.platform.worker.di.workerModule
 import com.kintmin.presentation.di.presentationModule
+import com.kintmin.presentation.platform.presentationAndroidModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.workmanager.koin.workManagerFactory
@@ -29,6 +30,7 @@ class JellyTubeApplication : Application() {
                 platformModule,
                 workerModule,
                 presentationModule,
+                presentationAndroidModule,
                 appModule,
             )
         }

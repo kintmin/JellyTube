@@ -5,7 +5,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.view.ViewGroup
 import android.webkit.WebView
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -54,7 +53,9 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.platform.Toaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.white
 import com.kintmin.presentation.ui.custom_ui.data_table.AgeColumn
@@ -91,6 +92,7 @@ fun MainScreen(
     navigateToFileShareReceive: () -> Unit,
 ) {
     val context = LocalContext.current
+    val toaster = koinInject<Toaster>()
     val mainViewModel = koinViewModel<MainViewModel>()
     val downloadViewModel = koinViewModel<YoutubeDownloadViewModel>()
     val playlistViewModel = koinViewModel<PlaylistViewModel>()
@@ -132,7 +134,7 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         downloadViewModel.eventFlow.collect { event ->
             when (event) {
-                is YoutubeWebViewEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                is YoutubeWebViewEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }
@@ -140,7 +142,7 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         mainViewModel.eventFlow.collect { event ->
             when (event) {
-                is MainScreenEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                is MainScreenEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }

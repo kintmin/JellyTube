@@ -24,13 +24,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.widget.Toast
+import com.kintmin.presentation.platform.Toaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -39,13 +39,13 @@ fun LyricsDetailScreen(
 ) {
     val viewModel = koinViewModel<LyricsDetailViewModel>()
     val data by viewModel.data.collectAsState()
-    val context = LocalContext.current
+    val toaster = koinInject<Toaster>()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is LyricsDetailEvent.ShowToast ->
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    toaster.show(event.message)
 
                 LyricsDetailEvent.NavigateToBack -> navigateToBack()
             }

@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -48,7 +47,9 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.platform.Toaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
 import com.kintmin.presentation.ui.setting.section.SettingItemView
@@ -81,6 +82,7 @@ fun SettingScreen(
     val viewModel = koinViewModel<SettingViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val toaster = koinInject<Toaster>()
     val appVersion = remember(context) { context.getAppVersionName() }
 
     val audioFileLauncher = rememberLauncherForActivityResult(
@@ -112,7 +114,7 @@ fun SettingScreen(
                 SettingEvent.NavigateToDeviceSaveScreen -> navigateToDeviceSave()
                 SettingEvent.LaunchAudioFilePicker -> audioFileLauncher.launch(arrayOf("audio/*"))
                 is SettingEvent.ShowToast ->
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    toaster.show(event.message)
                 SettingEvent.RequestActivityRecognitionPermission -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         val permission = Manifest.permission.ACTIVITY_RECOGNITION

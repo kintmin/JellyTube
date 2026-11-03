@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.audio_edit
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -36,7 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -47,6 +45,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
+import com.kintmin.presentation.platform.Toaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.bloodyRed100
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditCompactControlsView
@@ -57,6 +56,7 @@ import com.kintmin.presentation.ui.audio_edit.waveform.TimelineGrab
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineRulerView
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineWaveformView
 import com.kintmin.presentation.ui.audio_edit.waveform.rememberTimelineViewportState
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -72,13 +72,13 @@ fun AudioEditScreen(
 ) {
     val viewModel = koinViewModel<AudioEditViewModel>()
     val data by viewModel.data.collectAsState()
-    val context = LocalContext.current
+    val toaster = koinInject<Toaster>()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is AudioEditEvent.ShowToast ->
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    toaster.show(event.message)
 
                 AudioEditEvent.NavigateToBack -> navigateToBack()
             }

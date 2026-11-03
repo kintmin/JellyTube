@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.main.floating_action
 
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -32,11 +31,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.platform.Toaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
 
@@ -49,13 +49,13 @@ fun MainFloatingActionButton(
 ) {
     val viewModel = koinViewModel<MainFloatingActionViewModel>()
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
+    val toaster = koinInject<Toaster>()
 
     LaunchedEffect(viewModel) {
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is MainFloatingActionEvent.Download -> onClickDownload(event.url)
-                is MainFloatingActionEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                is MainFloatingActionEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }

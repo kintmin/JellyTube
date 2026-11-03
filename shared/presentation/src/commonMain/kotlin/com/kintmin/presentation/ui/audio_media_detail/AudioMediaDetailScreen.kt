@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.audio_media_detail
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -42,15 +41,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
+import com.kintmin.presentation.platform.Toaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_media_detail.dialog.AudioEditRevertDialog
 import com.kintmin.presentation.ui.audio_media_detail.dialog.KaraokeUnlinkDialog
@@ -72,14 +72,14 @@ fun AudioMediaDetailScreen(
     val mainViewModel = koinViewModel<AudioMediaDetailViewModel>()
 
     val data by mainViewModel.data.collectAsState()
-    val context = LocalContext.current
+    val toaster = koinInject<Toaster>()
 
     LaunchedEffect(Unit) {
         mainViewModel.eventFlow.collect { event ->
             when (event) {
                 AudioMediaDetailEvent.OnNavigateToBack -> navigateToBack()
                 is AudioMediaDetailEvent.ShowToast ->
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    toaster.show(event.message)
             }
         }
     }

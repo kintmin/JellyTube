@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.lyrics_edit
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -35,15 +34,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kintmin.presentation.platform.Toaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.wheel_picker.TimePickerBottomSheet
 import com.kintmin.presentation.ui.lyrics_edit.dialog.LyricsEditExitDialog
 import com.kintmin.presentation.ui.lyrics_edit.list_item.LyricsEditItemView
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -52,13 +52,13 @@ fun LyricsEditScreen(
 ) {
     val viewModel = koinViewModel<LyricsEditViewModel>()
     val data by viewModel.data.collectAsState()
-    val context = LocalContext.current
+    val toaster = koinInject<Toaster>()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is LyricsEditEvent.ShowToast ->
-                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                    toaster.show(event.message)
 
                 LyricsEditEvent.NavigateToBack -> navigateToBack()
             }
