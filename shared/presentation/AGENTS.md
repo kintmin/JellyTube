@@ -170,7 +170,8 @@ If a required color is missing from `Color.kt`, add it there first, then use it.
 
 - Wrap all previews in `JellyTubeTheme { ... }`.
 - Place the preview function in the same file as the composable.
-- **`org.jetbrains.compose.ui.tooling.preview.Preview` 를 쓴다.** CMP `@Preview` 는 **파라미터를 받지 않는다** — `showBackground`/`backgroundColor` 등을 붙이면 컴파일되지 않는다. 배경이 필요하면 `JellyTubeTheme` 안에서 `Surface`/`Box` 로 직접 깐다.
+- **`androidx.compose.ui.tooling.preview.Preview` 를 쓴다.** CMP 가 그 패키지를 멀티플랫폼으로 제공한다(`org.jetbrains.compose.ui:ui-tooling-preview`). `org.jetbrains.compose.ui.tooling.preview.Preview`(components 쪽)는 CMP 1.12 에서 deprecated 됐다.
+- **파라미터를 붙이지 않는다** — 멀티플랫폼 `@Preview` 는 `showBackground`/`backgroundColor` 를 받지 않는다. 배경이 필요하면 `JellyTubeTheme` 안에서 `Surface`/`Box` 로 직접 깐다.
 - Provide realistic mock data. If a `UiState` is needed, add a `getMock()` companion factory.
 
 ```kotlin

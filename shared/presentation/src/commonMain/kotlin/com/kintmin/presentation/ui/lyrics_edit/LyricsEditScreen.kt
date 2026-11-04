@@ -44,7 +44,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.wheel_picker.TimePickerBottomSheet
 import com.kintmin.presentation.ui.lyrics_edit.dialog.LyricsEditExitDialog
 import com.kintmin.presentation.ui.lyrics_edit.list_item.LyricsEditItemView
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 

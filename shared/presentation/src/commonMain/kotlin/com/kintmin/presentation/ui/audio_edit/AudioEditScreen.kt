@@ -58,7 +58,7 @@ import com.kintmin.presentation.ui.audio_edit.waveform.TimelineRulerView
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineWaveformView
 import com.kintmin.presentation.ui.audio_edit.waveform.rememberTimelineViewportState
 import kotlin.time.Duration.Companion.milliseconds
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 

@@ -20,7 +20,7 @@ import com.kintmin.presentation.platform.PlatformWebView
 import com.kintmin.presentation.platform.WebViewHandle
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray80
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 
 private const val HOME_URL = "https://m.youtube.com/"
 

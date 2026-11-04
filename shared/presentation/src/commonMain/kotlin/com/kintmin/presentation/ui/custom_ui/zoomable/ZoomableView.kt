@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.TransformOrigin
 import com.kintmin.presentation.theme.JellyTubeTheme

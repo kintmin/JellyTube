@@ -46,7 +46,7 @@ kotlin {
             // app 의 MainNavHost 가 NavHost / rememberNavController 를 쓴다.
             api(libs.jetbrains.navigation.compose)
 
-            implementation(libs.compose.components.ui.tooling.preview)
+            implementation(libs.compose.ui.tooling.preview)
             implementation(libs.jetbrains.lifecycle.viewmodel.compose)
             implementation(libs.jetbrains.lifecycle.runtime.compose)
             implementation(libs.jetbrains.lifecycle.viewmodel.savedstate)
