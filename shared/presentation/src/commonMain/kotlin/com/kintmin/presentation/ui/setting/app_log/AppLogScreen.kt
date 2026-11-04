@@ -1,8 +1,5 @@
 package com.kintmin.presentation.ui.setting.app_log
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,14 +30,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
-import androidx.core.content.FileProvider
+import com.kintmin.presentation.platform.AppLogShareResult
+import com.kintmin.presentation.platform.rememberAppLogSharer
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.SettingScreen
 import com.kintmin.presentation.ui.setting.SettingUiState
-import java.util.ArrayList
 
 @Composable
 fun AppLogScreen(
@@ -67,7 +64,8 @@ fun AppLogScreen(
     navigateToBack: () -> Unit,
     sendIntent: (AppLogIntent) -> Unit,
 ) {
-    val context = LocalContext.current
+    val toaster = rememberToaster()
+    val appLogSharer = rememberAppLogSharer()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -84,7 +82,17 @@ fun AppLogScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = { sendAppLogByEmail(context) },
+                        onClick = {
+                            when (appLogSharer.share()) {
+                                AppLogShareResult.Started -> Unit
+                                AppLogShareResult.NoLogFiles ->
+                                    toaster.show("전송할 로그 파일이 없습니다.")
+                                AppLogShareResult.NoShareTarget ->
+                                    toaster.show("메일 앱을 찾을 수 없습니다.")
+                                AppLogShareResult.Failed ->
+                                    toaster.show("로그 전송을 시작하지 못했습니다.")
+                            }
+                        },
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.Send,
@@ -171,44 +179,6 @@ fun AppLogScreen(
     }
 }
 
-private fun sendAppLogByEmail(context: android.content.Context) {
-    val logDir = context.filesDir.resolve("app_logs")
-    val logFileList = logDir
-        .listFiles()
-        ?.filter { file -> file.isFile && file.extension == "log" }
-        ?.sortedByDescending { file -> file.name }
-        ?: emptyList()
-
-    if (logFileList.isEmpty()) {
-        Toast.makeText(context, "전송할 로그 파일이 없습니다.", Toast.LENGTH_SHORT).show()
-        return
-    }
-
-    val authority = "${context.packageName}.fileprovider"
-    val uriList = ArrayList<android.net.Uri>(logFileList.size)
-    logFileList.forEach { file ->
-        uriList += FileProvider.getUriForFile(context, authority, file)
-    }
-
-    val sendIntent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_EMAIL, arrayOf("kintmin4@gmail.com"))
-        putExtra(Intent.EXTRA_SUBJECT, "JellyTube App Logs")
-        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uriList)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-
-    val chooserIntent = Intent.createChooser(sendIntent, "메일 앱 선택")
-    runCatching {
-        context.startActivity(chooserIntent)
-    }.onFailure { throwable ->
-        if (throwable is ActivityNotFoundException) {
-            Toast.makeText(context, "메일 앱을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(context, "로그 전송을 시작하지 못했습니다.", Toast.LENGTH_SHORT).show()
-        }
-    }
-}
 
 @Preview
 @Composable

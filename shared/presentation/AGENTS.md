@@ -26,15 +26,13 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 
 ### 승격 현황
 
-**199 / 218 파일이 `commonMain`** 이다(91%). `androidMain` 19(그중 6개는 `platform/` actual), `iosMain` 6.
+**205 / 222 파일이 `commonMain`** 이다(92%). `androidMain` 17(그중 8개는 `platform/` actual), `iosMain` 8.
 
 `androidMain` 에 남은 **화면 코드 15개**의 사유는 셋뿐이다.
 
 | 사유 | 대상 | 필요한 탈출구 |
 |---|---|---|
 | **탈출구 미구현** | `MainScreen` + `YoutubeWebView` | WebView (`PlatformWebView` + `WebViewHandle`) |
-| | `AppLogScreen` | 로그 파일 공유(`filesDir` + FileProvider + `ACTION_SEND_MULTIPLE`) |
-| | `SettingDeviceSaveScreen` | 외부 앱 열기(AlarmClock/Settings 액션 폴백 체인) |
 | **공통화 불가(의도적)** | `ImageDrawingView`(S펜 `MotionEvent.BUTTON_STYLUS_PRIMARY`), `FloatingComponentEditor`·`FloatingComponentView`(`pointerInteropFilter`) | 없음. `expect` 를 만들면 iOS actual 이 죽은 코드가 된다 |
 | **위 파일의 이웃** | 해당 `~Navigation.kt`(= `~ScreenRoute` 선언처), 그 Route 를 `toRoute()` 로 읽는 `MainViewModel`·`YoutubeDownloadViewModel`, 그리고 `di/PresentationModule.kt` | 짝이 되는 Screen 이 올라가면 함께 올라간다 |
 
@@ -65,6 +63,8 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 | `platform/PermissionController` + `rememberPermissionController()` | `interface` + `expect`/`actual`. **원시 권한 문자열을 노출하지 않는다** — `AppPermission` enum(`Notification`/`MediaStorage`/`ActivityRecognition`)만 받고, OS 버전별로 어떤 권한이 실제 필요한지는 actual 이 판단한다(저장: SDK 28 이하 WRITE, 32 이하 READ, 그 위 불필요). iOS 는 권한 모델이 달라 "필요 없음"으로 답한다 | `MainScreen`(시작 시 일괄 요청), `SettingScreen`(신체 활동 인식), `SettingDeviceSaveSelectScreen`(저장) |
 | `platform/rememberAppVersionName()` | `expect`/`actual`. Android 는 `PackageManager`(SDK 33 분기), iOS 는 `NSBundle` 의 `CFBundleShortVersionString` | `SettingScreen` |
 | `platform/extractDominantColor(imageFileFullPath)` | `expect`/`actual` **suspend 함수**(Compose 로컬이 필요 없다). Android 는 `BitmapFactory` 2패스 다운샘플 + `Palette`, iOS 는 아직 null. `Dispatchers.IO` 가 JVM 전용이라 디스패처 선택도 actual 이 한다. 호출자는 null 이면 기본 그라데이션으로 떨어진다 | `PlayerDetailScreen` |
+| `platform/AppLogSharer` + `rememberAppLogSharer()` | `fun interface` + `expect`/`actual`. Android 는 `filesDir/app_logs` 의 `.log` 를 모아 FileProvider URI 로 `ACTION_SEND_MULTIPLE` chooser 를 띄운다. iOS 는 `UIActivityViewController` 가 필요해 아직 `Failed`. 결과는 `AppLogShareResult` enum 으로 돌려주고 **안내 문구는 호출자가 정한다** | `AppLogScreen` |
+| `platform/SystemSettingsOpener` + `rememberSystemSettingsOpener()` | `fun interface` + `expect`/`actual`. 목적지를 `SystemSettingsTarget`(`Alarm`/`Sound`) enum 으로 받고 인텐트 폴백 체인은 actual 이 품는다(SHOW_ALARMS 미지원 기기 → SET_ALARM). iOS 는 시스템 설정의 특정 화면으로 보낼 수 없어 항상 false | `SettingDeviceSaveScreen` |
 
 `port/` 의 포트 9개(`MediaControllerManager`, `AudioPreviewPlayer`, `Execute*` 4종, `StepMeasurementController`, `FileShareServerController`)는 후자이며 `android:app` 의 `platform/di/PlatformModule.kt` 가 바인딩한다. 배치 규칙은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
 

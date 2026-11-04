@@ -1,10 +1,5 @@
 package com.kintmin.presentation.ui.setting.device_save
 
-import android.content.Context
-import android.content.Intent
-import android.provider.AlarmClock
-import android.provider.Settings
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,9 +33,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.platform.SystemSettingsTarget
+import com.kintmin.presentation.platform.rememberSystemSettingsOpener
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 
 @Composable
@@ -48,59 +45,25 @@ fun SettingDeviceSaveScreen(
     navigateToBack: () -> Unit,
     navigateToDeviceSaveSelect: () -> Unit,
 ) {
-    val context = LocalContext.current
+    val toaster = rememberToaster()
+    val systemSettingsOpener = rememberSystemSettingsOpener()
 
     SettingDeviceSaveScreen(
         navigateToBack = navigateToBack,
         onClickGoToSave = navigateToDeviceSaveSelect,
         onClickGoToAlarm = {
-            // SHOW_ALARMS를 처리하지 않는 기기가 있어서 알람 생성 화면(SET_ALARM)으로 폴백한다.
-            // SET_ALARM은 EXTRA_SKIP_UI를 false로 둬야 알람을 바로 만들지 않고 화면을 보여준다.
-            startFirstAvailableActivity(
-                context = context,
-                intentList = listOf(
-                    Intent(AlarmClock.ACTION_SHOW_ALARMS),
-                    Intent(AlarmClock.ACTION_SET_ALARM)
-                        .putExtra(AlarmClock.EXTRA_SKIP_UI, false),
-                ),
-                notFoundMessage = "시계 앱을 열 수 없습니다. 시계 앱에서 직접 알람음을 설정해주세요.",
-            )
+            if (!systemSettingsOpener.open(SystemSettingsTarget.Alarm)) {
+                toaster.showLong("시계 앱을 열 수 없습니다. 시계 앱에서 직접 알람음을 설정해주세요.")
+            }
         },
         onClickGoToSoundSetting = {
-            startFirstAvailableActivity(
-                context = context,
-                intentList = listOf(
-                    Intent(Settings.ACTION_SOUND_SETTINGS),
-                    Intent(Settings.ACTION_SETTINGS),
-                ),
-                notFoundMessage = "소리 설정 화면을 열 수 없습니다.",
-            )
+            if (!systemSettingsOpener.open(SystemSettingsTarget.Sound)) {
+                toaster.showLong("소리 설정 화면을 열 수 없습니다.")
+            }
         },
     )
 }
 
-/**
- * 앞에서부터 실행 가능한 인텐트를 찾아 하나만 실행한다.
- *
- * 기기·제조사에 따라 처리하는 액션이 달라서 폴백이 필요하다. 패키지 가시성(Android 11+) 때문에
- * resolveActivity로 미리 확인하는 방식은 믿을 수 없으므로 실제로 실행해 보고 판단한다.
- *
- * 실패 원인이 액티비티 부재(ActivityNotFoundException)인지 권한 거부(SecurityException)인지
- * 기기마다 달라서 종류를 가리지 않고 다음 후보로 넘어간다. 전부 실패했을 때만 안내한다.
- */
-private fun startFirstAvailableActivity(
-    context: Context,
-    intentList: List<Intent>,
-    notFoundMessage: String,
-) {
-    intentList.forEach { intent ->
-        val isStarted = runCatching {
-            context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        }.isSuccess
-        if (isStarted) return
-    }
-    Toast.makeText(context, notFoundMessage, Toast.LENGTH_LONG).show()
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
