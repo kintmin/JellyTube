@@ -1,7 +1,5 @@
 package com.kintmin.presentation.ui.main
 
-import android.view.ViewGroup
-import android.webkit.WebView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -50,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.AppPermission
+import com.kintmin.presentation.platform.rememberWebViewHandle
 import com.kintmin.presentation.platform.rememberAudioFilePicker
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
@@ -183,19 +182,8 @@ fun MainScreen(
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
-    var webView: WebView? by remember { mutableStateOf(null) }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            webView?.apply {
-                stopLoading()
-                (parent as? ViewGroup)?.removeView(this)
-                removeAllViews()
-                destroy()
-            }
-            webView = null
-        }
-    }
+    // 핸들이 웹뷰 생명주기를 소유한다. 탭을 옮겨도 인스턴스를 유지하려고 여기서 만든다.
+    val webViewHandle = rememberWebViewHandle()
 
     var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
     var searchInput by rememberSaveable { mutableStateOf(currentUrl) }
@@ -352,16 +340,15 @@ fun MainScreen(
         tabSaveableStateHolder.SaveableStateProvider(key = selectedTab.name) {
             when (selectedTab) {
                 MainTabItem.Search -> YoutubeWebView(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
                     currentUrl = currentUrl,
-                    setWebView = { value -> webView = value },
-                    webView = webView,
+                    webViewHandle = webViewHandle,
                     sendIntent = sendYoutubeDownloadIntent,
                     onNavigateToPlaylist = {
                         sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist))
                     },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
                 )
 
                 MainTabItem.Playlist -> PlaylistView(

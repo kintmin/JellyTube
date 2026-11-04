@@ -24,19 +24,25 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 
 결과가 **0줄**이어야 한다. `androidx.compose.*` / `androidx.navigation.*` / `androidx.lifecycle.compose.*` 는 CMP·JetBrains 포크가 같은 패키지명을 쓰므로 **허용**이다. 위 정규식은 Android 전용 하위 패키지와 심볼만 집어서 금지한다.
 
-### 승격 현황
+### 승격 현황 — 전환 완료
 
-**205 / 222 파일이 `commonMain`** 이다(92%). `androidMain` 17(그중 8개는 `platform/` actual), `iosMain` 8.
-
-`androidMain` 에 남은 **화면 코드 15개**의 사유는 셋뿐이다.
-
-| 사유 | 대상 | 필요한 탈출구 |
+| 소스셋 | 파일 수 | 내용 |
 |---|---|---|
-| **탈출구 미구현** | `MainScreen` + `YoutubeWebView` | WebView (`PlatformWebView` + `WebViewHandle`) |
-| **공통화 불가(의도적)** | `ImageDrawingView`(S펜 `MotionEvent.BUTTON_STYLUS_PRIMARY`), `FloatingComponentEditor`·`FloatingComponentView`(`pointerInteropFilter`) | 없음. `expect` 를 만들면 iOS actual 이 죽은 코드가 된다 |
-| **위 파일의 이웃** | 해당 `~Navigation.kt`(= `~ScreenRoute` 선언처), 그 Route 를 `toRoute()` 로 읽는 `MainViewModel`·`YoutubeDownloadViewModel`, 그리고 `di/PresentationModule.kt` | 짝이 되는 Screen 이 올라가면 함께 올라간다 |
+| `commonMain` | **212** | 화면·ViewModel·Intent·UiState·Event·Navigation·theme·extension·port 전부 |
+| `androidMain` | 12 | `platform/` actual 9 + 공통화 불가 3 |
+| `iosMain` | 9 | `platform/` actual 9 |
 
-`~Navigation.kt` 는 `@Serializable` Route 와 `NavGraphBuilder` 등록을 한 파일에 담는다(프로젝트 규약). 등록부가 Screen 을 참조하므로 **Screen 이 `androidMain` 이면 Route 도 `androidMain` 이고, 그 Route 를 읽는 ViewModel 도 따라간다.** 파일을 쪼개 Route 만 올리는 선택지가 있으나, 규약을 깨고 파일 수를 늘리는 대가가 Screen 승격 뒤 자동으로 해소되는 문제보다 크다고 판단해 하지 않았다.
+**화면 코드는 212 / 215(98.6%)가 `commonMain`** 이다. `androidMain` 에 남은 화면 코드 3개는 **의도적 잔류**이며 해소할 생각이 없다.
+
+| 파일 | 왜 공통화하지 않는가 |
+|---|---|
+| `ui/custom_ui/image_drawing/ImageDrawingView.kt` | S펜 측면 버튼(`MotionEvent.BUTTON_STYLUS_PRIMARY`)으로 지우개를 판정한다. CMP common `PointerType` 에는 `Stylus`/`Eraser` 만 있고 버튼 상태에 대응하는 API 가 없다. Apple Pencil 에는 그 버튼이 아예 없다 |
+| `ui/custom_ui/floating_component/FloatingComponentEditor.kt` | `Modifier.pointerInteropFilter` + `MotionEvent` 로 회전 제스처의 각도를 추적한다 |
+| `ui/custom_ui/floating_component/FloatingComponentView.kt` | 위 파일의 `EditableFloatingComponent` 를 쓴다 |
+
+`expect` 를 만들면 iOS actual 이 영구히 죽은 코드가 된다(루트 `AGENTS.md` §2 "단일 사용처에 추상화 금지"). iOS 에서 이 기능을 어떻게 다룰지는 Tier3 화면 분기와 함께 결정한다.
+
+> **`~Navigation.kt` 연쇄에 대한 기록**: 이 파일은 `@Serializable` Route 와 `NavGraphBuilder` 등록을 한 파일에 담는다(프로젝트 규약). 등록부가 Screen 을 참조하므로 **Screen 이 `androidMain` 이면 Route 도, 그 Route 를 `toRoute()` 로 읽는 ViewModel 도 따라 내려간다.** 승격 중에는 이 연쇄가 반복해서 걸림돌이었지만, Screen 이 전부 올라가면서 자연히 해소됐다. 파일을 쪼개 Route 만 올리는 선택지를 쓰지 않은 것이 결과적으로 맞았다.
 
 
 ## 플랫폼 탈출구
@@ -65,6 +71,7 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 | `platform/extractDominantColor(imageFileFullPath)` | `expect`/`actual` **suspend 함수**(Compose 로컬이 필요 없다). Android 는 `BitmapFactory` 2패스 다운샘플 + `Palette`, iOS 는 아직 null. `Dispatchers.IO` 가 JVM 전용이라 디스패처 선택도 actual 이 한다. 호출자는 null 이면 기본 그라데이션으로 떨어진다 | `PlayerDetailScreen` |
 | `platform/AppLogSharer` + `rememberAppLogSharer()` | `fun interface` + `expect`/`actual`. Android 는 `filesDir/app_logs` 의 `.log` 를 모아 FileProvider URI 로 `ACTION_SEND_MULTIPLE` chooser 를 띄운다. iOS 는 `UIActivityViewController` 가 필요해 아직 `Failed`. 결과는 `AppLogShareResult` enum 으로 돌려주고 **안내 문구는 호출자가 정한다** | `AppLogScreen` |
 | `platform/SystemSettingsOpener` + `rememberSystemSettingsOpener()` | `fun interface` + `expect`/`actual`. 목적지를 `SystemSettingsTarget`(`Alarm`/`Sound`) enum 으로 받고 인텐트 폴백 체인은 actual 이 품는다(SHOW_ALARMS 미지원 기기 → SET_ALARM). iOS 는 시스템 설정의 특정 화면으로 보낼 수 없어 항상 false | `SettingDeviceSaveScreen` |
+| `platform/WebViewHandle` + `rememberWebViewHandle()` + `PlatformWebView(...)` | `@Stable interface` + `expect`/`actual`. **플랫폼 뷰 객체를 노출하지 않는다** — 노출하면 그 타입이 시그니처를 타고 호출자까지 전염된다(실제로 `MainScreen` 이 `WebView` 를 들고 있었다). 핸들이 생명주기(`stopLoading`/`removeView`/`destroy`)와 생성 실패 상태까지 소유한다. Android actual 이 `AndroidView` + `WebViewClient` 스킴 라우팅(`intent://` 의 `browser_fallback_url` 폴백 포함) + 쿠키·Referer 설정을 품는다. iOS 는 `WKWebView` + `UIKitView` 가 필요해 아직 안내 문구만 보여준다 | `MainScreen`, `YoutubeWebView` |
 
 `port/` 의 포트 9개(`MediaControllerManager`, `AudioPreviewPlayer`, `Execute*` 4종, `StepMeasurementController`, `FileShareServerController`)는 후자이며 `android:app` 의 `platform/di/PlatformModule.kt` 가 바인딩한다. 배치 규칙은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
 

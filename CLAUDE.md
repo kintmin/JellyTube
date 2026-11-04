@@ -13,7 +13,7 @@
 Kotlin Multiplatform(KMP) 멀티플랫폼 앱. 하나의 공유 코어를 Android / iOS / Desktop이 공유한다.
 - **공유 코어 `shared/`**: `domain`(순수 비즈니스 로직 — 모델/Repository 인터페이스/UseCase), `data`(구현 — RepositoryImpl/Room/네트워크/Python 브릿지), `presentation`(Compose Multiplatform UI, MVI), `log`(로깅 API), `file-share`(파일공유 상수/DTO)
 - **Android `android/`**: `app`(진입점/DI/네비/딥링크 + OS 기능 — Service/Worker/Receiver/Notification/DeepLinkConstants + `shared:presentation` 포트 구현)
-- **iOS `ios/app/`**: 진입점 + TCA(Client/Feature/Item/ScreenView) + SKIE로 KMP 브릿지
+- **iOS `ios/app/`**: 진입점 + SKIE로 KMP 브릿지. UI는 `shared:presentation`(CMP)을 쓸 예정이며 framework 구성은 미결(`shared/presentation/AGENTS.md` 참고)
 - **Desktop `desktop/`**: Compose Desktop, 파일 전송 sender + mDNS
 
 ## 모듈 맵 — 건드리기 전 읽을 AGENTS.md
