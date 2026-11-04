@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.player_detail
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
@@ -65,12 +64,12 @@ import androidx.compose.ui.unit.sp
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
+import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.deepSea60
@@ -81,12 +80,9 @@ import com.kintmin.presentation.ui.player_detail.dialog.PlaybackPitchDialog
 import com.kintmin.presentation.ui.player_detail.dialog.PlaybackSpeedDialog
 import com.kintmin.presentation.ui.player_detail.dialog.toPitchSemitoneText
 import com.kintmin.presentation.ui.player_detail.dialog.toPlaybackSpeedText
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
 import okio.Path.Companion.toPath
 import kotlin.math.max
 import kotlin.math.min
@@ -689,51 +685,17 @@ private fun PlaybackSpeedChip(
     }
 }
 
-private suspend fun extractGradientFromArtwork(path: String?): List<Color>? = withContext(Dispatchers.IO) {
-    if (path.isNullOrBlank()) return@withContext null
+private suspend fun extractGradientFromArtwork(path: String?): List<Color>? {
+    if (path.isNullOrBlank()) return null
+    val seed = Color(extractDominantColor(path) ?: return null)
 
-    val file = File(path)
-    if (!file.exists()) return@withContext null
-
-    val options = BitmapFactory.Options().apply {
-        inJustDecodeBounds = true
-    }
-    BitmapFactory.decodeFile(path, options)
-    if (options.outWidth <= 0 || options.outHeight <= 0) return@withContext null
-
-    val sampledOptions = BitmapFactory.Options().apply {
-        inSampleSize = calculateInSampleSize(options.outWidth, options.outHeight)
-        inPreferredConfig = android.graphics.Bitmap.Config.RGB_565
-    }
-    val bitmap = BitmapFactory.decodeFile(path, sampledOptions) ?: return@withContext null
-
-    runCatching {
-        val palette = Palette.Builder(bitmap)
-            .maximumColorCount(16)
-            .generate()
-        val seed = palette.getDominantColor(0xFF4B453B.toInt())
-
-        val top = Color(seed).lighten(0.2f)
-        val middle = Color(seed).darken(0.55f)
-        val bottom = Color(seed).darken(0.82f)
-
-        listOf(top, middle, bottom)
-    }.getOrNull().also {
-        bitmap.recycle()
-    }
+    return listOf(
+        seed.lighten(0.2f),
+        seed.darken(0.55f),
+        seed.darken(0.82f),
+    )
 }
 
-private fun calculateInSampleSize(width: Int, height: Int, reqWidth: Int = 240, reqHeight: Int = 240): Int {
-    var inSampleSize = 1
-    if (height > reqHeight || width > reqWidth) {
-        val halfHeight = height / 2
-        val halfWidth = width / 2
-        while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-            inSampleSize *= 2
-        }
-    }
-    return inSampleSize.coerceAtLeast(1)
-}
 
 private fun Color.lighten(factor: Float): Color {
     val safe = factor.coerceIn(0f, 1f)

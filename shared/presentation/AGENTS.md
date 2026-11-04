@@ -26,14 +26,13 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 
 ### 승격 현황
 
-**196 / 216 파일이 `commonMain`** 이다(91%). `androidMain` 20(그중 5개는 `platform/` actual), `iosMain` 5.
+**199 / 218 파일이 `commonMain`** 이다(91%). `androidMain` 19(그중 6개는 `platform/` actual), `iosMain` 6.
 
 `androidMain` 에 남은 **화면 코드 15개**의 사유는 셋뿐이다.
 
 | 사유 | 대상 | 필요한 탈출구 |
 |---|---|---|
 | **탈출구 미구현** | `MainScreen` + `YoutubeWebView` | WebView (`PlatformWebView` + `WebViewHandle`) |
-| | `PlayerDetailScreen` | 도미넌트색 추출(`Palette` + `BitmapFactory`) |
 | | `AppLogScreen` | 로그 파일 공유(`filesDir` + FileProvider + `ACTION_SEND_MULTIPLE`) |
 | | `SettingDeviceSaveScreen` | 외부 앱 열기(AlarmClock/Settings 액션 폴백 체인) |
 | **공통화 불가(의도적)** | `ImageDrawingView`(S펜 `MotionEvent.BUTTON_STYLUS_PRIMARY`), `FloatingComponentEditor`·`FloatingComponentView`(`pointerInteropFilter`) | 없음. `expect` 를 만들면 iOS actual 이 죽은 코드가 된다 |
@@ -65,6 +64,7 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 | `platform/rememberAudioFilePicker(startAtAudioRoot, onPicked)` | `expect`/`actual`. Android actual 이 `ActivityResultContracts.OpenMultipleDocuments` 와 "오디오" 루트용 커스텀 contract(`DocumentsContract.EXTRA_INITIAL_URI`)를 품는다. iOS 는 `UIDocumentPickerViewController` 가 필요해 아직 no-op | `MainScreen`, `SettingScreen`(`startAtAudioRoot = true`), `SettingShareScreen` |
 | `platform/PermissionController` + `rememberPermissionController()` | `interface` + `expect`/`actual`. **원시 권한 문자열을 노출하지 않는다** — `AppPermission` enum(`Notification`/`MediaStorage`/`ActivityRecognition`)만 받고, OS 버전별로 어떤 권한이 실제 필요한지는 actual 이 판단한다(저장: SDK 28 이하 WRITE, 32 이하 READ, 그 위 불필요). iOS 는 권한 모델이 달라 "필요 없음"으로 답한다 | `MainScreen`(시작 시 일괄 요청), `SettingScreen`(신체 활동 인식), `SettingDeviceSaveSelectScreen`(저장) |
 | `platform/rememberAppVersionName()` | `expect`/`actual`. Android 는 `PackageManager`(SDK 33 분기), iOS 는 `NSBundle` 의 `CFBundleShortVersionString` | `SettingScreen` |
+| `platform/extractDominantColor(imageFileFullPath)` | `expect`/`actual` **suspend 함수**(Compose 로컬이 필요 없다). Android 는 `BitmapFactory` 2패스 다운샘플 + `Palette`, iOS 는 아직 null. `Dispatchers.IO` 가 JVM 전용이라 디스패처 선택도 actual 이 한다. 호출자는 null 이면 기본 그라데이션으로 떨어진다 | `PlayerDetailScreen` |
 
 `port/` 의 포트 9개(`MediaControllerManager`, `AudioPreviewPlayer`, `Execute*` 4종, `StepMeasurementController`, `FileShareServerController`)는 후자이며 `android:app` 의 `platform/di/PlatformModule.kt` 가 바인딩한다. 배치 규칙은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
 
