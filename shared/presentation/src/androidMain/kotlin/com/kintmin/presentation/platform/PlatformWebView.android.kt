@@ -15,6 +15,7 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +45,8 @@ private class AndroidWebViewHandle : WebViewHandle {
 
     override fun loadUrl(url: String, clearHistoryAfterLoad: Boolean) {
         shouldClearHistoryAfterLoad = clearHistoryAfterLoad
-        webView?.loadUrl(url)
+        val target = webView ?: return
+        target.loadUrl(url, mapOf("Referer" to "https://${target.context.packageName.lowercase()}"))
     }
 
     override fun retryCreation() {
@@ -90,6 +92,24 @@ actual fun PlatformWebView(
 ) {
     val androidHandle = handle as AndroidWebViewHandle
 
+    // 로드는 url 이 "바뀔 때 한 번"만 한다.
+    //
+    // AndroidView 의 update 로 `view.url != url 이면 로드`를 계속 단언하면 안 된다.
+    // 웹뷰도 스스로 이동하는 주체이고, view.url 은 로드가 커밋될 때 바로 바뀌는데
+    // ViewModel 은 doUpdateVisitedHistory 를 거쳐야 갱신된다. 그 사이에 리컴포지션이
+    // 일어나면 낡은 url 을 다시 로드해 뒤로가기가 되돌아가 버린다
+    // (PlayerBar 가 300ms 폴링이라 그 창이 거의 항상 열린다).
+    //
+    // currentUrl 비교는 웹뷰가 스스로 이동해 올라온 값을 되로드하지 않기 위한 것이다.
+    // webView 도 키에 넣는다. 이 효과는 AndroidView 의 factory 보다 먼저 돌 수 있어서
+    // 인스턴스가 붙은 뒤 다시 실행되어야 첫 로드가 유실되지 않는다.
+    LaunchedEffect(androidHandle.webView, url) {
+        val view = androidHandle.webView ?: return@LaunchedEffect
+        if (url.isNotBlank() && view.url != url) {
+            androidHandle.loadUrl(url)
+        }
+    }
+
     AndroidView(
         modifier = modifier,
         factory = { context ->
@@ -97,7 +117,6 @@ actual fun PlatformWebView(
                 createWebView(
                     context = context,
                     handle = androidHandle,
-                    initialUrl = url,
                     onUrlChanged = onUrlChanged,
                     onExternalSchemeFailed = onExternalSchemeFailed,
                 )
@@ -113,18 +132,12 @@ actual fun PlatformWebView(
                 FrameLayout(context)
             }
         },
-        update = { view ->
-            if (view is WebView && url.isNotBlank() && view.url != url) {
-                view.loadUrl(url)
-            }
-        },
     )
 }
 
 private fun createWebView(
     context: Context,
     handle: AndroidWebViewHandle,
-    initialUrl: String,
     onUrlChanged: (String) -> Unit,
     onExternalSchemeFailed: (String) -> Unit,
 ): WebView = WebView(context).apply {
@@ -180,7 +193,7 @@ private fun createWebView(
         }
     }
 
-    loadUrl(initialUrl, mapOf("Referer" to "https://${context.packageName.lowercase()}"))
+    // 로드는 호출자의 LaunchedEffect(url) 가 한다. 여기서 하면 로더가 둘이 된다.
 }
 
 private fun handleIntentUrl(uri: Uri, context: Context, onError: (String) -> Unit) {
