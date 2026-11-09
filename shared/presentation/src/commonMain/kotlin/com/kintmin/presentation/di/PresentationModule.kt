@@ -1,5 +1,6 @@
 package com.kintmin.presentation.di
 
+import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.ui.audio_edit.AudioEditViewModel
 import com.kintmin.presentation.ui.audio_media_detail.AudioMediaDetailViewModel
 import com.kintmin.presentation.ui.audio_media_information_edit.AudioMediaInformationEditViewModel
@@ -29,6 +30,7 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val presentationModule: Module = module {
+    viewModelOf(::AppViewModel)
     viewModelOf(::StepViewModel)
     viewModelOf(::SettingViewModel)
     viewModelOf(::PlayerBarViewModel)
