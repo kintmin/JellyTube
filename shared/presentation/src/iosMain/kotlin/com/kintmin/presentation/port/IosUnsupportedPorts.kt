@@ -83,13 +83,6 @@ internal class IosAudioPreviewPlayerStub : AudioPreviewPlayer {
     override fun release() = Unit
 }
 
-/** 교체 예정 — CMPedometer 기반 측정으로 채운다. */
-internal class IosStepMeasurementControllerStub : StepMeasurementController {
-
-    override fun start() = Unit
-    override fun stop() = Unit
-}
-
 /**
  * **영구 잔류** — PC 파일 수신을 iOS 에서 제공하지 않는다.
  * `shared:file-share` 가 JVM 전용 모듈이라 상수조차 공유되지 않는다.

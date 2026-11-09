@@ -13,7 +13,7 @@ import com.kintmin.presentation.port.IosExecuteLyricsVariantCreationStub
 import com.kintmin.presentation.port.IosExecuteYoutubeDownloadStub
 import com.kintmin.presentation.port.IosFileShareServerControllerStub
 import com.kintmin.presentation.port.IosMediaControllerManagerStub
-import com.kintmin.presentation.port.IosStepMeasurementControllerStub
+import com.kintmin.presentation.port.IosStepMeasurementController
 import com.kintmin.presentation.port.MediaControllerManager
 import com.kintmin.presentation.port.StepMeasurementController
 import org.koin.core.module.Module
@@ -29,7 +29,7 @@ import org.koin.dsl.module
 val presentationIosModule: Module = module {
     single<MediaControllerManager> { IosMediaControllerManagerStub() }
     single<AudioPreviewPlayer> { IosAudioPreviewPlayerStub() }
-    single<StepMeasurementController> { IosStepMeasurementControllerStub() }
+    single<StepMeasurementController> { IosStepMeasurementController(get(), get()) }
     single<FileShareServerController> { IosFileShareServerControllerStub() }
     single<ExecuteYoutubeDownload> { IosExecuteYoutubeDownloadStub() }
     single<ExecuteAnomalyDataCheck> { IosExecuteAnomalyDataCheckStub() }

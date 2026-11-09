@@ -1,8 +1,15 @@
 package com.kintmin.ios
 
 import androidx.compose.ui.window.ComposeUIViewController
+import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
 import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
+import com.kintmin.presentation.port.StepMeasurementController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import org.koin.mp.KoinPlatform
 import platform.UIKit.UIViewController
 
@@ -15,12 +22,31 @@ import platform.UIKit.UIViewController
  */
 private val appViewModel: AppViewModel by lazy { KoinPlatform.getKoin().get() }
 
+private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
 /**
  * Koin 초기화 직후 한 번 부른다. `android:app` 의 `MainActivity.onCreate` 앞부분과 짝이다.
  */
 fun startApp() {
     appViewModel.registerUser()
     appViewModel.initializeMediaController()
+    restoreStepMeasurementIfEnabled()
+}
+
+/**
+ * 설정이 켜져 있으면 걸음수 측정을 다시 건다.
+ *
+ * Android 는 `MainActivity` 가 포그라운드 서비스를 띄우고 서비스가 같은 판단을 한다.
+ * iOS 는 상시 실행이 없으므로 앱이 뜰 때마다 여기서 다시 걸고, 그 안에서 꺼져 있던 구간을
+ * 소급 조회로 메운다.
+ */
+private fun restoreStepMeasurementIfEnabled() {
+    appScope.launch {
+        val koin = KoinPlatform.getKoin()
+        if (koin.get<FetchIsStepEnabledFlowUseCase>()().first()) {
+            koin.get<StepMeasurementController>().start()
+        }
+    }
 }
 
 /** Swift 가 `MainViewControllerKt.mainViewController()` 로 부른다. */
