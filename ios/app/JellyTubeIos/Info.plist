@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  GENERATE_INFOPLIST_FILE 이 켜져 있어 나머지 키는 Xcode 가 채운다.
+	  INFOPLIST_KEY_* 빌드 설정이 **무시하는 키만** 여기 적는다 — 아래 둘은 빌드 설정에
+	  넣어도 생성된 plist 에 들어가지 않는다(확인된 동작).
+	-->
+
+	<!-- Compose Multiplatform 이 요구한다. 없으면 기동 직후 예외로 죽는다. -->
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+
+	<!-- 화면이 꺼진 뒤에도 재생을 잇는다. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+</dict>
+</plist>
