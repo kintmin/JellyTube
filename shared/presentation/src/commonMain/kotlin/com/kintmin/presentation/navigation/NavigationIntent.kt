@@ -1,5 +1,9 @@
-package com.kintmin.jellytube
+package com.kintmin.presentation.navigation
 
+/**
+ * 최상위 화면 이동 명령. 앱 밖에서 들어온 주소를 [com.kintmin.presentation.deeplink.DeepLinkParser]
+ * 가 이 목록으로 바꾸고, `MainNavHost` 가 순서대로 소비한다.
+ */
 sealed interface NavigationIntent {
 
     data object PopAll : NavigationIntent

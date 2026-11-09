@@ -1,6 +1,5 @@
-package com.kintmin.jellytube
+package com.kintmin.presentation.navigation
 
-import android.net.Uri
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
@@ -8,7 +7,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
-import com.kintmin.platform.deeplink.DeepLinkConstants
+import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.ui.audio_edit.navigation.audioEditScreen
 import com.kintmin.presentation.ui.audio_edit.navigation.navigateToAudioEditScreen
 import com.kintmin.presentation.ui.audio_media_detail.navigation.audioMediaDetailScreen
@@ -63,7 +62,8 @@ val navOptions = navOptions {
 fun MainNavHost(
     navController: NavHostController,
     navigationIntentFlow: Flow<NavigationIntent>,
-    onDeepLink: (Uri) -> Unit,
+    isDebugTabVisible: Boolean,
+    onDeepLink: (url: String) -> Unit,
 ) {
     NavHost(
         navController = navController,
@@ -94,7 +94,7 @@ fun MainNavHost(
         },
     ) {
         mainScreen(
-            isDebugTabVisible = BuildConfig.DEBUG,
+            isDebugTabVisible = isDebugTabVisible,
             navigateToPlaylistDetail = { playlistId, isBasePlaylist ->
                 navController.navigateToPlaylistDetailScreen(
                     playlistId = playlistId,
@@ -155,7 +155,7 @@ fun MainNavHost(
                 )
             },
             navigateToPlaylistDetailScreen = { playlistId, audioMediaId ->
-                onDeepLink(DeepLinkConstants.UriBuilder.playlistContentScreen(playlistId, audioMediaId))
+                onDeepLink(DeepLinkConstants.UrlBuilder.playlistContentScreen(playlistId, audioMediaId))
             },
             navigateToLyricsSearch = { audioMediaId, query, durationSeconds ->
                 navController.navigateToLyricsSearchScreen(audioMediaId, query, durationSeconds, navOptions)
@@ -254,7 +254,7 @@ fun MainNavHost(
                 navController.navigateToAudioMediaInformationEditScreen(audioMediaId, navOptions)
             },
             navigateToPlayingPlaylist = { playlistId, audioMediaId ->
-                onDeepLink(DeepLinkConstants.UriBuilder.playlistContentScreen(playlistId, audioMediaId))
+                onDeepLink(DeepLinkConstants.UrlBuilder.playlistContentScreen(playlistId, audioMediaId))
             },
             navigateToLyricsViewer = { audioMediaId ->
                 navController.navigateToLyricsViewerScreen(audioMediaId, navOptions)

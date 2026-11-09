@@ -10,6 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
 import com.kintmin.platform.service.StepForegroundService
+import com.kintmin.presentation.navigation.MainNavHost
 import com.kintmin.presentation.theme.JellyTubeTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
                     MainNavHost(
                         navController = navController,
                         navigationIntentFlow = viewModel.navigationIntentFlow,
+                        isDebugTabVisible = BuildConfig.DEBUG,
                         onDeepLink = viewModel::onDeepLink,
                     )
                 }

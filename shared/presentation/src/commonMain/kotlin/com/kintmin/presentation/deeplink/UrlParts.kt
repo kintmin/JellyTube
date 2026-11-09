@@ -128,12 +128,36 @@ internal object UrlParts {
         return decoded.toString()
     }
 
+    /**
+     * 쿼리 값으로 쓸 수 있게 인코딩한다. unreserved(`A-Za-z0-9-_.~`)만 남기고 나머지는 UTF-8
+     * 바이트의 `%XX` 로 바꾼다.
+     *
+     * `+` 까지 `%2B` 로 바꾸는 것이 중요하다 — [queryParameter] 가 `+` 를 공백으로 읽으므로
+     * 그대로 두면 왕복이 깨진다.
+     */
+    fun encodeQueryValue(value: String): String {
+        val encoded = StringBuilder(value.length)
+        for (byte in value.encodeToByteArray()) {
+            val char = byte.toInt().toChar()
+            if (char.isAsciiLetter() || char.isAsciiDigit() || char in "-_.~") {
+                encoded.append(char)
+            } else {
+                encoded.append('%')
+                encoded.append(HEX_DIGITS[(byte.toInt() shr 4) and 0x0F])
+                encoded.append(HEX_DIGITS[byte.toInt() and 0x0F])
+            }
+        }
+        return encoded.toString()
+    }
+
     /** WHATWG URL 과 같게 역슬래시도 authority 의 끝으로 본다. 맞추지 않으면 앱이 보는 호스트와 실제로 열리는 호스트가 갈린다. */
     private fun Char.isAuthorityTerminator(): Boolean = this == '/' || this == '\\' || this == '?' || this == '#'
 
     private fun Char.isAsciiLetter(): Boolean = this in 'a'..'z' || this in 'A'..'Z'
 
     private fun Char.isAsciiDigit(): Boolean = this in '0'..'9'
+
+    private const val HEX_DIGITS = "0123456789ABCDEF"
 
     private fun Char.hexValue(): Int? = when (this) {
         in '0'..'9' -> this - '0'

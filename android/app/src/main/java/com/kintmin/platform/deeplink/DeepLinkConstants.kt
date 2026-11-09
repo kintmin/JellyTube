@@ -2,115 +2,45 @@ package com.kintmin.platform.deeplink
 
 import android.net.Uri
 import androidx.core.net.toUri
-import kotlin.text.substringBefore
+import com.kintmin.presentation.deeplink.DeepLinkConstants.PlayerScreenEntry
+import com.kintmin.presentation.deeplink.DeepLinkConstants as SharedDeepLink
 
+/**
+ * 공통 딥링크 규약을 안드로이드 `Uri` 로 바꿔 주는 어댑터.
+ *
+ * 경로·쿼리 키·주소 조립의 단일 진원지는 `shared:presentation` 의
+ * [SharedDeepLink] 다. 여기는 `PendingIntent` 가 `Uri` 를 요구해서 존재한다 —
+ * **주소 문자열을 여기서 다시 만들지 않는다.**
+ */
 object DeepLinkConstants {
 
-    const val DEEP_LINK_SCHEME = "https"
-    const val DEEP_LINK_HOST = "www.jellytube.com" // 변경 시 app manifest intent-filter 변경 필요
+    const val DEEP_LINK_SCHEME = SharedDeepLink.SCHEME
 
-    private const val DEEP_LINK_SCHEME_AND_HOST = "$DEEP_LINK_SCHEME://$DEEP_LINK_HOST"
-
-    object Path {
-
-        const val MAIN = "main"
-
-        const val PLAYER = "player"
-
-        const val SETTINGS = "settings"
-        const val APP_LOG = "appLog"
-        const val STEP = "step"
-
-        const val DOWNLOAD = "download"
-
-        const val PLAYLISTS = "playlists"
-        const val PLAYLIST_ID = "playlistId"
-        const val AUDIO_MEDIAS = "audioMedias"
-        const val AUDIO_MEDIA_ID = "audioMediaId"
-
-        const val LYRICS = "lyrics"
-    }
-
-    object QueryKey {
-
-        const val ENTRY = "entry"
-        const val ENCODED_URL = "encodedUrl"
-        const val FOCUS_AUDIO_MEDIA_ID = "focusAudioMediaId"
-    }
-
-    private object UriPattern {
-
-        const val PLAYER_SCREEN = "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.PLAYER}"
-
-        const val SETTINGS_SCREEN = "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.SETTINGS}"
-        const val APP_LOG_SCREEN = "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.SETTINGS}/${Path.APP_LOG}"
-        const val STEP_SCREEN = "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.STEP}"
-
-        const val MAIN_SCREEN_DOWNLOAD =
-            "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.DOWNLOAD}?${QueryKey.ENCODED_URL}={${QueryKey.ENCODED_URL}}"
-        const val MAIN_SCREEN_PLAYLISTS = "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.PLAYLISTS}"
-
-        const val PLAYLIST_CONTENT_SCREEN =
-            "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.PLAYLISTS}/{${Path.PLAYLIST_ID}}/${Path.AUDIO_MEDIAS}?${QueryKey.FOCUS_AUDIO_MEDIA_ID}={${QueryKey.FOCUS_AUDIO_MEDIA_ID}}"
-        const val PLAYLIST_AUDIO_MEDIA_DETAIL_SCREEN =
-            "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.PLAYLISTS}/{${Path.PLAYLIST_ID}}/${Path.AUDIO_MEDIAS}/{${Path.AUDIO_MEDIA_ID}}"
-
-        const val AUDIO_MEDIA_DETAIL_SCREEN =
-            "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.AUDIO_MEDIAS}/{${Path.AUDIO_MEDIA_ID}}"
-
-        const val LYRICS_VIEWER_SCREEN =
-            "${DEEP_LINK_SCHEME_AND_HOST}/${Path.MAIN}/${Path.LYRICS}/{${Path.AUDIO_MEDIA_ID}}"
-    }
-
-    enum class PlayerScreenEntry(val path: String) {
-        Main(Path.MAIN),
-        Playlist(Path.PLAYLISTS),
-    }
+    /** 변경 시 app manifest 의 intent-filter 도 바꿔야 한다. */
+    const val DEEP_LINK_HOST = SharedDeepLink.HOST
 
     object UriBuilder {
 
-        fun playerScreen(entry: PlayerScreenEntry = PlayerScreenEntry.Main): Uri {
-            val base = UriPattern.PLAYER_SCREEN.toUri()
-            return base.buildUpon().appendQueryParameter(QueryKey.ENTRY, entry.path).build()
-        }
+        fun playerScreen(entry: PlayerScreenEntry = PlayerScreenEntry.Main): Uri =
+            SharedDeepLink.UrlBuilder.playerScreen(entry).toUri()
 
-        fun mainScreenDownloadTab(downloadLink: String): Uri {
-            return UriPattern.MAIN_SCREEN_DOWNLOAD.substringBefore("?").toUri()
-                .buildUpon()
-                .appendQueryParameter(QueryKey.ENCODED_URL, downloadLink)
-                .build()
-        }
+        fun mainScreenDownloadTab(downloadLink: String): Uri =
+            SharedDeepLink.UrlBuilder.mainScreenDownloadTab(downloadLink).toUri()
 
-        fun stepScreen(): Uri = UriPattern.STEP_SCREEN.toUri()
+        fun stepScreen(): Uri = SharedDeepLink.UrlBuilder.stepScreen().toUri()
 
-        fun appLogScreen(): Uri = UriPattern.APP_LOG_SCREEN.toUri()
+        fun appLogScreen(): Uri = SharedDeepLink.UrlBuilder.appLogScreen().toUri()
 
-        fun playlistContentScreen(playlistId: Int, audioMediaId: Int? = null): Uri {
-            val base = UriPattern.PLAYLIST_CONTENT_SCREEN
-                .replace("{${Path.PLAYLIST_ID}}", playlistId.toString())
-                .substringBefore("?").toUri()
+        fun playlistContentScreen(playlistId: Int, audioMediaId: Int? = null): Uri =
+            SharedDeepLink.UrlBuilder.playlistContentScreen(playlistId, audioMediaId).toUri()
 
-            return if (audioMediaId == null) base
-            else base.buildUpon().appendQueryParameter(QueryKey.FOCUS_AUDIO_MEDIA_ID, audioMediaId.toString()).build()
-        }
+        fun playlistAudioMediaDetailScreen(playlistId: Int, audioMediaId: Int): Uri =
+            SharedDeepLink.UrlBuilder.playlistAudioMediaDetailScreen(playlistId, audioMediaId).toUri()
 
-        fun playlistAudioMediaDetailScreen(playlistId: Int, audioMediaId: Int): Uri {
-            return UriPattern.PLAYLIST_AUDIO_MEDIA_DETAIL_SCREEN
-                .replace("{${Path.PLAYLIST_ID}}", playlistId.toString())
-                .replace("{${Path.AUDIO_MEDIA_ID}}", audioMediaId.toString())
-                .toUri()
-        }
+        fun audioMediaDetailScreen(audioMediaId: Int): Uri =
+            SharedDeepLink.UrlBuilder.audioMediaDetailScreen(audioMediaId).toUri()
 
-        fun audioMediaDetailScreen(audioMediaId: Int): Uri {
-            return UriPattern.AUDIO_MEDIA_DETAIL_SCREEN
-                .replace("{${Path.AUDIO_MEDIA_ID}}", audioMediaId.toString())
-                .toUri()
-        }
-
-        fun lyricsViewerScreen(audioMediaId: Int): Uri {
-            return UriPattern.LYRICS_VIEWER_SCREEN
-                .replace("{${Path.AUDIO_MEDIA_ID}}", audioMediaId.toString())
-                .toUri()
-        }
+        fun lyricsViewerScreen(audioMediaId: Int): Uri =
+            SharedDeepLink.UrlBuilder.lyricsViewerScreen(audioMediaId).toUri()
     }
 }

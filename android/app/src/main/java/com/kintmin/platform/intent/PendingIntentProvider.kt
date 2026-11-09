@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import com.kintmin.platform.deeplink.DeepLinkConstants
+import com.kintmin.presentation.deeplink.DeepLinkConstants.PlayerScreenEntry
 
 private const val TARGET_ACTIVITY_NAME = "com.kintmin.jellytube.MainActivity"
 
@@ -13,7 +14,7 @@ internal fun Context.mediaSessionPendingIntent() = PendingIntent.getActivity(
     IntentRequestCode.MEDIA_SESSION_NOTIFICATION,
     Intent().apply {
         action = Intent.ACTION_VIEW
-        data = DeepLinkConstants.UriBuilder.playerScreen(DeepLinkConstants.PlayerScreenEntry.Playlist)
+        data = DeepLinkConstants.UriBuilder.playerScreen(PlayerScreenEntry.Playlist)
         component = ComponentName(
             packageName,
             TARGET_ACTIVITY_NAME,
