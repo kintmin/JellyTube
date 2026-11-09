@@ -5,9 +5,12 @@ import com.kintmin.data.di.dataIosModule
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.domain.step.worker.RegisterDailyResetImmediatelyWorker
 import com.kintmin.domain.step.worker.RegisterLoadBalancedDailyResetWorker
+import com.kintmin.ios.media.IosMediaControllerBridge
+import com.kintmin.ios.media.IosMediaControllerManager
 import com.kintmin.ios.step.IosRegisterDailyResetImmediatelyWorker
 import com.kintmin.ios.step.IosRegisterLoadBalancedDailyResetWorker
 import com.kintmin.presentation.di.presentationIosModule
+import com.kintmin.presentation.port.MediaControllerManager
 import com.kintmin.presentation.di.presentationModule
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -24,7 +27,10 @@ private val iosDomainPortModule = module {
  *
  * `android:app` 의 `JellyTubeApplication` 과 짝이다. 한쪽에 모듈을 더하면 다른 쪽도 본다.
  */
-fun initIosKoin(pythonExecutorBridge: IosPythonExecutorBridge) {
+fun initIosKoin(
+    pythonExecutorBridge: IosPythonExecutorBridge,
+    mediaControllerBridge: IosMediaControllerBridge,
+) {
     startKoin {
         modules(
             dataCommonModule,
@@ -32,6 +38,9 @@ fun initIosKoin(pythonExecutorBridge: IosPythonExecutorBridge) {
             presentationModule,
             presentationIosModule,
             iosDomainPortModule,
+            module {
+                single<MediaControllerManager> { IosMediaControllerManager(mediaControllerBridge) }
+            },
         )
     }
 }

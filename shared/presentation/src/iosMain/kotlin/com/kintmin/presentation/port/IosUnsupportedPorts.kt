@@ -3,10 +3,8 @@ package com.kintmin.presentation.port
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.lyrics.model.LyricsVariant
-import com.kintmin.presentation.port.model.MediaControlData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlin.time.Duration
 
 /**
  * iOS 포트 미구현 스텁 모음.
@@ -23,54 +21,6 @@ import kotlin.time.Duration
  */
 private fun unsupported(feature: String) =
     UnsupportedOperationException("iOS 에서는 $feature 을 지원하지 않습니다.")
-
-/** 교체 예정 — AVAudioEngine 기반 재생으로 채운다. */
-internal class IosMediaControllerManagerStub : MediaControllerManager {
-
-    override fun initialize() = Unit
-
-    override val isPlaying: Boolean = false
-    override fun pause() = Unit
-    override fun resume() = Unit
-    override fun playPrevious() = Unit
-    override fun playNext() = Unit
-
-    override val playingMediaItem: MediaControlData? = null
-    override val currentPlaylistId: Int? = null
-    override val currentPosition: Long? = null
-    override val playbackDuration: Long? = null
-    override val playbackSpeed: Float = 1f
-    override val playbackPitchSemitone: Int = 0
-    override val repeatRangeState: RepeatRangeState = RepeatRangeState()
-
-    override fun seek(duration: Duration) = Unit
-    override fun updateRepeatRange(): Result<Unit> = Result.failure(unsupported("재생"))
-    override fun clearRepeatRange() = Unit
-    override fun repeatRangeIfNeeded() = Unit
-
-    override fun playFromPlaylist(
-        playlistId: Int,
-        startMediaId: Int?,
-        mediaControlDataList: List<MediaControlData>,
-    ): Result<Unit> = Result.failure(unsupported("재생"))
-
-    override fun tryDeleteMediaItem(playlistId: Int, mediaId: Int): Result<Unit> =
-        Result.failure(unsupported("재생"))
-
-    override fun tryAddLastMediaItem(playlistId: Int, mediaItem: MediaControlData): Result<Unit> =
-        Result.failure(unsupported("재생"))
-
-    override fun tryAddFirstMediaItem(playlistId: Int, mediaItem: MediaControlData): Result<Unit> =
-        Result.failure(unsupported("재생"))
-
-    override fun tryReplaceMediaItem(mediaId: Int, mediaItem: MediaControlData): Result<Unit> =
-        Result.failure(unsupported("재생"))
-
-    override fun setShuffleMode(isShuffle: Boolean) = Unit
-    override fun setRepeatMode(isRepeat: Boolean) = Unit
-    override fun setPlaybackSpeed(speed: Float) = Unit
-    override fun setPlaybackPitchSemitone(semitone: Int) = Unit
-}
 
 /** **영구 잔류** — 음원 편집을 iOS 에서 제공하지 않는다. 편집 화면 진입점도 숨긴다. */
 internal class IosAudioPreviewPlayerStub : AudioPreviewPlayer {

@@ -6,7 +6,10 @@ struct JellyTubeIosApp: App {
 
     init() {
         // 순서가 중요하다 — Koin 이 먼저 서야 startApp 이 앱 레벨 ViewModel 을 꺼낼 수 있다.
-        IosKoinKt.doInitIosKoin(pythonExecutorBridge: PythonExecutorBridgeImpl())
+        IosKoinKt.doInitIosKoin(
+            pythonExecutorBridge: PythonExecutorBridgeImpl(),
+            mediaControllerBridge: MediaControllerBridgeImpl()
+        )
         MainViewControllerKt.startApp()
     }
 

@@ -17,6 +17,7 @@
 		4A0000000000000000000064 /* app_packages in Resources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000063 /* app_packages */; };
 		4A0000000000000000000088 /* MediaControllerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000087 /* MediaControllerItem.swift */; };
 		4A000000000000000000008A /* MediaControllerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000089 /* MediaControllerEngine.swift */; };
+		4A0000000000000000000092 /* MediaControllerBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */; };
 		4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008D /* NowPlayingCoordinator.swift */; };
 /* End PBXBuildFile section */
 
@@ -31,6 +32,7 @@
 		4A0000000000000000000063 /* app_packages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = app_packages; path = Vendor/Python/app-packages; sourceTree = SOURCE_ROOT; };
 		4A0000000000000000000087 /* MediaControllerItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerItem.swift; sourceTree = "<group>"; };
 		4A0000000000000000000089 /* MediaControllerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerEngine.swift; sourceTree = "<group>"; };
+		4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerBridgeImpl.swift; sourceTree = "<group>"; };
 		4A000000000000000000008D /* NowPlayingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingCoordinator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -129,6 +131,7 @@
 			children = (
 				4A0000000000000000000087 /* MediaControllerItem.swift */,
 				4A0000000000000000000089 /* MediaControllerEngine.swift */,
+				4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */,
 				4A000000000000000000008D /* NowPlayingCoordinator.swift */,
 			);
 			path = MediaController;
@@ -261,6 +264,7 @@
 				C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */,
 				4A0000000000000000000088 /* MediaControllerItem.swift in Sources */,
 				4A000000000000000000008A /* MediaControllerEngine.swift in Sources */,
+				4A0000000000000000000092 /* MediaControllerBridgeImpl.swift in Sources */,
 				4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
