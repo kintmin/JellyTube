@@ -17,10 +17,12 @@
 
 ```powershell
 rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
-  "^import (android\.|java\.|javax\.|androidx\.(activity|core|palette|work|webkit|compose\.ui\.viewinterop)\.)|^import androidx\.compose\.ui\.platform\.Local(Context|View)|^import androidx\.lifecycle\.(lifecycleScope|repeatOnLifecycle)|^import org\.koin\.androidx|\bString\.format\(|[^.\w]Math\.|System\.currentTimeMillis\("
+  "^import (android\.|java\.|javax\.|androidx\.(activity|core|palette|work|webkit|compose\.ui\.viewinterop)\.)|^import androidx\.compose\.ui\.platform\.Local(Context|View|Configuration)|^import androidx\.lifecycle\.(lifecycleScope|repeatOnLifecycle)|^import org\.koin\.androidx|\.format\(|[^.\w]Math\.|System\.currentTimeMillis\("
 ```
 
-`^import` 로 묶은 항목은 import 줄만, 나머지는 호출 형태(`String.format(` / `System.currentTimeMillis(`)만 집는다. KDoc 에 API 이름을 적는 경우를 오탐하지 않기 위해서다.
+`^import` 로 묶은 항목은 import 줄만, 나머지는 호출 형태(`.format(` / `System.currentTimeMillis(`)만 집는다. KDoc 에 API 이름을 적는 경우를 오탐하지 않기 위해서다 — 그러니 **주석에도 호출 형태를 적지 않는다.**
+
+> **구멍 2개를 메운 기록**: iOS 를 처음 실제로 컴파일했을 때 이 게이트가 0줄을 냈는데도 `commonMain` 4파일이 깨졌다. ① `LocalConfiguration` 이 `Local(Context|View)` 에 없었고, ② 확장 호출 형태(`"%,d"` 뒤에 붙는 서식 확장)가 `String.format(` 패턴에 걸리지 않았다. 공통 코드에 `format(` 을 호출할 정당한 자리가 없으므로 뒤쪽을 `\.format\(` 로 넓혔다.
 
 결과가 **0줄**이어야 한다. `androidx.compose.*` / `androidx.navigation.*` / `androidx.lifecycle.compose.*` 는 CMP·JetBrains 포크가 같은 패키지명을 쓰므로 **허용**이다. 위 정규식은 Android 전용 하위 패키지와 심볼만 집어서 금지한다.
 

@@ -433,7 +433,7 @@ class PaymentColumn : ColumnType<TempData> {
         DefaultCell(
             width = headerWidth,
             height = cellHeight,
-            text = "${"%,d".format(data.payment.roundToInt())}원",
+            text = "${data.payment.roundToInt().toGroupedString()}원",
         )
     }
 }
@@ -455,4 +455,13 @@ class LineColumn : ColumnType<TempData> {
             text = data.line,
         )
     }
+}
+
+/** 세 자리 구분 쉼표를 직접 넣는다. 서식 문자열 확장은 JVM 전용이라 공통 코드에서 쓸 수 없다. */
+private fun Int.toGroupedString(): String {
+    val digits = toString()
+    val isNegative = digits.startsWith('-')
+    val body = if (isNegative) digits.substring(1) else digits
+    val grouped = body.reversed().chunked(3).joinToString(",").reversed()
+    return if (isNegative) "-$grouped" else grouped
 }

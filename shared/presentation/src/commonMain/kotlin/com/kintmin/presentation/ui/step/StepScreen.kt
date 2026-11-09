@@ -63,10 +63,10 @@ fun StepScreen(
     val peakStartMin = if (peakSlot % 2 == 0) 0 else 30
     val peakEndMin = peakStartMin + 30
     val peakEndHour = if (peakEndMin >= 60) (peakStartHour + 1) % 24 else peakStartHour
-    val peakHourRangeText = "%02d:%02d~%02d:%02d".format(
-        peakStartHour, peakStartMin,
-        peakEndHour, peakEndMin % 60,
-    )
+    val peakHourRangeText = "${peakStartHour.toString().padStart(2, '0')}" +
+        ":${peakStartMin.toString().padStart(2, '0')}" +
+        "~${peakEndHour.toString().padStart(2, '0')}" +
+        ":${(peakEndMin % 60).toString().padStart(2, '0')}"
     val d = uiState.selectedDate
     val dateText = "${d.year}년 ${d.month.number}월 ${d.day}일"
 

@@ -33,7 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -132,7 +133,9 @@ fun AudioEditScreen(
 
     // 가로 화면처럼 높이가 낮으면 제목·저장 버튼을 상단 바로 올리고 조작부를 한 줄로 줄여 파형 자리를 확보한다.
     // 방향이 아니라 높이로 판단해야 분할 화면에서도 맞다.
-    val isCompactHeight = LocalConfiguration.current.screenHeightDp < COMPACT_HEIGHT_DP
+    // LocalConfiguration 은 Android 전용이라 창 크기를 직접 재서 dp 로 환산한다.
+    val windowHeightPx = LocalWindowInfo.current.containerSize.height
+    val isCompactHeight = with(LocalDensity.current) { windowHeightPx.toDp() } < COMPACT_HEIGHT_DP.dp
     val durationSummary = data.durationSummary()
 
     Scaffold(

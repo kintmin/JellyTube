@@ -285,13 +285,8 @@ private fun SelectedSlotTooltip(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "%d:%02d - %d:%02d  %d걸음".format(
-                    startHour,
-                    startMinute,
-                    endHour,
-                    endMinute,
-                    steps,
-                ),
+                text = "$startHour:${startMinute.toString().padStart(2, '0')}" +
+                    " - $endHour:${endMinute.toString().padStart(2, '0')}  ${steps}걸음",
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 style = MaterialTheme.typography.labelLarge,
                 maxLines = 1,
