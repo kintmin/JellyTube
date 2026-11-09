@@ -21,6 +21,29 @@ class DeepLinkParserTest {
     }
 
     @Test
+    fun `iOS 커스텀 스킴도 같은 문법으로 받는다`() {
+        // 스킴만 다르고 호스트·경로는 https 쪽과 같다. 두 플랫폼이 같은 답을 내야 한다.
+        assertEquals(
+            parse(DeepLinkConstants.UrlBuilder.stepScreen()),
+            parse("jellytube://www.jellytube.com/main/step"),
+        )
+        assertEquals(
+            listOf(
+                NavigationIntent.PopAll,
+                NavigationIntent.NavigateToMainPlaylistsTab,
+                NavigationIntent.NavigateToLyricsViewer(9),
+            ),
+            parse("jellytube://www.jellytube.com/main/lyrics/9"),
+        )
+    }
+
+    @Test
+    fun `커스텀 스킴이어도 호스트가 다르면 거른다`() {
+        assertEquals(emptyList<NavigationIntent>(), parse("jellytube://evil.com/main/step"))
+        assertEquals(emptyList<NavigationIntent>(), parse("jellytubex://www.jellytube.com/main/step"))
+    }
+
+    @Test
     fun `신뢰 호스트를 가장한 주소를 거른다`() {
         assertEquals(
             emptyList<NavigationIntent>(),

@@ -11,7 +11,25 @@ object DeepLinkConstants {
 
     const val SCHEME = "https"
 
-    /** 변경 시 `android:app` manifest 의 intent-filter 도 바꿔야 한다. */
+    /**
+     * iOS 진입용 커스텀 스킴.
+     *
+     * Android 는 `https` 링크를 App Links(`autoVerify`)로 가로채지만, iOS 에서 같은 링크를
+     * 받으려면 Universal Links 가 필요하고 그건 **도메인에
+     * `apple-app-site-association` 을 올리는 것이 선행 조건**이다. 그때까지는 커스텀 스킴을
+     * 쓴다.
+     *
+     * 호스트와 경로는 `https` 쪽과 **같은 문법**이다(`jellytube://www.jellytube.com/main/...`).
+     * 스킴만 다르게 둬서 판정과 호스트 검사를 한 벌로 유지한다 — 문법을 따로 두면 두
+     * 플랫폼이 다른 답을 낼 자리가 생긴다.
+     *
+     * 대가는 **다른 앱도 이 스킴을 등록할 수 있다**는 것이다. 딥링크 목적지가 전부 앱 내부
+     * 화면이고 토큰이 오가지 않아 받아들인다. 외부에서 값을 받는 링크가 생기면 그때
+     * Universal Links 로 올라가야 한다.
+     */
+    const val APP_SCHEME = "jellytube"
+
+    /** 변경 시 `android:app` manifest 의 intent-filter 와 iOS `CFBundleURLTypes` 도 바꿔야 한다. */
     const val HOST = "www.jellytube.com"
 
     private const val SCHEME_AND_HOST = "$SCHEME://$HOST"

@@ -18,6 +18,23 @@
 	<key>NSMotionUsageDescription</key>
 	<string>걸음수를 세기 위해 동작 및 피트니스 데이터를 사용합니다.</string>
 
+	<!--
+	  딥링크 진입용 커스텀 스킴. 값의 진원지는 공통 `DeepLinkConstants.APP_SCHEME` 이다.
+	  Android 는 같은 주소를 https App Links 로 받는다 — Universal Links 는 도메인에
+	  apple-app-site-association 을 올린 뒤에 쓴다.
+	-->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.kintmin.JellyTubeIos.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>jellytube</string>
+			</array>
+		</dict>
+	</array>
+
 	<!-- 화면이 꺼진 뒤에도 재생을 잇는다. -->
 	<key>UIBackgroundModes</key>
 	<array>
