@@ -7,6 +7,7 @@ import androidx.navigation.toRoute
 import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
 import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
+import com.kintmin.presentation.ui.main.navigation.mainScreenTypeMap
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +19,7 @@ class MainViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val importSharedAudioMediaUseCase: ImportSharedAudioMediaUseCase,
 ) : ViewModel() {
-    private val _currentTabItem = MutableStateFlow(savedStateHandle.toRoute<MainScreenRoute>().tabItem)
+    private val _currentTabItem = MutableStateFlow(savedStateHandle.toRoute<MainScreenRoute>(mainScreenTypeMap).tabItem)
     val tabItem = _currentTabItem.asStateFlow()
 
     private val eventChannel = Channel<MainScreenEvent>(capacity = 8)

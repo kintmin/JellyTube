@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.presentation.port.ExecuteYoutubeDownload
 import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
+import com.kintmin.presentation.ui.main.navigation.mainScreenTypeMap
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -19,7 +20,7 @@ class YoutubeDownloadViewModel constructor(
 ) : ViewModel() {
 
     private val _currentUrl = MutableStateFlow(
-        savedStateHandle.toRoute<MainScreenRoute>().searchUrl ?: "https://m.youtube.com/"
+        savedStateHandle.toRoute<MainScreenRoute>(mainScreenTypeMap).searchUrl ?: "https://m.youtube.com/"
     )
     val currentUrl = _currentUrl.asStateFlow()
 
