@@ -45,12 +45,6 @@ internal class IosFileShareServerControllerStub : FileShareServerController {
     override fun stop() = Unit
 }
 
-/** 교체 예정 — yt-dlp 추출 + background URLSession 전송으로 채운다. */
-internal class IosExecuteYoutubeDownloadStub : ExecuteYoutubeDownload {
-
-    override fun invoke(url: String) = Unit
-}
-
 /** 교체 예정 — 앱 수명 코루틴 스코프로 채운다. */
 internal class IosExecuteAnomalyDataCheckStub : ExecuteAnomalyDataCheck {
 

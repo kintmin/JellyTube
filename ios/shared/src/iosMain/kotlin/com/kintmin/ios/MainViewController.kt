@@ -1,9 +1,11 @@
 package com.kintmin.ios
 
 import androidx.compose.ui.window.ComposeUIViewController
+import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
 import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
+import com.kintmin.presentation.port.ExecuteYoutubeDownload
 import com.kintmin.presentation.port.StepMeasurementController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +33,24 @@ fun startApp() {
     appViewModel.registerUser()
     appViewModel.initializeMediaController()
     restoreStepMeasurementIfEnabled()
+    resumeFinishedDownloads()
+}
+
+/**
+ * 앱이 내려가 있는 사이에 끝난 전송을 등록까지 이어 준다.
+ *
+ * 전송은 OS 데몬이 하므로 앱이 없어도 끝난다. 그때는 받아 줄 코루틴이 없어 파일만 자리에
+ * 놓여 있는데, 같은 주소로 한 번 더 태우면 브릿지가 전송 없이 그 결과를 돌려준다.
+ */
+private fun resumeFinishedDownloads() {
+    appScope.launch {
+        val koin = KoinPlatform.getKoin()
+        val finishedUrls = koin.get<IosPythonExecutorBridge>().takeFinishedDownloadUrls()
+        if (finishedUrls.isEmpty()) return@launch
+
+        val execute = koin.get<ExecuteYoutubeDownload>()
+        finishedUrls.forEach { execute(it) }
+    }
 }
 
 /**

@@ -37,6 +37,8 @@ fun dataIosModule(pythonExecutorBridge: IosPythonExecutorBridge): Module = modul
     single<FileManager> { FileManagerImpl() }
     single<AppLog> { IosAppLog() }
     single<PythonExecutor> { IosPythonExecutorAdapter(pythonExecutorBridge) }
+    // 브릿지 자체도 꺼낼 수 있어야 한다 — 끝난 전송 목록처럼 PythonExecutor 밖의 일이 있다.
+    single<IosPythonExecutorBridge> { pythonExecutorBridge }
     single<LyricsTranslator> { IosLyricsTranslator() }
     single<LyricsTransliterator> { IosLyricsTransliterator(pythonExecutorBridge) }
 }

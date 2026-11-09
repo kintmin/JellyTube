@@ -5,39 +5,63 @@ import shared
 enum PythonExecutorBridgeError: Error {
     case invalidDownloadResult
     case invalidPlaylistResult
+    case invalidDirectUrl
 }
 
 final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     private let runtime = PythonRuntime()
 
+    /// 추출과 전송을 가른다.
+    ///
+    /// yt-dlp 는 **주소만** 알아내고(수 초), 바이트를 받는 것은 background `URLSession` 이
+    /// 맡는다. 그래야 앱이 내려가도 전송이 이어진다 — Python 안에서 받으면 전송 주체가 앱
+    /// 프로세스라 앱이 멈추면 같이 멈춘다.
     func __downloadYoutubeMedia(
         youtubeUrl: String,
         audioDownloadPath: String,
         completionHandler: @escaping @Sendable (YoutubeDownloadDto?, Error?) -> Void,
     ) {
+        // 지난 생애에 이미 끝난 전송이면 다시 받지 않는다.
+        if let finished = YoutubeDownloader.shared.consumeCompleted(sourceUrl: youtubeUrl) {
+            completionHandler(finished.toDto(), nil)
+            return
+        }
+
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 let result = try self.runtime.callFunction(
                     moduleName: Self.fileName,
-                    functionName: Self.methodDownloadAudio,
-                    arguments: [youtubeUrl, audioDownloadPath]
+                    functionName: Self.methodExtractAudioSource,
+                    arguments: [youtubeUrl]
                 )
 
-                guard result.count >= 6 else {
-                    throw PythonExecutorBridgeError.invalidDownloadResult
+                guard result.count >= 8, let remoteUrl = URL(string: result[0]) else {
+                    throw PythonExecutorBridgeError.invalidDirectUrl
                 }
 
-                completionHandler(
-                    YoutubeDownloadDto(
-                        title: result[safe: 0] ?? "알 수 없음",
-                        thumbnailDownloadUrl: result[safe: 1] ?? "",
-                        duration: result[safe: 2] ?? "0",
-                        uploader: result[safe: 3] ?? "알 수 없음",
-                        description: result[safe: 4] ?? "",
-                        audioFileNameWithExt: result[safe: 5] ?? ""
-                    ),
-                    nil
+                let ext = result[safe: 2].flatMap { $0.isEmpty ? nil : $0 } ?? "m4a"
+                let source = YoutubeAudioSource(
+                    sourceUrl: youtubeUrl,
+                    destinationPath: "\(audioDownloadPath).\(ext)",
+                    fileNameWithExt: "\((audioDownloadPath as NSString).lastPathComponent).\(ext)",
+                    title: result[safe: 3].flatMap { $0.isEmpty ? nil : $0 } ?? "알 수 없음",
+                    thumbnailUrl: result[safe: 4] ?? "",
+                    duration: result[safe: 5].flatMap { $0.isEmpty ? nil : $0 } ?? "0",
+                    uploader: result[safe: 6].flatMap { $0.isEmpty ? nil : $0 } ?? "알 수 없음",
+                    description: result[safe: 7] ?? ""
                 )
+
+                YoutubeDownloader.shared.download(
+                    from: remoteUrl,
+                    headers: Self.parseHeaders(result[1]),
+                    source: source
+                ) { error in
+                    if let error {
+                        completionHandler(nil, error as NSError)
+                    } else {
+                        completionHandler(source.toDto(), nil)
+                    }
+                }
             } catch {
                 completionHandler(nil, error as NSError)
             }
@@ -80,9 +104,21 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
         }
     }
 
+    func takeFinishedDownloadUrls() -> [String] {
+        YoutubeDownloader.shared.takeCompleted().map(\.sourceUrl)
+    }
+
     private static let fileName = "download_youtube_audio"
     private static let methodDownloadAudio = "download_audio"
     private static let methodExtractVideoUrlsFromPlaylist = "extract_video_urls_from_playlist"
+    private static let methodExtractAudioSource = "extract_audio_source"
+
+    private static func parseHeaders(_ json: String) -> [String: String] {
+        guard let data = json.data(using: .utf8),
+              let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: String]
+        else { return [:] }
+        return parsed
+    }
     private static let transliterateFileName = "transliterate_lyrics"
     private static let methodTransliterateToKorean = "transliterate_to_korean"
 }
@@ -185,5 +221,18 @@ private final class PythonRuntime {
 private extension Array {
     subscript(safe index: Int) -> Element? {
         indices.contains(index) ? self[index] : nil
+    }
+}
+
+private extension YoutubeAudioSource {
+    func toDto() -> YoutubeDownloadDto {
+        YoutubeDownloadDto(
+            title: title,
+            thumbnailDownloadUrl: thumbnailUrl,
+            duration: duration,
+            uploader: uploader,
+            description: description,
+            audioFileNameWithExt: fileNameWithExt
+        )
     }
 }

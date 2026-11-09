@@ -1,8 +1,24 @@
 import SwiftUI
 import shared
 
+/// 백그라운드 전송이 끝나 OS 가 앱을 깨울 때를 받는다.
+/// 이 자리가 비어 있으면 지난 생애에 끝난 전송의 완료 콜백이 오지 않는다.
+final class AppDelegate: NSObject, UIApplicationDelegate {
+
+    func application(
+        _ application: UIApplication,
+        handleEventsForBackgroundURLSession identifier: String,
+        completionHandler: @escaping () -> Void
+    ) {
+        YoutubeDownloader.shared.backgroundCompletionHandler = completionHandler
+        YoutubeDownloader.shared.activate()
+    }
+}
+
 @main
 struct JellyTubeIosApp: App {
+
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     init() {
         // 순서가 중요하다 — Koin 이 먼저 서야 startApp 이 앱 레벨 ViewModel 을 꺼낼 수 있다.
@@ -10,6 +26,8 @@ struct JellyTubeIosApp: App {
             pythonExecutorBridge: PythonExecutorBridgeImpl(),
             mediaControllerBridge: MediaControllerBridgeImpl()
         )
+        // 지난 생애의 완료 콜백을 받으려면 세션을 먼저 되살려야 한다.
+        YoutubeDownloader.shared.activate()
         MainViewControllerKt.startApp()
     }
 
