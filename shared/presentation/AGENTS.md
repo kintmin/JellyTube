@@ -264,12 +264,25 @@ When a screen's `~UiState` field is filled from an **async source** (a `Flow`/DB
 - Only seed values the previous screen **already has in hand**. Do NOT fetch extra data upstream, or widen a UseCase, just to produce a seed — that trades a flash for a worse coupling.
 - This applies to any first-frame-visible field gated on async load (base/system flags, tab selection, header titles already shown in the list, etc.), not just `isBasePlaylist`.
 
-### Adding a Deep Link destination
+### 딥링크와 최상위 네비게이션 — 이 모듈이 소유한다
 
-If a new screen must be reachable via a deep link:
-1. Add the path constant to `DeepLinkConstants.Path` in `android:app`.
-2. Add the URI pattern to `DeepLinkConstants.UriPattern` (private) and a builder to `DeepLinkConstants.UriBuilder`.
-3. Add the parsing branch in `MainViewModel.sendNavigationIntents()` in `android:app`.
-4. Add the corresponding `NavigationIntent` entry in `android:app`.
-5. Wire the new intent in `MainNavHost` to call the appropriate `NavController.navigateTo~()` function.
-6. Check if `AndroidManifest.xml` `intent-filter` needs updating.
+딥링크 판정과 최상위 그래프는 `commonMain` 에 있다. 두 플랫폼이 같은 주소에 다른 답을 내면
+그 자체가 버그이므로 **판정에 플랫폼 분기를 두지 않는다.**
+
+| 자리 | 무엇 |
+|---|---|
+| `deeplink/DeepLinkConstants` | 경로·쿼리 키·주소 조립의 단일 진원지. 주소를 **문자열**로 다룬다 |
+| `deeplink/UrlParts` | `android.net.Uri`/`NSURL` 을 대신하는 파서. 정규화하지 않고, userinfo 는 마지막 `@` 까지, 역슬래시는 WHATWG 와 같게 authority 의 끝, 쿼리 중복 키는 첫 번째가 이긴다 |
+| `deeplink/DeepLinkParser` | 주소 → `List<NavigationIntent>`. **순수 함수**이고 포트를 주입받지 않는다. 우리 주소가 아니면 빈 목록 |
+| `navigation/NavigationIntent` | 최상위 화면 이동 명령 |
+| `navigation/MainNavHost` | `NavHost` + `navigationIntentFlow` 소비 |
+
+플랫폼에 남는 것은 진입 통로와 OS 배선뿐이다 — Android 는 Manifest `intent-filter`,
+`MainViewModel.handleIntent()`(Intent → 문자열), `PendingIntent` 용 `Uri` 어댑터
+(`android:app` 의 `com.kintmin.platform.deeplink.DeepLinkConstants`). iOS 는 `onOpenURL`.
+
+새 목적지를 더하는 절차는 `.claude/skills/add-deep-link` 가 단일 진원지다.
+
+> **분기 안에서 포기하면 그때까지 쌓인 명령은 그대로 나간다.** 뿌리 경로가 맞은 뒤에 넣는
+> `PopAll` 이 그래서 남는다. 중간 포기 지점을 옮기면 동작이 바뀌므로 `DeepLinkParserTest` 가
+> 분기별 순서를 고정한다.

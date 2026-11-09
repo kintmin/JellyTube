@@ -5,9 +5,7 @@
 This module owns:
 - `JellyTubeApplication` — Koin init, app-level setup
 - `MainActivity` — edge-to-edge enablement, intent handling, lifecycle
-- `MainNavHost` — top-level Compose navigation graph wiring
-- `MainViewModel` — deep link parsing, shared file handling, navigation intent dispatch
-- `NavigationIntent` — sealed class of all top-level navigation commands
+- `MainViewModel` — Intent 어댑터(딥링크 문자열 추출 · 공유 파일 수신) + `NavigationIntent` 디스패치
 - `di/AppModule` — Koin module that wires runtime implementations to their interfaces
 - `log_impl/` — concrete `AppLog` implementation (Firebase, Logcat, etc.)
 - `python_bridge_impl/` — concrete `PythonExecutor` implementation via Chaquopy
@@ -35,7 +33,7 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 - `Worker` / `CoroutineWorker` subclasses → `platform/worker/`, worker DI in `platform/worker/di/`
 - `NotificationChannel` creation, `NotificationCompat.Builder` usage → `platform/push_notification/`
 - `MediaSession`, `MediaController`, `MediaBrowser` bindings → `platform/service_controller/`
-- Deep link URI constants and URI builder helpers → `platform/deeplink/`
+- 딥링크 주소를 `Uri` 로 바꾸는 어댑터 → `platform/deeplink/` (**상수·조립은 `shared:presentation` 소유**)
 
 ### Port implementations (`presentation`의 포트 구현)
 
@@ -69,17 +67,16 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 
 ---
 
-## DeepLinkConstants
+## DeepLinkConstants — 어댑터일 뿐이다
 
-`DeepLinkConstants` (package `com.kintmin.platform.deeplink`) is the single source of truth for all deep link paths, query keys, and URI builders.
+경로·쿼리 키·주소 조립의 단일 진원지는 **`shared:presentation` 의
+`com.kintmin.presentation.deeplink.DeepLinkConstants`** 다. 이 모듈의 동명 객체는
+`PendingIntent` 가 `android.net.Uri` 를 요구해서 존재한다.
 
 **Rules**:
-- All path segment strings must be declared as `const val` inside `DeepLinkConstants.Path`.
-- All query parameter key strings must be declared as `const val` inside `DeepLinkConstants.QueryKey`.
-- URI pattern strings belong in the private `UriPattern` object.
-- Public URI builders belong in `UriBuilder` object and must return `android.net.Uri`.
-- **Do not** hardcode URI strings outside of `DeepLinkConstants`.
-- `DEEP_LINK_HOST` is `www.jellytube.com`. Changing it requires updating the manifest `intent-filter` as well.
+- **주소 문자열을 여기서 조립하지 않는다.** 공통 `UrlBuilder` 의 결과를 `toUri()` 로만 바꾼다.
+- 새 path/query 키는 공통 쪽 `Path`/`QueryKey` 에 더한다. 이 모듈에 복제하지 않는다.
+- `DEEP_LINK_HOST`(= 공통 `HOST`, `www.jellytube.com`) 변경 시 manifest `intent-filter` 도 함께 바꾼다.
 
 ---
 
@@ -108,24 +105,24 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 
 ---
 
-## Deep Link Handling
+## Deep Link Handling — 진입 통로만 이 모듈이다
 
 **Flow**:
-1. `MainActivity.onNewIntent()` / `onCreate()` calls `MainViewModel.handleIntent(intent)`
-2. `MainViewModel` reads `intent.data` (Uri) and delegates to `sendNavigationIntents(uri)`
-3. `sendNavigationIntents` uses `DeepLinkConstants.Path` and `DeepLinkConstants.QueryKey` to parse segments
-4. Navigation commands are sent as `NavigationIntent` via `navigationIntentChannel` (capacity=8 Channel)
-5. `MainNavHost` collects `navigationIntentFlow` and calls the appropriate `NavController` functions
+1. `MainActivity.onNewIntent()` / `onCreate()` → `MainViewModel.handleIntent(intent)`
+2. `MainViewModel` 이 `intent.data` 를 꺼내 **문자열로** `onDeepLink(url)` 에 넘긴다
+3. 판정과 명령 생성은 `shared:presentation` 의 `DeepLinkParser.parse(url, 재생상태)` 가 한다
+4. 결과 `NavigationIntent` 들을 `navigationIntentChannel`(capacity=8)로 보낸다
+5. 공통 `MainNavHost` 가 `navigationIntentFlow` 를 수집해 `NavController` 를 부른다
 
 **Rules**:
-- Adding a new deep link now changes only this module: add the path constant to `DeepLinkConstants`, add the branch in `sendNavigationIntents`, add the `NavigationIntent` entry, wire it in `MainNavHost`, and update `AndroidManifest.xml` `intent-filter` if the link must be interceptable from outside the app.
-- Always consume the URI after processing: `intent.data = null`
-- Always send `NavigationIntent.PopAll` before navigating to a new deep link destination.
+- **파싱 분기를 이 모듈에 두지 않는다.** 두 플랫폼이 같은 답을 내야 한다. 새 목적지 추가
+  절차는 `.claude/skills/add-deep-link` 가 단일 진원지다.
+- 처리 후 URI 를 소비한다: `intent.data = null`
+- `PopAll` 은 파서가 뿌리 경로 확인 직후 넣는다 — 호출부에서 따로 보내지 않는다.
 
 ---
 
 ## NavigationIntent Rules
 
-- `NavigationIntent` is a sealed class in this module.
-- Add new entries here when a new navigation destination is needed from `MainViewModel`.
-- `MainNavHost` is the only consumer of `navigationIntentFlow`. Do not collect it elsewhere.
+- `NavigationIntent` 는 **`shared:presentation` 의 `navigation/`** 에 있다. 이 모듈에 두지 않는다.
+- `MainNavHost` 가 `navigationIntentFlow` 의 유일한 소비자다. 다른 곳에서 collect 금지.
