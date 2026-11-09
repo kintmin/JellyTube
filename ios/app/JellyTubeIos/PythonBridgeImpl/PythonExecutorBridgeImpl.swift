@@ -62,9 +62,29 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
         }
     }
 
+    func __transliterateToKorean(
+        text: String,
+        completionHandler: @escaping @Sendable (String?, Error?) -> Void,
+    ) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                let result = try self.runtime.callFunctionReturningString(
+                    moduleName: Self.transliterateFileName,
+                    functionName: Self.methodTransliterateToKorean,
+                    arguments: [text]
+                )
+                completionHandler(result, nil)
+            } catch {
+                completionHandler(nil, error as NSError)
+            }
+        }
+    }
+
     private static let fileName = "download_youtube_audio"
     private static let methodDownloadAudio = "download_audio"
     private static let methodExtractVideoUrlsFromPlaylist = "extract_video_urls_from_playlist"
+    private static let transliterateFileName = "transliterate_lyrics"
+    private static let methodTransliterateToKorean = "transliterate_to_korean"
 }
 
 private final class PythonRuntime {
@@ -82,6 +102,21 @@ private final class PythonRuntime {
         let result = function.dynamicallyCall(withArguments: arguments.map(PythonObject.init))
 
         return convertPythonSequenceToStrings(result)
+    }
+
+    /// 문자열 하나를 돌려주는 함수용. 시퀀스 변환을 쓰면 문자열이 글자 단위로 쪼개진다.
+    func callFunctionReturningString(
+        moduleName: String,
+        functionName: String,
+        arguments: [String]
+    ) throws -> String {
+        configurePythonIfNeeded()
+
+        let module = Python.import(moduleName)
+        let function = module[dynamicMember: functionName]
+        let result = function.dynamicallyCall(withArguments: arguments.map(PythonObject.init))
+
+        return String(result) ?? String(Python.str(result)) ?? ""
     }
 
     // Python이 반환하는 튜플/리스트가 str/int/None 혼합일 수 있어 각 원소를 문자열로 관대하게 변환한다.

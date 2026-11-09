@@ -11,6 +11,9 @@ interface IosPythonExecutorBridge {
     suspend fun extractYoutubeUrlsFromPlaylist(
         playlistUrl: String,
     ): List<String>
+
+    /** `transliterate_lyrics.py` 의 `transliterate_to_korean`. 줄 구조를 보존한다. */
+    suspend fun transliterateToKorean(text: String): String
 }
 
 internal class IosPythonExecutorAdapter(

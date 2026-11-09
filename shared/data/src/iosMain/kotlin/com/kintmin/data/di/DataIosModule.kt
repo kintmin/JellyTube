@@ -38,5 +38,5 @@ fun dataIosModule(pythonExecutorBridge: IosPythonExecutorBridge): Module = modul
     single<AppLog> { IosAppLog() }
     single<PythonExecutor> { IosPythonExecutorAdapter(pythonExecutorBridge) }
     single<LyricsTranslator> { IosLyricsTranslator() }
-    single<LyricsTransliterator> { IosLyricsTransliterator() }
+    single<LyricsTransliterator> { IosLyricsTransliterator(pythonExecutorBridge) }
 }
