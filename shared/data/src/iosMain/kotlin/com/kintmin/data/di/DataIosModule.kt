@@ -10,9 +10,13 @@ import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.database.createIosJellyTubeDatabase
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.local_file.FileManagerImpl
+import com.kintmin.data.python_bridge.IosLyricsTransliterator
 import com.kintmin.data.python_bridge.IosPythonExecutorAdapter
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
+import com.kintmin.data.python_bridge.LyricsTransliterator
 import com.kintmin.data.python_bridge.PythonExecutor
+import com.kintmin.data.translation.IosLyricsTranslator
+import com.kintmin.data.translation.LyricsTranslator
 import com.kintmin.log.AppLog
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -33,4 +37,6 @@ fun dataIosModule(pythonExecutorBridge: IosPythonExecutorBridge): Module = modul
     single<FileManager> { FileManagerImpl() }
     single<AppLog> { IosAppLog() }
     single<PythonExecutor> { IosPythonExecutorAdapter(pythonExecutorBridge) }
+    single<LyricsTranslator> { IosLyricsTranslator() }
+    single<LyricsTransliterator> { IosLyricsTransliterator() }
 }
