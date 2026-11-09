@@ -12,6 +12,12 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 
+	<!--
+	  걸음수 측정(CMPedometer). 이 설명이 없으면 모션 API 를 건드리는 순간 앱이 죽는다.
+	-->
+	<key>NSMotionUsageDescription</key>
+	<string>걸음수를 세기 위해 동작 및 피트니스 데이터를 사용합니다.</string>
+
 	<!-- 화면이 꺼진 뒤에도 재생을 잇는다. -->
 	<key>UIBackgroundModes</key>
 	<array>
