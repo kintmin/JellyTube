@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.skie)
 }
 
 kotlin {
@@ -38,16 +37,11 @@ kotlin {
             }
         }
     }
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64(),
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "shared"
-            export(project(":shared:domain"))
-            export(project(":shared:log"))
-        }
-    }
+    // 프레임워크와 SKIE 는 iOS Composition Root(`:ios:shared`)가 소유한다.
+    // iOS 프레임워크는 하나여야 하고, 그 하나는 data 와 presentation 을 함께 보는
+    // 모듈이어야 한다. 이 모듈은 klib 만 내놓는다.
+    iosArm64()
+    iosSimulatorArm64()
 
     sourceSets {
         commonMain.dependencies {
