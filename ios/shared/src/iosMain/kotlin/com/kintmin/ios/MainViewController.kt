@@ -87,3 +87,17 @@ fun mainViewController(): UIViewController = ComposeUIViewController {
 fun handleDeepLink(url: String) {
     appViewModel.handleDeepLink(url)
 }
+
+/**
+ * 다른 앱이 "JellyTube 로 열기"로 넘긴 오디오 파일.
+ *
+ * `Info.plist` 의 `CFBundleDocumentTypes` 때문에 `onOpenURL` 로 `file://` 주소가 들어온다.
+ * 딥링크와 **같은 통로를 쓰지 않는** 이유는 판정이 다르기 때문이다 — 딥링크는 "어느 화면을
+ * 열까"고 이것은 "이 파일을 들여올까"다. 한 함수에 섞으면 둘 중 하나의 검증이 느슨해진다.
+ *
+ * `android:app` 의 `MainActivity` 가 `ACTION_SEND` 를 꺼내 `importSharedAudio` 로 넘기는
+ * 자리와 짝이다.
+ */
+fun handleSharedAudioFile(url: String) {
+    appViewModel.importSharedAudio(listOf(url))
+}

@@ -32,7 +32,27 @@ struct JellyTubeIosApp: App {
         )
         // 지난 생애의 완료 콜백을 받으려면 세션을 먼저 되살려야 한다.
         YoutubeDownloader.shared.activate()
+        Self.clearSharedFileInbox()
         MainViewControllerKt.startApp()
+    }
+
+    /// "JellyTube 로 열기"로 들어온 파일은 iOS 가 `Documents/Inbox/` 에 **복사해** 둔다.
+    /// 앱이 자기 저장소로 다시 복사해 들이므로 그 원본은 쓸모가 없는데, 지우는 주체가
+    /// 없으면 쓸 일 없는 사본이 계속 쌓인다. 들여오는 중에 지우면 안 되니 **다음 기동에**
+    /// 치운다 — 그 시점에는 진행 중인 들여오기가 없다.
+    private static func clearSharedFileInbox() {
+        guard let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        else { return }
+
+        let inbox = documents.appendingPathComponent("Inbox")
+        guard let entries = try? FileManager.default.contentsOfDirectory(
+            at: inbox,
+            includingPropertiesForKeys: nil
+        ) else { return }
+
+        for entry in entries {
+            try? FileManager.default.removeItem(at: entry)
+        }
     }
 
     var body: some Scene {
@@ -42,8 +62,13 @@ struct JellyTubeIosApp: App {
                 // 덮어야 한다. 인셋 처리는 각 화면의 Scaffold(innerPadding)가 한다.
                 .ignoresSafeArea(.all)
                 .onOpenURL { url in
-                    // 판정은 공통 코드가 한다. Swift 는 주소만 넘긴다.
-                    MainViewControllerKt.handleDeepLink(url: url.absoluteString)
+                    // 판정은 공통 코드가 한다. Swift 는 "파일이냐 아니냐"만 가른다 —
+                    // 그 둘은 아예 다른 일이라 통로를 나눠야 한쪽 검증이 느슨해지지 않는다.
+                    if url.isFileURL {
+                        MainViewControllerKt.handleSharedAudioFile(url: url.absoluteString)
+                    } else {
+                        MainViewControllerKt.handleDeepLink(url: url.absoluteString)
+                    }
                 }
         }
     }

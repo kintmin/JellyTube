@@ -35,6 +35,30 @@
 		</dict>
 	</array>
 
+	<!--
+	  다른 앱의 공유 시트에서 "JellyTube 로 열기"가 뜨게 한다 — Android 의
+	  `ACTION_SEND` intent-filter 에 대응하는 자리다.
+
+	  `LSSupportsOpeningDocumentsInPlace` 는 켜지 않는다. 끄면 iOS 가 파일을
+	  `Documents/Inbox/` 로 **복사해서** 넘겨 주는데, 어차피 앱이 자기 저장소로 복사해
+	  들이므로 원본을 직접 건드릴 이유가 없다.
+	-->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>오디오 파일</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.audio</string>
+			</array>
+		</dict>
+	</array>
+
 	<!-- 화면이 꺼진 뒤에도 재생을 잇는다. -->
 	<key>UIBackgroundModes</key>
 	<array>
