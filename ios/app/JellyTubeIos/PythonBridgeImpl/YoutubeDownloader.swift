@@ -534,7 +534,8 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
             withIntermediateDirectories: true
         )
         if !manager.fileExists(atPath: path) {
-            manager.createFile(atPath: path, contents: nil)
+            // 기본값은 0644 다. 전송이 통짜였을 때 OS 임시 파일을 옮겨 받던 권한과 맞춘다.
+            manager.createFile(atPath: path, contents: nil, attributes: [.posixPermissions: 0o600])
         }
 
         let handle = try FileHandle(forWritingTo: URL(fileURLWithPath: path))
