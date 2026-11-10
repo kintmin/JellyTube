@@ -1,5 +1,6 @@
 import Foundation
 import os
+import shared
 
 private let downloadLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "YoutubeDownload")
 
@@ -9,11 +10,17 @@ enum YoutubeDownloadError: LocalizedError {
     case httpStatus(Int)
     /// 200 이지만 본문이 비어 있는 경우.
     case emptyBody
+    /// 206 인데 `Content-Range` 가 없어 남은 분량을 셀 수 없는 경우.
+    case unknownTotalBytes
+    case sizeMismatch(received: Int64, expected: Int64)
 
     var errorDescription: String? {
         switch self {
         case .httpStatus(let code): return "음원 주소가 거부됐습니다 (HTTP \(code))"
         case .emptyBody: return "받은 음원이 비어 있습니다"
+        case .unknownTotalBytes: return "음원 길이를 알 수 없습니다"
+        case .sizeMismatch(let received, let expected):
+            return "받은 크기가 맞지 않습니다 (\(received)/\(expected))"
         }
     }
 }
@@ -30,10 +37,24 @@ struct YoutubeAudioSource: Codable {
     let description: String
 }
 
+/// 진행 중인 전송. 청크가 끝나는 시점이 앱의 다음 생애일 수 있어 디스크에 적어 둔다.
+private struct YoutubeTransfer: Codable {
+    let source: YoutubeAudioSource
+    let remoteUrl: String
+    let headers: [String: String]
+    var receivedBytes: Int64
+    /// 첫 응답의 `Content-Range` 로 알게 되므로 그 전에는 비어 있다.
+    var totalBytes: Int64?
+
+    /// 완주한 뒤에야 목적지로 옮긴다. 중간에 끊겨도 반쪽 파일이 자리에 남지 않는다.
+    var partPath: String { source.destinationPath + ".part" }
+}
+
 /// 유튜브 음원을 background `URLSession` 으로 내려받는다. 전송 주체가 OS 데몬이라 앱이
 /// 내려가도 이어지고, 사용자가 앱 스위처에서 강제 종료하면 OS 가 전부 취소한다.
 ///
-/// 완료가 앱의 다음 생애에 올 수 있어 진행 중인 전송을 디스크에 적어 둔다.
+/// 한 요청이 [RangeChunkPlan.MAX_CHUNK_BYTES] 를 넘는 범위를 달라고 하면 CDN 이 속도를 조이므로
+/// 그 상한으로 끊어 순차로 받는다.
 final class YoutubeDownloader: NSObject {
 
     static let shared = YoutubeDownloader()
@@ -54,8 +75,8 @@ final class YoutubeDownloader: NSObject {
     }()
 
     private let lock = NSLock()
-    private var waiters: [Int: (Error?) -> Void] = [:]
-    private var startedAt: [Int: Date] = [:]
+    private var waiters: [String: (Error?) -> Void] = [:]
+    private var startedAt: [String: Date] = [:]
 
     private override init() {
         super.init()
@@ -72,7 +93,7 @@ final class YoutubeDownloader: NSObject {
         lock.lock()
         defer { lock.unlock() }
 
-        return Array(Self.load(key: Self.completedKey).keys)
+        return Array(Self.load(YoutubeAudioSource.self, key: Self.completedKey).keys)
     }
 
     /// 같은 주소의 결과가 이미 디스크에 있으면 돌려준다. 전송을 다시 하지 않기 위해서다.
@@ -80,7 +101,7 @@ final class YoutubeDownloader: NSObject {
         lock.lock()
         defer { lock.unlock() }
 
-        var completed = Self.load(key: Self.completedKey)
+        var completed = Self.load(YoutubeAudioSource.self, key: Self.completedKey)
         guard let source = completed.removeValue(forKey: sourceUrl) else { return nil }
         Self.save(completed, key: Self.completedKey)
 
@@ -95,40 +116,66 @@ final class YoutubeDownloader: NSObject {
         source: YoutubeAudioSource,
         completion: @escaping (Error?) -> Void
     ) {
-        var request = URLRequest(url: remoteUrl)
+        let transfer = YoutubeTransfer(
+            source: source,
+            remoteUrl: remoteUrl.absoluteString,
+            headers: headers,
+            receivedBytes: 0,
+            totalBytes: nil
+        )
+        // 새로 추출한 주소다. 전에 받아 둔 조각이 같은 바이트라는 보장이 없어 버린다.
+        try? FileManager.default.removeItem(atPath: transfer.partPath)
+
+        lock.lock()
+        waiters[source.sourceUrl] = completion
+        startedAt[source.sourceUrl] = Date()
+        Self.put(transfer)
+        lock.unlock()
+
+        request(RangeChunkPlan.shared.first(), for: transfer)
+    }
+
+    private func request(_ chunk: RangeChunk, for transfer: YoutubeTransfer) {
+        guard let url = URL(string: transfer.remoteUrl) else {
+            fail(sourceUrl: transfer.source.sourceUrl, error: URLError(.badURL))
+            return
+        }
+
+        var request = URLRequest(url: url)
         // 유튜브가 주는 주소는 서명된 단기 주소다. 추출 때와 다른 헤더로 요청하면 거부될 수 있어
         // yt-dlp 가 준 헤더를 그대로 싣는다.
-        for (field, value) in headers {
+        for (field, value) in transfer.headers {
             request.setValue(value, forHTTPHeaderField: field)
         }
+        // 압축이 끼면 `Content-Range` 의 바이트 수와 받은 바이트 수가 어긋난다.
+        request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+        request.setValue(chunk.headerValue, forHTTPHeaderField: "Range")
 
         let task = session.downloadTask(with: request)
         // `taskIdentifier` 는 세션 인스턴스 안에서만 유일하다. 앱이 다시 뜨면 1 부터 다시 매겨져
         // 지난 생애의 기록과 엉킨다. 기록은 주소로 찾고, 태스크에는 그 주소를 붙여 둔다.
-        task.taskDescription = source.sourceUrl
+        task.taskDescription = transfer.source.sourceUrl
 
-        lock.lock()
-        waiters[task.taskIdentifier] = completion
-        var inFlight = Self.load(key: Self.inFlightKey)
-        inFlight[source.sourceUrl] = source
-        Self.save(inFlight, key: Self.inFlightKey)
-        lock.unlock()
-
-        downloadLog.info("start task=\(task.taskIdentifier) dest=\(source.destinationPath, privacy: .public)")
-        startedAt[task.taskIdentifier] = Date()
+        downloadLog.info("start task=\(task.taskIdentifier) range=\(chunk.headerValue, privacy: .public)")
         task.resume()
     }
 
     // MARK: - 기록
 
-    private static func load(key: String) -> [String: YoutubeAudioSource] {
+    private static func put(_ transfer: YoutubeTransfer) {
+        var inFlight = load(YoutubeTransfer.self, key: inFlightKey)
+        inFlight[transfer.source.sourceUrl] = transfer
+        save(inFlight, key: inFlightKey)
+    }
+
+    private static func load<T: Decodable>(_ type: T.Type, key: String) -> [String: T] {
         guard let data = UserDefaults.standard.data(forKey: key),
-              let decoded = try? JSONDecoder().decode([String: YoutubeAudioSource].self, from: data)
+              let decoded = try? JSONDecoder().decode([String: T].self, from: data)
         else { return [:] }
         return decoded
     }
 
-    private static func save(_ value: [String: YoutubeAudioSource], key: String) {
+    private static func save<T: Encodable>(_ value: [String: T], key: String) {
         guard let data = try? JSONEncoder().encode(value) else { return }
         UserDefaults.standard.set(data, forKey: key)
     }
@@ -141,50 +188,117 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
+        guard let sourceUrl = downloadTask.taskDescription else { return }
+
         lock.lock()
-        var inFlight = Self.load(key: Self.inFlightKey)
-        let source = downloadTask.taskDescription.flatMap { inFlight.removeValue(forKey: $0) }
-        Self.save(inFlight, key: Self.inFlightKey)
-        let waiter = waiters[downloadTask.taskIdentifier]
+        let stored = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)[sourceUrl]
         lock.unlock()
 
-        guard let source else {
+        guard var transfer = stored else {
             downloadLog.error("no record for task=\(downloadTask.taskIdentifier)")
             return
         }
 
         // `URLSessionDownloadTask` 는 403 도 "전송 성공"으로 보고 오류 본문을 파일로 내려 준다.
         // 여기서 걸러내지 않으면 내용 없는 m4a 가 DB 에 등록된다.
-        let statusCode = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
-        let attributes = try? FileManager.default.attributesOfItem(atPath: location.path)
-        let byteCount = (attributes?[.size] as? NSNumber)?.intValue ?? 0
-        let elapsed = startedAt.removeValue(forKey: downloadTask.taskIdentifier)
-            .map { Date().timeIntervalSince($0) } ?? 0
-        downloadLog.info(
-            "finish task=\(downloadTask.taskIdentifier) status=\(statusCode) bytes=\(byteCount) elapsed=\(elapsed)s"
-        )
+        let response = downloadTask.response as? HTTPURLResponse
+        let statusCode = response?.statusCode ?? 0
+        let byteCount = Self.fileSize(atPath: location.path)
 
-        guard (200...299).contains(statusCode) else {
-            finish(
-                taskIdentifier: downloadTask.taskIdentifier,
-                waiter: waiter,
-                error: YoutubeDownloadError.httpStatus(statusCode),
-                source: nil
-            )
+        guard statusCode == 200 || statusCode == 206 else {
+            fail(sourceUrl: sourceUrl, error: YoutubeDownloadError.httpStatus(statusCode))
             return
         }
         guard byteCount > 0 else {
-            finish(
-                taskIdentifier: downloadTask.taskIdentifier,
-                waiter: waiter,
-                error: YoutubeDownloadError.emptyBody,
-                source: nil
+            fail(sourceUrl: sourceUrl, error: YoutubeDownloadError.emptyBody)
+            return
+        }
+
+        // 200 은 서버가 `Range` 를 무시하고 전체를 보낸 것이다. 앞 조각에 이어 붙이면 깨진다.
+        let isWholeBody = statusCode == 200
+        if isWholeBody {
+            try? FileManager.default.removeItem(atPath: transfer.partPath)
+            transfer.receivedBytes = 0
+        }
+
+        // 이 함수가 끝나면 OS 가 임시 파일을 지운다. 반드시 여기서 옮겨야 한다.
+        do {
+            try Self.append(contentsOf: location, to: transfer.partPath)
+        } catch {
+            downloadLog.error("append failed: \(error.localizedDescription, privacy: .public)")
+            fail(sourceUrl: sourceUrl, error: error)
+            return
+        }
+
+        transfer.receivedBytes += byteCount
+        if transfer.totalBytes == nil {
+            transfer.totalBytes = isWholeBody
+                ? transfer.receivedBytes
+                : RangeChunkPlan.shared.parseTotalBytes(
+                    contentRange: response?.value(forHTTPHeaderField: "Content-Range")
+                )?.int64Value
+        }
+
+        guard let totalBytes = transfer.totalBytes else {
+            fail(sourceUrl: sourceUrl, error: YoutubeDownloadError.unknownTotalBytes)
+            return
+        }
+
+        // 다음 요청을 내기 전에 적어 둔다. 그 사이에 앱이 죽어도 이어받을 자리가 남는다.
+        lock.lock()
+        Self.put(transfer)
+        lock.unlock()
+
+        guard let next = RangeChunkPlan.shared.next(
+            receivedBytes: transfer.receivedBytes,
+            totalBytes: totalBytes
+        ) else {
+            finalize(transfer, totalBytes: totalBytes)
+            return
+        }
+
+        request(next, for: transfer)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        guard let error, let sourceUrl = task.taskDescription else { return }
+
+        fail(sourceUrl: sourceUrl, error: error)
+    }
+
+    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        // 청크가 더 남아 있으면 아직 끝난 것이 아니다.
+        lock.lock()
+        let hasPending = !Self.load(YoutubeTransfer.self, key: Self.inFlightKey).isEmpty
+        lock.unlock()
+        guard !hasPending else { return }
+
+        DispatchQueue.main.async {
+            self.backgroundCompletionHandler?()
+            self.backgroundCompletionHandler = nil
+        }
+    }
+
+    private func finalize(_ transfer: YoutubeTransfer, totalBytes: Int64) {
+        let sourceUrl = transfer.source.sourceUrl
+
+        lock.lock()
+        let elapsed = startedAt[sourceUrl].map { Date().timeIntervalSince($0) } ?? 0
+        lock.unlock()
+        downloadLog.info("finish bytes=\(transfer.receivedBytes) elapsed=\(elapsed)s")
+
+        guard transfer.receivedBytes == totalBytes else {
+            fail(
+                sourceUrl: sourceUrl,
+                error: YoutubeDownloadError.sizeMismatch(
+                    received: transfer.receivedBytes,
+                    expected: totalBytes
+                )
             )
             return
         }
 
-        // 이 함수가 끝나면 OS 가 임시 파일을 지운다. 반드시 여기서 옮겨야 한다.
-        let destination = URL(fileURLWithPath: source.destinationPath)
+        let destination = URL(fileURLWithPath: transfer.source.destinationPath)
         do {
             try FileManager.default.createDirectory(
                 at: destination.deletingLastPathComponent(),
@@ -193,53 +307,67 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
             if FileManager.default.fileExists(atPath: destination.path) {
                 try FileManager.default.removeItem(at: destination)
             }
-            try FileManager.default.moveItem(at: location, to: destination)
+            try FileManager.default.moveItem(atPath: transfer.partPath, toPath: destination.path)
         } catch {
             downloadLog.error("move failed: \(error.localizedDescription, privacy: .public)")
-            finish(taskIdentifier: downloadTask.taskIdentifier, waiter: waiter, error: error, source: nil)
+            fail(sourceUrl: sourceUrl, error: error)
             return
         }
 
-        finish(taskIdentifier: downloadTask.taskIdentifier, waiter: waiter, error: nil, source: source)
+        finish(sourceUrl: sourceUrl, error: nil, source: transfer.source)
     }
 
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        guard let error else { return }  // 성공은 didFinishDownloadingTo 가 이미 처리했다
-
+    private func fail(sourceUrl: String, error: Error) {
         lock.lock()
-        var inFlight = Self.load(key: Self.inFlightKey)
-        if let sourceUrl = task.taskDescription { inFlight.removeValue(forKey: sourceUrl) }
-        Self.save(inFlight, key: Self.inFlightKey)
-        let waiter = waiters.removeValue(forKey: task.taskIdentifier)
+        let transfer = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)[sourceUrl]
         lock.unlock()
 
-        downloadLog.error("task=\(task.taskIdentifier) failed: \(error.localizedDescription, privacy: .public)")
-        waiter?(error)
-    }
-
-    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        DispatchQueue.main.async {
-            self.backgroundCompletionHandler?()
-            self.backgroundCompletionHandler = nil
+        if let transfer {
+            try? FileManager.default.removeItem(atPath: transfer.partPath)
         }
+        downloadLog.error("failed: \(error.localizedDescription, privacy: .public)")
+        finish(sourceUrl: sourceUrl, error: error, source: nil)
     }
 
     /// 기다리던 쪽이 있으면 바로 알리고, 없으면(앱이 새로 뜬 경우) 결과를 적어 둔다.
-    private func finish(
-        taskIdentifier: Int,
-        waiter: ((Error?) -> Void)?,
-        error: Error?,
-        source: YoutubeAudioSource?
-    ) {
+    private func finish(sourceUrl: String, error: Error?, source: YoutubeAudioSource?) {
         lock.lock()
-        waiters.removeValue(forKey: taskIdentifier)
+        var inFlight = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)
+        inFlight.removeValue(forKey: sourceUrl)
+        Self.save(inFlight, key: Self.inFlightKey)
+        startedAt.removeValue(forKey: sourceUrl)
+        let waiter = waiters.removeValue(forKey: sourceUrl)
         if waiter == nil, let source {
-            var completed = Self.load(key: Self.completedKey)
-            completed[source.sourceUrl] = source
+            var completed = Self.load(YoutubeAudioSource.self, key: Self.completedKey)
+            completed[sourceUrl] = source
             Self.save(completed, key: Self.completedKey)
         }
         lock.unlock()
 
         waiter?(error)
+    }
+
+    private static func fileSize(atPath path: String) -> Int64 {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: path)
+        return (attributes?[.size] as? NSNumber)?.int64Value ?? 0
+    }
+
+    /// 첫 조각은 옮기고, 그다음부터는 뒤에 붙인다.
+    private static func append(contentsOf location: URL, to path: String) throws {
+        let manager = FileManager.default
+        try manager.createDirectory(
+            at: URL(fileURLWithPath: path).deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+
+        guard manager.fileExists(atPath: path) else {
+            try manager.moveItem(atPath: location.path, toPath: path)
+            return
+        }
+
+        let handle = try FileHandle(forWritingTo: URL(fileURLWithPath: path))
+        defer { try? handle.close() }
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data(contentsOf: location, options: .mappedIfSafe))
     }
 }
