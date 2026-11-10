@@ -71,10 +71,7 @@ internal class IosMediaControllerManager(
 
     override fun seek(duration: Duration) = bridge.seek(duration.inWholeMilliseconds)
 
-    /**
-     * 누를 때마다 시작점 → 끝점 → 해제로 돈다. 끝점은 시작점보다 뒤여야 한다.
-     * Android 구현과 단계·조건이 같아야 하므로 손대면 양쪽을 함께 본다.
-     */
+    /** 단계와 조건은 `IosMediaControllerManagerTest` 가 고정한다. Android 구현과 같아야 한다. */
     override fun updateRepeatRange(): Result<Unit> = runCatching {
         val mediaId = bridge.playingItem()?.mediaId ?: return@runCatching
         clearRepeatRangeIfMediaChanged(mediaId)
@@ -102,7 +99,6 @@ internal class IosMediaControllerManager(
         repeatRangeEnd = null
     }
 
-    /** 화면의 폴링이 부른다. 끝점을 넘었으면 시작점으로 되돌린다. */
     override fun repeatRangeIfNeeded() {
         val mediaId = bridge.playingItem()?.mediaId ?: return
         clearRepeatRangeIfMediaChanged(mediaId)

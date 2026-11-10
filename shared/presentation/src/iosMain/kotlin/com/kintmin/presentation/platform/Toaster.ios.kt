@@ -30,25 +30,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /** Android `Toast.LENGTH_SHORT` / `LENGTH_LONG` 과 같은 길이로 맞춘다. */
-private const val SHORT_DURATION_MILLIS = 2_000L
-private const val LONG_DURATION_MILLIS = 3_500L
+internal const val SHORT_DURATION_MILLIS = 2_000L
+internal const val LONG_DURATION_MILLIS = 3_500L
 
-private data class ToastMessage(
+internal data class ToastMessage(
     val id: Long,
     val text: String,
     val durationMillis: Long,
 )
 
 /**
- * 띄울 메시지를 [PlatformToastHost] 로 흘린다.
+ * 띄울 메시지를 [PlatformToastHost] 로 흘린다. 동작은 `IosToastHostTest` 가 고정한다.
  *
- * 전역인 이유: 토스트를 띄우는 쪽은 화면 어디에나 있고 그리는 쪽은 앱 루트 하나다.
- * `CompositionLocal` 을 쓰지 않는 것은 모듈 규약이다(`shared/presentation/AGENTS.md`).
- *
- * **겹치면 마지막 것이 이긴다.** Android `Toast` 는 줄을 세우지만, 줄 세우기가 필요할 만큼
- * 토스트가 몰리는 자리가 없다. 필요해지면 큐로 바꾼다.
+ * 띄우는 쪽은 화면 어디에나 있고 그리는 쪽은 앱 루트 하나라 전역이다.
  */
-private object ToastHost {
+internal object ToastHost {
 
     private var nextId = 0L
     private val _current = MutableStateFlow<ToastMessage?>(null)
@@ -59,13 +55,12 @@ private object ToastHost {
         _current.value = ToastMessage(id = nextId, text = text, durationMillis = durationMillis)
     }
 
-    /** 그 사이 새 메시지가 올라왔으면 지우지 않는다. */
     fun clear(id: Long) {
         if (_current.value?.id == id) _current.value = null
     }
 }
 
-private object IosToaster : Toaster {
+internal object IosToaster : Toaster {
 
     override fun show(message: String) = ToastHost.show(message, SHORT_DURATION_MILLIS)
 

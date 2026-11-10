@@ -70,6 +70,10 @@ kotlin {
             implementation(libs.ktor.client.darwin)
         }
 
+        iosTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+
         getByName("androidHostTest") {
             dependencies {
                 implementation(libs.junit)

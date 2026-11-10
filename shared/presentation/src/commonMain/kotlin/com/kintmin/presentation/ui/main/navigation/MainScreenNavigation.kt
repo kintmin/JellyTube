@@ -18,13 +18,7 @@ data class MainScreenRoute(
     val searchUrl: String? = null,
 )
 
-/**
- * [MainTabItem] 은 기본 타입이 아니라 [NavType] 을 명시해야 한다. 생략하면 iOS 에서
- * 그래프를 만드는 순간 터진다 — 자세한 이유는 [EnumNavType].
- *
- * **등록부와 `toRoute()` 가 같은 것을 써야 한다.** 둘 중 하나만 넘기면 안드로이드는
- * 지나가고 iOS 에서만 터진다.
- */
+/** 등록부와 `toRoute()` 가 같은 것을 써야 한다. 이유는 [EnumNavType]. */
 internal val mainScreenTypeMap: Map<KType, NavType<*>> =
     mapOf(typeOf<MainTabItem>() to EnumNavType(MainTabItem.entries))
 

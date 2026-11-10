@@ -1,31 +1,19 @@
 package com.kintmin.presentation.deeplink
 
 /**
- * 딥링크 경로·쿼리 키·주소 조립의 **단일 진원지**.
- *
- * 주소를 문자열로 다룬다. `android.net.Uri` 는 안드로이드 전용이고, 플랫폼마다 다른 파서를
- * 쓰면 같은 주소를 다르게 읽을 수 있다. 안드로이드가 `Uri` 를 필요로 하는 자리
- * (`PendingIntent`)는 `android:app` 의 어댑터가 여기 결과를 `Uri` 로 바꿔 쓴다.
+ * 딥링크 경로·쿼리 키·주소 조립의 **단일 진원지**. 주소는 문자열로 다룬다 —
+ * `Uri` 가 필요한 자리(`PendingIntent`)는 `android:app` 어댑터가 여기 결과를 바꿔 쓴다.
  */
 object DeepLinkConstants {
 
     const val SCHEME = "https"
 
     /**
-     * iOS 진입용 커스텀 스킴.
+     * iOS 진입용 커스텀 스킴. 호스트·경로 문법은 `https` 쪽과 같다
+     * (`jellytube://www.jellytube.com/main/...`).
      *
-     * Android 는 `https` 링크를 App Links(`autoVerify`)로 가로채지만, iOS 에서 같은 링크를
-     * 받으려면 Universal Links 가 필요하고 그건 **도메인에
-     * `apple-app-site-association` 을 올리는 것이 선행 조건**이다. 그때까지는 커스텀 스킴을
-     * 쓴다.
-     *
-     * 호스트와 경로는 `https` 쪽과 **같은 문법**이다(`jellytube://www.jellytube.com/main/...`).
-     * 스킴만 다르게 둬서 판정과 호스트 검사를 한 벌로 유지한다 — 문법을 따로 두면 두
-     * 플랫폼이 다른 답을 낼 자리가 생긴다.
-     *
-     * 커스텀 스킴은 다른 앱도 등록할 수 있다. 지금은 목적지가 전부 앱 내부 화면이고 토큰이
-     * 오가지 않아 괜찮지만, **외부에서 값을 받는 링크가 생기면 Universal Links 로 올라가야
-     * 한다.**
+     * 커스텀 스킴은 다른 앱도 등록할 수 있다. **외부에서 값을 받는 링크가 생기면
+     * Universal Links 로 올라가야 한다** — `apple-app-site-association` 호스팅이 선행 조건이다.
      */
     const val APP_SCHEME = "jellytube"
 

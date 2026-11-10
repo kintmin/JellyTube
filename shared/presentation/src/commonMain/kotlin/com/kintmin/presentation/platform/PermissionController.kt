@@ -2,13 +2,7 @@ package com.kintmin.presentation.platform
 
 import androidx.compose.runtime.Composable
 
-/**
- * 앱이 요구하는 권한.
- *
- * **원시 권한 문자열을 노출하지 않는다.** OS 버전에 따라 어떤 권한이 필요한지는
- * 구현이 판단한다(예: 저장 권한은 SDK 28 이하 WRITE, 32 이하 READ, 그 위는 불필요).
- * 그 분기가 화면 코드로 새어나오면 화면이 플랫폼에 묶인다.
- */
+/** 앱이 요구하는 권한. OS 버전별로 어떤 원시 권한이 필요한지는 구현이 판단한다. */
 enum class AppPermission {
 
     /** 알림 표시. */

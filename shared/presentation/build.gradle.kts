@@ -81,6 +81,10 @@ kotlin {
             implementation(libs.mockk)
             implementation(libs.kotlinx.coroutines.test)
         }
+        iosTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+        }
         // commonTest 소스셋은 만들지 않는다. mockk 가 JVM 전용이라 iOS 컴파일이 깨진다.
     }
 }

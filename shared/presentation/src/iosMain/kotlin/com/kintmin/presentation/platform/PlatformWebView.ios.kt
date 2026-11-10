@@ -42,8 +42,7 @@ private const val URL_CHANGE_HANDLER_NAME = "jellyTubeUrlChanged"
 
 /**
  * `WKNavigationDelegate` 는 same-document 이동(`pushState`/`replaceState`/`popstate`/
- * `hashchange`)을 알려주지 않는다. SPA 인 m.youtube.com 은 영상 사이 이동이 전부 여기로
- * 떨어져서, 이 스크립트가 없으면 현재 주소가 첫 화면에서 멈춘다.
+ * `hashchange`)을 알려주지 않는다. SPA 인 m.youtube.com 은 영상 사이 이동이 전부 여기로 떨어진다.
  * Android `WebViewClient.doUpdateVisitedHistory` 와 짝이다.
  */
 private val URL_CHANGE_SCRIPT = """

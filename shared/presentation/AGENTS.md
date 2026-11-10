@@ -11,6 +11,7 @@
 | `src/commonMain/kotlin` | **기본 자리.** 화면/ViewModel/Intent/UiState/Event/Navigation/theme/extension |
 | `src/androidMain/kotlin` | `expect` 선언의 Android `actual`, 그리고 공통화가 불가능해 의도적으로 Android 전용으로 남긴 코드 |
 | `src/androidHostTest/kotlin` | 단위테스트. **`commonTest`를 만들지 않는다** — mockk 가 JVM 전용이라 iOS 컴파일이 깨진다 |
+| `src/iosTest/kotlin` | iOS 전용 코드의 단위테스트(`kotlin.test`). `./gradlew :shared:presentation:iosSimulatorArm64Test` |
 | `src/iosMain/kotlin` | iOS `actual`(`platform/`)과 **포트의 iOS 구현**(`port/`) |
 
 **순수성 게이트는 여전히 필요하다.** macOS 에서는 iOS 컴파일이 돌아 위반을 잡아 주지만, Windows 에서 작업하면 돌지 않는다 — 그쪽에서 `commonMain` 에 Android/JVM 전용 API 를 넣어도 **컴파일러가 잡아주지 않는다.** 아래 게이트를 그 자리의 통과 기준으로 쓴다.
@@ -59,6 +60,7 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 - Compose 로컬(`LocalContext` 등)이 필요하면 `@Composable expect fun remember~()` 로 생성만 `expect` 한다.
 - **`expect class` 는 쓰지 않는다.** 공통 테스트에서 인스턴스를 만들 수 없어 그 타입을 쓰는 로직이 통째로 테스트 불가가 된다. 계약은 `interface`, 생성만 `expect`.
 - **커스텀 `CompositionLocal` 은 만들지 않는다.** 위 두 가지로 충분하고, 세 번째 경로가 생기면 "이건 어느 쪽이냐"를 매번 따져야 한다.
+- **지켜야 하는 규칙은 주석이 아니라 테스트로 적는다.** 플랫폼 API 를 타는 자리라도 순수한 계산을 떼어내면 `iosTest` 에서 돌릴 수 있다(`StepSlotSchedule`, `CMTimeMillis`). 주석은 테스트가 말해 주지 못하는 것만 남긴다.
 
 ### 현재 탈출구 목록
 

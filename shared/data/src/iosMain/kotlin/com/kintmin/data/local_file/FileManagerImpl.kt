@@ -15,7 +15,6 @@ import kotlinx.cinterop.get
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.reinterpret
-import kotlinx.cinterop.useContents
 import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
 import kotlinx.coroutines.Dispatchers
@@ -66,10 +65,7 @@ internal class FileManagerImpl : FileManager {
         /** Android 와 같은 보존 기간. 날짜 파일 14개를 넘으면 오래된 것부터 지운다. */
         const val MAX_LOG_FILE_COUNT = 14
 
-        /**
-         * Android 는 WebP 60 으로 줄인다. iOS 에는 공개 WebP 인코더가 없어 JPEG 로 간다.
-         * 품질 값은 같은 뜻(0~1 스케일)이고, 확장자는 DB 가 파일별로 들고 있어 달라도 된다.
-         */
+        /** iOS 에는 공개 WebP 인코더가 없어 Android(WebP 60)와 달리 JPEG 로 간다. */
         const val IMAGE_COMPRESSION_QUALITY = 0.6
 
         /** 확장자를 모를 때. Android 와 같은 폴백이다. */
@@ -129,11 +125,8 @@ internal class FileManagerImpl : FileManager {
     }
 
     /**
-     * 파일 선택기·외부 공유로 들어온 오디오를 앱 안으로 들인다.
-     *
      * 파라미터 이름은 Android SAF 개념이지만 문자열이라 iOS 는 `file://` 주소를 그대로 받는다.
-     * 선택기를 `asCopy` 로 열기 때문에 여기 오는 것은 이미 임시 디렉터리 안의 복사본이고,
-     * 그래서 보안 스코프(`startAccessingSecurityScopedResource`)를 열 필요가 없다.
+     * 선택기를 `asCopy` 로 열어서 들어오는 것은 이미 복사본이고, 보안 스코프를 열 필요가 없다.
      */
     override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = runCatching {
         withContext(Dispatchers.IO) {
@@ -155,8 +148,7 @@ internal class FileManagerImpl : FileManager {
             CopiedAudioInfo(
                 fileNameWithExt = fileNameWithExt,
                 sha256Hex = data.sha256Hex(),
-                // 파일에 제목이 없으면 **원본 파일명**으로 떨어진다. 저장용 이름(UUID)으로
-                // 떨어지면 사용자에게 의미 없는 문자열이 제목으로 보인다(Android 와 같은 선).
+                // 저장용 이름(UUID)이 아니라 원본 파일명으로 떨어뜨린다(Android 와 같은 선).
                 title = metadata.title?.takeIf { it.isNotBlank() }
                     ?: sourcePath.substringAfterLast('/').substringBeforeLast('.'),
                 artist = metadata.artist,
@@ -234,23 +226,11 @@ internal class FileManagerImpl : FileManager {
 
     private fun logDir(): String = directory(LOG_DIR_NAME)
 
-    /**
-     * 음원에 박혀 있는 제목·아티스트·길이·앨범아트를 읽는다.
-     *
-     * Android 의 `MediaMetadataRetriever` 에 대응한다. 실패는 전부 "없음"으로 떨어뜨린다 —
-     * 메타데이터가 없다고 들여오기를 막을 이유가 없다.
-     */
+    /** 실패는 전부 "없음" 으로 떨어뜨린다. 메타데이터가 없다고 들여오기를 막지 않는다. */
     private suspend fun readAudioMetadata(fileFullPath: String, imageFileName: String): AudioMetadata {
         val asset = AVURLAsset(uRL = NSURL.fileURLWithPath(fileFullPath), options = null)
 
-        // `CMTimeGetSeconds` 는 구조체를 값으로 넘기는 호출이라 Kotlin/Native 에서 값이
-        // 어긋난다. 필드를 직접 읽는다.
-        val durationMs = asset.duration.useContents {
-            val scale = timescale.toDouble()
-            if (scale <= 0.0) null else value.toDouble() / scale
-        }
-            ?.takeIf { seconds -> seconds.isFinite() && seconds > 0.0 }
-            ?.let { seconds -> (seconds * 1000.0).toLong() }
+        val durationMs = asset.duration.toMillisOrNull()
 
         var title: String? = null
         var artist: String? = null
@@ -371,9 +351,7 @@ private fun String.writeToFileAtPath(path: String) {
     if (!written) error("파일을 저장할 수 없습니다: $path")
 }
 
-/**
- * `NSData.create(bytes =)` 는 포인터를 받는다. 빈 배열은 `addressOf(0)` 이 터지므로 따로 막는다.
- */
+/** 빈 배열은 `addressOf(0)` 이 터지므로 따로 막는다. */
 @OptIn(ExperimentalForeignApi::class)
 private fun ByteArray.toNSData(): NSData {
     if (isEmpty()) return NSData()

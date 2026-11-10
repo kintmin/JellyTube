@@ -17,14 +17,9 @@ import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
 /**
- * 알림 권한 상태 캐시.
- *
- * [PermissionController.isGranted] 는 동기인데 `UNUserNotificationCenter` 의 조회는
- * 비동기다. 마지막으로 확인한 값을 들고 있다가 돌려주고, 컨트롤러가 붙을 때와 요청 직후에
- * 갱신한다.
- *
- * 캐시가 비어 있으면 "아직 아님" 으로 답해 요청이 한 번 더 나가게 한다 — **이미 결정된
- * 상태라면 시스템이 창을 띄우지 않고 바로 답을 돌려주므로** 사용자에게 보이는 비용이 없다.
+ * [PermissionController.isGranted] 는 동기인데 `UNUserNotificationCenter` 조회는 비동기다.
+ * 마지막으로 확인한 값을 돌려주고, 비어 있으면 "아직 아님" 으로 답해 요청을 한 번 더 내보낸다
+ * (이미 결정된 상태면 시스템이 창 없이 바로 답한다).
  */
 private object NotificationAuthorization {
 
@@ -53,12 +48,8 @@ private object NotificationAuthorization {
 }
 
 /**
- * 모션 권한.
- *
- * **iOS 에는 모션 권한을 "요청" 하는 API 가 없다.** 실제로 질의를 한 번 던지면 시스템이
- * 창을 띄우고, 사용자가 답한 뒤 완료 핸들러가 돌아온다. 그때 상태를 다시 읽는다.
- *
- * `Info.plist` 에 `NSMotionUsageDescription` 이 없으면 질의하는 순간 앱이 죽는다.
+ * iOS 에는 모션 권한을 요청하는 API 가 없다. 질의를 한 번 던지면 시스템이 창을 띄운다.
+ * `Info.plist` 에 `NSMotionUsageDescription` 이 없으면 그 순간 앱이 죽는다.
  */
 private object MotionAuthorization {
 
@@ -92,8 +83,7 @@ private fun onMainQueue(block: () -> Unit) {
 private class IosPermissionController : PermissionController {
 
     override fun isGranted(permission: AppPermission): Boolean = when (permission) {
-        // 앱 샌드박스 안에서만 파일을 다룬다. 바깥 파일은 문서 선택기로 사용자가 직접 고른
-        // 것만 읽으므로 따로 받을 권한이 없다.
+        // 샌드박스 밖 파일은 문서 선택기로 고른 것만 읽어서 받을 권한이 없다.
         AppPermission.MediaStorage -> true
         AppPermission.Notification -> NotificationAuthorization.isAuthorized
         AppPermission.ActivityRecognition -> MotionAuthorization.isAuthorized
@@ -106,8 +96,7 @@ private class IosPermissionController : PermissionController {
         val notGranted = permissions.filterNot { isGranted(it) }
         if (notGranted.isEmpty()) return
 
-        // 요청이 각각 비동기로 돌아오므로 전부 모인 뒤에 한 번만 알린다.
-        // 완료 콜백은 메인 큐로 모아 두어 이 집계가 한 스레드에서만 돈다.
+        // 각각 비동기로 돌아온다. 메인 큐로 모아 한 스레드에서 집계하고 한 번만 알린다.
         val results = mutableMapOf<AppPermission, Boolean>()
 
         fun complete(permission: AppPermission, isGranted: Boolean) {

@@ -6,12 +6,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * iOS 가 제공하지 않는 포트의 스텁.
- *
- * **바인딩을 비워 두면 안 된다.** `presentationModule` 의 ViewModel 들이 이 포트들을
- * 생성자로 받으므로, 비어 있으면 해당 화면에 들어가는 순간 Koin 이 터진다.
- *
- * 실패를 조용히 삼키지 않는다 — `Result` 자리는 실패를, 아닌 자리는 기본값을 돌려준다.
+ * iOS 가 제공하지 않는 포트의 스텁. ViewModel 이 생성자로 받으므로 **바인딩을 비워 두면**
+ * 해당 화면에 들어가는 순간 Koin 이 터진다.
  */
 private fun unsupported(feature: String) =
     UnsupportedOperationException("iOS 에서는 $feature 을 지원하지 않습니다.")

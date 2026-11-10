@@ -3,27 +3,22 @@ package com.kintmin.presentation.deeplink
 import com.kintmin.presentation.navigation.NavigationIntent
 
 /**
- * 앱 밖에서 들어온 주소를 화면 이동 명령 목록으로 바꾼다.
+ * 앱 밖에서 들어온 주소를 화면 이동 명령으로 바꾼다. 판정은 `DeepLinkParserTest` 가 고정한다.
  *
- * **순수 함수다.** 포트를 주입받지 않고 재생 상태를 파라미터로 받는다 — 파서가 포트를 들면
- * 테스트에 목이 필요해지고, 두 플랫폼이 같은 답을 내는지 확인하기 어려워진다.
- *
- * 우리 주소가 아니면 **빈 목록**을 돌려준다. 호출자는 아무것도 하지 않으면 된다.
+ * 순수 함수다 — 재생 상태도 포트가 아니라 파라미터로 받는다. 우리 주소가 아니면 빈 목록이다.
  */
 object DeepLinkParser {
 
     /**
-     * @param playingPlaylistId 재생 중인 플레이리스트. 플레이어 딥링크가 "재생 목록에서
-     *   들어왔다" 고 알려 줄 때만 쓴다. 호출자가 미디어 컨트롤러에서 읽어 넘긴다.
-     * @param playingMediaId 재생 중인 음원. 위와 같은 자리에서만 쓴다.
+     * @param playingPlaylistId 플레이어 딥링크가 "재생 목록에서 들어왔다" 고 할 때만 쓴다.
+     * @param playingMediaId 위와 같은 자리에서만 쓴다.
      */
     fun parse(
         url: String,
         playingPlaylistId: Int? = null,
         playingMediaId: Int? = null,
     ): List<NavigationIntent> {
-        // 스킴만 둘이고 호스트·경로 문법은 하나다. Android 는 https(App Links),
-        // iOS 는 커스텀 스킴으로 들어온다.
+        // Android 는 https(App Links), iOS 는 커스텀 스킴. 호스트·경로 문법은 하나다.
         val scheme = UrlParts.scheme(url)
         if (scheme != DeepLinkConstants.SCHEME && scheme != DeepLinkConstants.APP_SCHEME) {
             return emptyList()
@@ -105,14 +100,7 @@ object DeepLinkParser {
         return intents
     }
 
-    /**
-     * 다운로드 딥링크의 대상 주소.
-     *
-     * **두 번 디코딩한다.** 링크가 주소를 한 번 인코딩해 쿼리에 실어 오고(키 이름이
-     * `encodedUrl` 인 이유다), 쿼리 값을 꺼낼 때 한 번 더 디코딩되기 때문이다.
-     *
-     * 값이 없으면 null 이다. 받는 쪽이 nullable 이라 예외로 올리지 않는다.
-     */
+    /** 링크가 주소를 한 번 인코딩해 실어 오므로(`encodedUrl`) 쿼리에서 꺼낸 뒤 한 번 더 디코딩한다. */
     private fun targetUrlOf(url: String): String? =
         UrlParts.queryParameter(url, DeepLinkConstants.QueryKey.ENCODED_URL)
             ?.let { UrlParts.percentDecode(it, plusAsSpace = true) }

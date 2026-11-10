@@ -6,12 +6,9 @@ import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.FirebaseEvent
 
 /**
- * `android:app` 의 `AppLogImpl` 에 대응하는 iOS 구현.
+ * `android:app` 의 `AppLogImpl` 에 대응하는 iOS 구현. 자르는 규칙은 `IosAppLogTest` 가 고정한다.
  *
- * 하는 일은 셋뿐이다 — GA4 제약으로 자르고, 파일 로그에 남기고, 수집기 창구로 넘긴다.
- * 자르는 규칙이 Swift 가 아니라 여기 있는 것은 두 플랫폼이 같은 값을 보내야 해서다.
- *
- * [GA4 제약사항] 이벤트명 40자 / param key 40자 / param value 100자 / param 25개
+ * 자르는 쪽이 Swift 가 아니라 여기인 것은 두 플랫폼이 같은 값을 보내야 해서다.
  * https://support.google.com/analytics/answer/9267744
  */
 internal class IosAppLog(
@@ -35,7 +32,6 @@ internal class IosAppLog(
         val params = firebaseEvent.params
             .take(MAX_PARAM_COUNT)
             .mapNotNull { (key, value) ->
-                // 값이 없는 param 은 보내지 않는다. Android 의 bundleOf 도 null 을 싣지 않는다.
                 value?.let { key.name.take(MAX_NAME_LENGTH) to it.take(MAX_VALUE_LENGTH) }
             }
             .toMap()

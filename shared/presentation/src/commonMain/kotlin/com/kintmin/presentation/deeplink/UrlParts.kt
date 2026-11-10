@@ -1,24 +1,13 @@
 package com.kintmin.presentation.deeplink
 
 /**
- * 딥링크 주소에서 조각을 꺼낸다.
+ * 딥링크 주소에서 조각을 꺼낸다. 동작 규약은 `UrlPartsTest` 가 고정한다.
  *
- * `android.net.Uri` / `NSURL` 을 쓰지 않는다. 플랫폼 파서는 관용적이라 같은 주소를 두
- * 플랫폼이 다르게 읽을 수 있는데, **딥링크 판정은 어디서나 같은 답이 나와야 한다.**
- * `shared:domain` 의 `YoutubeUrl` 이 같은 이유로 이미 직접 파싱한다.
- *
- * **정규화하지 않는다** — IDNA 변환·호스트 퍼센트 디코딩·상대경로 해석을 하지 않는다.
- * 모르는 형태는 "다른 호스트" 로 떨어져야 하고, 정규화를 거쳐 통과해서는 안 된다.
- *
- * IPv6 리터럴(`[::1]:80`)은 지원하지 않는다. 호스트가 깨진 값으로 나와 판정에서 떨어지는데,
- * 딥링크 호스트는 고정 도메인 하나라 그 실패가 맞는 결과다.
+ * 플랫폼 파서(`android.net.Uri` / `NSURL`)를 쓰지 않는 것은 같은 주소를 두 플랫폼이 다르게
+ * 읽을 수 있어서다.
  */
 internal object UrlParts {
 
-    /**
-     * 스킴. RFC 3986 대로 `.` 도 허용하므로 `scheme.env` 형태의 커스텀 스킴이 통째로 나온다.
-     * **소문자로 바꾸지 않는다** — 바꾸면 플랫폼 파서보다 관용적이 되어 판정이 느슨해진다.
-     */
     fun scheme(url: String): String? {
         val colonIndex = url.indexOf(':')
         if (colonIndex <= 0) return null
@@ -31,12 +20,6 @@ internal object UrlParts {
         return candidate
     }
 
-    /**
-     * 호스트. 포트와 userinfo 는 떼어낸다.
-     *
-     * **userinfo 는 마지막 `@` 까지다.** 첫 `@` 로 자르면 `https://jellytube.com@evil.com` 의
-     * 호스트가 신뢰 도메인으로 읽혀 통과한다.
-     */
     fun host(url: String): String? {
         val afterScheme = url.substringAfter("://", missingDelimiterValue = "")
         if (afterScheme.isEmpty()) return null
@@ -47,7 +30,6 @@ internal object UrlParts {
         return hostWithPort.substringBefore(':').ifEmpty { null }
     }
 
-    /** 경로 세그먼트. 플랫폼 파서와 같게 퍼센트 디코딩한 값을 돌려준다(`+` 는 그대로). */
     fun pathSegments(url: String): List<String> {
         val afterScheme = url.substringAfter("://", missingDelimiterValue = "")
         if (afterScheme.isEmpty()) return emptyList()
@@ -64,12 +46,6 @@ internal object UrlParts {
             .map { percentDecode(it) }
     }
 
-    /**
-     * 쿼리 파라미터. 값은 플랫폼 파서와 같게 퍼센트 디코딩하고 `+` 를 공백으로 바꾼다.
-     *
-     * **같은 키가 여럿이면 첫 번째가 이긴다.** 뒤가 앞을 덮으면 검증을 통과할 값을 앞에 두고
-     * 진짜 쓰고 싶은 값을 뒤에 붙이는 수법이 성립한다.
-     */
     fun queryParameter(url: String, name: String): String? {
         val query = url.substringAfter('?', missingDelimiterValue = "").substringBefore('#')
         if (query.isEmpty()) return null
@@ -84,11 +60,7 @@ internal object UrlParts {
         return null
     }
 
-    /**
-     * 퍼센트 디코딩. 한 글자가 여러 바이트일 수 있어 연속된 `%XX` 를 모아 UTF-8 로 해석한다.
-     *
-     * 깨진 `%` 는 그대로 남긴다 — 디코딩에 실패했다고 주소를 바꾸면 안 된다.
-     */
+    /** 한 글자가 여러 바이트일 수 있어 연속된 `%XX` 를 모아 UTF-8 로 해석한다. */
     fun percentDecode(value: String, plusAsSpace: Boolean = false): String {
         val hasPlusToConvert = plusAsSpace && value.contains('+')
         if (!value.contains('%') && !hasPlusToConvert) return value
@@ -128,13 +100,7 @@ internal object UrlParts {
         return decoded.toString()
     }
 
-    /**
-     * 쿼리 값으로 쓸 수 있게 인코딩한다. unreserved(`A-Za-z0-9-_.~`)만 남기고 나머지는 UTF-8
-     * 바이트의 `%XX` 로 바꾼다.
-     *
-     * `+` 까지 `%2B` 로 바꾸는 것이 중요하다 — [queryParameter] 가 `+` 를 공백으로 읽으므로
-     * 그대로 두면 왕복이 깨진다.
-     */
+    /** unreserved(`A-Za-z0-9-_.~`)만 남기고 나머지는 UTF-8 바이트의 `%XX` 로 바꾼다. */
     fun encodeQueryValue(value: String): String {
         val encoded = StringBuilder(value.length)
         for (byte in value.encodeToByteArray()) {

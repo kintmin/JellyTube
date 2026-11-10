@@ -56,6 +56,12 @@ class UrlPartsTest {
     }
 
     @Test
+    fun `host 는 IPv6 리터럴을 지원하지 않는다`() {
+        // 깨진 값으로 나와 호스트 검사에서 떨어진다. 딥링크 호스트는 고정 도메인 하나라 그 실패가 맞다.
+        assertEquals("[", UrlParts.host("https://[::1]:80/main"))
+    }
+
+    @Test
     fun `pathSegments 는 빈 세그먼트를 버리고 디코딩한다`() {
         assertEquals(
             listOf("main", "playlists", "3", "audioMedias"),

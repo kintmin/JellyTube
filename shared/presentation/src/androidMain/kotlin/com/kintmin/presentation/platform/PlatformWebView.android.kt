@@ -92,17 +92,9 @@ actual fun PlatformWebView(
 ) {
     val androidHandle = handle as AndroidWebViewHandle
 
-    // 로드는 url 이 "바뀔 때 한 번"만 한다.
-    //
-    // AndroidView 의 update 로 `view.url != url 이면 로드`를 계속 단언하면 안 된다.
-    // 웹뷰도 스스로 이동하는 주체이고, view.url 은 로드가 커밋될 때 바로 바뀌는데
-    // ViewModel 은 doUpdateVisitedHistory 를 거쳐야 갱신된다. 그 사이에 리컴포지션이
-    // 일어나면 낡은 url 을 다시 로드해 뒤로가기가 되돌아가 버린다
-    // (PlayerBar 가 300ms 폴링이라 그 창이 거의 항상 열린다).
-    //
-    // currentUrl 비교는 웹뷰가 스스로 이동해 올라온 값을 되로드하지 않기 위한 것이다.
-    // webView 도 키에 넣는다. 이 효과는 AndroidView 의 factory 보다 먼저 돌 수 있어서
-    // 인스턴스가 붙은 뒤 다시 실행되어야 첫 로드가 유실되지 않는다.
+    // 로드는 url 이 바뀔 때 한 번만. AndroidView 의 update 에서 단언하면 ViewModel 이
+    // doUpdateVisitedHistory 로 갱신되기 전의 낡은 url 을 되로드해 뒤로가기가 되돌아간다.
+    // webView 를 키에 넣는 것은 이 효과가 factory 보다 먼저 돌 수 있어서다.
     LaunchedEffect(androidHandle.webView, url) {
         val view = androidHandle.webView ?: return@LaunchedEffect
         if (url.isNotBlank() && view.url != url) {

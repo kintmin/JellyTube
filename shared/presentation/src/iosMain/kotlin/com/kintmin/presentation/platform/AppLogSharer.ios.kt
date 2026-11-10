@@ -20,12 +20,8 @@ private const val LOG_DIR_NAME = "app_logs"
 private const val LOG_FILE_EXTENSION = "log"
 
 /**
- * 로그 파일을 iOS 공유 시트로 넘긴다.
- *
- * Android 는 메일 앱을 직접 겨냥하지만(`ACTION_SEND_MULTIPLE` + 수신자),
- * **iOS 에는 "이 주소로 보내는 메일 앱"을 고르게 하는 공개 수단이 없다.**
- * `UIActivityViewController` 로 파일만 넘기고 어디로 보낼지는 사용자가 고른다.
- * `NoShareTarget` 이 서지 않는 이유도 이것이다 — iOS 공유 시트는 항상 뜬다.
+ * 로그 파일을 공유 시트로 넘긴다. Android 와 달리 수신자를 지정할 공개 수단이 없어
+ * 어디로 보낼지는 사용자가 고르고, 시트가 항상 떠서 `NoShareTarget` 이 서지 않는다.
  */
 @OptIn(ExperimentalForeignApi::class)
 private fun shareAppLogs(): AppLogShareResult {
