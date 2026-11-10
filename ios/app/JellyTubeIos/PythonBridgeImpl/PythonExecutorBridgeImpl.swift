@@ -27,6 +27,24 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
             return
         }
 
+        attemptDownload(
+            youtubeUrl: youtubeUrl,
+            audioDownloadPath: audioDownloadPath,
+            remainingRetryCount: Self.extractRetryCount,
+            completionHandler: completionHandler
+        )
+    }
+
+    /// 추출 → 전송을 한 번 시도하고, 전송이 거부되면 **다시 추출해서** 재시도한다.
+    ///
+    /// 유튜브가 주는 주소는 서명된 단기 주소라 거부(403)는 대개 그 주소가 상한 것이다.
+    /// 같은 주소로 다시 쏘는 것은 의미가 없고, 추출부터 다시 해야 새 서명을 받는다.
+    private func attemptDownload(
+        youtubeUrl: String,
+        audioDownloadPath: String,
+        remainingRetryCount: Int,
+        completionHandler: @escaping @Sendable (YoutubeDownloadDto?, Error?) -> Void
+    ) {
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 let result = try self.runtime.callFunction(
@@ -56,16 +74,35 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                     headers: Self.parseHeaders(result[1]),
                     source: source
                 ) { error in
-                    if let error {
-                        completionHandler(nil, error as NSError)
-                    } else {
+                    guard let error else {
                         completionHandler(source.toDto(), nil)
+                        return
+                    }
+
+                    if remainingRetryCount > 0, Self.isWorthReextracting(error) {
+                        self.attemptDownload(
+                            youtubeUrl: youtubeUrl,
+                            audioDownloadPath: audioDownloadPath,
+                            remainingRetryCount: remainingRetryCount - 1,
+                            completionHandler: completionHandler
+                        )
+                    } else {
+                        completionHandler(nil, error as NSError)
                     }
                 }
             } catch {
                 completionHandler(nil, error as NSError)
             }
         }
+    }
+
+    /// 다시 추출해 볼 가치가 있는 실패인가.
+    ///
+    /// 주소가 상했거나(403) 사라진(404·410) 경우만이다. 네트워크 단절·디스크 오류는
+    /// 다시 추출해도 같은 자리에서 넘어지므로 바로 올린다.
+    private static func isWorthReextracting(_ error: Error) -> Bool {
+        guard case .httpStatus(let code) = error as? YoutubeDownloadError else { return false }
+        return code == 403 || code == 404 || code == 410
     }
 
     func __extractYoutubeUrlsFromPlaylist(
@@ -112,6 +149,10 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     private static let methodDownloadAudio = "download_audio"
     private static let methodExtractVideoUrlsFromPlaylist = "extract_video_urls_from_playlist"
     private static let methodExtractAudioSource = "extract_audio_source"
+
+    /// 재추출 재시도 횟수. 유튜브의 거부는 대체로 한 번 더 받으면 풀린다 —
+    /// 계속 거부되는 것은 주소 문제가 아니라 그 영상을 받을 수 없는 것이다.
+    private static let extractRetryCount = 1
 
     private static func parseHeaders(_ json: String) -> [String: String] {
         guard let data = json.data(using: .utf8),
