@@ -7,9 +7,9 @@ import com.kintmin.presentation.port.ExecuteLyricsVariantCreation
 import com.kintmin.presentation.port.ExecuteYoutubeDownload
 import com.kintmin.presentation.port.FileShareServerController
 import com.kintmin.presentation.port.IosAudioPreviewPlayerStub
-import com.kintmin.presentation.port.IosExecuteAnomalyDataCheckStub
+import com.kintmin.presentation.port.IosExecuteAnomalyDataCheck
 import com.kintmin.presentation.port.IosExecuteAudioEditSaveStub
-import com.kintmin.presentation.port.IosExecuteLyricsVariantCreationStub
+import com.kintmin.presentation.port.IosExecuteLyricsVariantCreation
 import com.kintmin.presentation.port.IosExecuteYoutubeDownload
 import com.kintmin.presentation.port.IosFileShareServerControllerStub
 import com.kintmin.presentation.port.IosStepMeasurementController
@@ -32,7 +32,7 @@ val presentationIosModule: Module = module {
     single<StepMeasurementController> { IosStepMeasurementController(get(), get()) }
     single<FileShareServerController> { IosFileShareServerControllerStub() }
     single<ExecuteYoutubeDownload> { IosExecuteYoutubeDownload(get(), get(), get(), get()) }
-    single<ExecuteAnomalyDataCheck> { IosExecuteAnomalyDataCheckStub() }
-    single<ExecuteLyricsVariantCreation> { IosExecuteLyricsVariantCreationStub() }
+    single<ExecuteAnomalyDataCheck> { IosExecuteAnomalyDataCheck(get(), get()) }
+    single<ExecuteLyricsVariantCreation> { IosExecuteLyricsVariantCreation(get(), get()) }
     single<ExecuteAudioEditSave> { IosExecuteAudioEditSaveStub() }
 }

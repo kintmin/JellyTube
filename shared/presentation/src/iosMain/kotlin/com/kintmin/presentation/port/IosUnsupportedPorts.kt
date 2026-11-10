@@ -2,7 +2,6 @@ package com.kintmin.presentation.port
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
-import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -16,8 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
  * **실패를 조용히 삼키지 않는다.** `Result` 를 돌려주는 자리는 실패를, 아닌 자리는 기본값을
  * 돌려준다. 호출자가 이미 그 둘을 다루게 되어 있다.
  *
- * 각 스텁은 실구현이 들어오면 **파일에서 사라진다.** 영구 잔류가 확정된 것(기능 자체를 iOS 에서
- * 제공하지 않기로 한 것)은 그렇게 적어 뒀다.
+ * 여기 남은 셋은 **영구 잔류**다 — 기능 자체를 iOS 에서 제공하지 않기로 한 것들이다.
+ * 교체 예정이던 것들은 실구현이 들어오면서 이 파일을 떠났다.
  */
 private fun unsupported(feature: String) =
     UnsupportedOperationException("iOS 에서는 $feature 을 지원하지 않습니다.")
@@ -43,24 +42,6 @@ internal class IosFileShareServerControllerStub : FileShareServerController {
 
     override fun start() = Unit
     override fun stop() = Unit
-}
-
-/** 교체 예정 — 앱 수명 코루틴 스코프로 채운다. */
-internal class IosExecuteAnomalyDataCheckStub : ExecuteAnomalyDataCheck {
-
-    /** false 는 "이미 실행 중" 이 아니라 "넘기지 못했다" 는 뜻으로 읽힌다 — 호출자가 그렇게 다룬다. */
-    override suspend fun invoke(): Boolean = false
-}
-
-/** 교체 예정 — 앱 수명 코루틴 스코프로 채운다. */
-internal class IosExecuteLyricsVariantCreationStub : ExecuteLyricsVariantCreation {
-
-    override fun invoke(
-        audioMediaId: Int,
-        lyricFileFullPath: String,
-        variant: LyricsVariant,
-        sourceLanguage: String,
-    ) = Unit
 }
 
 /** **영구 잔류** — 음원 편집을 iOS 에서 제공하지 않는다. */
