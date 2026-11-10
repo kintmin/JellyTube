@@ -32,12 +32,11 @@ private const val MIN_ALPHA = 128
 /**
  * 대표 색을 뽑는다.
  *
- * Android 는 Palette 가 하는 일을 여기서는 직접 한다 — **작게 줄여 그리고, 색을 거칠게
- * 묶어 가장 많은 묶음을 고르고, 그 묶음의 평균색을 돌려준다.** Palette 의
- * `getDominantColor` 가 "가장 인구가 많은 swatch" 인 것과 같은 정의다.
+ * Android 가 Palette 로 하는 일을 직접 한다 — 작게 줄여 그리고, 색을 거칠게 묶어 가장 많은
+ * 묶음을 고르고, 그 묶음의 평균색을 돌려준다. Palette 의 `getDominantColor` 가 "가장 인구가
+ * 많은 swatch" 인 것과 같은 정의다.
  *
- * 실패하면 null 이다. 호출자가 null 을 기본 그라데이션으로 처리하므로, 아무 색이나
- * 돌려주면 앨범아트와 어긋난 배경이 나와 더 나쁘다.
+ * 실패하면 null 이다. 호출자가 null 을 기본 그라데이션으로 처리한다.
  */
 @OptIn(ExperimentalForeignApi::class)
 actual suspend fun extractDominantColor(imageFileFullPath: String): Int? =

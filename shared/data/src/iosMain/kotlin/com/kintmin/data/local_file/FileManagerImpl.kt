@@ -243,8 +243,8 @@ internal class FileManagerImpl : FileManager {
     private suspend fun readAudioMetadata(fileFullPath: String, imageFileName: String): AudioMetadata {
         val asset = AVURLAsset(uRL = NSURL.fileURLWithPath(fileFullPath), options = null)
 
-        // `CMTimeGetSeconds` 를 쓰지 않는다 — 구조체를 값으로 넘기는 호출이라 Kotlin/Native
-        // 에서 길이가 2배로 나왔다(19초 파일이 38초). 필드를 직접 읽는 쪽이 안전하다.
+        // `CMTimeGetSeconds` 는 구조체를 값으로 넘기는 호출이라 Kotlin/Native 에서 값이
+        // 어긋난다. 필드를 직접 읽는다.
         val durationMs = asset.duration.useContents {
             val scale = timescale.toDouble()
             if (scale <= 0.0) null else value.toDouble() / scale

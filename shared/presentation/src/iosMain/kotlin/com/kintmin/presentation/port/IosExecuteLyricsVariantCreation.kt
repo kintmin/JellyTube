@@ -13,11 +13,10 @@ import kotlinx.coroutines.launch
  * 가사 번역·음차 변형 생성.
  *
  * [IosExecuteAnomalyDataCheck] 와 같은 성격이다 — 계산 작업이라 전송 경로와 무관하고,
- * 앱이 떠 있는 동안 돌고 끝나면 로컬 알림으로 알린다.
+ * 앱 수명 스코프에서 돌고 끝나면 로컬 알림으로 알린다.
  *
- * Android 는 성공 알림을 누르면 해당 가사 화면으로 딥링크한다. **여기는 아직 그게 없다** —
- * iOS 알림 탭을 받으려면 `UNUserNotificationCenterDelegate` 를 Swift 에 두고 그 결과를
- * 공통 딥링크 파서로 넘겨야 해서, 알림 처리 전반과 함께 다룬다.
+ * Android 와 달리 알림을 눌러도 가사 화면으로 가지 않는다. 그러려면
+ * `UNUserNotificationCenterDelegate` 가 Swift 쪽에 있어야 한다.
  */
 internal class IosExecuteLyricsVariantCreation(
     private val createLyricsVariantUseCase: CreateLyricsVariantUseCase,

@@ -27,8 +27,7 @@ import org.koin.dsl.module
  * 등록되지 않는 것은 [FileManagerImpl] · [IosPythonExecutorAdapter] 가 이 모듈의
  * `internal` 이기 때문이다. 공개로 넓히는 것보다 파라미터 하나가 싸다.
  *
- * **`AppLog` 는 여기 없다.** 수집기 구현이 Swift 에 있어 조립 모듈(`:ios:shared`)이 맡는다 —
- * data 모듈이 로그 구현을 들고 있을 이유가 없다.
+ * `AppLog` 는 여기 없다 — 수집기 구현이 Swift 라 조립 모듈(`:ios:shared`)이 맡는다.
  */
 fun dataIosModule(pythonExecutorBridge: IosPythonExecutorBridge): Module = module {
     single { createIosPreferencesDataStore() }

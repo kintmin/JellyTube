@@ -11,8 +11,7 @@
 # 짝이다. 한쪽에 패키지를 더하면 다른 쪽도 더한다 — 안 그러면 한 플랫폼에서만 동작한다.
 #
 # **yt-dlp 는 주기적으로 다시 돌려야 한다.** 유튜브가 추출 경로를 바꾸면 묵은 yt-dlp 는
-# 서명이 모자란 주소를 돌려주고 전송이 403 으로 거부된다. 다운로드가 자주 실패하면
-# 코드를 보기 전에 이 스크립트부터 다시 돌린다.
+# 서명이 모자란 주소를 돌려주고 전송이 403 으로 거부된다.
 
 set -euo pipefail
 
@@ -46,10 +45,8 @@ install_runtime() {
 install_packages() {
     echo "app-packages 를 채운다: ${PACKAGES[*]}"
 
-    # **지우고 다시 깐다.** `pip --target --upgrade` 는 새 버전을 덮어쓰되 옛 버전의
-    # `*.dist-info` 와 사라진 모듈 파일을 남긴다. 그 상태가 쌓이면 어느 버전이 실제로
-    # 도는지 알 수 없어진다 — 실제로 yt-dlp 가 4개월 묵은 채 남아 유튜브 다운로드가
-    # 간헐적으로 403 으로 거부됐다.
+    # 지우고 다시 깐다. `pip --target --upgrade` 는 새 버전을 덮어쓰되 옛 버전의
+    # `*.dist-info` 와 사라진 모듈 파일을 남겨, 어느 버전이 도는지 알 수 없게 만든다.
     rm -rf "$APP_PACKAGES_DIR"
     mkdir -p "$APP_PACKAGES_DIR"
     python3 -m pip install \

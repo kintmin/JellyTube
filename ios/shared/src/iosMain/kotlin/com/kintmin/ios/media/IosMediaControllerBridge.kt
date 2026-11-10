@@ -3,12 +3,11 @@ package com.kintmin.ios.media
 /**
  * Swift 가 구현하는 오디오 재생 창구. 구현은 `MediaControllerEngine`(AVAudioEngine) 이다.
  *
- * **포트(`MediaControllerManager`)를 Swift 가 직접 구현하지 않는 이유는 둘이다.**
- * 그 포트가 쓰는 타입이 `shared:presentation` 에 있고 presentation 은 프레임워크에
- * export 되지 않아 Swift 가 볼 수 없다. 그리고 A-B 구간반복처럼 **앱이 직접 쓴 로직**은
- * 두 플랫폼이 같은 답을 내야 해서 Kotlin 에 한 벌만 둬야 한다.
+ * 포트(`MediaControllerManager`)를 Swift 가 직접 구현하지 않는 이유는 둘이다. 그 포트가
+ * 쓰는 타입이 `shared:presentation` 에 있는데 presentation 은 프레임워크에 export 되지 않아
+ * Swift 가 볼 수 없고, A-B 구간반복처럼 앱이 직접 쓴 로직은 두 플랫폼이 같은 답을 내야 한다.
  *
- * 그래서 여기는 **원시 조작만** 받는다. 큐·셔플·반복은 플레이어가 원래 들고 있는 기능이라
+ * 그래서 여기는 원시 조작만 받는다. 큐·셔플·반복은 플레이어가 원래 들고 있는 기능이라
  * Swift 에 맡기고(Android 도 ExoPlayer 에 맡긴다), 구간반복만 [IosMediaControllerManager]
  * 가 쥔다.
  */

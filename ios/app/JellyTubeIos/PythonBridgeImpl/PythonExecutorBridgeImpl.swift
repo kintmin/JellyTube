@@ -13,9 +13,8 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
 
     /// 추출과 전송을 가른다.
     ///
-    /// yt-dlp 는 **주소만** 알아내고(수 초), 바이트를 받는 것은 background `URLSession` 이
-    /// 맡는다. 그래야 앱이 내려가도 전송이 이어진다 — Python 안에서 받으면 전송 주체가 앱
-    /// 프로세스라 앱이 멈추면 같이 멈춘다.
+    /// yt-dlp 는 주소만 알아내고, 바이트를 받는 것은 background `URLSession` 이 맡는다.
+    /// Python 안에서 받으면 전송 주체가 앱 프로세스라 앱이 멈추면 같이 멈춘다.
     func __downloadYoutubeMedia(
         youtubeUrl: String,
         audioDownloadPath: String,
@@ -35,10 +34,10 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
         )
     }
 
-    /// 추출 → 전송을 한 번 시도하고, 전송이 거부되면 **다시 추출해서** 재시도한다.
+    /// 추출 → 전송을 한 번 시도하고, 전송이 거부되면 다시 추출해서 재시도한다.
     ///
-    /// 유튜브가 주는 주소는 서명된 단기 주소라 거부(403)는 대개 그 주소가 상한 것이다.
-    /// 같은 주소로 다시 쏘는 것은 의미가 없고, 추출부터 다시 해야 새 서명을 받는다.
+    /// 유튜브가 주는 주소는 서명된 단기 주소다. 같은 주소로 다시 쏘는 것은 의미가 없고
+    /// 추출부터 다시 해야 새 서명을 받는다.
     private func attemptDownload(
         youtubeUrl: String,
         audioDownloadPath: String,
@@ -150,8 +149,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     private static let methodExtractVideoUrlsFromPlaylist = "extract_video_urls_from_playlist"
     private static let methodExtractAudioSource = "extract_audio_source"
 
-    /// 재추출 재시도 횟수. 유튜브의 거부는 대체로 한 번 더 받으면 풀린다 —
-    /// 계속 거부되는 것은 주소 문제가 아니라 그 영상을 받을 수 없는 것이다.
+    /// 재추출 재시도 횟수. 계속 거부되는 것은 주소가 상한 것이 아니라 그 영상을 받을 수 없는 것이다.
     private static let extractRetryCount = 1
 
     private static func parseHeaders(_ json: String) -> [String: String] {

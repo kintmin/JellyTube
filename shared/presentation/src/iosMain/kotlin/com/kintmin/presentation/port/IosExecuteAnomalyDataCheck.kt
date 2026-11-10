@@ -12,10 +12,8 @@ import kotlinx.coroutines.sync.Mutex
 /**
  * 이상 데이터 점검.
  *
- * **전송이 아니라 계산 작업이라 background `URLSession` 과 무관하다.** 앱이 떠 있는 동안
- * 앱 수명 스코프에서 돌고, 끝나면 로컬 알림으로 알린다. Android 는 WorkManager 가 같은 일을
- * 하면서 앱이 내려가도 이어 주지만, iOS 에는 그런 장치가 없다 — 앱이 내려가면 중단된다.
- * 사용자가 설정 화면에서 직접 누르는 작업이라 그 사이 앱을 내릴 이유가 적다.
+ * 전송이 아니라 계산 작업이라 background `URLSession` 과 무관하다. 앱 수명 스코프에서 돌고
+ * 끝나면 로컬 알림으로 알린다. Android 의 WorkManager 와 달리 **앱이 내려가면 중단된다.**
  */
 internal class IosExecuteAnomalyDataCheck(
     private val cleanupAnomalousDataUseCase: CleanupAnomalousDataUseCase,
@@ -26,8 +24,7 @@ internal class IosExecuteAnomalyDataCheck(
 
     /**
      * Android 의 `enqueueUniqueWork(KEEP)` 자리. 두 번 눌러도 두 번 돌지 않게 막는다.
-     * `Mutex` 를 쓰는 것은 **기다리기 위해서가 아니라** `tryLock` 으로 "이미 돌고 있음"을
-     * 즉시 가려내기 위해서다 — 호출 계약이 "기다림" 이 아니라 "false" 다.
+     * `tryLock` 인 것은 기다리지 않고 "이미 돌고 있음"을 false 로 즉시 돌려주는 계약이라서다.
      */
     private val runGate = Mutex()
 

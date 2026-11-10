@@ -109,11 +109,9 @@ object DeepLinkParser {
      * 다운로드 딥링크의 대상 주소.
      *
      * **두 번 디코딩한다.** 링크가 주소를 한 번 인코딩해 쿼리에 실어 오고(키 이름이
-     * `encodedUrl` 인 이유다), 쿼리 값을 꺼낼 때 한 번 더 디코딩되기 때문이다. 안드로이드가
-     * `Uri.getQueryParameter` + `URLDecoder.decode` 로 하던 횟수와 같다.
+     * `encodedUrl` 인 이유다), 쿼리 값을 꺼낼 때 한 번 더 디코딩되기 때문이다.
      *
-     * 값이 없으면 null 이다. 안드로이드 구현은 이 자리에서 `URLDecoder.decode(null)` 로
-     * 예외를 던졌는데, 받는 쪽이 이미 nullable 이라 null 로 흘려보내는 쪽이 맞다.
+     * 값이 없으면 null 이다. 받는 쪽이 nullable 이라 예외로 올리지 않는다.
      */
     private fun targetUrlOf(url: String): String? =
         UrlParts.queryParameter(url, DeepLinkConstants.QueryKey.ENCODED_URL)

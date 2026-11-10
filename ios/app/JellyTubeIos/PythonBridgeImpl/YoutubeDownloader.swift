@@ -32,13 +32,12 @@ struct YoutubeAudioSource: Codable {
 
 /// 유튜브 음원을 background `URLSession` 으로 내려받는다.
 ///
-/// 전송 주체가 앱 프로세스가 아니라 **OS 데몬**이라 앱이 백그라운드로 내려가거나 시스템이
-/// 앱을 정리해도 이어진다. 대신 사용자가 앱 스위처에서 강제 종료하면 OS 가 전부 취소한다 —
-/// 그건 정책이라 우회할 방법이 없다.
+/// 전송 주체가 앱 프로세스가 아니라 OS 데몬이라 앱이 백그라운드로 내려가거나 시스템이
+/// 앱을 정리해도 이어진다. 사용자가 앱 스위처에서 강제 종료하면 OS 가 전부 취소한다.
 ///
-/// 완료가 **앱의 다음 생애에** 올 수 있어 진행 중인 전송을 디스크에 적어 둔다. 기다리던
-/// 쪽이 없으면 받은 파일을 목적지에 옮겨만 두고, 다음에 같은 주소로 요청이 오면 전송 없이
-/// 그 결과를 돌려준다([takeCompleted]).
+/// 완료가 앱의 다음 생애에 올 수 있어 진행 중인 전송을 디스크에 적어 둔다. 기다리던 쪽이
+/// 없으면 받은 파일을 목적지에 옮겨만 두고, 다음에 같은 주소로 요청이 오면 전송 없이 그
+/// 결과를 돌려준다([takeCompleted]).
 final class YoutubeDownloader: NSObject {
 
     static let shared = YoutubeDownloader()
@@ -155,8 +154,8 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
             return
         }
 
-        // `URLSessionDownloadTask` 는 403 도 "전송 성공"으로 본다 — 오류 페이지를 파일로
-        // 내려 줄 뿐이다. 여기서 걸러내지 않으면 0바이트 m4a 가 DB 에 등록된다.
+        // `URLSessionDownloadTask` 는 403 도 "전송 성공"으로 보고 오류 본문을 파일로 내려 준다.
+        // 여기서 걸러내지 않으면 내용 없는 m4a 가 DB 에 등록된다.
         let statusCode = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
         let attributes = try? FileManager.default.attributesOfItem(atPath: location.path)
         let byteCount = (attributes?[.size] as? NSNumber)?.intValue ?? 0

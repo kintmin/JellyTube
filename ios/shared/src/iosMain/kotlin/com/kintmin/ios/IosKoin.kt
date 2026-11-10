@@ -25,7 +25,7 @@ private val iosDomainPortModule = module {
 }
 
 /**
- * Swift 가 `IosKoinKt.doInitIosKoin(pythonExecutorBridge:)` 로 부른다.
+ * Swift 가 `IosKoinKt.doInitIosKoin(...)` 으로 부른다.
  * 파일명이 Obj-C 클래스명을 정하므로 이 파일 이름을 바꾸면 Swift 호출부가 깨진다.
  *
  * `android:app` 의 `JellyTubeApplication` 과 짝이다. 한쪽에 모듈을 더하면 다른 쪽도 본다.

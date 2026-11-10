@@ -8,9 +8,8 @@ import com.kintmin.log.model.FirebaseEvent
 /**
  * `android:app` 의 `AppLogImpl` 에 대응하는 iOS 구현.
  *
- * 하는 일은 셋뿐이다 — **GA4 제약으로 자르고**, 파일 로그에 남기고, 수집기 창구로 넘긴다.
- * 자르는 규칙을 Kotlin 에 두는 이유는 두 플랫폼이 같은 값을 보내야 하기 때문이다.
- * Swift 에 맡기면 한쪽만 규칙이 바뀌는 날이 온다.
+ * 하는 일은 셋뿐이다 — GA4 제약으로 자르고, 파일 로그에 남기고, 수집기 창구로 넘긴다.
+ * 자르는 규칙이 Swift 가 아니라 여기 있는 것은 두 플랫폼이 같은 값을 보내야 해서다.
  *
  * [GA4 제약사항] 이벤트명 40자 / param key 40자 / param value 100자 / param 25개
  * https://support.google.com/analytics/answer/9267744

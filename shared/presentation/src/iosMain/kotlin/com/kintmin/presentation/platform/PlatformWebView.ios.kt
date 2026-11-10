@@ -42,8 +42,8 @@ private const val URL_CHANGE_HANDLER_NAME = "jellyTubeUrlChanged"
 
 /**
  * `WKNavigationDelegate` 는 same-document 이동(`pushState`/`replaceState`/`popstate`/
- * `hashchange`)을 알려주지 않는다. m.youtube.com 은 SPA 라 영상 사이 이동이 전부 여기로
- * 떨어지는데, 이것이 없으면 **다운로드 대상 주소가 첫 화면에서 멈춘다.**
+ * `hashchange`)을 알려주지 않는다. SPA 인 m.youtube.com 은 영상 사이 이동이 전부 여기로
+ * 떨어져서, 이 스크립트가 없으면 현재 주소가 첫 화면에서 멈춘다.
  * Android `WebViewClient.doUpdateVisitedHistory` 와 짝이다.
  */
 private val URL_CHANGE_SCRIPT = """
@@ -77,11 +77,7 @@ private class IosWebViewHandle : WebViewHandle {
     var webView: WKWebView? by mutableStateOf(null)
         private set
 
-    /**
-     * iOS 에서 이 상태가 서는 경우는 **렌더러(WebContent) 프로세스가 죽었을 때**다.
-     * Android 의 "시스템 WebView APK 생성 실패"와 원인은 다르지만, 사용자에게는 똑같이
-     * "웹뷰를 쓸 수 없다" 이고 재시도로 풀린다. 비워 두면 흰 화면으로 남는다.
-     */
+    /** iOS 에서 이 상태가 서는 경우는 렌더러(WebContent) 프로세스가 죽었을 때다. */
     override var isCreationFailed: Boolean by mutableStateOf(false)
         private set
 
@@ -99,18 +95,14 @@ private class IosWebViewHandle : WebViewHandle {
     override fun loadUrl(url: String, clearHistoryAfterLoad: Boolean) {
         val target = webView ?: return
 
-        // `WKWebView.backForwardList` 는 읽기 전용이라 Android 처럼 히스토리를 비울 수 없다.
-        // 대신 새 항목을 **쌓지 않는** location.replace 로 간다. 양쪽이 같은 답을 내려면
-        // 비우는 쪽이 아니라 덮어쓰는 쪽이어야 한다.
+        // `WKWebView.backForwardList` 는 읽기 전용이라 히스토리를 비울 수 없다.
+        // 대신 히스토리에 쌓지 않는 location.replace 로 덮어쓴다.
         if (clearHistoryAfterLoad && target.URL != null) {
             target.evaluateJavaScript("location.replace('${url.escapeForJsString()}')", null)
             return
         }
 
         val nsUrl = NSURL.URLWithString(url) ?: return
-        // Android 는 Referer 에 패키지명을 싣는다. **여기서는 싣지 않는다** — 그 헤더가 무엇을
-        // 위한 것인지 Android 쪽에 기록이 없어, 근거 없이 따라 하면 두 플랫폼이 다른 이유로
-        // 같은 값을 보내게 된다. 유튜브가 다르게 굴면 그때 근거와 함께 더한다.
         target.loadRequest(NSURLRequest.requestWithURL(nsUrl))
     }
 
@@ -189,8 +181,8 @@ actual fun PlatformWebView(
         }
     }
 
-    // 로드는 url 이 "바뀔 때 한 번"만 한다. 웹뷰도 스스로 이동하는 주체라, 매 리컴포지션마다
-    // 단언하면 낡은 주소를 되로드해 뒤로가기가 되돌아간다(Android 쪽에 같은 기록이 있다).
+    // 웹뷰도 스스로 이동하는 주체다. 매 리컴포지션마다 단언하면 낡은 주소를 되로드해
+    // 뒤로가기가 되돌아가므로, url 이 바뀔 때 한 번만 로드한다.
     LaunchedEffect(webView, url) {
         if (url.isNotBlank() && webView.URL?.absoluteString != url) {
             iosHandle.loadUrl(url)
@@ -200,9 +192,8 @@ actual fun PlatformWebView(
     UIKitView(
         factory = { webView },
         modifier = modifier,
-        // **기본값(NonCooperative)이면 웹뷰 위에 겹친 Compose 가 터치를 못 받는다.**
-        // interop 뷰는 네이티브 계층에서 Compose 캔버스 위에 놓이므로, 그려지는 순서와
-        // 무관하게 네이티브가 먼저 집는다 — 다운로드 FAB 이 눌리지 않는다.
+        // interop 뷰는 그리는 순서와 무관하게 네이티브 계층에서 Compose 캔버스 위에 놓인다.
+        // 기본값(NonCooperative)이면 웹뷰 위에 겹친 Compose 가 터치를 받지 못한다.
         // Cooperative 는 Compose 에 먼저 기회를 주고, 아무도 집지 않으면 웹뷰로 넘긴다.
         properties = UIKitInteropProperties(
             interactionMode = UIKitInteropInteractionMode.Cooperative(),
@@ -273,10 +264,7 @@ private class WebViewNavigationDelegate(
         webView.URL?.absoluteString?.let(onUrlChanged)
     }
 
-    /**
-     * 렌더러가 죽었다. **비워 두면 화면이 빈 흰색으로 남고** 사용자에게는 앱이 멈춘 것과
-     * 구분되지 않는다. `WKWebView` 는 스스로 되살아나지 않는다.
-     */
+    /** `WKWebView` 는 렌더러가 죽어도 스스로 되살아나지 않는다. 비워 두면 흰 화면으로 남는다. */
     override fun webViewWebContentProcessDidTerminate(webView: WKWebView) {
         onRendererGone(webView.URL?.absoluteString)
     }
