@@ -20,7 +20,9 @@ readonly PYTHON_MINOR="3.11"
 readonly PYTHON_BUILD="b9"
 
 # Android 의 chaquopy pip 목록과 같아야 한다.
-readonly PACKAGES=(yt-dlp pykakasi)
+# certifi 가 없으면 번들 파이썬에 루트 인증서가 없어 모든 https 요청이
+# CERTIFICATE_VERIFY_FAILED 로 떨어진다. yt-dlp 는 import 가능하면 알아서 쓴다.
+readonly PACKAGES=(yt-dlp pykakasi certifi)
 
 readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly VENDOR_DIR="$REPO_ROOT/ios/app/Vendor/Python"

@@ -1,9 +1,27 @@
 import SwiftUI
+import UserNotifications
 import shared
 
 /// 백그라운드 전송이 끝나 OS 가 앱을 깨울 때를 받는다.
 /// 이 자리가 비어 있으면 지난 생애에 끝난 전송의 완료 콜백이 오지 않는다.
-final class AppDelegate: NSObject, UIApplicationDelegate {
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        // 이 델리게이트가 없으면 앱을 보고 있는 동안 띄운 로컬 알림이 조용히 버려진다.
+        UNUserNotificationCenter.current().delegate = self
+        return true
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .list, .sound])
+    }
 
     func application(
         _ application: UIApplication,

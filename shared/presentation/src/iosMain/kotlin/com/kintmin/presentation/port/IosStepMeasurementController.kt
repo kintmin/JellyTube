@@ -3,6 +3,8 @@ package com.kintmin.presentation.port
 import com.kintmin.domain.extension.startOfDayMillis
 import com.kintmin.domain.extension.todayLocalDate
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
 import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +33,7 @@ private const val BACKFILL_DAYS = 2
 internal class IosStepMeasurementController(
     private val backupStepSensorUseCase: BackupStepSensorUseCase,
     private val updateLastStepSensorUseCase: UpdateLastStepSensorUseCase,
+    private val appLog: AppLog,
 ) : StepMeasurementController {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -44,8 +47,12 @@ internal class IosStepMeasurementController(
     override fun start() {
         if (isRunning) return
         // 권한 요청은 설정 화면이 한다. 여기서 창을 띄우지 않는다.
-        if (!CMPedometer.isStepCountingAvailable()) return
-        if (CMPedometer.authorizationStatus() != CMAuthorizationStatusAuthorized) return
+        val isAvailable = CMPedometer.isStepCountingAvailable()
+        val status = CMPedometer.authorizationStatus()
+        appLog.sendDebugLog(
+            DebugLog("IosStepMeasurementController", "start available=$isAvailable status=$status"),
+        )
+        if (!isAvailable || status != CMAuthorizationStatusAuthorized) return
 
         isRunning = true
         scope.launch {

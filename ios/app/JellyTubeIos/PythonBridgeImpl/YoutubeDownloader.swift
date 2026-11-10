@@ -55,6 +55,7 @@ final class YoutubeDownloader: NSObject {
 
     private let lock = NSLock()
     private var waiters: [Int: (Error?) -> Void] = [:]
+    private var startedAt: [Int: Date] = [:]
 
     private override init() {
         super.init()
@@ -114,6 +115,7 @@ final class YoutubeDownloader: NSObject {
         lock.unlock()
 
         downloadLog.info("start task=\(task.taskIdentifier) dest=\(source.destinationPath, privacy: .public)")
+        startedAt[task.taskIdentifier] = Date()
         task.resume()
     }
 
@@ -156,7 +158,11 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         let statusCode = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
         let attributes = try? FileManager.default.attributesOfItem(atPath: location.path)
         let byteCount = (attributes?[.size] as? NSNumber)?.intValue ?? 0
-        downloadLog.info("finish task=\(downloadTask.taskIdentifier) status=\(statusCode) bytes=\(byteCount)")
+        let elapsed = startedAt.removeValue(forKey: downloadTask.taskIdentifier)
+            .map { Date().timeIntervalSince($0) } ?? 0
+        downloadLog.info(
+            "finish task=\(downloadTask.taskIdentifier) status=\(statusCode) bytes=\(byteCount) elapsed=\(elapsed)s"
+        )
 
         guard (200...299).contains(statusCode) else {
             finish(

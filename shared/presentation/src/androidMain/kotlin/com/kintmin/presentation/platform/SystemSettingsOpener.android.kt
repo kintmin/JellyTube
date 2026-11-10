@@ -7,6 +7,7 @@ import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 
 /**
  * 목적지별 인텐트 후보. 앞에서부터 시도해 하나라도 뜨면 성공이다.
@@ -14,7 +15,7 @@ import androidx.compose.ui.platform.LocalContext
  * SHOW_ALARMS 를 처리하지 않는 기기가 있어 알람 생성 화면(SET_ALARM)으로 폴백한다.
  * SET_ALARM 은 EXTRA_SKIP_UI 를 false 로 둬야 알람을 바로 만들지 않고 화면을 보여준다.
  */
-private fun SystemSettingsTarget.intentCandidates(): List<Intent> = when (this) {
+private fun SystemSettingsTarget.intentCandidates(packageName: String): List<Intent> = when (this) {
     SystemSettingsTarget.Alarm -> listOf(
         Intent(AlarmClock.ACTION_SHOW_ALARMS),
         Intent(AlarmClock.ACTION_SET_ALARM).putExtra(AlarmClock.EXTRA_SKIP_UI, false),
@@ -22,6 +23,11 @@ private fun SystemSettingsTarget.intentCandidates(): List<Intent> = when (this) 
 
     SystemSettingsTarget.Sound -> listOf(
         Intent(Settings.ACTION_SOUND_SETTINGS),
+        Intent(Settings.ACTION_SETTINGS),
+    )
+
+    SystemSettingsTarget.AppPermissions -> listOf(
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:$packageName".toUri()),
         Intent(Settings.ACTION_SETTINGS),
     )
 }
@@ -44,6 +50,8 @@ private fun Context.startFirstAvailable(intentList: List<Intent>): Boolean {
 actual fun rememberSystemSettingsOpener(): SystemSettingsOpener {
     val context = LocalContext.current
     return remember(context) {
-        SystemSettingsOpener { target -> context.startFirstAvailable(target.intentCandidates()) }
+        SystemSettingsOpener { target ->
+            context.startFirstAvailable(target.intentCandidates(context.packageName))
+        }
     }
 }

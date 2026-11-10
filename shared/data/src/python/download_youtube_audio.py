@@ -75,6 +75,7 @@ def extract_audio_source(url):
     추출 때와 다른 헤더로 요청하면 거부될 수 있기 때문이다.
     """
     import json
+    import traceback
 
     try:
         ydl_opts = {
@@ -124,7 +125,8 @@ def extract_audio_source(url):
                 description,
             )
     except Exception as e:
-        raise Exception(f"Extract audio source failed: {e}")
+        # 원래 자리를 지우면 어디서 깨졌는지 알 수 없다. 앱 로그가 이 문자열을 통째로 받는다.
+        raise Exception(f"Extract audio source failed: {e}\n{traceback.format_exc()}")
 
 
 def extract_video_urls_from_playlist(playlist_url):

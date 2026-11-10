@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.CoreMotion.CMAuthorizationStatusAuthorized
+import platform.CoreMotion.CMAuthorizationStatusNotDetermined
 import platform.CoreMotion.CMPedometer
 import platform.Foundation.NSDate
 import platform.UserNotifications.UNAuthorizationOptionAlert
@@ -13,7 +14,11 @@ import platform.UserNotifications.UNAuthorizationOptionSound
 import platform.UserNotifications.UNAuthorizationStatusAuthorized
 import platform.UserNotifications.UNAuthorizationStatusProvisional
 import platform.UserNotifications.UNUserNotificationCenter
+import platform.darwin.DISPATCH_TIME_NOW
+import platform.darwin.NSEC_PER_MSEC
+import platform.darwin.dispatch_after
 import platform.darwin.dispatch_async
+import platform.darwin.dispatch_time
 import platform.darwin.dispatch_get_main_queue
 
 /**
@@ -50,11 +55,17 @@ private object NotificationAuthorization {
 /**
  * iOS 에는 모션 권한을 요청하는 API 가 없다. 질의를 한 번 던지면 시스템이 창을 띄운다.
  * `Info.plist` 에 `NSMotionUsageDescription` 이 없으면 그 순간 앱이 죽는다.
+ *
+ * **질의의 완료 핸들러로 답을 판단하면 안 된다.** 창이 아직 떠 있는 동안 `CMErrorNotAuthorized`
+ * 로 먼저 돌아오므로, 그때 읽은 상태는 늘 `notDetermined` 다. 상태가 결정될 때까지 센다.
  */
 private object MotionAuthorization {
 
     /** 질의가 끝나기 전에 해제되지 않도록 인스턴스를 들고 있는다. */
     private val pedometer by lazy { CMPedometer() }
+
+    private const val POLL_INTERVAL_MILLIS = 250L
+    private const val POLL_TIMEOUT_MILLIS = 60_000L
 
     val isAuthorized: Boolean
         get() = CMPedometer.authorizationStatus() == CMAuthorizationStatusAuthorized
@@ -68,9 +79,23 @@ private object MotionAuthorization {
         // 길이가 0 인 구간은 질의로 취급되지 않을 수 있어 1초를 준다.
         val now = NSDate()
         val oneSecondAgo = NSDate(timeIntervalSinceReferenceDate = now.timeIntervalSinceReferenceDate - 1.0)
+        pedometer.queryPedometerDataFromDate(oneSecondAgo, toDate = now) { _, _ -> }
 
-        pedometer.queryPedometerDataFromDate(oneSecondAgo, toDate = now) { _, _ ->
+        awaitSettledStatus(elapsedMillis = 0L, onResult = onResult)
+    }
+
+    private fun awaitSettledStatus(elapsedMillis: Long, onResult: (Boolean) -> Unit) {
+        if (CMPedometer.authorizationStatus() != CMAuthorizationStatusNotDetermined) {
             onMainQueue { onResult(isAuthorized) }
+            return
+        }
+        if (elapsedMillis >= POLL_TIMEOUT_MILLIS) {
+            onMainQueue { onResult(false) }
+            return
+        }
+
+        afterOnMainQueue(POLL_INTERVAL_MILLIS) {
+            awaitSettledStatus(elapsedMillis + POLL_INTERVAL_MILLIS, onResult)
         }
     }
 }
@@ -78,6 +103,12 @@ private object MotionAuthorization {
 @OptIn(ExperimentalForeignApi::class)
 private fun onMainQueue(block: () -> Unit) {
     dispatch_async(dispatch_get_main_queue()) { block() }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun afterOnMainQueue(delayMillis: Long, block: () -> Unit) {
+    val delay = dispatch_time(DISPATCH_TIME_NOW, delayMillis * NSEC_PER_MSEC.toLong())
+    dispatch_after(delay, dispatch_get_main_queue()) { block() }
 }
 
 private class IosPermissionController : PermissionController {

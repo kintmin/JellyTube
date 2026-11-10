@@ -2,10 +2,22 @@ import Foundation
 import PythonKit
 import shared
 
-enum PythonExecutorBridgeError: Error {
+enum PythonExecutorBridgeError: LocalizedError {
     case invalidDownloadResult
     case invalidPlaylistResult
     case invalidDirectUrl
+    /// `PythonKit.PythonError` 는 `localizedDescription` 이 "error 0" 라 쓸모가 없다.
+    /// 파이썬이 뭐라고 던졌는지 로그에 남기려면 여기서 문자열로 바꿔 다시 올려야 한다.
+    case python(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidDownloadResult: return "다운로드 결과를 읽을 수 없습니다"
+        case .invalidPlaylistResult: return "재생목록 결과를 읽을 수 없습니다"
+        case .invalidDirectUrl: return "음원 주소를 찾지 못했습니다"
+        case .python(let message): return message
+        }
+    }
 }
 
 final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
@@ -169,10 +181,7 @@ private final class PythonRuntime {
     ) throws -> [String] {
         configurePythonIfNeeded()
 
-        let module = Python.import(moduleName)
-        let function = module[dynamicMember: functionName]
-        let result = function.dynamicallyCall(withArguments: arguments.map(PythonObject.init))
-
+        let result = try call(moduleName: moduleName, functionName: functionName, arguments: arguments)
         return convertPythonSequenceToStrings(result)
     }
 
@@ -184,11 +193,27 @@ private final class PythonRuntime {
     ) throws -> String {
         configurePythonIfNeeded()
 
-        let module = Python.import(moduleName)
-        let function = module[dynamicMember: functionName]
-        let result = function.dynamicallyCall(withArguments: arguments.map(PythonObject.init))
-
+        let result = try call(moduleName: moduleName, functionName: functionName, arguments: arguments)
         return String(result) ?? String(Python.str(result)) ?? ""
+    }
+
+    /// `Python.import` 와 `dynamicallyCall` 은 파이썬 예외에서 **트랩한다**. throwing 변형을 써야
+    /// 예외가 Swift 에러로 올라와 실패 알림으로 떨어진다.
+    private func call(
+        moduleName: String,
+        functionName: String,
+        arguments: [String]
+    ) throws -> PythonObject {
+        do {
+            let module = try Python.attemptImport(moduleName)
+            let function = module[dynamicMember: functionName]
+            // 타입을 반드시 명시한다. `ThrowingPythonObject` 에는 가변인자 오버로드가 같이 있어서,
+            // 배열을 그대로 넘기면 그 오버로드가 골라져 **인자 하나짜리 리스트**로 싸인다.
+            let positionalArguments: [PythonConvertible] = arguments.map { PythonObject($0) }
+            return try function.throwing.dynamicallyCall(withArguments: positionalArguments)
+        } catch {
+            throw PythonExecutorBridgeError.python("\(moduleName).\(functionName): \(error)")
+        }
     }
 
     // Python이 반환하는 튜플/리스트가 str/int/None 혼합일 수 있어 각 원소를 문자열로 관대하게 변환한다.
@@ -230,6 +255,15 @@ private final class PythonRuntime {
         sys.path.insert(0, PythonObject(pythonHome))
         sys.path.insert(0, PythonObject(appPackages))
         sys.path.insert(0, PythonObject(pythonSourcePath()))
+
+        // 번들 파이썬에는 루트 인증서가 없다. 세우지 않으면 모든 https 요청이
+        // CERTIFICATE_VERIFY_FAILED 로 떨어진다.
+        let caBundle = "\(appPackages)/certifi/cacert.pem"
+        if FileManager.default.fileExists(atPath: caBundle) {
+            setenv("SSL_CERT_FILE", caBundle, 1)
+            setenv("REQUESTS_CA_BUNDLE", caBundle, 1)
+        }
+
         didConfigurePython = true
     }
 

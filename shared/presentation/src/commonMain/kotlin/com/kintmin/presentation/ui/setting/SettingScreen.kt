@@ -31,21 +31,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.AppPermission
+import com.kintmin.presentation.platform.SystemSettingsTarget
 import com.kintmin.presentation.platform.isDeviceSaveSupported
 import com.kintmin.presentation.platform.isFileShareReceiveSupported
 import com.kintmin.presentation.platform.rememberAppVersionName
 import com.kintmin.presentation.platform.rememberAudioFilePicker
 import com.kintmin.presentation.platform.rememberPermissionController
+import com.kintmin.presentation.platform.rememberSystemSettingsOpener
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
+import com.kintmin.presentation.ui.setting.dialog.MotionPermissionDialog
 import com.kintmin.presentation.ui.setting.section.SettingItemView
 import com.kintmin.presentation.ui.setting.section.SettingNavigateIcon
 import com.kintmin.presentation.ui.setting.section.SettingSectionView
@@ -65,6 +70,8 @@ fun SettingScreen(
     val toaster = rememberToaster()
     val appVersion = rememberAppVersionName()
     val permissionController = rememberPermissionController()
+    val systemSettingsOpener = rememberSystemSettingsOpener()
+    var isMotionPermissionDialogVisible by remember { mutableStateOf(false) }
     // 음원 가져오기는 선택기를 "오디오" 루트에서 연다.
     val audioFilePicker = rememberAudioFilePicker(startAtAudioRoot = true) { fileIdentifiers ->
         viewModel.sendIntent(SettingIntent.OnAudioFilesSelected(fileIdentifiers))
@@ -96,6 +103,7 @@ fun SettingScreen(
                                 viewModel.sendIntent(SettingIntent.OnActivityRecognitionGranted)
                             } else {
                                 viewModel.sendIntent(SettingIntent.OnActivityRecognitionDenied)
+                                isMotionPermissionDialogVisible = true
                             }
                         }
                     }
@@ -103,6 +111,17 @@ fun SettingScreen(
             }
         }
     }
+
+    MotionPermissionDialog(
+        showDialog = isMotionPermissionDialogVisible,
+        onOpenSettings = {
+            isMotionPermissionDialogVisible = false
+            if (!systemSettingsOpener.open(SystemSettingsTarget.AppPermissions)) {
+                toaster.show("설정을 열 수 없습니다. 직접 설정 앱에서 허용해주세요.")
+            }
+        },
+        onDismiss = { isMotionPermissionDialogVisible = false },
+    )
 
     SettingScreen(
         uiState = uiState,

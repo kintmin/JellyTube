@@ -9,6 +9,9 @@ enum class SystemSettingsTarget {
 
     /** 소리·볼륨 설정 화면. */
     Sound,
+
+    /** 이 앱의 설정 페이지. 거부된 권한을 사용자가 직접 켜는 자리다. */
+    AppPermissions,
 }
 
 /**
