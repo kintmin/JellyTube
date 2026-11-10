@@ -232,11 +232,13 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
 
         transfer.receivedBytes += byteCount
         if transfer.totalBytes == nil {
-            transfer.totalBytes = isWholeBody
-                ? transfer.receivedBytes
-                : RangeChunkPlan.shared.parseTotalBytes(
-                    contentRange: response?.value(forHTTPHeaderField: "Content-Range")
-                )?.int64Value
+            let parsed = RangeChunkPlan.shared.parseTotalBytes(
+                contentRange: response?.value(forHTTPHeaderField: "Content-Range")
+            )?.int64Value
+            // 첫 요청은 늘 상한만큼 달라고 하므로, 그보다 적게 왔다면 서버가 파일 끝에 닿은 것이다.
+            let reachedEnd = byteCount < RangeChunkPlan.shared.MAX_CHUNK_BYTES
+            transfer.totalBytes = isWholeBody ? transfer.receivedBytes
+                : parsed ?? (reachedEnd ? transfer.receivedBytes : nil)
         }
 
         guard let totalBytes = transfer.totalBytes else {
