@@ -84,6 +84,7 @@ final class YoutubeDownloader: NSObject {
     private static let inFlightKey = "youtubeDownload.inFlight"
     private static let completedKey = "youtubeDownload.completed"
     private static let executionWindowName = "youtube-download"
+    private static let chunkRetryLimit = 2
 
     /// 백그라운드 세션을 되살려 달라고 OS 가 앱을 깨울 때 쥐여 주는 마무리 콜백.
     var backgroundCompletionHandler: (() -> Void)?
@@ -113,6 +114,8 @@ final class YoutubeDownloader: NSObject {
     private let lock = NSLock()
     private var waiters: [String: (Error?) -> Void] = [:]
     private var startedAt: [String: Date] = [:]
+    /// `주소#시작오프셋` 별 재시도 횟수.
+    private var chunkRetryCounts: [String: Int] = [:]
     /// 메인 스레드에서만 만진다.
     private var executionWindow: UIBackgroundTaskIdentifier = .invalid
     /// 전송 기록이 생기기 전 단계(추출)가 몇 건 돌고 있는지.
@@ -237,12 +240,14 @@ final class YoutubeDownloader: NSObject {
 
     /// 할 일이 남아 있으면 앱을 깨어 있게 하고, 없으면 유예를 반납한다.
     private func refreshExecutionWindow() {
-        lock.lock()
-        let hasPending = !Self.load(YoutubeTransfer.self, key: Self.inFlightKey).isEmpty
-            || pendingExtractionCount > 0
-        lock.unlock()
-
         DispatchQueue.main.async {
+            // 메인에 들어온 뒤에 읽어야 한다. 밖에서 재면 "A 끝남(false) → B 시작(true)" 이
+            // 메인에서 뒤집혀 들어와 진행 중인 B 가 유예 없이 남는다.
+            self.lock.lock()
+            let hasPending = !Self.load(YoutubeTransfer.self, key: Self.inFlightKey).isEmpty
+                || self.pendingExtractionCount > 0
+            self.lock.unlock()
+
             if hasPending, self.executionWindow == .invalid {
                 self.executionWindow = UIApplication.shared.beginBackgroundTask(
                     withName: Self.executionWindowName
@@ -385,6 +390,17 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
                 rangeHeader: downloadTask.originalRequest?.value(forHTTPHeaderField: "Range")
             )?.int64Value ?? 0
 
+        // 요청한 폭만큼 오지 않으면 그 구간에 구멍이 남는다. `.part` 는 전체 길이로 미리 잡아
+        // 두므로 다 받은 뒤 파일 크기를 재도 드러나지 않는다.
+        let expectedBytes = min(offset + RangeChunkPlan.shared.MAX_CHUNK_BYTES, totalBytes) - offset
+        guard isWholeBody || byteCount == expectedBytes else {
+            fail(
+                sourceUrl: sourceUrl,
+                error: YoutubeDownloadError.sizeMismatch(received: byteCount, expected: expectedBytes)
+            )
+            return
+        }
+
         // 이 함수가 끝나면 OS 가 임시 파일을 지운다. 반드시 여기서 옮겨야 한다.
         do {
             try Self.write(
@@ -421,12 +437,12 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         Self.put(transfer)
         lock.unlock()
 
-        if shouldEnqueueRest {
-            missing.forEach { request($0, for: transfer) }
+        guard !missing.isEmpty else {
+            finalize(transfer, totalBytes: totalBytes)
             return
         }
-        if missing.isEmpty {
-            finalize(transfer, totalBytes: totalBytes)
+        if shouldEnqueueRest {
+            missing.forEach { request($0, for: transfer) }
         }
     }
 
@@ -435,16 +451,45 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         // 취소는 우리가 낸 것이다 — 한 구간이 깨지면 같은 주소의 나머지를 접는다.
         guard (error as? URLError)?.code != .cancelled else { return }
 
+        // 구간을 전부 동시에 등록하므로 하나가 넘어졌다고 전체를 버리면 실패가 구간 수만큼
+        // 잦아진다. 받아 둔 조각은 `.part` 에 남아 있으니 그 구간만 다시 받는다.
+        if let chunk = retryChunk(for: task, sourceUrl: sourceUrl) {
+            downloadLog("retry range=\(chunk.headerValue): \(error.localizedDescription)")
+            return
+        }
+
         fail(sourceUrl: sourceUrl, error: error)
     }
 
-    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        // 구간이 더 남아 있으면 아직 끝난 것이 아니다.
+    /// 다시 받을 구간이 있으면 등록하고 돌려준다. 한도를 넘었거나 되읽을 수 없으면 nil.
+    private func retryChunk(for task: URLSessionTask, sourceUrl: String) -> RangeChunk? {
         lock.lock()
-        let hasPending = !Self.load(YoutubeTransfer.self, key: Self.inFlightKey).isEmpty
+        let transfer = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)[sourceUrl]
         lock.unlock()
-        guard !hasPending else { return }
 
+        guard let transfer,
+              let totalBytes = transfer.totalBytes,
+              let start = RangeChunkPlan.shared.parseRequestedStart(
+                  rangeHeader: task.originalRequest?.value(forHTTPHeaderField: "Range")
+              )?.int64Value,
+              !transfer.receivedStarts.contains(start),
+              let chunk = RangeChunkPlan.shared.next(receivedBytes: start, totalBytes: totalBytes)
+        else { return nil }
+
+        let key = "\(sourceUrl)#\(start)"
+        lock.lock()
+        let attempt = (chunkRetryCounts[key] ?? 0) + 1
+        chunkRetryCounts[key] = attempt
+        lock.unlock()
+        guard attempt <= Self.chunkRetryLimit else { return nil }
+
+        request(chunk, for: transfer)
+        return chunk
+    }
+
+    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        // 이 세션의 이벤트가 전부 전달된 뒤에만 불린다. 여기서 핸들러를 돌려주지 않으면
+        // OS 가 깨워 준 앱을 그대로 강제 종료한다. 구간이 남아 있으면 다음 전달 때 다시 불린다.
         DispatchQueue.main.async {
             self.backgroundCompletionHandler?()
             self.backgroundCompletionHandler = nil
@@ -464,7 +509,9 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
                 + "elapsed=\(seconds(since: startedDate))s"
         )
 
-        guard partBytes == totalBytes else {
+        // `.part` 길이는 미리 잡아 둔 전체 길이라 그것만으로는 다 받았는지 알 수 없다.
+        let chunkCount = RangeChunkPlan.shared.chunks(totalBytes: totalBytes).count
+        guard transfer.receivedStarts.count == chunkCount, partBytes == totalBytes else {
             fail(
                 sourceUrl: sourceUrl,
                 error: YoutubeDownloadError.sizeMismatch(received: partBytes, expected: totalBytes)
@@ -529,6 +576,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         inFlight.removeValue(forKey: sourceUrl)
         Self.save(inFlight, key: Self.inFlightKey)
         startedAt.removeValue(forKey: sourceUrl)
+        chunkRetryCounts = chunkRetryCounts.filter { !$0.key.hasPrefix("\(sourceUrl)#") }
         let waiter = waiters.removeValue(forKey: sourceUrl)
         if waiter == nil, let source {
             var completed = Self.load(YoutubeAudioSource.self, key: Self.completedKey)
