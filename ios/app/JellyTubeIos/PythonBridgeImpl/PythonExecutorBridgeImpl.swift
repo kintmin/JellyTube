@@ -57,6 +57,10 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
         completionHandler: @escaping @Sendable (YoutubeDownloadDto?, Error?) -> Void
     ) {
         DispatchQueue.global(qos: .userInitiated).async {
+            // 추출이 끝나고 전송이 등록될 때까지 앱이 돌아야 한다.
+            YoutubeDownloader.shared.beginExtraction()
+            defer { YoutubeDownloader.shared.endExtraction() }
+
             do {
                 let result = try self.runtime.callFunction(
                     moduleName: Self.fileName,

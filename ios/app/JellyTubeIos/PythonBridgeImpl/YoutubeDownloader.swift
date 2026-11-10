@@ -1,6 +1,7 @@
 import Foundation
 import os
 import shared
+import UIKit
 
 private let downloadLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "YoutubeDownload")
 
@@ -48,17 +49,26 @@ private struct YoutubeTransfer: Codable {
     var receivedStarts: [Int64]
     /// 남은 구간까지 전부 등록을 마쳤는지.
     var didEnqueueAll: Bool
+    /// 실행 유예가 끝나 OS 데몬에 넘긴 전송인지. 앱 생애를 넘겨도 같은 세션으로 이어야 한다.
+    var usesBackgroundSession: Bool
 
     /// 완주한 뒤에야 목적지로 옮긴다. 중간에 끊겨도 반쪽 파일이 자리에 남지 않는다.
     var partPath: String { source.destinationPath + ".part" }
 }
 
-/// 유튜브 음원을 background `URLSession` 으로 내려받는다. 전송 주체가 OS 데몬이라 앱이
-/// 내려가도 이어지고, 사용자가 앱 스위처에서 강제 종료하면 OS 가 전부 취소한다.
+/// 유튜브 음원을 세션 두 벌로 내려받는다.
 ///
 /// 한 요청이 [RangeChunkPlan.MAX_CHUNK_BYTES] 를 넘는 범위를 달라고 하면 CDN 이 속도를 조이므로
-/// 그 상한으로 끊고, **구간 전부를 앱이 떠 있는 동안 등록한다** — 하나씩 이어서 등록하면
-/// 그때마다 OS 가 앱을 깨워야 해서 서스펜드 상태에서 청크당 10초를 넘게 기다린다.
+/// 그 상한으로 끊고, 구간 전부를 처음에 등록한다.
+///
+/// 전송은 **기본 세션**으로 시작하고 `beginBackgroundTask` 로 앱을 깨어 있게 한다. 홈으로
+/// 내려가도 그 유예 동안은 전속으로 받는다. 서스펜드된 앱의 background 세션 전송은 시스템이
+/// 전원·네트워크 상태를 보고 자기 속도로 돌려주기 때문이다 — 같은 48.8MB 를 포그라운드 6.4초,
+/// 백그라운드 2~3분으로 실측했다.
+///
+/// 유예가 만료되면 남은 구간을 **background 세션**으로 넘긴다. 전송 주체가 OS 데몬으로 바뀌어
+/// 앱이 서스펜드되거나 죽어도 이어진다. 느리지만 완주는 보장된다. 사용자가 앱 스위처에서
+/// 강제 종료하면 그때는 OS 가 전부 취소한다.
 final class YoutubeDownloader: NSObject {
 
     static let shared = YoutubeDownloader()
@@ -66,21 +76,40 @@ final class YoutubeDownloader: NSObject {
     private static let sessionIdentifier = "com.kintmin.JellyTubeIos.youtube-download"
     private static let inFlightKey = "youtubeDownload.inFlight"
     private static let completedKey = "youtubeDownload.completed"
+    private static let executionWindowName = "youtube-download"
 
     /// 백그라운드 세션을 되살려 달라고 OS 가 앱을 깨울 때 쥐여 주는 마무리 콜백.
     var backgroundCompletionHandler: (() -> Void)?
 
-    private lazy var session: URLSession = {
+    /// 세션이 둘이라 델리게이트 큐를 공유해야 한다. 그러지 않으면 두 세션의 콜백이 겹쳐
+    /// 같은 `.part` 와 같은 기록을 동시에 건드린다.
+    private let delegateQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 1
+        return queue
+    }()
+
+    private lazy var foregroundSession = URLSession(
+        configuration: .default,
+        delegate: self,
+        delegateQueue: delegateQueue
+    )
+
+    private lazy var backgroundSession: URLSession = {
         let configuration = URLSessionConfiguration.background(withIdentifier: Self.sessionIdentifier)
         // 사용자가 누른 다운로드다. 시스템이 한가할 때까지 미루면 안 된다.
         configuration.isDiscretionary = false
         configuration.sessionSendsLaunchEvents = true
-        return URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+        return URLSession(configuration: configuration, delegate: self, delegateQueue: delegateQueue)
     }()
 
     private let lock = NSLock()
     private var waiters: [String: (Error?) -> Void] = [:]
     private var startedAt: [String: Date] = [:]
+    /// 메인 스레드에서만 만진다.
+    private var executionWindow: UIBackgroundTaskIdentifier = .invalid
+    /// 전송 기록이 생기기 전 단계(추출)가 몇 건 돌고 있는지.
+    private var pendingExtractionCount = 0
 
     private override init() {
         super.init()
@@ -88,7 +117,7 @@ final class YoutubeDownloader: NSObject {
 
     /// 앱이 뜰 때 한 번 불러 세션을 되살린다. 그래야 지난 생애의 완료 콜백이 도착한다.
     func activate() {
-        _ = session
+        _ = backgroundSession
     }
 
     /// 지난 생애에 끝난 전송의 원본 주소. **기록은 지우지 않는다** —
@@ -127,7 +156,8 @@ final class YoutubeDownloader: NSObject {
             headers: headers,
             totalBytes: totalBytes,
             receivedStarts: [],
-            didEnqueueAll: totalBytes != nil
+            didEnqueueAll: totalBytes != nil,
+            usesBackgroundSession: false
         )
         // 새로 추출한 주소다. 전에 받아 둔 조각이 같은 바이트라는 보장이 없어 버린다.
         try? FileManager.default.removeItem(atPath: transfer.partPath)
@@ -137,6 +167,7 @@ final class YoutubeDownloader: NSObject {
         startedAt[source.sourceUrl] = Date()
         Self.put(transfer)
         lock.unlock()
+        refreshExecutionWindow()
 
         guard let totalBytes else {
             // 크기를 모르면 첫 응답의 `Content-Range` 로 알아내고 그때 나머지를 등록한다.
@@ -163,6 +194,7 @@ final class YoutubeDownloader: NSObject {
         request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
         request.setValue(chunk.headerValue, forHTTPHeaderField: "Range")
 
+        let session = transfer.usesBackgroundSession ? backgroundSession : foregroundSession
         let task = session.downloadTask(with: request)
         // `taskIdentifier` 는 세션 인스턴스 안에서만 유일하다. 앱이 다시 뜨면 1 부터 다시 매겨져
         // 지난 생애의 기록과 엉킨다. 기록은 주소로 찾고, 태스크에는 그 주소를 붙여 둔다.
@@ -170,6 +202,79 @@ final class YoutubeDownloader: NSObject {
 
         downloadLog.info("start task=\(task.taskIdentifier) range=\(chunk.headerValue, privacy: .public)")
         task.resume()
+    }
+
+    // MARK: - 실행 유예
+
+    /// 추출도 앱 프로세스에서 돈다. 유예가 없으면 홈으로 내려가는 순간 멈춰서 받을 구간
+    /// 목록조차 만들지 못하고, 앱으로 돌아올 때까지 아무 일도 일어나지 않는다.
+    func beginExtraction() {
+        lock.lock()
+        pendingExtractionCount += 1
+        lock.unlock()
+        refreshExecutionWindow()
+    }
+
+    func endExtraction() {
+        lock.lock()
+        pendingExtractionCount = max(0, pendingExtractionCount - 1)
+        lock.unlock()
+        refreshExecutionWindow()
+    }
+
+    /// 할 일이 남아 있으면 앱을 깨어 있게 하고, 없으면 유예를 반납한다.
+    private func refreshExecutionWindow() {
+        lock.lock()
+        let hasPending = !Self.load(YoutubeTransfer.self, key: Self.inFlightKey).isEmpty
+            || pendingExtractionCount > 0
+        lock.unlock()
+
+        DispatchQueue.main.async {
+            if hasPending, self.executionWindow == .invalid {
+                self.executionWindow = UIApplication.shared.beginBackgroundTask(
+                    withName: Self.executionWindowName
+                ) {
+                    self.handOffToBackgroundSession()
+                }
+            } else if !hasPending, self.executionWindow != .invalid {
+                UIApplication.shared.endBackgroundTask(self.executionWindow)
+                self.executionWindow = .invalid
+            }
+        }
+    }
+
+    /// 유예가 만료될 때 남은 구간을 OS 데몬에 넘긴다. 넘기지 않으면 서스펜드와 함께 전송이 죽는다.
+    ///
+    /// **등록을 먼저 하고 취소를 뒤에 한다** — 반대로 하면 취소와 등록 사이에 서스펜드되어
+    /// 아무 전송도 남지 않을 수 있다. 같은 구간이 두 세션에서 겹쳐 와도 바이트가 같고
+    /// 제 오프셋에 쓰므로 해가 없다.
+    private func handOffToBackgroundSession() {
+        lock.lock()
+        var inFlight = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)
+        for key in inFlight.keys {
+            inFlight[key]?.usesBackgroundSession = true
+        }
+        Self.save(inFlight, key: Self.inFlightKey)
+        lock.unlock()
+
+        for transfer in inFlight.values {
+            guard let totalBytes = transfer.totalBytes else {
+                request(RangeChunkPlan.shared.first(), for: transfer)
+                continue
+            }
+            RangeChunkPlan.shared.chunks(totalBytes: totalBytes)
+                .filter { !transfer.receivedStarts.contains($0.start) }
+                .forEach { request($0, for: transfer) }
+        }
+
+        if executionWindow != .invalid {
+            UIApplication.shared.endBackgroundTask(executionWindow)
+            executionWindow = .invalid
+        }
+
+        // 서스펜드되면 기본 세션의 태스크는 어차피 죽는다. 포그라운드로 바로 돌아오는 경우만
+        // 겹치므로 접어 두되, 유예 반납을 여기에 매달지 않는다.
+        foregroundSession.getAllTasks { $0.forEach { $0.cancel() } }
     }
 
     // MARK: - 기록
@@ -370,16 +475,26 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
 
         // 같은 주소의 나머지 구간은 이미 등록돼 돌고 있다. 접지 않으면 그 응답이
         // 재추출로 새로 시작한 전송의 기록에 끼어든다.
-        session.getAllTasks { tasks in
-            tasks
-                .filter { $0.taskDescription == sourceUrl }
-                .forEach { $0.cancel() }
-
+        cancelTasks(for: sourceUrl) {
             if let transfer {
                 try? FileManager.default.removeItem(atPath: transfer.partPath)
             }
             self.finish(sourceUrl: sourceUrl, error: error, source: nil)
         }
+    }
+
+    private func cancelTasks(for sourceUrl: String, completion: @escaping () -> Void) {
+        let group = DispatchGroup()
+        for session in [foregroundSession, backgroundSession] {
+            group.enter()
+            session.getAllTasks { tasks in
+                tasks
+                    .filter { $0.taskDescription == sourceUrl }
+                    .forEach { $0.cancel() }
+                group.leave()
+            }
+        }
+        group.notify(queue: .global(), execute: completion)
     }
 
     /// 기다리던 쪽이 있으면 바로 알리고, 없으면(앱이 새로 뜬 경우) 결과를 적어 둔다.
@@ -396,6 +511,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
             Self.save(completed, key: Self.completedKey)
         }
         lock.unlock()
+        refreshExecutionWindow()
 
         waiter?(error)
     }
