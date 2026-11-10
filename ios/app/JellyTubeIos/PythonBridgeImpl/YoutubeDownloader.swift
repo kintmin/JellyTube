@@ -1,9 +1,16 @@
 import Foundation
-import os
 import shared
 import UIKit
 
-private let downloadLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "YoutubeDownload")
+/// 공유 앱 로그로 보낸다. `os_log` 로만 남기면 `app_logs` 에 안 가서 기기에서 뽑아 볼 수 없다.
+private func downloadLog(_ message: String) {
+    SwiftAppLogKt.swiftDebugLog(tag: "YoutubeDownload", message: message)
+}
+
+private func seconds(since start: Date?) -> String {
+    guard let start else { return "?" }
+    return String(format: "%.2f", Date().timeIntervalSince(start))
+}
 
 /// 전송 자체는 끝났지만 받은 것이 음원이 아닐 때.
 enum YoutubeDownloadError: LocalizedError {
@@ -171,11 +178,14 @@ final class YoutubeDownloader: NSObject {
 
         guard let totalBytes else {
             // 크기를 모르면 첫 응답의 `Content-Range` 로 알아내고 그때 나머지를 등록한다.
+            downloadLog("begin totalBytes=unknown")
             request(RangeChunkPlan.shared.first(), for: transfer)
             return
         }
 
-        RangeChunkPlan.shared.chunks(totalBytes: totalBytes).forEach { request($0, for: transfer) }
+        let chunks = RangeChunkPlan.shared.chunks(totalBytes: totalBytes)
+        downloadLog("begin totalBytes=\(totalBytes) chunks=\(chunks.count)")
+        chunks.forEach { request($0, for: transfer) }
     }
 
     private func request(_ chunk: RangeChunk, for transfer: YoutubeTransfer) {
@@ -200,7 +210,10 @@ final class YoutubeDownloader: NSObject {
         // 지난 생애의 기록과 엉킨다. 기록은 주소로 찾고, 태스크에는 그 주소를 붙여 둔다.
         task.taskDescription = transfer.source.sourceUrl
 
-        downloadLog.info("start task=\(task.taskIdentifier) range=\(chunk.headerValue, privacy: .public)")
+        downloadLog(
+            "request range=\(chunk.headerValue) "
+                + "session=\(transfer.usesBackgroundSession ? "background" : "foreground")"
+        )
         task.resume()
     }
 
@@ -249,6 +262,7 @@ final class YoutubeDownloader: NSObject {
     /// 아무 전송도 남지 않을 수 있다. 같은 구간이 두 세션에서 겹쳐 와도 바이트가 같고
     /// 제 오프셋에 쓰므로 해가 없다.
     private func handOffToBackgroundSession() {
+        downloadLog("window expired — background 세션으로 넘긴다")
         lock.lock()
         var inFlight = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)
         for key in inFlight.keys {
@@ -312,7 +326,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         lock.unlock()
 
         guard var transfer = stored else {
-            downloadLog.error("no record for task=\(downloadTask.taskIdentifier)")
+            downloadLog("no record for \(sourceUrl)")
             return
         }
 
@@ -380,7 +394,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
                 totalBytes: totalBytes
             )
         } catch {
-            downloadLog.error("write failed: \(error.localizedDescription, privacy: .public)")
+            downloadLog("write failed: \(error.localizedDescription)")
             fail(sourceUrl: sourceUrl, error: error)
             return
         }
@@ -388,6 +402,14 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         if !transfer.receivedStarts.contains(offset) {
             transfer.receivedStarts.append(offset)
         }
+
+        lock.lock()
+        let startedDate = startedAt[sourceUrl]
+        lock.unlock()
+        downloadLog(
+            "chunk start=\(offset) status=\(statusCode) bytes=\(byteCount) "
+                + "received=\(transfer.receivedStarts.count) elapsed=\(seconds(since: startedDate))s"
+        )
 
         let missing = RangeChunkPlan.shared.chunks(totalBytes: totalBytes)
             .filter { !transfer.receivedStarts.contains($0.start) }
@@ -433,11 +455,14 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         let sourceUrl = transfer.source.sourceUrl
 
         lock.lock()
-        let elapsed = startedAt[sourceUrl].map { Date().timeIntervalSince($0) } ?? 0
+        let startedDate = startedAt[sourceUrl]
         lock.unlock()
 
         let partBytes = Self.fileSize(atPath: transfer.partPath)
-        downloadLog.info("finish bytes=\(partBytes) elapsed=\(elapsed)s")
+        downloadLog(
+            "done bytes=\(partBytes) chunks=\(transfer.receivedStarts.count) "
+                + "elapsed=\(seconds(since: startedDate))s"
+        )
 
         guard partBytes == totalBytes else {
             fail(
@@ -458,7 +483,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
             }
             try FileManager.default.moveItem(atPath: transfer.partPath, toPath: destination.path)
         } catch {
-            downloadLog.error("move failed: \(error.localizedDescription, privacy: .public)")
+            downloadLog("move failed: \(error.localizedDescription)")
             fail(sourceUrl: sourceUrl, error: error)
             return
         }
@@ -471,7 +496,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         let transfer = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)[sourceUrl]
         lock.unlock()
 
-        downloadLog.error("failed: \(error.localizedDescription, privacy: .public)")
+        downloadLog("failed: \(error.localizedDescription)")
 
         // 같은 주소의 나머지 구간은 이미 등록돼 돌고 있다. 접지 않으면 그 응답이
         // 재추출로 새로 시작한 전송의 기록에 끼어든다.

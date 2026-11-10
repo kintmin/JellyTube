@@ -62,10 +62,15 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
             defer { YoutubeDownloader.shared.endExtraction() }
 
             do {
+                let extractStart = Date()
                 let result = try self.runtime.callFunction(
                     moduleName: Self.fileName,
                     functionName: Self.methodExtractAudioSource,
                     arguments: [youtubeUrl]
+                )
+                SwiftAppLogKt.swiftDebugLog(
+                    tag: "YoutubeExtract",
+                    message: String(format: "elapsed=%.2fs", Date().timeIntervalSince(extractStart))
                 )
 
                 guard result.count >= 8, let remoteUrl = URL(string: result[0]) else {
