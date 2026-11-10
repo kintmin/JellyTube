@@ -5,11 +5,14 @@ import com.kintmin.data.di.dataIosModule
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.domain.step.worker.RegisterDailyResetImmediatelyWorker
 import com.kintmin.domain.step.worker.RegisterLoadBalancedDailyResetWorker
+import com.kintmin.ios.log.IosAppLog
+import com.kintmin.ios.log.IosAppLogBridge
 import com.kintmin.ios.media.IosMediaControllerBridge
 import com.kintmin.ios.media.IosMediaControllerManager
 import com.kintmin.ios.step.IosRegisterDailyResetImmediatelyWorker
 import com.kintmin.ios.step.IosRegisterLoadBalancedDailyResetWorker
 import com.kintmin.presentation.di.presentationIosModule
+import com.kintmin.log.AppLog
 import com.kintmin.presentation.port.MediaControllerManager
 import com.kintmin.presentation.di.presentationModule
 import org.koin.core.context.startKoin
@@ -30,6 +33,7 @@ private val iosDomainPortModule = module {
 fun initIosKoin(
     pythonExecutorBridge: IosPythonExecutorBridge,
     mediaControllerBridge: IosMediaControllerBridge,
+    appLogBridge: IosAppLogBridge,
 ) {
     startKoin {
         modules(
@@ -40,6 +44,7 @@ fun initIosKoin(
             iosDomainPortModule,
             module {
                 single<MediaControllerManager> { IosMediaControllerManager(mediaControllerBridge) }
+                single<AppLog> { IosAppLog(appLogBridge, get()) }
             },
         )
     }

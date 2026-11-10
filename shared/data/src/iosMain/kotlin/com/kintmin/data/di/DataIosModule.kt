@@ -4,7 +4,6 @@ import com.kintmin.data.audio_edit.AudioEditor
 import com.kintmin.data.audio_edit.AudioEditorImpl
 import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.device_status.DeviceStatusImpl
-import com.kintmin.data.ios.IosAppLog
 import com.kintmin.data.local_datastore.createIosPreferencesDataStore
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.database.createIosJellyTubeDatabase
@@ -17,7 +16,6 @@ import com.kintmin.data.python_bridge.LyricsTransliterator
 import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.data.translation.IosLyricsTranslator
 import com.kintmin.data.translation.LyricsTranslator
-import com.kintmin.log.AppLog
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -26,8 +24,11 @@ import org.koin.dsl.module
  * 손에 들어온다. Android 는 같은 것을 `androidContext()` 로 받지만 iOS 에는 그 창구가 없다.
  *
  * 이 바인딩들이 함수 파라미터를 타고 들어오는 대신 조립 모듈(`:ios:shared`)에서 직접
- * 등록되지 않는 것은 [FileManagerImpl] · [IosAppLog] · [IosPythonExecutorAdapter] 가
- * 이 모듈의 `internal` 이기 때문이다. 공개로 넓히는 것보다 파라미터 하나가 싸다.
+ * 등록되지 않는 것은 [FileManagerImpl] · [IosPythonExecutorAdapter] 가 이 모듈의
+ * `internal` 이기 때문이다. 공개로 넓히는 것보다 파라미터 하나가 싸다.
+ *
+ * **`AppLog` 는 여기 없다.** 수집기 구현이 Swift 에 있어 조립 모듈(`:ios:shared`)이 맡는다 —
+ * data 모듈이 로그 구현을 들고 있을 이유가 없다.
  */
 fun dataIosModule(pythonExecutorBridge: IosPythonExecutorBridge): Module = module {
     single { createIosPreferencesDataStore() }
@@ -35,7 +36,6 @@ fun dataIosModule(pythonExecutorBridge: IosPythonExecutorBridge): Module = modul
     single<DeviceStatus> { DeviceStatusImpl() }
     single<AudioEditor> { AudioEditorImpl() }
     single<FileManager> { FileManagerImpl() }
-    single<AppLog> { IosAppLog() }
     single<PythonExecutor> { IosPythonExecutorAdapter(pythonExecutorBridge) }
     // 브릿지 자체도 꺼낼 수 있어야 한다 — 끝난 전송 목록처럼 PythonExecutor 밖의 일이 있다.
     single<IosPythonExecutorBridge> { pythonExecutorBridge }

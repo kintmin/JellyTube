@@ -21,10 +21,14 @@ struct JellyTubeIosApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     init() {
+        // 수집기는 Koin 보다 **먼저** 선다. 이 앞에서 나는 크래시는 받는 곳이 없다.
+        let appLogBridge = AppLogBridgeImpl()
+
         // 순서가 중요하다 — Koin 이 먼저 서야 startApp 이 앱 레벨 ViewModel 을 꺼낼 수 있다.
         IosKoinKt.doInitIosKoin(
             pythonExecutorBridge: PythonExecutorBridgeImpl(),
-            mediaControllerBridge: MediaControllerBridgeImpl()
+            mediaControllerBridge: MediaControllerBridgeImpl(),
+            appLogBridge: appLogBridge
         )
         // 지난 생애의 완료 콜백을 받으려면 세션을 먼저 되살려야 한다.
         YoutubeDownloader.shared.activate()
