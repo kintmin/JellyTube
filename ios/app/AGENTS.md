@@ -1,266 +1,167 @@
-## Module: ios/app
+## Module: ios/ (app + shared)
 
-**Role**: iOS app entry point, TCA architecture, KMP use case bridging, and runtime implementations.
+**Role**: iOS 진입점과 조립. UI 는 `shared:presentation`(CMP)을 그대로 쓴다.
 
----
+iOS 쪽은 두 곳으로 나뉜다. **둘 다 "조립과 OS 호출" 만 한다 — 화면도 비즈니스 로직도 없다.**
 
-## Architecture: TCA (The Composable Architecture)
-
-Every feature follows this exact file structure. Use `Playlist` as the canonical reference.
-
-| File | Role | Reference |
+| 경로 | 언어 | 역할 |
 |---|---|---|
-| `~Client.swift` | Wraps KMP use cases into a Swift-friendly async API | `PlaylistClient.swift` |
-| `~Feature.swift` | `@Reducer` — owns State, Action, and the reduce logic | `PlaylistFeature.swift` |
-| `~Item.swift` | View-specific data model (not the KMP domain model) | `PlaylistItem.swift` |
-| `~ScreenView.swift` | SwiftUI view bound to the Feature's Store | `PlaylistScreenView.swift` |
+| `ios/shared/` | Kotlin | iOS Composition Root. 프레임워크 선언 · Koin 조립 · Compose 진입점 · 도메인 워커 포트 구현 |
+| `ios/app/` | Swift | Xcode 앱. 진입점(`JellyTubeIosApp`) · Kotlin 인터페이스의 Swift 구현(브릿지) · Info.plist |
+
+> **TCA 는 더 이상 쓰지 않는다.** `~Client` / `~Feature` / `~ScreenView` / `IosFacades` /
+> `~Facade.kt` 규약은 CMP 전환으로 전부 폐기됐고 해당 파일도 리포에 없다. 옛 문서를 보고
+> 그 구조를 되살리지 않는다.
 
 ---
 
-## KMP Facade (shared:data / iosMain)
+## 프레임워크는 하나다
 
-**Do NOT create one bridge class + `create...` factory per UseCase.** That multiplies boilerplate by 80. Instead, expose **one Facade per feature** that groups the feature's UseCases via **constructor injection**, and resolve it through the single `IosFacades` object.
+`ios/shared` 만 framework 를 선언한다(`baseName = "shared"` — Swift 의 `import shared`).
 
-**기본은 domain 모델을 그대로 노출한다. DTO를 만들지 않는다.** 원시 필드(String/Int/Bool/경로문자열)는 Swift `~Client`의 `init(from:)`에서 직접 복사하면 된다. DTO는 필드를 중복 정의하는 오버헤드라 기본값이 아니다.
+**둘로 쪼개면 안 된다.** Kotlin/Native 프레임워크를 2개 만들면 런타임·Koin·코루틴 디스패처가
+각각 따로 서서, 같은 타입이 서로 다른 클래스가 되고 Koin 그래프가 둘로 갈린다.
 
-**예외는 Swift가 열 수 없는 리치 타입뿐이다.** `kotlin.time.Duration`은 value class라 Kotlin/Native가 불투명하게 내보내 Swift에서 `.inWholeSeconds`를 못 부른다(`LocalDateTime`도 유사). 이런 필드**만** Facade에 **변환 헬퍼 메서드**를 두어 원시 타입으로 준다. `Flow`(SKIE 처리)와 마찬가지로, "Swift에서 다룰 수 없는 것만 Kotlin 경계 헬퍼로 흡수"하는 원칙이다. **domain 모델은 절대 원시화하지 않는다.**
+`export()` 는 **Swift 가 직접 이름을 부르는 모듈만** 한다 — 지금은 `domain`·`log`·`data`.
+`presentation` 은 `api` 로 의존만 하고 export 하지 않는다. export 하면 화면과 ViewModel 전체가
+Obj-C 헤더로 쏟아진다.
 
-Reference: `PlaylistFacade.kt`(모델 반환 + `playTimeSeconds` 헬퍼), `IosFacades.kt`.
+---
+
+## 무엇을 어디에 두는가
+
+### `ios/shared/` (Kotlin)
+
+넷뿐이다. **그 외의 것을 여기 두지 않는다.**
+
+1. `build.gradle.kts` — framework + SKIE
+2. `IosKoin.kt` — `initIosKoin(...)`. `android:app` 의 `JellyTubeApplication` 과 짝이다.
+   한쪽에 모듈을 더하면 다른 쪽도 본다
+3. `MainViewController.kt` — Swift 에 노출되는 최상위 함수들
+   (`startApp` / `mainViewController` / `handleDeepLink` / `handleSharedAudioFile`)
+4. 도메인 포트의 iOS 구현 — `domain` 에 플랫폼 구현을 넣지 않기 위해서다
+5. Swift 가 구현할 Kotlin 인터페이스 — 프레임워크에 들어가는 모듈이라야 Swift 가 본다
+   (`IosMediaControllerBridge`, `IosAppLogBridge`)
+
+**앱 레벨 ViewModel 은 파일 최상위에 `by lazy` 로 한 벌만** 둔다. iOS 는 단일 윈도우이고,
+Compose 밖(`onOpenURL`)에서 들어온 이벤트를 화면과 **같은 인스턴스**로 넘겨야 한다.
+`by lazy` 인 이유는 Koin 이 서기 전에 초기화되는 것을 막기 위해서다.
+
+> `MainViewController.kt` 의 **파일 이름이 Obj-C 클래스 이름을 정한다**
+> (`MainViewControllerKt.startApp()`). 파일명을 바꾸면 Swift 호출부가 깨진다.
+
+### `shared/presentation/src/iosMain/` (Kotlin)
+
+- `platform/*.ios.kt` — `expect`/`actual` 탈출구
+- **`port/` 의 iOS 구현도 여기다.** Android 는 `Context` 가 필요해 `android:app` 에 두지만,
+  iOS 구현은 그런 것이 없고 Kotlin/Native 가 UIKit·AVFoundation·CoreMotion 인터롭을 기본
+  제공해서 인터페이스와 같은 모듈에서 구현된다. 바인딩은 `di/PresentationIosModule.kt`
+- 예외는 `MediaControllerManager` 하나다 — 구현이 Swift 엔진에 기대서 `ios/shared` 가 가진다
+
+### `ios/app/JellyTubeIos/` (Swift)
+
+**Swift 가 맡는 것은 둘뿐이다.**
+
+1. **Kotlin/Native 가 부를 수 없는 SDK** — Firebase(`Shared/Log/`), PythonKit(`PythonBridgeImpl/`)
+2. **Kotlin 으로 쓰면 더 나빠지는 네이티브 엔진** — `AVAudioEngine` 재생(`Shared/MediaController/`),
+   background `URLSession`(`PythonBridgeImpl/YoutubeDownloader.swift`)
+
+---
+
+## 브릿지 패턴 — Swift 가 Kotlin 인터페이스를 구현한다
+
+세 군데가 같은 모양이다: `IosPythonExecutorBridge`(data), `IosMediaControllerBridge`(ios/shared),
+`IosAppLogBridge`(ios/shared).
 
 ```kotlin
-class FooFacade(
-    private val fetchAllFlow: FetchAllFooFlowUseCase,
-    private val doSomething: DoSomethingUseCase,
-) {
-    fun observeAll(): Flow<List<Foo>> = fetchAllFlow()               // domain 모델 그대로 (Flow는 SKIE 처리)
-    suspend fun doIt(param: String) = doSomething(param).getOrThrow()  // Result → throws
-    fun durationSeconds(foo: Foo): Long = foo.playTime.inWholeSeconds  // Swift가 못 여는 필드만 변환
+// Kotlin — 프레임워크에 들어가는 모듈에 선언한다
+interface IosAppLogBridge {
+    fun debug(tag: String, message: String)
 }
-
-object IosFacades : KoinComponent {                                 // Swift는 IosFacades.shared 로 접근
-    fun foo(): FooFacade = get()
-}
-
-val iosFacadeModule = module { factory { FooFacade(get(), get()) } }  // initIosKoin의 modules()에 추가
 ```
-
-**Rules**:
-- **기본: DTO 없음.** Facade는 domain 모델을 반환하고 Swift `~Client`가 `init(from:)`에서 원시 필드를 직접 복사한다.
-- **리치 타입(`Duration`/`LocalDateTime`)만** Facade 변환 헬퍼(`durationSeconds(foo:)`처럼 도메인 모델을 받아 원시 반환)로 처리한다. 이 헬퍼는 반드시 Kotlin에 둔다(Swift가 해당 타입을 못 열기 때문).
-- `Flow`는 그대로 `Flow<List<Model>>`로 노출한다. SKIE가 경계에서 `AsyncSequence`로 변환한다.
-- Use **named methods** (`observeAll`, `doIt`), never `operator fun invoke()` — `.invoke()`는 Swift 셀렉터가 지저분하다.
-- Facade는 생성자 주입만 사용한다. `get<>()` 서비스 로케이터를 흩뿌리지 않는다. (`IosFacades`가 유일한 예외 창구)
-- 새 기능 추가 시 Facade 클래스 1개 + `iosFacadeModule`에 factory 한 줄 + `IosFacades`에 리졸버 한 줄.
-- **DTO는 예외적으로만** 만든다 — 리치 필드가 여럿이라 헬퍼가 지저분해지거나, `~Client`가 domain 타입을 아예 import하지 않게 강제하고 싶을 때.
-
----
-
-## ~Client Rules
-
-A `~Client` struct wraps a **single feature Facade** into a Swift-friendly async API. The rest of the Swift code never imports `shared` directly except in the `~Client` extension.
-
-**Structure**:
-
 ```swift
-struct FooClient: Sendable {
-    var fetchAll: @Sendable () -> AsyncThrowingStream<[FooItem], Error>
-    var doSomething: @Sendable (_ param: String) async throws -> Void
-}
-
-// 1. Register as a TCA Dependency
-extension FooClient: DependencyKey {
-    static let liveValue = Self.live()
-}
-
-extension DependencyValues {
-    var fooClient: FooClient {
-        get { self[FooClient.self] }
-        set { self[FooClient.self] = newValue }
-    }
-}
-
-// 2. Facade wiring — Facade 하나만 잡는다
-extension FooClient {
-    static func live(facade: FooFacade = IosFacades.shared.foo()) -> Self {
-        Self(
-            fetchAll: {
-                KmpStream.of(facade.observeAll) { foos in foos.map { FooItem(from: $0, facade: facade) } }
-            },
-            doSomething: { param in try await facade.doIt(param: param) }
-        )
-    }
-}
-
-// 원시 필드는 self.init에서 직접 복사. Swift가 못 여는 리치 필드만 Facade 헬퍼로 받는다.
-private extension FooItem {
-    init(from foo: Foo, facade: FooFacade) {
-        self.init(/* id: Int(foo.id), name: foo.name, ..., seconds: Int(facade.durationSeconds(foo: foo)) */)
-    }
+// Swift — 구현하고 doInitIosKoin 에 넘긴다
+final class AppLogBridgeImpl: IosAppLogBridge {
+    func debug(tag: String, message: String) { ... }
 }
 ```
 
 **Rules**:
-- KMP `Flow` 소비는 손으로 `AsyncThrowingStream`을 짜지 말고 **`KmpStream.of(_:map:)`** 헬퍼(`Shared/Kmp/KmpStream.swift`)를 쓴다. 취소 처리(`onTermination`)가 헬퍼에 들어 있다.
-- domain 모델 → `~Item` 매핑은 `private extension ~Item { init(from:facade:) }`로 Client 파일에 격리한다. 원시 필드는 직접 복사, 리치 필드만 `facade` 헬퍼 호출. `~Item` 정의 파일 자체는 `shared`를 import하지 않는다.
-- The `liveValue` must call `Self.live()`. Test values can provide mock closures.
-- Client는 Facade **하나만** 주입받는다. UseCase 브릿지를 여러 개 주입받는 형태(구식)는 금지.
+- 브릿지는 **원시 타입과 거울 DTO** 만 주고받는다. 포트가 쓰는 `presentation` 타입은
+  Swift 가 볼 수 없어서다(export 하지 않는다). `IosMediaItem` 이 그래서 있는 거울 DTO 다
+- **판정은 Kotlin 이 한다.** Swift 는 "시킨 일" 만 한다. 같은 판단을 두 플랫폼이 다르게 내리면
+  그 자체가 버그다 — 딥링크 파싱, 로그 자르기 규칙, A-B 구간반복이 전부 Kotlin 에 있는 이유다
+- 비동기는 `completionHandler` 로 받는다. SKIE 가 Swift `async` 로 바꿔 준다
+- Swift 구현이 `@MainActor` 타입에 기대면 `@MainActor init` + `MainActor.assumeIsolated` 로
+  **메인스레드 계약을 코드에 적는다**. nonisolated 로 두고 넘어가지 않는다
 
 ---
 
-## ~Feature Rules
+## Info.plist — `INFOPLIST_KEY_*` 를 믿지 않는다
 
-A `~Feature` is a TCA `@Reducer`. It owns the canonical UI state and all business-level actions.
+**`GENERATE_INFOPLIST_FILE = YES` 라도 실제 `Info.plist` 파일을 둔다.**
+일부 키는 `INFOPLIST_KEY_*` 빌드 설정에 넣어도 **생성된 plist 에 들어가지 않는다**
+(확인된 것: `CADisableMinimumFrameDurationOnPhone`, `UIBackgroundModes`).
+조용히 빠지므로 "설정했다" 고 믿고 넘어가면 기동 크래시나 백그라운드 중단으로 돌아온다.
 
-```swift
-@Reducer
-struct FooFeature {
-    @ObservableState
-    struct State: Equatable {
-        var items: [FooItem] = []
-        var isLoading = false
-        @Presents var alert: AlertState<Action.Alert>?
-    }
+지금 파일에 있는 것: `CADisableMinimumFrameDurationOnPhone`(CMP 필수) ·
+`NSMotionUsageDescription`(걸음수) · `CFBundleURLTypes`(딥링크 스킴) ·
+`CFBundleDocumentTypes`(공유 수신) · `UIBackgroundModes: audio`(백그라운드 재생).
 
-    enum Action: BindableAction, Equatable {
-        case binding(BindingAction<State>)
-        case task
-        case itemsUpdated([FooItem])
-        case operationFailed(String)
-        case alert(PresentationAction<Alert>)
-        enum Alert: Equatable {}
-    }
+---
 
-    @Dependency(\.fooClient) var fooClient
+## 진입 통로
 
-    var body: some ReducerOf<Self> {
-        BindingReducer()
-        Reduce { state, action in
-            // ...
-        }
-        .ifLet(\.$alert, action: \.alert)
-    }
-}
-```
+| 들어오는 것 | 받는 자리 | 넘기는 곳 |
+|---|---|---|
+| 딥링크(`jellytube://`) | `onOpenURL` | `MainViewControllerKt.handleDeepLink` |
+| 다른 앱의 "JellyTube 로 열기" | `onOpenURL` (`url.isFileURL`) | `MainViewControllerKt.handleSharedAudioFile` |
+| 백그라운드 전송 완료 | `AppDelegate.handleEventsForBackgroundURLSession` | `YoutubeDownloader.shared` |
 
 **Rules**:
-- Always include `BindingAction` and `BindingReducer()` so that `@Bindable` works in the view.
-- Long-running subscriptions (KMP Flow via `~Client`) must use `.cancellable(id:, cancelInFlight: true)`.
-- Guard against duplicate subscriptions with a flag (e.g., `isSubscriptionActive`) before starting a `.run` effect.
-- Do NOT perform navigation logic inside a Feature. Navigation is handled by parent features or `NavigationStack` bindings.
+- 진입 통로는 `onOpenURL` **하나**다. `application(_:open:options:)` /
+  `scene(_:openURLContexts:)` / `NSUserActivity` 를 쓰지 않는다
+- Swift 가 하는 분기는 `url.isFileURL` 하나뿐이다. 그 뒤 판정은 전부 공통 코드가 한다
+- 딥링크 경로·쿼리 키의 진원지는 `shared:presentation` 의 `DeepLinkConstants` 다.
+  스킴을 바꾸면 `Info.plist` 의 `CFBundleURLSchemes` 도 함께 바꾼다
 
 ---
 
-## Modal Presentation Rules (정석 — 통일 필수)
+## Vendor/
 
-**All modal presentation (alert / sheet / popover / fullScreenCover) MUST use tree-based `@Presents` + `.ifLet`.** Do NOT mix styles — a loose `Bool` flag (`isXxxPresented`) plus scattered state fields for one modal and `@Presents` for another is forbidden.
+`ios/app/Vendor/` 는 gitignore 대상이다. **클론 직후에는 비어 있어 빌드되지 않는다.**
+`scripts/setup-ios-vendor.sh` 를 한 번 돌려 Python.xcframework 와 app-packages
+(yt-dlp · pykakasi)를 받는다.
 
-**Why**: `@Presents`는 "표시 여부 + 그 모달이 소유한 상태"를 한 옵셔널로 묶어 상태의 진실을 하나로 만든다. `Bool` + 별도 필드 방식은 표시 여부와 데이터가 따로 놀아 불일치가 생기고, TCA의 자식 리듀서/`onDismiss`/취소 연동을 못 받는다.
+---
 
-**Pattern** — 입력값을 가진 시트(예: 새 플레이리스트 추가)는 자식 State를 옵셔널로 소유한다:
+## iOS 에서 제공하지 않는 것
 
-```swift
-@ObservableState
-struct State: Equatable {
-    @Presents var alert: AlertState<Action.Alert>?
-    @Presents var addPlaylist: AddPlaylistFeature.State?   // 시트도 @Presents
-}
+진입점을 숨기고, 포트는 **명시적 미지원 스텁**으로 바인딩한다
+(`presentation/port/IosUnsupportedPorts.kt`, `data/audio_edit/AudioEditorImpl.kt`).
+스텁이 없으면 그 화면에 들어가는 순간 Koin 이 터진다 — 바인딩을 비워 두는 선택지는 없다.
 
-enum Action {
-    case alert(PresentationAction<Alert>)
-    case addPlaylist(PresentationAction<AddPlaylistFeature.Action>)
-    case addButtonTapped
-}
+| 항목 | 이유 |
+|---|---|
+| 음원 편집 | Media3 Transformer + TarsosDSP 기반이라 전면 재작성이다 |
+| PC 파일 수신 | `shared:file-share` 가 JVM 전용 모듈이라 상수조차 공유되지 않는다 |
+| 드로잉 / 플로팅 UI | `MotionEvent` + S펜 전제. Apple Pencil 에 대응물이 없다 |
+| 기기 저장(벨소리/알람/알림음) | 세 타깃 전부 30초 트리밍 + 포맷 변환이 선행 조건이라 음원 편집과 묶인다 |
+| 번역(ML Kit) | 대응물이 iOS 18+ `Translation` 뿐인데 배포 타깃이 17.0 이다 |
+| iosX64(인텔 맥 시뮬레이터) | CMP 가 1.11.0-alpha01 이후 배포하지 않는다 |
 
-// 열기: 자식 State를 세팅하면 시트가 뜬다
-case .addButtonTapped:
-    state.addPlaylist = AddPlaylistFeature.State()
-    return .none
+**Android 와 보장이 다른 것**: 사용자가 앱 스위처에서 강제 종료하면 background `URLSession`
+전송도 OS 가 취소한다. 정책이라 우회 수단이 없다 — WorkManager 와 같은 보장은 iOS 에 없다.
 
-var body: some ReducerOf<Self> {
-    BindingReducer()
-    Reduce { state, action in /* ... */ }
-        .ifLet(\.$alert, action: \.alert)
-        .ifLet(\.$addPlaylist, action: \.addPlaylist)   // 시트도 .ifLet
-}
+---
+
+## 빌드
+
+```bash
+./gradlew :ios:shared:linkDebugFrameworkIosSimulatorArm64
+xcodebuild -project ios/app/JellyTubeIos.xcodeproj -scheme JellyTubeIos \
+  -destination 'platform=iOS Simulator,name=iPhone 17' build
 ```
 
-- 아주 사소한 시트라도 `Bool` 대신 `@Presents var xxx: EmptyState?` 또는 전용 자식 Feature로 모델링한다.
-- 뷰에서는 `.sheet(item: $store.scope(state: \.addPlaylist, action: \.addPlaylist))` 형태로 바인딩한다. `.sheet(isPresented:)` + 별도 바인딩 금지.
-
----
-
-## ~Item Rules
-
-A `~Item` is a Swift-side view model — a plain struct that holds exactly what the view needs.
-
-```swift
-struct FooItem: Identifiable, Equatable, Sendable {
-    let id: Int
-    let title: String
-    // only fields the view actually uses
-}
-```
-
-**Rules**:
-- Must conform to `Identifiable`, `Equatable`, and `Sendable`.
-- Must NOT import `shared`. Mapping from KMP domain models happens inside `~Client`.
-- Do not add computed properties that contain business logic. Keep it a pure data bag.
-
----
-
-## ~ScreenView Rules
-
-The view is bound to `StoreOf<~Feature>` via `@Bindable`.
-
-```swift
-struct FooScreenView: View {
-    @Bindable var store: StoreOf<FooFeature>
-
-    var body: some View {
-        // Use store.someState directly (thanks to @ObservableState)
-        // Use $store.someBindableField for two-way bindings
-        // Use store.send(.someAction) for user actions
-    }
-}
-```
-
-**Rules**:
-- Use `@Bindable var store: StoreOf<~Feature>`. Do NOT use `WithViewStore`.
-- Do NOT expose `Binding<T>` directly in the view body. A text field binding goes through `BindableAction` → `$store.fieldName`. A sheet/alert binds via `$store.scope(state:action:)` against its `@Presents` field (see Modal Presentation Rules) — never `.sheet(isPresented:)`.
-- Break the view into private computed properties or private sub-`View` structs when `body` grows beyond ~50 lines.
-- Sub-views that are reusable across features go in `Shared/UI/`.
-
----
-
-## #Preview Requirement
-
-**Every `View` struct must have a `#Preview` block.**
-
-```swift
-#Preview {
-    FooScreenView(
-        store: Store(
-            initialState: FooFeature.State(
-                items: [FooItem(id: 1, title: "Mock Item")]
-            )
-        ) {
-            EmptyReducer()
-        }
-    )
-}
-```
-
-- Use `EmptyReducer()` for previews so actions do not fire.
-- Provide realistic mock data that exercises the non-empty state.
-- If the view has a loading state and a content state, add a second `#Preview` for the loading state.
-
----
-
-## Runtime Implementations
-
-This module contains runtime-bound implementations that are not OS features:
-
-- **Log implementation**: The concrete logging implementation (e.g., OSLog, Firebase) is provided here and registered with Koin at `JellyTubeIosApp` init.
-- **Python bridge implementation** (`PythonBridgeImpl/PythonExecutorBridgeImpl.swift`): iOS-specific Python bridge. Not an OS feature — it is a runtime dependency.
-
-These are registered during Koin initialization in `JellyTubeIosApp.swift` via `doInitIosKoin(...)`.
+Xcode 빌드는 `:ios:shared:embedAndSignAppleFrameworkForXcode` 를 빌드 페이즈로 부른다 —
+Kotlin 을 고쳤으면 Xcode 빌드만 돌려도 반영된다.

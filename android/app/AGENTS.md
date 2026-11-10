@@ -41,16 +41,18 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 
 현재 포트와 구현체:
 
-| 포트 (`presentation/port/`) | 구현체 (`com.kintmin.platform.*`) |
-|---|---|
-| `MediaControllerManager` | `service_controller/MediaControllerManagerImpl` |
-| `AudioPreviewPlayer` | `audio_preview/AudioPreviewPlayerImpl` |
-| `StepMeasurementController` | `service_controller/StepMeasurementControllerImpl` |
-| `FileShareServerController` | `service_controller/FileShareServerControllerImpl` |
-| `ExecuteYoutubeDownload` | `worker/usecase/ExecuteYoutubeDownloadImpl` |
-| `ExecuteLyricsVariantCreation` | `worker/usecase/ExecuteLyricsVariantCreationImpl` |
-| `ExecuteAnomalyDataCheck` | `worker/usecase/ExecuteAnomalyDataCheckImpl` |
-| `ExecuteAudioEditSave` | `worker/usecase/ExecuteAudioEditSaveImpl` |
+| 포트 (`presentation/port/`) | Android 구현 (`com.kintmin.platform.*`) | iOS 구현 |
+|---|---|---|
+| `MediaControllerManager` | `service_controller/MediaControllerManagerImpl` | `ios/shared` 의 `media/IosMediaControllerManager`(Swift 엔진 브릿지) |
+| `AudioPreviewPlayer` | `audio_preview/AudioPreviewPlayerImpl` | 미지원 스텁(음원 편집 제외) |
+| `StepMeasurementController` | `service_controller/StepMeasurementControllerImpl` | `IosStepMeasurementController`(CMPedometer) |
+| `FileShareServerController` | `service_controller/FileShareServerControllerImpl` | 미지원 스텁(PC 파일 수신 제외) |
+| `ExecuteYoutubeDownload` | `worker/usecase/ExecuteYoutubeDownloadImpl` | `IosExecuteYoutubeDownload`(추출 + background URLSession) |
+| `ExecuteLyricsVariantCreation` | `worker/usecase/ExecuteLyricsVariantCreationImpl` | `IosExecuteLyricsVariantCreation`(앱 수명 스코프 + 로컬 알림) |
+| `ExecuteAnomalyDataCheck` | `worker/usecase/ExecuteAnomalyDataCheckImpl` | `IosExecuteAnomalyDataCheck`(앱 수명 스코프 + 로컬 알림) |
+| `ExecuteAudioEditSave` | `worker/usecase/ExecuteAudioEditSaveImpl` | 미지원 스텁(음원 편집 제외) |
+
+iOS 구현의 자리는 **`shared:presentation` 의 `iosMain/port/`** 다(`MediaControllerManager` 만 예외). 이유는 `shared/presentation/AGENTS.md` §포트 와 `ios/app/AGENTS.md` 에 있다.
 
 **Rules**:
 - 새 포트가 필요하면 인터페이스는 `presentation/port/`에, 구현체는 여기에 두고 `platform/di/PlatformModule.kt`에 `single<Port> { PortImpl(androidContext()) }`로 등록한다.

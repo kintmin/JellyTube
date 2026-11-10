@@ -11,9 +11,9 @@
 | `src/commonMain/kotlin` | **기본 자리.** 화면/ViewModel/Intent/UiState/Event/Navigation/theme/extension |
 | `src/androidMain/kotlin` | `expect` 선언의 Android `actual`, 그리고 공통화가 불가능해 의도적으로 Android 전용으로 남긴 코드 |
 | `src/androidHostTest/kotlin` | 단위테스트. **`commonTest`를 만들지 않는다** — mockk 가 JVM 전용이라 iOS 컴파일이 깨진다 |
-| `src/iosMain/kotlin` | (아직 없음) iOS `actual`과 iOS 전용 화면 |
+| `src/iosMain/kotlin` | iOS `actual`(`platform/`)과 **포트의 iOS 구현**(`port/`) |
 
-**iOS 타겟은 선언돼 있으나 Windows 에서는 컴파일 태스크가 돌지 않는다.** 따라서 `commonMain` 에 Android/JVM 전용 API 를 넣어도 **컴파일러가 잡아주지 않는다.** 아래 순수성 게이트를 승격 작업의 통과 기준으로 쓴다.
+**순수성 게이트는 여전히 필요하다.** macOS 에서는 iOS 컴파일이 돌아 위반을 잡아 주지만, Windows 에서 작업하면 돌지 않는다 — 그쪽에서 `commonMain` 에 Android/JVM 전용 API 를 넣어도 **컴파일러가 잡아주지 않는다.** 아래 게이트를 그 자리의 통과 기준으로 쓴다.
 
 ```powershell
 rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
@@ -32,7 +32,7 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 |---|---|---|
 | `commonMain` | **212** | 화면·ViewModel·Intent·UiState·Event·Navigation·theme·extension·port 전부 |
 | `androidMain` | 12 | `platform/` actual 9 + 공통화 불가 3 |
-| `iosMain` | 9 | `platform/` actual 9 |
+| `iosMain` | — | `platform/` actual 전부 + `port/` 의 iOS 구현 + `di/PresentationIosModule` |
 
 **화면 코드는 212 / 215(98.6%)가 `commonMain`** 이다. `androidMain` 에 남은 화면 코드 3개는 **의도적 잔류**이며 해소할 생각이 없다.
 
@@ -66,14 +66,14 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 |---|---|---|
 | `platform/PlatformFullScreenDialog(onDismissRequest, hideSystemBars, content)` | `expect`/`actual`. Android 는 창 배경·DIM·decor 와 `WindowInsetsControllerCompat` 를 직접 만진다(`DialogProperties.decorFitsSystemWindows` 는 Android 전용). iOS 는 `Dialog(usePlatformDefaultWidth = false)` | `JellyTubeDialog`(호출부 22곳, 공개 시그니처 불변), `FullScreenImageViewer`(`hideSystemBars = true`) |
 | `platform/PlatformBottomSheetSystemBarEffect(lightNavigationBarIcons)` | `expect`/`actual`. Android 만 실동작, iOS no-op(내비게이션바가 없다) | 바텀시트 3종 |
-| `platform/Toaster` + `@Composable expect fun rememberToaster()` | `interface` + `expect`/`actual`. Android actual 이 `LocalContext` 를 집어 만든다. iOS actual 은 메시지를 로그로만 남긴다 | Composable 문맥 Toast 10곳. MVI `Event.ShowToast` 계층은 순수 Kotlin 이라 무변경 |
-| `platform/rememberAudioFilePicker(startAtAudioRoot, onPicked)` | `expect`/`actual`. Android actual 이 `ActivityResultContracts.OpenMultipleDocuments` 와 "오디오" 루트용 커스텀 contract(`DocumentsContract.EXTRA_INITIAL_URI`)를 품는다. iOS 는 `UIDocumentPickerViewController` 가 필요해 아직 no-op | `MainScreen`, `SettingScreen`(`startAtAudioRoot = true`), `SettingShareScreen` |
-| `platform/PermissionController` + `rememberPermissionController()` | `interface` + `expect`/`actual`. **원시 권한 문자열을 노출하지 않는다** — `AppPermission` enum(`Notification`/`MediaStorage`/`ActivityRecognition`)만 받고, OS 버전별로 어떤 권한이 실제 필요한지는 actual 이 판단한다(저장: SDK 28 이하 WRITE, 32 이하 READ, 그 위 불필요). iOS 는 권한 모델이 달라 "필요 없음"으로 답한다 | `MainScreen`(시작 시 일괄 요청), `SettingScreen`(신체 활동 인식), `SettingDeviceSaveSelectScreen`(저장) |
+| `platform/Toaster` + `@Composable expect fun rememberToaster()` | `interface` + `expect`/`actual`. Android actual 이 `LocalContext` 를 집어 만든다. iOS actual 은 모듈 내부 state holder 로 흘려 앱 루트의 `PlatformToastHost()` 가 상단 캡슐로 그린다(iOS 에는 시스템 토스트 API 가 없다) | Composable 문맥 Toast 10곳. MVI `Event.ShowToast` 계층은 순수 Kotlin 이라 무변경 |
+| `platform/rememberAudioFilePicker(startAtAudioRoot, onPicked)` | `expect`/`actual`. Android actual 이 `ActivityResultContracts.OpenMultipleDocuments` 와 "오디오" 루트용 커스텀 contract(`DocumentsContract.EXTRA_INITIAL_URI`)를 품는다. iOS 는 `UIDocumentPickerViewController` 를 `asCopy = true` 로 연다(`startAtAudioRoot` 는 대응물이 없어 무시) | `MainScreen`, `SettingScreen`(`startAtAudioRoot = true`), `SettingShareScreen` |
+| `platform/PermissionController` + `rememberPermissionController()` | `interface` + `expect`/`actual`. **원시 권한 문자열을 노출하지 않는다** — `AppPermission` enum(`Notification`/`MediaStorage`/`ActivityRecognition`)만 받고, OS 버전별로 어떤 권한이 실제 필요한지는 actual 이 판단한다(저장: SDK 28 이하 WRITE, 32 이하 READ, 그 위 불필요). iOS 는 `UNUserNotificationCenter`/`CMPedometer.authorizationStatus` 로 답하고, 저장은 샌드박스라 "필요 없음" 이다 | `MainScreen`(시작 시 일괄 요청), `SettingScreen`(신체 활동 인식), `SettingDeviceSaveSelectScreen`(저장) |
 | `platform/rememberAppVersionName()` | `expect`/`actual`. Android 는 `PackageManager`(SDK 33 분기), iOS 는 `NSBundle` 의 `CFBundleShortVersionString` | `SettingScreen` |
-| `platform/extractDominantColor(imageFileFullPath)` | `expect`/`actual` **suspend 함수**(Compose 로컬이 필요 없다). Android 는 `BitmapFactory` 2패스 다운샘플 + `Palette`, iOS 는 아직 null. `Dispatchers.IO` 가 JVM 전용이라 디스패처 선택도 actual 이 한다. 호출자는 null 이면 기본 그라데이션으로 떨어진다 | `PlayerDetailScreen` |
-| `platform/AppLogSharer` + `rememberAppLogSharer()` | `fun interface` + `expect`/`actual`. Android 는 `filesDir/app_logs` 의 `.log` 를 모아 FileProvider URI 로 `ACTION_SEND_MULTIPLE` chooser 를 띄운다. iOS 는 `UIActivityViewController` 가 필요해 아직 `Failed`. 결과는 `AppLogShareResult` enum 으로 돌려주고 **안내 문구는 호출자가 정한다** | `AppLogScreen` |
+| `platform/extractDominantColor(imageFileFullPath)` | `expect`/`actual` **suspend 함수**(Compose 로컬이 필요 없다). Android 는 `BitmapFactory` 2패스 다운샘플 + `Palette`, iOS 는 CoreGraphics 로 32x32 에 그린 뒤 색을 묶어 최빈 묶음의 평균색을 낸다. `Dispatchers.IO` 가 JVM 전용이라 디스패처 선택도 actual 이 한다. 호출자는 null 이면 기본 그라데이션으로 떨어진다 | `PlayerDetailScreen` |
+| `platform/AppLogSharer` + `rememberAppLogSharer()` | `fun interface` + `expect`/`actual`. Android 는 `filesDir/app_logs` 의 `.log` 를 모아 FileProvider URI 로 `ACTION_SEND_MULTIPLE` chooser 를 띄운다. iOS 는 `UIActivityViewController` 로 파일만 넘긴다(수신자를 지정하는 공개 수단이 없어 `NoShareTarget` 이 서지 않는다). 결과는 `AppLogShareResult` enum 으로 돌려주고 **안내 문구는 호출자가 정한다** | `AppLogScreen` |
 | `platform/SystemSettingsOpener` + `rememberSystemSettingsOpener()` | `fun interface` + `expect`/`actual`. 목적지를 `SystemSettingsTarget`(`Alarm`/`Sound`) enum 으로 받고 인텐트 폴백 체인은 actual 이 품는다(SHOW_ALARMS 미지원 기기 → SET_ALARM). iOS 는 시스템 설정의 특정 화면으로 보낼 수 없어 항상 false | `SettingDeviceSaveScreen` |
-| `platform/WebViewHandle` + `rememberWebViewHandle()` + `PlatformWebView(...)` | `@Stable interface` + `expect`/`actual`. **플랫폼 뷰 객체를 노출하지 않는다** — 노출하면 그 타입이 시그니처를 타고 호출자까지 전염된다(실제로 `MainScreen` 이 `WebView` 를 들고 있었다). 핸들이 생명주기(`stopLoading`/`removeView`/`destroy`)와 생성 실패 상태까지 소유한다. Android actual 이 `AndroidView` + `WebViewClient` 스킴 라우팅(`intent://` 의 `browser_fallback_url` 폴백 포함) + 쿠키·Referer 설정을 품는다. iOS 는 `WKWebView` + `UIKitView` 가 필요해 아직 안내 문구만 보여준다 | `MainScreen`, `YoutubeWebView` |
+| `platform/WebViewHandle` + `rememberWebViewHandle()` + `PlatformWebView(...)` | `@Stable interface` + `expect`/`actual`. **플랫폼 뷰 객체를 노출하지 않는다** — 노출하면 그 타입이 시그니처를 타고 호출자까지 전염된다(실제로 `MainScreen` 이 `WebView` 를 들고 있었다). 핸들이 생명주기(`stopLoading`/`removeView`/`destroy`)와 생성 실패 상태까지 소유한다. Android actual 이 `AndroidView` + `WebViewClient` 스킴 라우팅(`intent://` 의 `browser_fallback_url` 폴백 포함) + 쿠키·Referer 설정을 품는다. iOS 는 `WKWebView` + `UIKitView`(**`UIKitInteropInteractionMode.Cooperative`** — 기본값이면 웹뷰 위에 겹친 Compose 가 터치를 못 받는다) + `WKUserScript` 로 SPA 주소를 추적한다 | `MainScreen`, `YoutubeWebView` |
 
 `port/` 의 포트 9개(`MediaControllerManager`, `AudioPreviewPlayer`, `Execute*` 4종, `StepMeasurementController`, `FileShareServerController`)는 후자이며 `android:app` 의 `platform/di/PlatformModule.kt` 가 바인딩한다. 배치 규칙은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
 
@@ -87,15 +87,19 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 **비-Composable Android 헬퍼 안의 Toast 5곳은 그대로 뒀다** — `AppLogScreen.sendAppLogByEmail`, `SettingDeviceSaveScreen.startFirstAvailableActivity`. 그 함수 자체가 `androidMain` 잔류라 추상화할 이유가 없다.
 
 
-### 미결 사항 — iOS framework 구성
+### iOS framework 구성 — 해소됨
 
-iOS framework 는 현재 `shared/data/build.gradle.kts` 에만 있다(`baseName = "shared"`, `export(domain)`, `export(log)`). SKIE 도 거기만 달려 있다. presentation 을 iOS 에 노출하려면 umbrella 모듈 신설 등 선택이 필요한데, **Windows 에서 iOS 링크 태스크가 돌지 않아 무엇이 되는지 검증할 수 없다.** 추측으로 배선하지 않는다. macOS 를 확보한 뒤 결정한다.
+framework 는 **`ios/shared`** 하나가 선언한다(`baseName = "shared"`, SKIE 포함). `data` 와 `presentation` 을 동시에 의존하는 모듈이 필요했고, 그것이 그 모듈의 신설 이유 전부다. 자세한 규칙은 `ios/app/AGENTS.md` 가 단일 진원지다.
+
+**`presentation` 은 export 하지 않는다.** `api` 로 의존만 한다 — export 하면 화면과 ViewModel 전체가 Obj-C 헤더로 쏟아진다. 그래서 **Swift 가 이 모듈의 타입을 볼 수 없고**, Swift 가 구현해야 하는 인터페이스(브릿지)는 `ios/shared` 에 둔다.
 
 ---
 
 ## 포트 (`port/`)
 
-Android/iOS 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 구현체는 `android:app` 에 둔다. 배치 규칙과 현재 포트 목록은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
+Android 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 구현체는 `android:app` 에 둔다. 배치 규칙과 현재 포트 목록은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
+
+**iOS 구현은 이 모듈의 `iosMain/port/` 에 둔다.** Android 와 달리 `Context` 류가 필요 없고 Kotlin/Native 가 UIKit·AVFoundation·CoreMotion 인터롭을 기본 제공해 인터페이스와 같은 모듈에서 구현된다. 바인딩은 `di/PresentationIosModule.kt`. 예외는 `MediaControllerManager` 하나로, 구현이 Swift 엔진에 기대서 `ios/shared` 가 가진다.
 
 - **인자 전달로 해결되면 포트를 만들지 않는다.** 값 하나를 넘기면 되는 경우(예: `isDebugTabVisible`)는 Screen/NavGraph 파라미터로 받는다.
 - 순수 판정 로직은 포트가 아니다. `shared:domain` 에 둔다.

@@ -13,7 +13,7 @@
 Kotlin Multiplatform(KMP) 멀티플랫폼 앱. 하나의 공유 코어를 Android / iOS / Desktop이 공유한다.
 - **공유 코어 `shared/`**: `domain`(순수 비즈니스 로직 — 모델/Repository 인터페이스/UseCase), `data`(구현 — RepositoryImpl/Room/네트워크/Python 브릿지), `presentation`(Compose Multiplatform UI, MVI), `log`(로깅 API), `file-share`(파일공유 상수/DTO)
 - **Android `android/`**: `app`(진입점/DI/네비/딥링크 + OS 기능 — Service/Worker/Receiver/Notification/DeepLinkConstants + `shared:presentation` 포트 구현)
-- **iOS `ios/app/`**: 진입점 + SKIE로 KMP 브릿지. UI는 `shared:presentation`(CMP)을 쓸 예정이며 framework 구성은 미결(`shared/presentation/AGENTS.md` 참고)
+- **iOS `ios/`**: `shared`(Composition Root — framework/SKIE/Koin/Compose 진입점) + `app`(Xcode 앱 — Swift 브릿지/Info.plist). UI는 `shared:presentation`(CMP)을 그대로 쓴다
 - **Desktop `desktop/`**: Compose Desktop, 파일 전송 sender + mDNS
 
 ## 모듈 맵 — 건드리기 전 읽을 AGENTS.md
@@ -26,7 +26,7 @@ Kotlin Multiplatform(KMP) 멀티플랫폼 앱. 하나의 공유 코어를 Androi
 | `shared/data/` | `shared/data/AGENTS.md` |
 | `shared/log/` | `shared/log/AGENTS.md` |
 | `shared/file-share/` | `shared/file-share/AGENTS.md` |
-| `ios/app/` | `ios/app/AGENTS.md` |
+| `ios/app/`, `ios/shared/` | `ios/app/AGENTS.md` |
 | `desktop/` | `desktop/AGENTS.md` |
 
 여러 모듈에 걸친 작업(딥링크 추가, 새 화면, 새 데이터 흐름 등)은 **관련 AGENTS.md를 전부 읽고** 코드를 작성한다.
@@ -37,10 +37,13 @@ Kotlin Multiplatform(KMP) 멀티플랫폼 앱. 하나의 공유 코어를 Androi
 - **단순성/외과적 변경**: 요청한 것만, 최소 코드로. 무관한 코드 리팩터 금지.
 
 ## 자주 쓰는 스킬 / 에이전트 (`.claude/`)
-- 스킬: `new-mvi-screen`(Android 화면), `new-tca-feature`(iOS 기능), `add-deep-link`, `new-repository-usecase`, `room-entity-migration`
+- 스킬: `new-mvi-screen`(공통 화면), `add-deep-link`, `new-repository-usecase`, `room-entity-migration`
 - 에이전트: `error-handling-reviewer`, `security-reviewer`, `performance-reviewer`, `build-verifier`
 - 일반 리뷰는 내장 `/code-review`·`/review`·`/security-review` 사용.
 
 ## 빌드
-- Windows / PowerShell. Gradle은 `./gradlew.bat`(NOT `./gradlew`). 모듈 경로는 콜론: `:shared:data` 등.
-- iOS 빌드는 macOS + Xcode 필요(`ios/app/JellyTubeIos.xcodeproj`). Windows에서는 iOS 빌드 검증 불가.
+- 모듈 경로는 콜론: `:shared:data` 등.
+- **Windows / PowerShell**: Gradle은 `./gradlew.bat`(NOT `./gradlew`). iOS 빌드 검증 불가.
+- **macOS**: `./gradlew`. iOS 프레임워크는 `./gradlew :ios:shared:linkDebugFrameworkIosSimulatorArm64`, 앱은
+  `xcodebuild -project ios/app/JellyTubeIos.xcodeproj -scheme JellyTubeIos -destination 'platform=iOS Simulator,name=iPhone 17' build`.
+  **클론 직후에는 `scripts/setup-ios-vendor.sh` 를 한 번 돌려야 한다** — `ios/app/Vendor/`(Python.xcframework · yt-dlp · pykakasi)가 gitignore 대상이라 비어 있다.
