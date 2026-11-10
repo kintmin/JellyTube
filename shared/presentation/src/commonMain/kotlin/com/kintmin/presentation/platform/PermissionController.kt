@@ -5,7 +5,6 @@ import androidx.compose.runtime.Composable
 /** 앱이 요구하는 권한. OS 버전별로 어떤 원시 권한이 필요한지는 구현이 판단한다. */
 enum class AppPermission {
 
-    /** 알림 표시. */
     Notification,
 
     /** 기기 저장소의 음원 파일 읽기·쓰기. */

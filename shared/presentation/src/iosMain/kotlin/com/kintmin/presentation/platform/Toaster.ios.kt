@@ -40,8 +40,7 @@ internal data class ToastMessage(
 )
 
 /**
- * 띄울 메시지를 [PlatformToastHost] 로 흘린다. 동작은 `IosToastHostTest` 가 고정한다.
- *
+ * 띄울 메시지를 [PlatformToastHost] 로 흘린다.
  * 띄우는 쪽은 화면 어디에나 있고 그리는 쪽은 앱 루트 하나라 전역이다.
  */
 internal object ToastHost {

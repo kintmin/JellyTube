@@ -68,7 +68,6 @@ internal class FileManagerImpl : FileManager {
         /** iOS 에는 공개 WebP 인코더가 없어 Android(WebP 60)와 달리 JPEG 로 간다. */
         const val IMAGE_COMPRESSION_QUALITY = 0.6
 
-        /** 확장자를 모를 때. Android 와 같은 폴백이다. */
         const val DEFAULT_AUDIO_EXT = "mp3"
     }
 

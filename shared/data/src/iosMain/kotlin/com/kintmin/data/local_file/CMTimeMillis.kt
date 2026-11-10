@@ -9,7 +9,7 @@ import platform.CoreMedia.CMTime
  * `CMTime` 을 밀리초로. 길이를 못 읽으면 null 이다.
  *
  * `CMTimeGetSeconds` 를 쓰지 않는다 — 구조체를 값으로 넘기는 호출이라 Kotlin/Native 에서
- * 값이 어긋난다. `CMTimeMillisTest` 가 이 함수의 답을 고정한다.
+ * 값이 어긋난다.
  */
 @OptIn(ExperimentalForeignApi::class)
 internal fun CValue<CMTime>.toMillisOrNull(): Long? = useContents {

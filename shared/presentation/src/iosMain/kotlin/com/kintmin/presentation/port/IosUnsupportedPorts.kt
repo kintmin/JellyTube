@@ -32,7 +32,6 @@ internal class IosFileShareServerControllerStub : FileShareServerController {
     override fun stop() = Unit
 }
 
-/** 음원 편집 미제공. */
 internal class IosExecuteAudioEditSaveStub : ExecuteAudioEditSave {
 
     override fun overwrite(audioMediaId: Int, timeline: AudioEditTimeline): Result<Unit> =

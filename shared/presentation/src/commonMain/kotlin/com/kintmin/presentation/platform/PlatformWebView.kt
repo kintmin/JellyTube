@@ -19,10 +19,8 @@ interface WebViewHandle {
 
     fun goBack()
 
-    /** [clearHistoryAfterLoad] 가 true 면 로드 완료 후 뒤로가기 히스토리를 비운다. */
     fun loadUrl(url: String, clearHistoryAfterLoad: Boolean = false)
 
-    /** 생성 실패 상태를 풀고 다시 만들게 한다. */
     fun retryCreation()
 }
 

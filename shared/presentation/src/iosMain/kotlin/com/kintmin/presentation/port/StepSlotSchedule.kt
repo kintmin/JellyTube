@@ -7,7 +7,7 @@ internal data class StepWritePoint(
 )
 
 /**
- * iOS 가 `STEP` 에 걸음수를 적는 시점과 값. `StepSlotScheduleTest` 가 고정한다.
+ * iOS 가 `STEP` 에 걸음수를 적는 시점과 값.
  *
  * 화면은 이웃한 두 값의 차이만 쓰므로(`CalculateStepCountUseCase`) 하루 안에서 단조증가이면
  * 된다. 여기서는 `CMPedometer` 가 주는 그대로 그날 0시부터의 누적을 쓴다.
@@ -18,7 +18,6 @@ internal object StepSlotSchedule {
     const val SLOT_MILLIS = 30L * 60L * 1000L
     const val DAY_MILLIS = 24L * 60L * 60L * 1000L
 
-    /** 하루치를 한 번에 메울 때. */
     fun forDay(dayStartMillis: Long, nowMillis: Long): List<StepWritePoint> {
         if (dayStartMillis > nowMillis) return emptyList()
 
@@ -33,7 +32,6 @@ internal object StepSlotSchedule {
         return points
     }
 
-    /** [afterMillis] 이후로 지나간 30분 경계. 그날 안에서만. */
     fun boundaries(dayStartMillis: Long, afterMillis: Long, nowMillis: Long): List<Long> {
         val dayEndMillis = dayStartMillis + DAY_MILLIS
         val result = mutableListOf<Long>()

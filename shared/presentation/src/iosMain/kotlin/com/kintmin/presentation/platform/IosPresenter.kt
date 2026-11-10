@@ -6,10 +6,8 @@ import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 
 /**
- * UIKit 화면을 얹을 자리.
- *
- * **이미 떠 있는 화면 위에 얹어야 한다.** 루트에 present 하면 "이미 present 중" 이라고
- * 거부된다 — Compose 가 올라와 있는 동안 루트는 늘 무언가를 띄우고 있을 수 있다.
+ * UIKit 화면을 얹을 자리. 이미 떠 있는 화면 위에 얹어야 한다 — 루트에 present 하면
+ * "이미 present 중" 으로 거부된다.
  */
 internal fun topViewController(): UIViewController? {
     val keyWindow = UIApplication.sharedApplication.connectedScenes

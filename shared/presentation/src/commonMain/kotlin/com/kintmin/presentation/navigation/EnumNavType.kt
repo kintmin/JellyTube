@@ -6,7 +6,7 @@ import androidx.savedstate.read
 import androidx.savedstate.write
 
 /**
- * `enum` 라우트 인자용 [NavType]. 동작 규약은 `EnumNavTypeTest` 가 고정한다.
+ * `enum` 라우트 인자용 [NavType].
  *
  * Navigation 은 기본 타입이 아닌 인자의 [NavType] 을 리플렉션으로 추론하는데 Kotlin/Native
  * 에는 리플렉션이 없고, `NavType.EnumType` 은 `java.lang.Class` 를 쓰는 JVM 전용이다.

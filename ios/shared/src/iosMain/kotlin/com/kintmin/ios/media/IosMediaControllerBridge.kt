@@ -8,7 +8,7 @@ package com.kintmin.ios.media
  */
 interface IosMediaControllerBridge {
 
-    /** 오디오 세션과 엔진을 준비한다. 여러 번 불려도 안전해야 한다. */
+    /** 여러 번 불려도 안전해야 한다. */
     fun initialize()
 
     /** [items] 로 큐를 세우고 [startMediaId] 부터 재생한다. 같은 목록이면 재생을 끊지 않는다. */
@@ -33,7 +33,6 @@ interface IosMediaControllerBridge {
     fun setPlaybackSpeed(speed: Float)
     fun setPlaybackPitchSemitone(semitone: Int)
 
-    /** [atStart] 면 큐 맨 앞에, 아니면 맨 뒤에 넣는다. */
     fun addItem(item: IosMediaItem, atStart: Boolean)
 
     fun removeItem(mediaId: String)

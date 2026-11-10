@@ -2,7 +2,6 @@ package com.kintmin.presentation.platform
 
 import androidx.compose.runtime.Composable
 
-/** 열려는 시스템 설정 화면. */
 enum class SystemSettingsTarget {
 
     /** 알람 목록·알람 생성 화면. */

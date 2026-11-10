@@ -2,13 +2,8 @@ import Foundation
 import os
 import shared
 
-/// 로그 수집기로 나가는 유일한 자리.
-///
-/// 공유 코드(`IosAppLog`)는 자르기와 파일 기록만 하고, 실제 수집기 호출은 전부 여기다.
-/// 수집기를 바꾸더라도 고칠 파일은 이것 하나다.
-///
-/// 지금은 `os.Logger` 로만 내보낸다. 수집기 SDK 를 붙이면 아래 `// MARK: 수집기` 세 자리에
-/// 호출을 더한다.
+/// 로그 수집기로 나가는 유일한 자리. 공유 코드(`IosAppLog`)는 자르기와 파일 기록만 한다.
+/// 수집기 SDK 를 붙이면 아래 `// MARK: 수집기` 세 자리에 호출을 더한다.
 final class AppLogBridgeImpl: IosAppLogBridge {
 
     private let logger = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "AppLog")

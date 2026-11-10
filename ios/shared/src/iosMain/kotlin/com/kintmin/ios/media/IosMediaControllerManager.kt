@@ -7,14 +7,10 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * iOS 재생 포트.
+ * iOS 재생 포트. 재생·큐·셔플·반복은 [IosMediaControllerBridge] 를 거쳐 Swift 엔진이 하고
+ * A-B 구간반복과 현재 플레이리스트 추적만 여기서 한다(`MediaControllerManagerImpl` 과 같은 가름).
  *
- * 재생·큐·셔플·반복은 [IosMediaControllerBridge] 를 거쳐 Swift 엔진이 하고, **A-B 구간반복과
- * 현재 플레이리스트 추적만 여기서 한다.** Android 구현(`MediaControllerManagerImpl`)도
- * 그 둘만 앱 코드로 들고 나머지는 ExoPlayer 에 맡긴다 — 같은 가름이다.
- *
- * 속도·피치도 Android 와 같게 **이쪽이 기억**한다. 플레이어에게 물으면 플랫폼마다 반올림이
- * 달라 화면이 흔들린다.
+ * 속도·피치는 이쪽이 기억한다. 플레이어에게 물으면 플랫폼마다 반올림이 달라 화면이 흔들린다.
  */
 internal class IosMediaControllerManager(
     private val bridge: IosMediaControllerBridge,
@@ -71,7 +67,7 @@ internal class IosMediaControllerManager(
 
     override fun seek(duration: Duration) = bridge.seek(duration.inWholeMilliseconds)
 
-    /** 단계와 조건은 `IosMediaControllerManagerTest` 가 고정한다. Android 구현과 같아야 한다. */
+    /** 단계와 조건이 Android 구현과 같아야 한다. */
     override fun updateRepeatRange(): Result<Unit> = runCatching {
         val mediaId = bridge.playingItem()?.mediaId ?: return@runCatching
         clearRepeatRangeIfMediaChanged(mediaId)

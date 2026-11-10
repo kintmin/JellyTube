@@ -3,8 +3,7 @@ package com.kintmin.presentation.deeplink
 import com.kintmin.presentation.navigation.NavigationIntent
 
 /**
- * 앱 밖에서 들어온 주소를 화면 이동 명령으로 바꾼다. 판정은 `DeepLinkParserTest` 가 고정한다.
- *
+ * 앱 밖에서 들어온 주소를 화면 이동 명령으로 바꾼다.
  * 순수 함수다 — 재생 상태도 포트가 아니라 파라미터로 받는다. 우리 주소가 아니면 빈 목록이다.
  */
 object DeepLinkParser {

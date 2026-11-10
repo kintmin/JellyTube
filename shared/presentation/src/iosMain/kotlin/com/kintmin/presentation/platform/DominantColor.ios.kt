@@ -17,7 +17,7 @@ import platform.CoreGraphics.CGImageAlphaInfo
 import platform.CoreGraphics.CGRectMake
 import platform.UIKit.UIImage
 
-/** 대표 색을 못 뽑았을 때의 기본값. Android 와 같다. */
+/** Android 와 같은 값. 앱 기본 그라데이션 최상단 색이다. */
 private const val FALLBACK_DOMINANT_COLOR = 0xFF4B453B.toInt()
 
 /** 색만 필요하므로 원본 크기와 무관하게 이 크기로 줄여 그린다. */
@@ -31,7 +31,7 @@ private const val MIN_ALPHA = 128
 
 /**
  * Android 가 Palette 로 하는 일을 직접 한다 — 작게 줄여 그리고, 색을 거칠게 묶어 가장 많은
- * 묶음의 평균색을 돌려준다. `DominantColorTest` 가 결과를 고정한다.
+ * 묶음의 평균색을 돌려준다.
  */
 @OptIn(ExperimentalForeignApi::class)
 actual suspend fun extractDominantColor(imageFileFullPath: String): Int? =

@@ -1,10 +1,8 @@
 package com.kintmin.presentation.deeplink
 
 /**
- * 딥링크 주소에서 조각을 꺼낸다. 동작 규약은 `UrlPartsTest` 가 고정한다.
- *
- * 플랫폼 파서(`android.net.Uri` / `NSURL`)를 쓰지 않는 것은 같은 주소를 두 플랫폼이 다르게
- * 읽을 수 있어서다.
+ * 딥링크 주소에서 조각을 꺼낸다. 플랫폼 파서(`android.net.Uri` / `NSURL`)를 쓰지 않는 것은
+ * 같은 주소를 두 플랫폼이 다르게 읽을 수 있어서다.
  */
 internal object UrlParts {
 

@@ -5,16 +5,9 @@ import androidx.compose.runtime.Composable
 /** 로그 전송 시도 결과. 사용자에게 보여줄 문구는 호출자가 정한다. */
 enum class AppLogShareResult {
 
-    /** 공유 수단(메일 앱 등)이 떴다. */
     Started,
-
-    /** 보낼 로그 파일이 없다. */
     NoLogFiles,
-
-    /** 공유를 받을 앱이 없다. */
     NoShareTarget,
-
-    /** 그 외 실패. */
     Failed,
 }
 

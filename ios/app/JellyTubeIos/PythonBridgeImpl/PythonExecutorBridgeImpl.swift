@@ -95,10 +95,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
         }
     }
 
-    /// 다시 추출해 볼 가치가 있는 실패인가.
-    ///
-    /// 주소가 상했거나(403) 사라진(404·410) 경우만이다. 네트워크 단절·디스크 오류는
-    /// 다시 추출해도 같은 자리에서 넘어지므로 바로 올린다.
+    /// 네트워크 단절·디스크 오류는 다시 추출해도 같은 자리에서 넘어지므로 바로 올린다.
     private static func isWorthReextracting(_ error: Error) -> Bool {
         guard case .httpStatus(let code) = error as? YoutubeDownloadError else { return false }
         return code == 403 || code == 404 || code == 410

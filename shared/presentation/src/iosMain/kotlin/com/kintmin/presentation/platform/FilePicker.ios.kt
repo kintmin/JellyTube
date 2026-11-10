@@ -12,14 +12,10 @@ import platform.UIKit.UIDocumentPickerViewController
 import platform.darwin.NSObject
 
 /**
- * 오디오 다중 선택기.
+ * `asCopy = true` 로 연다 — 시스템이 고른 파일을 앱 임시 디렉터리로 먼저 복사해 주므로
+ * 보안 스코프 URL 을 직접 다루지 않아도 되고, iCloud Drive 에만 있는 파일도 내려받아 준다.
  *
- * `asCopy = true` 로 연다 — 시스템이 고른 파일을 앱 임시 디렉터리로 **먼저 복사해 주고**
- * 그 주소를 넘긴다. 보안 스코프 URL(`startAccessingSecurityScopedResource`)을 직접
- * 다루지 않아도 되고, iCloud Drive 에만 있는 파일도 내려받아 준다.
- *
- * [startAtAudioRoot] 는 무시한다. iOS 문서 선택기에는 "오디오 루트" 개념이 없다 —
- * 타입을 오디오로 좁히는 것이 할 수 있는 전부고, 그건 항상 한다.
+ * [startAtAudioRoot] 는 무시한다. iOS 문서 선택기에 "오디오 루트" 개념이 없다.
  */
 @Composable
 actual fun rememberAudioFilePicker(
@@ -72,11 +68,10 @@ private class AudioDocumentPickerDelegate(
         controller: UIDocumentPickerViewController,
         didPickDocumentsAtURLs: List<*>,
     ) {
-        // `asCopy` 라 넘어오는 것은 이미 앱 임시 디렉터리 안의 복사본이다.
         onPicked(didPickDocumentsAtURLs.filterIsInstance<NSURL>().mapNotNull { it.absoluteString })
     }
 
     override fun documentPickerWasCancelled(controller: UIDocumentPickerViewController) {
-        // 아무것도 하지 않는다. 호출부는 "고른 것이 없다"와 "취소"를 구분하지 않는다.
+        // 호출부는 "고른 것이 없다"와 "취소"를 구분하지 않는다.
     }
 }

@@ -34,10 +34,9 @@ import platform.WebKit.WKWebView
 import platform.WebKit.WKWebViewConfiguration
 import platform.darwin.NSObject
 
-/** 웹뷰가 그대로 열어야 하는 스킴. 나머지는 바깥 앱으로 넘긴다. */
+/** 나머지 스킴은 바깥 앱으로 넘긴다. */
 private val PASS_THROUGH_SCHEMES = setOf("http", "https", "about", "data", "blob", "javascript")
 
-/** SPA 의 주소 변경을 네이티브로 올리는 창구 이름. */
 private const val URL_CHANGE_HANDLER_NAME = "jellyTubeUrlChanged"
 
 /**
@@ -193,7 +192,6 @@ actual fun PlatformWebView(
         modifier = modifier,
         // interop 뷰는 그리는 순서와 무관하게 네이티브 계층에서 Compose 캔버스 위에 놓인다.
         // 기본값(NonCooperative)이면 웹뷰 위에 겹친 Compose 가 터치를 받지 못한다.
-        // Cooperative 는 Compose 에 먼저 기회를 주고, 아무도 집지 않으면 웹뷰로 넘긴다.
         properties = UIKitInteropProperties(
             interactionMode = UIKitInteropInteractionMode.Cooperative(),
         ),
@@ -282,6 +280,5 @@ private class UrlChangeMessageHandler(
     }
 }
 
-/** `location.replace('...')` 에 넣기 전에 따옴표와 역슬래시를 막는다. */
 private fun String.escapeForJsString(): String =
     replace("\\", "\\\\").replace("'", "\\'")

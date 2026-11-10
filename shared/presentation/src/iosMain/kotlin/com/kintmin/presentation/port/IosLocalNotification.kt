@@ -6,10 +6,8 @@ import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNUserNotificationCenter
 
 /**
- * 작업이 끝났을 때 띄우는 로컬 알림.
- *
- * Android 는 워커가 포그라운드 알림을 들고 돌지만 iOS 에는 그런 장치가 없다. 작업이 끝난
- * 시점에 한 번 알리는 것으로 갈음한다. 권한이 없으면 시스템이 조용히 버린다.
+ * 작업이 끝났을 때 한 번 띄우는 로컬 알림. Android 워커의 진행 알림에 해당하는 장치가
+ * iOS 에는 없다. 권한이 없으면 시스템이 조용히 버린다.
  */
 internal object IosLocalNotification {
 
