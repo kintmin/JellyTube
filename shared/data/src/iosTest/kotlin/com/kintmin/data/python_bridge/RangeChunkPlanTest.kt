@@ -78,6 +78,47 @@ class RangeChunkPlanTest {
         assertEquals(6, requestCount)
     }
 
+    /**
+     * 하나씩 이어서 등록하면 그때마다 OS 가 앱을 깨워야 하고, 서스펜드 상태에서 그 깨우기가
+     * 청크당 10초를 넘는다. 48.8MB 를 포그라운드 6.4초 · 백그라운드 73.8초로 실측했다.
+     */
+    @Test
+    fun `전체 목록은 빈틈도 겹침도 없이 파일을 덮는다`() {
+        listOf(1L, 378_743L, 10_485_760L, 10_485_761L, 51_176_868L, 58_263_890L).forEach { total ->
+            val chunks = RangeChunkPlan.chunks(total)
+
+            assertEquals(0L, chunks.first().start, "total=$total")
+            assertEquals(total - 1L, chunks.last().endInclusive, "total=$total")
+            chunks.zipWithNext { current, nextChunk ->
+                assertEquals(current.endInclusive + 1L, nextChunk.start, "total=$total")
+            }
+            chunks.forEach { chunk ->
+                val span = chunk.endInclusive - chunk.start + 1L
+                assertTrue(span in 1L..RangeChunkPlan.MAX_CHUNK_BYTES, "total=$total 범위 폭 $span")
+            }
+        }
+    }
+
+    @Test
+    fun `전체 목록의 개수는 상한으로 나눈 올림이다`() {
+        assertEquals(1, RangeChunkPlan.chunks(1L).size)
+        assertEquals(1, RangeChunkPlan.chunks(10_485_760L).size)
+        assertEquals(2, RangeChunkPlan.chunks(10_485_761L).size)
+        assertEquals(5, RangeChunkPlan.chunks(51_176_868L).size)
+        assertTrue(RangeChunkPlan.chunks(0L).isEmpty())
+        assertTrue(RangeChunkPlan.chunks(-1L).isEmpty())
+    }
+
+    @Test
+    fun `보낸 Range 헤더에서 어느 구간인지 되읽는다`() {
+        val chunk = RangeChunkPlan.chunks(51_176_868L)[3]
+        assertEquals(chunk.start, RangeChunkPlan.parseRequestedStart(chunk.headerValue))
+        assertEquals(0L, RangeChunkPlan.parseRequestedStart("bytes=0-10485759"))
+        assertNull(RangeChunkPlan.parseRequestedStart("bytes=-500"))
+        assertNull(RangeChunkPlan.parseRequestedStart("10485760-20971519"))
+        assertNull(RangeChunkPlan.parseRequestedStart(null))
+    }
+
     @Test
     fun `Content-Range 에서 전체 크기를 읽는다`() {
         assertEquals(58_263_890L, RangeChunkPlan.parseTotalBytes("bytes 0-10485759/58263890"))

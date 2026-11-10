@@ -42,9 +42,12 @@ private struct YoutubeTransfer: Codable {
     let source: YoutubeAudioSource
     let remoteUrl: String
     let headers: [String: String]
-    var receivedBytes: Int64
-    /// 첫 응답의 `Content-Range` 로 알게 되므로 그 전에는 비어 있다.
+    /// 추출이 알려 주거나, 못 받았으면 첫 응답의 `Content-Range` 로 알게 된다.
     var totalBytes: Int64?
+    /// 이미 받아 `.part` 에 써 둔 구간의 시작 오프셋.
+    var receivedStarts: [Int64]
+    /// 남은 구간까지 전부 등록을 마쳤는지.
+    var didEnqueueAll: Bool
 
     /// 완주한 뒤에야 목적지로 옮긴다. 중간에 끊겨도 반쪽 파일이 자리에 남지 않는다.
     var partPath: String { source.destinationPath + ".part" }
@@ -54,7 +57,8 @@ private struct YoutubeTransfer: Codable {
 /// 내려가도 이어지고, 사용자가 앱 스위처에서 강제 종료하면 OS 가 전부 취소한다.
 ///
 /// 한 요청이 [RangeChunkPlan.MAX_CHUNK_BYTES] 를 넘는 범위를 달라고 하면 CDN 이 속도를 조이므로
-/// 그 상한으로 끊어 순차로 받는다.
+/// 그 상한으로 끊고, **구간 전부를 앱이 떠 있는 동안 등록한다** — 하나씩 이어서 등록하면
+/// 그때마다 OS 가 앱을 깨워야 해서 서스펜드 상태에서 청크당 10초를 넘게 기다린다.
 final class YoutubeDownloader: NSObject {
 
     static let shared = YoutubeDownloader()
@@ -113,15 +117,17 @@ final class YoutubeDownloader: NSObject {
     func download(
         from remoteUrl: URL,
         headers: [String: String],
+        totalBytes: Int64?,
         source: YoutubeAudioSource,
         completion: @escaping (Error?) -> Void
     ) {
-        let transfer = YoutubeTransfer(
+        var transfer = YoutubeTransfer(
             source: source,
             remoteUrl: remoteUrl.absoluteString,
             headers: headers,
-            receivedBytes: 0,
-            totalBytes: nil
+            totalBytes: totalBytes,
+            receivedStarts: [],
+            didEnqueueAll: totalBytes != nil
         )
         // 새로 추출한 주소다. 전에 받아 둔 조각이 같은 바이트라는 보장이 없어 버린다.
         try? FileManager.default.removeItem(atPath: transfer.partPath)
@@ -132,7 +138,13 @@ final class YoutubeDownloader: NSObject {
         Self.put(transfer)
         lock.unlock()
 
-        request(RangeChunkPlan.shared.first(), for: transfer)
+        guard let totalBytes else {
+            // 크기를 모르면 첫 응답의 `Content-Range` 로 알아내고 그때 나머지를 등록한다.
+            request(RangeChunkPlan.shared.first(), for: transfer)
+            return
+        }
+
+        RangeChunkPlan.shared.chunks(totalBytes: totalBytes).forEach { request($0, for: transfer) }
     }
 
     private func request(_ chunk: RangeChunk, for transfer: YoutubeTransfer) {
@@ -214,31 +226,33 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
             return
         }
 
-        // 200 은 서버가 `Range` 를 무시하고 전체를 보낸 것이다. 앞 조각에 이어 붙이면 깨진다.
+        let reportedTotal = RangeChunkPlan.shared.parseTotalBytes(
+            contentRange: response?.value(forHTTPHeaderField: "Content-Range")
+        )?.int64Value
+
+        // 200 은 서버가 `Range` 를 무시하고 전체를 보낸 것이다. 조각으로 섞으면 깨진다.
         let isWholeBody = statusCode == 200
         if isWholeBody {
             try? FileManager.default.removeItem(atPath: transfer.partPath)
-            transfer.receivedBytes = 0
-        }
-
-        // 이 함수가 끝나면 OS 가 임시 파일을 지운다. 반드시 여기서 옮겨야 한다.
-        do {
-            try Self.append(contentsOf: location, to: transfer.partPath)
-        } catch {
-            downloadLog.error("append failed: \(error.localizedDescription, privacy: .public)")
-            fail(sourceUrl: sourceUrl, error: error)
-            return
-        }
-
-        transfer.receivedBytes += byteCount
-        if transfer.totalBytes == nil {
-            let parsed = RangeChunkPlan.shared.parseTotalBytes(
-                contentRange: response?.value(forHTTPHeaderField: "Content-Range")
-            )?.int64Value
+            transfer.receivedStarts = []
+            transfer.totalBytes = byteCount
+            transfer.didEnqueueAll = true
+        } else if let totalBytes = transfer.totalBytes {
+            // 추출이 알려 준 크기와 서버가 말하는 크기가 다르면 구간 계획 전체가 틀린 것이다.
+            guard reportedTotal == nil || reportedTotal == totalBytes else {
+                fail(
+                    sourceUrl: sourceUrl,
+                    error: YoutubeDownloadError.sizeMismatch(
+                        received: reportedTotal ?? 0,
+                        expected: totalBytes
+                    )
+                )
+                return
+            }
+        } else {
             // 첫 요청은 늘 상한만큼 달라고 하므로, 그보다 적게 왔다면 서버가 파일 끝에 닿은 것이다.
             let reachedEnd = byteCount < RangeChunkPlan.shared.MAX_CHUNK_BYTES
-            transfer.totalBytes = isWholeBody ? transfer.receivedBytes
-                : parsed ?? (reachedEnd ? transfer.receivedBytes : nil)
+            transfer.totalBytes = reportedTotal ?? (reachedEnd ? byteCount : nil)
         }
 
         guard let totalBytes = transfer.totalBytes else {
@@ -246,30 +260,59 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
             return
         }
 
-        // 다음 요청을 내기 전에 적어 둔다. 그 사이에 앱이 죽어도 이어받을 자리가 남는다.
+        let offset = isWholeBody
+            ? 0
+            : RangeChunkPlan.shared.parseRequestedStart(
+                rangeHeader: downloadTask.originalRequest?.value(forHTTPHeaderField: "Range")
+            )?.int64Value ?? 0
+
+        // 이 함수가 끝나면 OS 가 임시 파일을 지운다. 반드시 여기서 옮겨야 한다.
+        do {
+            try Self.write(
+                contentsOf: location,
+                to: transfer.partPath,
+                at: offset,
+                totalBytes: totalBytes
+            )
+        } catch {
+            downloadLog.error("write failed: \(error.localizedDescription, privacy: .public)")
+            fail(sourceUrl: sourceUrl, error: error)
+            return
+        }
+
+        if !transfer.receivedStarts.contains(offset) {
+            transfer.receivedStarts.append(offset)
+        }
+
+        let missing = RangeChunkPlan.shared.chunks(totalBytes: totalBytes)
+            .filter { !transfer.receivedStarts.contains($0.start) }
+
+        let shouldEnqueueRest = !transfer.didEnqueueAll
+        transfer.didEnqueueAll = true
+
         lock.lock()
         Self.put(transfer)
         lock.unlock()
 
-        guard let next = RangeChunkPlan.shared.next(
-            receivedBytes: transfer.receivedBytes,
-            totalBytes: totalBytes
-        ) else {
-            finalize(transfer, totalBytes: totalBytes)
+        if shouldEnqueueRest {
+            missing.forEach { request($0, for: transfer) }
             return
         }
-
-        request(next, for: transfer)
+        if missing.isEmpty {
+            finalize(transfer, totalBytes: totalBytes)
+        }
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         guard let error, let sourceUrl = task.taskDescription else { return }
+        // 취소는 우리가 낸 것이다 — 한 구간이 깨지면 같은 주소의 나머지를 접는다.
+        guard (error as? URLError)?.code != .cancelled else { return }
 
         fail(sourceUrl: sourceUrl, error: error)
     }
 
     func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        // 청크가 더 남아 있으면 아직 끝난 것이 아니다.
+        // 구간이 더 남아 있으면 아직 끝난 것이 아니다.
         lock.lock()
         let hasPending = !Self.load(YoutubeTransfer.self, key: Self.inFlightKey).isEmpty
         lock.unlock()
@@ -287,15 +330,14 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         lock.lock()
         let elapsed = startedAt[sourceUrl].map { Date().timeIntervalSince($0) } ?? 0
         lock.unlock()
-        downloadLog.info("finish bytes=\(transfer.receivedBytes) elapsed=\(elapsed)s")
 
-        guard transfer.receivedBytes == totalBytes else {
+        let partBytes = Self.fileSize(atPath: transfer.partPath)
+        downloadLog.info("finish bytes=\(partBytes) elapsed=\(elapsed)s")
+
+        guard partBytes == totalBytes else {
             fail(
                 sourceUrl: sourceUrl,
-                error: YoutubeDownloadError.sizeMismatch(
-                    received: transfer.receivedBytes,
-                    expected: totalBytes
-                )
+                error: YoutubeDownloadError.sizeMismatch(received: partBytes, expected: totalBytes)
             )
             return
         }
@@ -324,11 +366,20 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         let transfer = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)[sourceUrl]
         lock.unlock()
 
-        if let transfer {
-            try? FileManager.default.removeItem(atPath: transfer.partPath)
-        }
         downloadLog.error("failed: \(error.localizedDescription, privacy: .public)")
-        finish(sourceUrl: sourceUrl, error: error, source: nil)
+
+        // 같은 주소의 나머지 구간은 이미 등록돼 돌고 있다. 접지 않으면 그 응답이
+        // 재추출로 새로 시작한 전송의 기록에 끼어든다.
+        session.getAllTasks { tasks in
+            tasks
+                .filter { $0.taskDescription == sourceUrl }
+                .forEach { $0.cancel() }
+
+            if let transfer {
+                try? FileManager.default.removeItem(atPath: transfer.partPath)
+            }
+            self.finish(sourceUrl: sourceUrl, error: error, source: nil)
+        }
     }
 
     /// 기다리던 쪽이 있으면 바로 알리고, 없으면(앱이 새로 뜬 경우) 결과를 적어 둔다.
@@ -354,22 +405,26 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         return (attributes?[.size] as? NSNumber)?.int64Value ?? 0
     }
 
-    /// 첫 조각은 옮기고, 그다음부터는 뒤에 붙인다.
-    private static func append(contentsOf location: URL, to path: String) throws {
+    /// 구간을 제 오프셋에 쓴다. 미리 전체 길이를 잡아 두어 조각이 어떤 순서로 와도 된다.
+    private static func write(
+        contentsOf location: URL,
+        to path: String,
+        at offset: Int64,
+        totalBytes: Int64
+    ) throws {
         let manager = FileManager.default
         try manager.createDirectory(
             at: URL(fileURLWithPath: path).deletingLastPathComponent(),
             withIntermediateDirectories: true
         )
-
-        guard manager.fileExists(atPath: path) else {
-            try manager.moveItem(atPath: location.path, toPath: path)
-            return
+        if !manager.fileExists(atPath: path) {
+            manager.createFile(atPath: path, contents: nil)
         }
 
         let handle = try FileHandle(forWritingTo: URL(fileURLWithPath: path))
         defer { try? handle.close() }
-        try handle.seekToEnd()
+        try handle.truncate(atOffset: UInt64(totalBytes))
+        try handle.seek(toOffset: UInt64(offset))
         try handle.write(contentsOf: Data(contentsOf: location, options: .mappedIfSafe))
     }
 }

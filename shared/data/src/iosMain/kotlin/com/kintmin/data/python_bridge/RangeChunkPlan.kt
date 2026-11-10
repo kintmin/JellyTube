@@ -32,6 +32,30 @@ object RangeChunkPlan {
         )
     }
 
+    /**
+     * [totalBytes] 를 받으려면 요청해야 하는 범위 전부.
+     *
+     * 앱이 떠 있는 동안 이것들을 한꺼번에 등록해야 한다. 하나씩 이어서 등록하면 그때마다 OS 가
+     * 앱을 깨워야 하고, 서스펜드 상태에서 그 깨우기가 청크당 10초를 넘는다.
+     */
+    fun chunks(totalBytes: Long): List<RangeChunk> {
+        if (totalBytes <= 0L) return emptyList()
+
+        return buildList {
+            var start = 0L
+            while (start < totalBytes) {
+                val chunk = next(start, totalBytes) ?: break
+                add(chunk)
+                start = chunk.endInclusive + 1L
+            }
+        }
+    }
+
+    /** `bytes=10485760-20971519` 에서 시작 오프셋. 어느 구간의 응답인지 가리는 데 쓴다. */
+    fun parseRequestedStart(rangeHeader: String?): Long? =
+        rangeHeader?.substringAfter('=', "")?.substringBefore('-')?.trim()?.toLongOrNull()
+            ?.takeIf { it >= 0L }
+
     /** `bytes 0-10485759/58263890` 에서 전체 크기. 크기를 모르는 `*` 응답이면 null. */
     fun parseTotalBytes(contentRange: String?): Long? =
         contentRange?.substringAfterLast('/')?.trim()?.toLongOrNull()?.takeIf { it > 0L }

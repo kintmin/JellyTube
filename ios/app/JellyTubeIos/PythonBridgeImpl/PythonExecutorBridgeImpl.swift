@@ -83,6 +83,8 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                 YoutubeDownloader.shared.download(
                     from: remoteUrl,
                     headers: Self.parseHeaders(result[1]),
+                    // 크기를 미리 알면 구간 전부를 앱이 떠 있는 동안 등록할 수 있다.
+                    totalBytes: result[safe: 8].flatMap { Int64($0) },
                     source: source
                 ) { error in
                     guard let error else {
