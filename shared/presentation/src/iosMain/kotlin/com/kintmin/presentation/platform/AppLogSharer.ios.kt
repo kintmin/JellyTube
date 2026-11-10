@@ -11,7 +11,6 @@ import platform.Foundation.NSURL
 import platform.Foundation.NSUserDomainMask
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIPopoverPresentationController
-import platform.UIKit.UIModalPresentationPopover
 import platform.UIKit.UIViewController
 import platform.UIKit.popoverPresentationController
 
@@ -45,7 +44,9 @@ private fun shareAppLogs(): AppLogShareResult {
         applicationActivities = null,
     )
 
-    // iPad 는 popover 라 기준 위치가 없으면 present 하는 순간 터진다. 화면 가운데를 준다.
+    // iPad 는 UIKit 이 이 화면을 popover 로 준다. 기준 위치가 없으면 present 하는 순간 터진다.
+    // `modalPresentationStyle` 을 손대면 안 된다 — popover 가 아닌 기기에서 아래 블록이 건너뛰어지고
+    // 기준 위치 없는 popover 만 남는다.
     controller.popoverPresentationController?.let { popover ->
         popover.sourceView = presenter.view
         presenter.view.bounds.useContents {
@@ -57,7 +58,6 @@ private fun shareAppLogs(): AppLogShareResult {
             )
         }
     }
-    controller.modalPresentationStyle = UIModalPresentationPopover
 
     presenter.presentViewController(controller, animated = true, completion = null)
     return AppLogShareResult.Started

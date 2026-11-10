@@ -44,6 +44,19 @@ class DeepLinkParserTest {
     }
 
     @Test
+    fun `프래그먼트로 경로를 가장한 주소는 명령을 내지 않는다`() {
+        // 경로 없는 주소 뒤에 #/main/download?encodedUrl=... 을 붙여 웹뷰에 임의 주소를 넘기려는 꼴.
+        assertEquals(
+            emptyList<NavigationIntent>(),
+            DeepLinkParser.parse(
+                "https://www.jellytube.com#/main/download?encodedUrl=https%253A%252F%252Fevil.example",
+                playingPlaylistId = null,
+                playingMediaId = null,
+            ),
+        )
+    }
+
+    @Test
     fun `신뢰 호스트를 가장한 주소를 거른다`() {
         assertEquals(
             emptyList<NavigationIntent>(),

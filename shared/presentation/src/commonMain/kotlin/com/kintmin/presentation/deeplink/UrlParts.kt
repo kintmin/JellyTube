@@ -32,8 +32,9 @@ internal object UrlParts {
         val afterScheme = url.substringAfter("://", missingDelimiterValue = "")
         if (afterScheme.isEmpty()) return emptyList()
 
-        val authorityEnd = afterScheme.indexOfFirst { it == '/' || it == '\\' }
+        val authorityEnd = afterScheme.indexOfFirst { it.isAuthorityTerminator() }
         if (authorityEnd == -1) return emptyList()
+        if (afterScheme[authorityEnd] == '?' || afterScheme[authorityEnd] == '#') return emptyList()
 
         val path = afterScheme.substring(authorityEnd)
             .substringBefore('?')
@@ -45,7 +46,7 @@ internal object UrlParts {
     }
 
     fun queryParameter(url: String, name: String): String? {
-        val query = url.substringAfter('?', missingDelimiterValue = "").substringBefore('#')
+        val query = url.substringBefore('#').substringAfter('?', missingDelimiterValue = "")
         if (query.isEmpty()) return null
 
         for (pair in query.split('&')) {

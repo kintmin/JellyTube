@@ -33,7 +33,7 @@ struct YoutubeAudioSource: Codable {
 /// 유튜브 음원을 background `URLSession` 으로 내려받는다. 전송 주체가 OS 데몬이라 앱이
 /// 내려가도 이어지고, 사용자가 앱 스위처에서 강제 종료하면 OS 가 전부 취소한다.
 ///
-/// 완료가 앱의 다음 생애에 올 수 있어 진행 중인 전송을 디스크에 적어 둔다([takeCompleted]).
+/// 완료가 앱의 다음 생애에 올 수 있어 진행 중인 전송을 디스크에 적어 둔다.
 final class YoutubeDownloader: NSObject {
 
     static let shared = YoutubeDownloader()
@@ -65,16 +65,13 @@ final class YoutubeDownloader: NSObject {
         _ = session
     }
 
-    /// 지난 생애에 끝난 전송이 있으면 꺼내 간다. 꺼낸 기록은 지운다.
-    func takeCompleted() -> [YoutubeAudioSource] {
+    /// 지난 생애에 끝난 전송의 원본 주소. **기록은 지우지 않는다** —
+    /// 이 주소로 다시 요청이 와야 [consumeCompleted] 가 그 결과를 돌려주고 그때 지운다.
+    func finishedSourceUrls() -> [String] {
         lock.lock()
         defer { lock.unlock() }
 
-        let completed = Self.load(key: Self.completedKey)
-        if !completed.isEmpty {
-            UserDefaults.standard.removeObject(forKey: Self.completedKey)
-        }
-        return Array(completed.values)
+        return Array(Self.load(key: Self.completedKey).keys)
     }
 
     /// 같은 주소의 결과가 이미 디스크에 있으면 돌려준다. 전송을 다시 하지 않기 위해서다.
@@ -84,9 +81,10 @@ final class YoutubeDownloader: NSObject {
 
         var completed = Self.load(key: Self.completedKey)
         guard let source = completed.removeValue(forKey: sourceUrl) else { return nil }
-        guard FileManager.default.fileExists(atPath: source.destinationPath) else { return nil }
-
         Self.save(completed, key: Self.completedKey)
+
+        // 파일이 사라졌으면 기록만 지우고 다시 받게 한다.
+        guard FileManager.default.fileExists(atPath: source.destinationPath) else { return nil }
         return source
     }
 
@@ -104,11 +102,14 @@ final class YoutubeDownloader: NSObject {
         }
 
         let task = session.downloadTask(with: request)
+        // `taskIdentifier` 는 세션 인스턴스 안에서만 유일하다. 앱이 다시 뜨면 1 부터 다시 매겨져
+        // 지난 생애의 기록과 엉킨다. 기록은 주소로 찾고, 태스크에는 그 주소를 붙여 둔다.
+        task.taskDescription = source.sourceUrl
 
         lock.lock()
         waiters[task.taskIdentifier] = completion
         var inFlight = Self.load(key: Self.inFlightKey)
-        inFlight[String(task.taskIdentifier)] = source
+        inFlight[source.sourceUrl] = source
         Self.save(inFlight, key: Self.inFlightKey)
         lock.unlock()
 
@@ -140,7 +141,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
     ) {
         lock.lock()
         var inFlight = Self.load(key: Self.inFlightKey)
-        let source = inFlight.removeValue(forKey: String(downloadTask.taskIdentifier))
+        let source = downloadTask.taskDescription.flatMap { inFlight.removeValue(forKey: $0) }
         Self.save(inFlight, key: Self.inFlightKey)
         let waiter = waiters[downloadTask.taskIdentifier]
         lock.unlock()
@@ -201,7 +202,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
 
         lock.lock()
         var inFlight = Self.load(key: Self.inFlightKey)
-        inFlight.removeValue(forKey: String(task.taskIdentifier))
+        if let sourceUrl = task.taskDescription { inFlight.removeValue(forKey: sourceUrl) }
         Self.save(inFlight, key: Self.inFlightKey)
         let waiter = waiters.removeValue(forKey: task.taskIdentifier)
         lock.unlock()

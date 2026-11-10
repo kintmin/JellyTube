@@ -78,6 +78,18 @@ class UrlPartsTest {
     }
 
     @Test
+    fun `pathSegments 는 프래그먼트 안의 경로를 경로로 읽지 않는다`() {
+        // 경로가 없는 주소의 프래그먼트에 슬래시가 있으면 authority 스캔이 그 너머까지 간다.
+        assertEquals(emptyList<String>(), UrlParts.pathSegments("https://www.jellytube.com#/main/download"))
+        assertEquals(emptyList<String>(), UrlParts.pathSegments("https://www.jellytube.com?next=/main/download"))
+    }
+
+    @Test
+    fun `queryParameter 는 프래그먼트 안의 쿼리를 읽지 않는다`() {
+        assertNull(UrlParts.queryParameter("https://www.jellytube.com#/main?encodedUrl=https%3A%2F%2Fevil.example", "encodedUrl"))
+    }
+
+    @Test
     fun `pathSegments 는 쿼리와 프래그먼트를 제외한다`() {
         assertEquals(
             listOf("main", "download"),

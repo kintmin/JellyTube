@@ -138,7 +138,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     }
 
     func takeFinishedDownloadUrls() -> [String] {
-        YoutubeDownloader.shared.takeCompleted().map(\.sourceUrl)
+        YoutubeDownloader.shared.finishedSourceUrls()
     }
 
     private static let fileName = "download_youtube_audio"

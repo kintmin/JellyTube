@@ -16,7 +16,7 @@ interface IosPythonExecutorBridge {
     suspend fun transliterateToKorean(text: String): String
 
     /**
-     * 앱이 내려가 있는 사이에 끝난 전송의 원본 주소. **꺼내 가면 기록이 지워진다.**
+     * 앱이 내려가 있는 사이에 끝난 전송의 원본 주소.
      *
      * 전송은 OS 데몬이 하므로 앱이 없는 동안에도 끝난다. 그때는 등록해 줄 코루틴이 없어
      * 파일만 자리에 놓여 있는데, 앱이 다시 뜰 때 이 목록으로 같은 주소를 한 번 더 태우면

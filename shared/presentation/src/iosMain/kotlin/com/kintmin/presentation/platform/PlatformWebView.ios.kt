@@ -82,7 +82,11 @@ private class IosWebViewHandle : WebViewHandle {
     /** 렌더러가 죽은 뒤 돌아갈 자리. `reload()` 는 그때 열려 있던 주소를 보장하지 않는다. */
     private var resumeUrl: String? = null
 
-    override val canGoBack: Boolean get() = webView?.canGoBack == true
+    /** 히스토리를 비운 셈 치고 있는 주소. 여기 있는 동안은 뒤로 갈 곳이 없다. */
+    private var clearedRootUrl: String? by mutableStateOf(null)
+
+    override val canGoBack: Boolean
+        get() = clearedRootUrl == null && webView?.canGoBack == true
 
     override val currentUrl: String? get() = webView?.URL?.absoluteString
 
@@ -93,13 +97,15 @@ private class IosWebViewHandle : WebViewHandle {
     override fun loadUrl(url: String, clearHistoryAfterLoad: Boolean) {
         val target = webView ?: return
 
-        // `WKWebView.backForwardList` 는 읽기 전용이라 히스토리를 비울 수 없다.
-        // 대신 히스토리에 쌓지 않는 location.replace 로 덮어쓴다.
+        // `WKWebView.backForwardList` 는 읽기 전용이라 히스토리를 비울 수 없다. 히스토리에
+        // 쌓지 않는 location.replace 로 덮어쓰고, 되돌아갈 곳이 없다는 것은 [clearedRootUrl] 로 센다.
         if (clearHistoryAfterLoad && target.URL != null) {
+            clearedRootUrl = url
             target.evaluateJavaScript("location.replace('${url.escapeForJsString()}')", null)
             return
         }
 
+        clearedRootUrl = null
         val nsUrl = NSURL.URLWithString(url) ?: return
         target.loadRequest(NSURLRequest.requestWithURL(nsUrl))
     }
@@ -114,6 +120,10 @@ private class IosWebViewHandle : WebViewHandle {
 
     fun attach(webView: WKWebView) {
         this.webView = webView
+    }
+
+    fun noteUrlChanged(url: String) {
+        if (url != clearedRootUrl) clearedRootUrl = null
     }
 
     fun markRendererGone(lastUrl: String?) {
@@ -154,13 +164,18 @@ actual fun PlatformWebView(
     val currentOnUrlChanged by rememberUpdatedState(onUrlChanged)
     val currentOnExternalSchemeFailed by rememberUpdatedState(onExternalSchemeFailed)
 
+    val onUrlChangedInternal: (String) -> Unit = { changedUrl ->
+        iosHandle.noteUrlChanged(changedUrl)
+        currentOnUrlChanged(changedUrl)
+    }
+
     val urlChangeHandler = remember {
-        UrlChangeMessageHandler { changedUrl -> currentOnUrlChanged(changedUrl) }
+        UrlChangeMessageHandler { changedUrl -> onUrlChangedInternal(changedUrl) }
     }
 
     val navigationDelegate = remember {
         WebViewNavigationDelegate(
-            onUrlChanged = { changedUrl -> currentOnUrlChanged(changedUrl) },
+            onUrlChanged = { changedUrl -> onUrlChangedInternal(changedUrl) },
             onExternalSchemeFailed = { message -> currentOnExternalSchemeFailed(message) },
             onRendererGone = { lastUrl -> iosHandle.markRendererGone(lastUrl) },
         )

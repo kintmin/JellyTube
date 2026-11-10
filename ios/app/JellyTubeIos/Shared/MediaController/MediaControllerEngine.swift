@@ -2,6 +2,10 @@ import AVFoundation
 import Foundation
 import os
 
+private enum MediaControllerEngineError: Error {
+    case emptyFile
+}
+
 private let mcLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "MediaController")
 
 @MainActor
@@ -179,9 +183,10 @@ final class MediaControllerEngine {
         originalQueue = atStart ? [item] + originalQueue : originalQueue + [item]
 
         if atStart {
+            // 듣고 있던 곡이 한 칸 뒤로 밀린다. 큐가 비어 있었으면 밀릴 곡이 없다.
+            let hadItems = !queue.isEmpty
             queue.insert(item, at: 0)
-            // 듣고 있던 곡이 한 칸 뒤로 밀린다.
-            if !queue.isEmpty { currentIndex += 1 }
+            if hadItems { currentIndex += 1 }
         } else {
             queue.append(item)
         }
@@ -265,6 +270,8 @@ final class MediaControllerEngine {
         let file: AVAudioFile
         do {
             file = try AVAudioFile(forReading: item.fileURL)
+            // 0프레임이면 재생할 것이 없다. 그냥 두면 advanceOnCompletion 과 서로를 불러 재귀가 끝나지 않는다.
+            guard file.length > 0 else { throw MediaControllerEngineError.emptyFile }
         } catch {
             mcLog.error("failed to open file: \(error.localizedDescription, privacy: .public)")
             currentFile = nil
