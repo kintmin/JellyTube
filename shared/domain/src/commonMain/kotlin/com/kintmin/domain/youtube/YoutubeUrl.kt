@@ -1,11 +1,8 @@
 package com.kintmin.domain.youtube
 
 /**
- * 다운로드 대상이 되는 유튜브 영상 URL 인지 판정한다.
- *
- * android.net.Uri 없이 순수 문자열로 파싱한다. 플랫폼 URI 파서는 관용적이라
- * 호스트/경로 판정 결과가 플랫폼마다 달라질 수 있는데, 이 판정은 비즈니스
- * 규칙이므로 어디서나 같은 답이 나와야 한다.
+ * 다운로드 대상이 되는 유튜브 영상 URL 인지 판정한다. 플랫폼 URI 파서를 쓰지 않는 것은
+ * 관용적이라 같은 주소를 플랫폼마다 다르게 읽을 수 있어서다.
  */
 object YoutubeUrl {
 
@@ -24,7 +21,7 @@ object YoutubeUrl {
         return host in DOWNLOADABLE_HOSTS && firstPathSegment in DOWNLOADABLE_FIRST_PATH_SEGMENTS
     }
 
-    /** scheme 과 authority 를 걷어내고 호스트만 돌려준다. 포트·userinfo 는 제거한다. */
+    /** 포트·userinfo 는 떼어낸다. */
     private fun hostOf(url: String): String? {
         val afterScheme = url.substringAfter("://", missingDelimiterValue = "")
         if (afterScheme.isEmpty()) return null
@@ -36,7 +33,6 @@ object YoutubeUrl {
         return host.ifEmpty { null }
     }
 
-    /** 경로의 첫 세그먼트를 돌려준다. 경로가 없으면 null. */
     private fun firstPathSegmentOf(url: String): String? {
         val afterScheme = url.substringAfter("://", missingDelimiterValue = "")
         if (afterScheme.isEmpty()) return null

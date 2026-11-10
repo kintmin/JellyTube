@@ -7,9 +7,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/** 대표 색을 못 뽑았을 때 Palette 에 넘기는 기본값. 앱의 기본 그라데이션 최상단 색이다. */
-private const val FALLBACK_DOMINANT_COLOR = 0xFF4B453B.toInt()
-
 /** 색만 필요하므로 원본을 그대로 올리지 않고 240x240 가량으로 다운샘플한다. */
 private fun calculateInSampleSize(
     width: Int,

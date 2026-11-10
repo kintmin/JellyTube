@@ -17,9 +17,6 @@ import platform.CoreGraphics.CGImageAlphaInfo
 import platform.CoreGraphics.CGRectMake
 import platform.UIKit.UIImage
 
-/** Android 와 같은 값. 앱 기본 그라데이션 최상단 색이다. */
-private const val FALLBACK_DOMINANT_COLOR = 0xFF4B453B.toInt()
-
 /** 색만 필요하므로 원본 크기와 무관하게 이 크기로 줄여 그린다. */
 private const val SAMPLE_SIZE = 32
 

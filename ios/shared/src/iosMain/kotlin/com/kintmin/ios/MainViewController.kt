@@ -50,7 +50,6 @@ private fun restoreStepMeasurementIfEnabled() {
     }
 }
 
-/** Swift 가 `MainViewControllerKt.mainViewController()` 로 부른다. */
 fun mainViewController(): UIViewController = ComposeUIViewController {
     JellyTubeApp(
         navigationIntentFlow = appViewModel.navigationIntentFlow,

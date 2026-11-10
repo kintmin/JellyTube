@@ -1,14 +1,14 @@
 package com.kintmin.ios.media
 
 import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.RepeatRange
 import com.kintmin.presentation.port.RepeatRangeState
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * iOS 재생 포트. 재생·큐·셔플·반복은 [IosMediaControllerBridge] 를 거쳐 Swift 엔진이 하고
- * A-B 구간반복과 현재 플레이리스트 추적만 여기서 한다(`MediaControllerManagerImpl` 과 같은 가름).
+ * iOS 재생 포트. 재생·큐·셔플·반복은 [IosMediaControllerBridge] 를 거쳐 Swift 엔진이 한다.
  *
  * 속도·피치는 이쪽이 기억한다. 플레이어에게 물으면 플랫폼마다 반올림이 달라 화면이 흔들린다.
  */
@@ -20,9 +20,7 @@ internal class IosMediaControllerManager(
     private var playbackSpeedState = 1.0f
     private var playbackPitchSemitoneState = 0
 
-    private var repeatRangeMediaId: String? = null
-    private var repeatRangeStart: Duration? = null
-    private var repeatRangeEnd: Duration? = null
+    private val repeatRange = RepeatRange()
 
     override fun initialize() = bridge.initialize()
 
@@ -56,54 +54,22 @@ internal class IosMediaControllerManager(
         get() = playbackPitchSemitoneState
 
     override val repeatRangeState: RepeatRangeState
-        get() {
-            clearRepeatRangeIfMediaChanged()
-            return RepeatRangeState(
-                mediaId = repeatRangeMediaId,
-                startDuration = repeatRangeStart,
-                endDuration = repeatRangeEnd,
-            )
-        }
+        get() = repeatRange.stateFor(bridge.playingItem()?.mediaId)
 
     override fun seek(duration: Duration) = bridge.seek(duration.inWholeMilliseconds)
 
-    /** 단계와 조건이 Android 구현과 같아야 한다. */
-    override fun updateRepeatRange(): Result<Unit> = runCatching {
-        val mediaId = bridge.playingItem()?.mediaId ?: return@runCatching
-        clearRepeatRangeIfMediaChanged(mediaId)
-
-        val currentDuration = bridge.currentPositionMillis().milliseconds
-        when {
-            repeatRangeStart == null -> {
-                repeatRangeMediaId = mediaId
-                repeatRangeStart = currentDuration
-            }
-
-            repeatRangeEnd == null -> {
-                val start = repeatRangeStart ?: return@runCatching
-                check(currentDuration > start)
-                repeatRangeEnd = currentDuration
-            }
-
-            else -> clearRepeatRange()
-        }
+    override fun updateRepeatRange(): Result<Unit> {
+        val mediaId = bridge.playingItem()?.mediaId ?: return Result.success(Unit)
+        return repeatRange.update(mediaId, bridge.currentPositionMillis().milliseconds)
     }
 
-    override fun clearRepeatRange() {
-        repeatRangeMediaId = null
-        repeatRangeStart = null
-        repeatRangeEnd = null
-    }
+    override fun clearRepeatRange() = repeatRange.clear()
 
     override fun repeatRangeIfNeeded() {
         val mediaId = bridge.playingItem()?.mediaId ?: return
-        clearRepeatRangeIfMediaChanged(mediaId)
-
-        val start = repeatRangeStart ?: return
-        val end = repeatRangeEnd ?: return
-        if (bridge.currentPositionMillis().milliseconds >= end) {
-            bridge.seek(start.inWholeMilliseconds)
-        }
+        val target = repeatRange.rewindTarget(mediaId, bridge.currentPositionMillis().milliseconds)
+            ?: return
+        bridge.seek(target.inWholeMilliseconds)
     }
 
     override fun playFromPlaylist(
@@ -146,10 +112,7 @@ internal class IosMediaControllerManager(
     ): Result<Unit> = runCatching {
         bridge.replaceItem(mediaId.toString(), mediaItem.toIosMediaItem())
 
-        // 길이가 바뀌면 옛 길이 기준으로 잡아둔 구간반복은 더 이상 유효하지 않다.
-        if (repeatRangeMediaId == mediaId.toString()) {
-            clearRepeatRange()
-        }
+        repeatRange.clearIfHeldBy(mediaId.toString())
     }
 
     override fun setShuffleMode(isShuffle: Boolean) = bridge.setShuffleMode(isShuffle)
@@ -164,12 +127,6 @@ internal class IosMediaControllerManager(
     override fun setPlaybackPitchSemitone(semitone: Int) {
         playbackPitchSemitoneState = semitone
         bridge.setPlaybackPitchSemitone(semitone)
-    }
-
-    private fun clearRepeatRangeIfMediaChanged(mediaId: String? = bridge.playingItem()?.mediaId) {
-        if (repeatRangeMediaId != null && repeatRangeMediaId != mediaId) {
-            clearRepeatRange()
-        }
     }
 }
 

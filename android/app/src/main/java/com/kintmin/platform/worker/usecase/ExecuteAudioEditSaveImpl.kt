@@ -13,11 +13,9 @@ class ExecuteAudioEditSaveImpl(
     private val appContext: Context,
 ) : ExecuteAudioEditSave {
 
-    /** 편집본을 만들어 이 음원에 적용한다. */
     override fun overwrite(audioMediaId: Int, timeline: AudioEditTimeline): Result<Unit> =
         enqueue(audioMediaId = audioMediaId, timeline = timeline, newMediaName = null)
 
-    /** 편집본을 원본과 별개인 새 음원으로 저장한다. */
     override fun saveAsNewMedia(audioMediaId: Int, timeline: AudioEditTimeline, name: String): Result<Unit> =
         enqueue(audioMediaId = audioMediaId, timeline = timeline, newMediaName = name)
 

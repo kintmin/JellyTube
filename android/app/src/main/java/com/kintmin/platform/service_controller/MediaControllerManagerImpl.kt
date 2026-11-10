@@ -13,6 +13,7 @@ import com.kintmin.platform.service_controller.mapper.toMediaItem
 import com.kintmin.platform.service.PlaybackService
 import com.kintmin.platform.service_controller.mapper.toMediaControlData
 import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.RepeatRange
 import com.kintmin.presentation.port.RepeatRangeState
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlin.math.pow
@@ -29,9 +30,7 @@ class MediaControllerManagerImpl(
     private var currentPlaylistIdState: Int? = null
     private var playbackSpeedState = 1.0f
     private var playbackPitchSemitoneState = 0
-    private var repeatRangeMediaId: String? = null
-    private var repeatRangeStart: Duration? = null
-    private var repeatRangeEnd: Duration? = null
+    private val repeatRange = RepeatRange()
 
     private fun getMediaController(): MediaController? {
         if (mediaController == null) initialize()
@@ -101,57 +100,26 @@ class MediaControllerManagerImpl(
     override val playbackPitchSemitone: Int
         get() = playbackPitchSemitoneState
     override val repeatRangeState: RepeatRangeState
-        get() {
-            clearRepeatRangeIfMediaChanged()
-            return RepeatRangeState(
-                mediaId = repeatRangeMediaId,
-                startDuration = repeatRangeStart,
-                endDuration = repeatRangeEnd,
-            )
-        }
+        get() = repeatRange.stateFor(playingMediaItem?.mediaId)
 
     override fun seek(duration: Duration) {
         getMediaController()?.seekTo(duration.inWholeMilliseconds)
     }
 
-    override fun updateRepeatRange(): Result<Unit> = runCatching {
-        val mediaController = getMediaController() ?: return@runCatching
-        val mediaId = mediaController.currentMediaItem?.mediaId ?: return@runCatching
-        clearRepeatRangeIfMediaChanged(mediaId)
-
-        val currentDuration = mediaController.currentPosition.milliseconds
-        when {
-            repeatRangeStart == null -> {
-                repeatRangeMediaId = mediaId
-                repeatRangeStart = currentDuration
-            }
-
-            repeatRangeEnd == null -> {
-                val start = repeatRangeStart ?: return@runCatching
-                check(currentDuration > start)
-                repeatRangeEnd = currentDuration
-            }
-
-            else -> clearRepeatRange()
-        }
+    override fun updateRepeatRange(): Result<Unit> {
+        val mediaController = getMediaController() ?: return Result.success(Unit)
+        val mediaId = mediaController.currentMediaItem?.mediaId ?: return Result.success(Unit)
+        return repeatRange.update(mediaId, mediaController.currentPosition.milliseconds)
     }
 
-    override fun clearRepeatRange() {
-        repeatRangeMediaId = null
-        repeatRangeStart = null
-        repeatRangeEnd = null
-    }
+    override fun clearRepeatRange() = repeatRange.clear()
 
     override fun repeatRangeIfNeeded() {
         val mediaController = getMediaController() ?: return
         val mediaId = mediaController.currentMediaItem?.mediaId ?: return
-        clearRepeatRangeIfMediaChanged(mediaId)
-
-        val start = repeatRangeStart ?: return
-        val end = repeatRangeEnd ?: return
-        if (mediaController.currentPosition.milliseconds >= end) {
-            mediaController.seekTo(start.inWholeMilliseconds)
-        }
+        val target = repeatRange.rewindTarget(mediaId, mediaController.currentPosition.milliseconds)
+            ?: return
+        mediaController.seekTo(target.inWholeMilliseconds)
     }
 
     override fun playFromPlaylist(
@@ -206,10 +174,7 @@ class MediaControllerManagerImpl(
         val targetIndex = findMediaItem(mediaId).getOrNull() ?: return@runCatching
         mediaController.replaceMediaItem(targetIndex, mediaItem.toMediaItem())
 
-        // 길이가 바뀌면 옛 길이 기준으로 잡아둔 구간반복은 더 이상 유효하지 않다.
-        if (repeatRangeMediaId == mediaId.toString()) {
-            clearRepeatRange()
-        }
+        repeatRange.clearIfHeldBy(mediaId.toString())
     }
 
     override fun setShuffleMode(isShuffle: Boolean) {
@@ -244,11 +209,6 @@ class MediaControllerManagerImpl(
         return 2.0.pow(this / 12.0).toFloat()
     }
 
-    private fun clearRepeatRangeIfMediaChanged(mediaId: String? = playingMediaItem?.mediaId) {
-        if (repeatRangeMediaId != null && repeatRangeMediaId != mediaId) {
-            clearRepeatRange()
-        }
-    }
 
     private fun playbackPlaylist(startMediaId: Int?) = runCatching {
         val mediaController = getMediaController() ?: return@runCatching

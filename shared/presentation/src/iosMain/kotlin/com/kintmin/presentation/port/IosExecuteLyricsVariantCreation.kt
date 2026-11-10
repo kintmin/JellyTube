@@ -30,7 +30,7 @@ internal class IosExecuteLyricsVariantCreation(
             createLyricsVariantUseCase(lyricFileFullPath, variant, sourceLanguage)
                 .onSuccess {
                     IosLocalNotification.show(
-                        title = "${variant.label()} 완료",
+                        title = "${variant.label} 완료",
                         body = "탭하여 결과를 확인하세요.",
                     )
                 }
@@ -39,16 +39,10 @@ internal class IosExecuteLyricsVariantCreation(
                         DebugLog("IosExecuteLyricsVariantCreation", throwable.message.toString()),
                     )
                     IosLocalNotification.show(
-                        title = "${variant.label()} 실패",
+                        title = "${variant.label} 실패",
                         body = "번역에 실패했습니다. 로그를 확인해주세요.",
                     )
                 }
         }
     }
-}
-
-/** 알림 문구는 Android 의 `LyricsVariantResultNotification` 과 같은 말을 쓴다. */
-private fun LyricsVariant.label(): String = when (this) {
-    LyricsVariant.TRANSLATION -> "가사 번역"
-    LyricsVariant.TRANSLITERATION -> "가사 음차 번역"
 }

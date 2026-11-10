@@ -1,5 +1,8 @@
 package com.kintmin.presentation.platform
 
+/** 대표 색을 못 뽑았을 때의 값. 앱 기본 그라데이션 최상단 색이다. */
+const val FALLBACK_DOMINANT_COLOR: Int = 0xFF4B453B.toInt()
+
 /**
  * 이미지 파일의 대표 색을 ARGB 정수로 돌려준다. 읽을 수 없으면 null.
  *

@@ -13,10 +13,8 @@ import kotlinx.coroutines.launch
 import kotlin.time.DurationUnit
 
 /**
- * 유튜브 음원 다운로드를 건다. 여기서 도는 코루틴은 **추출과 등록**만 맡는다 — 전송은
+ * 유튜브 음원 다운로드를 건다. 여기서 도는 코루틴은 추출과 등록만 맡는다 — 전송은
  * background `URLSession`(`YoutubeDownloader`)이 하므로 앱이 내려가도 이어진다.
- *
- * 순서는 Android 워커와 같다: 음원 등록 → 알림 → 재생목록 반영, 가사는 병렬로.
  */
 internal class IosExecuteYoutubeDownload(
     private val downloadAudioMediaUseCase: DownloadAudioMediaUseCase,

@@ -56,7 +56,6 @@ class AppViewModel(
         }
     }
 
-    /** 외부 앱이 공유한 오디오를 가져온다. 플랫폼은 식별자 문자열만 넘긴다. */
     fun importSharedAudio(fileIdentifiers: List<String>) {
         if (fileIdentifiers.isEmpty()) return
 

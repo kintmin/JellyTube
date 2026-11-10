@@ -11,7 +11,7 @@ interface IosMediaControllerBridge {
     /** 여러 번 불려도 안전해야 한다. */
     fun initialize()
 
-    /** [items] 로 큐를 세우고 [startMediaId] 부터 재생한다. 같은 목록이면 재생을 끊지 않는다. */
+    /** 같은 목록이면 현재 재생을 끊지 않는다. */
     fun play(playlistId: Int, startMediaId: Int?, items: List<IosMediaItem>)
 
     fun pause()

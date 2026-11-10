@@ -114,8 +114,7 @@ internal object UrlParts {
         return encoded.toString()
     }
 
-    /** WHATWG URL 과 같게 역슬래시도 authority 의 끝으로 본다. 맞추지 않으면 앱이 보는 호스트와 실제로 열리는 호스트가 갈린다. */
-    private fun Char.isAuthorityTerminator(): Boolean = this == '/' || this == '\\' || this == '?' || this == '#'
+        private fun Char.isAuthorityTerminator(): Boolean = this == '/' || this == '\\' || this == '?' || this == '#'
 
     private fun Char.isAsciiLetter(): Boolean = this in 'a'..'z' || this in 'A'..'Z'
 

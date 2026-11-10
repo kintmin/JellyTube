@@ -62,9 +62,6 @@ internal class FileManagerImpl : FileManager {
         const val LYRIC_DIR_NAME = "lyrics"
         const val LOG_DIR_NAME = "app_logs"
 
-        /** Android 와 같은 보존 기간. 날짜 파일 14개를 넘으면 오래된 것부터 지운다. */
-        const val MAX_LOG_FILE_COUNT = 14
-
         /** iOS 에는 공개 WebP 인코더가 없어 Android(WebP 60)와 달리 JPEG 로 간다. */
         const val IMAGE_COMPRESSION_QUALITY = 0.6
 
@@ -147,7 +144,7 @@ internal class FileManagerImpl : FileManager {
             CopiedAudioInfo(
                 fileNameWithExt = fileNameWithExt,
                 sha256Hex = data.sha256Hex(),
-                // 저장용 이름(UUID)이 아니라 원본 파일명으로 떨어뜨린다(Android 와 같은 선).
+                // 저장용 이름(UUID)이 아니라 원본 파일명으로 떨어뜨린다.
                 title = metadata.title?.takeIf { it.isNotBlank() }
                     ?: sourcePath.substringAfterLast('/').substringBeforeLast('.'),
                 artist = metadata.artist,
@@ -212,7 +209,6 @@ internal class FileManagerImpl : FileManager {
                 error = null,
             ) ?: return@withContext emptyList()
 
-            // 최신 줄이 위로 와야 한다(Android 와 같은 순서).
             text.lines().filter { it.isNotEmpty() }.asReversed()
         }
     }

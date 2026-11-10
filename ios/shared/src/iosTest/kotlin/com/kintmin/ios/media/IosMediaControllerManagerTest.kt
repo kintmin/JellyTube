@@ -2,57 +2,15 @@ package com.kintmin.ios.media
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
-import kotlin.time.Duration.Companion.milliseconds
 
+/** 구간반복의 판정은 공통 `RepeatRange` 가 하고(`RepeatRangeTest`), 여기는 배선만 본다. */
 class IosMediaControllerManagerTest {
 
     private val bridge = FakeMediaControllerBridge()
     private val manager = IosMediaControllerManager(bridge)
 
     @Test
-    fun `구간반복은 시작점 끝점 해제로 돈다`() {
-        // Android 구현(MediaControllerManagerImpl)과 단계가 같아야 한다.
-        bridge.positionMillis = 1_000
-        manager.updateRepeatRange()
-        assertEquals(1_000.milliseconds, manager.repeatRangeState.startDuration)
-        assertNull(manager.repeatRangeState.endDuration)
-
-        bridge.positionMillis = 3_000
-        manager.updateRepeatRange()
-        assertEquals(3_000.milliseconds, manager.repeatRangeState.endDuration)
-
-        manager.updateRepeatRange()
-        assertNull(manager.repeatRangeState.startDuration)
-        assertNull(manager.repeatRangeState.endDuration)
-    }
-
-    @Test
-    fun `끝점이 시작점보다 앞이면 실패로 돌려준다`() {
-        bridge.positionMillis = 3_000
-        manager.updateRepeatRange()
-
-        bridge.positionMillis = 1_000
-        assertTrue(manager.updateRepeatRange().isFailure)
-        assertNull(manager.repeatRangeState.endDuration)
-    }
-
-    @Test
-    fun `곡이 바뀌면 구간이 풀린다`() {
-        bridge.positionMillis = 1_000
-        manager.updateRepeatRange()
-        bridge.positionMillis = 3_000
-        manager.updateRepeatRange()
-
-        bridge.playing = item("2")
-
-        assertNull(manager.repeatRangeState.startDuration)
-        assertEquals(null, manager.repeatRangeState.mediaId)
-    }
-
-    @Test
-    fun `끝점을 넘으면 시작점으로 되돌린다`() {
+    fun `끝점을 넘으면 브릿지에 시작점으로 탐색을 건다`() {
         bridge.positionMillis = 1_000
         manager.updateRepeatRange()
         bridge.positionMillis = 3_000
@@ -65,7 +23,7 @@ class IosMediaControllerManagerTest {
     }
 
     @Test
-    fun `구간이 덜 잡혔으면 되돌리지 않는다`() {
+    fun `구간이 덜 잡혔으면 탐색하지 않는다`() {
         bridge.positionMillis = 1_000
         manager.updateRepeatRange()
 
@@ -75,19 +33,27 @@ class IosMediaControllerManagerTest {
         assertEquals(emptyList(), bridge.seekCalls)
     }
 
-    private fun item(mediaId: String) = IosMediaItem(
-        mediaId = mediaId,
-        fileFullPath = "/tmp/$mediaId.m4a",
-        title = "title",
-        description = "",
-        artist = "artist",
-        durationMillis = 10_000,
-        artworkFileFullPath = null,
-    )
+    @Test
+    fun `재생 중인 곡이 없으면 아무 일도 하지 않는다`() {
+        bridge.playing = null
 
-    private inner class FakeMediaControllerBridge : IosMediaControllerBridge {
+        manager.repeatRangeIfNeeded()
+
+        assertEquals(emptyList(), bridge.seekCalls)
+        assertEquals(null, manager.repeatRangeState.mediaId)
+    }
+
+    private class FakeMediaControllerBridge : IosMediaControllerBridge {
         var positionMillis = 0L
-        var playing: IosMediaItem? = item("1")
+        var playing: IosMediaItem? = IosMediaItem(
+            mediaId = "1",
+            fileFullPath = "/tmp/1.m4a",
+            title = "title",
+            description = "",
+            artist = "artist",
+            durationMillis = 10_000,
+            artworkFileFullPath = null,
+        )
         val seekCalls = mutableListOf<Long>()
 
         override fun playingItem() = playing

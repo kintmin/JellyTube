@@ -3,6 +3,7 @@ package com.kintmin.platform.push_notification.notifications
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import com.kintmin.domain.lyrics.model.LyricsVariant
+import com.kintmin.presentation.port.label
 import com.kintmin.platform.intent.appLogPendingIntent
 import com.kintmin.platform.intent.lyricsViewerPendingIntent
 import com.kintmin.platform.push_notification.PushNotificationIdGenerator
@@ -38,15 +39,11 @@ data class LyricsVariantResultNotification(
             .build()
 
     private fun title(): String {
-        val label = when (variant) {
-            LyricsVariant.TRANSLATION -> "가사 번역"
-            LyricsVariant.TRANSLITERATION -> "가사 음차 번역"
-        }
         val suffix = when (resultType) {
             ResultType.Success -> "완료"
             ResultType.Failure -> "실패"
         }
-        return "$label $suffix"
+        return "${variant.label} $suffix"
     }
 
     enum class ResultType {
