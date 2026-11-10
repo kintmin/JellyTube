@@ -4,7 +4,9 @@ object AppConfiguration {
     const val APPLICATION_ID = "com.kintmin.jellytube"
     const val RELEASE_APP_NAME = "JellyTube"
     const val DEBUG_APP_NAME = "JellyTube(개발)"
-    const val COMPILE_SDK = 36
+    // CMP 1.12.2 가 끌어오는 androidx compose 1.12.1 이 compileSdk 37 이상을 요구한다.
+    // compileSdk 는 컴파일 전용이라 런타임 동작(targetSdk)과 무관하다.
+    const val COMPILE_SDK = 37
     const val TARGET_SDK = 36
     const val MIN_SDK = 26
     const val VERSION_CODE = 19

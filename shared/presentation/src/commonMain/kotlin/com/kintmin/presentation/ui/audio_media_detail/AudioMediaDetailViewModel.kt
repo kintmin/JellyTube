@@ -1,0 +1,116 @@
+package com.kintmin.presentation.ui.audio_media_detail
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
+import com.kintmin.domain.audio_edit.usecase.ObserveAudioEditSavingUseCase
+import com.kintmin.domain.audio_edit.usecase.RevertAudioEditUseCase
+import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
+import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
+import com.kintmin.domain.karaoke.usecase.DeleteAudioMediaKaraokeNumberUseCase
+import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.model.MediaControlData
+import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+class AudioMediaDetailViewModel constructor(
+    savedStateHandle: SavedStateHandle,
+    fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
+    observeAudioEditSavingUseCase: ObserveAudioEditSavingUseCase,
+    private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
+    private val deleteAudioMediaKaraokeNumberUseCase: DeleteAudioMediaKaraokeNumberUseCase,
+    private val revertAudioEditUseCase: RevertAudioEditUseCase,
+    private val mediaControllerManager: MediaControllerManager,
+) : ViewModel() {
+
+    private val audioMediaId = savedStateHandle.toRoute<AudioMediaDetailScreenRoute>().audioMediaId
+
+    private val _eventFlow = MutableSharedFlow<AudioMediaDetailEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
+
+    val data: StateFlow<AudioMediaDetailUiState> = combine(
+        fetchAudioMediaDetailFlowUseCase(audioMediaId),
+        observeAudioEditSavingUseCase(audioMediaId),
+    ) { detail, isAudioEditSaving ->
+        detail.toAudioMediaDetailUiState().copy(isAudioEditSaving = isAudioEditSaving)
+    }
+        .stateIn(
+            viewModelScope, SharingStarted.WhileSubscribed(5000), AudioMediaDetailUiState(
+                audioMediaId = audioMediaId,
+                imageFileFullPath = null,
+                audioMediaName = "",
+                artist = "",
+                playTime = "",
+                audioDurationSeconds = null,
+                audioMediaCreationTime = "",
+                source = "",
+                webViewUrl = null,
+                audioMediaDescription = "",
+                hasLyrics = false,
+                tjKaraokeNumber = null,
+                hasEditedAudio = false,
+                playlists = listOf(),
+            )
+        )
+
+    fun sendIntent(intent: AudioMediaDetailIntent) {
+        when (intent) {
+            AudioMediaDetailIntent.OnClickDeleteAudioMedia -> deleteAudioMedia()
+            AudioMediaDetailIntent.OnClickUnlinkKaraokeNumber -> unlinkKaraokeNumber()
+            AudioMediaDetailIntent.OnClickRevertAudioEdit -> revertAudioEdit()
+        }
+    }
+
+    private fun deleteAudioMedia() {
+        viewModelScope.launch {
+            deleteAudioMediaUseCase(audioMediaId, data.value.source)
+            triggerEvent(AudioMediaDetailEvent.OnNavigateToBack)
+        }
+    }
+
+    private fun unlinkKaraokeNumber() {
+        viewModelScope.launch {
+            deleteAudioMediaKaraokeNumberUseCase(audioMediaId)
+        }
+    }
+
+    private fun revertAudioEdit() {
+        if (data.value.isAudioEditSaving) return
+
+        viewModelScope.launch {
+            revertAudioEditUseCase(audioMediaId).onSuccess { audioMedia ->
+                // 재생 큐는 같은 플레이리스트를 다시 재생할 때 갱신되지 않아 직접 교체해야 한다
+                mediaControllerManager.tryReplaceMediaItem(
+                    mediaId = audioMedia.id,
+                    mediaItem = audioMedia.toMediaControlData(),
+                )
+            }.onFailure { throwable ->
+                _eventFlow.emit(AudioMediaDetailEvent.ShowToast(throwable.message ?: "원본으로 되돌리지 못했습니다."))
+            }
+        }
+    }
+
+    private fun triggerEvent(newEvent: AudioMediaDetailEvent) {
+        viewModelScope.launch {
+            _eventFlow.emit(newEvent)
+        }
+    }
+}
+
+private fun AudioMedia.toMediaControlData() = MediaControlData(
+    mediaId = id.toString(),
+    mediaFileUri = playbackFileFullPath,
+    mediaTitle = name,
+    mediaDescription = description,
+    mediaArtist = artist,
+    mediaDurationMs = playbackDuration?.inWholeMilliseconds ?: 0L,
+    mediaArtworkFileUri = imageFileFullPath,
+)

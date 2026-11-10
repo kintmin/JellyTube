@@ -30,7 +30,6 @@ internal class FileManagerImpl(
 
         const val LOG_DIR_NAME = "app_logs"
         const val LYRIC_DIR_NAME = "lyrics"
-        const val MAX_LOG_FILE_COUNT = 14
 
         const val EXPORT_DIR_NAME = "JellyTube"
 

@@ -3,6 +3,7 @@ import Foundation
 struct MediaControllerItem: Identifiable, Equatable, Sendable {
     let id: Int
     let title: String
+    let description: String
     let artist: String
     let fileURL: URL
     let artworkURL: URL?

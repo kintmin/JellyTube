@@ -1,0 +1,78 @@
+package com.kintmin.presentation.platform
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
+import platform.CoreGraphics.CGRectMake
+import platform.Foundation.NSDocumentDirectory
+import platform.Foundation.NSFileManager
+import platform.Foundation.NSURL
+import platform.Foundation.NSUserDomainMask
+import platform.UIKit.UIActivityViewController
+import platform.UIKit.UIPopoverPresentationController
+import platform.UIKit.UIViewController
+import platform.UIKit.popoverPresentationController
+
+/** `shared:data` 의 `FileManagerImpl` 이 쓰는 이름과 같아야 한다. 다르면 빈 목록이 된다. */
+private const val LOG_DIR_NAME = "app_logs"
+private const val LOG_FILE_EXTENSION = "log"
+
+/**
+ * 로그 파일을 공유 시트로 넘긴다. Android 와 달리 수신자를 지정할 공개 수단이 없어
+ * 어디로 보낼지는 사용자가 고르고, 시트가 항상 떠서 `NoShareTarget` 이 서지 않는다.
+ */
+@OptIn(ExperimentalForeignApi::class)
+private fun shareAppLogs(): AppLogShareResult {
+    val logDirectory = documentDirectory()?.appendPathComponent(LOG_DIR_NAME)
+        ?: return AppLogShareResult.Failed
+
+    val fileUrls = (
+        NSFileManager.defaultManager.contentsOfDirectoryAtPath(logDirectory, error = null)
+            ?.filterIsInstance<String>()
+            ?: emptyList()
+        )
+        .filter { name -> name.endsWith(".$LOG_FILE_EXTENSION") }
+        .sortedDescending()
+        .map { name -> NSURL.fileURLWithPath(logDirectory.appendPathComponent(name)) }
+
+    if (fileUrls.isEmpty()) return AppLogShareResult.NoLogFiles
+
+    val presenter = topViewController() ?: return AppLogShareResult.Failed
+    val controller = UIActivityViewController(
+        activityItems = fileUrls,
+        applicationActivities = null,
+    )
+
+    // iPad 는 UIKit 이 이 화면을 popover 로 준다. 기준 위치가 없으면 present 하는 순간 터진다.
+    // `modalPresentationStyle` 을 손대면 안 된다 — popover 가 아닌 기기에서 아래 블록이 건너뛰어지고
+    // 기준 위치 없는 popover 만 남는다.
+    controller.popoverPresentationController?.let { popover ->
+        popover.sourceView = presenter.view
+        presenter.view.bounds.useContents {
+            popover.sourceRect = CGRectMake(
+                x = size.width / 2.0,
+                y = size.height / 2.0,
+                width = 0.0,
+                height = 0.0,
+            )
+        }
+    }
+
+    presenter.presentViewController(controller, animated = true, completion = null)
+    return AppLogShareResult.Started
+}
+
+@Composable
+actual fun rememberAppLogSharer(): AppLogSharer = remember { AppLogSharer { shareAppLogs() } }
+
+@OptIn(ExperimentalForeignApi::class)
+private fun documentDirectory(): String? = NSFileManager.defaultManager.URLForDirectory(
+    directory = NSDocumentDirectory,
+    inDomain = NSUserDomainMask,
+    appropriateForURL = null,
+    create = false,
+    error = null,
+)?.path
+
+private fun String.appendPathComponent(component: String): String = trimEnd('/') + "/" + component

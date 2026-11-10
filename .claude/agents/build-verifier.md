@@ -9,7 +9,7 @@ You are the Build & Test Verifier for the **JellyTube** KMP project. You are a s
 
 ## Environment
 - Dev machine here is **Windows / PowerShell**. Use `./gradlew.bat`, NOT `./gradlew`.
-- Gradle module paths use colons: `:android:app`, `:android:presentation`, `:android:platform`, `:shared:domain`, `:shared:data`, `:shared:log`, `:shared:file-share`, `:desktop`.
+- Gradle module paths use colons: `:android:app`, `:shared:presentation`, `:shared:domain`, `:shared:data`, `:shared:log`, `:shared:file-share`, `:desktop`.
 - iOS builds require **macOS + Xcode** (`xcodebuild`). They CANNOT run on this Windows machine — neither `xcodebuild` nor Kotlin/Native iOS framework linking works without the Apple toolchain. On Windows, mark iOS as ⚠️ unverifiable locally and defer to CI/mac.
 - iOS project: `ios/app/JellyTubeIos.xcodeproj` (confirm scheme with `xcodebuild -list -project ios/app/JellyTubeIos.xcodeproj`; likely `JellyTubeIos`).
 
@@ -19,8 +19,8 @@ You are the Build & Test Verifier for the **JellyTube** KMP project. You are a s
 3. Run the narrowest meaningful task first, widen only if needed.
 
 ### Gradle (Android / shared / desktop)
-- Compile one module: `./gradlew.bat :shared:domain:compileAndroidMain` (KMP) / `:android:presentation:compileDebugKotlin` / `:desktop:compileKotlin`.
-- Unit tests: `./gradlew.bat :shared:data:testAndroidHostTest` (KMP) or `:android:presentation:testDebugUnitTest`. Domain tests live in `androidHostTest`.
+- Compile one module: `./gradlew.bat :shared:domain:compileAndroidMain` (KMP) / `:shared:presentation:compileAndroidMain` (KMP+CMP) / `:desktop:compileKotlin`.
+- Unit tests: `./gradlew.bat :shared:data:testAndroidHostTest` / `:shared:presentation:testAndroidHostTest` / `:android:app:testDebugUnitTest`. KMP module tests live in `androidHostTest`.
 - Assemble app only when app-level wiring changed: `./gradlew.bat :android:app:assembleDebug`.
 - Prefer `--offline` if deps already resolved; drop it on resolution errors.
 - Do NOT run a full clean build unless narrower tasks pass and the task explicitly needs it.

@@ -2,6 +2,10 @@ import AVFoundation
 import Foundation
 import os
 
+private enum MediaControllerEngineError: Error {
+    case emptyFile
+}
+
 private let mcLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "MediaController")
 
 @MainActor
@@ -12,6 +16,10 @@ final class MediaControllerEngine {
     private let nowPlaying = NowPlayingCoordinator()
 
     private var queue: [MediaControllerItem] = []
+    /// `play(...)` 가 받은 원래 순서. 셔플을 끌 때 되돌릴 기준이다.
+    private var originalQueue: [MediaControllerItem] = []
+    private var isShuffleEnabled = false
+    private var isRepeatAllEnabled = false
     private var currentPlaylistId: Int?
     private var currentIndex: Int = 0
     private var currentFile: AVAudioFile?
@@ -52,7 +60,8 @@ final class MediaControllerEngine {
         let targetIndex = startMediaId
             .flatMap { id in items.firstIndex(where: { $0.id == id }) }
             ?? 0
-        let sameList = currentPlaylistId == playlistId && queue.map(\.id) == items.map(\.id)
+        // 셔플 중에는 queue 가 섞여 있으므로 원래 순서와 비교해야 한다.
+        let sameList = currentPlaylistId == playlistId && originalQueue.map(\.id) == items.map(\.id)
 
         mcLog.info("play playlistId=\(playlistId) startMediaId=\(startMediaId ?? -1) items=\(items.count) targetIndex=\(targetIndex) sameList=\(sameList)")
 
@@ -64,10 +73,13 @@ final class MediaControllerEngine {
 
         if !sameList {
             currentPlaylistId = playlistId
-            queue = items
+            originalQueue = items
+            queue = isShuffleEnabled ? items.shuffled() : items
         }
 
-        scheduleItem(at: targetIndex, startingSeconds: 0)
+        let startId = (targetIndex < items.count) ? items[targetIndex].id : nil
+        let scheduleIndex = startId.flatMap { id in queue.firstIndex(where: { $0.id == id }) } ?? 0
+        scheduleItem(at: scheduleIndex, startingSeconds: 0)
         playerNode.play()
         isPlayingIntent = true
         broadcast()
@@ -94,8 +106,9 @@ final class MediaControllerEngine {
     }
 
     func next() {
-        guard currentIndex + 1 < queue.count else { return }
-        scheduleItem(at: currentIndex + 1, startingSeconds: 0)
+        let hasNext = currentIndex + 1 < queue.count
+        guard hasNext || (isRepeatAllEnabled && !queue.isEmpty) else { return }
+        scheduleItem(at: hasNext ? currentIndex + 1 : 0, startingSeconds: 0)
         if isPlayingIntent {
             playerNode.play()
         }
@@ -143,6 +156,96 @@ final class MediaControllerEngine {
         broadcast()
     }
 
+    /// 지금 듣고 있는 곡은 자리를 지킨 채 나머지만 섞는다. 끄면 원래 순서로 되돌린다.
+    func setShuffle(_ isShuffle: Bool) {
+        guard isShuffleEnabled != isShuffle else { return }
+        isShuffleEnabled = isShuffle
+
+        let playingId = currentItem?.id
+        if isShuffle {
+            var shuffled = originalQueue.shuffled()
+            if let playingId, let index = shuffled.firstIndex(where: { $0.id == playingId }) {
+                shuffled.swapAt(0, index)
+            }
+            queue = shuffled
+        } else {
+            queue = originalQueue
+        }
+        currentIndex = playingId.flatMap { id in queue.firstIndex(where: { $0.id == id }) } ?? 0
+        broadcast()
+    }
+
+    func setRepeatAll(_ isRepeat: Bool) {
+        isRepeatAllEnabled = isRepeat
+    }
+
+    func addItem(_ item: MediaControllerItem, atStart: Bool) {
+        originalQueue = atStart ? [item] + originalQueue : originalQueue + [item]
+
+        if atStart {
+            // 듣고 있던 곡이 한 칸 뒤로 밀린다. 큐가 비어 있었으면 밀릴 곡이 없다.
+            let hadItems = !queue.isEmpty
+            queue.insert(item, at: 0)
+            if hadItems { currentIndex += 1 }
+        } else {
+            queue.append(item)
+        }
+        broadcast()
+    }
+
+    func removeItem(mediaId: Int) {
+        originalQueue.removeAll { $0.id == mediaId }
+        guard let index = queue.firstIndex(where: { $0.id == mediaId }) else { return }
+
+        let wasCurrent = index == currentIndex
+        queue.remove(at: index)
+
+        if queue.isEmpty {
+            playerNode.stop()
+            currentFile = nil
+            currentIndex = 0
+            isPlayingIntent = false
+        } else if wasCurrent {
+            // 빠진 자리를 이어받은 곡으로 넘어간다. 마지막 곡이었으면 한 칸 앞으로.
+            let nextIndex = min(index, queue.count - 1)
+            scheduleItem(at: nextIndex, startingSeconds: 0)
+            if isPlayingIntent { playerNode.play() }
+        } else if index < currentIndex {
+            currentIndex -= 1
+        }
+        broadcast()
+    }
+
+    /// 같은 자리에 다른 파일이 들어온다(음원 편집 결과 등). 듣고 있던 곡이면 처음부터 다시 건다.
+    func replaceItem(mediaId: Int, with item: MediaControllerItem) {
+        if let index = originalQueue.firstIndex(where: { $0.id == mediaId }) {
+            originalQueue[index] = item
+        }
+        guard let index = queue.firstIndex(where: { $0.id == mediaId }) else { return }
+        queue[index] = item
+
+        if index == currentIndex {
+            scheduleItem(at: index, startingSeconds: 0)
+            if isPlayingIntent { playerNode.play() }
+        }
+        broadcast()
+    }
+
+    var currentItem: MediaControllerItem? {
+        (0..<queue.count).contains(currentIndex) ? queue[currentIndex] : nil
+    }
+
+    var isPlayingNow: Bool { playerNode.isPlaying && isPlayingIntent }
+
+    var positionMillis: Int64 { Int64(currentTimeInItem * 1000) }
+
+    var durationMillis: Int64 {
+        if let file = currentFile, file.processingFormat.sampleRate > 0 {
+            return Int64(Double(file.length) / file.processingFormat.sampleRate * 1000)
+        }
+        return Int64((currentItem?.durationSeconds ?? 0) * 1000)
+    }
+
     func snapshotStream() -> AsyncStream<MediaControllerSnapshot> {
         AsyncStream { continuation in
             let id = UUID()
@@ -167,6 +270,8 @@ final class MediaControllerEngine {
         let file: AVAudioFile
         do {
             file = try AVAudioFile(forReading: item.fileURL)
+            // 0프레임이면 재생할 것이 없다. 그냥 두면 advanceOnCompletion 과 서로를 불러 재귀가 끝나지 않는다.
+            guard file.length > 0 else { throw MediaControllerEngineError.emptyFile }
         } catch {
             mcLog.error("failed to open file: \(error.localizedDescription, privacy: .public)")
             currentFile = nil
@@ -200,13 +305,15 @@ final class MediaControllerEngine {
 
     private func advanceOnCompletion() {
         guard isPlayingIntent else { return }
-        guard currentIndex + 1 < queue.count else {
+
+        let hasNext = currentIndex + 1 < queue.count
+        guard hasNext || (isRepeatAllEnabled && !queue.isEmpty) else {
             isPlayingIntent = false
             playerNode.stop()
             broadcast()
             return
         }
-        scheduleItem(at: currentIndex + 1, startingSeconds: 0)
+        scheduleItem(at: hasNext ? currentIndex + 1 : 0, startingSeconds: 0)
         playerNode.play()
         broadcast()
     }
@@ -342,8 +449,8 @@ final class MediaControllerEngine {
     }
 
     private func currentSnapshot() -> MediaControllerSnapshot {
-        let item: MediaControllerItem? = (0..<queue.count).contains(currentIndex) ? queue[currentIndex] : nil
-        let isPlaying = playerNode.isPlaying && isPlayingIntent
+        let item = currentItem
+        let isPlaying = isPlayingNow
         let position = currentTimeInItem
         let duration: Double = {
             if let file = currentFile, file.processingFormat.sampleRate > 0 {

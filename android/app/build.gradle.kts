@@ -154,11 +154,11 @@ chaquopy {
 }
 
 dependencies {
-    implementation(project(":android:presentation"))
-    implementation(project(":android:platform"))
+    implementation(project(":shared:presentation"))
     implementation(project(":shared:log"))
     implementation(project(":shared:domain"))
     implementation(project(":shared:data"))
+    implementation(project(":shared:file-share"))
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
@@ -169,15 +169,29 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.workmanager)
     implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.datetime)
+
+    // 미디어 재생 (PlaybackService / MediaControllerManagerImpl / AudioPreviewPlayerImpl)
+    implementation(libs.androidx.media3.session)
+    implementation(libs.androidx.media3.exoplayer)
+
+    // 파일공유 수신 서버 (FileShareForegroundService)
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.cio)
+    implementation(libs.ktor.server.websockets)
+    implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.material3)
     implementation(libs.androidx.splashscreen)
+    // Compose 는 :shared:presentation 이 api 로 내보내는 CMP 아티팩트를 쓴다.
+    // androidx compose BOM 을 같이 두면 androidx.compose.ui 버전이 양쪽에서
+    // 고정되어 충돌하므로 선언하지 않는다. navigation 도 CMP 포크 한 벌만 쓴다.
+
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.core)

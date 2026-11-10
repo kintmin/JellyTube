@@ -1,11 +1,11 @@
 ---
 name: new-mvi-screen
-description: JellyTube의 android:presentation 모듈에 새 MVI 화면을 규약대로 생성한다. Screen/ViewModel/Intent/UiState/Event 5파일 + Navigation + @Preview를 한 번에 스캐폴딩한다. "새 화면 추가", "화면 만들어줘", "MVI 스크린 생성" 요청 시 사용.
+description: JellyTube의 shared:presentation 모듈에 새 MVI 화면을 규약대로 생성한다. Screen/ViewModel/Intent/UiState/Event 5파일 + Navigation + @Preview를 한 번에 스캐폴딩한다. "새 화면 추가", "화면 만들어줘", "MVI 스크린 생성" 요청 시 사용.
 ---
 
 # New MVI Screen
 
-`android:presentation` 모듈에 새 화면을 추가할 때 사용한다. 규약은 `android/presentation/AGENTS.md`가 단일 진원지이며, 생성 전 해당 파일과 기존 화면 1개(예: `playlist`)를 참고해 패키지/네이밍 스타일을 맞춘다.
+`shared:presentation` 모듈(Compose Multiplatform)에 새 화면을 추가할 때 사용한다. 규약은 `shared/presentation/AGENTS.md`가 단일 진원지이며, 생성 전 해당 파일과 기존 화면 1개(예: `playlist`)를 참고해 패키지/네이밍 스타일을 맞춘다.
 
 ## 입력 확인 (필요 시 1개만 질문)
 - 화면 이름(PascalCase, 예: `PlaylistDetail`)
@@ -34,10 +34,10 @@ description: JellyTube의 android:presentation 모듈에 새 MVI 화면을 규�
 7. **인코딩**: 모든 파일 UTF-8(BOM 없음), 한글 주석/문자열 보존.
 
 ## 절차
-1. `android/presentation/AGENTS.md`와 기존 참조 화면을 읽어 스타일 확인.
+1. `shared/presentation/AGENTS.md`와 기존 참조 화면을 읽어 스타일 확인.
 2. 위 6+1 파일을 생성. ViewModel은 빈 상태부터 시작하되 컴파일되는 형태로.
 3. NavGraph에 등록이 필요하면 `MainNavHost` 연결 지점을 안내(딥링크 진입이면 `add-deep-link` 스킬과 연계).
-4. 생성 후 `./gradlew.bat :android:presentation:compileDebugKotlin` 권장, `@Preview` 렌더 확인.
+4. 생성 후 `./gradlew.bat :shared:presentation:compileAndroidMain` 권장, `@Preview` 렌더 확인.
 
 ## 골격 예시
 ```kotlin

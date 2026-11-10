@@ -10,27 +10,33 @@
 		4A000000000000000000000A /* JellyTubeIosApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000007 /* JellyTubeIosApp.swift */; };
 		4A000000000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000009 /* Assets.xcassets */; };
 		C9E4F40D2FD13000009FB07B /* python in Resources */ = {isa = PBXBuildFile; fileRef = C9E4F40E2FD13000009FB07B /* python */; };
-		4A000000000000000000003C /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 4A0000000000000000000040 /* ComposableArchitecture */; };
 		C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */ = {isa = PBXBuildFile; productRef = C9E4F4102FD14000009FB07B /* PythonKit */; };
 		C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */; };
+		4A0000000000000000000094 /* YoutubeDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000093 /* YoutubeDownloader.swift */; };
 		4A0000000000000000000061 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000060 /* Python.xcframework */; };
 		4A0000000000000000000062 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000060 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4A0000000000000000000064 /* app_packages in Resources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000063 /* app_packages */; };
 		4A0000000000000000000088 /* MediaControllerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000087 /* MediaControllerItem.swift */; };
 		4A000000000000000000008A /* MediaControllerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000089 /* MediaControllerEngine.swift */; };
+		4A0000000000000000000092 /* MediaControllerBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */; };
+		4A00000000000000000000A2 /* AppLogBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000A1 /* AppLogBridgeImpl.swift */; };
 		4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008D /* NowPlayingCoordinator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		4A0000000000000000000003 /* JellyTubeIos.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JellyTubeIos.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4A0000000000000000000090 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4A0000000000000000000007 /* JellyTubeIosApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyTubeIosApp.swift; sourceTree = "<group>"; };
 		4A0000000000000000000009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C9E4F40E2FD13000009FB07B /* python */ = {isa = PBXFileReference; lastKnownFileType = folder; name = python; path = ../../shared/data/src/python; sourceTree = SOURCE_ROOT; };
 		C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonExecutorBridgeImpl.swift; sourceTree = "<group>"; };
+		4A0000000000000000000093 /* YoutubeDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeDownloader.swift; sourceTree = "<group>"; };
 		4A0000000000000000000060 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Python.xcframework; path = Vendor/Python/Python.xcframework; sourceTree = SOURCE_ROOT; };
 		4A0000000000000000000063 /* app_packages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = app_packages; path = Vendor/Python/app-packages; sourceTree = SOURCE_ROOT; };
 		4A0000000000000000000087 /* MediaControllerItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerItem.swift; sourceTree = "<group>"; };
 		4A0000000000000000000089 /* MediaControllerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerEngine.swift; sourceTree = "<group>"; };
+		4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerBridgeImpl.swift; sourceTree = "<group>"; };
+		4A00000000000000000000A1 /* AppLogBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogBridgeImpl.swift; sourceTree = "<group>"; };
 		4A000000000000000000008D /* NowPlayingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingCoordinator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -39,7 +45,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4A000000000000000000003C /* ComposableArchitecture in Frameworks */,
 				C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */,
 				4A0000000000000000000061 /* Python.xcframework in Frameworks */,
 			);
@@ -92,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				4A0000000000000000000007 /* JellyTubeIosApp.swift */,
+				4A0000000000000000000090 /* Info.plist */,
 				C9E4F40C2FD13000009FB07B /* PythonBridgeImpl */,
 				4A0000000000000000000046 /* Shared */,
 				4A0000000000000000000009 /* Assets.xcassets */,
@@ -112,6 +118,7 @@
 			isa = PBXGroup;
 			children = (
 				C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */,
+				4A0000000000000000000093 /* YoutubeDownloader.swift */,
 			);
 			path = PythonBridgeImpl;
 			sourceTree = "<group>";
@@ -120,6 +127,7 @@
 			isa = PBXGroup;
 			children = (
 				4A0000000000000000000086 /* MediaController */,
+				4A00000000000000000000A3 /* Log */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -129,9 +137,18 @@
 			children = (
 				4A0000000000000000000087 /* MediaControllerItem.swift */,
 				4A0000000000000000000089 /* MediaControllerEngine.swift */,
+				4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */,
 				4A000000000000000000008D /* NowPlayingCoordinator.swift */,
 			);
 			path = MediaController;
+			sourceTree = "<group>";
+		};
+		4A00000000000000000000A3 /* Log */ = {
+			isa = PBXGroup;
+			children = (
+				4A00000000000000000000A1 /* AppLogBridgeImpl.swift */,
+			);
+			path = Log;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -154,7 +171,6 @@
 			);
 			name = JellyTubeIos;
 			packageProductDependencies = (
-				4A0000000000000000000040 /* ComposableArchitecture */,
 				C9E4F4102FD14000009FB07B /* PythonKit */,
 			);
 			productName = JellyTubeIos;
@@ -188,7 +204,6 @@
 			);
 			mainGroup = 4A0000000000000000000004;
 			packageReferences = (
-				4A000000000000000000003F /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
 				C9E4F4112FD14000009FB07B /* XCRemoteSwiftPackageReference "PythonKit" */,
 			);
 			productRefGroup = 4A0000000000000000000006 /* Products */;
@@ -231,7 +246,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/../..\"\nsh ./gradlew :shared:data:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$SRCROOT/../..\"\nsh ./gradlew :ios:shared:embedAndSignAppleFrameworkForXcode\n";
 		};
 		4A0000000000000000000066 /* Install Python (stdlib + app_packages) */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -261,8 +276,11 @@
 			files = (
 				4A000000000000000000000A /* JellyTubeIosApp.swift in Sources */,
 				C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */,
+				4A0000000000000000000094 /* YoutubeDownloader.swift in Sources */,
 				4A0000000000000000000088 /* MediaControllerItem.swift in Sources */,
 				4A000000000000000000008A /* MediaControllerEngine.swift in Sources */,
+				4A0000000000000000000092 /* MediaControllerBridgeImpl.swift in Sources */,
+				4A00000000000000000000A2 /* AppLogBridgeImpl.swift in Sources */,
 				4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -273,18 +291,19 @@
 		4A0000000000000000000012 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../../shared/data/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+					"$(SRCROOT)/../../ios/shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = JellyTubeIos/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = JellyTube;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -310,17 +329,18 @@
 		4A0000000000000000000013 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../../shared/data/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+					"$(SRCROOT)/../../ios/shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = JellyTubeIos/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = JellyTube;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UIBackgroundModes = audio;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -481,14 +501,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		4A000000000000000000003F /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.25.5;
-			};
-		};
 		C9E4F4112FD14000009FB07B /* XCRemoteSwiftPackageReference "PythonKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pvieito/PythonKit";
@@ -500,11 +512,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		4A0000000000000000000040 /* ComposableArchitecture */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4A000000000000000000003F /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
-			productName = ComposableArchitecture;
-		};
 		C9E4F4102FD14000009FB07B /* PythonKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C9E4F4112FD14000009FB07B /* XCRemoteSwiftPackageReference "PythonKit" */;
