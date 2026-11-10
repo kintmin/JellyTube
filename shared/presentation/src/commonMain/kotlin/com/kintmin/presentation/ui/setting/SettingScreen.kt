@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.AppPermission
+import com.kintmin.presentation.platform.isDeviceSaveSupported
+import com.kintmin.presentation.platform.isFileShareReceiveSupported
 import com.kintmin.presentation.platform.rememberAppVersionName
 import com.kintmin.presentation.platform.rememberAudioFilePicker
 import com.kintmin.presentation.platform.rememberPermissionController
@@ -212,18 +214,22 @@ fun SettingScreen(
                     onClick = { sendIntent(SettingIntent.OnClickShareTile) },
                     trailing = { SettingNavigateIcon(contentDescription = "Quick Share 화면으로 이동") },
                 )
-                SettingItemView(
-                    title = "PC에서 공유받기",
-                    icon = Icons.Rounded.Computer,
-                    onClick = { sendIntent(SettingIntent.OnClickFileShareReceiveTile) },
-                    trailing = { SettingNavigateIcon(contentDescription = "PC에서 공유받기 화면으로 이동") },
-                )
-                SettingItemView(
-                    title = "파일 기기에 저장하기",
-                    icon = Icons.Rounded.SaveAlt,
-                    onClick = { sendIntent(SettingIntent.OnClickDeviceSaveTile) },
-                    trailing = { SettingNavigateIcon(contentDescription = "기기에 저장하기 화면으로 이동") },
-                )
+                if (isFileShareReceiveSupported) {
+                    SettingItemView(
+                        title = "PC에서 공유받기",
+                        icon = Icons.Rounded.Computer,
+                        onClick = { sendIntent(SettingIntent.OnClickFileShareReceiveTile) },
+                        trailing = { SettingNavigateIcon(contentDescription = "PC에서 공유받기 화면으로 이동") },
+                    )
+                }
+                if (isDeviceSaveSupported) {
+                    SettingItemView(
+                        title = "파일 기기에 저장하기",
+                        icon = Icons.Rounded.SaveAlt,
+                        onClick = { sendIntent(SettingIntent.OnClickDeviceSaveTile) },
+                        trailing = { SettingNavigateIcon(contentDescription = "기기에 저장하기 화면으로 이동") },
+                    )
+                }
             }
 
             SettingSectionView(title = "걸음수") {

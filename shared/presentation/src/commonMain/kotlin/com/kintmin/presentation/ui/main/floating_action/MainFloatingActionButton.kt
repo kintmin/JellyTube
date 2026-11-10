@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.platform.isFileShareReceiveSupported
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
@@ -106,21 +107,25 @@ fun MainFloatingActionButton(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                ExtendedFloatingActionButton(
-                    modifier = Modifier.alpha(0.9f),
-                    onClick = {
-                        isActionButtonVisible = false
-                        onClickDesktopFileShare()
-                    },
-                    shape = MaterialTheme.shapes.extraLarge,
-                    elevation = FloatingActionButtonDefaults.elevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp,
-                        focusedElevation = 0.dp,
-                        hoveredElevation = 0.dp,
-                    ),
-                ) {
-                    Text(text = "PC에서 공유받기")
+                // 제공하지 않는 플랫폼에서는 보이지 않는다. 포트가 스텁이라 눌러도 아무 일이
+                // 없는데, 막는 것과 숨기는 것은 별개 일이다.
+                if (isFileShareReceiveSupported) {
+                    ExtendedFloatingActionButton(
+                        modifier = Modifier.alpha(0.9f),
+                        onClick = {
+                            isActionButtonVisible = false
+                            onClickDesktopFileShare()
+                        },
+                        shape = MaterialTheme.shapes.extraLarge,
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 0.dp,
+                            focusedElevation = 0.dp,
+                            hoveredElevation = 0.dp,
+                        ),
+                    ) {
+                        Text(text = "PC에서 공유받기")
+                    }
                 }
 
                 ExtendedFloatingActionButton(

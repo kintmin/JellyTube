@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
+import com.kintmin.presentation.platform.isAudioEditSupported
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
@@ -206,13 +207,15 @@ fun PlaylistDetailListItemView(
                         sendIntent(PlaylistDetailListIntent.OnClickReorderAudioMedia(data))
                     },
                 )
-                DropdownMenuItem(
-                    text = { Text("수정") },
-                    onClick = {
-                        readModeDropdownExpanded = false
-                        sendIntent(PlaylistDetailListIntent.OnClickEditAudioMedia(data))
-                    },
-                )
+                if (isAudioEditSupported) {
+                    DropdownMenuItem(
+                        text = { Text("수정") },
+                        onClick = {
+                            readModeDropdownExpanded = false
+                            sendIntent(PlaylistDetailListIntent.OnClickEditAudioMedia(data))
+                        },
+                    )
+                }
                 DropdownMenuItem(
                     text = { Text("삭제") },
                     onClick = {
