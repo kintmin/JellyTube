@@ -60,7 +60,7 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 - Compose 로컬(`LocalContext` 등)이 필요하면 `@Composable expect fun remember~()` 로 생성만 `expect` 한다.
 - **`expect class` 는 쓰지 않는다.** 공통 테스트에서 인스턴스를 만들 수 없어 그 타입을 쓰는 로직이 통째로 테스트 불가가 된다. 계약은 `interface`, 생성만 `expect`.
 - **커스텀 `CompositionLocal` 은 만들지 않는다.** 위 두 가지로 충분하고, 세 번째 경로가 생기면 "이건 어느 쪽이냐"를 매번 따져야 한다.
-- **지켜야 하는 규칙은 주석이 아니라 테스트로 적는다.** 플랫폼 API 를 타는 자리라도 순수한 계산을 떼어내면 `iosTest` 에서 돌릴 수 있다(`StepSlotSchedule`, `CMTimeMillis`). 주석은 테스트가 말해 주지 못하는 것만 남긴다.
+- 플랫폼 API 를 타는 자리라도 **순수한 계산을 떼어내면 `iosTest` 에서 돌릴 수 있다**(`StepSlotSchedule`). 주석으로 규칙을 적기 전에 이쪽을 본다 — 루트 `AGENTS.md` §6.
 
 ### 현재 탈출구 목록
 

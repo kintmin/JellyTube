@@ -77,7 +77,27 @@ Because mode 2 cannot be prevented by the save step, every file write that conta
 - **Never copy text that already contains U+FFFD into another file** (commit, new file, edit). Fix the source first, or the corruption propagates.
 - When unsure what the original glyph was, reconstruct from context/meaning rather than leaving a U+FFFD placeholder.
 
-## 6. Module Map
+## 6. Comments
+
+**Write the constraint, not the story.** Default to one line; a KDoc over three lines needs a reason.
+
+Keep a comment only when someone changing this code would otherwise undo something:
+- Platform/API traps (`CMTimeGetSeconds` misreads on Kotlin/Native; an interop view takes touches before the Compose content drawn over it).
+- Non-obvious lifetime or ownership (the document-picker delegate is held weakly).
+- Why an absence exists (an empty override, a stub binding that Koin would otherwise fail on).
+- Magic numbers whose provenance isn't derivable from the code.
+
+Delete:
+- Anything the name or signature already says.
+- Decision records, alternatives considered, what the code used to be, how it was measured — that belongs in the PR.
+- Restatements of what a test already pins.
+- Cross-references to tests. The test references the type; that is the link.
+
+**A rule that must hold is a test, not a comment.** If the rule lives in platform code, pull the pure part out so it can be tested (`StepSlotSchedule`, `CMTimeMillis`, `RepeatRange`). iOS-only logic has `iosTest` source sets.
+
+**"Both platforms must do X" is never a comment.** Put X in one shared place so it cannot drift. If it genuinely cannot be shared and cannot be tested, drop the claim rather than writing it down.
+
+## 7. Module Map
 
 **Before touching any file, read the AGENTS.md of every module involved.**
 
@@ -89,7 +109,7 @@ Because mode 2 cannot be prevented by the save step, every file write that conta
 | `shared/data/` | `shared/data/AGENTS.md` |
 | `shared/log/` | `shared/log/AGENTS.md` |
 | `shared/file-share/` | `shared/file-share/AGENTS.md` |
-| `ios/app/` | `ios/app/AGENTS.md` |
+| `ios/app/`, `ios/shared/` | `ios/app/AGENTS.md` |
 | `desktop/` | `desktop/AGENTS.md` |
 
 If a task spans multiple modules (e.g., adding a deep link, adding navigation, adding a new screen), read ALL relevant AGENTS.md files before writing a single line of code.
