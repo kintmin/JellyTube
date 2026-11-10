@@ -3,6 +3,21 @@ import os
 
 private let downloadLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "YoutubeDownload")
 
+/// 전송 자체는 끝났지만 받은 것이 음원이 아닐 때.
+enum YoutubeDownloadError: LocalizedError {
+    /// 서명이 만료됐거나 헤더가 달라 유튜브가 거부한 경우. 본문이 오류 페이지라 파일이 생긴다.
+    case httpStatus(Int)
+    /// 200 이지만 본문이 비어 있는 경우.
+    case emptyBody
+
+    var errorDescription: String? {
+        switch self {
+        case .httpStatus(let code): return "음원 주소가 거부됐습니다 (HTTP \(code))"
+        case .emptyBody: return "받은 음원이 비어 있습니다"
+        }
+    }
+}
+
 /// 추출 단계에서 나온 메타데이터. 전송이 끝난 뒤 Kotlin 에 그대로 넘어간다.
 struct YoutubeAudioSource: Codable {
     let sourceUrl: String
@@ -137,6 +152,32 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
 
         guard let source else {
             downloadLog.error("no record for task=\(downloadTask.taskIdentifier)")
+            return
+        }
+
+        // `URLSessionDownloadTask` 는 403 도 "전송 성공"으로 본다 — 오류 페이지를 파일로
+        // 내려 줄 뿐이다. 여기서 걸러내지 않으면 0바이트 m4a 가 DB 에 등록된다.
+        let statusCode = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
+        let attributes = try? FileManager.default.attributesOfItem(atPath: location.path)
+        let byteCount = (attributes?[.size] as? NSNumber)?.intValue ?? 0
+        downloadLog.info("finish task=\(downloadTask.taskIdentifier) status=\(statusCode) bytes=\(byteCount)")
+
+        guard (200...299).contains(statusCode) else {
+            finish(
+                taskIdentifier: downloadTask.taskIdentifier,
+                waiter: waiter,
+                error: YoutubeDownloadError.httpStatus(statusCode),
+                source: nil
+            )
+            return
+        }
+        guard byteCount > 0 else {
+            finish(
+                taskIdentifier: downloadTask.taskIdentifier,
+                waiter: waiter,
+                error: YoutubeDownloadError.emptyBody,
+                source: nil
+            )
             return
         }
 
