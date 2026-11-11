@@ -1,5 +1,6 @@
 package com.kintmin.platform.service.migration
 
+import com.kintmin.fileshare.MigrationFinishRequest
 import java.security.MessageDigest
 import java.security.SecureRandom
 
@@ -13,6 +14,8 @@ class MigrationSession(
     val code: String = generateCode(),
     private val generateToken: () -> String = ::generateToken,
     private val onClosed: () -> Unit = {},
+    private val onPaired: () -> Unit = {},
+    private val onFinished: (MigrationFinishRequest) -> Unit = {},
 ) {
     private var token: String? = null
     private var failedAttempts = 0
@@ -37,6 +40,7 @@ class MigrationSession(
             }
         }
         if (hasLockedOut) onClosed()
+        if (issued != null) onPaired()
         return issued
     }
 
@@ -55,7 +59,13 @@ class MigrationSession(
     @Synchronized
     fun isFileAllowed(kind: String, name: String): Boolean = kind to name in allowedFiles
 
-    // onClosed 는 잠금 밖에서 부른다. 받는 쪽이 자기 잠금을 쥔 채 close() 를 부르면 교착된다.
+    /** 받는 기기가 끝났다고 알렸다. 실패한 곡을 다시 받을 수 있도록 세션은 닫지 않는다. */
+    fun finish(report: MigrationFinishRequest) {
+        if (isClosed) return
+        onFinished(report)
+    }
+
+    // 콜백은 잠금 밖에서 부른다. 받는 쪽이 자기 잠금을 쥔 채 close() 를 부르면 교착된다.
     fun close() {
         if (markClosed()) onClosed()
     }

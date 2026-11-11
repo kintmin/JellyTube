@@ -6,6 +6,7 @@ import com.kintmin.domain.data_migration.model.MigrationFileKind
 import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
 import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.fileshare.MigrationFinishRequest
 import com.kintmin.fileshare.MigrationPairRequest
 import com.kintmin.fileshare.MigrationPairResponse
 import io.ktor.http.HttpHeaders
@@ -45,6 +46,14 @@ internal fun Route.migrationRoutes(
                 call.respond(export.toManifestDto())
             }
             .onFailure { call.respond(HttpStatusCode.InternalServerError) }
+    }
+
+    post(FileShareConstants.MIGRATION_FINISH_PATH) {
+        val session = call.authorizedSession(currentSession) ?: return@post
+        val report = runCatching { call.receive<MigrationFinishRequest>() }
+            .getOrElse { return@post call.respond(HttpStatusCode.BadRequest) }
+        session.finish(report)
+        call.respond(HttpStatusCode.OK)
     }
 
     get("${FileShareConstants.MIGRATION_FILES_PATH}/{kind}/{name}") {

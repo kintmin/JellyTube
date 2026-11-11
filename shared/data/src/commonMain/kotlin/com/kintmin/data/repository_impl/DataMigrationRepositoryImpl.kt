@@ -16,6 +16,7 @@ import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
+import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
 import com.kintmin.fileshare.FileShareConstants
@@ -146,6 +147,18 @@ class DataMigrationRepositoryImpl constructor(
             fileSystem.deleteRecursively(fileManager.getMigrationStagingDirPath().getOrThrow().toPath(), mustExist = false)
         }
     }
+
+    override suspend fun notifyFinished(
+        endpoint: MigrationEndpoint,
+        token: String,
+        summary: MigrationSummary,
+    ): Result<Unit> = migrationDataSource.finish(
+        host = endpoint.host,
+        port = endpoint.port,
+        token = token,
+        newAudioMediaCount = summary.newAudioMediaCount,
+        failedCount = summary.failures.size,
+    )
 
     private fun stagedPath(file: MigrationFile): Path =
         fileManager.getMigrationStagingDirPath().getOrThrow().toPath() / file.kind.name / file.name

@@ -2,6 +2,7 @@ package com.kintmin.presentation.port
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
+import com.kintmin.presentation.port.model.DataMigrationSendStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -35,7 +36,7 @@ internal class IosFileShareServerControllerStub : FileShareServerController {
 /** 데이터 보내기 미제공. iOS 는 받는 쪽만 한다 — 보내는 서버가 Android 에만 있다. */
 internal class IosDataMigrationSendControllerStub : DataMigrationSendController {
 
-    override val pairingCode: StateFlow<String?> = MutableStateFlow(null)
+    override val status: StateFlow<DataMigrationSendStatus> = MutableStateFlow(DataMigrationSendStatus.Idle)
 
     override fun start() = Unit
     override fun stop() = Unit

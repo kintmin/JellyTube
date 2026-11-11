@@ -7,6 +7,7 @@ import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileEntry
 import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
+import com.kintmin.domain.data_migration.model.MigrationSummary
 
 interface DataMigrationRepository {
 
@@ -40,4 +41,7 @@ interface DataMigrationRepository {
     suspend fun applyPlan(plan: MigrationPlan): Result<MigrationApplyResult>
 
     suspend fun clearStaging(): Result<Unit>
+
+    /** 보내는 기기에 끝났다고 알린다. 보내는 기기는 이걸 받아야 화면을 떠나도 된다고 안내한다. */
+    suspend fun notifyFinished(endpoint: MigrationEndpoint, token: String, summary: MigrationSummary): Result<Unit>
 }

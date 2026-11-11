@@ -19,6 +19,7 @@ import com.kintmin.domain.data_migration.model.MigrationPlaylist
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationStage
+import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
 import com.kintmin.domain.data_migration.usecase.ImportMigrationDataUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
@@ -119,6 +120,8 @@ class ImportMigrationDataUseCaseTest {
             }
 
         override suspend fun clearStaging() = Result.success(Unit).also { calls += "clear" }
+        override suspend fun notifyFinished(endpoint: MigrationEndpoint, token: String, summary: MigrationSummary) =
+            Result.success(Unit).also { calls += "finish" }
     }
 
     @Test
@@ -135,7 +138,7 @@ class ImportMigrationDataUseCaseTest {
         val summary = useCase(repository)(endpoint, "t", progress::add).getOrThrow()
 
         assertEquals(listOf("new.m4a"), repository.staged)
-        assertEquals(listOf("fetchRemoteExport", "fetchSnapshot", "stage", "apply", "clear"), repository.calls)
+        assertEquals(listOf("fetchRemoteExport", "fetchSnapshot", "stage", "apply", "clear", "finish"), repository.calls)
         assertEquals(listOf(101), repository.appliedPlan?.newAudioMedias?.map { it.id })
         assertEquals(1, summary.newAudioMediaCount)
         assertTrue(summary.failures.isEmpty())
@@ -268,6 +271,7 @@ class ImportMigrationDataUseCaseTest {
         assertTrue(result.isFailure)
         assertTrue("apply" !in repository.calls)
         assertTrue("clear" !in repository.calls)
+        assertTrue("finish" !in repository.calls)
         coVerify { audioMediaRepository.deleteFileAtFullPath("/audios/re.m4a") }
     }
 

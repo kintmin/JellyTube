@@ -28,6 +28,8 @@ object FileShareConstants {
     const val MIGRATION_MANIFEST_PATH = "/migration/manifest"
     /** 데이터 이전 파일 HTTP GET endpoint. 뒤에 `/{kind}/{name}` 이 붙는다 */
     const val MIGRATION_FILES_PATH = "/migration/files"
+    /** 데이터 이전 완료 알림 HTTP POST endpoint. 받는 기기가 끝나면 보내는 기기에 결과를 알린다 */
+    const val MIGRATION_FINISH_PATH = "/migration/finish"
     /** 이전 프로토콜 버전. 양쪽이 다르면 받는 쪽이 이전을 거부한다 */
     const val MIGRATION_FORMAT_VERSION = 1
 }

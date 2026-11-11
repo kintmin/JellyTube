@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.setting.data_migration_send
 
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.presentation.port.DataMigrationSendController
+import com.kintmin.presentation.port.model.DataMigrationSendStatus
 import io.mockk.coEvery
 import io.mockk.coVerifyOrder
 import io.mockk.every
@@ -22,7 +23,7 @@ import org.junit.Test
 class SettingDataMigrationSendViewModelTest {
 
     private val controller = mockk<DataMigrationSendController>(relaxUnitFun = true) {
-        every { pairingCode } returns MutableStateFlow("123456")
+        every { status } returns MutableStateFlow(DataMigrationSendStatus.WaitingForPair("123456"))
     }
     private val cleanup = mockk<CleanupAnomalousDataUseCase>()
 

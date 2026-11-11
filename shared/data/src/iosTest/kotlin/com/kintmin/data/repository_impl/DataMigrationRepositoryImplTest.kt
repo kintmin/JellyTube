@@ -133,6 +133,9 @@ class DataMigrationRepositoryImplTest {
         override suspend fun fetchManifest(host: String, port: Int, token: String) =
             Result.failure<MigrationManifestDto>(UnsupportedOperationException())
 
+        override suspend fun finish(host: String, port: Int, token: String, newAudioMediaCount: Int, failedCount: Int) =
+            Result.success(Unit)
+
         override suspend fun downloadFile(
             host: String,
             port: Int,

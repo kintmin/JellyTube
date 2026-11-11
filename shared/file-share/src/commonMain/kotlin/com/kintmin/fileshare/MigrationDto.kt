@@ -13,6 +13,12 @@ data class MigrationPairResponse(
 )
 
 @Serializable
+data class MigrationFinishRequest(
+    val newAudioMediaCount: Int,
+    val failedCount: Int,
+)
+
+@Serializable
 data class MigrationManifestDto(
     val formatVersion: Int,
     val snapshot: MigrationSnapshotDto,

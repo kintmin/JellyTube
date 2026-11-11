@@ -8,6 +8,7 @@ import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
 import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.fileshare.MigrationFinishRequest
 import com.kintmin.platform.service.fileShareModule
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
@@ -151,6 +152,27 @@ class MigrationRoutesTest {
 
         assertEquals(HttpStatusCode.Unauthorized, manifest(TOKEN).status)
         assertEquals(HttpStatusCode.Unauthorized, file("AUDIO", "a.m4a", TOKEN).status)
+    }
+
+    @Test
+    fun `완료 알림은 토큰이 있어야 하고 세션에 결과를 남긴다`() = serverTest {
+        var finished: MigrationFinishRequest? = null
+        session = MigrationSession(code = CODE, generateToken = { TOKEN }, onFinished = { finished = it })
+        pair(CODE)
+
+        val unauthorized = client.post(FileShareConstants.MIGRATION_FINISH_PATH) {
+            contentType(ContentType.Application.Json)
+            setBody("""{"newAudioMediaCount":3,"failedCount":1}""")
+        }
+        val response = client.post(FileShareConstants.MIGRATION_FINISH_PATH) {
+            bearerAuth(TOKEN)
+            contentType(ContentType.Application.Json)
+            setBody("""{"newAudioMediaCount":3,"failedCount":1}""")
+        }
+
+        assertEquals(HttpStatusCode.Unauthorized, unauthorized.status)
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(MigrationFinishRequest(newAudioMediaCount = 3, failedCount = 1), finished)
     }
 
     private companion object {

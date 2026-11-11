@@ -120,7 +120,11 @@ class ImportMigrationDataUseCase constructor(
                 newPlaylistCount = applyPlan.newPlaylists.size,
                 redownloadedCount = redownloaded.size,
                 failures = failures,
-            )
+            ).also { summary ->
+                // 반영은 끝났다. 알림이 실패해도 결과를 되돌리지 않는다 — 보내는 쪽은 사용자가 직접 닫는다.
+                dataMigrationRepository.notifyFinished(endpoint, token, summary)
+                    .onFailure { log("완료 알림 실패: $it") }
+            }
         } catch (e: Throwable) {
             // 다시 받은 파일은 아직 어느 행도 가리키지 않는다. 두면 고아가 된다.
             redownloaded.values.forEach { audioMediaRepository.deleteFileAtFullPath(it.fileFullPath) }

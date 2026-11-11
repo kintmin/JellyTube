@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.presentation.port.DataMigrationSendController
+import com.kintmin.presentation.port.model.DataMigrationSendStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,8 +30,8 @@ class SettingDataMigrationSendViewModel constructor(
     init {
         prepareAndStart()
         viewModelScope.launch {
-            dataMigrationSendController.pairingCode.collect { code ->
-                _uiState.update { it.copy(pairingCode = code) }
+            dataMigrationSendController.status.collect { status ->
+                _uiState.update { it.copy(pairingCode = (status as? DataMigrationSendStatus.WaitingForPair)?.code) }
             }
         }
     }

@@ -2,6 +2,7 @@ package com.kintmin.data.network.dataSourceImpl
 
 import com.kintmin.data.network.dataSource.MigrationDataSource
 import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.fileshare.MigrationFinishRequest
 import com.kintmin.fileshare.MigrationManifestDto
 import com.kintmin.fileshare.MigrationPairRequest
 import com.kintmin.fileshare.MigrationPairResponse
@@ -52,6 +53,23 @@ internal class MigrationDataSourceImpl(
                 timeout { requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS }
             }.body()
         }
+
+    override suspend fun finish(
+        host: String,
+        port: Int,
+        token: String,
+        newAudioMediaCount: Int,
+        failedCount: Int,
+    ): Result<Unit> = runCatching {
+        client.post {
+            migrationUrl(host, port, FileShareConstants.MIGRATION_FINISH_PATH)
+            bearerAuth(token)
+            contentType(ContentType.Application.Json)
+            setBody(MigrationFinishRequest(newAudioMediaCount, failedCount))
+            expectSuccess = true
+        }
+        Unit
+    }
 
     override suspend fun downloadFile(
         host: String,
