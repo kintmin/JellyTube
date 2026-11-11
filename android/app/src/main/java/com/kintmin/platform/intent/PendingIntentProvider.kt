@@ -102,3 +102,20 @@ internal fun Context.appLogPendingIntent() = PendingIntent.getActivity(
     },
     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
 )
+
+/**
+ * 딥링크를 쓰지 않고 앱을 앞으로 가져오기만 한다. 딥링크는 화면 스택을 비우므로, 떠 있던 보내기 화면이
+ * 닫히며 이전 세션도 닫힌다.
+ */
+internal fun Context.bringAppToFrontPendingIntent() = PendingIntent.getActivity(
+    this,
+    IntentRequestCode.DATA_MIGRATION_SEND_NOTIFICATION,
+    Intent(Intent.ACTION_MAIN).apply {
+        addCategory(Intent.CATEGORY_LAUNCHER)
+        component = ComponentName(
+            packageName,
+            TARGET_ACTIVITY_NAME,
+        )
+    },
+    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+)

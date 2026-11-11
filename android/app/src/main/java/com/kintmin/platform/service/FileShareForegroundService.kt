@@ -25,6 +25,7 @@ import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.DataMigrationSendNotification
 import com.kintmin.platform.push_notification.notifications.DownloadResultNotification
 import com.kintmin.platform.push_notification.notifications.FileShareServerNotification
+import com.kintmin.platform.push_notification.notifications.PushNotification
 import com.kintmin.platform.service.migration.MigrationSessionHolder
 import com.kintmin.presentation.port.model.DataMigrationSendStatus
 import io.ktor.server.cio.CIO
@@ -72,19 +73,16 @@ class FileShareForegroundService : Service(), KoinComponent {
             if (Owner.DATA_MIGRATION !in owners.value) stopSelf()
             return START_NOT_STICKY
         }
+        if (intent?.action == ACTION_REPOST_NOTIFICATION) {
+            if (ktorServer != null && Owner.DATA_MIGRATION in owners.value) startForegroundWith(DataMigrationSendNotification)
+            return START_NOT_STICKY
+        }
         intent?.getIntExtra(EXTRA_GENERATION, NO_GENERATION)?.takeIf { it != NO_GENERATION }?.let { generation = it }
         // 다시 붙이면 같은 포트에 서버가 두 번 뜬다.
         if (ktorServer != null) return START_NOT_STICKY
 
         val notification = if (Owner.DATA_MIGRATION in owners.value) DataMigrationSendNotification else FileShareServerNotification
-        runCatching {
-            ServiceCompat.startForeground(
-                this,
-                notification.id,
-                notification.createNotification(this),
-                @SuppressLint("InlinedApi") ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
-            )
-        }.onSuccess {
+        runCatching { startForegroundWith(notification) }.onSuccess {
             startKtorServer()
             registerNsdService()
             holdLocksWhileMigrating()
@@ -94,6 +92,15 @@ class FileShareForegroundService : Service(), KoinComponent {
         }
 
         return START_NOT_STICKY
+    }
+
+    private fun startForegroundWith(notification: PushNotification) {
+        ServiceCompat.startForeground(
+            this,
+            notification.id,
+            notification.createNotification(this),
+            @SuppressLint("InlinedApi") ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+        )
     }
 
     override fun onDestroy() {
@@ -236,6 +243,7 @@ class FileShareForegroundService : Service(), KoinComponent {
 
     companion object {
         const val ACTION_STOP = "com.kintmin.platform.FILE_SHARE_STOP"
+        const val ACTION_REPOST_NOTIFICATION = "com.kintmin.platform.FILE_SHARE_REPOST_NOTIFICATION"
         private const val EXTRA_GENERATION = "generation"
         private const val NO_GENERATION = -1
 
