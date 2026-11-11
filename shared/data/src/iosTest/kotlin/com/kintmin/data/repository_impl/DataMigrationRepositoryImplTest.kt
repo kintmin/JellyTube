@@ -12,6 +12,7 @@ import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileEntry
 import com.kintmin.domain.data_migration.model.MigrationFileKind
+import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
 import com.kintmin.domain.data_migration.model.MigrationRef
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationTrackAddition
@@ -82,7 +83,8 @@ class DataMigrationRepositoryImplTest {
     fun `받은 크기가 다르면 실패하고 받아 둔 파일로 남지 않는다`() = runTest {
         val result = repository.stageFile(endpoint, "t", audioEntry.copy(size = 10)) {}
 
-        assertTrue(result.isFailure)
+        // 그 파일 하나의 문제다. 이전 전체를 멈추지 않도록 따로 구분한다.
+        assertTrue(result.exceptionOrNull() is MigrationFileUnavailableException)
         assertFalse(fileSystem.exists(root / "staging" / "AUDIO" / "a.m4a"))
     }
 

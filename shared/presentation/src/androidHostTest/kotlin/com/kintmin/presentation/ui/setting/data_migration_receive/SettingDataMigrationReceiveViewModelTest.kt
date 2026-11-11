@@ -87,7 +87,7 @@ class SettingDataMigrationReceiveViewModelTest {
     fun `페어링 후 옮기기를 마치면 결과를 보여 준다`() {
         coEvery { discovery.discover() } returns endpoint
         coEvery { pair(endpoint, "123456") } returns Result.success("token")
-        coEvery { import(endpoint, "token", any()) } returns Result.success(MigrationSummary(3, 1))
+        coEvery { import(endpoint, "token", any()) } returns Result.success(MigrationSummary(3, 1, 0, emptyList()))
         val viewModel = viewModel()
         viewModel.searchAndEnter("123456")
 
@@ -102,7 +102,7 @@ class SettingDataMigrationReceiveViewModelTest {
         coEvery { pair(endpoint, "123456") } returns Result.success("token")
         coEvery { import(endpoint, "token", any()) } returnsMany listOf(
             Result.failure(IllegalStateException("끊김")),
-            Result.success(MigrationSummary(3, 1)),
+            Result.success(MigrationSummary(3, 1, 0, emptyList())),
         )
         val viewModel = viewModel()
         viewModel.searchAndEnter("123456")

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
+import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
 import com.kintmin.domain.data_migration.usecase.ImportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
@@ -76,8 +77,8 @@ class SettingDataMigrationReceiveViewModel constructor(
                         DataMigrationReceiveStep.Transferring(
                             receivedBytes = progress.receivedBytes,
                             totalBytes = progress.totalBytes,
-                            redownloadedCount = progress.redownloadedCount,
-                            redownloadTotal = progress.redownloadTotal,
+                            redownloadedCount = progress.doneCount.takeIf { progress.stage == MigrationStage.REDOWNLOAD } ?: 0,
+                            redownloadTotal = progress.totalCount.takeIf { progress.stage == MigrationStage.REDOWNLOAD } ?: 0,
                         )
                     )
                 }
@@ -88,7 +89,7 @@ class SettingDataMigrationReceiveViewModel constructor(
                             newAudioMediaCount = summary.newAudioMediaCount,
                             newPlaylistCount = summary.newPlaylistCount,
                             redownloadedCount = summary.redownloadedCount,
-                            excludedAudioMediaNames = summary.excludedAudioMediaNames,
+                            excludedAudioMediaNames = summary.failures.map { it.audioMediaName },
                         )
                     )
                 }

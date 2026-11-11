@@ -12,12 +12,15 @@ import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileEntry
 import com.kintmin.domain.data_migration.model.MigrationFileKind
+import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
 import com.kintmin.fileshare.FileShareConstants
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -101,11 +104,20 @@ class DataMigrationRepositoryImpl constructor(
                     sink.write(bytes, 0, count)
                     received += count
                     onReceived(received)
-                }.getOrThrow()
+                }.getOrElse { error ->
+                    // 404 는 그 파일만의 문제다. 그 밖의 오류(연결 끊김·401)는 이전 전체를 멈춘다.
+                    if (error is ClientRequestException && error.response.status == HttpStatusCode.NotFound) {
+                        throw MigrationFileUnavailableException(entry.file.name, error)
+                    }
+                    throw error
+                }
             } finally {
                 sink.close()
             }
-            check(received == entry.size) { "${entry.file.name} 크기가 다릅니다: $received / ${entry.size}" }
+            if (received != entry.size) {
+                fileSystem.delete(part, mustExist = false)
+                throw MigrationFileUnavailableException("${entry.file.name} (받은 크기 $received / ${entry.size})")
+            }
             fileSystem.atomicMove(part, staged)
         }
     }

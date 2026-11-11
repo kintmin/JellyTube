@@ -1,9 +1,10 @@
 package com.kintmin.domain.data_migration.model
 
 data class MigrationProgress(
-    val receivedBytes: Long,
-    val totalBytes: Long,
-    /** 이 기기에서 재생할 수 없는 형식이라 원본 주소에서 다시 받는 곡 수. */
-    val redownloadedCount: Int = 0,
-    val redownloadTotal: Int = 0,
+    val stage: MigrationStage,
+    val doneCount: Int = 0,
+    val totalCount: Int = 0,
+    /** [MigrationStage.TRANSFER] 에서만 채운다. */
+    val receivedBytes: Long = 0,
+    val totalBytes: Long = 0,
 )
