@@ -51,14 +51,16 @@ def download_audio(url, audio_path):
     except Exception as e:
         raise Exception(f"Download failed: {e}")
 
-# 전송을 바깥으로 넘길 때 쓰는 포맷 선택자.
+# 전송을 바깥으로 넘길 때 쓰는 포맷 선택자. iOS 만 이 경로를 쓴다.
 #
 # `download_audio` 와 달리 **분할 포맷(DASH/HLS)을 배제**한다. 분할 포맷은 주소 하나로
 # 받을 수 없어서, 전송을 iOS 의 background URLSession 에 맡기는 경로에서는 쓸 수 없다.
+#
+# **MP4 의 AAC 만 받는다.** iOS 의 AVAudioFile 은 webm(Opus/Vorbis)을 열지 못한다. 그쪽으로
+# 넘어가면 받은 곡이 재생되지 않으므로, m4a 가 없는 영상은 실패로 돌린다.
 _SINGLE_FILE_AUDIO_FORMAT = (
     "bestaudio[ext=m4a][protocol!*=dash][protocol!*=m3u8]/"
-    "bestaudio[acodec=aac][protocol!*=dash][protocol!*=m3u8]/"
-    "bestaudio[protocol!*=dash][protocol!*=m3u8]"
+    "bestaudio[acodec^=mp4a][protocol!*=dash][protocol!*=m3u8]"
 )
 
 
