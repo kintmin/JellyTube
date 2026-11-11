@@ -1,0 +1,69 @@
+package com.kintmin.platform.service.migration
+
+import java.security.MessageDigest
+import java.security.SecureRandom
+
+/**
+ * 데이터 이전 한 번의 인가 상태. 화면에 띄운 [code] 를 맞힌 기기 하나에만 토큰을 준다.
+ *
+ * 코드를 [MAX_FAILED_ATTEMPTS] 번 틀리면 세션이 닫힌다. 6자리는 무차별 대입에 약해서
+ * 시도 횟수로 막는다. 닫힌 세션은 다시 열 수 없다 — 새 세션(새 코드)을 만든다.
+ */
+class MigrationSession(
+    val code: String = generateCode(),
+    private val generateToken: () -> String = ::generateToken,
+) {
+    private var token: String? = null
+    private var failedAttempts = 0
+    private var allowedFiles: Set<Pair<String, String>> = emptySet()
+
+    @get:Synchronized
+    var isClosed = false
+        private set
+
+    /** 코드가 맞으면 토큰을 준다. 이미 다른 기기가 페어링했거나 닫혔으면 null. */
+    @Synchronized
+    fun pair(code: String): String? {
+        if (isClosed || token != null) return null
+        if (!constantTimeEquals(code, this.code)) {
+            failedAttempts++
+            if (failedAttempts >= MAX_FAILED_ATTEMPTS) isClosed = true
+            return null
+        }
+        return generateToken().also { token = it }
+    }
+
+    @Synchronized
+    fun isAuthorized(token: String?): Boolean {
+        val issued = this.token
+        return !isClosed && issued != null && token != null && constantTimeEquals(token, issued)
+    }
+
+    /** manifest 로 내려준 파일만 받아 갈 수 있다. */
+    @Synchronized
+    fun allowFiles(files: Set<Pair<String, String>>) {
+        allowedFiles = files
+    }
+
+    @Synchronized
+    fun isFileAllowed(kind: String, name: String): Boolean = kind to name in allowedFiles
+
+    @Synchronized
+    fun close() {
+        isClosed = true
+    }
+
+    companion object {
+        const val MAX_FAILED_ATTEMPTS = 5
+
+        private val secureRandom = SecureRandom()
+
+        private fun generateCode(): String = secureRandom.nextInt(1_000_000).toString().padStart(6, '0')
+
+        @OptIn(ExperimentalStdlibApi::class)
+        private fun generateToken(): String = ByteArray(32).also(secureRandom::nextBytes).toHexString()
+
+        private fun constantTimeEquals(a: String, b: String): Boolean =
+            MessageDigest.isEqual(a.toByteArray(), b.toByteArray())
+    }
+}
