@@ -15,6 +15,7 @@ import com.kintmin.domain.data_migration.model.MigrationFileKind
 import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationPlan
+import com.kintmin.domain.data_migration.model.MigrationSenderCleanupFailedException
 import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationSummary
@@ -22,6 +23,7 @@ import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
 import com.kintmin.fileshare.FileShareConstants
 import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.ServerResponseException
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -74,7 +76,12 @@ class DataMigrationRepositoryImpl constructor(
     override suspend fun fetchRemoteExport(endpoint: MigrationEndpoint, token: String): Result<MigrationExport> =
         runCatching {
             val manifest = migrationDataSource.fetchManifest(endpoint.host, endpoint.port, token)
-                .getOrElse { throw it.asSessionExpiredOrSelf() }
+                .getOrElse { error ->
+                    if (error is ServerResponseException && error.response.status == HttpStatusCode.ServiceUnavailable) {
+                        throw MigrationSenderCleanupFailedException(error)
+                    }
+                    throw error.asSessionExpiredOrSelf()
+                }
             if (manifest.formatVersion != FileShareConstants.MIGRATION_FORMAT_VERSION) {
                 throw MigrationVersionMismatchException()
             }

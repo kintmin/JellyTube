@@ -7,6 +7,7 @@ import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationProgress
+import com.kintmin.domain.data_migration.model.MigrationSenderCleanupFailedException
 import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
@@ -202,6 +203,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     private fun Throwable.toMessage(): String = when (this) {
         is MigrationPairRejectedException -> "코드가 맞지 않거나 Android 기기의 보내기 화면이 닫혔습니다."
         is MigrationVersionMismatchException -> message.orEmpty()
+        is MigrationSenderCleanupFailedException -> "Android 기기에서 보내기 전 데이터 정리에 실패했습니다. 다시 시도해도 같으면 Android 앱 로그를 확인해 주세요."
         is MigrationSessionExpiredException -> "Android 기기와의 연결이 끊겼습니다. Android 화면에 보이는 코드를 다시 입력해 주세요. 받은 파일은 이어서 받습니다."
         else -> "연결이 끊겼습니다. 두 기기가 같은 Wi-Fi에 있고 Android 보내기 화면이 열려 있는지 확인한 뒤 다시 시도해 주세요. 받은 파일은 이어서 받습니다."
     }

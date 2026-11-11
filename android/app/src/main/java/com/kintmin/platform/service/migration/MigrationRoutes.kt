@@ -42,8 +42,9 @@ internal fun Route.migrationRoutes(
 
     get(FileShareConstants.MIGRATION_MANIFEST_PATH) {
         val session = call.authorizedSession(currentSession) ?: return@get
-        cleanupAnomalousData()
-            .mapCatching { exportMigrationData().getOrThrow() }
+        // 받는 쪽이 연결 실패와 구분해 "보내는 기기의 정리 실패"로 보여 준다.
+        cleanupAnomalousData().onFailure { return@get call.respond(HttpStatusCode.ServiceUnavailable) }
+        exportMigrationData()
             .onSuccess { export ->
                 session.allowFiles(export.files.map { it.file.kind.name to it.file.name }.toSet())
                 call.respond(export.toManifestDto())

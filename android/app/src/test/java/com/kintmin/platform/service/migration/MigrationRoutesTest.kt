@@ -167,7 +167,7 @@ class MigrationRoutesTest {
         coEvery { cleanupUseCase() } returns Result.failure(IllegalStateException())
         pair(CODE)
 
-        assertEquals(HttpStatusCode.InternalServerError, manifest(TOKEN).status)
+        assertEquals(HttpStatusCode.ServiceUnavailable, manifest(TOKEN).status)
     }
 
     @Test
