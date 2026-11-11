@@ -16,6 +16,8 @@ class SourceKeyTest {
             "https://youtube.com/watch?feature=share&v=abc123",
             "https://M.YouTube.com/watch?v=abc123#t=3",
             "https://www.youtube.com/shorts/abc123?si=CCCC",
+            "https://www.youtube.com/live/abc123?si=DDDD",
+            "https://music.youtube.com/watch?v=abc123&si=EEEE",
         )
 
         assertEquals(setOf("youtube:abc123"), variants.map(SourceKey::of).toSet())

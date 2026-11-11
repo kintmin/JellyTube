@@ -10,16 +10,12 @@ object YoutubeUrl {
         "youtube.com",
         "www.youtube.com",
         "m.youtube.com",
+        "music.youtube.com",
         "youtu.be",
     )
-    private val DOWNLOADABLE_FIRST_PATH_SEGMENTS = setOf("watch", "shorts")
 
-    fun isDownloadable(url: String): Boolean {
-        val host = hostOf(url)?.lowercase() ?: return false
-        val firstPathSegment = firstPathSegmentOf(url) ?: return false
-
-        return host in DOWNLOADABLE_HOSTS && firstPathSegment in DOWNLOADABLE_FIRST_PATH_SEGMENTS
-    }
+    /** yt-dlp 는 영상 ID 를 뽑을 수 있는 주소면 받는다. 같은 기준으로 가른다. */
+    fun isDownloadable(url: String): Boolean = videoIdOf(url) != null
 
     /** 같은 영상을 가리키는 주소는 `si`·`t` 같은 파라미터나 호스트가 달라도 같은 값을 낸다. 영상 주소가 아니면 null. */
     fun videoIdOf(url: String): String? {
@@ -30,7 +26,8 @@ object YoutubeUrl {
         val videoId = when {
             host == "youtu.be" -> pathSegments.firstOrNull()
             pathSegments.firstOrNull() == "watch" -> firstQueryValueOf(url, key = "v")
-            pathSegments.firstOrNull() == "shorts" -> pathSegments.getOrNull(1)
+            // 라이브(종료된 것 포함)는 공유하면 `/live/{id}` 이고, 모바일 웹은 이 경로를 watch 로 바꾸지 않는다.
+            pathSegments.firstOrNull() == "shorts" || pathSegments.firstOrNull() == "live" -> pathSegments.getOrNull(1)
             else -> null
         }
         return videoId?.ifEmpty { null }
@@ -47,9 +44,6 @@ object YoutubeUrl {
 
         return host.ifEmpty { null }
     }
-
-    private fun firstPathSegmentOf(url: String): String? =
-        pathOf(url)?.substringBefore('/')?.ifEmpty { null }
 
     /** 앞의 `/` 를 뗀 경로. 쿼리·프래그먼트는 뺀다. */
     private fun pathOf(url: String): String? {
