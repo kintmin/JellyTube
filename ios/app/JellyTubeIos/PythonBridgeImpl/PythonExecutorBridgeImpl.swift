@@ -57,11 +57,20 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
         completionHandler: @escaping @Sendable (YoutubeDownloadDto?, Error?) -> Void
     ) {
         DispatchQueue.global(qos: .userInitiated).async {
+            // 추출이 끝나고 전송이 등록될 때까지 앱이 돌아야 한다.
+            YoutubeDownloader.shared.beginExtraction()
+            defer { YoutubeDownloader.shared.endExtraction() }
+
             do {
+                let extractStart = Date()
                 let result = try self.runtime.callFunction(
                     moduleName: Self.fileName,
                     functionName: Self.methodExtractAudioSource,
                     arguments: [youtubeUrl]
+                )
+                SwiftAppLogKt.swiftDebugLog(
+                    tag: "YoutubeExtract",
+                    message: String(format: "elapsed=%.2fs", Date().timeIntervalSince(extractStart))
                 )
 
                 guard result.count >= 8, let remoteUrl = URL(string: result[0]) else {
@@ -83,6 +92,8 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                 YoutubeDownloader.shared.download(
                     from: remoteUrl,
                     headers: Self.parseHeaders(result[1]),
+                    // 크기를 미리 알면 구간 전부를 앱이 떠 있는 동안 등록할 수 있다.
+                    totalBytes: result[safe: 8].flatMap { Int64($0) },
                     source: source
                 ) { error in
                     guard let error else {

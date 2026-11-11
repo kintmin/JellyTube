@@ -69,7 +69,12 @@ def extract_audio_source(url):
     Android 는 이 경로를 쓰지 않는다(WorkManager 가 같은 일을 해 준다).
 
     돌려주는 순서:
-        (direct_url, http_headers_json, ext, title, thumbnail_url, duration, uploader, description)
+        (direct_url, http_headers_json, ext, title, thumbnail_url, duration, uploader, description,
+         filesize)
+
+    `filesize` 를 함께 주는 이유는 호출자가 전송을 쪼갤 때 **첫 응답을 기다리지 않고** 모든
+    구간을 한 번에 등록할 수 있어야 하기 때문이다. 정확한 값이 없으면 비운다 —
+    `filesize_approx` 는 크기 검증을 망가뜨린다.
 
     `http_headers` 를 함께 주는 이유는 유튜브가 돌려주는 주소가 **서명된 단기 주소**라
     추출 때와 다른 헤더로 요청하면 거부될 수 있기 때문이다.
@@ -107,6 +112,7 @@ def extract_audio_source(url):
 
             headers = selected.get("http_headers") or {}
             ext = selected.get("ext") or "m4a"
+            filesize = selected.get("filesize") or None
 
             title = (info_dict.get("title") or "")[:100] or None
             thumbnail_url = info_dict.get("thumbnail") or None
@@ -123,6 +129,7 @@ def extract_audio_source(url):
                 duration,
                 uploader,
                 description,
+                filesize,
             )
     except Exception as e:
         # 원래 자리를 지우면 어디서 깨졌는지 알 수 없다. 앱 로그가 이 문자열을 통째로 받는다.
