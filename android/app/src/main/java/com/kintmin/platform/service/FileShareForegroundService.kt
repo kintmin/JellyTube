@@ -170,7 +170,7 @@ class FileShareForegroundService : Service(), KoinComponent {
         if (migrationWakeLock?.isHeld != true) {
             migrationWakeLock = (getSystemService(POWER_SERVICE) as PowerManager)
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, MIGRATION_LOCK_TAG)
-                // 다시 잡을 때 개수가 쌓이지 않고 상한만 늘어나게 한다. 그래야 release 한 번으로 놓인다.
+                // 다시 잡아도 개수가 쌓이지 않아야 release 한 번으로 놓인다.
                 .apply { setReferenceCounted(false) }
                 .apply { acquire(MIGRATION_LOCK_TIMEOUT_MS) }
             renewWakeLockBeforeTimeout()
@@ -188,7 +188,6 @@ class FileShareForegroundService : Service(), KoinComponent {
         }
     }
 
-    // 상한이 다 차기 전에 다시 잡는다. 세션이 닫히면 releaseMigrationLocks 가 이 작업도 걷는다.
     private fun renewWakeLockBeforeTimeout() {
         migrationWakeLockRenewJob?.cancel()
         migrationWakeLockRenewJob = serviceScope.launch {
@@ -267,10 +266,7 @@ class FileShareForegroundService : Service(), KoinComponent {
             _isPcFileShareRunning.value = Owner.PC_FILE_SHARE in owners
         }
 
-        /**
-         * 알림의 중지나 시스템 종료로 내려가면 쓰던 쪽들이 서버가 살아 있다고 믿지 않게 비운다. 나갔다 바로 다시
-         * 들어오면 앞 서비스의 onDestroy 가 새로 연 뒤에 오므로, 마지막으로 띄운 서비스일 때만 비운다.
-         */
+        /** 나갔다 바로 다시 들어오면 앞 서비스의 onDestroy 가 새로 연 뒤에 온다. 마지막으로 띄운 서비스일 때만 비운다. */
         @Synchronized
         private fun clearOwnersIfCurrent(generation: Int) {
             if (generation != startedGeneration) return

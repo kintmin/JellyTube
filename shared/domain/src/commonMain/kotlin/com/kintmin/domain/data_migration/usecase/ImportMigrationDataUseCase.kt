@@ -57,9 +57,9 @@ class ImportMigrationDataUseCase constructor(
         val available = MigrationFiles.keepAvailable(export.snapshot, availableEntries.map { it.file }.toSet())
         val target = dataMigrationRepository.fetchSnapshot().getOrThrow()
 
-        // 보내는 기기에 음원 파일이 없는 곡은 계획 전에 빠진다. 이미 이 기기에 있는 곡이 아니면 실패로 알린다.
+        // 보내는 기기에 음원 파일이 없는 곡은 계획 전에 빠진다. 같은 곡의 다른 행으로 들어오거나 이미 이 기기에
+        // 있으면 실패가 아니다.
         val targetKeys = target.audioMedias.map { SourceKey.of(it.source) }.toSet()
-        // 같은 곡의 다른 행에 파일이 있으면 그 행으로 들어오므로 실패가 아니다.
         val availableKeys = available.audioMedias.map { SourceKey.of(it.source) }.toSet()
         val missingOnSender = export.snapshot.audioMedias
             .filter { SourceKey.of(it.source) !in availableKeys }
@@ -119,8 +119,7 @@ class ImportMigrationDataUseCase constructor(
         }
 
         onProgress(MigrationProgress(MigrationStage.APPLY))
-        // 커밋 직후에 취소되면 돌아오는 자리에서 CancellationException 이 난다. 그때 지우면 커밋된 행이 빈 파일을
-        // 가리키므로, 반영 자체가 실패했을 때만 지운다.
+        // 커밋 직후 취소돼도 돌아오는 자리에서 CancellationException 이 난다. 반영 자체가 실패했을 때만 지운다.
         val applied = withContext(NonCancellable) {
             dataMigrationRepository.applyPlan(applyPlan).onFailure { deleteRedownloaded(redownloaded) }
         }.getOrThrow()

@@ -18,7 +18,7 @@ object MigrationSessionHolder {
     /** 열려 있던 세션은 닫는다. 코드는 매번 새로 만든다. */
     @Synchronized
     fun open(): MigrationSession {
-        // close() 를 쓰면 Idle 을 거쳐 화면이 연결 끊김으로 한 번 깜빡인다. 상태는 아래에서 바로 바꾼다.
+        // close() 는 Idle 을 거쳐 화면이 연결 끊김으로 깜빡인다.
         _session.value?.let { previous ->
             _session.value = null
             previous.close()
