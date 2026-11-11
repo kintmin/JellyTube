@@ -4,6 +4,7 @@ import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.CreateLyricsVariantUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.port.model.RunningWork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +36,7 @@ internal class IosExecuteLyricsVariantCreation(
                     IosLocalNotification.show(
                         title = "${variant.label} 완료",
                         body = "탭하여 결과를 확인하세요.",
+                        deepLink = DeepLinkConstants.UrlBuilder.lyricsViewerScreen(audioMediaId),
                     )
                 }
                 .onFailure { throwable ->
@@ -44,6 +46,7 @@ internal class IosExecuteLyricsVariantCreation(
                     IosLocalNotification.show(
                         title = "${variant.label} 실패",
                         body = "번역에 실패했습니다. 로그를 확인해주세요.",
+                        deepLink = DeepLinkConstants.UrlBuilder.appLogScreen(),
                     )
                 }
         }

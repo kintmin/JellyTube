@@ -3,6 +3,7 @@ package com.kintmin.presentation.port
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.port.model.RunningWork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,6 +50,7 @@ internal class IosExecuteAnomalyDataCheck(
                         IosLocalNotification.show(
                             title = "이상 데이터 점검 실패",
                             body = "작업 도중 오류가 발생했습니다\n앱 로그를 확인해주세요.",
+                            deepLink = DeepLinkConstants.UrlBuilder.appLogScreen(),
                         )
                     }
             } finally {

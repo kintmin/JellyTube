@@ -23,6 +23,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         completionHandler([.banner, .list, .sound])
     }
 
+    /// 알림을 탭했을 때. 앱이 꺼져 있었어도 `App.init`(Koin) 뒤에 불리므로 바로 넘겨도 된다.
+    /// 딥링크 키 해석은 Kotlin 이 한다.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        MainViewControllerKt.handleNotificationTap(userInfo: response.notification.request.content.userInfo)
+        completionHandler()
+    }
+
     func application(
         _ application: UIApplication,
         handleEventsForBackgroundURLSession identifier: String,
