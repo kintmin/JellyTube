@@ -10,15 +10,27 @@ object YoutubeUrl {
         "youtube.com",
         "www.youtube.com",
         "m.youtube.com",
+        "music.youtube.com",
         "youtu.be",
     )
-    private val DOWNLOADABLE_FIRST_PATH_SEGMENTS = setOf("watch", "shorts")
 
-    fun isDownloadable(url: String): Boolean {
-        val host = hostOf(url)?.lowercase() ?: return false
-        val firstPathSegment = firstPathSegmentOf(url) ?: return false
+    /** yt-dlp 는 영상 ID 를 뽑을 수 있는 주소면 받는다. 같은 기준으로 가른다. */
+    fun isDownloadable(url: String): Boolean = videoIdOf(url) != null
 
-        return host in DOWNLOADABLE_HOSTS && firstPathSegment in DOWNLOADABLE_FIRST_PATH_SEGMENTS
+    /** 같은 영상을 가리키는 주소는 `si`·`t` 같은 파라미터나 호스트가 달라도 같은 값을 낸다. 영상 주소가 아니면 null. */
+    fun videoIdOf(url: String): String? {
+        val host = hostOf(url)?.lowercase() ?: return null
+        if (host !in DOWNLOADABLE_HOSTS) return null
+        val pathSegments = pathOf(url)?.split('/').orEmpty()
+
+        val videoId = when {
+            host == "youtu.be" -> pathSegments.firstOrNull()
+            pathSegments.firstOrNull() == "watch" -> firstQueryValueOf(url, key = "v")
+            // 라이브(종료된 것 포함)는 공유하면 `/live/{id}` 이고, 모바일 웹은 이 경로를 watch 로 바꾸지 않는다.
+            pathSegments.firstOrNull() == "shorts" || pathSegments.firstOrNull() == "live" -> pathSegments.getOrNull(1)
+            else -> null
+        }
+        return videoId?.ifEmpty { null }
     }
 
     /** 포트·userinfo 는 떼어낸다. */
@@ -33,17 +45,24 @@ object YoutubeUrl {
         return host.ifEmpty { null }
     }
 
-    private fun firstPathSegmentOf(url: String): String? {
+    /** 앞의 `/` 를 뗀 경로. 쿼리·프래그먼트는 뺀다. */
+    private fun pathOf(url: String): String? {
         val afterScheme = url.substringAfter("://", missingDelimiterValue = "")
         if (afterScheme.isEmpty()) return null
 
         val authorityEnd = afterScheme.indexOf('/')
         if (authorityEnd == -1) return null
 
-        val path = afterScheme.substring(authorityEnd + 1)
+        return afterScheme.substring(authorityEnd + 1)
             .substringBefore('?')
             .substringBefore('#')
+    }
 
-        return path.substringBefore('/').ifEmpty { null }
+    /** 같은 키가 여러 번이면 첫 번째가 이긴다. */
+    private fun firstQueryValueOf(url: String, key: String): String? {
+        val query = url.substringAfter('?', missingDelimiterValue = "").substringBefore('#')
+        return query.split('&')
+            .firstOrNull { it.substringBefore('=') == key }
+            ?.substringAfter('=', missingDelimiterValue = "")
     }
 }

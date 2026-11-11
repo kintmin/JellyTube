@@ -17,6 +17,7 @@ import androidx.compose.material.icons.rounded.DirectionsWalk
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.SaveAlt
+import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,6 +43,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.SystemSettingsTarget
 import com.kintmin.presentation.platform.isDeviceSaveSupported
+import com.kintmin.presentation.platform.isDataMigrationReceiveSupported
+import com.kintmin.presentation.platform.isDataMigrationSendSupported
 import com.kintmin.presentation.platform.isFileShareReceiveSupported
 import com.kintmin.presentation.platform.rememberAppVersionName
 import com.kintmin.presentation.platform.rememberAudioFilePicker
@@ -63,6 +66,8 @@ fun SettingScreen(
     navigateToAppLog: () -> Unit,
     navigateToShare: () -> Unit,
     navigateToFileShareReceive: () -> Unit,
+    navigateToDataMigrationSend: () -> Unit,
+    navigateToDataMigrationReceive: () -> Unit,
     navigateToDeviceSave: () -> Unit,
 ) {
     val viewModel = koinViewModel<SettingViewModel>()
@@ -87,6 +92,8 @@ fun SettingScreen(
                 SettingEvent.NavigateToAppLogScreen -> navigateToAppLog()
                 SettingEvent.NavigateToShareScreen -> navigateToShare()
                 SettingEvent.NavigateToFileShareReceiveScreen -> navigateToFileShareReceive()
+                SettingEvent.NavigateToDataMigrationSendScreen -> navigateToDataMigrationSend()
+                SettingEvent.NavigateToDataMigrationReceiveScreen -> navigateToDataMigrationReceive()
                 SettingEvent.NavigateToDeviceSaveScreen -> navigateToDeviceSave()
                 SettingEvent.LaunchAudioFilePicker -> audioFilePicker.launch()
                 is SettingEvent.ShowToast ->
@@ -239,6 +246,22 @@ fun SettingScreen(
                         icon = Icons.Rounded.Computer,
                         onClick = { sendIntent(SettingIntent.OnClickFileShareReceiveTile) },
                         trailing = { SettingNavigateIcon(contentDescription = "PC에서 공유받기 화면으로 이동") },
+                    )
+                }
+                if (isDataMigrationSendSupported) {
+                    SettingItemView(
+                        title = "다른 기기로 데이터 보내기",
+                        icon = Icons.Rounded.SwapHoriz,
+                        onClick = { sendIntent(SettingIntent.OnClickDataMigrationSendTile) },
+                        trailing = { SettingNavigateIcon(contentDescription = "데이터 보내기 화면으로 이동") },
+                    )
+                }
+                if (isDataMigrationReceiveSupported) {
+                    SettingItemView(
+                        title = "Android에서 데이터 가져오기",
+                        icon = Icons.Rounded.SwapHoriz,
+                        onClick = { sendIntent(SettingIntent.OnClickDataMigrationReceiveTile) },
+                        trailing = { SettingNavigateIcon(contentDescription = "데이터 가져오기 화면으로 이동") },
                     )
                 }
                 if (isDeviceSaveSupported) {

@@ -44,6 +44,10 @@ import com.kintmin.presentation.ui.setting.device_save.navigation.navigateToSett
 import com.kintmin.presentation.ui.setting.device_save.navigation.settingDeviceSaveScreen
 import com.kintmin.presentation.ui.setting.device_save_select.navigation.navigateToSettingDeviceSaveSelectScreen
 import com.kintmin.presentation.ui.setting.device_save_select.navigation.settingDeviceSaveSelectScreen
+import com.kintmin.presentation.ui.setting.data_migration_receive.navigation.navigateToSettingDataMigrationReceiveScreen
+import com.kintmin.presentation.ui.setting.data_migration_receive.navigation.settingDataMigrationReceiveScreen
+import com.kintmin.presentation.ui.setting.data_migration_send.navigation.navigateToSettingDataMigrationSendScreen
+import com.kintmin.presentation.ui.setting.data_migration_send.navigation.settingDataMigrationSendScreen
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.navigateToSettingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.settingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.quick_share.navigation.navigateToSettingShareScreen
@@ -213,6 +217,12 @@ fun MainNavHost(
             navigateToFileShareReceive = {
                 navController.navigateToSettingFileShareReceiveScreen(navOptions)
             },
+            navigateToDataMigrationSend = {
+                navController.navigateToSettingDataMigrationSendScreen(navOptions)
+            },
+            navigateToDataMigrationReceive = {
+                navController.navigateToSettingDataMigrationReceiveScreen(navOptions)
+            },
             navigateToDeviceSave = {
                 navController.navigateToSettingDeviceSaveScreen(navOptions)
             },
@@ -230,6 +240,14 @@ fun MainNavHost(
             )
 
             settingFileShareReceiveScreen(
+                navigateToBack = { navController.popBackStack() },
+            )
+
+            settingDataMigrationSendScreen(
+                navigateToBack = { navController.popBackStack() },
+            )
+
+            settingDataMigrationReceiveScreen(
                 navigateToBack = { navController.popBackStack() },
             )
 

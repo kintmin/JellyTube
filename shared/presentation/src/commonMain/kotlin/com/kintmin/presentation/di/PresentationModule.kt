@@ -21,6 +21,8 @@ import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewMo
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListViewModel
 import com.kintmin.presentation.ui.setting.SettingViewModel
 import com.kintmin.presentation.ui.setting.app_log.AppLogViewModel
+import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveViewModel
+import com.kintmin.presentation.ui.setting.data_migration_send.SettingDataMigrationSendViewModel
 import com.kintmin.presentation.ui.setting.file_share_receive.SettingFileShareReceiveViewModel
 import com.kintmin.presentation.ui.setting.device_save_select.SettingDeviceSaveSelectViewModel
 import com.kintmin.presentation.ui.setting.quick_share.SettingShareViewModel
@@ -35,6 +37,8 @@ val presentationModule: Module = module {
     viewModelOf(::SettingViewModel)
     viewModelOf(::PlayerBarViewModel)
     viewModelOf(::SettingFileShareReceiveViewModel)
+    viewModelOf(::SettingDataMigrationSendViewModel)
+    viewModelOf(::SettingDataMigrationReceiveViewModel)
     viewModelOf(::SettingShareViewModel)
     viewModelOf(::SettingDeviceSaveSelectViewModel)
     viewModelOf(::AppLogViewModel)

@@ -15,6 +15,17 @@ class YoutubeUrlTest {
     }
 
     @Test
+    fun `yt-dlp 가 받는 라이브와 유튜브 뮤직 주소도 다운로드 대상이다`() {
+        assertTrue(YoutubeUrl.isDownloadable("https://m.youtube.com/live/abc123"))
+        assertTrue(YoutubeUrl.isDownloadable("https://www.youtube.com/live/abc123?si=x"))
+        assertTrue(YoutubeUrl.isDownloadable("https://music.youtube.com/watch?v=abc123"))
+        assertTrue(YoutubeUrl.isDownloadable("https://youtu.be/abc123?si=x"))
+        assertFalse(YoutubeUrl.isDownloadable("https://m.youtube.com/live"))
+        assertFalse(YoutubeUrl.isDownloadable("https://m.youtube.com/watch"))
+        assertFalse(YoutubeUrl.isDownloadable("https://m.youtube.com/shorts/"))
+    }
+
+    @Test
     fun `호스트 대소문자를 가리지 않는다`() {
         assertTrue(YoutubeUrl.isDownloadable("https://M.YouTube.com/watch?v=abc123"))
     }

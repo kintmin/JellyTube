@@ -10,13 +10,13 @@ class FileShareServerControllerImpl(
     private val appContext: Context,
 ) : FileShareServerController {
 
-    override val isRunning: StateFlow<Boolean> = FileShareForegroundService.isRunning
+    override val isRunning: StateFlow<Boolean> = FileShareForegroundService.isPcFileShareRunning
 
     override fun start() {
-        FileShareForegroundService.startService(appContext)
+        FileShareForegroundService.startService(appContext, FileShareForegroundService.Owner.PC_FILE_SHARE)
     }
 
     override fun stop() {
-        FileShareForegroundService.stopService(appContext)
+        FileShareForegroundService.stopService(appContext, FileShareForegroundService.Owner.PC_FILE_SHARE)
     }
 }

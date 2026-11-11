@@ -10,9 +10,11 @@ import com.kintmin.data.network.createHttpClient
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.network.dataSource.KaraokeDataSource
 import com.kintmin.data.network.dataSource.LyricsDataSource
+import com.kintmin.data.network.dataSource.MigrationDataSource
 import com.kintmin.data.network.dataSourceImpl.HttpDataSourceImpl
 import com.kintmin.data.network.dataSourceImpl.KaraokeDataSourceImpl
 import com.kintmin.data.network.dataSourceImpl.LyricsDataSourceImpl
+import com.kintmin.data.network.dataSourceImpl.MigrationDataSourceImpl
 import com.kintmin.data.repository_impl.*
 import com.kintmin.domain.app_log.repository.AppLogRepository
 import com.kintmin.domain.app_log.usecase.*
@@ -26,6 +28,8 @@ import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingReposito
 import com.kintmin.domain.audio_play_setting.usecase.*
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.audio_track.usecase.*
+import com.kintmin.domain.data_migration.repository.DataMigrationRepository
+import com.kintmin.domain.data_migration.usecase.*
 import com.kintmin.domain.karaoke.repository.KaraokeRepository
 import com.kintmin.domain.karaoke.usecase.*
 import com.kintmin.domain.lyrics.repository.LyricsRepository
@@ -51,6 +55,7 @@ val dataCommonModule: Module = module {
     single<HttpDataSource> { HttpDataSourceImpl(get()) }
     single<LyricsDataSource> { LyricsDataSourceImpl(get()) }
     single<KaraokeDataSource> { KaraokeDataSourceImpl(get()) }
+    single<MigrationDataSource> { MigrationDataSourceImpl(get()) }
     single<DatastoreUtil> { DatastoreUtilImpl(get<DataStore<Preferences>>()) }
 
     single { get<JellyTubeDatabase>().audioMediaDao() }
@@ -66,6 +71,7 @@ val dataCommonModule: Module = module {
     singleOf(::AudioMediaRepositoryImpl) bind AudioMediaRepository::class
     singleOf(::AudioPlaySettingRepositoryImpl) bind AudioPlaySettingRepository::class
     singleOf(::AudioTrackRepositoryImpl) bind AudioTrackRepository::class
+    singleOf(::DataMigrationRepositoryImpl) bind DataMigrationRepository::class
     singleOf(::DeviceStatusRepositoryImpl) bind DeviceStatusRepository::class
     singleOf(::LyricsRepositoryImpl) bind LyricsRepository::class
     singleOf(::LyricsTranslationRepositoryImpl) bind LyricsTranslationRepository::class
@@ -86,11 +92,18 @@ val dataCommonModule: Module = module {
     factoryOf(::ApplyAudioEditUseCase)
     factoryOf(::FetchAudioEditTimelineUseCase)
     factoryOf(::ObserveAudioEditSavingUseCase)
+    factoryOf(::FetchSavingAudioMediaIdsFlowUseCase)
     factoryOf(::ReserveAudioEditSaveUseCase)
     factoryOf(::ReleaseAudioEditSaveUseCase)
     factoryOf(::MeasureAudioDurationUseCase)
     factoryOf(::RevertAudioEditUseCase)
     factoryOf(::SaveEditedAudioAsNewMediaUseCase)
+
+    factoryOf(::ExportMigrationDataUseCase)
+    factoryOf(::ResolveMigrationFilePathUseCase)
+    factoryOf(::PairMigrationSourceUseCase)
+    factoryOf(::ImportMigrationDataUseCase)
+    factoryOf(::ClearMigrationStagingUseCase)
 
     factoryOf(::CleanupAnomalousDataUseCase)
     factoryOf(::DeleteAudioMediaListUseCase)

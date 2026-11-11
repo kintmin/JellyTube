@@ -4,6 +4,7 @@ import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.CreateLyricsVariantUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.presentation.port.model.RunningWork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,7 +28,9 @@ internal class IosExecuteLyricsVariantCreation(
         sourceLanguage: String,
     ) {
         scope.launch {
-            createLyricsVariantUseCase(lyricFileFullPath, variant, sourceLanguage)
+            IosRunningWorkTracker.track(RunningWork.LYRICS_VARIANT) {
+                createLyricsVariantUseCase(lyricFileFullPath, variant, sourceLanguage)
+            }
                 .onSuccess {
                     IosLocalNotification.show(
                         title = "${variant.label} 완료",

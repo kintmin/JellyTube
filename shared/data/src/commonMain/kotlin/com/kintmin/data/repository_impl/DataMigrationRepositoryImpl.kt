@@ -1,0 +1,196 @@
+package com.kintmin.data.repository_impl
+
+import com.kintmin.data.data_migration.isPlayableAudioExtension
+import com.kintmin.data.data_migration.toExport
+import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
+import com.kintmin.data.local_file.FileManager
+import com.kintmin.data.network.dataSource.MigrationDataSource
+import com.kintmin.domain.data_migration.MigrationFiles
+import com.kintmin.domain.data_migration.model.MigrationApplyResult
+import com.kintmin.domain.data_migration.model.MigrationEndpoint
+import com.kintmin.domain.data_migration.model.MigrationExport
+import com.kintmin.domain.data_migration.model.MigrationFile
+import com.kintmin.domain.data_migration.model.MigrationFileEntry
+import com.kintmin.domain.data_migration.model.MigrationFileKind
+import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
+import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
+import com.kintmin.domain.data_migration.model.MigrationPlan
+import com.kintmin.domain.data_migration.model.MigrationSenderCleanupFailedException
+import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
+import com.kintmin.domain.data_migration.model.MigrationSnapshot
+import com.kintmin.domain.data_migration.model.MigrationSummary
+import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
+import com.kintmin.domain.data_migration.repository.DataMigrationRepository
+import com.kintmin.fileshare.FileShareConstants
+import io.ktor.client.plugins.ClientRequestException
+import io.ktor.client.plugins.ServerResponseException
+import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
+import okio.FileSystem
+import okio.IOException
+import okio.Path
+import okio.Path.Companion.toPath
+import okio.buffer
+
+class DataMigrationRepositoryImpl constructor(
+    private val audioMediaFacade: AudioMediaFacade,
+    private val fileManager: FileManager,
+    private val migrationDataSource: MigrationDataSource,
+) : DataMigrationRepository {
+
+    private val fileSystem = FileSystem.SYSTEM
+
+    override suspend fun exportData(): Result<MigrationExport> = withContext(Dispatchers.IO) {
+        runCatching {
+            val snapshot = audioMediaFacade.fetchMigrationSnapshot()
+            val files = MigrationFiles.referencedBy(snapshot.audioMedias, snapshot.playlists)
+                .mapNotNull { file ->
+                    val path = resolveFilePath(file).getOrNull() ?: return@mapNotNull null
+                    val size = fileSystem.metadataOrNull(path.toPath())?.size ?: return@mapNotNull null
+                    MigrationFileEntry(file, size)
+                }
+            MigrationExport(snapshot, files, downloadSettings = null)
+        }
+    }
+
+    override fun resolveFilePath(file: MigrationFile): Result<String> = when (file.kind) {
+        MigrationFileKind.AUDIO -> fileManager.getAudioFileFullPath(file.name)
+        MigrationFileKind.IMAGE -> fileManager.getImageFileFullPath(file.name)
+        MigrationFileKind.LYRIC -> fileManager.getLyricFileFullPath(file.name)
+    }
+
+    override suspend fun fetchSnapshot(): Result<MigrationSnapshot> = withContext(Dispatchers.IO) {
+        runCatching { audioMediaFacade.fetchMigrationSnapshot() }
+    }
+
+    override fun isPlayableAudioFile(fileName: String): Boolean =
+        isPlayableAudioExtension(fileName.substringAfterLast('.', missingDelimiterValue = ""))
+
+    override suspend fun pair(endpoint: MigrationEndpoint, code: String): Result<String> = runCatching {
+        migrationDataSource.pair(endpoint.host, endpoint.port, code).getOrThrow()
+            ?: throw MigrationPairRejectedException()
+    }
+
+    override suspend fun fetchRemoteExport(endpoint: MigrationEndpoint, token: String): Result<MigrationExport> =
+        runCatching {
+            val manifest = migrationDataSource.fetchManifest(endpoint.host, endpoint.port, token)
+                .getOrElse { error ->
+                    if (error is ServerResponseException && error.response.status == HttpStatusCode.ServiceUnavailable) {
+                        throw MigrationSenderCleanupFailedException(error)
+                    }
+                    throw error.asSessionExpiredOrSelf()
+                }
+            if (manifest.formatVersion != FileShareConstants.MIGRATION_FORMAT_VERSION) {
+                throw MigrationVersionMismatchException()
+            }
+            manifest.toExport()
+        }
+
+    override suspend fun stageFile(
+        endpoint: MigrationEndpoint,
+        token: String,
+        entry: MigrationFileEntry,
+        onReceived: (Long) -> Unit,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val staged = stagedPath(entry.file)
+            if (fileSystem.metadataOrNull(staged)?.size == entry.size) return@runCatching
+
+            // 받다 끊긴 파일이 받아 둔 파일로 보이지 않도록 다 받은 뒤에 이름을 바꾼다.
+            val part = "$staged.part".toPath()
+            fileSystem.createDirectories(staged.parent!!)
+            var received = 0L
+            val sink = fileSystem.sink(part).buffer()
+            try {
+                migrationDataSource.downloadFile(
+                    host = endpoint.host,
+                    port = endpoint.port,
+                    token = token,
+                    kind = entry.file.kind.name,
+                    name = entry.file.name,
+                ) { bytes, count ->
+                    sink.write(bytes, 0, count)
+                    received += count
+                    onReceived(received)
+                }.getOrElse { error ->
+                    if (error is ClientRequestException && error.response.status == HttpStatusCode.Gone) {
+                        throw MigrationFileUnavailableException(entry.file.name, error)
+                    }
+                    throw error.asSessionExpiredOrSelf()
+                }
+            } finally {
+                sink.close()
+            }
+            if (received != entry.size) {
+                fileSystem.delete(part, mustExist = false)
+                throw MigrationFileUnavailableException("${entry.file.name} (받은 크기 $received / ${entry.size})")
+            }
+            fileSystem.atomicMove(part, staged)
+        }
+    }
+
+    override suspend fun applyPlan(plan: MigrationPlan): Result<MigrationApplyResult> = withContext(Dispatchers.IO) {
+        runCatching {
+            val moved = mutableListOf<Path>()
+            try {
+                plan.requiredFiles.forEach { file ->
+                    val destination = resolveFilePath(file).getOrThrow().toPath()
+                    // 이름이 UUID 라 이미 있으면 같은 파일이다. 남의 파일이므로 되돌릴 때 지우지 않는다.
+                    if (fileSystem.exists(destination)) return@forEach
+                    fileSystem.moveFile(stagedPath(file), destination)
+                    moved += destination
+                }
+                MigrationApplyResult(audioMediaFacade.applyMigrationPlan(plan))
+            } catch (e: Throwable) {
+                moved.forEach { fileSystem.delete(it, mustExist = false) }
+                throw e
+            }
+        }
+    }
+
+    override suspend fun clearStaging(): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            fileSystem.deleteRecursively(fileManager.getMigrationStagingDirPath().getOrThrow().toPath(), mustExist = false)
+        }
+    }
+
+    override suspend fun notifyFinished(
+        endpoint: MigrationEndpoint,
+        token: String,
+        summary: MigrationSummary,
+    ): Result<Unit> = migrationDataSource.finish(
+        host = endpoint.host,
+        port = endpoint.port,
+        token = token,
+        newAudioMediaCount = summary.newAudioMediaCount,
+        failedCount = summary.failures.size,
+    )
+
+    /** 401 은 토큰이 바뀐 것, 404 는 세션이 닫힌 것이다. */
+    private fun Throwable.asSessionExpiredOrSelf(): Throwable {
+        val status = (this as? ClientRequestException)?.response?.status
+        return if (status == HttpStatusCode.Unauthorized || status == HttpStatusCode.NotFound) {
+            MigrationSessionExpiredException(this)
+        } else {
+            this
+        }
+    }
+
+    private fun stagedPath(file: MigrationFile): Path =
+        fileManager.getMigrationStagingDirPath().getOrThrow().toPath() / file.kind.name / file.name
+}
+
+internal fun FileSystem.moveFile(source: Path, destination: Path) {
+    try {
+        atomicMove(source, destination)
+    } catch (e: IOException) {
+        // 반쯤 복사된 파일을 남기면 다음 시도가 이미 있는 같은 파일로 보고 건너뛴다.
+        runCatching { copy(source, destination) }.onFailure {
+            delete(destination, mustExist = false)
+            throw it
+        }
+        delete(source)
+    }
+}

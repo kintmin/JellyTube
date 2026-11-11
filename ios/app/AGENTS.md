@@ -41,7 +41,7 @@ Obj-C 헤더로 쏟아진다.
    (`startApp` / `mainViewController` / `handleDeepLink` / `handleSharedAudioFile`)
 4. 도메인 포트의 iOS 구현 — `domain` 에 플랫폼 구현을 넣지 않기 위해서다
 5. Swift 가 구현할 Kotlin 인터페이스 — 프레임워크에 들어가는 모듈이라야 Swift 가 본다
-   (`IosMediaControllerBridge`, `IosAppLogBridge`)
+   (`IosMediaControllerBridge`, `IosAppLogBridge`, `IosMigrationSourceBrowserBridge`)
 
 **앱 레벨 ViewModel 은 파일 최상위에 `by lazy` 로 한 벌만** 둔다. iOS 는 단일 윈도우이고,
 Compose 밖(`onOpenURL`)에서 들어온 이벤트를 화면과 **같은 인스턴스**로 넘겨야 한다.
@@ -70,8 +70,8 @@ Compose 밖(`onOpenURL`)에서 들어온 이벤트를 화면과 **같은 인스�
 
 ## 브릿지 패턴 — Swift 가 Kotlin 인터페이스를 구현한다
 
-세 군데가 같은 모양이다: `IosPythonExecutorBridge`(data), `IosMediaControllerBridge`(ios/shared),
-`IosAppLogBridge`(ios/shared).
+네 군데가 같은 모양이다: `IosPythonExecutorBridge`(data), `IosMediaControllerBridge`(ios/shared),
+`IosAppLogBridge`(ios/shared), `IosMigrationSourceBrowserBridge`(ios/shared — `NWBrowser` 탐색).
 
 ```kotlin
 // Kotlin — 프레임워크에 들어가는 모듈에 선언한다
@@ -106,7 +106,9 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 
 지금 파일에 있는 것: `CADisableMinimumFrameDurationOnPhone`(CMP 필수) ·
 `NSMotionUsageDescription`(걸음수) · `CFBundleURLTypes`(딥링크 스킴) ·
-`CFBundleDocumentTypes`(공유 수신) · `UIBackgroundModes: audio`(백그라운드 재생).
+`CFBundleDocumentTypes`(공유 수신) · `UIBackgroundModes: audio`(백그라운드 재생) ·
+`NSLocalNetworkUsageDescription` + `NSBonjourServices`(데이터 이전 탐색 — 둘 중 하나라도 없으면
+탐색이 오류 없이 0건) · `NSAppTransportSecurity.NSAllowsLocalNetworking`(보내는 기기의 평문 HTTP).
 
 ---
 
@@ -151,7 +153,7 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 | 항목 | 이유 |
 |---|---|
 | 음원 편집 | Media3 Transformer + TarsosDSP 기반이라 전면 재작성이다 |
-| PC 파일 수신 | `shared:file-share` 가 JVM 전용 모듈이라 상수조차 공유되지 않는다 |
+| PC 파일 수신 | 수신 서버(Ktor CIO)와 그 서버를 붙잡아 두는 포그라운드 서비스가 Android 에만 있다 |
 | 드로잉 / 플로팅 UI | `MotionEvent` + S펜 전제. Apple Pencil 에 대응물이 없다 |
 | 기기 저장(벨소리/알람/알림음) | 세 타깃 전부 30초 트리밍 + 포맷 변환이 선행 조건이라 음원 편집과 묶인다 |
 | 번역(ML Kit) | 대응물이 iOS 18+ `Translation` 뿐인데 배포 타깃이 17.0 이다 |

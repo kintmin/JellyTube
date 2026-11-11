@@ -158,6 +158,16 @@ class SettingViewModel constructor(
                     _eventFlow.emit(SettingEvent.NavigateToFileShareReceiveScreen)
                 }
             }
+            SettingIntent.OnClickDataMigrationSendTile -> {
+                viewModelScope.launch {
+                    _eventFlow.emit(SettingEvent.NavigateToDataMigrationSendScreen)
+                }
+            }
+            SettingIntent.OnClickDataMigrationReceiveTile -> {
+                viewModelScope.launch {
+                    _eventFlow.emit(SettingEvent.NavigateToDataMigrationReceiveScreen)
+                }
+            }
             is SettingIntent.OnToggleIsStepEnabled -> {
                 if (intent.value) {
                     viewModelScope.launch {

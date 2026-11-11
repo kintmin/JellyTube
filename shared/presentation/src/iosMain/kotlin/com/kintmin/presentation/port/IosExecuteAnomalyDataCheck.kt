@@ -3,6 +3,7 @@ package com.kintmin.presentation.port
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.presentation.port.model.RunningWork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,7 +35,7 @@ internal class IosExecuteAnomalyDataCheck(
 
         scope.launch {
             try {
-                cleanupAnomalousDataUseCase()
+                IosRunningWorkTracker.track(RunningWork.ANOMALY_DATA_CHECK) { cleanupAnomalousDataUseCase() }
                     .onSuccess { anomalyCount ->
                         IosLocalNotification.show(
                             title = "이상 데이터 점검 완료",

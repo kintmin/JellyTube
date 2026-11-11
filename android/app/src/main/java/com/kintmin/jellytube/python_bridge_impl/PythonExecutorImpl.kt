@@ -5,6 +5,7 @@ import android.util.Log
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.kintmin.data.python_bridge.PythonExecutor
+import com.kintmin.data.python_bridge.model.PlayableAudioDownloadDto
 import com.kintmin.data.python_bridge.model.YoutubeDownloadDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -43,6 +44,26 @@ class PythonExecutorImpl(
         }
     }
 
+    override suspend fun downloadPlayableAudio(
+        youtubeUrl: String,
+        audioDownloadPath: String,
+    ): Result<PlayableAudioDownloadDto> = withContext(Dispatchers.IO) {
+        runCatching {
+            if (!Python.isStarted()) {
+                Python.start(AndroidPlatform(context))
+            }
+
+            withTimeout(TIME_OUT) {
+                val module = Python.getInstance().getModule(FILE_NAME)
+                val pyResult = module.callAttr(METHOD_DOWNLOAD_PLAYABLE_AUDIO, youtubeUrl, audioDownloadPath).asList()
+                PlayableAudioDownloadDto(
+                    audioFileNameWithExt = pyResult.getOrNull(0)?.toString().orEmpty(),
+                    duration = pyResult.getOrNull(1)?.toString().orEmpty(),
+                )
+            }
+        }
+    }
+
     override suspend fun extractYoutubeUrlsFromPlaylist(playlistUrl: String): Result<List<String>> = withContext(Dispatchers.IO) {
         runCatching {
             if (!Python.isStarted()) {
@@ -62,6 +83,7 @@ class PythonExecutorImpl(
         const val FILE_NAME = "download_youtube_audio"
         const val METHOD_GET_VERSION = "get_version"
         const val METHOD_DOWNLOAD_AUDIO = "download_audio"
+        const val METHOD_DOWNLOAD_PLAYABLE_AUDIO = "download_playable_audio"
         const val METHOD_EXTRACT_VIDEO_URLS_FROM_PLAYLIST = "extract_video_urls_from_playlist"
     }
 }

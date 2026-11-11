@@ -21,4 +21,15 @@ object FileShareConstants {
     const val HEADER_FILE_NAME = "X-File-Name"
     /** 썸네일 일괄 변경 대상 audioMediaId 목록 전달 헤더 */
     const val HEADER_AUDIO_MEDIA_IDS = "X-Audio-Media-Ids"
+
+    /** 데이터 이전 페어링 HTTP POST endpoint. 화면에 띄운 코드를 토큰으로 바꾼다 */
+    const val MIGRATION_PAIR_PATH = "/migration/pair"
+    /** 데이터 이전 manifest HTTP GET endpoint */
+    const val MIGRATION_MANIFEST_PATH = "/migration/manifest"
+    /** 데이터 이전 파일 HTTP GET endpoint. 뒤에 `/{kind}/{name}` 이 붙는다 */
+    const val MIGRATION_FILES_PATH = "/migration/files"
+    /** 데이터 이전 완료 알림 HTTP POST endpoint. 받는 기기가 끝나면 보내는 기기에 결과를 알린다 */
+    const val MIGRATION_FINISH_PATH = "/migration/finish"
+    /** 이전 프로토콜 버전. 양쪽이 다르면 받는 쪽이 이전을 거부한다 */
+    const val MIGRATION_FORMAT_VERSION = 1
 }

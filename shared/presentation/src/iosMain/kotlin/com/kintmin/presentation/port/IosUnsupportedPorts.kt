@@ -2,6 +2,7 @@ package com.kintmin.presentation.port
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
+import com.kintmin.presentation.port.model.DataMigrationSendStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -23,10 +24,19 @@ internal class IosAudioPreviewPlayerStub : AudioPreviewPlayer {
     override fun release() = Unit
 }
 
-/** PC 파일 수신 미제공. `shared:file-share` 가 JVM 전용 모듈이라 상수조차 공유되지 않는다. */
+/** PC 파일 수신 미제공. 수신 서버와 그 서버를 붙잡아 두는 포그라운드 서비스가 Android 에만 있다. */
 internal class IosFileShareServerControllerStub : FileShareServerController {
 
     override val isRunning: StateFlow<Boolean> = MutableStateFlow(false)
+
+    override fun start() = Unit
+    override fun stop() = Unit
+}
+
+/** 데이터 보내기 미제공. iOS 는 받는 쪽만 한다 — 보내는 서버가 Android 에만 있다. */
+internal class IosDataMigrationSendControllerStub : DataMigrationSendController {
+
+    override val status: StateFlow<DataMigrationSendStatus> = MutableStateFlow(DataMigrationSendStatus.Idle)
 
     override fun start() = Unit
     override fun stop() = Unit

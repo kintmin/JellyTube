@@ -1,5 +1,6 @@
 package com.kintmin.data.python_bridge
 
+import com.kintmin.data.python_bridge.model.PlayableAudioDownloadDto
 import com.kintmin.data.python_bridge.model.YoutubeDownloadDto
 
 interface IosPythonExecutorBridge {
@@ -7,6 +8,12 @@ interface IosPythonExecutorBridge {
         youtubeUrl: String,
         audioDownloadPath: String,
     ): YoutubeDownloadDto
+
+    /** `download_youtube_audio.py` 의 `download_playable_audio`. 앱 프로세스 안에서 받는다. */
+    suspend fun downloadPlayableAudio(
+        youtubeUrl: String,
+        audioDownloadPath: String,
+    ): PlayableAudioDownloadDto
 
     suspend fun extractYoutubeUrlsFromPlaylist(
         playlistUrl: String,
@@ -37,6 +44,13 @@ internal class IosPythonExecutorAdapter(
             youtubeUrl = youtubeUrl,
             audioDownloadPath = audioDownloadPath,
         )
+    }
+
+    override suspend fun downloadPlayableAudio(
+        youtubeUrl: String,
+        audioDownloadPath: String,
+    ): Result<PlayableAudioDownloadDto> = runCatching {
+        bridge.downloadPlayableAudio(youtubeUrl = youtubeUrl, audioDownloadPath = audioDownloadPath)
     }
 
     override suspend fun extractYoutubeUrlsFromPlaylist(playlistUrl: String): Result<List<String>> = runCatching {

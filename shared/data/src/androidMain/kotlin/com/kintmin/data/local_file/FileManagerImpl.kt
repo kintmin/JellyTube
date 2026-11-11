@@ -30,6 +30,7 @@ internal class FileManagerImpl(
 
         const val LOG_DIR_NAME = "app_logs"
         const val LYRIC_DIR_NAME = "lyrics"
+        const val MIGRATION_STAGING_DIR_NAME = "migration_staging"
 
         const val EXPORT_DIR_NAME = "JellyTube"
 
@@ -67,6 +68,11 @@ internal class FileManagerImpl(
 
     override fun getLyricFileFullPath(fileNameWithExt: String) = runCatching {
         lyricDir().resolve(fileNameWithExt).absolutePath
+    }
+
+    // Android 는 받는 쪽이 아니지만 계약을 채운다. 음원 디렉터리와 볼륨이 달라 옮기기는 복사로 떨어진다.
+    override fun getMigrationStagingDirPath() = runCatching {
+        resolveDirectory(appContext.filesDir.resolve(MIGRATION_STAGING_DIR_NAME)).absolutePath
     }
 
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String) =

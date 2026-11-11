@@ -5,6 +5,7 @@ import com.kintmin.data.local_db.dao_facade.AddNewAudioMediaResult
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.AudioMediaEntity
+import com.kintmin.data.local_file.AudioFileExtensionCorrector
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
@@ -12,6 +13,7 @@ import com.kintmin.domain.audio_media.model.AddedAudioMedia
 import com.kintmin.domain.audio_media.model.AudioExportTarget
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
+import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
@@ -75,6 +77,30 @@ internal class AudioMediaRepositoryImpl constructor(
             }
         }
     }
+
+    override suspend fun downloadAudioFile(downloadUrl: String): Result<DownloadedAudioFile> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val audioDownloadBasePath = fileManager.getAudioDownloadBasePath(
+                    fileName = Uuid.random().toString(),
+                ).getOrThrow()
+                val downloadDto = pythonExecutor.downloadPlayableAudio(
+                    youtubeUrl = downloadUrl,
+                    audioDownloadPath = audioDownloadBasePath,
+                ).getOrThrow()
+                val downloadedName = downloadDto.audioFileNameWithExt.ifBlank {
+                    throw Exception("다운로드한 오디오 파일명을 확인할 수 없습니다.")
+                }
+                // HLS 로 받으면 ADTS 가 `.mp4` 로 저장된다. AVAudioFile 은 확장자를 힌트로 쓴다.
+                val audioFileNameWithExt = AudioFileExtensionCorrector(audioMediaDao, fileManager)
+                    .renameToMatchContent(downloadedName) ?: downloadedName
+                DownloadedAudioFile(
+                    fileNameWithExt = audioFileNameWithExt,
+                    fileFullPath = fileManager.getAudioFileFullPath(audioFileNameWithExt).getOrThrow(),
+                    durationSeconds = downloadDto.duration.toLongOrNull(),
+                )
+            }
+        }
 
     override suspend fun addAudioMedia(
         downloadedAudioMedia: DownloadedMedia,
@@ -392,6 +418,10 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun listAudioAndImageFileFullPaths(): Result<List<String>> =
         fileManager.listAudioAndImageFileFullPaths()
+
+    override suspend fun correctAudioFileExtensions(): Result<Int> = withContext(Dispatchers.IO) {
+        runCatching { AudioFileExtensionCorrector(audioMediaDao, fileManager).correctAll() }
+    }
 
     override suspend fun exportAudioMediaToDevice(
         audioFileFullPath: String,

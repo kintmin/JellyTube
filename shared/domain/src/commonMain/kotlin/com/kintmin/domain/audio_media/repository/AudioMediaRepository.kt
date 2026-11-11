@@ -4,12 +4,19 @@ import com.kintmin.domain.audio_media.model.AddedAudioMedia
 import com.kintmin.domain.audio_media.model.AudioExportTarget
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
+import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlinx.coroutines.flow.Flow
 
 interface AudioMediaRepository {
     suspend fun downloadAudioMedia(downloadUrl: String): Result<DownloadedMedia>
+
+    /**
+     * 이 기기에서 재생할 수 있는 형식으로 음원 파일만 받는다. 행을 만들지 않으므로 쓰지 않게 되면 호출자가 지운다.
+     * 앱 프로세스 안에서 받으므로 앱이 떠 있는 동안 써야 한다.
+     */
+    suspend fun downloadAudioFile(downloadUrl: String): Result<DownloadedAudioFile>
     suspend fun addAudioMedia(
         downloadedAudioMedia: DownloadedMedia,
         playlistIdOnDownload: Int?,
@@ -66,6 +73,9 @@ interface AudioMediaRepository {
     suspend fun deleteOrphanAudioMedia(): Result<List<AudioMedia>>
     suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit>
     suspend fun listAudioAndImageFileFullPaths(): Result<List<String>>
+
+    /** 음원 파일 확장자를 내용에 맞춘다. 바로잡은 파일 수를 돌려준다. */
+    suspend fun correctAudioFileExtensions(): Result<Int>
 
     suspend fun exportAudioMediaToDevice(
         audioFileFullPath: String,

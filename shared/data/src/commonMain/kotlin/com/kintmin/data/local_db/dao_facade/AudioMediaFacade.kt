@@ -1,16 +1,24 @@
 package com.kintmin.data.local_db.dao_facade
 
+import androidx.room.deferredTransaction
 import androidx.room.immediateTransaction
+import androidx.room.useReaderConnection
 import androidx.room.useWriterConnection
 import com.kintmin.data.local_db.dao.AudioEditProjectDao
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
+import com.kintmin.data.local_db.dao.StepDao
+import com.kintmin.data.local_db.mapper.toMigration
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.model.AudioEditProjectEntity
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_db.model.PlaylistTrackEntity
+import com.kintmin.data.local_db.model.StepEntity
+import com.kintmin.domain.data_migration.model.MigrationPlan
+import com.kintmin.domain.data_migration.model.MigrationRef
+import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.playlist.model.PlaylistType
 
 class AudioMediaFacade constructor(
@@ -19,7 +27,101 @@ class AudioMediaFacade constructor(
     private val playlistDao: PlaylistDao,
     private val playlistTrackDao: PlaylistTrackDao,
     private val audioEditProjectDao: AudioEditProjectDao,
+    private val stepDao: StepDao,
 ) {
+
+    /** 다섯 테이블을 한 읽기 트랜잭션에서 읽는다. 따로 읽으면 사이에 끼어든 쓰기로 소속이 없는 곡을 가리킬 수 있다. */
+    suspend fun fetchMigrationSnapshot(): MigrationSnapshot {
+        return db.useReaderConnection { transactor ->
+            transactor.deferredTransaction {
+                MigrationSnapshot(
+                    audioMedias = audioMediaDao.getAll().map { it.toMigration() },
+                    playlists = playlistDao.getAll().map { it.toMigration() },
+                    tracks = playlistTrackDao.getAll().map { it.toMigration() },
+                    editProjects = audioEditProjectDao.getAll().map { it.toMigration() },
+                    steps = stepDao.getAll().map { it.toMigration() },
+                )
+            }
+        }
+    }
+
+    /**
+     * 새 행은 여기서 새 id 를 받는다. 소속은 기존 추가 경로로 붙여 곡 수·재생시간·대표 이미지를 맞춘다.
+     * 새로 만든 플레이리스트의 보내는 쪽 id → 새 id 를 돌려준다.
+     */
+    suspend fun applyMigrationPlan(plan: MigrationPlan): Map<Int, Int> {
+        return db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                val audioIdBySourceId = plan.newAudioMedias.associate { audio ->
+                    audio.id to audioMediaDao.insertAudioMedia(
+                        AudioMediaEntity(
+                            source = audio.source,
+                            name = audio.name,
+                            artist = audio.artist,
+                            description = audio.description,
+                            rawAudioDurationSeconds = audio.rawAudioDurationSeconds,
+                            audioFileNameWithExt = audio.audioFileName,
+                            imageFileNameWithExt = audio.imageFileName,
+                            lyricFileNameWithExt = audio.lyricFileName,
+                            tjKaraokeNumber = audio.tjKaraokeNumber,
+                            editedAudioFileNameWithExt = audio.editedAudioFileName,
+                            editedAudioDurationSeconds = audio.editedAudioDurationSeconds,
+                            rawCreatedTime = audio.createdTimeMillis,
+                        )
+                    ).toInt()
+                }
+
+                var nextSequence = playlistDao.getMaxSequence() + 1
+                val playlistIdBySourceId = plan.newPlaylists.associate { playlist ->
+                    playlist.id to playlistDao.insertPlaylist(
+                        PlaylistEntity(
+                            name = playlist.name,
+                            description = playlist.description,
+                            audioMediaCount = 0,
+                            rawPlayTimeDuration = 0,
+                            rawCreatedTime = playlist.createdTimeMillis,
+                            imageFileNameWithExt = playlist.customImageFileName,
+                            isCustomImage = playlist.customImageFileName != null,
+                            sequence = nextSequence++,
+                            type = PlaylistType.USER.name,
+                        )
+                    ).toInt()
+                }
+
+                fun MigrationRef.resolve(idBySourceId: Map<Int, Int>) = when (this) {
+                    is MigrationRef.Existing -> id
+                    is MigrationRef.Incoming -> idBySourceId.getValue(sourceId)
+                }
+
+                plan.trackAdditions.forEach { addition ->
+                    addTrackWithSyncPlaylist(
+                        playlistId = addition.playlist.resolve(playlistIdBySourceId),
+                        audioMediaIdList = addition.audioMedias.map { it.resolve(audioIdBySourceId) },
+                        shouldInsertAtTop = false,
+                    )
+                }
+                if (plan.uncategorizedRemovals.isNotEmpty()) {
+                    deleteTrackWithSyncPlaylist(
+                        playlistId = requireSystemPlaylistId(PlaylistType.UNCATEGORIZED),
+                        audioMediaIdList = plan.uncategorizedRemovals,
+                    )
+                }
+
+                plan.editProjects.forEach { project ->
+                    audioEditProjectDao.upsert(
+                        AudioEditProjectEntity(
+                            audioMediaId = audioIdBySourceId.getValue(project.audioMediaId),
+                            timelineJson = project.timelineJson,
+                        )
+                    )
+                }
+                stepDao.insertAllIgnoringExisting(
+                    plan.steps.map { StepEntity(rawCreatedTime = it.createdTimeMillis, stepSensor = it.stepSensor) }
+                )
+                playlistIdBySourceId
+            }
+        }
+    }
 
     suspend fun addNewAudioMedia(
         newAudioMedia: AudioMediaEntity,

@@ -61,6 +61,7 @@ internal class FileManagerImpl : FileManager {
         const val AUDIO_DIR_NAME = "audios"
         const val LYRIC_DIR_NAME = "lyrics"
         const val LOG_DIR_NAME = "app_logs"
+        const val MIGRATION_STAGING_DIR_NAME = "migration_staging"
 
         /** iOS 에는 공개 WebP 인코더가 없어 Android(WebP 60)와 달리 JPEG 로 간다. */
         const val IMAGE_COMPRESSION_QUALITY = 0.6
@@ -86,6 +87,10 @@ internal class FileManagerImpl : FileManager {
 
     override fun getLyricFileFullPath(fileNameWithExt: String): Result<String> = runCatching {
         lyricDir() + "/$fileNameWithExt"
+    }
+
+    override fun getMigrationStagingDirPath(): Result<String> = runCatching {
+        directory(MIGRATION_STAGING_DIR_NAME)
     }
 
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<String> = runCatching {

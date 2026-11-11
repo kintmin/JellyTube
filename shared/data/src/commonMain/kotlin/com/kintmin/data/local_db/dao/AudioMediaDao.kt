@@ -21,6 +21,9 @@ interface AudioMediaDao {
     @Query("SELECT * FROM AUDIO_MEDIA")
     fun getAudioMediaListFlow(): Flow<List<AudioMediaEntity>>
 
+    @Query("SELECT * FROM AUDIO_MEDIA")
+    suspend fun getAll(): List<AudioMediaEntity>
+
     @Query("SELECT * FROM AUDIO_MEDIA WHERE id NOT IN (SELECT audioMediaId FROM PLAYLIST_TRACK)")
     suspend fun getOrphanAudioMediaList(): List<AudioMediaEntity>
 
@@ -56,6 +59,12 @@ WHERE id = :id
         imageFileNameWithExt: String? = null,
         lyricFileNameWithExt: String? = null,
     )
+
+    @Query("UPDATE AUDIO_MEDIA SET audioFileNameWithExt = :fileNameWithExt WHERE id = :id")
+    suspend fun updateAudioFileName(id: Int, fileNameWithExt: String)
+
+    @Query("UPDATE AUDIO_MEDIA SET editedAudioFileNameWithExt = :fileNameWithExt WHERE id = :id")
+    suspend fun updateEditedAudioFileName(id: Int, fileNameWithExt: String)
 
     @Query("UPDATE AUDIO_MEDIA SET lyricFileNameWithExt = NULL WHERE id = :id")
     suspend fun clearLyricFile(id: Int)
