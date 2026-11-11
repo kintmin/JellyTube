@@ -59,8 +59,9 @@ class ImportMigrationDataUseCase constructor(
 
         // 보내는 기기에 음원 파일이 없는 곡은 계획 전에 빠진다. 이미 이 기기에 있는 곡이 아니면 실패로 알린다.
         val targetKeys = target.audioMedias.map { SourceKey.of(it.source) }.toSet()
+        val availableIds = available.audioMedias.map { it.id }.toSet()
         val missingOnSender = export.snapshot.audioMedias
-            .filter { audio -> available.audioMedias.none { it.id == audio.id } }
+            .filter { it.id !in availableIds }
             .filter { SourceKey.of(it.source) !in targetKeys }
             .distinctBy { SourceKey.of(it.source) }
         missingOnSender.forEach { log("보내는 기기에 음원 파일이 없음: ${it.name} (${it.audioFileName})") }
