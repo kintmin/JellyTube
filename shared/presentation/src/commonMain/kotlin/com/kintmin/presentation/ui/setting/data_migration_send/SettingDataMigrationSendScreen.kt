@@ -3,36 +3,35 @@ package com.kintmin.presentation.ui.setting.data_migration_send
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
+import com.kintmin.presentation.platform.KeepScreenOnEffect
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.setting.data_migration_send.view.DataMigrationSendStatusView
+import com.kintmin.presentation.ui.setting.dialog.SettingConfirmDialog
 import com.kintmin.presentation.ui.setting.section.SettingStepCardView
+import com.kintmin.presentation.ui.setting.section.SettingWarningBannerView
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -56,13 +55,32 @@ fun SettingDataMigrationSendScreen(
     navigateToBack: () -> Unit,
     sendIntent: (SettingDataMigrationSendIntent) -> Unit,
 ) {
+    KeepScreenOnEffect(enabled = uiState.keepsScreenOn)
+
+    var isStopDialogVisible by remember { mutableStateOf(false) }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = uiState.isSending,
+    ) {
+        isStopDialogVisible = true
+    }
+    SettingConfirmDialog(
+        isShow = isStopDialogVisible,
+        title = "보내기를 중단할까요?",
+        message = "iPhone이 아직 받고 있습니다. 이 화면을 나가면 iPhone에서 전송이 실패합니다.",
+        dismissText = "계속 보내기",
+        confirmText = "중단",
+        onDismiss = { isStopDialogVisible = false },
+        onConfirm = navigateToBack,
+    )
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = { Text("다른 기기로 데이터 보내기") },
                 navigationIcon = {
-                    IconButton(onClick = navigateToBack) {
+                    IconButton(onClick = { if (uiState.isSending) isStopDialogVisible = true else navigateToBack() }) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             contentDescription = "뒤로가기",
@@ -80,60 +98,14 @@ fun SettingDataMigrationSendScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    val code = uiState.pairingCode
-                    if (uiState.step == DataMigrationSendStep.Preparing) {
-                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                        Text(
-                            text = "보내기 전에 데이터를 점검하고 있습니다.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                    } else if (uiState.step == DataMigrationSendStep.PreparationFailed) {
-                        Text(
-                            text = "데이터 점검에 실패했습니다. 다시 시도해 주세요.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                        Button(onClick = { sendIntent(SettingDataMigrationSendIntent.OnClickRetryPreparation) }) {
-                            Text("다시 시도")
-                        }
-                    } else if (code != null) {
-                        Text(
-                            text = "연결 코드",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                        Text(
-                            text = code,
-                            fontSize = 40.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 8.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                    } else {
-                        Text(
-                            text = "코드를 여러 번 잘못 입력해 연결을 막았습니다.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                        Button(onClick = { sendIntent(SettingDataMigrationSendIntent.OnClickRenewCode) }) {
-                            Text("새 코드 받기")
-                        }
-                    }
-                }
+            if (uiState.keepsScreenOn) {
+                SettingWarningBannerView(
+                    title = "iPhone이 다 받을 때까지 이 화면을 켜 두세요",
+                    message = "이 화면을 나가거나 앱을 종료하면 iPhone의 전송이 실패합니다.",
+                )
             }
+
+            DataMigrationSendStatusView(step = uiState.step, sendIntent = sendIntent)
 
             SettingStepCardView(
                 stepNumber = 1,
@@ -148,7 +120,7 @@ fun SettingDataMigrationSendScreen(
             SettingStepCardView(
                 stepNumber = 3,
                 title = "연결 코드 입력",
-                description = "위의 6자리 코드를 iPhone에 입력합니다. 다 옮겨질 때까지 이 화면을 열어 두세요.",
+                description = "위의 6자리 코드를 iPhone에 입력합니다. iPhone이 다 받을 때까지 이 화면을 열어 두세요.",
             )
         }
     }
@@ -168,22 +140,10 @@ private fun SettingDataMigrationSendScreenPreview() {
 
 @Preview
 @Composable
-private fun SettingDataMigrationSendScreenPreparingPreview() {
+private fun SettingDataMigrationSendScreenSendingPreview() {
     JellyTubeTheme {
         SettingDataMigrationSendScreen(
-            uiState = SettingDataMigrationSendUiState(),
-            navigateToBack = {},
-            sendIntent = {},
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun SettingDataMigrationSendScreenLockedPreview() {
-    JellyTubeTheme {
-        SettingDataMigrationSendScreen(
-            uiState = SettingDataMigrationSendUiState(step = DataMigrationSendStep.Ready, pairingCode = null),
+            uiState = SettingDataMigrationSendUiState(step = DataMigrationSendStep.Sending),
             navigateToBack = {},
             sendIntent = {},
         )

@@ -7,7 +7,10 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
+import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
@@ -21,6 +24,7 @@ import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.DownloadResultNotification
 import com.kintmin.platform.push_notification.notifications.FileShareServerNotification
 import com.kintmin.platform.service.migration.MigrationSessionHolder
+import com.kintmin.presentation.port.model.DataMigrationSendStatus
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import kotlinx.coroutines.CoroutineScope
@@ -48,6 +52,8 @@ class FileShareForegroundService : Service(), KoinComponent {
     private var nsdManager: NsdManager? = null
     private var registeredServiceName: String? = null
     private var nsdRegistrationListener: NsdManager.RegistrationListener? = null
+    private var migrationWakeLock: PowerManager.WakeLock? = null
+    private var migrationWifiLock: WifiManager.WifiLock? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -69,6 +75,7 @@ class FileShareForegroundService : Service(), KoinComponent {
             _isRunning.update { true }
             startKtorServer()
             registerNsdService()
+            holdLocksWhileMigrating()
         }.onFailure {
             _isRunning.update { false }
             stopSelf()
@@ -80,6 +87,7 @@ class FileShareForegroundService : Service(), KoinComponent {
 
     override fun onDestroy() {
         _isRunning.update { false }
+        releaseMigrationLocks()
         unregisterNsdService()
         ktorServer?.let { server ->
             runCatching { server.stop(500L, 500L) }
@@ -123,6 +131,46 @@ class FileShareForegroundService : Service(), KoinComponent {
         }
     }
 
+    /**
+     * 포그라운드 서비스는 프로세스를 살려 둘 뿐 CPU 와 Wi-Fi 를 깨워 두지 않는다. 화면이 꺼진 채 받는
+     * 기기가 파일을 받아 가는 동안 멈추지 않도록, 연결된 동안만 둘을 잡는다.
+     */
+    private fun holdLocksWhileMigrating() {
+        serviceScope.launch {
+            MigrationSessionHolder.state.collect { status ->
+                if (status == DataMigrationSendStatus.Paired) acquireMigrationLocks() else releaseMigrationLocks()
+            }
+        }
+    }
+
+    @Synchronized
+    private fun acquireMigrationLocks() {
+        if (migrationWakeLock?.isHeld != true) {
+            migrationWakeLock = (getSystemService(POWER_SERVICE) as PowerManager)
+                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, MIGRATION_LOCK_TAG)
+                .apply { acquire(MIGRATION_LOCK_TIMEOUT_MS) }
+        }
+        if (migrationWifiLock?.isHeld != true) {
+            val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+            } else {
+                @Suppress("DEPRECATION")
+                WifiManager.WIFI_MODE_FULL_HIGH_PERF
+            }
+            migrationWifiLock = (applicationContext.getSystemService(WIFI_SERVICE) as WifiManager)
+                .createWifiLock(mode, MIGRATION_LOCK_TAG)
+                .apply { acquire() }
+        }
+    }
+
+    @Synchronized
+    private fun releaseMigrationLocks() {
+        migrationWakeLock?.takeIf { it.isHeld }?.release()
+        migrationWakeLock = null
+        migrationWifiLock?.takeIf { it.isHeld }?.release()
+        migrationWifiLock = null
+    }
+
     private fun registerNsdService() {
         runCatching {
             val serviceInfo = NsdServiceInfo().apply {
@@ -157,6 +205,11 @@ class FileShareForegroundService : Service(), KoinComponent {
 
     companion object {
         const val ACTION_STOP = "com.kintmin.platform.FILE_SHARE_STOP"
+
+        private const val MIGRATION_LOCK_TAG = "JellyTube:migration"
+
+        // 놓친 해제가 배터리를 끝까지 잡지 않도록 상한을 둔다. 수천 곡도 이 안에 끝난다.
+        private const val MIGRATION_LOCK_TIMEOUT_MS = 2 * 60 * 60 * 1000L
 
         private val _isRunning = MutableStateFlow(false)
         val isRunning = _isRunning.asStateFlow()

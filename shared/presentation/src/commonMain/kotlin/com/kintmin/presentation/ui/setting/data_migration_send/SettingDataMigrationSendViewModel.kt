@@ -31,14 +31,14 @@ class SettingDataMigrationSendViewModel constructor(
         prepareAndStart()
         viewModelScope.launch {
             dataMigrationSendController.status.collect { status ->
-                _uiState.update { it.copy(pairingCode = (status as? DataMigrationSendStatus.WaitingForPair)?.code) }
+                if (hasStarted) status.toStep()?.let { step -> _uiState.update { it.copy(step = step) } }
             }
         }
     }
 
     fun sendIntent(intent: SettingDataMigrationSendIntent) {
         when (intent) {
-            SettingDataMigrationSendIntent.OnClickRenewCode -> dataMigrationSendController.start()
+            SettingDataMigrationSendIntent.OnClickRenewCode -> startSession()
             SettingDataMigrationSendIntent.OnClickRetryPreparation -> prepareAndStart()
         }
     }
@@ -47,13 +47,23 @@ class SettingDataMigrationSendViewModel constructor(
         _uiState.update { it.copy(step = DataMigrationSendStep.Preparing) }
         viewModelScope.launch {
             cleanupAnomalousDataUseCase()
-                .onSuccess {
-                    dataMigrationSendController.start()
-                    hasStarted = true
-                    _uiState.update { it.copy(step = DataMigrationSendStep.Ready) }
-                }
+                .onSuccess { startSession() }
                 .onFailure { _uiState.update { it.copy(step = DataMigrationSendStep.PreparationFailed) } }
         }
+    }
+
+    private fun startSession() {
+        dataMigrationSendController.start()
+        hasStarted = true
+        dataMigrationSendController.status.value.toStep()?.let { step -> _uiState.update { it.copy(step = step) } }
+    }
+
+    private fun DataMigrationSendStatus.toStep(): DataMigrationSendStep? = when (this) {
+        DataMigrationSendStatus.Idle -> null
+        is DataMigrationSendStatus.WaitingForPair -> DataMigrationSendStep.WaitingForPair(code)
+        DataMigrationSendStatus.Paired -> DataMigrationSendStep.Sending
+        is DataMigrationSendStatus.Finished -> DataMigrationSendStep.Finished(newAudioMediaCount, failedCount)
+        DataMigrationSendStatus.Locked -> DataMigrationSendStep.Locked
     }
 
     override fun onCleared() {
