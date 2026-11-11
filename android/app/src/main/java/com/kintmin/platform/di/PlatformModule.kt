@@ -3,6 +3,7 @@ package com.kintmin.platform.di
 import com.kintmin.domain.step.worker.RegisterDailyResetImmediatelyWorker
 import com.kintmin.domain.step.worker.RegisterLoadBalancedDailyResetWorker
 import com.kintmin.platform.audio_preview.AudioPreviewPlayerImpl
+import com.kintmin.platform.data_migration.UnsupportedMigrationSourceDiscovery
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.PushNotificationManagerImpl
 import com.kintmin.platform.service_controller.FileShareServerControllerImpl
@@ -21,6 +22,7 @@ import com.kintmin.presentation.port.ExecuteLyricsVariantCreation
 import com.kintmin.presentation.port.ExecuteYoutubeDownload
 import com.kintmin.presentation.port.FileShareServerController
 import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.StepMeasurementController
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
@@ -42,4 +44,5 @@ val platformModule: Module = module {
     single<ExecuteAnomalyDataCheck> { ExecuteAnomalyDataCheckImpl(androidContext()) }
     single<ExecuteLyricsVariantCreation> { ExecuteLyricsVariantCreationImpl(androidContext()) }
     single<ExecuteAudioEditSave> { ExecuteAudioEditSaveImpl(androidContext()) }
+    single<MigrationSourceDiscovery> { UnsupportedMigrationSourceDiscovery() }
 }

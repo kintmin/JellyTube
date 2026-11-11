@@ -46,7 +46,8 @@ struct JellyTubeIosApp: App {
         IosKoinKt.doInitIosKoin(
             pythonExecutorBridge: PythonExecutorBridgeImpl(),
             mediaControllerBridge: MediaControllerBridgeImpl(),
-            appLogBridge: appLogBridge
+            appLogBridge: appLogBridge,
+            migrationSourceBrowserBridge: MigrationSourceBrowserBridgeImpl()
         )
         // 지난 생애의 완료 콜백을 받으려면 세션을 먼저 되살려야 한다.
         YoutubeDownloader.shared.activate()

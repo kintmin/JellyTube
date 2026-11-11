@@ -51,8 +51,9 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 | `ExecuteLyricsVariantCreation` | `worker/usecase/ExecuteLyricsVariantCreationImpl` | `IosExecuteLyricsVariantCreation`(앱 수명 스코프 + 로컬 알림) |
 | `ExecuteAnomalyDataCheck` | `worker/usecase/ExecuteAnomalyDataCheckImpl` | `IosExecuteAnomalyDataCheck`(앱 수명 스코프 + 로컬 알림) |
 | `ExecuteAudioEditSave` | `worker/usecase/ExecuteAudioEditSaveImpl` | 미지원 스텁(음원 편집 제외) |
+| `MigrationSourceDiscovery` | `data_migration/UnsupportedMigrationSourceDiscovery`(Android 는 보내는 쪽만) | `ios/shared` 의 `migration/IosMigrationSourceDiscovery`(Swift `NWBrowser` 브릿지) |
 
-iOS 구현의 자리는 **`shared:presentation` 의 `iosMain/port/`** 다(`MediaControllerManager` 만 예외). 이유는 `shared/presentation/AGENTS.md` §포트 와 `ios/app/AGENTS.md` 에 있다.
+iOS 구현의 자리는 **`shared:presentation` 의 `iosMain/port/`** 다(`MediaControllerManager`·`MigrationSourceDiscovery` 는 예외 — Swift 브릿지에 기댄다). 이유는 `shared/presentation/AGENTS.md` §포트 와 `ios/app/AGENTS.md` 에 있다.
 
 **Rules**:
 - 새 포트가 필요하면 인터페이스는 `presentation/port/`에, 구현체는 여기에 두고 `platform/di/PlatformModule.kt`에 `single<Port> { PortImpl(androidContext()) }`로 등록한다.

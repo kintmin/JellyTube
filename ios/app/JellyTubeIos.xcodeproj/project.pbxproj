@@ -13,6 +13,7 @@
 		C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */ = {isa = PBXBuildFile; productRef = C9E4F4102FD14000009FB07B /* PythonKit */; };
 		C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */; };
 		4A0000000000000000000094 /* YoutubeDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000093 /* YoutubeDownloader.swift */; };
+		4A00000000000000000000B1 /* MigrationSourceBrowserBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000B0 /* MigrationSourceBrowserBridgeImpl.swift */; };
 		4A0000000000000000000061 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000060 /* Python.xcframework */; };
 		4A0000000000000000000062 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000060 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4A0000000000000000000064 /* app_packages in Resources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000063 /* app_packages */; };
@@ -31,6 +32,7 @@
 		C9E4F40E2FD13000009FB07B /* python */ = {isa = PBXFileReference; lastKnownFileType = folder; name = python; path = ../../shared/data/src/python; sourceTree = SOURCE_ROOT; };
 		C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonExecutorBridgeImpl.swift; sourceTree = "<group>"; };
 		4A0000000000000000000093 /* YoutubeDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeDownloader.swift; sourceTree = "<group>"; };
+		4A00000000000000000000B0 /* MigrationSourceBrowserBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationSourceBrowserBridgeImpl.swift; sourceTree = "<group>"; };
 		4A0000000000000000000060 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Python.xcframework; path = Vendor/Python/Python.xcframework; sourceTree = SOURCE_ROOT; };
 		4A0000000000000000000063 /* app_packages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = app_packages; path = Vendor/Python/app-packages; sourceTree = SOURCE_ROOT; };
 		4A0000000000000000000087 /* MediaControllerItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerItem.swift; sourceTree = "<group>"; };
@@ -128,6 +130,7 @@
 			children = (
 				4A0000000000000000000086 /* MediaController */,
 				4A00000000000000000000A3 /* Log */,
+				4A00000000000000000000B2 /* Migration */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -149,6 +152,14 @@
 				4A00000000000000000000A1 /* AppLogBridgeImpl.swift */,
 			);
 			path = Log;
+			sourceTree = "<group>";
+		};
+		4A00000000000000000000B2 /* Migration */ = {
+			isa = PBXGroup;
+			children = (
+				4A00000000000000000000B0 /* MigrationSourceBrowserBridgeImpl.swift */,
+			);
+			path = Migration;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -277,6 +288,7 @@
 				4A000000000000000000000A /* JellyTubeIosApp.swift in Sources */,
 				C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */,
 				4A0000000000000000000094 /* YoutubeDownloader.swift in Sources */,
+				4A00000000000000000000B1 /* MigrationSourceBrowserBridgeImpl.swift in Sources */,
 				4A0000000000000000000088 /* MediaControllerItem.swift in Sources */,
 				4A000000000000000000008A /* MediaControllerEngine.swift in Sources */,
 				4A0000000000000000000092 /* MediaControllerBridgeImpl.swift in Sources */,

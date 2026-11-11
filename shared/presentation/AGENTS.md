@@ -102,7 +102,7 @@ framework 는 **`ios/shared`** 하나가 선언한다(`baseName = "shared"`, SKI
 
 Android 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 구현체는 `android:app` 에 둔다. 배치 규칙과 현재 포트 목록은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
 
-**iOS 구현은 이 모듈의 `iosMain/port/` 에 둔다.** Android 와 달리 `Context` 류가 필요 없고 Kotlin/Native 가 UIKit·AVFoundation·CoreMotion 인터롭을 기본 제공해 인터페이스와 같은 모듈에서 구현된다. 바인딩은 `di/PresentationIosModule.kt`. 예외는 `MediaControllerManager` 하나로, 구현이 Swift 엔진에 기대서 `ios/shared` 가 가진다.
+**iOS 구현은 이 모듈의 `iosMain/port/` 에 둔다.** Android 와 달리 `Context` 류가 필요 없고 Kotlin/Native 가 UIKit·AVFoundation·CoreMotion 인터롭을 기본 제공해 인터페이스와 같은 모듈에서 구현된다. 바인딩은 `di/PresentationIosModule.kt`. 예외는 `MediaControllerManager`·`MigrationSourceDiscovery` 로, 구현이 Swift 에 기대서 `ios/shared` 가 가진다.
 
 - **인자 전달로 해결되면 포트를 만들지 않는다.** 값 하나를 넘기면 되는 경우(예: `isDebugTabVisible`)는 Screen/NavGraph 파라미터로 받는다.
 - 순수 판정 로직은 포트가 아니다. `shared:domain` 에 둔다.

@@ -43,6 +43,7 @@ kotlin {
             api(project(":shared:log"))
             api(project(":shared:data"))
             api(project(":shared:presentation"))
+            implementation(project(":shared:file-share"))
 
             implementation(libs.koin.core)
             implementation(libs.kotlinx.coroutines.core)

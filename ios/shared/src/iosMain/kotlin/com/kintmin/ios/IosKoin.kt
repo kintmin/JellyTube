@@ -9,11 +9,14 @@ import com.kintmin.ios.log.IosAppLog
 import com.kintmin.ios.log.IosAppLogBridge
 import com.kintmin.ios.media.IosMediaControllerBridge
 import com.kintmin.ios.media.IosMediaControllerManager
+import com.kintmin.ios.migration.IosMigrationSourceBrowserBridge
+import com.kintmin.ios.migration.IosMigrationSourceDiscovery
 import com.kintmin.ios.step.IosRegisterDailyResetImmediatelyWorker
 import com.kintmin.ios.step.IosRegisterLoadBalancedDailyResetWorker
 import com.kintmin.presentation.di.presentationIosModule
 import com.kintmin.log.AppLog
 import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.di.presentationModule
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -34,6 +37,7 @@ fun initIosKoin(
     pythonExecutorBridge: IosPythonExecutorBridge,
     mediaControllerBridge: IosMediaControllerBridge,
     appLogBridge: IosAppLogBridge,
+    migrationSourceBrowserBridge: IosMigrationSourceBrowserBridge,
 ) {
     startKoin {
         modules(
@@ -45,6 +49,7 @@ fun initIosKoin(
             module {
                 single<MediaControllerManager> { IosMediaControllerManager(mediaControllerBridge) }
                 single<AppLog> { IosAppLog(appLogBridge, get()) }
+                single<MigrationSourceDiscovery> { IosMigrationSourceDiscovery(migrationSourceBrowserBridge) }
             },
         )
     }

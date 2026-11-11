@@ -23,7 +23,7 @@ internal class IosAudioPreviewPlayerStub : AudioPreviewPlayer {
     override fun release() = Unit
 }
 
-/** PC 파일 수신 미제공. `shared:file-share` 가 JVM 전용 모듈이라 상수조차 공유되지 않는다. */
+/** PC 파일 수신 미제공. 수신 서버와 그 서버를 붙잡아 두는 포그라운드 서비스가 Android 에만 있다. */
 internal class IosFileShareServerControllerStub : FileShareServerController {
 
     override val isRunning: StateFlow<Boolean> = MutableStateFlow(false)
