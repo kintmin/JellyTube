@@ -4,4 +4,6 @@ package com.kintmin.domain.data_migration.model
 data class MigrationExport(
     val snapshot: MigrationSnapshot,
     val files: List<MigrationFileEntry>,
+    /** null 이면 설정을 옮기지 않는다. */
+    val downloadSettings: MigrationDownloadSettings?,
 )

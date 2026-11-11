@@ -10,4 +10,6 @@ data class MigrationPlan(
     val editProjects: List<MigrationEditProject>,
     val steps: List<MigrationStep>,
     val requiredFiles: Set<MigrationFile>,
+    /** 보내는 쪽 플레이리스트 id 가 받는 쪽 어디로 가는지. 다운로드 대상 설정을 옮길 때 쓴다. */
+    val playlistRefBySourceId: Map<Int, MigrationRef>,
 )

@@ -45,9 +45,12 @@ class AudioMediaFacade constructor(
         }
     }
 
-    /** 새 행은 여기서 새 id 를 받는다. 소속은 기존 추가 경로로 붙여 곡 수·재생시간·대표 이미지를 맞춘다. */
-    suspend fun applyMigrationPlan(plan: MigrationPlan) {
-        db.useWriterConnection { transactor ->
+    /**
+     * 새 행은 여기서 새 id 를 받는다. 소속은 기존 추가 경로로 붙여 곡 수·재생시간·대표 이미지를 맞춘다.
+     * 새로 만든 플레이리스트의 보내는 쪽 id → 새 id 를 돌려준다.
+     */
+    suspend fun applyMigrationPlan(plan: MigrationPlan): Map<Int, Int> {
+        return db.useWriterConnection { transactor ->
             transactor.immediateTransaction {
                 val audioIdBySourceId = plan.newAudioMedias.associate { audio ->
                     audio.id to audioMediaDao.insertAudioMedia(
@@ -115,6 +118,7 @@ class AudioMediaFacade constructor(
                 stepDao.insertAllIgnoringExisting(
                     plan.steps.map { StepEntity(rawCreatedTime = it.createdTimeMillis, stepSensor = it.stepSensor) }
                 )
+                playlistIdBySourceId
             }
         }
     }

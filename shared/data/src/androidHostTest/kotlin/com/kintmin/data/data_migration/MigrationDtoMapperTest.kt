@@ -1,6 +1,7 @@
 package com.kintmin.data.data_migration
 
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
+import com.kintmin.domain.data_migration.model.MigrationDownloadSettings
 import com.kintmin.domain.data_migration.model.MigrationEditProject
 import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationFile
@@ -38,6 +39,7 @@ class MigrationDtoMapperTest {
             steps = listOf(MigrationStep(8, 9)),
         ),
         files = listOf(MigrationFileEntry(MigrationFile(MigrationFileKind.AUDIO, "a.m4a"), 10)),
+        downloadSettings = MigrationDownloadSettings(shouldInsertAtTop = true, playlistId = 2),
     )
 
     @Test
@@ -45,6 +47,13 @@ class MigrationDtoMapperTest {
         val json = Json.encodeToString(MigrationManifestDto.serializer(), export.toManifestDto())
 
         assertEquals(export, Json.decodeFromString(MigrationManifestDto.serializer(), json).toExport())
+    }
+
+    @Test
+    fun `설정이 없는 manifest 는 설정 없음으로 읽는다`() {
+        val json = Json.encodeToString(MigrationManifestDto.serializer(), export.copy(downloadSettings = null).toManifestDto())
+
+        assertEquals(null, Json.decodeFromString(MigrationManifestDto.serializer(), json).toExport().downloadSettings)
     }
 
     @Test

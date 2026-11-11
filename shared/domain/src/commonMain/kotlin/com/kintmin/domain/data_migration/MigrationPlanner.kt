@@ -107,6 +107,7 @@ object MigrationPlanner {
             editProjects = source.editProjects.filter { it.audioMediaId in newAudioIds },
             steps = source.steps,
             requiredFiles = MigrationFiles.referencedBy(newAudioMedias, newPlaylists),
+            playlistRefBySourceId = playlistRefBySourceId,
         )
     }
 }

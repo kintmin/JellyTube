@@ -1,11 +1,18 @@
 package com.kintmin.domain.data_migration.usecase
 
+import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.data_migration.MigrationFiles
 import com.kintmin.domain.data_migration.MigrationPlanner
+import com.kintmin.domain.data_migration.model.MigrationApplyResult
+import com.kintmin.domain.data_migration.model.MigrationDownloadSettings
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
+import com.kintmin.domain.data_migration.model.MigrationPlan
+import com.kintmin.domain.data_migration.model.MigrationRef
+import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 
 /**
@@ -15,6 +22,7 @@ import com.kintmin.domain.playlist.repository.PlaylistRepository
 class ImportMigrationDataUseCase constructor(
     private val dataMigrationRepository: DataMigrationRepository,
     private val playlistRepository: PlaylistRepository,
+    private val appSettingRepository: AppSettingRepository,
 ) {
     suspend operator fun invoke(
         endpoint: MigrationEndpoint,
@@ -43,12 +51,29 @@ class ImportMigrationDataUseCase constructor(
             onProgress(MigrationProgress(receivedBytes, totalBytes))
         }
 
-        dataMigrationRepository.applyPlan(plan).getOrThrow()
+        val applied = dataMigrationRepository.applyPlan(plan).getOrThrow()
         dataMigrationRepository.clearStaging().getOrThrow()
+        export.downloadSettings?.let { applyDownloadSettings(it, plan, applied, target) }
 
         MigrationSummary(
             newAudioMediaCount = plan.newAudioMedias.size,
             newPlaylistCount = plan.newPlaylists.size,
         )
+    }
+
+    /** 다운로드 설정은 받는 기기 것을 덮는다. 대상 플레이리스트를 못 찾으면 미분류로 둔다(설정이 없을 때와 같다). */
+    private suspend fun applyDownloadSettings(
+        settings: MigrationDownloadSettings,
+        plan: MigrationPlan,
+        applied: MigrationApplyResult,
+        target: MigrationSnapshot,
+    ) {
+        appSettingRepository.updateShouldInsertAtTopOnDownload(settings.shouldInsertAtTop).getOrThrow()
+        val playlistId = when (val ref = settings.playlistId?.let { plan.playlistRefBySourceId[it] }) {
+            is MigrationRef.Existing -> ref.id
+            is MigrationRef.Incoming -> applied.newPlaylistIdBySourceId[ref.sourceId]
+            null -> null
+        } ?: target.playlists.first { it.type == PlaylistType.UNCATEGORIZED }.id
+        appSettingRepository.updatePlaylistIdOnDownload(playlistId).getOrThrow()
     }
 }

@@ -48,6 +48,7 @@ class MigrationRoutesTest {
             MigrationExport(
                 snapshot = MigrationSnapshot(emptyList(), emptyList(), emptyList(), emptyList(), emptyList()),
                 files = listOf(MigrationFileEntry(audioFile, size = 3)),
+                downloadSettings = null,
             ),
         )
         every { resolvePathUseCase(audioFile) } returns Result.success(audioPath)

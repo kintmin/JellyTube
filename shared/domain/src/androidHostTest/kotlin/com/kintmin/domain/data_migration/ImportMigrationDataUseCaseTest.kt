@@ -1,6 +1,9 @@
 package com.kintmin.domain.data_migration
 
+import com.kintmin.domain.app_setting.repository.AppSettingRepository
+import com.kintmin.domain.data_migration.model.MigrationApplyResult
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
+import com.kintmin.domain.data_migration.model.MigrationDownloadSettings
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationFile
@@ -27,6 +30,10 @@ class ImportMigrationDataUseCaseTest {
     private val endpoint = MigrationEndpoint("192.168.0.2", 52847)
     private val playlistRepository = mockk<PlaylistRepository> {
         coEvery { ensureSystemPlaylists() } returns Result.success(Unit)
+    }
+    private val appSettingRepository = mockk<AppSettingRepository> {
+        coEvery { updateShouldInsertAtTopOnDownload(any()) } returns Result.success(Unit)
+        coEvery { updatePlaylistIdOnDownload(any()) } returns Result.success(Unit)
     }
     private val targetSystem = listOf(
         MigrationPlaylist(1, "전체", "", null, 0, PlaylistType.TOTAL, 0),
@@ -71,10 +78,11 @@ class ImportMigrationDataUseCaseTest {
             return Result.success(Unit)
         }
 
-        override suspend fun applyPlan(plan: MigrationPlan) = Result.success(Unit).also {
-            calls += "apply"
-            appliedPlan = plan
-        }
+        override suspend fun applyPlan(plan: MigrationPlan) =
+            Result.success(MigrationApplyResult(plan.newPlaylists.associate { it.id to it.id + 1000 })).also {
+                calls += "apply"
+                appliedPlan = plan
+            }
 
         override suspend fun clearStaging() = Result.success(Unit).also { calls += "clear" }
     }
@@ -88,6 +96,7 @@ class ImportMigrationDataUseCaseTest {
                     playlists = emptyList(), tracks = emptyList(), editProjects = emptyList(), steps = emptyList(),
                 ),
                 files = listOf(entry("new.m4a", 100), entry("old.m4a", 50)),
+                downloadSettings = null,
             ),
             target = MigrationSnapshot(
                 audioMedias = listOf(audio(7, "https://www.youtube.com/watch?v=old", "mine.m4a")),
@@ -96,7 +105,7 @@ class ImportMigrationDataUseCaseTest {
         )
         val progress = mutableListOf<MigrationProgress>()
 
-        val summary = ImportMigrationDataUseCase(repository, playlistRepository)(endpoint, "t", progress::add).getOrThrow()
+        val summary = ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository)(endpoint, "t", progress::add).getOrThrow()
 
         assertEquals(listOf("new.m4a"), repository.staged)
         assertEquals(listOf("fetchRemoteExport", "fetchSnapshot", "stage", "apply", "clear"), repository.calls)
@@ -117,14 +126,72 @@ class ImportMigrationDataUseCaseTest {
                     playlists = emptyList(), tracks = emptyList(), editProjects = emptyList(), steps = emptyList(),
                 ),
                 files = listOf(entry("../evil.m4a", 10)),
+                downloadSettings = null,
             ),
             target = MigrationSnapshot(emptyList(), targetSystem, emptyList(), emptyList(), emptyList()),
         )
 
-        ImportMigrationDataUseCase(repository, playlistRepository)(endpoint, "t") {}.getOrThrow()
+        ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository)(endpoint, "t") {}.getOrThrow()
 
         assertTrue(repository.staged.isEmpty())
         assertTrue(repository.appliedPlan?.newAudioMedias.orEmpty().isEmpty())
+    }
+
+    @Test
+    fun `다운로드 설정을 옮기고 대상 플레이리스트는 받는 쪽 id 로 바꾼다`() = runTest {
+        val sourceSystem = listOf(
+            MigrationPlaylist(11, "전체", "", null, 0, PlaylistType.TOTAL, 0),
+            MigrationPlaylist(12, "미분류", "", null, 0, PlaylistType.UNCATEGORIZED, 0),
+            MigrationPlaylist(13, "즐겨찾기", "", null, 0, PlaylistType.FAVORITE, 0),
+        )
+        fun repositoryWith(settings: MigrationDownloadSettings) = FakeRepository(
+            export = MigrationExport(
+                snapshot = MigrationSnapshot(
+                    audioMedias = emptyList(),
+                    playlists = sourceSystem +
+                        MigrationPlaylist(14, "새 목록", "", null, 1, PlaylistType.USER, 0) +
+                        MigrationPlaylist(15, "있는 목록", "", null, 2, PlaylistType.USER, 0),
+                    tracks = emptyList(), editProjects = emptyList(), steps = emptyList(),
+                ),
+                files = emptyList(),
+                downloadSettings = settings,
+            ),
+            target = MigrationSnapshot(
+                audioMedias = emptyList(),
+                playlists = targetSystem + MigrationPlaylist(7, "있는 목록", "", null, 1, PlaylistType.USER, 0),
+                tracks = emptyList(), editProjects = emptyList(), steps = emptyList(),
+            ),
+        )
+        val useCase = { settings: MigrationDownloadSettings ->
+            ImportMigrationDataUseCase(repositoryWith(settings), playlistRepository, appSettingRepository)
+        }
+
+        useCase(MigrationDownloadSettings(shouldInsertAtTop = true, playlistId = 14))(endpoint, "t") {}.getOrThrow()
+        coVerify { appSettingRepository.updateShouldInsertAtTopOnDownload(true) }
+        coVerify { appSettingRepository.updatePlaylistIdOnDownload(1014) }
+
+        useCase(MigrationDownloadSettings(shouldInsertAtTop = false, playlistId = 15))(endpoint, "t") {}.getOrThrow()
+        coVerify { appSettingRepository.updatePlaylistIdOnDownload(7) }
+
+        useCase(MigrationDownloadSettings(shouldInsertAtTop = false, playlistId = null))(endpoint, "t") {}.getOrThrow()
+        coVerify { appSettingRepository.updatePlaylistIdOnDownload(2) }
+    }
+
+    @Test
+    fun `설정이 없는 manifest 면 받는 기기 설정을 건드리지 않는다`() = runTest {
+        val repository = FakeRepository(
+            export = MigrationExport(
+                snapshot = MigrationSnapshot(emptyList(), emptyList(), emptyList(), emptyList(), emptyList()),
+                files = emptyList(),
+                downloadSettings = null,
+            ),
+            target = MigrationSnapshot(emptyList(), targetSystem, emptyList(), emptyList(), emptyList()),
+        )
+
+        ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository)(endpoint, "t") {}.getOrThrow()
+
+        coVerify(exactly = 0) { appSettingRepository.updateShouldInsertAtTopOnDownload(any()) }
+        coVerify(exactly = 0) { appSettingRepository.updatePlaylistIdOnDownload(any()) }
     }
 
     @Test
@@ -136,12 +203,13 @@ class ImportMigrationDataUseCaseTest {
                     playlists = emptyList(), tracks = emptyList(), editProjects = emptyList(), steps = emptyList(),
                 ),
                 files = listOf(entry("a.m4a", 10)),
+                downloadSettings = null,
             ),
             target = MigrationSnapshot(emptyList(), targetSystem, emptyList(), emptyList(), emptyList()),
             failStaging = true,
         )
 
-        val result = ImportMigrationDataUseCase(repository, playlistRepository)(endpoint, "t") {}
+        val result = ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository)(endpoint, "t") {}
 
         assertTrue(result.isFailure)
         assertTrue("apply" !in repository.calls)

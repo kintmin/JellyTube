@@ -1,5 +1,6 @@
 package com.kintmin.domain.data_migration.repository
 
+import com.kintmin.domain.data_migration.model.MigrationApplyResult
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationFile
@@ -33,7 +34,7 @@ interface DataMigrationRepository {
     ): Result<Unit>
 
     /** 받아 둔 파일을 제자리로 옮기고 DB 에 한 트랜잭션으로 반영한다. DB 반영이 실패하면 옮긴 파일을 지운다. */
-    suspend fun applyPlan(plan: MigrationPlan): Result<Unit>
+    suspend fun applyPlan(plan: MigrationPlan): Result<MigrationApplyResult>
 
     suspend fun clearStaging(): Result<Unit>
 }

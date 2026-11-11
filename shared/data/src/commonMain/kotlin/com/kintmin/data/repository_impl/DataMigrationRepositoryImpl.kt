@@ -5,6 +5,7 @@ import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.dataSource.MigrationDataSource
 import com.kintmin.domain.data_migration.MigrationFiles
+import com.kintmin.domain.data_migration.model.MigrationApplyResult
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationFile
@@ -42,7 +43,7 @@ class DataMigrationRepositoryImpl constructor(
                     val size = fileSystem.metadataOrNull(path.toPath())?.size ?: return@mapNotNull null
                     MigrationFileEntry(file, size)
                 }
-            MigrationExport(snapshot, files)
+            MigrationExport(snapshot, files, downloadSettings = null)
         }
     }
 
@@ -105,7 +106,7 @@ class DataMigrationRepositoryImpl constructor(
         }
     }
 
-    override suspend fun applyPlan(plan: MigrationPlan): Result<Unit> = withContext(Dispatchers.IO) {
+    override suspend fun applyPlan(plan: MigrationPlan): Result<MigrationApplyResult> = withContext(Dispatchers.IO) {
         runCatching {
             val moved = mutableListOf<Path>()
             try {
@@ -116,7 +117,7 @@ class DataMigrationRepositoryImpl constructor(
                     move(stagedPath(file), destination)
                     moved += destination
                 }
-                audioMediaFacade.applyMigrationPlan(plan)
+                MigrationApplyResult(audioMediaFacade.applyMigrationPlan(plan))
             } catch (e: Throwable) {
                 moved.forEach { fileSystem.delete(it, mustExist = false) }
                 throw e

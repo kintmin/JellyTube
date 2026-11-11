@@ -17,6 +17,13 @@ data class MigrationManifestDto(
     val formatVersion: Int,
     val snapshot: MigrationSnapshotDto,
     val files: List<MigrationFileDto>,
+    val downloadSettings: MigrationDownloadSettingsDto? = null,
+)
+
+@Serializable
+data class MigrationDownloadSettingsDto(
+    val shouldInsertAtTop: Boolean,
+    val playlistId: Int? = null,
 )
 
 @Serializable

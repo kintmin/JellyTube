@@ -1,6 +1,7 @@
 package com.kintmin.data.data_migration
 
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
+import com.kintmin.domain.data_migration.model.MigrationDownloadSettings
 import com.kintmin.domain.data_migration.model.MigrationEditProject
 import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationFile
@@ -13,6 +14,7 @@ import com.kintmin.domain.data_migration.model.MigrationTrack
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.MigrationAudioMediaDto
+import com.kintmin.fileshare.MigrationDownloadSettingsDto
 import com.kintmin.fileshare.MigrationEditProjectDto
 import com.kintmin.fileshare.MigrationFileDto
 import com.kintmin.fileshare.MigrationManifestDto
@@ -32,6 +34,7 @@ fun MigrationExport.toManifestDto() = MigrationManifestDto(
         steps = snapshot.steps.map { MigrationStepDto(it.createdTimeMillis, it.stepSensor) },
     ),
     files = files.map { MigrationFileDto(kind = it.file.kind.name, name = it.file.name, size = it.size) },
+    downloadSettings = downloadSettings?.let { MigrationDownloadSettingsDto(it.shouldInsertAtTop, it.playlistId) },
 )
 
 /** 모르는 종류의 파일은 버린다. 그 파일을 가리키는 행은 계획에서 받을 파일 목록에 남아 실패로 드러난다. */
@@ -47,6 +50,7 @@ fun MigrationManifestDto.toExport() = MigrationExport(
         val kind = runCatching { MigrationFileKind.valueOf(dto.kind) }.getOrNull() ?: return@mapNotNull null
         MigrationFileEntry(MigrationFile(kind, dto.name), dto.size)
     },
+    downloadSettings = downloadSettings?.let { MigrationDownloadSettings(it.shouldInsertAtTop, it.playlistId) },
 )
 
 private fun MigrationAudioMedia.toDto() = MigrationAudioMediaDto(
