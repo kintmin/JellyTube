@@ -124,6 +124,33 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
         return code == 403 || code == 404 || code == 410
     }
 
+    /// 데이터 이전 중 다시 받기용. 앱이 떠 있는 동안만 쓰므로 background `URLSession` 을 거치지 않는다.
+    /// 그 대신 yt-dlp 가 HLS 도 직접 받아, 단일 파일 m4a 가 없는 영상도 받을 수 있다.
+    func __downloadPlayableAudio(
+        youtubeUrl: String,
+        audioDownloadPath: String,
+        completionHandler: @escaping @Sendable (PlayableAudioDownloadDto?, Error?) -> Void
+    ) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                let result = try self.runtime.callFunction(
+                    moduleName: Self.fileName,
+                    functionName: Self.methodDownloadPlayableAudio,
+                    arguments: [youtubeUrl, audioDownloadPath]
+                )
+                guard let fileNameWithExt = result[safe: 0], !fileNameWithExt.isEmpty else {
+                    throw PythonExecutorBridgeError.invalidDownloadResult
+                }
+                completionHandler(
+                    PlayableAudioDownloadDto(audioFileNameWithExt: fileNameWithExt, duration: result[safe: 1] ?? ""),
+                    nil
+                )
+            } catch {
+                completionHandler(nil, error as NSError)
+            }
+        }
+    }
+
     func __extractYoutubeUrlsFromPlaylist(
         playlistUrl: String,
         completionHandler: @escaping @Sendable ([String]?, Error?) -> Void,
@@ -168,6 +195,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     private static let methodDownloadAudio = "download_audio"
     private static let methodExtractVideoUrlsFromPlaylist = "extract_video_urls_from_playlist"
     private static let methodExtractAudioSource = "extract_audio_source"
+    private static let methodDownloadPlayableAudio = "download_playable_audio"
 
     /// 재추출 재시도 횟수. 계속 거부되는 것은 주소가 상한 것이 아니라 그 영상을 받을 수 없는 것이다.
     private static let extractRetryCount = 1

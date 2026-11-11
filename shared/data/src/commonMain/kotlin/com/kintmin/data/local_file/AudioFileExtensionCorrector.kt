@@ -30,22 +30,29 @@ internal class AudioFileExtensionCorrector(
     }
 
     private suspend fun correct(fileName: String, updateFileName: suspend (String) -> Unit): Boolean {
-        val source = fileManager.getAudioFileFullPath(fileName).getOrThrow().toPath()
-        val container = detectContainer(source) ?: return false
-        val correctedName = AudioContainerSniffer.correctedFileName(fileName, container) ?: return false
-        val destination = fileManager.getAudioFileFullPath(correctedName).getOrThrow().toPath()
-        // 이름이 UUID 라 겹칠 일이 없지만, 겹치면 남의 파일을 덮지 않도록 건너뛴다.
-        if (fileSystem.exists(destination)) return false
-
-        fileSystem.atomicMove(source, destination)
+        val correctedName = renameToMatchContent(fileName) ?: return false
         try {
             updateFileName(correctedName)
         } catch (e: Throwable) {
-            fileSystem.atomicMove(destination, source)
+            fileSystem.atomicMove(audioPath(correctedName), audioPath(fileName))
             throw e
         }
         return true
     }
+
+    /** 행이 없는 파일의 이름만 내용에 맞춘다. 바꿨으면 새 이름, 그대로면 null. */
+    fun renameToMatchContent(fileName: String): String? {
+        val source = audioPath(fileName)
+        val container = detectContainer(source) ?: return null
+        val correctedName = AudioContainerSniffer.correctedFileName(fileName, container) ?: return null
+        val destination = audioPath(correctedName)
+        // 이름이 UUID 라 겹칠 일이 없지만, 겹치면 남의 파일을 덮지 않도록 건너뛴다.
+        if (fileSystem.exists(destination)) return null
+        fileSystem.atomicMove(source, destination)
+        return correctedName
+    }
+
+    private fun audioPath(fileName: String): Path = fileManager.getAudioFileFullPath(fileName).getOrThrow().toPath()
 
     /** 모르는 형식이면 null. 이름을 바꾸지 않는다. */
     private fun detectContainer(path: Path): AudioContainer? {

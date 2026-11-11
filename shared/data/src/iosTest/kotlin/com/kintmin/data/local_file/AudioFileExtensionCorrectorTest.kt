@@ -97,5 +97,17 @@ class AudioFileExtensionCorrectorTest {
         assertEquals("big.mp3", db.audioMediaDao().getDataById(id).audioFileNameWithExt)
     }
 
+    @Test
+    fun `행 없는 파일도 내용에 맞춰 이름을 바꾼다`() {
+        // yt-dlp 가 HLS(234)를 받은 결과: ID3 타임스탬프 뒤 ADTS 인데 `.mp4` 로 저장된다.
+        val hls = "4944330300000000003f50524956000000350000636f6d2e6170706c652e73747265616d696e672e7472616e73706f727453747265616d54696d657374616d70000000000000000000fff15080".hexToBytes()
+        writeAudio("hls.mp4", hls)
+        writeAudio("ok.m4a", m4aHeader)
+
+        assertEquals("hls.aac", corrector.renameToMatchContent("hls.mp4"))
+        assertTrue(fileSystem.exists(root / "audios" / "hls.aac"))
+        assertEquals(null, corrector.renameToMatchContent("ok.m4a"))
+    }
+
     private fun String.hexToBytes(): ByteArray = chunked(2).map { it.toInt(16).toByte() }.toByteArray()
 }

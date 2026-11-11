@@ -84,13 +84,16 @@ internal class AudioMediaRepositoryImpl constructor(
                 val audioDownloadBasePath = fileManager.getAudioDownloadBasePath(
                     fileName = Uuid.random().toString(),
                 ).getOrThrow()
-                val downloadDto = pythonExecutor.downloadYoutubeMedia(
+                val downloadDto = pythonExecutor.downloadPlayableAudio(
                     youtubeUrl = downloadUrl,
                     audioDownloadPath = audioDownloadBasePath,
                 ).getOrThrow()
-                val audioFileNameWithExt = downloadDto.audioFileNameWithExt.ifBlank {
+                val downloadedName = downloadDto.audioFileNameWithExt.ifBlank {
                     throw Exception("다운로드한 오디오 파일명을 확인할 수 없습니다.")
                 }
+                // HLS 로 받으면 ADTS 가 `.mp4` 로 저장된다. AVAudioFile 은 확장자를 힌트로 쓴다.
+                val audioFileNameWithExt = AudioFileExtensionCorrector(audioMediaDao, fileManager)
+                    .renameToMatchContent(downloadedName) ?: downloadedName
                 DownloadedAudioFile(
                     fileNameWithExt = audioFileNameWithExt,
                     fileFullPath = fileManager.getAudioFileFullPath(audioFileNameWithExt).getOrThrow(),
