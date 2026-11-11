@@ -32,10 +32,14 @@ class CleanupAnomalousDataUseCase constructor(
 
         appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "track 연결 없는 음원 정리 완료"))
 
+        // iOS AVAudioFile 은 확장자가 내용과 다르면 열지 못한다. 다른 기기로 옮기기 전에도 이 정리를 거친다.
+        val correctedFileCount = audioMediaRepository.correctAudioFileExtensions().getOrThrow()
+        appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "확장자 바로잡음: ${correctedFileCount}건"))
+
         // 렌더 중이거나 DB 연결 직전인 편집본·썸네일은 아직 참조가 없어 고아로 보인다
         if (audioEditRepository.observeSavingAudioMediaIds().first().isNotEmpty()) {
             appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "편집본 저장 중이라 DB 연결 없는 파일 정리 건너뜀"))
-            return@runCatching orphanMediaList.size
+            return@runCatching orphanMediaList.size + correctedFileCount
         }
 
         appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "DB 연결 없는 파일 정리 시작"))
@@ -59,7 +63,7 @@ class CleanupAnomalousDataUseCase constructor(
 
         appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "DB 연결 없는 파일 정리 완료"))
 
-        val anomalyCount = orphanMediaList.size + orphanFileFullPaths.size
+        val anomalyCount = orphanMediaList.size + correctedFileCount + orphanFileFullPaths.size
         anomalyCount
     }
 

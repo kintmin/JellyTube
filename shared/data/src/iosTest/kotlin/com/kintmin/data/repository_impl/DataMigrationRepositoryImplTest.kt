@@ -4,11 +4,8 @@ import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.database.JellyTubeDatabase
-import com.kintmin.data.local_file.FileManager
-import com.kintmin.data.local_file.model.CopiedAudioInfo
-import com.kintmin.data.local_file.model.ExportedAudioInfo
+import com.kintmin.data.local_file.DirectoryFileManager
 import com.kintmin.data.network.dataSource.MigrationDataSource
-import com.kintmin.domain.audio_media.model.AudioExportTarget
 import com.kintmin.domain.data_migration.MigrationPlanner
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
@@ -147,36 +144,5 @@ class DataMigrationRepositoryImplTest {
             onChunk(bytes, bytes.size)
             return Result.success(Unit)
         }
-    }
-
-    /** 데이터 이전이 쓰는 경로만 [root] 아래로 돌린다. */
-    private class DirectoryFileManager(private val root: Path) : FileManager {
-        private fun dir(name: String): Path = (root / name).also { FileSystem.SYSTEM.createDirectories(it) }
-
-        override fun getAudioFileFullPath(fileNameWithExt: String) = runCatching { (dir("audios") / fileNameWithExt).toString() }
-        override fun getImageFileFullPath(fileNameWithExt: String) = runCatching { (dir("images") / fileNameWithExt).toString() }
-        override fun getLyricFileFullPath(fileNameWithExt: String) = runCatching { (dir("lyrics") / fileNameWithExt).toString() }
-        override fun getMigrationStagingDirPath() = runCatching { dir("staging").toString() }
-
-        override fun getFileNameWithExt(fileFullPath: String): Result<String> = TODO()
-        override fun getAudioDownloadBasePath(fileName: String): Result<String> = TODO()
-        override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<String> = TODO()
-        override suspend fun copyImageFile(sourceFileNameWithExt: String, targetFileName: String): Result<String> = TODO()
-        override suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<String> = TODO()
-        override suspend fun fetchLyrics(fileNameWithExt: String): Result<String> = TODO()
-        override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = TODO()
-        override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = TODO()
-        override suspend fun exportAudioToPublicStorage(
-            sourceAudioFileFullPath: String,
-            title: String,
-            artist: String?,
-            targetList: List<AudioExportTarget>,
-        ): Result<ExportedAudioInfo> = TODO()
-        override suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit> = TODO()
-        override suspend fun listAudioAndImageFileFullPaths(): Result<List<String>> = TODO()
-        override fun clearDiskCache(): Result<Unit> = TODO()
-        override suspend fun appendAppLog(date: String, line: String): Result<Unit> = TODO()
-        override suspend fun fetchAppLogDateList(): Result<List<String>> = TODO()
-        override suspend fun fetchAppLogLineList(date: String): Result<List<String>> = TODO()
     }
 }

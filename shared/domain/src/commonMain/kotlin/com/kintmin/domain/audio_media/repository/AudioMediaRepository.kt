@@ -67,6 +67,9 @@ interface AudioMediaRepository {
     suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit>
     suspend fun listAudioAndImageFileFullPaths(): Result<List<String>>
 
+    /** 음원 파일 확장자를 내용에 맞춘다. 바로잡은 파일 수를 돌려준다. */
+    suspend fun correctAudioFileExtensions(): Result<Int>
+
     suspend fun exportAudioMediaToDevice(
         audioFileFullPath: String,
         title: String,

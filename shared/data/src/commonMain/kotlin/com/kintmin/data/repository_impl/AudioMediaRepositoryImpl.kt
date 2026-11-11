@@ -5,6 +5,7 @@ import com.kintmin.data.local_db.dao_facade.AddNewAudioMediaResult
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.AudioMediaEntity
+import com.kintmin.data.local_file.AudioFileExtensionCorrector
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
@@ -392,6 +393,10 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun listAudioAndImageFileFullPaths(): Result<List<String>> =
         fileManager.listAudioAndImageFileFullPaths()
+
+    override suspend fun correctAudioFileExtensions(): Result<Int> = withContext(Dispatchers.IO) {
+        runCatching { AudioFileExtensionCorrector(audioMediaDao, fileManager).correctAll() }
+    }
 
     override suspend fun exportAudioMediaToDevice(
         audioFileFullPath: String,

@@ -60,6 +60,12 @@ WHERE id = :id
         lyricFileNameWithExt: String? = null,
     )
 
+    @Query("UPDATE AUDIO_MEDIA SET audioFileNameWithExt = :fileNameWithExt WHERE id = :id")
+    suspend fun updateAudioFileName(id: Int, fileNameWithExt: String)
+
+    @Query("UPDATE AUDIO_MEDIA SET editedAudioFileNameWithExt = :fileNameWithExt WHERE id = :id")
+    suspend fun updateEditedAudioFileName(id: Int, fileNameWithExt: String)
+
     @Query("UPDATE AUDIO_MEDIA SET lyricFileNameWithExt = NULL WHERE id = :id")
     suspend fun clearLyricFile(id: Int)
 
