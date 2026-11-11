@@ -1,0 +1,182 @@
+package com.kintmin.data.repository_impl
+
+import androidx.room.Room
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
+import com.kintmin.data.local_db.database.JellyTubeDatabase
+import com.kintmin.data.local_file.FileManager
+import com.kintmin.data.local_file.model.CopiedAudioInfo
+import com.kintmin.data.local_file.model.ExportedAudioInfo
+import com.kintmin.data.network.dataSource.MigrationDataSource
+import com.kintmin.domain.audio_media.model.AudioExportTarget
+import com.kintmin.domain.data_migration.MigrationPlanner
+import com.kintmin.domain.data_migration.model.MigrationAudioMedia
+import com.kintmin.domain.data_migration.model.MigrationEndpoint
+import com.kintmin.domain.data_migration.model.MigrationFile
+import com.kintmin.domain.data_migration.model.MigrationFileEntry
+import com.kintmin.domain.data_migration.model.MigrationFileKind
+import com.kintmin.domain.data_migration.model.MigrationRef
+import com.kintmin.domain.data_migration.model.MigrationSnapshot
+import com.kintmin.domain.data_migration.model.MigrationTrackAddition
+import com.kintmin.fileshare.MigrationManifestDto
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.test.runTest
+import okio.FileSystem
+import okio.Path
+import okio.Path.Companion.toPath
+import platform.Foundation.NSTemporaryDirectory
+import platform.Foundation.NSUUID
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+class DataMigrationRepositoryImplTest {
+
+    private val fileSystem = FileSystem.SYSTEM
+    private val root: Path = (NSTemporaryDirectory() + NSUUID().UUIDString).toPath()
+    private val endpoint = MigrationEndpoint("host", 1)
+    private val remoteFiles = mutableMapOf("a.m4a" to byteArrayOf(1, 2, 3, 4))
+    private var downloadCount = 0
+
+    private lateinit var db: JellyTubeDatabase
+    private lateinit var facade: AudioMediaFacade
+    private lateinit var repository: DataMigrationRepositoryImpl
+
+    @BeforeTest
+    fun setup() {
+        fileSystem.createDirectories(root)
+        db = Room.inMemoryDatabaseBuilder<JellyTubeDatabase>()
+            .setDriver(BundledSQLiteDriver())
+            .setQueryCoroutineContext(Dispatchers.IO)
+            .build()
+        facade = AudioMediaFacade(
+            db = db,
+            audioMediaDao = db.audioMediaDao(),
+            playlistDao = db.playlistDao(),
+            playlistTrackDao = db.playlistTrackDao(),
+            audioEditProjectDao = db.audioEditProjectDao(),
+            stepDao = db.stepDao(),
+        )
+        repository = DataMigrationRepositoryImpl(facade, DirectoryFileManager(root), FakeDataSource())
+    }
+
+    @AfterTest
+    fun tearDown() {
+        db.close()
+        fileSystem.deleteRecursively(root)
+    }
+
+    private val audioEntry = MigrationFileEntry(MigrationFile(MigrationFileKind.AUDIO, "a.m4a"), size = 4)
+
+    @Test
+    fun `받아 둔 파일은 다시 받지 않는다`() = runTest {
+        repository.stageFile(endpoint, "t", audioEntry) {}.getOrThrow()
+        repository.stageFile(endpoint, "t", audioEntry) {}.getOrThrow()
+
+        assertEquals(1, downloadCount)
+        assertTrue(fileSystem.exists(root / "staging" / "AUDIO" / "a.m4a"))
+    }
+
+    @Test
+    fun `받은 크기가 다르면 실패하고 받아 둔 파일로 남지 않는다`() = runTest {
+        val result = repository.stageFile(endpoint, "t", audioEntry.copy(size = 10)) {}
+
+        assertTrue(result.isFailure)
+        assertFalse(fileSystem.exists(root / "staging" / "AUDIO" / "a.m4a"))
+    }
+
+    @Test
+    fun `반영하면 받아 둔 파일이 제자리로 가고 임시 공간을 비울 수 있다`() = runTest {
+        facade.ensureSystemPlaylists()
+        repository.stageFile(endpoint, "t", audioEntry) {}.getOrThrow()
+        val plan = MigrationPlanner.plan(sourceWithOneAudio(), facade.fetchMigrationSnapshot())
+
+        repository.applyPlan(plan).getOrThrow()
+        repository.clearStaging().getOrThrow()
+
+        assertTrue(byteArrayOf(1, 2, 3, 4).contentEquals(fileSystem.read(root / "audios" / "a.m4a") { readByteArray() }))
+        assertFalse(fileSystem.exists(root / "staging"))
+        assertEquals(1, db.audioMediaDao().getAll().size)
+    }
+
+    @Test
+    fun `DB 반영이 실패하면 옮긴 파일을 지우고 아무 행도 남기지 않는다`() = runTest {
+        facade.ensureSystemPlaylists()
+        repository.stageFile(endpoint, "t", audioEntry) {}.getOrThrow()
+        val plan = MigrationPlanner.plan(sourceWithOneAudio(), facade.fetchMigrationSnapshot()).let {
+            it.copy(trackAdditions = it.trackAdditions + MigrationTrackAddition(MigrationRef.Existing(9999), listOf(MigrationRef.Incoming(101))))
+        }
+
+        val result = repository.applyPlan(plan)
+
+        assertTrue(result.isFailure)
+        assertFalse(fileSystem.exists(root / "audios" / "a.m4a"))
+        assertTrue(db.audioMediaDao().getAll().isEmpty())
+    }
+
+    private fun sourceWithOneAudio() = MigrationSnapshot(
+        audioMedias = listOf(
+            MigrationAudioMedia(
+                id = 101, source = "s", name = "곡", artist = "", description = "", rawAudioDurationSeconds = 1,
+                audioFileName = "a.m4a", imageFileName = null, lyricFileName = null, tjKaraokeNumber = null,
+                editedAudioFileName = null, editedAudioDurationSeconds = null, createdTimeMillis = 0,
+            ),
+        ),
+        playlists = emptyList(), tracks = emptyList(), editProjects = emptyList(), steps = emptyList(),
+    )
+
+    private inner class FakeDataSource : MigrationDataSource {
+        override suspend fun pair(host: String, port: Int, code: String) = Result.success<String?>("t")
+        override suspend fun fetchManifest(host: String, port: Int, token: String) =
+            Result.failure<MigrationManifestDto>(UnsupportedOperationException())
+
+        override suspend fun downloadFile(
+            host: String,
+            port: Int,
+            token: String,
+            kind: String,
+            name: String,
+            onChunk: (ByteArray, Int) -> Unit,
+        ): Result<Unit> {
+            downloadCount++
+            val bytes = remoteFiles.getValue(name)
+            onChunk(bytes, bytes.size)
+            return Result.success(Unit)
+        }
+    }
+
+    /** 데이터 이전이 쓰는 경로만 [root] 아래로 돌린다. */
+    private class DirectoryFileManager(private val root: Path) : FileManager {
+        private fun dir(name: String): Path = (root / name).also { FileSystem.SYSTEM.createDirectories(it) }
+
+        override fun getAudioFileFullPath(fileNameWithExt: String) = runCatching { (dir("audios") / fileNameWithExt).toString() }
+        override fun getImageFileFullPath(fileNameWithExt: String) = runCatching { (dir("images") / fileNameWithExt).toString() }
+        override fun getLyricFileFullPath(fileNameWithExt: String) = runCatching { (dir("lyrics") / fileNameWithExt).toString() }
+        override fun getMigrationStagingDirPath() = runCatching { dir("staging").toString() }
+
+        override fun getFileNameWithExt(fileFullPath: String): Result<String> = TODO()
+        override fun getAudioDownloadBasePath(fileName: String): Result<String> = TODO()
+        override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<String> = TODO()
+        override suspend fun copyImageFile(sourceFileNameWithExt: String, targetFileName: String): Result<String> = TODO()
+        override suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<String> = TODO()
+        override suspend fun fetchLyrics(fileNameWithExt: String): Result<String> = TODO()
+        override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = TODO()
+        override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = TODO()
+        override suspend fun exportAudioToPublicStorage(
+            sourceAudioFileFullPath: String,
+            title: String,
+            artist: String?,
+            targetList: List<AudioExportTarget>,
+        ): Result<ExportedAudioInfo> = TODO()
+        override suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit> = TODO()
+        override suspend fun listAudioAndImageFileFullPaths(): Result<List<String>> = TODO()
+        override fun clearDiskCache(): Result<Unit> = TODO()
+        override suspend fun appendAppLog(date: String, line: String): Result<Unit> = TODO()
+        override suspend fun fetchAppLogDateList(): Result<List<String>> = TODO()
+        override suspend fun fetchAppLogLineList(date: String): Result<List<String>> = TODO()
+    }
+}

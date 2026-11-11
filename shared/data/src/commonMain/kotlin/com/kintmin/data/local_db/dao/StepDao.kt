@@ -40,4 +40,8 @@ interface StepDao {
 
     @Query("SELECT * FROM STEP")
     suspend fun getAll(): List<StepEntity>
+
+    /** 이전으로 들어온 기록은 이 기기의 기록을 덮지 않는다. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAllIgnoringExisting(entities: List<StepEntity>)
 }

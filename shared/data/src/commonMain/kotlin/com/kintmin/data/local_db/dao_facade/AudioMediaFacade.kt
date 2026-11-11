@@ -15,6 +15,9 @@ import com.kintmin.data.local_db.model.AudioEditProjectEntity
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_db.model.PlaylistTrackEntity
+import com.kintmin.data.local_db.model.StepEntity
+import com.kintmin.domain.data_migration.model.MigrationPlan
+import com.kintmin.domain.data_migration.model.MigrationRef
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.playlist.model.PlaylistType
 
@@ -37,6 +40,80 @@ class AudioMediaFacade constructor(
                     tracks = playlistTrackDao.getAll().map { it.toMigration() },
                     editProjects = audioEditProjectDao.getAll().map { it.toMigration() },
                     steps = stepDao.getAll().map { it.toMigration() },
+                )
+            }
+        }
+    }
+
+    /** 새 행은 여기서 새 id 를 받는다. 소속은 기존 추가 경로로 붙여 곡 수·재생시간·대표 이미지를 맞춘다. */
+    suspend fun applyMigrationPlan(plan: MigrationPlan) {
+        db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                val audioIdBySourceId = plan.newAudioMedias.associate { audio ->
+                    audio.id to audioMediaDao.insertAudioMedia(
+                        AudioMediaEntity(
+                            source = audio.source,
+                            name = audio.name,
+                            artist = audio.artist,
+                            description = audio.description,
+                            rawAudioDurationSeconds = audio.rawAudioDurationSeconds,
+                            audioFileNameWithExt = audio.audioFileName,
+                            imageFileNameWithExt = audio.imageFileName,
+                            lyricFileNameWithExt = audio.lyricFileName,
+                            tjKaraokeNumber = audio.tjKaraokeNumber,
+                            editedAudioFileNameWithExt = audio.editedAudioFileName,
+                            editedAudioDurationSeconds = audio.editedAudioDurationSeconds,
+                            rawCreatedTime = audio.createdTimeMillis,
+                        )
+                    ).toInt()
+                }
+
+                var nextSequence = playlistDao.getMaxSequence() + 1
+                val playlistIdBySourceId = plan.newPlaylists.associate { playlist ->
+                    playlist.id to playlistDao.insertPlaylist(
+                        PlaylistEntity(
+                            name = playlist.name,
+                            description = playlist.description,
+                            audioMediaCount = 0,
+                            rawPlayTimeDuration = 0,
+                            rawCreatedTime = playlist.createdTimeMillis,
+                            imageFileNameWithExt = playlist.customImageFileName,
+                            isCustomImage = playlist.customImageFileName != null,
+                            sequence = nextSequence++,
+                            type = PlaylistType.USER.name,
+                        )
+                    ).toInt()
+                }
+
+                fun MigrationRef.resolve(idBySourceId: Map<Int, Int>) = when (this) {
+                    is MigrationRef.Existing -> id
+                    is MigrationRef.Incoming -> idBySourceId.getValue(sourceId)
+                }
+
+                plan.trackAdditions.forEach { addition ->
+                    addTrackWithSyncPlaylist(
+                        playlistId = addition.playlist.resolve(playlistIdBySourceId),
+                        audioMediaIdList = addition.audioMedias.map { it.resolve(audioIdBySourceId) },
+                        shouldInsertAtTop = false,
+                    )
+                }
+                if (plan.uncategorizedRemovals.isNotEmpty()) {
+                    deleteTrackWithSyncPlaylist(
+                        playlistId = requireSystemPlaylistId(PlaylistType.UNCATEGORIZED),
+                        audioMediaIdList = plan.uncategorizedRemovals,
+                    )
+                }
+
+                plan.editProjects.forEach { project ->
+                    audioEditProjectDao.upsert(
+                        AudioEditProjectEntity(
+                            audioMediaId = audioIdBySourceId.getValue(project.audioMediaId),
+                            timelineJson = project.timelineJson,
+                        )
+                    )
+                }
+                stepDao.insertAllIgnoringExisting(
+                    plan.steps.map { StepEntity(rawCreatedTime = it.createdTimeMillis, stepSensor = it.stepSensor) }
                 )
             }
         }
