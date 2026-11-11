@@ -132,7 +132,7 @@ class DataMigrationRepositoryImpl constructor(
                     val destination = resolveFilePath(file).getOrThrow().toPath()
                     // 이름이 UUID 라 이미 있으면 같은 파일이다. 남의 파일이므로 되돌릴 때 지우지 않는다.
                     if (fileSystem.exists(destination)) return@forEach
-                    move(stagedPath(file), destination)
+                    fileSystem.moveFile(stagedPath(file), destination)
                     moved += destination
                 }
                 MigrationApplyResult(audioMediaFacade.applyMigrationPlan(plan))
@@ -173,13 +173,17 @@ class DataMigrationRepositoryImpl constructor(
 
     private fun stagedPath(file: MigrationFile): Path =
         fileManager.getMigrationStagingDirPath().getOrThrow().toPath() / file.kind.name / file.name
+}
 
-    private fun move(source: Path, destination: Path) {
-        try {
-            fileSystem.atomicMove(source, destination)
-        } catch (e: IOException) {
-            fileSystem.copy(source, destination)
-            fileSystem.delete(source)
+internal fun FileSystem.moveFile(source: Path, destination: Path) {
+    try {
+        atomicMove(source, destination)
+    } catch (e: IOException) {
+        // 반쯤 복사된 파일을 남기면 다음 시도가 이미 있는 같은 파일로 보고 건너뛴다.
+        runCatching { copy(source, destination) }.onFailure {
+            delete(destination, mustExist = false)
+            throw it
         }
+        delete(source)
     }
 }

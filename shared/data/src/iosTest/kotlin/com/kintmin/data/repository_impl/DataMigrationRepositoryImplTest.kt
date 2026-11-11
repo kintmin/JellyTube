@@ -20,15 +20,20 @@ import com.kintmin.fileshare.MigrationManifestDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.test.runTest
+import okio.Buffer
 import okio.FileSystem
+import okio.ForwardingFileSystem
+import okio.IOException
 import okio.Path
 import okio.Path.Companion.toPath
+import okio.Sink
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSUUID
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -115,6 +120,33 @@ class DataMigrationRepositoryImplTest {
         assertTrue(result.isFailure)
         assertFalse(fileSystem.exists(root / "audios" / "a.m4a"))
         assertTrue(db.audioMediaDao().getAll().isEmpty())
+    }
+
+    @Test
+    fun `옮기다 복사가 실패하면 반쯤 쓴 파일을 남기지 않는다`() {
+        val source = root / "staged.m4a"
+        val destination = root / "a.m4a"
+        fileSystem.write(source) { write(byteArrayOf(1, 2, 3, 4)) }
+
+        assertFails { FailingCopyFileSystem(fileSystem).moveFile(source, destination) }
+
+        assertFalse(fileSystem.exists(destination))
+        assertTrue(fileSystem.exists(source))
+    }
+
+    /** 다른 볼륨이라 바로 옮기지 못하고, 복사는 한 바이트 쓰고 실패한다. */
+    private class FailingCopyFileSystem(delegate: FileSystem) : ForwardingFileSystem(delegate) {
+        override fun atomicMove(source: Path, target: Path) = throw IOException("다른 볼륨")
+
+        override fun sink(file: Path, mustCreate: Boolean): Sink {
+            val delegate = super.sink(file, mustCreate)
+            return object : Sink by delegate {
+                override fun write(source: Buffer, byteCount: Long) {
+                    delegate.write(source, 1)
+                    throw IOException("저장 공간 부족")
+                }
+            }
+        }
     }
 
     private fun sourceWithOneAudio() = MigrationSnapshot(
