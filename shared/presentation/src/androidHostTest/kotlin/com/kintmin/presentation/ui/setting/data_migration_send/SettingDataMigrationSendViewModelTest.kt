@@ -1,10 +1,7 @@
 package com.kintmin.presentation.ui.setting.data_migration_send
 
-import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.model.DataMigrationSendStatus
-import io.mockk.coEvery
-import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -29,7 +26,6 @@ class SettingDataMigrationSendViewModelTest {
         every { status } returns statusFlow
         every { start() } answers { statusFlow.value = DataMigrationSendStatus.WaitingForPair("123456") }
     }
-    private val cleanup = mockk<CleanupAnomalousDataUseCase>()
 
     @Before
     fun setUp() {
@@ -42,35 +38,16 @@ class SettingDataMigrationSendViewModelTest {
     }
 
     @Test
-    fun `이상 데이터 정리를 마친 뒤에 연결 코드를 연다`() {
-        coEvery { cleanup() } returns Result.success(0)
-
-        val viewModel = SettingDataMigrationSendViewModel(controller, cleanup)
+    fun `화면에 들어오면 바로 연결 코드를 연다`() {
+        val viewModel = SettingDataMigrationSendViewModel(controller)
 
         assertEquals(DataMigrationSendStep.WaitingForPair("123456"), viewModel.uiState.value.step)
-        coVerifyOrder {
-            cleanup()
-            controller.start()
-        }
-    }
-
-    @Test
-    fun `정리에 실패하면 연결을 열지 않고 다시 시도할 수 있다`() {
-        coEvery { cleanup() } returnsMany listOf(Result.failure(IllegalStateException()), Result.success(0))
-
-        val viewModel = SettingDataMigrationSendViewModel(controller, cleanup)
-        assertEquals(DataMigrationSendStep.PreparationFailed, viewModel.uiState.value.step)
-        verify(exactly = 0) { controller.start() }
-
-        viewModel.sendIntent(SettingDataMigrationSendIntent.OnClickRetryPreparation)
-
-        assertEquals(DataMigrationSendStep.WaitingForPair("123456"), viewModel.uiState.value.step)
+        verify(exactly = 1) { controller.start() }
     }
 
     @Test
     fun `받는 기기가 받는 동안만 뒤로가기를 막고 화면은 코드 대기부터 켜 둔다`() {
-        coEvery { cleanup() } returns Result.success(0)
-        val viewModel = SettingDataMigrationSendViewModel(controller, cleanup)
+        val viewModel = SettingDataMigrationSendViewModel(controller)
         assertTrue(viewModel.uiState.value.keepsScreenOn)
         assertFalse(viewModel.uiState.value.isSending)
 
@@ -86,8 +63,7 @@ class SettingDataMigrationSendViewModelTest {
 
     @Test
     fun `코드를 여러 번 틀려 잠기면 새 코드로 다시 연다`() {
-        coEvery { cleanup() } returns Result.success(0)
-        val viewModel = SettingDataMigrationSendViewModel(controller, cleanup)
+        val viewModel = SettingDataMigrationSendViewModel(controller)
 
         statusFlow.value = DataMigrationSendStatus.Locked
         assertEquals(DataMigrationSendStep.Locked, viewModel.uiState.value.step)

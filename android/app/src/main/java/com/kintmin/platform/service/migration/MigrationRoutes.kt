@@ -1,6 +1,7 @@
 package com.kintmin.platform.service.migration
 
 import com.kintmin.data.data_migration.toManifestDto
+import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileKind
 import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
@@ -27,6 +28,7 @@ import java.io.File
  */
 internal fun Route.migrationRoutes(
     currentSession: () -> MigrationSession?,
+    cleanupAnomalousData: CleanupAnomalousDataUseCase,
     exportMigrationData: ExportMigrationDataUseCase,
     resolveMigrationFilePath: ResolveMigrationFilePathUseCase,
 ) {
@@ -40,7 +42,9 @@ internal fun Route.migrationRoutes(
 
     get(FileShareConstants.MIGRATION_MANIFEST_PATH) {
         val session = call.authorizedSession(currentSession) ?: return@get
-        exportMigrationData()
+        // 받는 기기가 연결한 뒤에 정리한다. 확장자가 내용과 다른 음원은 iOS 에서 열리지 않고, 고아는 보낼 필요가 없다.
+        cleanupAnomalousData()
+            .mapCatching { exportMigrationData().getOrThrow() }
             .onSuccess { export ->
                 session.allowFiles(export.files.map { it.file.kind.name to it.file.name }.toSet())
                 call.respond(export.toManifestDto())

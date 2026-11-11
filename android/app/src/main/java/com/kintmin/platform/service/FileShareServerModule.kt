@@ -1,6 +1,7 @@
 package com.kintmin.platform.service
 
 import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
@@ -40,6 +41,7 @@ internal fun Application.fileShareModule(
     uploadCacheDir: File,
     onUploadImported: (ImportedAudioMediaResult) -> Unit,
     currentMigrationSession: () -> MigrationSession?,
+    cleanupAnomalousData: CleanupAnomalousDataUseCase,
     exportMigrationData: ExportMigrationDataUseCase,
     resolveMigrationFilePath: ResolveMigrationFilePathUseCase,
 ) {
@@ -48,7 +50,7 @@ internal fun Application.fileShareModule(
         json(Json { ignoreUnknownKeys = true })
     }
     routing {
-        migrationRoutes(currentMigrationSession, exportMigrationData, resolveMigrationFilePath)
+        migrationRoutes(currentMigrationSession, cleanupAnomalousData, exportMigrationData, resolveMigrationFilePath)
 
         webSocket(FileShareConstants.WS_STATUS_PATH) {
             send("running")

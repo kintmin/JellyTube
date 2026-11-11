@@ -42,15 +42,8 @@ fun DataMigrationSendStatusView(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             when (step) {
-                DataMigrationSendStep.Preparing -> {
+                DataMigrationSendStep.Starting -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                    StatusText("보내기 전에 데이터를 점검하고 있습니다.")
-                }
-                DataMigrationSendStep.PreparationFailed -> {
-                    StatusText("데이터 점검에 실패했습니다. 다시 시도해 주세요.")
-                    Button(onClick = { sendIntent(SettingDataMigrationSendIntent.OnClickRetryPreparation) }) {
-                        Text("다시 시도")
-                    }
                 }
                 is DataMigrationSendStep.WaitingForPair -> {
                     StatusText("연결 코드")
@@ -65,7 +58,7 @@ fun DataMigrationSendStatusView(
                 }
                 DataMigrationSendStep.Sending -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                    StatusText("iPhone이 데이터를 받고 있습니다.")
+                    StatusText("iPhone이 데이터를 받고 있습니다. 처음에는 보내기 전에 데이터를 점검합니다.")
                 }
                 is DataMigrationSendStep.Finished -> {
                     StatusText("iPhone이 받기를 마쳤습니다.")

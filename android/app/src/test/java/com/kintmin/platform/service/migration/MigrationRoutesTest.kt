@@ -22,7 +22,10 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
+import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
@@ -37,6 +40,9 @@ class MigrationRoutesTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
+    private val cleanupUseCase = mockk<CleanupAnomalousDataUseCase> {
+        coEvery { this@mockk() } returns Result.success(0)
+    }
     private val exportUseCase = mockk<ExportMigrationDataUseCase>()
     private val resolvePathUseCase = mockk<ResolveMigrationFilePathUseCase>()
     private var session: MigrationSession? = MigrationSession(code = CODE, generateToken = { TOKEN })
@@ -64,6 +70,7 @@ class MigrationRoutesTest {
                 uploadCacheDir = tempFolder.root,
                 onUploadImported = {},
                 currentMigrationSession = { session },
+                cleanupAnomalousData = cleanupUseCase,
                 exportMigrationData = exportUseCase,
                 resolveMigrationFilePath = resolvePathUseCase,
             )
@@ -127,6 +134,11 @@ class MigrationRoutesTest {
         assertEquals(HttpStatusCode.OK, manifest.status)
         assertTrue(manifest.bodyAsText().contains(""""formatVersion":${FileShareConstants.MIGRATION_FORMAT_VERSION}"""))
 
+        coVerifyOrder {
+            cleanupUseCase()
+            exportUseCase()
+        }
+
         val response = file("AUDIO", "a.m4a", TOKEN)
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(byteArrayOf(1, 2, 3).contentEquals(response.bodyAsBytes()))
@@ -141,6 +153,21 @@ class MigrationRoutesTest {
         java.io.File(tempFolder.root, "a.m4a").delete()
 
         assertEquals(HttpStatusCode.Gone, file("AUDIO", "a.m4a", TOKEN).status)
+    }
+
+    @Test
+    fun `연결 전에는 데이터를 정리하지 않는다`() = serverTest {
+        pair(CODE)
+
+        coVerify(exactly = 0) { cleanupUseCase() }
+    }
+
+    @Test
+    fun `정리에 실패하면 목록을 내려주지 않는다`() = serverTest {
+        coEvery { cleanupUseCase() } returns Result.failure(IllegalStateException())
+        pair(CODE)
+
+        assertEquals(HttpStatusCode.InternalServerError, manifest(TOKEN).status)
     }
 
     @Test

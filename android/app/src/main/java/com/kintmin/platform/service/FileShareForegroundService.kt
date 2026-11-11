@@ -13,6 +13,7 @@ import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
+import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
@@ -43,6 +44,7 @@ class FileShareForegroundService : Service(), KoinComponent {
     private val importUploadedAudioMediaUseCase: ImportUploadedAudioMediaUseCase by inject()
     private val updateAudioMediaUseCase: UpdateAudioMediaUseCase by inject()
     private val saveAudioMediaImageUseCase: SaveAudioMediaImageUseCase by inject()
+    private val cleanupAnomalousDataUseCase: CleanupAnomalousDataUseCase by inject()
     private val exportMigrationDataUseCase: ExportMigrationDataUseCase by inject()
     private val resolveMigrationFilePathUseCase: ResolveMigrationFilePathUseCase by inject()
     private val pushNotificationManager: PushNotificationManager by inject()
@@ -123,6 +125,7 @@ class FileShareForegroundService : Service(), KoinComponent {
                             )
                         },
                         currentMigrationSession = { MigrationSessionHolder.session.value },
+                        cleanupAnomalousData = cleanupAnomalousDataUseCase,
                         exportMigrationData = exportMigrationDataUseCase,
                         resolveMigrationFilePath = resolveMigrationFilePathUseCase,
                     )

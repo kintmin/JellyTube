@@ -52,6 +52,7 @@ class FileShareServerModuleTest {
                 uploadCacheDir = tempFolder.root,
                 onUploadImported = { imported += it },
                 currentMigrationSession = { null },
+                cleanupAnomalousData = mockk(),
                 exportMigrationData = mockk(),
                 resolveMigrationFilePath = mockk(),
             )
