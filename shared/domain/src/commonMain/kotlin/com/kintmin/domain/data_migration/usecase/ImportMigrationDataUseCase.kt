@@ -28,6 +28,9 @@ import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.domain.youtube.YoutubeUrl
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * 보내는 기기의 데이터를 받아 이 기기에 합친다. 곡 하나의 실패는 그 곡을 빼고 계속하고
@@ -72,7 +75,7 @@ class ImportMigrationDataUseCase constructor(
             ).toMutableList()
         val redownloaded = redownload(redownloadable, failures, onProgress)
 
-        try {
+        val (applyPlan, applied) = try {
             // 같은 곡의 다른 행이 대표로 올라와 빠진 곡의 파일을 가져오지 않도록 키로 뺀다.
             val excludedKeys = unplayable.filter { it.id !in redownloaded }
                 .map { SourceKey.of(it.source) }
@@ -107,26 +110,35 @@ class ImportMigrationDataUseCase constructor(
             )
 
             onProgress(MigrationProgress(MigrationStage.APPLY))
-            val applied = dataMigrationRepository.applyPlan(applyPlan).getOrThrow()
-            dataMigrationRepository.clearStaging().getOrThrow()
-            export.downloadSettings?.let { applyDownloadSettings(it, applyPlan, applied, target) }
-
-            MigrationSummary(
-                newAudioMediaCount = applyPlan.newAudioMedias.size,
-                newPlaylistCount = applyPlan.newPlaylists.size,
-                redownloadedCount = redownloaded.size,
-                failures = failures,
-            ).also { summary ->
-                // 반영은 끝났다. 알림이 실패해도 결과를 되돌리지 않는다 — 보내는 쪽은 사용자가 직접 닫는다.
-                dataMigrationRepository.notifyFinished(endpoint, token, summary)
-                    .onFailure { log("완료 알림 실패: $it") }
-            }
+            applyPlan to dataMigrationRepository.applyPlan(applyPlan).getOrThrow()
         } catch (e: Throwable) {
-            // 다시 받은 파일은 아직 어느 행도 가리키지 않는다. 두면 고아가 된다.
-            redownloaded.values.forEach { audioMediaRepository.deleteFileAtFullPath(it.fileFullPath) }
+            // 반영 전이라 다시 받은 파일은 아직 어느 행도 가리키지 않는다. 두면 고아가 된다. 취소돼도 지운다.
+            withContext(NonCancellable) {
+                redownloaded.values.forEach { audioMediaRepository.deleteFileAtFullPath(it.fileFullPath) }
+            }
             throw e
         }
-    }.onFailure { log("이전 중단: $it") }
+
+        // 여기부터는 반영이 끝났다. 실패해도 결과를 되돌리지 않고 기록만 한다 — 다시 받은 파일은 이미 행이 가리킨다.
+        dataMigrationRepository.clearStaging().onFailure { log("임시 공간 정리 실패: $it") }
+        export.downloadSettings?.let { settings ->
+            runCatching { applyDownloadSettings(settings, applyPlan, applied, target) }
+                .onFailure { log("다운로드 설정 반영 실패: $it") }
+        }
+        MigrationSummary(
+            newAudioMediaCount = applyPlan.newAudioMedias.size,
+            newPlaylistCount = applyPlan.newPlaylists.size,
+            redownloadedCount = redownloaded.size,
+            failures = failures,
+        ).also { summary ->
+            dataMigrationRepository.notifyFinished(endpoint, token, summary)
+                .onFailure { log("완료 알림 실패: $it") }
+        }
+    }.onFailure {
+        // 취소는 실패가 아니다. 결과로 돌려주지 않고 그대로 올린다.
+        if (it is CancellationException) throw it
+        log("이전 중단: $it")
+    }
 
     private fun planWithout(source: MigrationSnapshot, target: MigrationSnapshot, localFiles: Set<MigrationFile>) =
         MigrationPlanner.plan(source, target).let { it.copy(requiredFiles = it.requiredFiles - localFiles) }
@@ -143,6 +155,7 @@ class ImportMigrationDataUseCase constructor(
             audioMediaRepository.downloadAudioFile(audio.source)
                 .onSuccess { result[audio.id] = it }
                 .onFailure {
+                    if (it is CancellationException) throw it
                     log("다시 받기 실패: ${audio.name} (${audio.source}) $it")
                     failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
                 }

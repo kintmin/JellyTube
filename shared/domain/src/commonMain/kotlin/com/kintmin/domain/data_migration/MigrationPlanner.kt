@@ -89,14 +89,15 @@ object MigrationPlanner {
             .filter { it.playlistId == uncategorizedId && MigrationRef.Existing(it.audioMediaId) in categorized }
             .map { it.audioMediaId }
 
-        val newAudioIds = newAudioMedias.map { it.id }.toSet()
+        val editedNewAudioIds = newAudioMedias.filter { it.editedAudioFileName != null }.map { it.id }.toSet()
         return MigrationPlan(
             newAudioMedias = newAudioMedias,
             newPlaylists = newPlaylists,
             trackAdditions = additions.filterValues { it.isNotEmpty() }
                 .map { (playlist, audios) -> MigrationTrackAddition(playlist, audios.toList()) },
             uncategorizedRemovals = uncategorizedRemovals,
-            editProjects = source.editProjects.filter { it.audioMediaId in newAudioIds },
+            // 편집 상태는 편집본 파일과 짝이다. 편집본 없이 들어오면 있지도 않은 편집본을 기준으로 복원한다.
+            editProjects = source.editProjects.filter { it.audioMediaId in editedNewAudioIds },
             steps = source.steps,
             requiredFiles = MigrationFiles.referencedBy(newAudioMedias, newPlaylists),
             playlistRefBySourceId = playlistRefBySourceId,

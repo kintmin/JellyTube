@@ -7,6 +7,7 @@ import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationProgress
+import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
@@ -122,6 +123,14 @@ class SettingDataMigrationReceiveViewModel constructor(
     }
 
     private fun interrupt(error: Throwable) {
+        // 같은 토큰으로는 다시 시도해도 계속 실패한다. Android 화면의 새 코드로 다시 연결받는다.
+        if (error is MigrationSessionExpiredException) {
+            token = null
+            _uiState.update {
+                it.copy(code = "", stages = emptyList(), phase = DataMigrationReceivePhase.CodeInput(error.toMessage()))
+            }
+            return
+        }
         _uiState.update { state ->
             state.copy(
                 phase = DataMigrationReceivePhase.Interrupted(error.toMessage()),
@@ -187,6 +196,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     private fun Throwable.toMessage(): String = when (this) {
         is MigrationPairRejectedException -> "코드가 맞지 않거나 Android 기기의 보내기 화면이 닫혔습니다."
         is MigrationVersionMismatchException -> message.orEmpty()
+        is MigrationSessionExpiredException -> "Android 기기와의 연결이 끊겼습니다. Android 화면에 보이는 코드를 다시 입력해 주세요. 받은 파일은 이어서 받습니다."
         else -> "연결이 끊겼습니다. 두 기기가 같은 Wi-Fi에 있고 Android 보내기 화면이 열려 있는지 확인한 뒤 다시 시도해 주세요. 받은 파일은 이어서 받습니다."
     }
 }

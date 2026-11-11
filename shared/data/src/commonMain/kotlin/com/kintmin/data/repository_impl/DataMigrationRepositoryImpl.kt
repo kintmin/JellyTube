@@ -15,6 +15,7 @@ import com.kintmin.domain.data_migration.model.MigrationFileKind
 import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationPlan
+import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
@@ -72,7 +73,8 @@ class DataMigrationRepositoryImpl constructor(
 
     override suspend fun fetchRemoteExport(endpoint: MigrationEndpoint, token: String): Result<MigrationExport> =
         runCatching {
-            val manifest = migrationDataSource.fetchManifest(endpoint.host, endpoint.port, token).getOrThrow()
+            val manifest = migrationDataSource.fetchManifest(endpoint.host, endpoint.port, token)
+                .getOrElse { throw it.asSessionExpiredOrSelf() }
             if (manifest.formatVersion != FileShareConstants.MIGRATION_FORMAT_VERSION) {
                 throw MigrationVersionMismatchException()
             }
@@ -106,11 +108,11 @@ class DataMigrationRepositoryImpl constructor(
                     received += count
                     onReceived(received)
                 }.getOrElse { error ->
-                    // 404 는 그 파일만의 문제다. 그 밖의 오류(연결 끊김·401)는 이전 전체를 멈춘다.
-                    if (error is ClientRequestException && error.response.status == HttpStatusCode.NotFound) {
+                    // 410 은 그 파일만의 문제다. 그 밖의 오류(연결 끊김·세션 만료)는 이전 전체를 멈춘다.
+                    if (error is ClientRequestException && error.response.status == HttpStatusCode.Gone) {
                         throw MigrationFileUnavailableException(entry.file.name, error)
                     }
-                    throw error
+                    throw error.asSessionExpiredOrSelf()
                 }
             } finally {
                 sink.close()
@@ -159,6 +161,16 @@ class DataMigrationRepositoryImpl constructor(
         newAudioMediaCount = summary.newAudioMediaCount,
         failedCount = summary.failures.size,
     )
+
+    /** 401(토큰이 바뀜)과 404(세션이 닫힘)는 같은 토큰으로 다시 시도해도 안 된다. */
+    private fun Throwable.asSessionExpiredOrSelf(): Throwable {
+        val status = (this as? ClientRequestException)?.response?.status
+        return if (status == HttpStatusCode.Unauthorized || status == HttpStatusCode.NotFound) {
+            MigrationSessionExpiredException(this)
+        } else {
+            this
+        }
+    }
 
     private fun stagedPath(file: MigrationFile): Path =
         fileManager.getMigrationStagingDirPath().getOrThrow().toPath() / file.kind.name / file.name

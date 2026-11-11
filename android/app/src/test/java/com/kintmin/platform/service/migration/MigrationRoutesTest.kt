@@ -135,6 +135,15 @@ class MigrationRoutesTest {
     }
 
     @Test
+    fun `목록에는 있지만 디스크에서 사라진 파일은 410 으로 세션 없음과 구분한다`() = serverTest {
+        pair(CODE)
+        manifest(TOKEN)
+        java.io.File(tempFolder.root, "a.m4a").delete()
+
+        assertEquals(HttpStatusCode.Gone, file("AUDIO", "a.m4a", TOKEN).status)
+    }
+
+    @Test
     fun `경로를 벗어나는 이름은 거부한다`() = serverTest {
         pair(CODE)
         manifest(TOKEN)

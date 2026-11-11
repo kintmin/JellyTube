@@ -6,6 +6,7 @@ import com.kintmin.domain.data_migration.model.MigrationFailure
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationProgress
+import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
@@ -171,6 +172,24 @@ class SettingDataMigrationReceiveViewModelTest {
 
         assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Finished)
         coVerify(exactly = 1) { pair(any(), any()) }
+    }
+
+    @Test
+    fun `세션이 끝났으면 다시 시도 대신 새 코드를 받는다`() {
+        coEvery { import(endpoint, "token", any()) } returns Result.failure(MigrationSessionExpiredException())
+        coEvery { pair(endpoint, "654321") } returns Result.success("new-token")
+        coEvery { import(endpoint, "new-token", any()) } returns Result.success(summary())
+        val viewModel = viewModel()
+        viewModel.connect()
+
+        val phase = viewModel.uiState.value.phase
+        assertTrue(phase is DataMigrationReceivePhase.CodeInput && phase.errorMessage != null)
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnChangeCode("654321"))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickConnect)
+
+        assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Finished)
+        coVerify(exactly = 1) { discovery.discover() }
     }
 
     @Test

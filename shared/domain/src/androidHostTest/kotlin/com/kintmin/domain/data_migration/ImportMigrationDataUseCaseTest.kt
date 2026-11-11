@@ -29,6 +29,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import kotlin.coroutines.cancellation.CancellationException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -85,6 +86,7 @@ class ImportMigrationDataUseCaseTest {
         private val unavailableFiles: Set<String> = emptySet(),
         /** 이 이름의 파일을 받다가 연결이 끊긴다. */
         private val disconnectAt: String? = null,
+        private val failClearStaging: Boolean = false,
     ) : DataMigrationRepository {
         val calls = mutableListOf<String>()
         val staged = mutableListOf<String>()
@@ -119,7 +121,10 @@ class ImportMigrationDataUseCaseTest {
                 appliedPlan = plan
             }
 
-        override suspend fun clearStaging() = Result.success(Unit).also { calls += "clear" }
+        override suspend fun clearStaging(): Result<Unit> {
+            calls += "clear"
+            return if (failClearStaging) Result.failure(IllegalStateException("디스크 오류")) else Result.success(Unit)
+        }
         override suspend fun notifyFinished(endpoint: MigrationEndpoint, token: String, summary: MigrationSummary) =
             Result.success(Unit).also { calls += "finish" }
     }
@@ -273,6 +278,43 @@ class ImportMigrationDataUseCaseTest {
         assertTrue("clear" !in repository.calls)
         assertTrue("finish" !in repository.calls)
         coVerify { audioMediaRepository.deleteFileAtFullPath("/audios/re.m4a") }
+    }
+
+    @Test
+    fun `반영이 끝난 뒤의 정리 실패는 결과를 되돌리지 않고 다시 받은 파일도 지우지 않는다`() = runTest {
+        coEvery { audioMediaRepository.downloadAudioFile(any()) } returns
+            Result.success(DownloadedAudioFile("re.m4a", "/audios/re.m4a", durationSeconds = 42))
+        val repository = FakeRepository(
+            export = export(listOf(audio(101, "https://youtu.be/yt", "yt.webm")), listOf(entry("yt.webm"))),
+            target = emptyTarget,
+            failClearStaging = true,
+        )
+
+        val result = useCase(repository)(endpoint, "t") {}
+
+        assertTrue(result.isSuccess)
+        assertTrue("apply" in repository.calls)
+        coVerify(exactly = 0) { audioMediaRepository.deleteFileAtFullPath(any()) }
+    }
+
+    @Test
+    fun `취소는 실패로 기록하지 않고 그대로 올리며 다시 받은 파일은 지운다`() = runTest {
+        coEvery { audioMediaRepository.downloadAudioFile("https://youtu.be/a") } returns
+            Result.success(DownloadedAudioFile("re.m4a", "/audios/re.m4a", durationSeconds = 42))
+        coEvery { audioMediaRepository.downloadAudioFile("https://youtu.be/b") } returns
+            Result.failure(CancellationException("나가기"))
+        val repository = FakeRepository(
+            export = export(
+                listOf(audio(101, "https://youtu.be/a", "a.webm"), audio(102, "https://youtu.be/b", "b.webm")),
+                listOf(entry("a.webm"), entry("b.webm")),
+            ),
+            target = emptyTarget,
+        )
+
+        val thrown = runCatching { useCase(repository)(endpoint, "t") {} }.exceptionOrNull()
+
+        assertTrue(thrown is CancellationException)
+        assertTrue("apply" !in repository.calls)
     }
 
     @Test

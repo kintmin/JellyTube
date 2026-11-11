@@ -193,6 +193,19 @@ class MigrationPlannerTest {
     }
 
     @Test
+    fun `편집본 파일이 없는 곡은 편집 상태도 옮기지 않는다`() {
+        val source = snapshot(
+            audios = listOf(audio(101, "https://youtu.be/a", edited = "a-edit.m4a"), audio(102, "https://youtu.be/b")),
+            playlists = sourceSystem,
+            editProjects = listOf(MigrationEditProject(101, "{}"), MigrationEditProject(102, "{}")),
+        )
+
+        val plan = MigrationPlanner.plan(source, snapshot(playlists = targetSystem))
+
+        assertEquals(listOf(MigrationEditProject(101, "{}")), plan.editProjects)
+    }
+
+    @Test
     fun `이미 옮겨 온 데이터를 다시 옮기면 걸음 수 말고는 할 일이 없다`() {
         val data = snapshot(
             audios = listOf(audio(101, "https://youtu.be/a"), audio(102, "https://youtu.be/b")),

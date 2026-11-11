@@ -56,7 +56,10 @@ class AudioMediaFacadeMigrationTest {
     )
 
     private val sourceSnapshot = MigrationSnapshot(
-        audioMedias = listOf(audio(101, "https://youtu.be/old?si=x"), audio(102, "https://youtu.be/new")),
+        audioMedias = listOf(
+            audio(101, "https://youtu.be/old?si=x"),
+            audio(102, "https://youtu.be/new").copy(editedAudioFileName = "102-edit.m4a", editedAudioDurationSeconds = 90),
+        ),
         playlists = listOf(
             MigrationPlaylist(11, "전체", "", null, 0, PlaylistType.TOTAL, 0),
             MigrationPlaylist(12, "미분류", "", null, 0, PlaylistType.UNCATEGORIZED, 0),
@@ -99,7 +102,8 @@ class AudioMediaFacadeMigrationTest {
         val playlists = db.playlistDao().getAll()
         val drive = playlists.single { it.name == "드라이브" }
         assertEquals(2, drive.audioMediaCount)
-        assertEquals(200, drive.rawPlayTimeDuration)
+        // 편집본이 있는 곡은 편집본 길이(90)로 센다.
+        assertEquals(190, drive.rawPlayTimeDuration)
         assertEquals("p.jpg", drive.imageFileNameWithExt)
         assertTrue(drive.isCustomImage)
         assertEquals(2, playlists.single { it.type == PlaylistType.TOTAL.name }.audioMediaCount)
