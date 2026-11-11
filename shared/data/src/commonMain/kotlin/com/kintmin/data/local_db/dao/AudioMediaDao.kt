@@ -21,6 +21,9 @@ interface AudioMediaDao {
     @Query("SELECT * FROM AUDIO_MEDIA")
     fun getAudioMediaListFlow(): Flow<List<AudioMediaEntity>>
 
+    @Query("SELECT * FROM AUDIO_MEDIA")
+    suspend fun getAll(): List<AudioMediaEntity>
+
     @Query("SELECT * FROM AUDIO_MEDIA WHERE id NOT IN (SELECT audioMediaId FROM PLAYLIST_TRACK)")
     suspend fun getOrphanAudioMediaList(): List<AudioMediaEntity>
 

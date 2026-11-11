@@ -13,11 +13,14 @@ import androidx.core.app.ServiceCompat
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
+import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
+import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.platform.push_notification.PushNotificationIds
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.DownloadResultNotification
 import com.kintmin.platform.push_notification.notifications.FileShareServerNotification
+import com.kintmin.platform.service.migration.MigrationSessionHolder
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +39,8 @@ class FileShareForegroundService : Service(), KoinComponent {
     private val importUploadedAudioMediaUseCase: ImportUploadedAudioMediaUseCase by inject()
     private val updateAudioMediaUseCase: UpdateAudioMediaUseCase by inject()
     private val saveAudioMediaImageUseCase: SaveAudioMediaImageUseCase by inject()
+    private val exportMigrationDataUseCase: ExportMigrationDataUseCase by inject()
+    private val resolveMigrationFilePathUseCase: ResolveMigrationFilePathUseCase by inject()
     private val pushNotificationManager: PushNotificationManager by inject()
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -109,6 +114,9 @@ class FileShareForegroundService : Service(), KoinComponent {
                                 ),
                             )
                         },
+                        currentMigrationSession = { MigrationSessionHolder.session.value },
+                        exportMigrationData = exportMigrationDataUseCase,
+                        resolveMigrationFilePath = resolveMigrationFilePathUseCase,
                     )
                 }.start(wait = false)
             }

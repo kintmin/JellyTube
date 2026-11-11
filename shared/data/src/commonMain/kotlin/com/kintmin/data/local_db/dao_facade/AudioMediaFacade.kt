@@ -1,16 +1,21 @@
 package com.kintmin.data.local_db.dao_facade
 
+import androidx.room.deferredTransaction
 import androidx.room.immediateTransaction
+import androidx.room.useReaderConnection
 import androidx.room.useWriterConnection
 import com.kintmin.data.local_db.dao.AudioEditProjectDao
 import com.kintmin.data.local_db.dao.AudioMediaDao
 import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao.PlaylistTrackDao
+import com.kintmin.data.local_db.dao.StepDao
+import com.kintmin.data.local_db.mapper.toMigration
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.model.AudioEditProjectEntity
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_db.model.PlaylistTrackEntity
+import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.playlist.model.PlaylistType
 
 class AudioMediaFacade constructor(
@@ -19,7 +24,23 @@ class AudioMediaFacade constructor(
     private val playlistDao: PlaylistDao,
     private val playlistTrackDao: PlaylistTrackDao,
     private val audioEditProjectDao: AudioEditProjectDao,
+    private val stepDao: StepDao,
 ) {
+
+    /** 다섯 테이블을 한 읽기 트랜잭션에서 읽는다. 따로 읽으면 사이에 끼어든 쓰기로 소속이 없는 곡을 가리킬 수 있다. */
+    suspend fun fetchMigrationSnapshot(): MigrationSnapshot {
+        return db.useReaderConnection { transactor ->
+            transactor.deferredTransaction {
+                MigrationSnapshot(
+                    audioMedias = audioMediaDao.getAll().map { it.toMigration() },
+                    playlists = playlistDao.getAll().map { it.toMigration() },
+                    tracks = playlistTrackDao.getAll().map { it.toMigration() },
+                    editProjects = audioEditProjectDao.getAll().map { it.toMigration() },
+                    steps = stepDao.getAll().map { it.toMigration() },
+                )
+            }
+        }
+    }
 
     suspend fun addNewAudioMedia(
         newAudioMedia: AudioMediaEntity,

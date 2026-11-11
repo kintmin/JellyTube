@@ -1,8 +1,6 @@
 package com.kintmin.domain.data_migration
 
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
-import com.kintmin.domain.data_migration.model.MigrationFile
-import com.kintmin.domain.data_migration.model.MigrationFileKind
 import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationPlaylist
 import com.kintmin.domain.data_migration.model.MigrationRef
@@ -100,18 +98,6 @@ object MigrationPlanner {
             .map { it.audioMediaId }
 
         val newAudioIds = newAudioMedias.map { it.id }.toSet()
-        val requiredFiles = buildSet {
-            newAudioMedias.forEach { audio ->
-                add(MigrationFile(MigrationFileKind.AUDIO, audio.audioFileName))
-                audio.editedAudioFileName?.let { add(MigrationFile(MigrationFileKind.AUDIO, it)) }
-                audio.imageFileName?.let { add(MigrationFile(MigrationFileKind.IMAGE, it)) }
-                audio.lyricFileName?.let { add(MigrationFile(MigrationFileKind.LYRIC, it)) }
-            }
-            newPlaylists.forEach { playlist ->
-                playlist.customImageFileName?.let { add(MigrationFile(MigrationFileKind.IMAGE, it)) }
-            }
-        }
-
         return MigrationPlan(
             newAudioMedias = newAudioMedias,
             newPlaylists = newPlaylists,
@@ -120,7 +106,7 @@ object MigrationPlanner {
             uncategorizedRemovals = uncategorizedRemovals,
             editProjects = source.editProjects.filter { it.audioMediaId in newAudioIds },
             steps = source.steps,
-            requiredFiles = requiredFiles,
+            requiredFiles = MigrationFiles.referencedBy(newAudioMedias, newPlaylists),
         )
     }
 }

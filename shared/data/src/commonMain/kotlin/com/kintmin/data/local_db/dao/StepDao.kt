@@ -37,4 +37,7 @@ interface StepDao {
     """
     )
     fun getEntitiesBetweenFlow(startUtc: Long, endUtc: Long): Flow<List<StepEntity>>
+
+    @Query("SELECT * FROM STEP")
+    suspend fun getAll(): List<StepEntity>
 }

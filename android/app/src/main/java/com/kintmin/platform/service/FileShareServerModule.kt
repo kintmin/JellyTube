@@ -5,10 +5,14 @@ import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
+import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
+import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
 import com.kintmin.fileshare.BulkArtistUpdateRequest
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.FileShareResponse
 import com.kintmin.fileshare.UploadResponse
+import com.kintmin.platform.service.migration.MigrationSession
+import com.kintmin.platform.service.migration.migrationRoutes
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -35,12 +39,17 @@ internal fun Application.fileShareModule(
     saveAudioMediaImage: SaveAudioMediaImageUseCase,
     uploadCacheDir: File,
     onUploadImported: (ImportedAudioMediaResult) -> Unit,
+    currentMigrationSession: () -> MigrationSession?,
+    exportMigrationData: ExportMigrationDataUseCase,
+    resolveMigrationFilePath: ResolveMigrationFilePathUseCase,
 ) {
     install(WebSockets)
     install(ContentNegotiation) {
         json(Json { ignoreUnknownKeys = true })
     }
     routing {
+        migrationRoutes(currentMigrationSession, exportMigrationData, resolveMigrationFilePath)
+
         webSocket(FileShareConstants.WS_STATUS_PATH) {
             send("running")
             for (frame in incoming) {

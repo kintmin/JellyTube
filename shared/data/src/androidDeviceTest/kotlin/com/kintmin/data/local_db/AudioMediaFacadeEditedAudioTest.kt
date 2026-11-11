@@ -54,6 +54,7 @@ class AudioMediaFacadeEditedAudioTest {
             playlistDao = db.playlistDao(),
             playlistTrackDao = db.playlistTrackDao(),
             audioEditProjectDao = db.audioEditProjectDao(),
+            stepDao = db.stepDao(),
         )
     }
 

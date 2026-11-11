@@ -51,6 +51,9 @@ class FileShareServerModuleTest {
                 saveAudioMediaImage = saveImageUseCase,
                 uploadCacheDir = tempFolder.root,
                 onUploadImported = { imported += it },
+                currentMigrationSession = { null },
+                exportMigrationData = mockk(),
+                resolveMigrationFilePath = mockk(),
             )
         }
         block()

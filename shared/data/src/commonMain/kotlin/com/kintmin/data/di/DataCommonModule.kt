@@ -26,6 +26,8 @@ import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingReposito
 import com.kintmin.domain.audio_play_setting.usecase.*
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.audio_track.usecase.*
+import com.kintmin.domain.data_migration.repository.DataMigrationRepository
+import com.kintmin.domain.data_migration.usecase.*
 import com.kintmin.domain.karaoke.repository.KaraokeRepository
 import com.kintmin.domain.karaoke.usecase.*
 import com.kintmin.domain.lyrics.repository.LyricsRepository
@@ -66,6 +68,7 @@ val dataCommonModule: Module = module {
     singleOf(::AudioMediaRepositoryImpl) bind AudioMediaRepository::class
     singleOf(::AudioPlaySettingRepositoryImpl) bind AudioPlaySettingRepository::class
     singleOf(::AudioTrackRepositoryImpl) bind AudioTrackRepository::class
+    singleOf(::DataMigrationRepositoryImpl) bind DataMigrationRepository::class
     singleOf(::DeviceStatusRepositoryImpl) bind DeviceStatusRepository::class
     singleOf(::LyricsRepositoryImpl) bind LyricsRepository::class
     singleOf(::LyricsTranslationRepositoryImpl) bind LyricsTranslationRepository::class
@@ -91,6 +94,9 @@ val dataCommonModule: Module = module {
     factoryOf(::MeasureAudioDurationUseCase)
     factoryOf(::RevertAudioEditUseCase)
     factoryOf(::SaveEditedAudioAsNewMediaUseCase)
+
+    factoryOf(::ExportMigrationDataUseCase)
+    factoryOf(::ResolveMigrationFilePathUseCase)
 
     factoryOf(::CleanupAnomalousDataUseCase)
     factoryOf(::DeleteAudioMediaListUseCase)

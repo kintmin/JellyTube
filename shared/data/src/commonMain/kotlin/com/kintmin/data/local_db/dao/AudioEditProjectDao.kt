@@ -11,6 +11,9 @@ interface AudioEditProjectDao {
     @Query("SELECT * FROM AUDIO_EDIT_PROJECT WHERE audioMediaId = :audioMediaId")
     suspend fun getByAudioMediaId(audioMediaId: Int): AudioEditProjectEntity?
 
+    @Query("SELECT * FROM AUDIO_EDIT_PROJECT")
+    suspend fun getAll(): List<AudioEditProjectEntity>
+
     /** 편집본을 다시 적용하면 이전 편집 상태를 덮어쓴다. */
     @Upsert
     suspend fun upsert(entity: AudioEditProjectEntity)
