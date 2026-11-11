@@ -358,9 +358,12 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         let isWholeBody = statusCode == 200
         if isWholeBody {
             try? FileManager.default.removeItem(atPath: transfer.partPath)
-            transfer.receivedStarts = []
             transfer.totalBytes = byteCount
             transfer.didEnqueueAll = true
+            // 한 번에 전부 받았으니 계획한 구간이 모두 채워진 것이다. 받은 구간을 `[0]` 으로만
+            // 두면 상한을 넘는 파일에서 완주 판정이 서지 않아 전송이 멈춘다.
+            transfer.receivedStarts = RangeChunkPlan.shared.chunks(totalBytes: byteCount)
+                .map { $0.start }
         } else if let totalBytes = transfer.totalBytes {
             // 추출이 알려 준 크기와 서버가 말하는 크기가 다르면 구간 계획 전체가 틀린 것이다.
             guard reportedTotal == nil || reportedTotal == totalBytes else {
