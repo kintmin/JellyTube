@@ -87,5 +87,15 @@ class AudioFileExtensionCorrectorTest {
         assertEquals(listOf("ok.m4a", "missing.mp3"), db.audioMediaDao().getAll().map { it.audioFileNameWithExt })
     }
 
+    @Test
+    fun `ID3 태그가 큰 MP3 는 태그 뒤 프레임으로 가른다`() = runTest {
+        // 4KB 짜리 ID3 태그(syncsafe 0x00 0x00 0x20 0x00) 뒤에 MP3 프레임.
+        writeAudio("big.m4a", "4944330300000000200000".hexToBytes().copyOf(10) + ByteArray(4096) + "fffb9064".hexToBytes())
+        val id = insert("big.m4a")
+
+        assertEquals(1, corrector.correctAll())
+        assertEquals("big.mp3", db.audioMediaDao().getDataById(id).audioFileNameWithExt)
+    }
+
     private fun String.hexToBytes(): ByteArray = chunked(2).map { it.toInt(16).toByte() }.toByteArray()
 }

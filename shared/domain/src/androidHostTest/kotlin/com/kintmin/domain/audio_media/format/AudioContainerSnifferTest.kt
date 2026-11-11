@@ -19,6 +19,8 @@ class AudioContainerSnifferTest {
         "opus_ogg.opus" to (AudioContainer.OGG_OPUS to "4f676753000200000000000000002ae6d05d00000000198c596201134f707573486561640102380180bb00000000004f676753000000000000000000002ae6d0"),
         "vorbis_ogg.ogg" to (AudioContainer.OGG to "4f676753000200000000000000002608b2b4000000000ed77836011e01766f72626973000000000280bb00000000000080b5010000000000b8014f6767530000"),
         "wma.wma" to (AudioContainer.ASF to "3026b2758e66cf11a6d900aa0062ce6cec01000000000000050000000102a1dcab8c47a9cf118ee400c00c205365680000000000000000000000000000000000"),
+        // ID3 타임스탬프 태그 뒤에 ADTS 가 온다. ffmpeg 없이 yt-dlp 가 HLS(234)를 받은 결과다.
+        "yt_234_hls.mp4" to (AudioContainer.ADTS to "4944330300000000003f50524956000000350000636f6d2e6170706c652e73747265616d696e672e7472616e73706f727453747265616d54696d657374616d70000000000000000000fff150802f5ffc21000500a01bffc0000000000000000000000000000000000000000000"),
         "alac.m4a" to (AudioContainer.MP4 to "0000001c667479704d344120000002004d34412069736f6d69736f3200000008667265650000d5d66d64617420000000020f0c01860001ffd7ff85ffd4004c0f"),
     )
 
@@ -44,14 +46,23 @@ class AudioContainerSnifferTest {
     }
 
     @Test
-    fun `내용과 다른 확장자만 바로잡는다`() {
-        val m4a = samples.getValue("yt_140.m4a").second.hexToBytes()
+    fun `ID3 태그가 앞부분을 넘어서면 판별을 미루고 태그 뒤 위치를 알려 준다`() {
+        // 크기 0x0100(=128) 인 태그. 앨범 아트가 들어간 MP3 가 이렇다.
+        val header = "494433030000000001000000".hexToBytes() + ByteArray(52)
 
-        assertEquals("uuid.m4a", AudioContainerSniffer.correctedFileName("uuid.mp3", m4a))
-        assertEquals("uuid.m4a", AudioContainerSniffer.correctedFileName("uuid", m4a))
-        assertNull(AudioContainerSniffer.correctedFileName("uuid.m4a", m4a))
-        assertNull(AudioContainerSniffer.correctedFileName("uuid.M4A", m4a))
-        assertNull(AudioContainerSniffer.correctedFileName("uuid.mp3", "3c68746d6c3e".hexToBytes()))
+        assertNull(AudioContainerSniffer.detect(header))
+        assertEquals(10L + 128, AudioContainerSniffer.id3PayloadOffset(header))
+        assertEquals(AudioContainer.MP3, AudioContainerSniffer.detectFrame("fffb9064".hexToBytes()))
+        assertNull(AudioContainerSniffer.id3PayloadOffset(samples.getValue("yt_140.m4a").second.hexToBytes()))
+    }
+
+    @Test
+    fun `내용과 다른 확장자만 바로잡는다`() {
+        assertEquals("uuid.m4a", AudioContainerSniffer.correctedFileName("uuid.mp3", AudioContainer.MP4))
+        assertEquals("uuid.m4a", AudioContainerSniffer.correctedFileName("uuid", AudioContainer.MP4))
+        assertEquals("uuid.aac", AudioContainerSniffer.correctedFileName("uuid.mp4", AudioContainer.ADTS))
+        assertNull(AudioContainerSniffer.correctedFileName("uuid.m4a", AudioContainer.MP4))
+        assertNull(AudioContainerSniffer.correctedFileName("uuid.M4A", AudioContainer.MP4))
     }
 
     private fun String.hexToBytes(): ByteArray = chunked(2).map { it.toInt(16).toByte() }.toByteArray()

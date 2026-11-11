@@ -1,6 +1,7 @@
 package com.kintmin.data.local_file
 
 import com.kintmin.data.local_db.dao.AudioMediaDao
+import com.kintmin.domain.audio_media.format.AudioContainer
 import com.kintmin.domain.audio_media.format.AudioContainerSniffer
 import okio.FileSystem
 import okio.Path
@@ -30,8 +31,8 @@ internal class AudioFileExtensionCorrector(
 
     private suspend fun correct(fileName: String, updateFileName: suspend (String) -> Unit): Boolean {
         val source = fileManager.getAudioFileFullPath(fileName).getOrThrow().toPath()
-        val header = readHeader(source) ?: return false
-        val correctedName = AudioContainerSniffer.correctedFileName(fileName, header) ?: return false
+        val container = detectContainer(source) ?: return false
+        val correctedName = AudioContainerSniffer.correctedFileName(fileName, container) ?: return false
         val destination = fileManager.getAudioFileFullPath(correctedName).getOrThrow().toPath()
         // 이름이 UUID 라 겹칠 일이 없지만, 겹치면 남의 파일을 덮지 않도록 건너뛴다.
         if (fileSystem.exists(destination)) return false
@@ -46,17 +47,27 @@ internal class AudioFileExtensionCorrector(
         return true
     }
 
-    private fun readHeader(path: Path): ByteArray? {
+    /** 모르는 형식이면 null. 이름을 바꾸지 않는다. */
+    private fun detectContainer(path: Path): AudioContainer? {
         if (!fileSystem.exists(path)) return null
-        return fileSystem.source(path).buffer().use { source ->
-            val header = ByteArray(AudioContainerSniffer.HEADER_SIZE)
+        val header = read(path, offset = 0, size = AudioContainerSniffer.HEADER_SIZE)
+        AudioContainerSniffer.detect(header)?.let { return it }
+        // 앨범 아트가 든 ID3 태그는 수백 KB 라 앞부분에 첫 프레임이 없다.
+        val payloadOffset = AudioContainerSniffer.id3PayloadOffset(header) ?: return null
+        return AudioContainerSniffer.detectFrame(read(path, payloadOffset, AudioContainerSniffer.FRAME_HEADER_SIZE))
+    }
+
+    private fun read(path: Path, offset: Long, size: Int): ByteArray =
+        fileSystem.source(path).buffer().use { source ->
+            if (!source.request(offset)) return@use ByteArray(0)
+            source.skip(offset)
+            val bytes = ByteArray(size)
             var read = 0
-            while (read < header.size) {
-                val count = source.read(header, read, header.size - read)
+            while (read < size) {
+                val count = source.read(bytes, read, size - read)
                 if (count == -1) break
                 read += count
             }
-            header.copyOf(read)
+            bytes.copyOf(read)
         }
-    }
 }
