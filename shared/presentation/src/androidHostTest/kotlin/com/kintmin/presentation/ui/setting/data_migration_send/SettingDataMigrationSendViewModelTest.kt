@@ -94,4 +94,15 @@ class SettingDataMigrationSendViewModelTest {
         viewModel.sendIntent(SettingDataMigrationSendIntent.OnClickRenewCode)
         assertEquals(DataMigrationSendStep.WaitingForPair("123456"), viewModel.uiState.value.step)
     }
+
+    @Test
+    fun `화면을 떠나지 않았는데 서버가 내려가면 끊김을 보여 주고 새 코드로 다시 연다`() {
+        val viewModel = SettingDataMigrationSendViewModel(controller, monitor)
+
+        statusFlow.value = DataMigrationSendStatus.Idle
+        assertEquals(DataMigrationSendStep.Disconnected, viewModel.uiState.value.step)
+
+        viewModel.sendIntent(SettingDataMigrationSendIntent.OnClickRenewCode)
+        assertEquals(DataMigrationSendStep.WaitingForPair("123456"), viewModel.uiState.value.step)
+    }
 }

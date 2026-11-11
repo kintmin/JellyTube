@@ -26,4 +26,7 @@ sealed interface DataMigrationSendStep {
 
     /** 코드를 여러 번 틀려 연결을 막았다. */
     data object Locked : DataMigrationSendStep
+
+    /** 화면을 떠나지 않았는데 서버가 내려갔다(시스템 종료 등). 보이던 코드는 더 이상 받지 않는다. */
+    data object Disconnected : DataMigrationSendStep
 }

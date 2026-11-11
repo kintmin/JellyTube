@@ -73,12 +73,21 @@ fun DataMigrationSendStatusView(
                 }
                 DataMigrationSendStep.Locked -> {
                     StatusText("코드를 여러 번 잘못 입력해 연결을 막았습니다.")
-                    Button(onClick = { sendIntent(SettingDataMigrationSendIntent.OnClickRenewCode) }) {
-                        Text("새 코드 받기")
-                    }
+                    RenewCodeButton(sendIntent)
+                }
+                DataMigrationSendStep.Disconnected -> {
+                    StatusText("보내기 연결이 끊겼습니다. 새 코드를 받아 iPhone에서 다시 연결해 주세요.")
+                    RenewCodeButton(sendIntent)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RenewCodeButton(sendIntent: (SettingDataMigrationSendIntent) -> Unit) {
+    Button(onClick = { sendIntent(SettingDataMigrationSendIntent.OnClickRenewCode) }) {
+        Text("새 코드 받기")
     }
 }
 
@@ -97,6 +106,14 @@ private fun StatusText(text: String) {
 private fun DataMigrationSendStatusViewWaitingPreview() {
     JellyTubeTheme {
         DataMigrationSendStatusView(step = DataMigrationSendStep.WaitingForPair("482913"), sendIntent = {})
+    }
+}
+
+@Preview
+@Composable
+private fun DataMigrationSendStatusViewDisconnectedPreview() {
+    JellyTubeTheme {
+        DataMigrationSendStatusView(step = DataMigrationSendStep.Disconnected, sendIntent = {})
     }
 }
 

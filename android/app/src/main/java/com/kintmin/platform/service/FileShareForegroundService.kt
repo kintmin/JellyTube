@@ -22,6 +22,7 @@ import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.platform.push_notification.PushNotificationIds
 import com.kintmin.platform.push_notification.PushNotificationManager
+import com.kintmin.platform.push_notification.notifications.DataMigrationSendNotification
 import com.kintmin.platform.push_notification.notifications.DownloadResultNotification
 import com.kintmin.platform.push_notification.notifications.FileShareServerNotification
 import com.kintmin.platform.service.migration.MigrationSessionHolder
@@ -33,6 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -58,6 +60,8 @@ class FileShareForegroundService : Service(), KoinComponent {
     private var migrationWakeLock: PowerManager.WakeLock? = null
     private var migrationWifiLock: WifiManager.WifiLock? = null
     private var migrationLockJob: Job? = null
+    private var migrationWakeLockRenewJob: Job? = null
+    private var generation = NO_GENERATION
 
     enum class Owner { PC_FILE_SHARE, DATA_MIGRATION }
 
@@ -65,17 +69,19 @@ class FileShareForegroundService : Service(), KoinComponent {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
-            stopSelf()
+            if (Owner.DATA_MIGRATION !in owners.value) stopSelf()
             return START_NOT_STICKY
         }
+        intent?.getIntExtra(EXTRA_GENERATION, NO_GENERATION)?.takeIf { it != NO_GENERATION }?.let { generation = it }
         // 다시 붙이면 같은 포트에 서버가 두 번 뜬다.
         if (ktorServer != null) return START_NOT_STICKY
 
+        val notification = if (Owner.DATA_MIGRATION in owners.value) DataMigrationSendNotification else FileShareServerNotification
         runCatching {
             ServiceCompat.startForeground(
                 this,
-                FileShareServerNotification.id,
-                FileShareServerNotification.createNotification(this),
+                notification.id,
+                notification.createNotification(this),
                 @SuppressLint("InlinedApi") ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
             )
         }.onSuccess {
@@ -91,9 +97,7 @@ class FileShareForegroundService : Service(), KoinComponent {
     }
 
     override fun onDestroy() {
-        // 알림의 중지나 시스템 종료로 내려가도 쓰던 쪽들이 서버가 살아 있다고 믿지 않게 한다.
-        setOwners(emptySet())
-        MigrationSessionHolder.close()
+        clearOwnersIfCurrent(generation)
         releaseMigrationLocks()
         unregisterNsdService()
         ktorServer?.let { server ->
@@ -159,7 +163,10 @@ class FileShareForegroundService : Service(), KoinComponent {
         if (migrationWakeLock?.isHeld != true) {
             migrationWakeLock = (getSystemService(POWER_SERVICE) as PowerManager)
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, MIGRATION_LOCK_TAG)
+                // 다시 잡을 때 개수가 쌓이지 않고 상한만 늘어나게 한다. 그래야 release 한 번으로 놓인다.
+                .apply { setReferenceCounted(false) }
                 .apply { acquire(MIGRATION_LOCK_TIMEOUT_MS) }
+            renewWakeLockBeforeTimeout()
         }
         if (migrationWifiLock?.isHeld != true) {
             val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -174,8 +181,21 @@ class FileShareForegroundService : Service(), KoinComponent {
         }
     }
 
+    // 상한이 다 차기 전에 다시 잡는다. 세션이 닫히면 releaseMigrationLocks 가 이 작업도 걷는다.
+    private fun renewWakeLockBeforeTimeout() {
+        migrationWakeLockRenewJob?.cancel()
+        migrationWakeLockRenewJob = serviceScope.launch {
+            while (true) {
+                delay(MIGRATION_LOCK_RENEW_MS)
+                migrationWakeLock?.acquire(MIGRATION_LOCK_TIMEOUT_MS)
+            }
+        }
+    }
+
     @Synchronized
     private fun releaseMigrationLocks() {
+        migrationWakeLockRenewJob?.cancel()
+        migrationWakeLockRenewJob = null
         migrationWakeLock?.takeIf { it.isHeld }?.release()
         migrationWakeLock = null
         migrationWifiLock?.takeIf { it.isHeld }?.release()
@@ -216,11 +236,14 @@ class FileShareForegroundService : Service(), KoinComponent {
 
     companion object {
         const val ACTION_STOP = "com.kintmin.platform.FILE_SHARE_STOP"
+        private const val EXTRA_GENERATION = "generation"
+        private const val NO_GENERATION = -1
 
         private const val MIGRATION_LOCK_TAG = "JellyTube:migration"
 
         // 놓친 해제가 배터리를 끝까지 잡지 않도록 상한을 둔다.
         private const val MIGRATION_LOCK_TIMEOUT_MS = 2 * 60 * 60 * 1000L
+        private const val MIGRATION_LOCK_RENEW_MS = MIGRATION_LOCK_TIMEOUT_MS - 10 * 60 * 1000L
 
         private val _owners = MutableStateFlow<Set<Owner>>(emptySet())
         val owners = _owners.asStateFlow()
@@ -228,19 +251,41 @@ class FileShareForegroundService : Service(), KoinComponent {
         private val _isPcFileShareRunning = MutableStateFlow(false)
         val isPcFileShareRunning = _isPcFileShareRunning.asStateFlow()
 
+        private var startedGeneration = NO_GENERATION
+
         @Synchronized
         private fun setOwners(owners: Set<Owner>) {
             _owners.value = owners
             _isPcFileShareRunning.value = Owner.PC_FILE_SHARE in owners
         }
 
+        /**
+         * 알림의 중지나 시스템 종료로 내려가면 쓰던 쪽들이 서버가 살아 있다고 믿지 않게 비운다. 나갔다 바로 다시
+         * 들어오면 앞 서비스의 onDestroy 가 새로 연 뒤에 오므로, 마지막으로 띄운 서비스일 때만 비운다.
+         */
+        @Synchronized
+        private fun clearOwnersIfCurrent(generation: Int) {
+            if (generation != startedGeneration) return
+            setOwners(emptySet())
+            MigrationSessionHolder.close()
+        }
+
         @Synchronized
         fun startService(context: Context, owner: Owner): Result<Unit> = runCatching {
-            val wasStopped = _owners.value.isEmpty()
-            setOwners(_owners.value + owner)
-            if (wasStopped) {
-                NotificationManagerCompat.from(context).cancel(PushNotificationIds.FILE_SHARE_SERVER)
-                context.startForegroundService(Intent(context, FileShareForegroundService::class.java))
+            val previous = _owners.value
+            setOwners(previous + owner)
+            if (previous.isEmpty()) {
+                try {
+                    NotificationManagerCompat.from(context).cancel(PushNotificationIds.FILE_SHARE_SERVER)
+                    startedGeneration++
+                    context.startForegroundService(
+                        Intent(context, FileShareForegroundService::class.java)
+                            .putExtra(EXTRA_GENERATION, startedGeneration),
+                    )
+                } catch (e: Throwable) {
+                    setOwners(previous)
+                    throw e
+                }
             }
         }
 

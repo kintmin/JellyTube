@@ -26,7 +26,7 @@ class SettingDataMigrationSendViewModel constructor(
         startIfIdle()
         viewModelScope.launch {
             dataMigrationSendController.status.collect { status ->
-                if (hasStarted) status.toStep()?.let { step -> _uiState.update { it.copy(step = step) } }
+                if (hasStarted) _uiState.update { it.copy(step = status.toStep()) }
             }
         }
     }
@@ -53,11 +53,11 @@ class SettingDataMigrationSendViewModel constructor(
     private fun startSession() {
         dataMigrationSendController.start()
         hasStarted = true
-        dataMigrationSendController.status.value.toStep()?.let { step -> _uiState.update { it.copy(step = step) } }
+        _uiState.update { it.copy(step = dataMigrationSendController.status.value.toStep()) }
     }
 
-    private fun DataMigrationSendStatus.toStep(): DataMigrationSendStep? = when (this) {
-        DataMigrationSendStatus.Idle -> null
+    private fun DataMigrationSendStatus.toStep(): DataMigrationSendStep = when (this) {
+        DataMigrationSendStatus.Idle -> DataMigrationSendStep.Disconnected
         is DataMigrationSendStatus.WaitingForPair -> DataMigrationSendStep.WaitingForPair(code)
         DataMigrationSendStatus.Paired -> DataMigrationSendStep.Sending
         is DataMigrationSendStatus.Finished -> DataMigrationSendStep.Finished(newAudioMediaCount, failedCount)
