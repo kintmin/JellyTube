@@ -151,7 +151,7 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 | 항목 | 이유 |
 |---|---|
 | 음원 편집 | Media3 Transformer + TarsosDSP 기반이라 전면 재작성이다 |
-| PC 파일 수신 | `shared:file-share` 가 JVM 전용 모듈이라 상수조차 공유되지 않는다 |
+| PC 파일 수신 | 수신 서버(Ktor CIO)와 그 서버를 붙잡아 두는 포그라운드 서비스가 Android 에만 있다 |
 | 드로잉 / 플로팅 UI | `MotionEvent` + S펜 전제. Apple Pencil 에 대응물이 없다 |
 | 기기 저장(벨소리/알람/알림음) | 세 타깃 전부 30초 트리밍 + 포맷 변환이 선행 조건이라 음원 편집과 묶인다 |
 | 번역(ML Kit) | 대응물이 iOS 18+ `Translation` 뿐인데 배포 타깃이 17.0 이다 |

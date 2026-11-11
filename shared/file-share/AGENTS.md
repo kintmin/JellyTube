@@ -1,6 +1,6 @@
 ## Module: shared:file-share
 
-**Role**: Shared constants and DTOs for the file-sharing feature between `android:app` and `desktop`.
+**Role**: Shared constants and DTOs for the file-sharing feature between `android:app`, `desktop`, and iOS.
 
 ---
 
@@ -24,7 +24,8 @@
 
 ## Dependency constraint
 
-Both `android:app` and `desktop` depend on this module. Therefore:
+`android:app`, `desktop`, and iOS all depend on this module. Therefore:
 - This module must have **zero platform-specific dependencies**.
-- Keep it as pure Kotlin (no KMP source set split needed unless a future need arises).
+- It is a KMP module with `jvm` + `iosArm64` + `iosSimulatorArm64` targets. Code lives only in `commonMain`.
+  `android:app` consumes the `jvm` variant — there is no `android` target on purpose.
 - Do not add transitive dependencies here. This module must remain a leaf node in the dependency graph.
