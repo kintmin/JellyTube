@@ -59,7 +59,6 @@ class FileShareForegroundService : Service(), KoinComponent {
     private var migrationWifiLock: WifiManager.WifiLock? = null
     private var migrationLockJob: Job? = null
 
-    /** 서버를 쓰는 쪽. 하나라도 남아 있으면 서버를 끄지 않는다. */
     enum class Owner { PC_FILE_SHARE, DATA_MIGRATION }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -69,7 +68,7 @@ class FileShareForegroundService : Service(), KoinComponent {
             stopSelf()
             return START_NOT_STICKY
         }
-        // 이미 떠 있으면 서버·NSD·잠금 감시를 다시 붙이지 않는다. 겹치면 같은 포트에 서버가 두 번 뜬다.
+        // 다시 붙이면 같은 포트에 서버가 두 번 뜬다.
         if (ktorServer != null) return START_NOT_STICKY
 
         runCatching {
@@ -142,8 +141,8 @@ class FileShareForegroundService : Service(), KoinComponent {
 
     /**
      * 포그라운드 서비스는 프로세스를 살려 둘 뿐 CPU 와 Wi-Fi 를 깨워 두지 않는다. 화면이 꺼진 채 받는
-     * 기기가 파일을 받아 가는 동안 멈추지 않도록, 연결된 뒤 세션이 닫힐 때까지 둘을 잡는다. 완료 뒤에도
-     * 받는 기기가 실패한 곡을 다시 받을 수 있어 세션이 열려 있는 한 놓지 않는다.
+     * 기기가 파일을 받아 가는 동안 멈추지 않도록 둘을 잡는다. 완료 뒤에도 실패한 곡을 다시 받을 수 있어
+     * 세션이 닫힐 때까지 놓지 않는다.
      */
     private fun holdLocksWhileMigrating() {
         if (migrationLockJob?.isActive == true) return

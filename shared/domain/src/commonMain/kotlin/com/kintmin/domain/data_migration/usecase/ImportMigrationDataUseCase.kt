@@ -112,14 +112,14 @@ class ImportMigrationDataUseCase constructor(
             onProgress(MigrationProgress(MigrationStage.APPLY))
             applyPlan to dataMigrationRepository.applyPlan(applyPlan).getOrThrow()
         } catch (e: Throwable) {
-            // 반영 전이라 다시 받은 파일은 아직 어느 행도 가리키지 않는다. 두면 고아가 된다. 취소돼도 지운다.
+            // 반영 전에는 다시 받은 파일을 가리키는 행이 없어 두면 고아가 된다.
             withContext(NonCancellable) {
                 redownloaded.values.forEach { audioMediaRepository.deleteFileAtFullPath(it.fileFullPath) }
             }
             throw e
         }
 
-        // 여기부터는 반영이 끝났다. 실패해도 결과를 되돌리지 않고 기록만 한다 — 다시 받은 파일은 이미 행이 가리킨다.
+        // 반영이 끝났다. 다시 받은 파일은 이미 행이 가리키므로 여기부터는 실패해도 기록만 한다.
         dataMigrationRepository.clearStaging().onFailure { log("임시 공간 정리 실패: $it") }
         export.downloadSettings?.let { settings ->
             runCatching { applyDownloadSettings(settings, applyPlan, applied, target) }
@@ -135,7 +135,6 @@ class ImportMigrationDataUseCase constructor(
                 .onFailure { log("완료 알림 실패: $it") }
         }
     }.onFailure {
-        // 취소는 실패가 아니다. 결과로 돌려주지 않고 그대로 올린다.
         if (it is CancellationException) throw it
         log("이전 중단: $it")
     }
@@ -176,7 +175,7 @@ class ImportMigrationDataUseCase constructor(
         val totalBytes = entries.sumOf { it.size }
         var receivedBytes = 0L
         val unavailable = mutableSetOf<MigrationFile>()
-        // 청크(64KB)마다 알리면 수 GB 에서 수만 번 화면을 다시 그린다. 1% 를 넘게 늘 때와 파일이 끝날 때만 알린다.
+        // 청크마다 알리면 수 GB 에서 화면을 수만 번 다시 그린다.
         val reportStepBytes = maxOf(totalBytes / 100, 1)
         var reportedBytes = 0L
         fun report(doneCount: Int, received: Long, force: Boolean = false) {

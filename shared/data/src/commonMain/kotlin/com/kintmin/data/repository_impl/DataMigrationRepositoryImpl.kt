@@ -108,7 +108,6 @@ class DataMigrationRepositoryImpl constructor(
                     received += count
                     onReceived(received)
                 }.getOrElse { error ->
-                    // 410 은 그 파일만의 문제다. 그 밖의 오류(연결 끊김·세션 만료)는 이전 전체를 멈춘다.
                     if (error is ClientRequestException && error.response.status == HttpStatusCode.Gone) {
                         throw MigrationFileUnavailableException(entry.file.name, error)
                     }
@@ -162,7 +161,7 @@ class DataMigrationRepositoryImpl constructor(
         failedCount = summary.failures.size,
     )
 
-    /** 401(토큰이 바뀜)과 404(세션이 닫힘)는 같은 토큰으로 다시 시도해도 안 된다. */
+    /** 401 은 토큰이 바뀐 것, 404 는 세션이 닫힌 것이다. */
     private fun Throwable.asSessionExpiredOrSelf(): Throwable {
         val status = (this as? ClientRequestException)?.response?.status
         return if (status == HttpStatusCode.Unauthorized || status == HttpStatusCode.NotFound) {

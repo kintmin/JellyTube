@@ -62,7 +62,6 @@ class SettingDataMigrationReceiveViewModel constructor(
         }
     }
 
-    /** 다른 작업이 돌고 있으면 찾지 않는다 — 이전 중에 데이터가 바뀌지 않게 한다. */
     private fun search() {
         token = null
         updatePhase(DataMigrationReceivePhase.Searching)
@@ -131,7 +130,6 @@ class SettingDataMigrationReceiveViewModel constructor(
     }
 
     private fun interrupt(error: Throwable) {
-        // 같은 토큰으로는 다시 시도해도 계속 실패한다. Android 화면의 새 코드로 다시 연결받는다.
         if (error is MigrationSessionExpiredException) {
             token = null
             _uiState.update {

@@ -42,7 +42,6 @@ internal fun Route.migrationRoutes(
 
     get(FileShareConstants.MIGRATION_MANIFEST_PATH) {
         val session = call.authorizedSession(currentSession) ?: return@get
-        // 받는 기기가 연결한 뒤에 정리한다. 확장자가 내용과 다른 음원은 iOS 에서 열리지 않고, 고아는 보낼 필요가 없다.
         cleanupAnomalousData()
             .mapCatching { exportMigrationData().getOrThrow() }
             .onSuccess { export ->
@@ -66,7 +65,7 @@ internal fun Route.migrationRoutes(
         val name = call.parameters["name"].orEmpty()
         if (!session.isFileAllowed(kind, name)) return@get call.respond(HttpStatusCode.NotFound)
 
-        // 목록에는 있지만 디스크에서 사라졌다. 세션이 없을 때의 404 와 구분해야 받는 쪽이 그 파일만 빼고 이어 간다.
+        // 세션 없음(404)과 구분해야 받는 쪽이 이 파일만 빼고 이어 간다.
         val file = resolveMigrationFilePath(MigrationFile(MigrationFileKind.valueOf(kind), name))
             .getOrNull()
             ?.let(::File)
