@@ -1,6 +1,8 @@
 package com.kintmin.domain.data_migration
 
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
+import com.kintmin.domain.audio_media.model.DownloadedAudioFile
+import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.data_migration.model.MigrationApplyResult
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
 import com.kintmin.domain.data_migration.model.MigrationDownloadSettings
@@ -35,6 +37,9 @@ class ImportMigrationDataUseCaseTest {
         coEvery { updateShouldInsertAtTopOnDownload(any()) } returns Result.success(Unit)
         coEvery { updatePlaylistIdOnDownload(any()) } returns Result.success(Unit)
     }
+    private val audioMediaRepository = mockk<AudioMediaRepository> {
+        coEvery { deleteFileAtFullPath(any()) } returns Result.success(Unit)
+    }
     private val targetSystem = listOf(
         MigrationPlaylist(1, "전체", "", null, 0, PlaylistType.TOTAL, 0),
         MigrationPlaylist(2, "미분류", "", null, 0, PlaylistType.UNCATEGORIZED, 0),
@@ -61,6 +66,7 @@ class ImportMigrationDataUseCaseTest {
         override suspend fun exportData() = error("받는 쪽에서 부르지 않는다")
         override fun resolveFilePath(file: MigrationFile) = error("받는 쪽에서 부르지 않는다")
         override suspend fun fetchSnapshot() = Result.success(target).also { calls += "fetchSnapshot" }
+        override fun isPlayableAudioFile(fileName: String) = !fileName.endsWith(".webm")
         override suspend fun pair(endpoint: MigrationEndpoint, code: String) = error("쓰지 않는다")
         override suspend fun fetchRemoteExport(endpoint: MigrationEndpoint, token: String) =
             Result.success(export).also { calls += "fetchRemoteExport" }
@@ -105,7 +111,7 @@ class ImportMigrationDataUseCaseTest {
         )
         val progress = mutableListOf<MigrationProgress>()
 
-        val summary = ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository)(endpoint, "t", progress::add).getOrThrow()
+        val summary = ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository, audioMediaRepository)(endpoint, "t", progress::add).getOrThrow()
 
         assertEquals(listOf("new.m4a"), repository.staged)
         assertEquals(listOf("fetchRemoteExport", "fetchSnapshot", "stage", "apply", "clear"), repository.calls)
@@ -131,7 +137,7 @@ class ImportMigrationDataUseCaseTest {
             target = MigrationSnapshot(emptyList(), targetSystem, emptyList(), emptyList(), emptyList()),
         )
 
-        ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository)(endpoint, "t") {}.getOrThrow()
+        ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository, audioMediaRepository)(endpoint, "t") {}.getOrThrow()
 
         assertTrue(repository.staged.isEmpty())
         assertTrue(repository.appliedPlan?.newAudioMedias.orEmpty().isEmpty())
@@ -163,7 +169,7 @@ class ImportMigrationDataUseCaseTest {
             ),
         )
         val useCase = { settings: MigrationDownloadSettings ->
-            ImportMigrationDataUseCase(repositoryWith(settings), playlistRepository, appSettingRepository)
+            ImportMigrationDataUseCase(repositoryWith(settings), playlistRepository, appSettingRepository, audioMediaRepository)
         }
 
         useCase(MigrationDownloadSettings(shouldInsertAtTop = true, playlistId = 14))(endpoint, "t") {}.getOrThrow()
@@ -188,10 +194,71 @@ class ImportMigrationDataUseCaseTest {
             target = MigrationSnapshot(emptyList(), targetSystem, emptyList(), emptyList(), emptyList()),
         )
 
-        ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository)(endpoint, "t") {}.getOrThrow()
+        ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository, audioMediaRepository)(endpoint, "t") {}.getOrThrow()
 
         coVerify(exactly = 0) { appSettingRepository.updateShouldInsertAtTopOnDownload(any()) }
         coVerify(exactly = 0) { appSettingRepository.updatePlaylistIdOnDownload(any()) }
+    }
+
+    @Test
+    fun `재생할 수 없는 유튜브 곡은 다시 받고 그 밖의 곡은 들여오지 않는다`() = runTest {
+        coEvery { audioMediaRepository.downloadAudioFile("https://youtu.be/yt") } returns
+            Result.success(DownloadedAudioFile("re.m4a", "/audios/re.m4a", durationSeconds = 42))
+        coEvery { audioMediaRepository.downloadAudioFile("https://youtu.be/fail") } returns
+            Result.failure(IllegalStateException("m4a 없음"))
+        val repository = FakeRepository(
+            export = MigrationExport(
+                snapshot = MigrationSnapshot(
+                    audioMedias = listOf(
+                        audio(101, "https://youtu.be/yt", "yt.webm"),
+                        audio(102, "fileShare://sha256/x", "x.webm"),
+                        audio(103, "https://youtu.be/fail", "fail.webm"),
+                        audio(104, "https://youtu.be/ok", "ok.m4a"),
+                    ),
+                    playlists = emptyList(), tracks = emptyList(), editProjects = emptyList(), steps = emptyList(),
+                ),
+                files = listOf(entry("yt.webm", 10), entry("x.webm", 10), entry("fail.webm", 10), entry("ok.m4a", 10)),
+                downloadSettings = null,
+            ),
+            target = MigrationSnapshot(emptyList(), targetSystem, emptyList(), emptyList(), emptyList()),
+        )
+
+        val summary = ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository, audioMediaRepository)(
+            endpoint, "t",
+        ) {}.getOrThrow()
+
+        assertEquals(listOf("ok.m4a"), repository.staged)
+        val applied = repository.appliedPlan!!.newAudioMedias
+        assertEquals(listOf(101, 104), applied.map { it.id })
+        assertEquals("re.m4a", applied.first { it.id == 101 }.audioFileName)
+        assertEquals(42L, applied.first { it.id == 101 }.rawAudioDurationSeconds)
+        assertEquals(1, summary.redownloadedCount)
+        assertEquals(listOf("곡102", "곡103"), summary.excludedAudioMediaNames)
+    }
+
+    @Test
+    fun `반영 전에 실패하면 다시 받은 파일을 지운다`() = runTest {
+        coEvery { audioMediaRepository.downloadAudioFile(any()) } returns
+            Result.success(DownloadedAudioFile("re.m4a", "/audios/re.m4a", durationSeconds = 42))
+        val repository = FakeRepository(
+            export = MigrationExport(
+                snapshot = MigrationSnapshot(
+                    audioMedias = listOf(audio(101, "https://youtu.be/yt", "yt.webm"), audio(104, "https://youtu.be/ok", "ok.m4a")),
+                    playlists = emptyList(), tracks = emptyList(), editProjects = emptyList(), steps = emptyList(),
+                ),
+                files = listOf(entry("yt.webm", 10), entry("ok.m4a", 10)),
+                downloadSettings = null,
+            ),
+            target = MigrationSnapshot(emptyList(), targetSystem, emptyList(), emptyList(), emptyList()),
+            failStaging = true,
+        )
+
+        val result = ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository, audioMediaRepository)(
+            endpoint, "t",
+        ) {}
+
+        assertTrue(result.isFailure)
+        coVerify { audioMediaRepository.deleteFileAtFullPath("/audios/re.m4a") }
     }
 
     @Test
@@ -209,7 +276,7 @@ class ImportMigrationDataUseCaseTest {
             failStaging = true,
         )
 
-        val result = ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository)(endpoint, "t") {}
+        val result = ImportMigrationDataUseCase(repository, playlistRepository, appSettingRepository, audioMediaRepository)(endpoint, "t") {}
 
         assertTrue(result.isFailure)
         assertTrue("apply" !in repository.calls)

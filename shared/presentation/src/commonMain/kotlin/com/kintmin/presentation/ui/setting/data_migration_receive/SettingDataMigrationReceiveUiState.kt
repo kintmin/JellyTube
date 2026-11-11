@@ -21,9 +21,21 @@ sealed interface DataMigrationReceiveStep {
     data object NotFound : DataMigrationReceiveStep
     data class CodeInput(val errorMessage: String? = null) : DataMigrationReceiveStep
     data object Pairing : DataMigrationReceiveStep
-    data class Transferring(val receivedBytes: Long, val totalBytes: Long) : DataMigrationReceiveStep {
+    data class Transferring(
+        val receivedBytes: Long,
+        val totalBytes: Long,
+        val redownloadedCount: Int = 0,
+        val redownloadTotal: Int = 0,
+    ) : DataMigrationReceiveStep {
+        val isRedownloading: Boolean get() = redownloadedCount < redownloadTotal
+
         val fraction: Float get() = if (totalBytes == 0L) 0f else receivedBytes.toFloat() / totalBytes
     }
-    data class Completed(val newAudioMediaCount: Int, val newPlaylistCount: Int) : DataMigrationReceiveStep
+    data class Completed(
+        val newAudioMediaCount: Int,
+        val newPlaylistCount: Int,
+        val redownloadedCount: Int = 0,
+        val excludedAudioMediaNames: List<String> = emptyList(),
+    ) : DataMigrationReceiveStep
     data class Failed(val message: String) : DataMigrationReceiveStep
 }

@@ -85,16 +85,33 @@ fun DataMigrationReceiveStatusView(
                     StatusText("연결하는 중입니다.")
                 }
                 is DataMigrationReceiveStep.Transferring -> {
-                    LinearProgressIndicator(
-                        progress = { step.fraction },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    StatusText("${step.receivedBytes.toMegabytes()} / ${step.totalBytes.toMegabytes()} MB")
+                    if (step.isRedownloading) {
+                        LinearProgressIndicator(
+                            progress = { step.redownloadedCount.toFloat() / step.redownloadTotal },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        StatusText("iPhone에서 재생할 수 없는 형식이라 원본에서 다시 받는 중 ${step.redownloadedCount} / ${step.redownloadTotal}곡")
+                    } else {
+                        LinearProgressIndicator(
+                            progress = { step.fraction },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        StatusText("${step.receivedBytes.toMegabytes()} / ${step.totalBytes.toMegabytes()} MB")
+                    }
                     StatusText("다 옮겨질 때까지 이 화면을 열어 두세요. 화면은 자동으로 꺼지지 않습니다.")
                 }
                 is DataMigrationReceiveStep.Completed -> {
                     StatusText("옮기기를 마쳤습니다.")
                     StatusText("새 음원 ${step.newAudioMediaCount}곡, 새 재생목록 ${step.newPlaylistCount}개")
+                    if (step.redownloadedCount > 0) {
+                        StatusText("재생할 수 없는 형식 ${step.redownloadedCount}곡은 원본에서 다시 받았습니다.")
+                    }
+                    if (step.excludedAudioMediaNames.isNotEmpty()) {
+                        StatusText(
+                            "iPhone에서 재생할 수 없는 형식이라 가져오지 못한 곡 ${step.excludedAudioMediaNames.size}곡: " +
+                                step.excludedAudioMediaNames.joinToString(", "),
+                        )
+                    }
                 }
                 is DataMigrationReceiveStep.Failed -> {
                     StatusText(step.message)
@@ -124,6 +141,24 @@ private fun DataMigrationReceiveStatusViewTransferringPreview() {
     JellyTubeTheme {
         DataMigrationReceiveStatusView(
             uiState = SettingDataMigrationReceiveUiState.getMock(),
+            sendIntent = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun DataMigrationReceiveStatusViewCompletedPreview() {
+    JellyTubeTheme {
+        DataMigrationReceiveStatusView(
+            uiState = SettingDataMigrationReceiveUiState(
+                step = DataMigrationReceiveStep.Completed(
+                    newAudioMediaCount = 120,
+                    newPlaylistCount = 4,
+                    redownloadedCount = 3,
+                    excludedAudioMediaNames = listOf("녹음 파일.wma"),
+                ),
+            ),
             sendIntent = {},
         )
     }

@@ -20,6 +20,9 @@ interface DataMigrationRepository {
 
     suspend fun fetchSnapshot(): Result<MigrationSnapshot>
 
+    /** 이 기기의 플레이어가 열 수 있는 음원 파일인지. 확장자가 내용과 맞다는 전제다(보내는 쪽이 정리를 거친다). */
+    fun isPlayableAudioFile(fileName: String): Boolean
+
     /** 토큰을 돌려준다. */
     suspend fun pair(endpoint: MigrationEndpoint, code: String): Result<String>
 

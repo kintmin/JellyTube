@@ -72,11 +72,25 @@ class SettingDataMigrationReceiveViewModel constructor(
         viewModelScope.launch {
             keepAppAwakeWhile {
                 importMigrationDataUseCase(endpoint, token) { progress ->
-                    updateStep(DataMigrationReceiveStep.Transferring(progress.receivedBytes, progress.totalBytes))
+                    updateStep(
+                        DataMigrationReceiveStep.Transferring(
+                            receivedBytes = progress.receivedBytes,
+                            totalBytes = progress.totalBytes,
+                            redownloadedCount = progress.redownloadedCount,
+                            redownloadTotal = progress.redownloadTotal,
+                        )
+                    )
                 }
             }
                 .onSuccess { summary ->
-                    updateStep(DataMigrationReceiveStep.Completed(summary.newAudioMediaCount, summary.newPlaylistCount))
+                    updateStep(
+                        DataMigrationReceiveStep.Completed(
+                            newAudioMediaCount = summary.newAudioMediaCount,
+                            newPlaylistCount = summary.newPlaylistCount,
+                            redownloadedCount = summary.redownloadedCount,
+                            excludedAudioMediaNames = summary.excludedAudioMediaNames,
+                        )
+                    )
                 }
                 .onFailure { error -> updateStep(DataMigrationReceiveStep.Failed(error.toMessage())) }
         }

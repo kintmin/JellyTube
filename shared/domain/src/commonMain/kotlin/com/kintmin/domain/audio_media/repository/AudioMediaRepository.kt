@@ -4,12 +4,16 @@ import com.kintmin.domain.audio_media.model.AddedAudioMedia
 import com.kintmin.domain.audio_media.model.AudioExportTarget
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
+import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlinx.coroutines.flow.Flow
 
 interface AudioMediaRepository {
     suspend fun downloadAudioMedia(downloadUrl: String): Result<DownloadedMedia>
+
+    /** 음원 파일만 받는다. 행을 만들지 않으므로 쓰지 않게 되면 호출자가 지운다. */
+    suspend fun downloadAudioFile(downloadUrl: String): Result<DownloadedAudioFile>
     suspend fun addAudioMedia(
         downloadedAudioMedia: DownloadedMedia,
         playlistIdOnDownload: Int?,

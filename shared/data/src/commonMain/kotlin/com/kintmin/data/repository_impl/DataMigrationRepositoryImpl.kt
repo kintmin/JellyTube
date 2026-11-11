@@ -1,5 +1,6 @@
 package com.kintmin.data.repository_impl
 
+import com.kintmin.data.data_migration.isPlayableAudioExtension
 import com.kintmin.data.data_migration.toExport
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_file.FileManager
@@ -56,6 +57,9 @@ class DataMigrationRepositoryImpl constructor(
     override suspend fun fetchSnapshot(): Result<MigrationSnapshot> = withContext(Dispatchers.IO) {
         runCatching { audioMediaFacade.fetchMigrationSnapshot() }
     }
+
+    override fun isPlayableAudioFile(fileName: String): Boolean =
+        isPlayableAudioExtension(fileName.substringAfterLast('.', missingDelimiterValue = ""))
 
     override suspend fun pair(endpoint: MigrationEndpoint, code: String): Result<String> = runCatching {
         migrationDataSource.pair(endpoint.host, endpoint.port, code).getOrThrow()
