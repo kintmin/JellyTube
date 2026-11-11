@@ -6,6 +6,7 @@ import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.port.model.MediaControlData
+import com.kintmin.presentation.port.model.RunningWork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,7 +31,9 @@ internal class IosExecuteYoutubeDownload(
 
     override fun invoke(url: String) {
         scope.launch {
-            withBackgroundExecutionWindow(WINDOW_NAME) { downloadAudioMediaUseCase(url) }
+            IosRunningWorkTracker.track(RunningWork.YOUTUBE_DOWNLOAD) {
+                withBackgroundExecutionWindow(WINDOW_NAME) { downloadAudioMediaUseCase(url) }
+            }
                 .onSuccess { result ->
                     // 가사는 실패해도 음원 등록을 되돌리지 않는다. 등록이 끝난 뒤라 고아가 생기지 않는다.
                     scope.launch {

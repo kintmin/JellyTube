@@ -52,6 +52,7 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 | `ExecuteAnomalyDataCheck` | `worker/usecase/ExecuteAnomalyDataCheckImpl` | `IosExecuteAnomalyDataCheck`(앱 수명 스코프 + 로컬 알림) |
 | `ExecuteAudioEditSave` | `worker/usecase/ExecuteAudioEditSaveImpl` | 미지원 스텁(음원 편집 제외) |
 | `DataMigrationSendController` | `service_controller/DataMigrationSendControllerImpl`(PC 수신과 같은 서버 + 페어링 세션) | 미지원 스텁(보내는 서버가 Android 에만 있다) |
+| `RunningWorkMonitor` | `running_work/RunningWorkMonitorImpl`(WorkManager 태그·고유 이름 + 편집 저장 + PC 수신) | `IosRunningWorkMonitor`(실행부가 세는 `IosRunningWorkTracker` + 편집 저장) |
 | `MigrationSourceDiscovery` | `data_migration/UnsupportedMigrationSourceDiscovery`(Android 는 보내는 쪽만) | `ios/shared` 의 `migration/IosMigrationSourceDiscovery`(Swift `NWBrowser` 브릿지) |
 
 iOS 구현의 자리는 **`shared:presentation` 의 `iosMain/port/`** 다(`MediaControllerManager`·`MigrationSourceDiscovery` 는 예외 — Swift 브릿지에 기댄다). 이유는 `shared/presentation/AGENTS.md` §포트 와 `ios/app/AGENTS.md` 에 있다.

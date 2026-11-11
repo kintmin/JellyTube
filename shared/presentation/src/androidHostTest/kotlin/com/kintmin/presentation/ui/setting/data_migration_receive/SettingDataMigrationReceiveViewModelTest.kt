@@ -13,6 +13,8 @@ import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
 import com.kintmin.domain.data_migration.usecase.ImportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.presentation.port.MigrationSourceDiscovery
+import com.kintmin.presentation.port.RunningWorkMonitor
+import com.kintmin.presentation.port.model.RunningWork
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
@@ -60,7 +62,11 @@ class SettingDataMigrationReceiveViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = SettingDataMigrationReceiveViewModel(discovery, pair, import, cleanup, clearStaging)
+    private val monitor = mockk<RunningWorkMonitor> {
+        coEvery { runningWorks() } returns emptyMap()
+    }
+
+    private fun viewModel() = SettingDataMigrationReceiveViewModel(discovery, pair, import, cleanup, clearStaging, monitor)
 
     private fun SettingDataMigrationReceiveViewModel.connect(code: String = "123456") {
         sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
@@ -69,6 +75,18 @@ class SettingDataMigrationReceiveViewModelTest {
     }
 
     private fun summary(vararg failures: MigrationFailure) = MigrationSummary(3, 1, 0, failures.toList())
+
+    @Test
+    fun `다른 작업이 돌고 있으면 찾지 않고 남은 작업을 보여 준다`() {
+        val running = mapOf(RunningWork.LYRICS_VARIANT to 1)
+        coEvery { monitor.runningWorks() } returns running
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
+
+        assertEquals(DataMigrationReceivePhase.Blocked(running), viewModel.uiState.value.phase)
+        coVerify(exactly = 0) { discovery.discover() }
+    }
 
     @Test
     fun `기기를 못 찾으면 NotFound 다`() {

@@ -27,7 +27,12 @@ class ExecuteLyricsVariantCreationImpl(
                     LyricsVariantWorker.INPUT_DATA_SOURCE_LANGUAGE to sourceLanguage,
                 )
             )
+            .addTag(TAG)
             .build()
         WorkManager.getInstance(appContext).enqueue(request)
+    }
+
+    companion object {
+        const val TAG = "lyrics_variant"
     }
 }

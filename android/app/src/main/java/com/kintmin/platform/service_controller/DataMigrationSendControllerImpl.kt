@@ -14,22 +14,13 @@ class DataMigrationSendControllerImpl(
 
     override val status: StateFlow<DataMigrationSendStatus> = MigrationSessionHolder.state
 
-    /** PC 수신 때문에 이미 켜져 있던 서버는 이전이 끝나도 끄지 않는다. */
-    private var hasStartedServer = false
-
     override fun start() {
         MigrationSessionHolder.open()
-        if (!FileShareForegroundService.isRunning.value) {
-            FileShareForegroundService.startService(appContext)
-            hasStartedServer = true
-        }
+        FileShareForegroundService.startService(appContext, FileShareForegroundService.Owner.DATA_MIGRATION)
     }
 
     override fun stop() {
         MigrationSessionHolder.close()
-        if (hasStartedServer) {
-            FileShareForegroundService.stopService(appContext)
-            hasStartedServer = false
-        }
+        FileShareForegroundService.stopService(appContext, FileShareForegroundService.Owner.DATA_MIGRATION)
     }
 }

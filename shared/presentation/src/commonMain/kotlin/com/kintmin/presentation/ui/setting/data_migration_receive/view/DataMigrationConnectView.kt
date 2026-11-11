@@ -45,6 +45,13 @@ fun DataMigrationConnectView(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             when (val phase = uiState.phase) {
+                is DataMigrationReceivePhase.Blocked -> {
+                    StatusText("아직 끝나지 않은 작업이 있습니다. 모두 끝난 뒤에 데이터를 옮길 수 있습니다.")
+                    phase.runningWorks.forEach { (work, count) -> StatusText("· ${work.label} ${count}건") }
+                    Button(onClick = { sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch) }) {
+                        Text("다시 확인")
+                    }
+                }
                 DataMigrationReceivePhase.Searching -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
                     StatusText("Android 기기를 찾는 중입니다.")

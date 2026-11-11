@@ -1,5 +1,7 @@
 package com.kintmin.presentation.ui.setting.data_migration_receive
 
+import com.kintmin.presentation.port.model.RunningWork
+
 data class SettingDataMigrationReceiveUiState(
     val phase: DataMigrationReceivePhase = DataMigrationReceivePhase.Idle,
     val code: String = "",
@@ -41,6 +43,9 @@ data class SettingDataMigrationReceiveUiState(
 sealed interface DataMigrationReceivePhase {
     data object Idle : DataMigrationReceivePhase
     data object Searching : DataMigrationReceivePhase
+
+    /** 이전 전에 끝나 있어야 하는 작업이 남아 있다. */
+    data class Blocked(val runningWorks: Map<RunningWork, Int>) : DataMigrationReceivePhase
     data object NotFound : DataMigrationReceivePhase
     data class CodeInput(val errorMessage: String? = null) : DataMigrationReceivePhase
     data object Pairing : DataMigrationReceivePhase

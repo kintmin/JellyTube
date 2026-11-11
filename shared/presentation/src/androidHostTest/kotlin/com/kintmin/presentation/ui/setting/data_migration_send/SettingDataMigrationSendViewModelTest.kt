@@ -1,7 +1,10 @@
 package com.kintmin.presentation.ui.setting.data_migration_send
 
 import com.kintmin.presentation.port.DataMigrationSendController
+import com.kintmin.presentation.port.RunningWorkMonitor
+import com.kintmin.presentation.port.model.RunningWork
 import com.kintmin.presentation.port.model.DataMigrationSendStatus
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -27,6 +30,10 @@ class SettingDataMigrationSendViewModelTest {
         every { start() } answers { statusFlow.value = DataMigrationSendStatus.WaitingForPair("123456") }
     }
 
+    private val monitor = mockk<RunningWorkMonitor> {
+        coEvery { runningWorks() } returns emptyMap()
+    }
+
     @Before
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -39,15 +46,31 @@ class SettingDataMigrationSendViewModelTest {
 
     @Test
     fun `화면에 들어오면 바로 연결 코드를 연다`() {
-        val viewModel = SettingDataMigrationSendViewModel(controller)
+        val viewModel = SettingDataMigrationSendViewModel(controller, monitor)
 
         assertEquals(DataMigrationSendStep.WaitingForPair("123456"), viewModel.uiState.value.step)
         verify(exactly = 1) { controller.start() }
     }
 
     @Test
+    fun `다른 작업이 돌고 있으면 연결을 열지 않고 남은 작업을 보여 준다`() {
+        val running = mapOf(RunningWork.YOUTUBE_DOWNLOAD to 2, RunningWork.PC_FILE_SHARE to 1)
+        coEvery { monitor.runningWorks() } returns running
+
+        val viewModel = SettingDataMigrationSendViewModel(controller, monitor)
+
+        assertEquals(DataMigrationSendStep.Blocked(running), viewModel.uiState.value.step)
+        verify(exactly = 0) { controller.start() }
+
+        coEvery { monitor.runningWorks() } returns emptyMap()
+        viewModel.sendIntent(SettingDataMigrationSendIntent.OnClickRecheck)
+
+        assertEquals(DataMigrationSendStep.WaitingForPair("123456"), viewModel.uiState.value.step)
+    }
+
+    @Test
     fun `받는 기기가 받는 동안만 뒤로가기를 막고 화면은 코드 대기부터 켜 둔다`() {
-        val viewModel = SettingDataMigrationSendViewModel(controller)
+        val viewModel = SettingDataMigrationSendViewModel(controller, monitor)
         assertTrue(viewModel.uiState.value.keepsScreenOn)
         assertFalse(viewModel.uiState.value.isSending)
 
@@ -63,7 +86,7 @@ class SettingDataMigrationSendViewModelTest {
 
     @Test
     fun `코드를 여러 번 틀려 잠기면 새 코드로 다시 연다`() {
-        val viewModel = SettingDataMigrationSendViewModel(controller)
+        val viewModel = SettingDataMigrationSendViewModel(controller, monitor)
 
         statusFlow.value = DataMigrationSendStatus.Locked
         assertEquals(DataMigrationSendStep.Locked, viewModel.uiState.value.step)

@@ -30,6 +30,7 @@ import com.kintmin.presentation.platform.KeepScreenOnEffect
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.data_migration_send.view.DataMigrationSendStatusView
 import com.kintmin.presentation.ui.setting.dialog.SettingConfirmDialog
+import com.kintmin.presentation.ui.setting.section.SettingRunningWorkView
 import com.kintmin.presentation.ui.setting.section.SettingStepCardView
 import com.kintmin.presentation.ui.setting.section.SettingWarningBannerView
 import org.koin.compose.viewmodel.koinViewModel
@@ -105,7 +106,13 @@ fun SettingDataMigrationSendScreen(
                 )
             }
 
-            DataMigrationSendStatusView(step = uiState.step, sendIntent = sendIntent)
+            when (val step = uiState.step) {
+                is DataMigrationSendStep.Blocked -> SettingRunningWorkView(
+                    runningWorks = step.runningWorks,
+                    onClickRecheck = { sendIntent(SettingDataMigrationSendIntent.OnClickRecheck) },
+                )
+                else -> DataMigrationSendStatusView(step = step, sendIntent = sendIntent)
+            }
 
             SettingStepCardView(
                 stepNumber = 1,

@@ -45,6 +45,8 @@ fun DataMigrationSendStatusView(
                 DataMigrationSendStep.Starting -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
                 }
+                // 화면이 따로 그린다.
+                is DataMigrationSendStep.Blocked -> Unit
                 is DataMigrationSendStep.WaitingForPair -> {
                     StatusText("연결 코드")
                     Text(

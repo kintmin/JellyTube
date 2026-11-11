@@ -14,7 +14,9 @@ import com.kintmin.presentation.port.IosExecuteAudioEditSaveStub
 import com.kintmin.presentation.port.IosExecuteLyricsVariantCreation
 import com.kintmin.presentation.port.IosExecuteYoutubeDownload
 import com.kintmin.presentation.port.IosFileShareServerControllerStub
+import com.kintmin.presentation.port.IosRunningWorkMonitor
 import com.kintmin.presentation.port.IosStepMeasurementController
+import com.kintmin.presentation.port.RunningWorkMonitor
 import com.kintmin.presentation.port.StepMeasurementController
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -37,4 +39,5 @@ val presentationIosModule: Module = module {
     single<ExecuteLyricsVariantCreation> { IosExecuteLyricsVariantCreation(get(), get()) }
     single<ExecuteAudioEditSave> { IosExecuteAudioEditSaveStub() }
     single<DataMigrationSendController> { IosDataMigrationSendControllerStub() }
+    single<RunningWorkMonitor> { IosRunningWorkMonitor(get()) }
 }

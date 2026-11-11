@@ -16,6 +16,7 @@ import com.kintmin.domain.data_migration.usecase.ImportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.presentation.platform.continueInBackgroundWhile
 import com.kintmin.presentation.port.MigrationSourceDiscovery
+import com.kintmin.presentation.port.RunningWorkMonitor
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
@@ -33,6 +34,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     private val importMigrationDataUseCase: ImportMigrationDataUseCase,
     private val cleanupAnomalousDataUseCase: CleanupAnomalousDataUseCase,
     private val clearMigrationStagingUseCase: ClearMigrationStagingUseCase,
+    private val runningWorkMonitor: RunningWorkMonitor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingDataMigrationReceiveUiState())
@@ -60,10 +62,16 @@ class SettingDataMigrationReceiveViewModel constructor(
         }
     }
 
+    /** 다른 작업이 돌고 있으면 찾지 않는다 — 이전 중에 데이터가 바뀌지 않게 한다. */
     private fun search() {
         token = null
         updatePhase(DataMigrationReceivePhase.Searching)
         viewModelScope.launch {
+            val runningWorks = runningWorkMonitor.runningWorks()
+            if (runningWorks.isNotEmpty()) {
+                updatePhase(DataMigrationReceivePhase.Blocked(runningWorks))
+                return@launch
+            }
             endpoint = migrationSourceDiscovery.discover()
             updatePhase(if (endpoint != null) DataMigrationReceivePhase.CodeInput() else DataMigrationReceivePhase.NotFound)
         }

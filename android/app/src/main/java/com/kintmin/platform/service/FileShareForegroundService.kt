@@ -57,14 +57,18 @@ class FileShareForegroundService : Service(), KoinComponent {
     private var migrationWakeLock: PowerManager.WakeLock? = null
     private var migrationWifiLock: WifiManager.WifiLock? = null
 
+    /** 서버를 쓰는 쪽. 하나라도 남아 있으면 서버를 끄지 않는다. */
+    enum class Owner { PC_FILE_SHARE, DATA_MIGRATION }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
-            _isRunning.update { false }
             stopSelf()
             return START_NOT_STICKY
         }
+        // 이미 떠 있으면 서버·NSD·잠금 감시를 다시 붙이지 않는다. 겹치면 같은 포트에 서버가 두 번 뜬다.
+        if (ktorServer != null) return START_NOT_STICKY
 
         runCatching {
             ServiceCompat.startForeground(
@@ -74,12 +78,10 @@ class FileShareForegroundService : Service(), KoinComponent {
                 @SuppressLint("InlinedApi") ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
             )
         }.onSuccess {
-            _isRunning.update { true }
             startKtorServer()
             registerNsdService()
             holdLocksWhileMigrating()
         }.onFailure {
-            _isRunning.update { false }
             stopSelf()
             return START_NOT_STICKY
         }
@@ -88,7 +90,9 @@ class FileShareForegroundService : Service(), KoinComponent {
     }
 
     override fun onDestroy() {
-        _isRunning.update { false }
+        // 알림의 중지나 시스템 종료로 내려가도 쓰던 쪽들이 서버가 살아 있다고 믿지 않게 한다.
+        setOwners(emptySet())
+        MigrationSessionHolder.close()
         releaseMigrationLocks()
         unregisterNsdService()
         ktorServer?.let { server ->
@@ -214,23 +218,33 @@ class FileShareForegroundService : Service(), KoinComponent {
         // 놓친 해제가 배터리를 끝까지 잡지 않도록 상한을 둔다.
         private const val MIGRATION_LOCK_TIMEOUT_MS = 2 * 60 * 60 * 1000L
 
-        private val _isRunning = MutableStateFlow(false)
-        val isRunning = _isRunning.asStateFlow()
+        private val _owners = MutableStateFlow<Set<Owner>>(emptySet())
+        val owners = _owners.asStateFlow()
 
-        fun startService(context: Context): Result<Unit> {
-            return runCatching<Unit> {
+        private val _isPcFileShareRunning = MutableStateFlow(false)
+        val isPcFileShareRunning = _isPcFileShareRunning.asStateFlow()
+
+        @Synchronized
+        private fun setOwners(owners: Set<Owner>) {
+            _owners.value = owners
+            _isPcFileShareRunning.value = Owner.PC_FILE_SHARE in owners
+        }
+
+        @Synchronized
+        fun startService(context: Context, owner: Owner): Result<Unit> = runCatching {
+            val wasStopped = _owners.value.isEmpty()
+            setOwners(_owners.value + owner)
+            if (wasStopped) {
                 NotificationManagerCompat.from(context).cancel(PushNotificationIds.FILE_SHARE_SERVER)
                 context.startForegroundService(Intent(context, FileShareForegroundService::class.java))
-            }.onSuccess {
-                _isRunning.update { true }
             }
         }
 
-        fun stopService(context: Context): Result<Unit> {
-            return runCatching<Unit> {
+        @Synchronized
+        fun stopService(context: Context, owner: Owner): Result<Unit> = runCatching {
+            setOwners(_owners.value - owner)
+            if (_owners.value.isEmpty()) {
                 context.stopService(Intent(context, FileShareForegroundService::class.java))
-            }.onSuccess {
-                _isRunning.update { false }
             }
         }
     }

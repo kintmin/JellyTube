@@ -92,6 +92,7 @@ val dataCommonModule: Module = module {
     factoryOf(::ApplyAudioEditUseCase)
     factoryOf(::FetchAudioEditTimelineUseCase)
     factoryOf(::ObserveAudioEditSavingUseCase)
+    factoryOf(::FetchSavingAudioMediaIdsFlowUseCase)
     factoryOf(::ReserveAudioEditSaveUseCase)
     factoryOf(::ReleaseAudioEditSaveUseCase)
     factoryOf(::MeasureAudioDurationUseCase)

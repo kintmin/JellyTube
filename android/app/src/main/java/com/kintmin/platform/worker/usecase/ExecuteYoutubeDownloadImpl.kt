@@ -16,7 +16,12 @@ class ExecuteYoutubeDownloadImpl(
         val request = OneTimeWorkRequestBuilder<YoutubeDownloadWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setInputData(workDataOf(YoutubeDownloadWorker.INPUT_DATA_URL to url))
+            .addTag(TAG)
             .build()
         WorkManager.getInstance(appContext).enqueue(request)
+    }
+
+    companion object {
+        const val TAG = "youtube_download"
     }
 }
