@@ -6,6 +6,14 @@ private enum MediaControllerEngineError: Error {
     case emptyFile
 }
 
+private enum ScheduleResult {
+    case scheduled
+    /// 파일이 없거나 열 수 없거나 비어 있다.
+    case unreadable
+    /// 곡 길이 이상으로 탐색했다.
+    case pastEnd
+}
+
 private let mcLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "MediaController")
 
 @MainActor
@@ -27,6 +35,8 @@ final class MediaControllerEngine {
     /// 구간을 걸 때마다 올린다. `stop()` 도 걸려 있던 구간의 완료 콜백을 부르므로, 콜백이 걸린 번호와
     /// 지금 번호가 다르면 이미 다른 곡으로 넘어간 뒤에 늦게 온 콜백이다. 그대로 따르면 한 곡을 더 건너뛴다.
     private var scheduleGeneration = 0
+    /// 엔진이 멈추면 재생 위치를 읽을 수 없다. 엔진이 돌 때 마지막으로 읽은 위치로 이어서 건다.
+    private var lastKnownPosition: TimeInterval = 0
     private var isPlayingIntent = false
     private var didConfigureAudioSession = false
     private var didStartEngine = false
@@ -39,6 +49,7 @@ final class MediaControllerEngine {
 
     private var interruptionObserver: NSObjectProtocol?
     private var routeChangeObserver: NSObjectProtocol?
+    private var configurationChangeObserver: NSObjectProtocol?
 
     init() {
         engine.attach(playerNode)
@@ -82,9 +93,10 @@ final class MediaControllerEngine {
 
         let startId = (targetIndex < items.count) ? items[targetIndex].id : nil
         let scheduleIndex = startId.flatMap { id in queue.firstIndex(where: { $0.id == id }) } ?? 0
-        scheduleItem(at: scheduleIndex, startingSeconds: 0)
-        playerNode.play()
         isPlayingIntent = true
+        if schedulePlayable(from: scheduleIndex, startingSeconds: 0) {
+            playerNode.play()
+        }
         broadcast()
     }
 
@@ -111,35 +123,19 @@ final class MediaControllerEngine {
     func next() {
         let hasNext = currentIndex + 1 < queue.count
         guard hasNext || (isRepeatAllEnabled && !queue.isEmpty) else { return }
-        scheduleItem(at: hasNext ? currentIndex + 1 : 0, startingSeconds: 0)
-        if isPlayingIntent {
-            playerNode.play()
-        }
+        playIfIntended(schedulePlayable(from: currentIndex + 1, startingSeconds: 0))
         broadcast()
     }
 
     func previous() {
-        let position = currentTimeInItem
-        if currentIndex > 0, position < 3 {
-            scheduleItem(at: currentIndex - 1, startingSeconds: 0)
-            if isPlayingIntent {
-                playerNode.play()
-            }
-        } else {
-            scheduleItem(at: currentIndex, startingSeconds: 0)
-            if isPlayingIntent {
-                playerNode.play()
-            }
-        }
+        let target = (currentIndex > 0 && currentTimeInItem < 3) ? currentIndex - 1 : currentIndex
+        playIfIntended(schedulePlayable(from: target, startingSeconds: 0))
         broadcast()
     }
 
     func seek(seconds: Double) {
         guard currentFile != nil else { return }
-        scheduleItem(at: currentIndex, startingSeconds: max(0, seconds))
-        if isPlayingIntent {
-            playerNode.play()
-        }
+        playIfIntended(schedulePlayable(from: currentIndex, startingSeconds: max(0, seconds)))
         broadcast()
     }
 
@@ -204,16 +200,14 @@ final class MediaControllerEngine {
         queue.remove(at: index)
 
         if queue.isEmpty {
-            scheduleGeneration += 1
-            playerNode.stop()
+            stopPlayer()
             currentFile = nil
             currentIndex = 0
             isPlayingIntent = false
         } else if wasCurrent {
             // 빠진 자리를 이어받은 곡으로 넘어간다. 마지막 곡이었으면 한 칸 앞으로.
             let nextIndex = min(index, queue.count - 1)
-            scheduleItem(at: nextIndex, startingSeconds: 0)
-            if isPlayingIntent { playerNode.play() }
+            playIfIntended(schedulePlayable(from: nextIndex, startingSeconds: 0))
         } else if index < currentIndex {
             currentIndex -= 1
         }
@@ -229,8 +223,7 @@ final class MediaControllerEngine {
         queue[index] = item
 
         if index == currentIndex {
-            scheduleItem(at: index, startingSeconds: 0)
-            if isPlayingIntent { playerNode.play() }
+            playIfIntended(schedulePlayable(from: index, startingSeconds: 0))
         }
         broadcast()
     }
@@ -265,25 +258,55 @@ final class MediaControllerEngine {
 
     // MARK: - Scheduling
 
-    private func scheduleItem(at index: Int, startingSeconds: TimeInterval) {
-        guard index >= 0, index < queue.count else { return }
+    /// [index] 부터 걸 수 있는 곡을 찾아 건다. 열 수 없는 파일과 끝을 넘긴 탐색은 다음 곡으로 넘긴다.
+    /// 걸 곡이 없으면 재생을 멈추고 false 다.
+    private func schedulePlayable(from index: Int, startingSeconds: TimeInterval) -> Bool {
+        var candidate = index
+        var seconds = startingSeconds
+        for _ in 0..<queue.count {
+            if candidate >= queue.count {
+                guard isRepeatAllEnabled else { break }
+                candidate = 0
+            }
+            switch scheduleItem(at: candidate, startingSeconds: seconds) {
+            case .scheduled:
+                return true
+            case .unreadable, .pastEnd:
+                candidate += 1
+                seconds = 0
+            }
+        }
+        isPlayingIntent = false
+        stopPlayer()
+        return false
+    }
 
+    private func playIfIntended(_ scheduled: Bool) {
+        if scheduled, isPlayingIntent { playerNode.play() }
+    }
+
+    /// `stop()` 은 걸려 있던 구간의 완료 콜백을 부른다. 세대를 함께 올려야 그 콜백이 다음 곡으로 넘기지 않는다.
+    private func stopPlayer() {
         scheduleGeneration += 1
-        let generation = scheduleGeneration
         playerNode.stop()
+    }
+
+    private func scheduleItem(at index: Int, startingSeconds: TimeInterval) -> ScheduleResult {
+        guard queue.indices.contains(index) else { return .unreadable }
+        stopPlayer()
+        let generation = scheduleGeneration
 
         let item = queue[index]
         let file: AVAudioFile
         do {
             file = try AVAudioFile(forReading: item.fileURL)
-            // 0프레임이면 재생할 것이 없다. 그냥 두면 advanceOnCompletion 과 서로를 불러 재귀가 끝나지 않는다.
             guard file.length > 0 else { throw MediaControllerEngineError.emptyFile }
         } catch {
             mcLog.error("failed to open file: \(error.localizedDescription, privacy: .public)")
             currentFile = nil
             currentIndex = index
             currentItemBaseOffset = 0
-            return
+            return .unreadable
         }
 
         currentFile = file
@@ -293,10 +316,7 @@ final class MediaControllerEngine {
         let sampleRate = file.processingFormat.sampleRate
         let startFrame = AVAudioFramePosition(startingSeconds * sampleRate)
         let totalFrames = file.length
-        guard startFrame < totalFrames else {
-            advanceOnCompletion()
-            return
-        }
+        guard startFrame < totalFrames else { return .pastEnd }
         let remaining = AVAudioFrameCount(totalFrames - startFrame)
 
         // 기본 콜백은 데이터를 렌더 스레드에 넘긴 시점(곡이 실제로 끝나기 전)에 불린다. 다 재생된 뒤에 넘어간다.
@@ -312,21 +332,12 @@ final class MediaControllerEngine {
                 self.advanceOnCompletion()
             }
         }
+        return .scheduled
     }
 
     private func advanceOnCompletion() {
         guard isPlayingIntent else { return }
-
-        let hasNext = currentIndex + 1 < queue.count
-        guard hasNext || (isRepeatAllEnabled && !queue.isEmpty) else {
-            isPlayingIntent = false
-            scheduleGeneration += 1
-            playerNode.stop()
-            broadcast()
-            return
-        }
-        scheduleItem(at: hasNext ? currentIndex + 1 : 0, startingSeconds: 0)
-        playerNode.play()
+        playIfIntended(schedulePlayable(from: currentIndex + 1, startingSeconds: 0))
         broadcast()
     }
 
@@ -365,6 +376,14 @@ final class MediaControllerEngine {
         ) { [weak self] note in
             Task { @MainActor in self?.handleInterruption(note) }
         }
+        // 출력 장치의 채널 수·샘플레이트가 바뀌면 엔진이 스스로 멈춘다. 다시 켜는 것은 앱의 몫이다.
+        configurationChangeObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: engine,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.handleConfigurationChange() }
+        }
         routeChangeObserver = NotificationCenter.default.addObserver(
             forName: AVAudioSession.routeChangeNotification,
             object: nil,
@@ -395,6 +414,14 @@ final class MediaControllerEngine {
         @unknown default:
             break
         }
+    }
+
+    private func handleConfigurationChange() {
+        mcLog.info("engine configuration changed → restart at \(self.lastKnownPosition)")
+        ensureEngineRunning()
+        guard currentFile != nil else { return }
+        playIfIntended(schedulePlayable(from: currentIndex, startingSeconds: lastKnownPosition))
+        broadcast()
     }
 
     private func handleRouteChange(_ note: Notification) {
@@ -454,6 +481,7 @@ final class MediaControllerEngine {
 
     private func broadcast() {
         let snapshot = currentSnapshot()
+        if engine.isRunning { lastKnownPosition = snapshot.positionSeconds }
         nowPlaying.update(snapshot: snapshot)
         for continuation in continuations.values {
             continuation.yield(snapshot)
