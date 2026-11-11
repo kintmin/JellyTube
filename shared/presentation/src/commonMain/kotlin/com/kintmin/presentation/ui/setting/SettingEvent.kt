@@ -7,6 +7,8 @@ sealed interface SettingEvent {
     data object NavigateToDeviceSaveScreen : SettingEvent
     data object NavigateToShareScreen : SettingEvent
     data object NavigateToFileShareReceiveScreen : SettingEvent
+    data object NavigateToDataMigrationSendScreen : SettingEvent
+    data object NavigateToDataMigrationReceiveScreen : SettingEvent
     data object RequestActivityRecognitionPermission : SettingEvent
     data class ShowToast(val message: String) : SettingEvent
 }

@@ -1,12 +1,14 @@
 package com.kintmin.presentation.di
 
 import com.kintmin.presentation.port.AudioPreviewPlayer
+import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.ExecuteAnomalyDataCheck
 import com.kintmin.presentation.port.ExecuteAudioEditSave
 import com.kintmin.presentation.port.ExecuteLyricsVariantCreation
 import com.kintmin.presentation.port.ExecuteYoutubeDownload
 import com.kintmin.presentation.port.FileShareServerController
 import com.kintmin.presentation.port.IosAudioPreviewPlayerStub
+import com.kintmin.presentation.port.IosDataMigrationSendControllerStub
 import com.kintmin.presentation.port.IosExecuteAnomalyDataCheck
 import com.kintmin.presentation.port.IosExecuteAudioEditSaveStub
 import com.kintmin.presentation.port.IosExecuteLyricsVariantCreation
@@ -34,4 +36,5 @@ val presentationIosModule: Module = module {
     single<ExecuteAnomalyDataCheck> { IosExecuteAnomalyDataCheck(get(), get()) }
     single<ExecuteLyricsVariantCreation> { IosExecuteLyricsVariantCreation(get(), get()) }
     single<ExecuteAudioEditSave> { IosExecuteAudioEditSaveStub() }
+    single<DataMigrationSendController> { IosDataMigrationSendControllerStub() }
 }

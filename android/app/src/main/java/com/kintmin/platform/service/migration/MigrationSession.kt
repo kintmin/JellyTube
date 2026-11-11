@@ -12,6 +12,7 @@ import java.security.SecureRandom
 class MigrationSession(
     val code: String = generateCode(),
     private val generateToken: () -> String = ::generateToken,
+    private val onClosed: () -> Unit = {},
 ) {
     private var token: String? = null
     private var failedAttempts = 0
@@ -22,15 +23,21 @@ class MigrationSession(
         private set
 
     /** 코드가 맞으면 토큰을 준다. 이미 다른 기기가 페어링했거나 닫혔으면 null. */
-    @Synchronized
     fun pair(code: String): String? {
-        if (isClosed || token != null) return null
-        if (!constantTimeEquals(code, this.code)) {
-            failedAttempts++
-            if (failedAttempts >= MAX_FAILED_ATTEMPTS) isClosed = true
-            return null
+        var hasLockedOut = false
+        val issued = synchronized(this) {
+            when {
+                isClosed || token != null -> null
+                !constantTimeEquals(code, this.code) -> {
+                    failedAttempts++
+                    if (failedAttempts >= MAX_FAILED_ATTEMPTS) hasLockedOut = markClosed()
+                    null
+                }
+                else -> generateToken().also { token = it }
+            }
         }
-        return generateToken().also { token = it }
+        if (hasLockedOut) onClosed()
+        return issued
     }
 
     @Synchronized
@@ -48,9 +55,16 @@ class MigrationSession(
     @Synchronized
     fun isFileAllowed(kind: String, name: String): Boolean = kind to name in allowedFiles
 
-    @Synchronized
+    // onClosed 는 잠금 밖에서 부른다. 받는 쪽이 자기 잠금을 쥔 채 close() 를 부르면 교착된다.
     fun close() {
+        if (markClosed()) onClosed()
+    }
+
+    @Synchronized
+    private fun markClosed(): Boolean {
+        if (isClosed) return false
         isClosed = true
+        return true
     }
 
     companion object {

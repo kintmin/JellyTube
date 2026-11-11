@@ -68,6 +68,17 @@ class MigrationSessionTest {
     }
 
     @Test
+    fun `닫힐 때 한 번만 알린다`() {
+        var closedCount = 0
+        val session = MigrationSession(code = "123456", generateToken = { "token" }, onClosed = { closedCount++ })
+
+        repeat(MigrationSession.MAX_FAILED_ATTEMPTS + 2) { session.pair("000000") }
+        session.close()
+
+        assertEquals(1, closedCount)
+    }
+
+    @Test
     fun `기본 코드는 여섯 자리 숫자다`() {
         repeat(50) { assertTrue(MigrationSession().code.matches(Regex("\\d{6}"))) }
     }

@@ -24,6 +24,8 @@ fun NavGraphBuilder.settingGraph(
     navigateToAppLog: () -> Unit,
     navigateToShare: () -> Unit,
     navigateToFileShareReceive: () -> Unit,
+    navigateToDataMigrationSend: () -> Unit,
+    navigateToDataMigrationReceive: () -> Unit,
     navigateToDeviceSave: () -> Unit,
     settingDestination: NavGraphBuilder.() -> Unit,
 ) {
@@ -35,6 +37,8 @@ fun NavGraphBuilder.settingGraph(
                 navigateToAppLog = navigateToAppLog,
                 navigateToShare = navigateToShare,
                 navigateToFileShareReceive = navigateToFileShareReceive,
+                navigateToDataMigrationSend = navigateToDataMigrationSend,
+                navigateToDataMigrationReceive = navigateToDataMigrationReceive,
                 navigateToDeviceSave = navigateToDeviceSave,
             )
         }

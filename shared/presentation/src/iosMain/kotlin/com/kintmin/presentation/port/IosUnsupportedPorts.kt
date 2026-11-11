@@ -32,6 +32,15 @@ internal class IosFileShareServerControllerStub : FileShareServerController {
     override fun stop() = Unit
 }
 
+/** 데이터 보내기 미제공. iOS 는 받는 쪽만 한다 — 보내는 서버가 Android 에만 있다. */
+internal class IosDataMigrationSendControllerStub : DataMigrationSendController {
+
+    override val pairingCode: StateFlow<String?> = MutableStateFlow(null)
+
+    override fun start() = Unit
+    override fun stop() = Unit
+}
+
 internal class IosExecuteAudioEditSaveStub : ExecuteAudioEditSave {
 
     override fun overwrite(audioMediaId: Int, timeline: AudioEditTimeline): Result<Unit> =

@@ -6,6 +6,7 @@ import com.kintmin.platform.audio_preview.AudioPreviewPlayerImpl
 import com.kintmin.platform.data_migration.UnsupportedMigrationSourceDiscovery
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.PushNotificationManagerImpl
+import com.kintmin.platform.service_controller.DataMigrationSendControllerImpl
 import com.kintmin.platform.service_controller.FileShareServerControllerImpl
 import com.kintmin.platform.service_controller.MediaControllerManagerImpl
 import com.kintmin.platform.service_controller.StepMeasurementControllerImpl
@@ -16,6 +17,7 @@ import com.kintmin.platform.worker.usecase.ExecuteYoutubeDownloadImpl
 import com.kintmin.platform.worker.usecase.RegisterDailyResetImmediatelyWorkerImpl
 import com.kintmin.platform.worker.usecase.RegisterLoadBalancedDailyResetWorkerImpl
 import com.kintmin.presentation.port.AudioPreviewPlayer
+import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.ExecuteAnomalyDataCheck
 import com.kintmin.presentation.port.ExecuteAudioEditSave
 import com.kintmin.presentation.port.ExecuteLyricsVariantCreation
@@ -45,4 +47,5 @@ val platformModule: Module = module {
     single<ExecuteLyricsVariantCreation> { ExecuteLyricsVariantCreationImpl(androidContext()) }
     single<ExecuteAudioEditSave> { ExecuteAudioEditSaveImpl(androidContext()) }
     single<MigrationSourceDiscovery> { UnsupportedMigrationSourceDiscovery() }
+    single<DataMigrationSendController> { DataMigrationSendControllerImpl(androidContext()) }
 }
