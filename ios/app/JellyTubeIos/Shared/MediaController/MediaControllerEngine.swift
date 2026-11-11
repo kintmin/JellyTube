@@ -24,6 +24,9 @@ final class MediaControllerEngine {
     private var currentIndex: Int = 0
     private var currentFile: AVAudioFile?
     private var currentItemBaseOffset: TimeInterval = 0
+    /// 구간을 걸 때마다 올린다. `stop()` 도 걸려 있던 구간의 완료 콜백을 부르므로, 콜백이 걸린 번호와
+    /// 지금 번호가 다르면 이미 다른 곡으로 넘어간 뒤에 늦게 온 콜백이다. 그대로 따르면 한 곡을 더 건너뛴다.
+    private var scheduleGeneration = 0
     private var isPlayingIntent = false
     private var didConfigureAudioSession = false
     private var didStartEngine = false
@@ -201,6 +204,7 @@ final class MediaControllerEngine {
         queue.remove(at: index)
 
         if queue.isEmpty {
+            scheduleGeneration += 1
             playerNode.stop()
             currentFile = nil
             currentIndex = 0
@@ -264,6 +268,8 @@ final class MediaControllerEngine {
     private func scheduleItem(at index: Int, startingSeconds: TimeInterval) {
         guard index >= 0, index < queue.count else { return }
 
+        scheduleGeneration += 1
+        let generation = scheduleGeneration
         playerNode.stop()
 
         let item = queue[index]
@@ -293,13 +299,18 @@ final class MediaControllerEngine {
         }
         let remaining = AVAudioFrameCount(totalFrames - startFrame)
 
+        // 기본 콜백은 데이터를 렌더 스레드에 넘긴 시점(곡이 실제로 끝나기 전)에 불린다. 다 재생된 뒤에 넘어간다.
         playerNode.scheduleSegment(
             file,
             startingFrame: startFrame,
             frameCount: remaining,
-            at: nil
-        ) { [weak self] in
-            Task { @MainActor in self?.advanceOnCompletion() }
+            at: nil,
+            completionCallbackType: .dataPlayedBack
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, self.scheduleGeneration == generation else { return }
+                self.advanceOnCompletion()
+            }
         }
     }
 
@@ -309,6 +320,7 @@ final class MediaControllerEngine {
         let hasNext = currentIndex + 1 < queue.count
         guard hasNext || (isRepeatAllEnabled && !queue.isEmpty) else {
             isPlayingIntent = false
+            scheduleGeneration += 1
             playerNode.stop()
             broadcast()
             return
