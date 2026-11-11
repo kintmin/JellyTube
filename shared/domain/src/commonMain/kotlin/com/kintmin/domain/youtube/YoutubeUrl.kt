@@ -58,7 +58,7 @@ object YoutubeUrl {
             .substringBefore('#')
     }
 
-    /** 같은 키가 여러 번이면 첫 번째가 이긴다(`UrlParts` 와 같다). */
+    /** 같은 키가 여러 번이면 첫 번째가 이긴다. */
     private fun firstQueryValueOf(url: String, key: String): String? {
         val query = url.substringAfter('?', missingDelimiterValue = "").substringBefore('#')
         return query.split('&')

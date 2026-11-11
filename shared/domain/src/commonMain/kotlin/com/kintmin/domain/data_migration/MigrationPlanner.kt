@@ -8,15 +8,7 @@ import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationTrackAddition
 import com.kintmin.domain.playlist.model.PlaylistType
 
-/**
- * 보내는 기기의 데이터를 받는 기기에 합치는 계획을 세운다.
- *
- * - 같은 곡([SourceKey])이면 받는 기기 쪽을 남긴다. 파일도 받지 않는다.
- * - USER 플레이리스트는 이름(앞뒤 공백 제외)이 같으면 합친다.
- * - 소속과 즐겨찾기는 합집합이다. 미분류는 "USER 플레이리스트에 하나도 없음" 으로 다시 정한다.
- *
- * [target] 에는 시스템 플레이리스트가 모두 있어야 한다.
- */
+/** 보내는 기기의 데이터를 받는 기기에 합치는 계획을 세운다. [target] 에는 시스템 플레이리스트가 모두 있어야 한다. */
 object MigrationPlanner {
 
     private val creationOrder = compareBy<MigrationAudioMedia>({ it.createdTimeMillis }, { it.id })

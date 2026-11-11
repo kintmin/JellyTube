@@ -23,7 +23,6 @@ import com.kintmin.fileshare.MigrationSnapshotDto
 import com.kintmin.fileshare.MigrationStepDto
 import com.kintmin.fileshare.MigrationTrackDto
 
-/** 보내는 쪽(Android 서버)과 받는 쪽이 같은 매핑을 쓰도록 여기 한 곳에 둔다. */
 fun MigrationExport.toManifestDto() = MigrationManifestDto(
     formatVersion = FileShareConstants.MIGRATION_FORMAT_VERSION,
     snapshot = MigrationSnapshotDto(
@@ -37,7 +36,7 @@ fun MigrationExport.toManifestDto() = MigrationManifestDto(
     downloadSettings = downloadSettings?.let { MigrationDownloadSettingsDto(it.shouldInsertAtTop, it.playlistId) },
 )
 
-/** 모르는 종류의 파일은 버린다. 그 파일을 가리키는 행은 계획에서 받을 파일 목록에 남아 실패로 드러난다. */
+/** 모르는 종류의 파일은 버린다. 그 파일을 가리키는 값은 받지 못한 것으로 친다. */
 fun MigrationManifestDto.toExport() = MigrationExport(
     snapshot = MigrationSnapshot(
         audioMedias = snapshot.audioMedias.map { it.toDomain() },

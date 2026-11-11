@@ -56,7 +56,7 @@ def download_audio(url, audio_path):
 # `download_audio` 와 달리 **분할 포맷(DASH/HLS)을 배제**한다. 분할 포맷은 주소 하나로
 # 받을 수 없어서, 전송을 iOS 의 background URLSession 에 맡기는 경로에서는 쓸 수 없다.
 #
-# **MP4 의 AAC 만 받는다.** iOS 의 AVAudioFile 은 webm(Opus/Vorbis)을 열지 못한다. 그쪽으로
+# MP4 의 AAC 만 받는다. iOS 의 AVAudioFile 은 webm(Opus/Vorbis)을 열지 못한다. 그쪽으로
 # 넘어가면 받은 곡이 재생되지 않으므로, m4a 가 없는 영상은 실패로 돌린다.
 _SINGLE_FILE_AUDIO_FORMAT = (
     "bestaudio[ext=m4a][protocol!*=dash][protocol!*=m3u8]/"
@@ -64,7 +64,7 @@ _SINGLE_FILE_AUDIO_FORMAT = (
 )
 
 
-# AVAudioFile 이 여는 형식만 고르되 **전송 방식은 가리지 않는다**. yt-dlp 가 https 는 10MiB 청크로,
+# AVAudioFile 이 여는 형식만 고르되 전송 방식은 가리지 않는다. yt-dlp 가 https 는 10MiB 청크로,
 # HLS 는 조각을 받아 이어 붙인다. 유튜브 HLS 오디오(233·234)는 코덱이 `unknown` 으로 나와
 # `acodec` 조건에 걸리지 않으므로 컨테이너(mp4)로 받는다. webm 은 제외한다.
 _PLAYABLE_AUDIO_FORMAT = "bestaudio[ext=m4a]/bestaudio[acodec^=mp4a]/bestaudio[ext=mp4]"

@@ -30,13 +30,9 @@ import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 
 /**
- * 보내는 기기의 데이터를 받아 이 기기에 합친다. 단계는 [MigrationStage] 순서다.
- *
- * 실패는 두 가지로 나눈다.
- * - 곡 하나의 실패(재생할 수 없는 형식, 다시 받기 실패, 그 파일만 받을 수 없음): 그 곡을 빼고 계속한다.
- *   뺀 곡은 DB 에 넣지 않는다 — 음원 없는 행이 남지 않는다. [MigrationSummary.failures] 로 알린다.
- * - 그 밖의 실패(연결 끊김 등): 전체를 멈추고 [Result.failure] 로 올린다. 다시 부르면 받아 둔 파일은
- *   건너뛰고, 이미 합친 데이터는 바뀌지 않으므로 빠진 곡만 이어 받는다.
+ * 보내는 기기의 데이터를 받아 이 기기에 합친다. 곡 하나의 실패는 그 곡을 빼고 계속하고
+ * ([MigrationSummary.failures]), 그 밖의 실패는 전체를 멈춘다. 다시 부르면 받아 둔 파일은 건너뛰고
+ * 빠진 곡만 이어 받는다.
  */
 class ImportMigrationDataUseCase constructor(
     private val dataMigrationRepository: DataMigrationRepository,

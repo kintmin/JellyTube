@@ -32,7 +32,7 @@ class CleanupAnomalousDataUseCase constructor(
 
         appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "track 연결 없는 음원 정리 완료"))
 
-        // iOS AVAudioFile 은 확장자가 내용과 다르면 열지 못한다. 다른 기기로 옮기기 전에도 이 정리를 거친다.
+        // iOS AVAudioFile 은 확장자가 내용과 다르면 열지 못한다.
         val correctedFileCount = audioMediaRepository.correctAudioFileExtensions().getOrThrow()
         appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "확장자 바로잡음: ${correctedFileCount}건"))
 

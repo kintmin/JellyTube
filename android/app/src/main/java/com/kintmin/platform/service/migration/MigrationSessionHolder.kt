@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** 서버(서비스)와 보내기 화면이 같은 세션을 봐야 해서 프로세스에 하나만 둔다. 상태는 보내기 화면 포트의 모델을 그대로 쓴다. */
+/** 서버(서비스)와 보내기 화면이 같은 세션을 봐야 해서 프로세스에 하나만 둔다. */
 object MigrationSessionHolder {
 
     private val _session = MutableStateFlow<MigrationSession?>(null)

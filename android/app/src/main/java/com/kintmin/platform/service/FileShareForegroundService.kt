@@ -208,7 +208,7 @@ class FileShareForegroundService : Service(), KoinComponent {
 
         private const val MIGRATION_LOCK_TAG = "JellyTube:migration"
 
-        // 놓친 해제가 배터리를 끝까지 잡지 않도록 상한을 둔다. 수천 곡도 이 안에 끝난다.
+        // 놓친 해제가 배터리를 끝까지 잡지 않도록 상한을 둔다.
         private const val MIGRATION_LOCK_TIMEOUT_MS = 2 * 60 * 60 * 1000L
 
         private val _isRunning = MutableStateFlow(false)

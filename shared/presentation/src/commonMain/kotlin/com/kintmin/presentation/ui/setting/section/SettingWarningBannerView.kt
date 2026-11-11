@@ -22,7 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
 
-/** 놓치면 작업이 망가지는 안내. 화면 위쪽에 고정해 눈에 띄게 둔다. */
+/** 놓치면 작업이 망가지는 안내. */
 @Composable
 fun SettingWarningBannerView(
     title: String,
