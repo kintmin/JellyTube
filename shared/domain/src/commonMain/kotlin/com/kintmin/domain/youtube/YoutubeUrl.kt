@@ -21,6 +21,21 @@ object YoutubeUrl {
         return host in DOWNLOADABLE_HOSTS && firstPathSegment in DOWNLOADABLE_FIRST_PATH_SEGMENTS
     }
 
+    /** 같은 영상을 가리키는 주소는 `si`·`t` 같은 파라미터나 호스트가 달라도 같은 값을 낸다. 영상 주소가 아니면 null. */
+    fun videoIdOf(url: String): String? {
+        val host = hostOf(url)?.lowercase() ?: return null
+        if (host !in DOWNLOADABLE_HOSTS) return null
+        val pathSegments = pathOf(url)?.split('/').orEmpty()
+
+        val videoId = when {
+            host == "youtu.be" -> pathSegments.firstOrNull()
+            pathSegments.firstOrNull() == "watch" -> firstQueryValueOf(url, key = "v")
+            pathSegments.firstOrNull() == "shorts" -> pathSegments.getOrNull(1)
+            else -> null
+        }
+        return videoId?.ifEmpty { null }
+    }
+
     /** 포트·userinfo 는 떼어낸다. */
     private fun hostOf(url: String): String? {
         val afterScheme = url.substringAfter("://", missingDelimiterValue = "")
@@ -33,17 +48,27 @@ object YoutubeUrl {
         return host.ifEmpty { null }
     }
 
-    private fun firstPathSegmentOf(url: String): String? {
+    private fun firstPathSegmentOf(url: String): String? =
+        pathOf(url)?.substringBefore('/')?.ifEmpty { null }
+
+    /** 앞의 `/` 를 뗀 경로. 쿼리·프래그먼트는 뺀다. */
+    private fun pathOf(url: String): String? {
         val afterScheme = url.substringAfter("://", missingDelimiterValue = "")
         if (afterScheme.isEmpty()) return null
 
         val authorityEnd = afterScheme.indexOf('/')
         if (authorityEnd == -1) return null
 
-        val path = afterScheme.substring(authorityEnd + 1)
+        return afterScheme.substring(authorityEnd + 1)
             .substringBefore('?')
             .substringBefore('#')
+    }
 
-        return path.substringBefore('/').ifEmpty { null }
+    /** 같은 키가 여러 번이면 첫 번째가 이긴다(`UrlParts` 와 같다). */
+    private fun firstQueryValueOf(url: String, key: String): String? {
+        val query = url.substringAfter('?', missingDelimiterValue = "").substringBefore('#')
+        return query.split('&')
+            .firstOrNull { it.substringBefore('=') == key }
+            ?.substringAfter('=', missingDelimiterValue = "")
     }
 }
