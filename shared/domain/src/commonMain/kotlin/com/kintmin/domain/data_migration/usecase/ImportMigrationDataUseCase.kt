@@ -59,9 +59,10 @@ class ImportMigrationDataUseCase constructor(
 
         // 보내는 기기에 음원 파일이 없는 곡은 계획 전에 빠진다. 이미 이 기기에 있는 곡이 아니면 실패로 알린다.
         val targetKeys = target.audioMedias.map { SourceKey.of(it.source) }.toSet()
-        val availableIds = available.audioMedias.map { it.id }.toSet()
+        // 같은 곡의 다른 행에 파일이 있으면 그 행으로 들어오므로 실패가 아니다.
+        val availableKeys = available.audioMedias.map { SourceKey.of(it.source) }.toSet()
         val missingOnSender = export.snapshot.audioMedias
-            .filter { it.id !in availableIds }
+            .filter { SourceKey.of(it.source) !in availableKeys }
             .filter { SourceKey.of(it.source) !in targetKeys }
             .distinctBy { SourceKey.of(it.source) }
         missingOnSender.forEach { log("보내는 기기에 음원 파일이 없음: ${it.name} (${it.audioFileName})") }
@@ -76,7 +77,7 @@ class ImportMigrationDataUseCase constructor(
             ).toMutableList()
         val redownloaded = redownload(redownloadable, failures, onProgress)
 
-        val (applyPlan, applied) = try {
+        val applyPlan = try {
             // 같은 곡의 다른 행이 대표로 올라와 빠진 곡의 파일을 가져오지 않도록 키로 뺀다.
             val excludedKeys = unplayable.filter { it.id !in redownloaded }
                 .map { SourceKey.of(it.source) }
@@ -110,15 +111,19 @@ class ImportMigrationDataUseCase constructor(
                 localFiles,
             )
 
-            onProgress(MigrationProgress(MigrationStage.APPLY))
-            applyPlan to dataMigrationRepository.applyPlan(applyPlan).getOrThrow()
+            applyPlan
         } catch (e: Throwable) {
             // 반영 전에는 다시 받은 파일을 가리키는 행이 없어 두면 고아가 된다.
-            withContext(NonCancellable) {
-                redownloaded.values.forEach { audioMediaRepository.deleteFileAtFullPath(it.fileFullPath) }
-            }
+            withContext(NonCancellable) { deleteRedownloaded(redownloaded) }
             throw e
         }
+
+        onProgress(MigrationProgress(MigrationStage.APPLY))
+        // 커밋 직후에 취소되면 돌아오는 자리에서 CancellationException 이 난다. 그때 지우면 커밋된 행이 빈 파일을
+        // 가리키므로, 반영 자체가 실패했을 때만 지운다.
+        val applied = withContext(NonCancellable) {
+            dataMigrationRepository.applyPlan(applyPlan).onFailure { deleteRedownloaded(redownloaded) }
+        }.getOrThrow()
 
         // 반영이 끝났다. 다시 받은 파일은 이미 행이 가리키므로 여기부터는 실패해도 기록만 한다.
         dataMigrationRepository.clearStaging().onFailure { log("임시 공간 정리 실패: $it") }
@@ -138,6 +143,10 @@ class ImportMigrationDataUseCase constructor(
     }.onFailure {
         if (it is CancellationException) throw it
         log("이전 중단: $it")
+    }
+
+    private suspend fun deleteRedownloaded(redownloaded: Map<Int, DownloadedAudioFile>) {
+        redownloaded.values.forEach { audioMediaRepository.deleteFileAtFullPath(it.fileFullPath) }
     }
 
     private fun planWithout(source: MigrationSnapshot, target: MigrationSnapshot, localFiles: Set<MigrationFile>) =

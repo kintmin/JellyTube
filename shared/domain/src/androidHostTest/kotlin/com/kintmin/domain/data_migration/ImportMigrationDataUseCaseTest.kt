@@ -28,7 +28,11 @@ import com.kintmin.log.AppLog
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -89,6 +93,8 @@ class ImportMigrationDataUseCaseTest {
         private val failClearStaging: Boolean = false,
         /** 정하면 이 크기로 잘라 여러 번 받은 것처럼 알린다. */
         private val chunkSize: Long? = null,
+        /** 반영이 커밋된 직후, 돌아오기 전에 부른다. */
+        private val afterApplyCommitted: () -> Unit = {},
     ) : DataMigrationRepository {
         val calls = mutableListOf<String>()
         val staged = mutableListOf<String>()
@@ -121,11 +127,13 @@ class ImportMigrationDataUseCaseTest {
             return Result.success(Unit)
         }
 
-        override suspend fun applyPlan(plan: MigrationPlan) =
-            Result.success(MigrationApplyResult(plan.newPlaylists.associate { it.id to it.id + 1000 })).also {
-                calls += "apply"
-                appliedPlan = plan
-            }
+        // 실제 구현처럼 다른 디스패처에서 돌아온다. 돌아오는 자리에서 취소가 드러난다.
+        override suspend fun applyPlan(plan: MigrationPlan) = withContext(Dispatchers.Default) {
+            calls += "apply"
+            appliedPlan = plan
+            afterApplyCommitted()
+            Result.success(MigrationApplyResult(plan.newPlaylists.associate { it.id to it.id + 1000 }))
+        }
 
         override suspend fun clearStaging(): Result<Unit> {
             calls += "clear"
@@ -337,6 +345,41 @@ class ImportMigrationDataUseCaseTest {
 
         assertTrue(thrown is CancellationException)
         assertTrue("apply" !in repository.calls)
+    }
+
+    @Test
+    fun `반영이 커밋된 직후 취소돼도 다시 받은 파일은 지우지 않는다`() = runTest {
+        coEvery { audioMediaRepository.downloadAudioFile(any()) } returns
+            Result.success(DownloadedAudioFile("re.m4a", "/audios/re.m4a", durationSeconds = 42))
+        lateinit var job: Job
+        val repository = FakeRepository(
+            export = export(listOf(audio(101, "https://youtu.be/yt", "yt.webm")), listOf(entry("yt.webm"))),
+            target = emptyTarget,
+            afterApplyCommitted = { job.cancel() },
+        )
+
+        job = launch { useCase(repository)(endpoint, "t") {} }
+        job.join()
+
+        assertTrue(job.isCancelled)
+        assertTrue("apply" in repository.calls)
+        coVerify(exactly = 0) { audioMediaRepository.deleteFileAtFullPath(any()) }
+    }
+
+    @Test
+    fun `같은 곡의 다른 행에 파일이 있으면 파일 없는 행은 실패로 알리지 않는다`() = runTest {
+        val repository = FakeRepository(
+            export = export(
+                audios = listOf(audio(101, "https://youtu.be/same", "gone.m4a"), audio(102, "https://youtu.be/same", "here.m4a")),
+                files = listOf(entry("here.m4a")),
+            ),
+            target = emptyTarget,
+        )
+
+        val summary = useCase(repository)(endpoint, "t") {}.getOrThrow()
+
+        assertTrue(summary.failures.isEmpty())
+        assertEquals(1, summary.newAudioMediaCount)
     }
 
     @Test
