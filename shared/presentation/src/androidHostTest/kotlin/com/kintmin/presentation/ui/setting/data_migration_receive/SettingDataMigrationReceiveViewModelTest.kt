@@ -211,6 +211,18 @@ class SettingDataMigrationReceiveViewModelTest {
     }
 
     @Test
+    fun `세션이 끝나 코드 입력으로 돌아간 뒤 나가도 임시 파일을 지운다`() = runTest {
+        coEvery { import(endpoint, "token", any()) } returns Result.failure(MigrationSessionExpiredException())
+        val viewModel = viewModel()
+        viewModel.connect()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnConfirmExit)
+
+        assertEquals(SettingDataMigrationReceiveEvent.NavigateToBack, viewModel.eventFlow.first())
+        coVerify(exactly = 1) { clearStaging() }
+    }
+
+    @Test
     fun `멈춘 상태에서 나가면 임시 파일을 지우고 끝난 뒤 나가면 지우지 않는다`() = runTest {
         coEvery { import(endpoint, "token", any()) } returns Result.failure(IllegalStateException("끊김"))
         val interrupted = viewModel()

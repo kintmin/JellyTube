@@ -152,8 +152,8 @@ class SettingDataMigrationReceiveViewModel constructor(
         viewModelScope.launch {
             // 받던 파일을 지우기 전에 받기를 먼저 멈춘다. 반영 중이었다면 트랜잭션째 되돌아간다.
             runJob?.cancelAndJoin()
-            // 다시 시도하지 않고 나가면 받아 둔 임시 파일은 쓸 데가 없다.
-            if (phase == DataMigrationReceivePhase.Running || phase is DataMigrationReceivePhase.Interrupted) {
+            // 다시 시도하지 않고 나가면 받아 둔 임시 파일은 쓸 데가 없다. 끝났으면 이미 지웠다.
+            if (phase !is DataMigrationReceivePhase.Finished) {
                 clearMigrationStagingUseCase()
             }
             _eventFlow.send(SettingDataMigrationReceiveEvent.NavigateToBack)
