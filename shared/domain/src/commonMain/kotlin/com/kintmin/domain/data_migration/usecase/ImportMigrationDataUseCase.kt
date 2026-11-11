@@ -176,11 +176,16 @@ class ImportMigrationDataUseCase constructor(
         val totalBytes = entries.sumOf { it.size }
         var receivedBytes = 0L
         val unavailable = mutableSetOf<MigrationFile>()
-        fun report(doneCount: Int, received: Long) = onProgress(
-            MigrationProgress(MigrationStage.TRANSFER, doneCount, entries.size, received, totalBytes),
-        )
+        // 청크(64KB)마다 알리면 수 GB 에서 수만 번 화면을 다시 그린다. 1% 를 넘게 늘 때와 파일이 끝날 때만 알린다.
+        val reportStepBytes = maxOf(totalBytes / 100, 1)
+        var reportedBytes = 0L
+        fun report(doneCount: Int, received: Long, force: Boolean = false) {
+            if (!force && received - reportedBytes < reportStepBytes) return
+            reportedBytes = received
+            onProgress(MigrationProgress(MigrationStage.TRANSFER, doneCount, entries.size, received, totalBytes))
+        }
 
-        report(0, 0)
+        report(0, 0, force = true)
         entries.forEachIndexed { index, entry ->
             val before = receivedBytes
             dataMigrationRepository.stageFile(endpoint, token, entry) { received -> report(index, before + received) }
@@ -190,7 +195,7 @@ class ImportMigrationDataUseCase constructor(
                     unavailable += entry.file
                 }
             receivedBytes = before + entry.size
-            report(index + 1, receivedBytes)
+            report(index + 1, receivedBytes, force = true)
         }
         return unavailable
     }

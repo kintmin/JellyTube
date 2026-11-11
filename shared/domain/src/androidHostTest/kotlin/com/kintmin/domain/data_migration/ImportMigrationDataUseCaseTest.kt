@@ -87,6 +87,8 @@ class ImportMigrationDataUseCaseTest {
         /** 이 이름의 파일을 받다가 연결이 끊긴다. */
         private val disconnectAt: String? = null,
         private val failClearStaging: Boolean = false,
+        /** 정하면 이 크기로 잘라 여러 번 받은 것처럼 알린다. */
+        private val chunkSize: Long? = null,
     ) : DataMigrationRepository {
         val calls = mutableListOf<String>()
         val staged = mutableListOf<String>()
@@ -111,7 +113,11 @@ class ImportMigrationDataUseCaseTest {
             if (name == disconnectAt) return Result.failure(IllegalStateException("끊김"))
             if (name in unavailableFiles) return Result.failure(MigrationFileUnavailableException(name))
             staged += name
-            onReceived(entry.size / 2)
+            if (chunkSize == null) {
+                onReceived(entry.size / 2)
+            } else {
+                (chunkSize..entry.size step chunkSize).forEach(onReceived)
+            }
             return Result.success(Unit)
         }
 
@@ -154,6 +160,22 @@ class ImportMigrationDataUseCaseTest {
         assertTrue(MigrationProgress(MigrationStage.TRANSFER, 0, 1, 50, 100) in progress)
         assertTrue(MigrationProgress(MigrationStage.TRANSFER, 1, 1, 100, 100) in progress)
         coVerify(exactly = 1) { playlistRepository.ensureSystemPlaylists() }
+    }
+
+    @Test
+    fun `파일 받기 진행은 청크마다가 아니라 1퍼센트 단위로 알린다`() = runTest {
+        val repository = FakeRepository(
+            export = export(listOf(audio(101, "s1", "a.m4a")), listOf(entry("a.m4a", size = 10_000))),
+            target = emptyTarget,
+            chunkSize = 1,
+        )
+        val progress = mutableListOf<MigrationProgress>()
+
+        useCase(repository)(endpoint, "t", progress::add).getOrThrow()
+
+        val transfer = progress.filter { it.stage == MigrationStage.TRANSFER }
+        assertTrue("${transfer.size}", transfer.size <= 102)
+        assertEquals(MigrationProgress(MigrationStage.TRANSFER, 1, 1, 10_000, 10_000), transfer.last())
     }
 
     @Test
