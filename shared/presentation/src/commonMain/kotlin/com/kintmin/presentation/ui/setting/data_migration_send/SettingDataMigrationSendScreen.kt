@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -91,7 +93,23 @@ fun SettingDataMigrationSendScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     val code = uiState.pairingCode
-                    if (code != null) {
+                    if (uiState.step == DataMigrationSendStep.Preparing) {
+                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                        Text(
+                            text = "보내기 전에 데이터를 점검하고 있습니다.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    } else if (uiState.step == DataMigrationSendStep.PreparationFailed) {
+                        Text(
+                            text = "데이터 점검에 실패했습니다. 다시 시도해 주세요.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                        Button(onClick = { sendIntent(SettingDataMigrationSendIntent.OnClickRetryPreparation) }) {
+                            Text("다시 시도")
+                        }
+                    } else if (code != null) {
                         Text(
                             text = "연결 코드",
                             style = MaterialTheme.typography.titleSmall,
@@ -150,10 +168,22 @@ private fun SettingDataMigrationSendScreenPreview() {
 
 @Preview
 @Composable
+private fun SettingDataMigrationSendScreenPreparingPreview() {
+    JellyTubeTheme {
+        SettingDataMigrationSendScreen(
+            uiState = SettingDataMigrationSendUiState(),
+            navigateToBack = {},
+            sendIntent = {},
+        )
+    }
+}
+
+@Preview
+@Composable
 private fun SettingDataMigrationSendScreenLockedPreview() {
     JellyTubeTheme {
         SettingDataMigrationSendScreen(
-            uiState = SettingDataMigrationSendUiState(pairingCode = null),
+            uiState = SettingDataMigrationSendUiState(step = DataMigrationSendStep.Ready, pairingCode = null),
             navigateToBack = {},
             sendIntent = {},
         )
