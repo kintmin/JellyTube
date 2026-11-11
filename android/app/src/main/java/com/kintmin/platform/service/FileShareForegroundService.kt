@@ -30,6 +30,7 @@ import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,6 +57,7 @@ class FileShareForegroundService : Service(), KoinComponent {
     private var nsdRegistrationListener: NsdManager.RegistrationListener? = null
     private var migrationWakeLock: PowerManager.WakeLock? = null
     private var migrationWifiLock: WifiManager.WifiLock? = null
+    private var migrationLockJob: Job? = null
 
     /** 서버를 쓰는 쪽. 하나라도 남아 있으면 서버를 끄지 않는다. */
     enum class Owner { PC_FILE_SHARE, DATA_MIGRATION }
@@ -140,12 +142,15 @@ class FileShareForegroundService : Service(), KoinComponent {
 
     /**
      * 포그라운드 서비스는 프로세스를 살려 둘 뿐 CPU 와 Wi-Fi 를 깨워 두지 않는다. 화면이 꺼진 채 받는
-     * 기기가 파일을 받아 가는 동안 멈추지 않도록, 연결된 동안만 둘을 잡는다.
+     * 기기가 파일을 받아 가는 동안 멈추지 않도록, 연결된 뒤 세션이 닫힐 때까지 둘을 잡는다. 완료 뒤에도
+     * 받는 기기가 실패한 곡을 다시 받을 수 있어 세션이 열려 있는 한 놓지 않는다.
      */
     private fun holdLocksWhileMigrating() {
-        serviceScope.launch {
+        if (migrationLockJob?.isActive == true) return
+        migrationLockJob = serviceScope.launch {
             MigrationSessionHolder.state.collect { status ->
-                if (status == DataMigrationSendStatus.Paired) acquireMigrationLocks() else releaseMigrationLocks()
+                val isConnected = status == DataMigrationSendStatus.Paired || status is DataMigrationSendStatus.Finished
+                if (isConnected) acquireMigrationLocks() else releaseMigrationLocks()
             }
         }
     }
