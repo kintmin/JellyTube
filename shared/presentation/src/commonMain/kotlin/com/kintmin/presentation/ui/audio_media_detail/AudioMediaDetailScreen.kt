@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -230,56 +231,86 @@ fun AudioMediaDetailScreen(
                         .padding(bottom = 16.dp)
                         .height(220.dp)
                         .background(MaterialTheme.colorScheme.surface)
-                        .clickable { isShowFullScreenImageViewer = true }
                 )
             }
         }
-        Column(
+        // 사진은 제자리에 두고 글 카드가 사진 위로 올라온다. 리스트가 사진 위를 덮어 터치를 가져가므로
+        // 사진 탭은 투명한 첫 칸이 대신 받는다.
+        LazyColumn(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(
-                    top = innerPadding.calculateTopPadding() + 210.dp,
+                    top = innerPadding.calculateTopPadding(),
                     bottom = innerPadding.calculateBottomPadding()
                 )
-                .clip(RoundedCornerShape(16.dp))
-                .fillMaxSize()
-                .background(color = MaterialTheme.colorScheme.background)
         ) {
-            LazyColumn(
-                modifier = Modifier.weight(1f)
-            ) {
-                item(key = -1) {
-                    Column(modifier = Modifier.padding(top = 20.dp)) {
+            item(key = -2) {
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(210.dp)
+                        .clickable(
+                            enabled = data.imageFileFullPath != null,
+                            interactionSource = null,
+                            indication = null,
+                        ) { isShowFullScreenImageViewer = true }
+                )
+            }
+            item(key = -1) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(top = 20.dp)
+                ) {
+                    Text(
+                        modifier = Modifier.padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
+                        text = data.audioMediaName,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 24.sp,
+                    )
+                    Text(
+                        modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
+                        text = "아티스트: ${data.artist}",
+                        fontSize = 16.sp,
+                        lineHeight = 16.sp,
+                    )
+                    Text(
+                        modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
+                        text = "재생 시간: ${data.playTime}",
+                        fontSize = 16.sp,
+                    )
+                    Text(
+                        modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
+                        text = "생성 시각: ${data.audioMediaCreationTime}",
+                        fontSize = 16.sp,
+                    )
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                data.webViewUrl?.let { url -> navigateToMainSearchTab(url) }
+                            }
+                            .padding(horizontal = 16.dp),
+                        text = "출처: ${data.webViewUrl ?: data.source}",
+                        fontSize = 16.sp,
+                    )
+
+                    Spacer(
+                        modifier = Modifier
+                            .padding(vertical = 20.dp, horizontal = 16.dp)
+                            .fillMaxWidth()
+                            .height(0.5.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.outline)
+                    )
+
+                    if (data.audioMediaDescription.isNotBlank()) {
                         Text(
-                            modifier = Modifier.padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
-                            text = data.audioMediaName,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            lineHeight = 24.sp,
-                        )
-                        Text(
-                            modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
-                            text = "아티스트: ${data.artist}",
-                            fontSize = 16.sp,
-                            lineHeight = 16.sp,
-                        )
-                        Text(
-                            modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
-                            text = "재생 시간: ${data.playTime}",
-                            fontSize = 16.sp,
-                        )
-                        Text(
-                            modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
-                            text = "생성 시각: ${data.audioMediaCreationTime}",
-                            fontSize = 16.sp,
-                        )
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    data.webViewUrl?.let { url -> navigateToMainSearchTab(url) }
-                                }
-                                .padding(horizontal = 16.dp),
-                            text = "출처: ${data.webViewUrl ?: data.source}",
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            text = data.audioMediaDescription,
                             fontSize = 16.sp,
                         )
 
@@ -291,23 +322,36 @@ fun AudioMediaDetailScreen(
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.outline)
                         )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surface)
+                            .clickable {
+                                if (data.hasLyrics) {
+                                    navigateToLyricsViewer(data.audioMediaId)
+                                } else {
+                                    navigateToLyricsSearch(data.audioMediaId, data.audioMediaName, data.audioDurationSeconds)
+                                }
+                            }
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = if (data.hasLyrics) "이 음원의 가사 보기" else "이 음원의 가사 찾기",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronRight,
+                            contentDescription = null,
+                        )
+                    }
 
-                        if (data.audioMediaDescription.isNotBlank()) {
-                            Text(
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                text = data.audioMediaDescription,
-                                fontSize = 16.sp,
-                            )
-
-                            Spacer(
-                                modifier = Modifier
-                                    .padding(vertical = 20.dp, horizontal = 16.dp)
-                                    .fillMaxWidth()
-                                    .height(0.5.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(MaterialTheme.colorScheme.outline)
-                            )
-                        }
+                    if (data.tjKaraokeNumber == null) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -315,18 +359,14 @@ fun AudioMediaDetailScreen(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.surface)
                                 .clickable {
-                                    if (data.hasLyrics) {
-                                        navigateToLyricsViewer(data.audioMediaId)
-                                    } else {
-                                        navigateToLyricsSearch(data.audioMediaId, data.audioMediaName, data.audioDurationSeconds)
-                                    }
+                                    navigateToKaraokeSearch(data.audioMediaId, data.audioMediaName)
                                 }
                                 .padding(horizontal = 16.dp, vertical = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 modifier = Modifier.weight(1f),
-                                text = if (data.hasLyrics) "이 음원의 가사 보기" else "이 음원의 가사 찾기",
+                                text = "TJ 노래방 번호 찾기",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                             )
@@ -335,8 +375,34 @@ fun AudioMediaDetailScreen(
                                 contentDescription = null,
                             )
                         }
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                modifier = Modifier.weight(1f),
+                                text = "TJ 노래방 번호: ${data.tjKaraokeNumber}",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            IconButton(onClick = { isShowKaraokeUnlinkDialog = true }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = "노래방 번호 연동 해제",
+                                )
+                            }
+                        }
+                    }
 
-                        if (data.tjKaraokeNumber == null) {
+                    // 음원 편집을 제공하지 않는 플랫폼에서는 두 갈래 모두 숨긴다.
+                    if (isAudioEditSupported) {
+                        if (!data.hasEditedAudio) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -344,14 +410,14 @@ fun AudioMediaDetailScreen(
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(MaterialTheme.colorScheme.surface)
                                     .clickable {
-                                        navigateToKaraokeSearch(data.audioMediaId, data.audioMediaName)
+                                        navigateToAudioEdit(data.audioMediaId)
                                     }
                                     .padding(horizontal = 16.dp, vertical = 16.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
                                     modifier = Modifier.weight(1f),
-                                    text = "TJ 노래방 번호 찾기",
+                                    text = if (data.isAudioEditSaving) "편집본 저장 중..." else "음원 편집하기",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -371,117 +437,67 @@ fun AudioMediaDetailScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    modifier = Modifier.weight(1f),
-                                    text = "TJ 노래방 번호: ${data.tjKaraokeNumber}",
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { navigateToAudioEdit(data.audioMediaId) },
+                                    text = if (data.isAudioEditSaving) {
+                                        "편집본 저장 중..."
+                                    } else {
+                                        "편집본 사용 중 · ${data.playTime}"
+                                    },
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
-                                IconButton(onClick = { isShowKaraokeUnlinkDialog = true }) {
+                                // 저장이 끝나면 편집본이 다시 연결되므로 저장 중에는 되돌릴 수 없다
+                                IconButton(
+                                    enabled = !data.isAudioEditSaving,
+                                    onClick = { isShowAudioEditRevertDialog = true },
+                                ) {
                                     Icon(
                                         imageVector = Icons.Rounded.Close,
-                                        contentDescription = "노래방 번호 연동 해제",
+                                        contentDescription = "원본으로 되돌리기",
                                     )
                                 }
                             }
                         }
-
-                        // 음원 편집을 제공하지 않는 플랫폼에서는 두 갈래 모두 숨긴다.
-                        if (isAudioEditSupported) {
-                            if (!data.hasEditedAudio) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(MaterialTheme.colorScheme.surface)
-                                        .clickable {
-                                            navigateToAudioEdit(data.audioMediaId)
-                                        }
-                                        .padding(horizontal = 16.dp, vertical = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        modifier = Modifier.weight(1f),
-                                        text = if (data.isAudioEditSaving) "편집본 저장 중..." else "음원 편집하기",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Rounded.ChevronRight,
-                                        contentDescription = null,
-                                    )
-                                }
-                            } else {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(MaterialTheme.colorScheme.surface)
-                                        .padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clickable { navigateToAudioEdit(data.audioMediaId) },
-                                        text = if (data.isAudioEditSaving) {
-                                            "편집본 저장 중..."
-                                        } else {
-                                            "편집본 사용 중 · ${data.playTime}"
-                                        },
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    )
-                                    // 저장이 끝나면 편집본이 다시 연결되므로 저장 중에는 되돌릴 수 없다
-                                    IconButton(
-                                        enabled = !data.isAudioEditSaving,
-                                        onClick = { isShowAudioEditRevertDialog = true },
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Close,
-                                            contentDescription = "원본으로 되돌리기",
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Text(
-                            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp, start = 16.dp, end = 16.dp),
-                            text = "추가된 플레이리스트 목록",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
                     }
+
+                    Text(
+                        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp, start = 16.dp, end = 16.dp),
+                        text = "추가된 플레이리스트 목록",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
+            }
 
-                items(
-                    count = data.playlists.count(),
-                    key = { index -> data.playlists[index].playlistId }
-                ) { index ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                navigateToPlaylistDetailScreen(data.playlists[index].playlistId, data.audioMediaId)
-                            }.padding(horizontal = 16.dp, vertical = 12.dp)
-                    ) {
-                        Text(
-                            text = data.playlists[index].playlistName,
-                            fontSize = 20.sp,
-                        )
-                        Text(
-                            modifier = Modifier.padding(top = 8.dp),
-                            text = "플레이리스트가 생성된 시각: ${data.playlists[index].playlistCreationTime}",
-                            fontSize = 15.sp,
-                        )
-                        Text(
-                            modifier = Modifier.padding(top = 4.dp),
-                            text = "플레이리스트에 추가된 시각: ${data.playlists[index].playlistAddedTime}",
-                            fontSize = 15.sp,
-                        )
-                    }
+            items(
+                count = data.playlists.count(),
+                key = { index -> data.playlists[index].playlistId }
+            ) { index ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .clickable {
+                            navigateToPlaylistDetailScreen(data.playlists[index].playlistId, data.audioMediaId)
+                        }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = data.playlists[index].playlistName,
+                        fontSize = 16.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        modifier = Modifier.padding(start = 12.dp),
+                        text = "${data.playlists[index].playlistAddedTime} 추가",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
