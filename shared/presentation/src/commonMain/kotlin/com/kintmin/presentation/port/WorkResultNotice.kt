@@ -3,7 +3,7 @@ package com.kintmin.presentation.port
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.presentation.deeplink.DeepLinkConstants
 
-/** 작업 결과 알림의 문구와 탭했을 때 갈 화면. 두 플랫폼이 같은 알림을 띄워야 해서 여기 한 벌만 둔다. */
+/** 두 플랫폼이 같은 알림을 띄워야 해서 여기 한 벌만 둔다. */
 sealed interface WorkResultNotice {
 
     val title: String

@@ -15,7 +15,7 @@ import org.koin.core.component.inject
 
 /**
  * 원본 가사로부터 번역/음차 변형 파일을 백그라운드에서 생성하고,
- * 완료/실패 시 알림을 보낸다. (성공 알림 탭 시 해당 가사 화면으로 딥링크)
+ * 완료/실패 시 알림을 보낸다.
  */
 class LyricsVariantWorker(
     private val appContext: Context,

@@ -7,7 +7,6 @@ import platform.UserNotifications.UNUserNotificationCenter
 
 private const val DEEP_LINK_KEY = "deepLink"
 
-/** `ios/shared` 가 알림 탭에서 넘겨받은 `userInfo` 를 읽는다. 딥링크가 없는 알림이면 null 이다. */
 fun localNotificationDeepLinkOf(userInfo: Map<Any?, *>): String? = userInfo[DEEP_LINK_KEY] as? String
 
 /**
