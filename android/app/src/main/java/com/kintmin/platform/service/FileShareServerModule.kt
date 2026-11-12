@@ -17,6 +17,7 @@ import com.kintmin.platform.service.migration.migrationRoutes
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.request.header
@@ -65,6 +66,7 @@ internal fun Application.fileShareModule(
          * Body: raw audio bytes
          */
         post(FileShareConstants.HTTP_UPLOAD_PATH) {
+            if (call.rejectWhileMigrating(currentMigrationSession)) return@post
             val originalFileName = call.request.header(FileShareConstants.HEADER_FILE_NAME)
                 ?: "upload.mp3"
 
@@ -112,6 +114,7 @@ internal fun Application.fileShareModule(
         }
 
         post(FileShareConstants.HTTP_BULK_ARTIST_PATH) {
+            if (call.rejectWhileMigrating(currentMigrationSession)) return@post
             val request = runCatching { call.receive<BulkArtistUpdateRequest>() }
                 .getOrElse {
                     call.respond(
@@ -143,6 +146,7 @@ internal fun Application.fileShareModule(
         }
 
         post(FileShareConstants.HTTP_BULK_THUMBNAIL_PATH) {
+            if (call.rejectWhileMigrating(currentMigrationSession)) return@post
             val ids = call.request.header(FileShareConstants.HEADER_AUDIO_MEDIA_IDS)
                 ?.split(",")
                 ?.mapNotNull { it.trim().toIntOrNull() }
@@ -179,6 +183,13 @@ internal fun Application.fileShareModule(
             )
         }
     }
+}
+
+/** 이전 세션이 열려 있으면 PC 업로드를 받지 않는다. 거절했으면 응답까지 보내고 true 를 돌려준다. */
+private suspend fun ApplicationCall.rejectWhileMigrating(currentMigrationSession: () -> MigrationSession?): Boolean {
+    if (currentMigrationSession() == null) return false
+    respond(HttpStatusCode.Conflict, FileShareResponse(success = false, message = "다른 기기와 데이터 이전 중입니다."))
+    return true
 }
 
 private const val TEMP_UPLOAD_PREFIX = "upload_"

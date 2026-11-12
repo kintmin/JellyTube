@@ -7,6 +7,7 @@ import com.kintmin.domain.audio_media.usecase.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.platform.service.migration.MigrationSession
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -32,7 +33,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 
-/** 기존 PC → Android 엔드포인트의 동작. 토큰 없이 받아야 한다(배포된 Desktop 앱이 토큰을 모른다). */
+/** 기존 PC → Android 엔드포인트의 동작. 토큰 없이 받아야 한다(배포된 Desktop 앱이 토큰을 모른다). 단, 이전 세션 동안은 거절한다. */
 class FileShareServerModuleTest {
 
     @get:Rule
@@ -43,7 +44,10 @@ class FileShareServerModuleTest {
     private val saveImageUseCase = mockk<SaveAudioMediaImageUseCase>()
     private val imported = mutableListOf<ImportedAudioMediaResult>()
 
-    private fun serverTest(block: suspend ApplicationTestBuilder.() -> Unit) = testApplication {
+    private fun serverTest(
+        migrationSession: MigrationSession? = null,
+        block: suspend ApplicationTestBuilder.() -> Unit,
+    ) = testApplication {
         application {
             fileShareModule(
                 importUploadedAudioMedia = importUseCase,
@@ -51,7 +55,7 @@ class FileShareServerModuleTest {
                 saveAudioMediaImage = saveImageUseCase,
                 uploadCacheDir = tempFolder.root,
                 onUploadImported = { imported += it },
-                currentMigrationSession = { null },
+                currentMigrationSession = { migrationSession },
                 cleanupAnomalousData = mockk(),
                 exportMigrationData = mockk(),
                 resolveMigrationFilePath = mockk(),
@@ -141,6 +145,29 @@ class FileShareServerModuleTest {
         val response = client.post(FileShareConstants.HTTP_BULK_THUMBNAIL_PATH) { setBody(byteArrayOf(9)) }
 
         assertEquals(HttpStatusCode.BadRequest, response.status)
+    }
+
+    @Test
+    fun `이전 세션이 열려 있으면 업로드와 일괄 변경을 409 로 거절한다`() = serverTest(migrationSession = MigrationSession()) {
+        val responses = listOf(
+            client.post(FileShareConstants.HTTP_UPLOAD_PATH) { setBody(byteArrayOf(1)) },
+            client.post(FileShareConstants.HTTP_BULK_ARTIST_PATH) {
+                contentType(ContentType.Application.Json)
+                setBody("""{"audioMediaIds":[1],"artist":"가수"}""")
+            },
+            client.post(FileShareConstants.HTTP_BULK_THUMBNAIL_PATH) {
+                header(FileShareConstants.HEADER_AUDIO_MEDIA_IDS, "1")
+                setBody(byteArrayOf(9))
+            },
+        )
+
+        responses.forEach { response ->
+            assertEquals(HttpStatusCode.Conflict, response.status)
+            assertTrue(response.bodyAsText().contains("다른 기기와 데이터 이전 중입니다."))
+        }
+        coVerify(exactly = 0) { importUseCase(any(), any()) }
+        coVerify(exactly = 0) { updateUseCase(id = any(), artist = any()) }
+        coVerify(exactly = 0) { saveImageUseCase(any()) }
     }
 
     private fun audioMedia(id: Int, name: String) = AudioMedia(
