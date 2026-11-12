@@ -3,6 +3,7 @@ package com.kintmin.ios
 import androidx.compose.ui.window.ComposeUIViewController
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
+import com.kintmin.domain.user.usecase.RegisterUserUseCase
 import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
 import com.kintmin.presentation.port.ExecuteYoutubeDownload
@@ -23,7 +24,7 @@ private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
 /** Koin 초기화 직후 한 번 부른다. `android:app` 의 `MainActivity.onCreate` 와 짝이다. */
 fun startApp() {
-    appViewModel.registerUser()
+    appScope.launch { KoinPlatform.getKoin().get<RegisterUserUseCase>()() }
     appViewModel.initializeMediaController()
     restoreStepMeasurementIfEnabled()
     resumeFinishedDownloads()
