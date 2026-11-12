@@ -31,16 +31,10 @@ object DeepLinkConstants {
 
         fun appLogScreen(): Uri = SharedDeepLink.UrlBuilder.appLogScreen().toUri()
 
-        fun playlistContentScreen(playlistId: Int, audioMediaId: Int? = null): Uri =
-            SharedDeepLink.UrlBuilder.playlistContentScreen(playlistId, audioMediaId).toUri()
-
         fun playlistAudioMediaDetailScreen(playlistId: Int, audioMediaId: Int): Uri =
             SharedDeepLink.UrlBuilder.playlistAudioMediaDetailScreen(playlistId, audioMediaId).toUri()
 
         fun audioMediaDetailScreen(audioMediaId: Int): Uri =
             SharedDeepLink.UrlBuilder.audioMediaDetailScreen(audioMediaId).toUri()
-
-        fun lyricsViewerScreen(audioMediaId: Int): Uri =
-            SharedDeepLink.UrlBuilder.lyricsViewerScreen(audioMediaId).toUri()
     }
 }

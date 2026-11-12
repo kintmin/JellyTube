@@ -8,6 +8,7 @@ import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.AnomalyCheckResultNotification
+import com.kintmin.presentation.port.WorkResultNotice
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -24,19 +25,14 @@ class AnomalyDataCheckWorker(
         cleanupAnomalousDataUseCase()
             .onSuccess { anomalyCount ->
                 pushNotificationManager.sendNotification(
-                    AnomalyCheckResultNotification(
-                        resultType = AnomalyCheckResultNotification.ResultType.Success,
-                        anomalyCount = anomalyCount,
-                    )
+                    AnomalyCheckResultNotification(WorkResultNotice.AnomalyCheck.Success(anomalyCount)),
                 )
                 return Result.success()
             }
             .onFailure {
                 appLog.sendDebugLog(DebugLog("AnomalyDataCheckWorker", it.message ?: "알 수 없는 오류"))
                 pushNotificationManager.sendNotification(
-                    AnomalyCheckResultNotification(
-                        resultType = AnomalyCheckResultNotification.ResultType.Failure,
-                    )
+                    AnomalyCheckResultNotification(WorkResultNotice.AnomalyCheck.Failure),
                 )
             }
         return Result.failure()

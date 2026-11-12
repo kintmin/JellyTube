@@ -48,8 +48,12 @@ internal class IosExecuteYoutubeDownload(
                     }
 
                     IosLocalNotification.show(
-                        title = "다운로드 완료",
-                        body = "${result.audioMedia.artist} - ${result.audioMedia.name}",
+                        WorkResultNotice.Download.Success(
+                            artist = result.audioMedia.artist,
+                            name = result.audioMedia.name,
+                            playlistId = result.playlistIdOnDownload,
+                            audioMediaId = result.audioMedia.id,
+                        ),
                     )
 
                     val mediaControlData = result.audioMedia.toMediaControlData()
@@ -66,10 +70,7 @@ internal class IosExecuteYoutubeDownload(
                     appLog.sendDebugLog(
                         DebugLog("IosExecuteYoutubeDownload", throwable.message.orEmpty()),
                     )
-                    IosLocalNotification.show(
-                        title = "다운로드 실패",
-                        body = throwable.message ?: "다운에 실패했습니다. 로그를 확인해주세요.",
-                    )
+                    IosLocalNotification.show(WorkResultNotice.Download.Failure)
                 }
         }
     }

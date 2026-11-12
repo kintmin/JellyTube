@@ -32,19 +32,13 @@ internal class IosExecuteLyricsVariantCreation(
                 createLyricsVariantUseCase(lyricFileFullPath, variant, sourceLanguage)
             }
                 .onSuccess {
-                    IosLocalNotification.show(
-                        title = "${variant.label} 완료",
-                        body = "탭하여 결과를 확인하세요.",
-                    )
+                    IosLocalNotification.show(WorkResultNotice.LyricsVariantCreation.Success(variant, audioMediaId))
                 }
                 .onFailure { throwable ->
                     appLog.sendDebugLog(
                         DebugLog("IosExecuteLyricsVariantCreation", throwable.message.toString()),
                     )
-                    IosLocalNotification.show(
-                        title = "${variant.label} 실패",
-                        body = "번역에 실패했습니다. 로그를 확인해주세요.",
-                    )
+                    IosLocalNotification.show(WorkResultNotice.LyricsVariantCreation.Failure(variant))
                 }
         }
     }
