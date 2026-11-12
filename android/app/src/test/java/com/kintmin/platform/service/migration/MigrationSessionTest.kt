@@ -43,11 +43,11 @@ class MigrationSessionTest {
     }
 
     @Test
-    fun `페어링한 뒤 틀린 코드는 잠금으로 세지 않아 받는 기기가 끊기지 않는다`() {
+    fun `페어링한 뒤 틀린 코드는 코드 틀림으로 답하되 잠금으로 세지 않아 받는 기기가 끊기지 않는다`() {
         val session = session()
         session.pair("123456", DEVICE)
 
-        repeat(MigrationSession.MAX_FAILED_ATTEMPTS) { assertEquals(PairResult.Busy, session.pair("000000", DEVICE)) }
+        repeat(MigrationSession.MAX_FAILED_ATTEMPTS) { assertEquals(PairResult.Rejected, session.pair("000000", DEVICE)) }
 
         assertFalse(session.isClosed)
         assertTrue(session.isAuthorized("token"))
@@ -96,6 +96,28 @@ class MigrationSessionTest {
         session.close()
 
         assertEquals(1, closedCount)
+    }
+
+    @Test
+    fun `상대 기기 이름은 제어 문자를 걷고 줄여서 알린다`() {
+        var pairedName: String? = null
+        val session = MigrationSession(code = "123456", generateToken = { "token" }, onPaired = { pairedName = it })
+
+        session.pair("123456", "  Kim's\niPhone\u0000 ")
+
+        assertEquals("Kim'siPhone", pairedName)
+    }
+
+    @Test
+    fun `상대 기기 이름이 길면 서로게이트 쌍을 쪼개지 않고 자른다`() {
+        val name = MigrationSession.toPeerName("😀".repeat(50))
+
+        assertEquals("😀".repeat(40), name)
+    }
+
+    @Test
+    fun `상대 기기 이름이 비면 대신 쓸 이름을 준다`() {
+        assertTrue(MigrationSession.toPeerName(" \t\n").isNotBlank())
     }
 
     @Test

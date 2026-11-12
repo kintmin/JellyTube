@@ -234,7 +234,7 @@ class SettingDataMigrationReceiveViewModel constructor(
 
     private fun Throwable.toMessage(): String = when (this) {
         is MigrationPairRejectedException -> "코드가 맞지 않습니다. Android 화면의 코드를 확인하고, 계속 안 되면 Android에서 새 코드를 받아 주세요."
-        is MigrationSourceBusyException -> "이 Android 기기는 이미 다른 기기에 데이터를 보내고 있습니다. 끝난 뒤 Android에서 새 코드를 받아 입력해 주세요."
+        is MigrationSourceBusyException -> "이 Android 기기는 이미 연결된 기기에 데이터를 보내고 있습니다. 이 iPhone이 연결했던 것이라면 Android에서 보내기를 멈추고 새 코드를 받아 입력해 주세요."
         is MigrationSourceClosedException -> "Android 기기의 보내기 화면이 닫혔거나 코드를 여러 번 틀려 잠겼습니다. Android에서 새 코드를 받아 입력해 주세요."
         is MigrationVersionMismatchException -> message.orEmpty()
         is MigrationSenderCleanupFailedException -> "Android 기기에서 보내기 전 데이터 정리에 실패했습니다. 다시 시도해도 같으면 Android 앱 로그를 확인해 주세요."

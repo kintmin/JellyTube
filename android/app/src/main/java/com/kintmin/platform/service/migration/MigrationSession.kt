@@ -27,16 +27,17 @@ class MigrationSession(
         private set
 
     /**
-     * 이미 페어링한 세션은 코드를 보지 않고 [PairResult.Busy] 다. 틀린 코드로 세우는 잠금이
-     * 받고 있는 기기를 끊지 않는다.
+     * 코드를 모르면 페어링 여부와 관계없이 [PairResult.Rejected] 다. 코드 없이 이전 중인지 엿볼 수 없다.
+     * 페어링한 뒤의 틀린 코드는 잠금으로 세지 않는다. 받고 있는 기기를 끊지 않는다.
      */
     fun pair(code: String, deviceName: String): PairResult {
         var hasLockedOut = false
         val result = synchronized(this) {
+            val isCodeCorrect = constantTimeEquals(code, this.code)
             when {
                 isClosed -> PairResult.Rejected
-                token != null -> PairResult.Busy
-                !constantTimeEquals(code, this.code) -> {
+                token != null -> if (isCodeCorrect) PairResult.Busy else PairResult.Rejected
+                !isCodeCorrect -> {
                     failedAttempts++
                     if (failedAttempts >= MAX_FAILED_ATTEMPTS) hasLockedOut = markClosed()
                     PairResult.Rejected
@@ -45,7 +46,7 @@ class MigrationSession(
             }
         }
         if (hasLockedOut) onClosed()
-        if (result is PairResult.Issued) onPaired(deviceName)
+        if (result is PairResult.Issued) onPaired(toPeerName(deviceName))
         return result
     }
 
@@ -91,6 +92,21 @@ class MigrationSession(
 
         @OptIn(ExperimentalStdlibApi::class)
         private fun generateToken(): String = ByteArray(32).also(secureRandom::nextBytes).toHexString()
+
+        /** 받는 기기가 보낸 이름이라 보내는 화면에 그대로 띄우지 않는다. */
+        internal fun toPeerName(deviceName: String): String {
+            val cleaned = deviceName.filterNot { it.isISOControl() || it.isWhitespace() && it != ' ' }.trim()
+            if (cleaned.isEmpty()) return UNKNOWN_PEER_NAME
+            val end = if (cleaned.codePointCount(0, cleaned.length) > MAX_PEER_NAME_CODE_POINTS) {
+                cleaned.offsetByCodePoints(0, MAX_PEER_NAME_CODE_POINTS)
+            } else {
+                cleaned.length
+            }
+            return cleaned.substring(0, end).trimEnd()
+        }
+
+        private const val MAX_PEER_NAME_CODE_POINTS = 40
+        private const val UNKNOWN_PEER_NAME = "이름 없는 기기"
 
         private fun constantTimeEquals(a: String, b: String): Boolean =
             MessageDigest.isEqual(a.toByteArray(), b.toByteArray())

@@ -112,10 +112,11 @@ class MigrationRoutesTest {
     }
 
     @Test
-    fun `이미 다른 기기가 페어링했으면 409 다`() = serverTest {
+    fun `이미 다른 기기가 페어링했으면 맞는 코드에만 409 이고 틀린 코드는 401 이다`() = serverTest {
         pair(CODE)
 
         assertEquals(HttpStatusCode.Conflict, pair(CODE).status)
+        assertEquals(HttpStatusCode.Unauthorized, pair("000000").status)
     }
 
     @Test
