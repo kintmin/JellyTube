@@ -32,7 +32,7 @@ import org.koin.dsl.module
  */
 val presentationIosModule: Module = module {
     single<AudioPreviewPlayer> { IosAudioPreviewPlayerStub() }
-    single<StepMeasurementController> { IosStepMeasurementController(get(), get(), get(), get()) }
+    single<StepMeasurementController> { IosStepMeasurementController(get(), get(), get()) }
     single<FileShareServerController> { IosFileShareServerControllerStub() }
     single<ExecuteYoutubeDownload> { IosExecuteYoutubeDownload(get(), get(), get(), get()) }
     single<ExecuteAnomalyDataCheck> { IosExecuteAnomalyDataCheck(get(), get()) }

@@ -18,8 +18,7 @@ internal object StepSlotSchedule {
     const val SLOT_MILLIS = 30L * 60L * 1000L
     const val DAY_MILLIS = 24L * 60L * 60L * 1000L
 
-    /** @param storedUntilMillis 이 시각까지는 이미 적혀 있다. 그 뒤의 점만 준다 — 옮겨 온 기록을 덮지 않는다. */
-    fun forDay(dayStartMillis: Long, nowMillis: Long, storedUntilMillis: Long? = null): List<StepWritePoint> {
+    fun forDay(dayStartMillis: Long, nowMillis: Long): List<StepWritePoint> {
         if (dayStartMillis > nowMillis) return emptyList()
 
         val dayEndMillis = dayStartMillis + DAY_MILLIS
@@ -30,16 +29,14 @@ internal object StepSlotSchedule {
         if (dayEndMillis <= nowMillis) {
             points += StepWritePoint(dayEndMillis - 1, queryUntilMillis = dayEndMillis)
         }
-        return points.filter { storedUntilMillis == null || it.rawCreatedTime > storedUntilMillis }
+        return points
     }
 
     fun boundaries(dayStartMillis: Long, afterMillis: Long, nowMillis: Long): List<Long> {
         val dayEndMillis = dayStartMillis + DAY_MILLIS
         val result = mutableListOf<Long>()
 
-        // afterMillis 가 칸 경계가 아닐 수 있다(옮겨 온 기록). 그 뒤 첫 경계부터 준다.
-        val slotsPassed = (maxOf(afterMillis, dayStartMillis) - dayStartMillis) / SLOT_MILLIS
-        var boundaryMillis = dayStartMillis + (slotsPassed + 1) * SLOT_MILLIS
+        var boundaryMillis = afterMillis + SLOT_MILLIS
         while (boundaryMillis <= nowMillis && boundaryMillis < dayEndMillis) {
             result += boundaryMillis
             boundaryMillis += SLOT_MILLIS
