@@ -29,6 +29,16 @@ class IosLyricsTranslatorTest {
     }
 
     @Test
+    fun `빈 줄뿐이면 브릿지를 부르지 않는다`() = runTest {
+        val bridge = FakeBridge { error("불리면 안 된다") }
+
+        val result = IosLyricsTranslator(bridge).translateToKorean("\n  \n", "en")
+
+        assertTrue(bridge.requests.isEmpty())
+        assertEquals("\n  \n", result.getOrThrow())
+    }
+
+    @Test
     fun `결과 줄 수가 다르면 실패한다`() = runTest {
         val bridge = FakeBridge { lines -> lines.drop(1) }
 
