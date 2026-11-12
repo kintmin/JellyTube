@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.BugReport
@@ -23,9 +24,9 @@ import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.ShortNavigationBar
+import androidx.compose.material3.ShortNavigationBarItem
+import androidx.compose.material3.ShortNavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -45,6 +46,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.AppPermission
@@ -76,6 +78,9 @@ import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebViewEvent
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
 import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
 import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
+
+private val NAV_ICON_SIZE = 22.dp
+private val NAV_LABEL_FONT_SIZE = 11.sp
 
 @Composable
 fun MainScreen(
@@ -306,28 +311,30 @@ fun MainScreen(
                     sendIntent = sendPlayerBarIntent,
                     onClickBar = navigateToPlayerDetail,
                 )
-                NavigationBar {
-                    val navigationBarItemColors = NavigationBarItemDefaults.colors(
+                // NavigationBar(80dp)는 높이를 줄이면 아이템이 잘린다. 64dp 짜리는 별도 컴포넌트다.
+                // 아이템은 아이콘을 위에서부터 고정 배치해 내용이 줄면 그만큼 아래가 빈다. 그래서 조금만 줄인다.
+                ShortNavigationBar {
+                    val navigationBarItemColors = ShortNavigationBarItemDefaults.colors().copy(
                         selectedTextColor = white,
                     )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                        label = { Text("음원추가") },
+                    ShortNavigationBarItem(
+                        icon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(NAV_ICON_SIZE)) },
+                        label = { Text("음원추가", fontSize = NAV_LABEL_FONT_SIZE) },
                         selected = selectedTab == MainTabItem.Search,
                         onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) },
                         colors = navigationBarItemColors,
                     )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Rounded.VideoLibrary, contentDescription = null) },
-                        label = { Text("플레이리스트") },
+                    ShortNavigationBarItem(
+                        icon = { Icon(Icons.Rounded.VideoLibrary, contentDescription = null, modifier = Modifier.size(NAV_ICON_SIZE)) },
+                        label = { Text("플레이리스트", fontSize = NAV_LABEL_FONT_SIZE) },
                         selected = selectedTab == MainTabItem.Playlist,
                         onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
                         colors = navigationBarItemColors,
                     )
                     if (isDebugTabVisible) {
-                        NavigationBarItem(
-                            icon = { Icon(Icons.Rounded.BugReport, contentDescription = null) },
-                            label = { Text("테스트뷰") },
+                        ShortNavigationBarItem(
+                            icon = { Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(NAV_ICON_SIZE)) },
+                            label = { Text("테스트뷰", fontSize = NAV_LABEL_FONT_SIZE) },
                             selected = selectedTab == MainTabItem.Debug,
                             onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Debug)) },
                             colors = navigationBarItemColors,

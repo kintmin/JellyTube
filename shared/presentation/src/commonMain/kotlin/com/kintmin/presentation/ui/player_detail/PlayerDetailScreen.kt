@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -68,6 +70,8 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import com.kintmin.presentation.animation.PLAYBACK_POLLING_INTERVAL_MILLIS
+import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.platform.rememberToaster
@@ -135,7 +139,7 @@ fun PlayerDetailScreen(
     LifecycleResumeEffect(Unit) {
         val job = scope.launch {
             while (isActive) {
-                delay(300)
+                delay(PLAYBACK_POLLING_INTERVAL_MILLIS.toLong())
                 sendIntent(PlayerDetailIntent.OnRefreshMediaData)
             }
         }
@@ -344,7 +348,9 @@ fun PlayerDetailScreen(
 
                 PlaybackSlider(
                     playbackSeconds = playbackSeconds,
-                    currentSeconds = currentSeconds,
+                    currentPositionSeconds = (data.currentDuration.inWholeMilliseconds / 1000f)
+                        .coerceAtMost(playbackSeconds.toFloat()),
+                    isPlaying = data.isPlaying,
                     repeatRangeStartSeconds = data.repeatRangeStartDuration?.inWholeSeconds,
                     repeatRangeEndSeconds = data.repeatRangeEndDuration?.inWholeSeconds,
                     onValueChange = { sendIntent(PlayerDetailIntent.OnChangeTimeSlider(it)) },
@@ -446,7 +452,7 @@ fun PlayerDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     PlaybackPitchChip(
-                        Modifier.width(52.dp),
+                        Modifier.widthIn(min = 52.dp),
                         semitone = data.playbackPitchSemitone,
                         onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
                     )
@@ -481,7 +487,7 @@ fun PlayerDetailScreen(
                         }
                     }
                     PlaybackSpeedChip(
-                        Modifier.width(64.dp),
+                        Modifier.widthIn(min = 64.dp),
                         speed = data.playbackSpeed,
                         onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
                     )
@@ -507,13 +513,19 @@ fun PlayerDetailScreen(
 @Composable
 private fun PlaybackSlider(
     playbackSeconds: Long,
-    currentSeconds: Long,
+    currentPositionSeconds: Float,
+    isPlaying: Boolean,
     repeatRangeStartSeconds: Long?,
     repeatRangeEndSeconds: Long?,
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit,
 ) {
     var sliderWidth by remember { mutableIntStateOf(0) }
+    var isDragging by remember { mutableStateOf(false) }
+    val smoothPositionSeconds = animatePlaybackSeconds(
+        targetSeconds = currentPositionSeconds,
+        snap = isDragging || !isPlaying,
+    )
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -523,9 +535,15 @@ private fun PlaybackSlider(
         Slider(
             modifier = Modifier.fillMaxWidth(),
             valueRange = 0f..playbackSeconds.toFloat(),
-            value = currentSeconds.toFloat(),
-            onValueChange = onValueChange,
-            onValueChangeFinished = onValueChangeFinished,
+            value = smoothPositionSeconds,
+            onValueChange = {
+                isDragging = true
+                onValueChange(it)
+            },
+            onValueChangeFinished = {
+                isDragging = false
+                onValueChangeFinished()
+            },
             colors = SliderDefaults.colors(
                 thumbColor = Color.White,
                 activeTrackColor = Color.White,
@@ -657,6 +675,10 @@ private fun PlaybackPitchChip(
             color = Color.White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false,
+            // 숫자 폭을 같게 해 값이 바뀔 때 칩 폭이 흔들리지 않게 한다.
+            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
         )
     }
 }
@@ -681,6 +703,10 @@ private fun PlaybackSpeedChip(
             color = Color.White,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false,
+            // 숫자 폭을 같게 해 값이 바뀔 때 칩 폭이 흔들리지 않게 한다.
+            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
         )
     }
 }

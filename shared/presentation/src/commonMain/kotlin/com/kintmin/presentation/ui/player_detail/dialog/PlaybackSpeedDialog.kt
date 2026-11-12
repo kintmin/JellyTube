@@ -178,7 +178,7 @@ private const val PlaybackSpeedStep = 0.01f
 
 private val PlaybackSpeedOptions = listOf(1.0f, 1.25f, 1.5f, 2.0f, 3.0f)
 
-fun Float.toPlaybackSpeedText(): String = "x${formatPlaybackSpeed()}"
+fun Float.toPlaybackSpeedText(): String = "x${toFixed(2)}"
 
 private fun Float.previousPlaybackSpeed(): Float? {
     return (this - PlaybackSpeedStep)

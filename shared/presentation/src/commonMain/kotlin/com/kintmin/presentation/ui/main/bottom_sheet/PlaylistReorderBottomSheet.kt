@@ -11,12 +11,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Reorder
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,14 +26,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.kintmin.presentation.platform.PlatformBottomSheetSystemBarEffect
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.remember_state.rememberReorderState
 
 private val ITEM_HEIGHT = 56.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistReorderBottomSheet(
     playlists: List<PlaylistItemUiState>,
@@ -49,28 +45,19 @@ fun PlaylistReorderBottomSheet(
         dataList = playlists,
         idOf = { it.id },
     )
-    // 부분 확장 없이 처음부터 완전히 펼친 상태로 등장한다.
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(playlists) {
         reorderState.items.clear()
         reorderState.items.addAll(playlists)
     }
 
-    ModalBottomSheet(
+    JellyTubeBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = sheetState,
         // 드래그 중에는 시트 자체 드래그를 잠가 reorder 제스처와의 충돌을 막는다.
         sheetGesturesEnabled = reorderState.draggingItemId == null,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
-        KeepBottomSheetNavigationBarDark()
-
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(600.dp),
+            modifier = Modifier.fillMaxWidth(),
             state = listState,
         ) {
             itemsIndexed(
@@ -144,11 +131,6 @@ private fun PlaylistReorderItemView(
             )
         }
     }
-}
-
-@Composable
-private fun KeepBottomSheetNavigationBarDark() {
-    PlatformBottomSheetSystemBarEffect(lightNavigationBarIcons = false)
 }
 
 @Preview

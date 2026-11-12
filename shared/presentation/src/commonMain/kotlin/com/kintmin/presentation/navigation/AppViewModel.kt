@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
 import com.kintmin.domain.playlist.usecase.EnsureSystemPlaylistsUseCase
-import com.kintmin.domain.user.usecase.RegisterUserUseCase
 import com.kintmin.presentation.deeplink.DeepLinkParser
 import com.kintmin.presentation.port.MediaControllerManager
 import kotlinx.coroutines.channels.Channel
@@ -19,7 +18,6 @@ import kotlinx.coroutines.launch
  */
 class AppViewModel(
     private val mediaControllerManager: MediaControllerManager,
-    private val registerUserUseCase: RegisterUserUseCase,
     private val importSharedAudioMediaUseCase: ImportSharedAudioMediaUseCase,
     private val ensureSystemPlaylistsUseCase: EnsureSystemPlaylistsUseCase,
 ) : ViewModel() {
@@ -30,12 +28,6 @@ class AppViewModel(
     init {
         viewModelScope.launch {
             ensureSystemPlaylistsUseCase()
-        }
-    }
-
-    fun registerUser() {
-        viewModelScope.launch {
-            registerUserUseCase()
         }
     }
 

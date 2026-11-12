@@ -3,6 +3,7 @@ package com.kintmin.presentation.ui.audio_media_detail
 import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
+import com.kintmin.presentation.extension.toDotDateTimeString
 import com.kintmin.presentation.extension.toKoreanDateTimeString
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
@@ -32,7 +33,6 @@ data class AudioMediaDetailUiState(
     data class Playlist(
         val playlistId: Int,
         val playlistName: String,
-        val playlistCreationTime: String,
         val playlistAddedTime: String,
     )
 
@@ -55,8 +55,7 @@ data class AudioMediaDetailUiState(
                 Playlist(
                     playlistId = index * it,
                     playlistName = "새로운 플레이리스트 $it",
-                    playlistCreationTime = "yyyy년 M월 dd일 HH:mm",
-                    playlistAddedTime = "yyyy년 M월 dd일 HH:mm",
+                    playlistAddedTime = "yyyy.M.d HH:mm",
                 )
             },
             audioMediaDescription = "이것은 최대 100자까지 가능한 미디어 설명입니다. 이것은 최대 100자까지 가능한 미디어 설명입니다. 이것은 최대 100자까지 가능한 미디어 설명입니다.",
@@ -86,8 +85,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
                 AudioMediaDetailUiState.Playlist(
                     playlistId = dataList.playlist.id,
                     playlistName = dataList.playlist.name,
-                    playlistCreationTime = dataList.playlist.createdTime.toKoreanDateTimeString(),
-                    playlistAddedTime = dataList.audioTrack.trackAddedTime.toKoreanDateTimeString(),
+                    playlistAddedTime = dataList.audioTrack.trackAddedTime.toDotDateTimeString(),
                 )
             }
         )

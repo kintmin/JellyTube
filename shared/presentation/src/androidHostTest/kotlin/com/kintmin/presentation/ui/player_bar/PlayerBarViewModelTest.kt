@@ -3,7 +3,10 @@ package com.kintmin.presentation.ui.player_bar
 import com.kintmin.presentation.port.MediaControllerManager
 import com.kintmin.presentation.port.model.MediaControlData
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.verify
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -54,5 +57,18 @@ class PlayerBarViewModelTest {
         viewModel.sendIntent(PlayerBarIntent.OnRefreshMediaData)
 
         assertEquals(40_000L.milliseconds, viewModel.currentMediaItem.value.playbackDuration)
+    }
+
+    @Test
+    fun `슬라이더를 놓은 지점을 초 단위로 자르지 않고 그대로 이동한다`() {
+        playing = media
+        every { manager.seek(any()) } just runs
+        val viewModel = PlayerBarViewModel(manager)
+
+        viewModel.sendIntent(PlayerBarIntent.OnChangeTimeSlider(12.5f))
+        viewModel.sendIntent(PlayerBarIntent.OnChangeFinishTimeSlider)
+
+        assertEquals(12_500L.milliseconds, viewModel.currentMediaItem.value.currentDuration)
+        verify { manager.seek(12_500L.milliseconds) }
     }
 }

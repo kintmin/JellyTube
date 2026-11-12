@@ -6,9 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kintmin.presentation.platform.PlatformBottomSheetSystemBarEffect
+import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import com.kintmin.presentation.theme.JellyTubeTheme
 
 /** audioDurationMs 가 null 일 때 시/분 컬럼의 기본 상한(99분). */
@@ -32,7 +29,6 @@ private const val DEFAULT_MAX_MS = 99 * 60_000L
  * 음원 길이가 1시간 이상이면 [시][분][초][밀리초], 아니면 [분][초][밀리초] 컬럼을 노출한다.
  * 밀리초 컬럼은 센티초(00~95)를 0.05초(50ms) 단위로만 조정한다.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimePickerBottomSheet(
     initialTimeMs: Long,
@@ -61,13 +57,7 @@ fun TimePickerBottomSheet(
     val secondValues = (0..59).toList()
     val centiValues = (0..95 step 5).toList()
 
-    ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-    ) {
-        KeepBottomSheetNavigationBarDark()
-
+    JellyTubeBottomSheet(onDismissRequest = onDismissRequest) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -132,12 +122,6 @@ fun TimePickerBottomSheet(
             }
         }
     }
-}
-
-@Suppress("DEPRECATION")
-@Composable
-private fun KeepBottomSheetNavigationBarDark() {
-    PlatformBottomSheetSystemBarEffect(lightNavigationBarIcons = false)
 }
 
 @Preview

@@ -25,6 +25,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +44,8 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import com.kintmin.presentation.animation.PLAYBACK_POLLING_INTERVAL_MILLIS
+import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray20
 import com.kintmin.presentation.theme.gray60
@@ -62,7 +68,7 @@ fun PlayerBar(
         val job = scope.launch {
             while (isActive) {
                 sendIntent(PlayerBarIntent.OnRefreshMediaData)
-                delay(300)
+                delay(PLAYBACK_POLLING_INTERVAL_MILLIS.toLong())
             }
         }
         onStopOrDispose { job.cancel() }
@@ -75,38 +81,7 @@ fun PlayerBar(
             .fillMaxWidth()
             .background(Color.Transparent),
     ) {
-        Box(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surfaceDim)
-                .height(16.dp)
-        ) {
-            Slider(
-                modifier = Modifier.fillMaxWidth(),
-                valueRange = 0f..data.playbackDuration.inWholeSeconds.toFloat(),
-                value = data.currentDuration.inWholeSeconds.toFloat(),
-                onValueChange = {
-                    sendIntent(PlayerBarIntent.OnChangeTimeSlider(it))
-                },
-                onValueChangeFinished = {
-                    sendIntent(PlayerBarIntent.OnChangeFinishTimeSlider)
-                },
-                track = { sliderState ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(16.dp)
-                            .background(gray20)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(data.currentDuration.inWholeSeconds / data.playbackDuration.inWholeSeconds.toFloat())
-                            .height(16.dp)
-                            .background(gray60)
-                    )
-                },
-                thumb = {},
-            )
-        }
+        PlayerBarProgress(data = data, sendIntent = sendIntent)
         Row(
             modifier = Modifier
                 .height(64.dp)
@@ -196,11 +171,72 @@ fun PlayerBar(
     }
 }
 
+/** 프레임마다 바뀌는 재생 위치를 여기서만 읽는다. 바깥에서 읽으면 재생바 전체가 매 프레임 다시 그려진다. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PlayerBarProgress(
+    data: PlayerBarUiState,
+    sendIntent: (PlayerBarIntent) -> Unit,
+) {
+    var isDragging by remember { mutableStateOf(false) }
+    val playbackSeconds = data.playbackDuration.inWholeMilliseconds / 1000f
+    val currentSeconds = animatePlaybackSeconds(
+        targetSeconds = data.currentDuration.inWholeMilliseconds / 1000f,
+        snap = isDragging || !data.isPlaying,
+    )
+
+    Box(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.surfaceDim)
+            .height(16.dp)
+    ) {
+        Slider(
+            modifier = Modifier.fillMaxWidth(),
+            valueRange = 0f..playbackSeconds,
+            value = currentSeconds,
+            onValueChange = {
+                isDragging = true
+                sendIntent(PlayerBarIntent.OnChangeTimeSlider(it))
+            },
+            onValueChangeFinished = {
+                isDragging = false
+                sendIntent(PlayerBarIntent.OnChangeFinishTimeSlider)
+            },
+            track = { sliderState ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(16.dp)
+                        .background(gray20)
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(if (playbackSeconds > 0f) (currentSeconds / playbackSeconds).coerceIn(0f, 1f) else 0f)
+                        .height(16.dp)
+                        .background(gray60)
+                )
+            },
+            thumb = {},
+        )
+    }
+}
+
 @Preview
 @Composable
 fun PlayerBarPreview() {
     JellyTubeTheme {
         PlayerBar(
+            data = PlayerBarUiState.getMock(),
+            sendIntent = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun PlayerBarProgressPreview() {
+    JellyTubeTheme {
+        PlayerBarProgress(
             data = PlayerBarUiState.getMock(),
             sendIntent = {},
         )

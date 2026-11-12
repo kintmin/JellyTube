@@ -37,7 +37,7 @@ class PlayerBarViewModel constructor(
             is PlayerBarIntent.OnChangeTimeSlider -> {
                 _isHandling = true
                 _currentMediaItem.update {
-                    it.copy(currentDuration = intent.duration.toLong().seconds)
+                    it.copy(currentDuration = intent.duration.toDouble().seconds)
                 }
             }
 

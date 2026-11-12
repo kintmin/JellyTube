@@ -1,38 +1,20 @@
 package com.kintmin.presentation.extension
 
 internal fun String.matchKorean(query: String): Boolean {
-    if (query.isEmpty()) return true
+    val queryParts = query.filterNot { it.isWhitespace() }.map { Korean(it) }
+    if (queryParts.isEmpty()) return true
 
-    val queryParts = query.map { Korean(it) }
-    val sourceParts = this.map { Korean(it) }
+    val sourceParts = this.filterNot { it.isWhitespace() }.map { Korean(it) }
 
-    var queryIndex = 0
-
-    for (sourceChar in sourceParts) {
-        val queryChar = queryParts[queryIndex]
-
-        if (sourceChar.initialConsonant == queryChar.initialConsonant) {
-            if (queryChar.medialVowel != null &&
-                queryChar.medialVowel != sourceChar.medialVowel
-            ) {
-                continue
-            }
-
-            if (queryChar.finalConsonant != null &&
-                queryChar.finalConsonant != sourceChar.finalConsonant
-            ) {
-                continue
-            }
-
-            queryIndex++
-            if (queryIndex == queryParts.size) return true
-        } else {
-            queryIndex = 0
-        }
+    return (0..sourceParts.size - queryParts.size).any { start ->
+        queryParts.indices.all { offset -> sourceParts[start + offset].matches(queryParts[offset]) }
     }
-
-    return false
 }
+
+private fun Korean.matches(queryChar: Korean): Boolean =
+    initialConsonant == queryChar.initialConsonant &&
+        (queryChar.medialVowel == null || queryChar.medialVowel == medialVowel) &&
+        (queryChar.finalConsonant == null || queryChar.finalConsonant == finalConsonant)
 
 internal data class Korean(val completedKorean: Char) {
     val initialConsonant: Char
