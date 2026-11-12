@@ -2,7 +2,6 @@ package com.kintmin.platform.service.migration
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -14,18 +13,10 @@ class MigrationSessionTest {
     fun `코드가 맞으면 토큰을 주고 그 토큰만 인가한다`() {
         val session = session()
 
-        assertEquals("token", session.pair("123456", ADDRESS, DEVICE))
-        assertTrue(session.isAuthorized("token", ADDRESS))
-        assertFalse(session.isAuthorized("other", ADDRESS))
-        assertFalse(session.isAuthorized(null, ADDRESS))
-    }
-
-    @Test
-    fun `토큰이 맞아도 페어링한 주소가 아니면 인가하지 않는다`() {
-        val session = session()
-        session.pair("123456", ADDRESS, DEVICE)
-
-        assertFalse(session.isAuthorized("token", "192.168.0.99"))
+        assertEquals(PairResult.Issued("token"), session.pair("123456", DEVICE))
+        assertTrue(session.isAuthorized("token"))
+        assertFalse(session.isAuthorized("other"))
+        assertFalse(session.isAuthorized(null))
     }
 
     @Test
@@ -33,44 +24,55 @@ class MigrationSessionTest {
         var pairedName: String? = null
         val session = MigrationSession(code = "123456", generateToken = { "token" }, onPaired = { pairedName = it })
 
-        session.pair("123456", ADDRESS, DEVICE)
+        session.pair("123456", DEVICE)
 
         assertEquals(DEVICE, pairedName)
     }
 
     @Test
     fun `페어링 전에는 아무 토큰도 인가하지 않는다`() {
-        assertFalse(session().isAuthorized("token", ADDRESS))
+        assertFalse(session().isAuthorized("token"))
     }
 
     @Test
     fun `이미 페어링한 세션은 같은 코드로도 다시 토큰을 주지 않는다`() {
         val session = session()
-        session.pair("123456", ADDRESS, DEVICE)
+        session.pair("123456", DEVICE)
 
-        assertNull(session.pair("123456", ADDRESS, DEVICE))
+        assertEquals(PairResult.Busy, session.pair("123456", DEVICE))
+    }
+
+    @Test
+    fun `페어링한 뒤 틀린 코드는 잠금으로 세지 않아 받는 기기가 끊기지 않는다`() {
+        val session = session()
+        session.pair("123456", DEVICE)
+
+        repeat(MigrationSession.MAX_FAILED_ATTEMPTS) { assertEquals(PairResult.Busy, session.pair("000000", DEVICE)) }
+
+        assertFalse(session.isClosed)
+        assertTrue(session.isAuthorized("token"))
     }
 
     @Test
     fun `코드를 정해진 횟수만큼 틀리면 세션이 닫혀 맞는 코드도 거부한다`() {
         val session = session()
-        repeat(MigrationSession.MAX_FAILED_ATTEMPTS - 1) { assertNull(session.pair("000000", ADDRESS, DEVICE)) }
+        repeat(MigrationSession.MAX_FAILED_ATTEMPTS - 1) { assertEquals(PairResult.Rejected, session.pair("000000", DEVICE)) }
         assertFalse(session.isClosed)
 
-        assertNull(session.pair("000000", ADDRESS, DEVICE))
+        assertEquals(PairResult.Rejected, session.pair("000000", DEVICE))
 
         assertTrue(session.isClosed)
-        assertNull(session.pair("123456", ADDRESS, DEVICE))
+        assertEquals(PairResult.Rejected, session.pair("123456", DEVICE))
     }
 
     @Test
     fun `닫힌 세션은 발급한 토큰도 인가하지 않는다`() {
         val session = session()
-        session.pair("123456", ADDRESS, DEVICE)
+        session.pair("123456", DEVICE)
 
         session.close()
 
-        assertFalse(session.isAuthorized("token", ADDRESS))
+        assertFalse(session.isAuthorized("token"))
     }
 
     @Test
@@ -90,7 +92,7 @@ class MigrationSessionTest {
         var closedCount = 0
         val session = MigrationSession(code = "123456", generateToken = { "token" }, onClosed = { closedCount++ })
 
-        repeat(MigrationSession.MAX_FAILED_ATTEMPTS + 2) { session.pair("000000", ADDRESS, DEVICE) }
+        repeat(MigrationSession.MAX_FAILED_ATTEMPTS + 2) { session.pair("000000", DEVICE) }
         session.close()
 
         assertEquals(1, closedCount)
@@ -102,5 +104,4 @@ class MigrationSessionTest {
     }
 }
 
-private const val ADDRESS = "192.168.0.10"
 private const val DEVICE = "iPhone"

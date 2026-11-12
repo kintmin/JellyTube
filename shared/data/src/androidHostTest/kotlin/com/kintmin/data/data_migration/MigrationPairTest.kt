@@ -3,6 +3,7 @@ package com.kintmin.data.data_migration
 import com.kintmin.data.network.dataSourceImpl.MigrationDataSourceImpl
 import com.kintmin.data.repository_impl.asPairFailure
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
+import com.kintmin.domain.data_migration.model.MigrationSourceBusyException
 import com.kintmin.domain.data_migration.model.MigrationSourceClosedException
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.MigrationPairRequest
@@ -51,9 +52,10 @@ class MigrationPairTest {
     }
 
     @Test
-    fun `401 은 코드 틀림 404 는 보내기 세션 없음으로 나눈다`() = runTest {
+    fun `401 은 코드 틀림 404 는 보내기 세션 없음 409 는 다른 기기와 연결됨으로 나눈다`() = runTest {
         assertTrue(pairFailure(HttpStatusCode.Unauthorized) is MigrationPairRejectedException)
         assertTrue(pairFailure(HttpStatusCode.NotFound) is MigrationSourceClosedException)
+        assertTrue(pairFailure(HttpStatusCode.Conflict) is MigrationSourceBusyException)
     }
 
     @Test

@@ -7,6 +7,7 @@ import com.kintmin.domain.data_migration.model.MigrationFailureReason
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
+import com.kintmin.domain.data_migration.model.MigrationSourceBusyException
 import com.kintmin.domain.data_migration.model.MigrationSourceClosedException
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
@@ -180,18 +181,21 @@ class SettingDataMigrationReceiveViewModelTest {
     }
 
     @Test
-    fun `보내기 세션이 없으면 코드 틀림과 다른 안내로 다시 입력받는다`() {
+    fun `코드 틀림 세션 없음 다른 기기와 연결됨을 서로 다른 안내로 다시 입력받는다`() {
         coEvery { pair(endpoint, "000000") } returns Result.failure(MigrationPairRejectedException())
         coEvery { pair(endpoint, "111111") } returns Result.failure(MigrationSourceClosedException())
+        coEvery { pair(endpoint, "222222") } returns Result.failure(MigrationSourceBusyException())
         val viewModel = viewModel()
 
-        viewModel.connect("000000")
-        val rejected = viewModel.uiState.value.phase as DataMigrationReceivePhase.CodeInput
-        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnChangeCode("111111"))
-        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickConnect)
-        val closed = viewModel.uiState.value.phase as DataMigrationReceivePhase.CodeInput
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
+        val messages = listOf("000000", "111111", "222222").map { code ->
+            viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnChangeCode(code))
+            viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickConnect)
+            (viewModel.uiState.value.phase as DataMigrationReceivePhase.CodeInput).errorMessage
+        }
 
-        assertTrue(closed.errorMessage != null && closed.errorMessage != rejected.errorMessage)
+        assertTrue(messages.all { it != null })
+        assertEquals(3, messages.toSet().size)
     }
 
     @Test

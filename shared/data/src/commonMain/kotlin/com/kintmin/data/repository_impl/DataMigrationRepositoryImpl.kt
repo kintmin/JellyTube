@@ -14,6 +14,7 @@ import com.kintmin.domain.data_migration.model.MigrationFileEntry
 import com.kintmin.domain.data_migration.model.MigrationFileKind
 import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
+import com.kintmin.domain.data_migration.model.MigrationSourceBusyException
 import com.kintmin.domain.data_migration.model.MigrationSourceClosedException
 import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationSenderCleanupFailedException
@@ -184,6 +185,7 @@ class DataMigrationRepositoryImpl constructor(
 internal fun Throwable.asPairFailure(): Throwable = when ((this as? ClientRequestException)?.response?.status) {
     HttpStatusCode.Unauthorized -> MigrationPairRejectedException()
     HttpStatusCode.NotFound -> MigrationSourceClosedException()
+    HttpStatusCode.Conflict -> MigrationSourceBusyException()
     else -> this
 }
 

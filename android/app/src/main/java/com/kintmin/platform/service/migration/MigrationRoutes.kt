@@ -13,7 +13,6 @@ import com.kintmin.fileshare.MigrationPairResponse
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.plugins.origin
 import io.ktor.server.request.header
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
@@ -37,9 +36,11 @@ internal fun Route.migrationRoutes(
         val session = currentSession() ?: return@post call.respond(HttpStatusCode.NotFound)
         val request = runCatching { call.receive<MigrationPairRequest>() }
             .getOrElse { return@post call.respond(HttpStatusCode.BadRequest) }
-        val token = session.pair(request.code, call.request.origin.remoteAddress, request.deviceName)
-            ?: return@post call.respond(HttpStatusCode.Unauthorized)
-        call.respond(MigrationPairResponse(token))
+        when (val result = session.pair(request.code, request.deviceName)) {
+            is PairResult.Issued -> call.respond(MigrationPairResponse(result.token))
+            PairResult.Rejected -> call.respond(HttpStatusCode.Unauthorized)
+            PairResult.Busy -> call.respond(HttpStatusCode.Conflict)
+        }
     }
 
     get(FileShareConstants.MIGRATION_MANIFEST_PATH) {
@@ -82,7 +83,7 @@ internal fun Route.migrationRoutes(
 private suspend fun ApplicationCall.authorizedSession(currentSession: () -> MigrationSession?): MigrationSession? {
     val session = currentSession() ?: return null.also { respond(HttpStatusCode.NotFound) }
     val token = request.header(HttpHeaders.Authorization)?.removePrefix(BEARER_PREFIX)
-    if (!session.isAuthorized(token, request.origin.remoteAddress)) return null.also { respond(HttpStatusCode.Unauthorized) }
+    if (!session.isAuthorized(token)) return null.also { respond(HttpStatusCode.Unauthorized) }
     return session
 }
 

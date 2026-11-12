@@ -112,6 +112,13 @@ class MigrationRoutesTest {
     }
 
     @Test
+    fun `이미 다른 기기가 페어링했으면 409 다`() = serverTest {
+        pair(CODE)
+
+        assertEquals(HttpStatusCode.Conflict, pair(CODE).status)
+    }
+
+    @Test
     fun `코드를 정해진 횟수만큼 틀리면 맞는 코드도 401 이다`() = serverTest {
         repeat(MigrationSession.MAX_FAILED_ATTEMPTS) { pair("000000") }
 
