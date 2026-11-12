@@ -77,4 +77,34 @@ class StepSlotScheduleTest {
 
         assertEquals(listOf(dayEnd - StepSlotSchedule.SLOT_MILLIS), boundaries)
     }
+
+    @Test
+    fun `이미 적힌 시각까지는 다시 적지 않는다`() {
+        val stored = dayStart + StepSlotSchedule.SLOT_MILLIS * 2
+        val points = StepSlotSchedule.forDay(dayStart, nowMillis = dayEnd + 1, storedUntilMillis = stored)
+
+        assertEquals(stored + StepSlotSchedule.SLOT_MILLIS, points.first().rawCreatedTime)
+        assertEquals(dayEnd - 1, points.last().rawCreatedTime)
+    }
+
+    @Test
+    fun `적힌 기록이 그날을 지났으면 그날은 아무것도 적지 않는다`() {
+        val points = StepSlotSchedule.forDay(dayStart, nowMillis = dayEnd + 1, storedUntilMillis = dayEnd + 1)
+
+        assertEquals(emptyList(), points)
+    }
+
+    @Test
+    fun `경계 목록은 칸 중간에서 시작해도 칸 경계에 맞춘다`() {
+        val now = dayStart + StepSlotSchedule.SLOT_MILLIS * 3
+
+        assertEquals(
+            listOf(dayStart + StepSlotSchedule.SLOT_MILLIS * 2, now),
+            StepSlotSchedule.boundaries(
+                dayStartMillis = dayStart,
+                afterMillis = dayStart + StepSlotSchedule.SLOT_MILLIS + 7,
+                nowMillis = now,
+            ),
+        )
+    }
 }

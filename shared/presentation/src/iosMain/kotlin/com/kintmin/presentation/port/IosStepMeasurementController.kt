@@ -3,6 +3,7 @@ package com.kintmin.presentation.port
 import com.kintmin.domain.extension.startOfDayMillis
 import com.kintmin.domain.extension.todayLocalDate
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
+import com.kintmin.domain.step.usecase.GetLatestStepTimeUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
@@ -32,6 +33,7 @@ private const val BACKFILL_DAYS = 7
  */
 internal class IosStepMeasurementController(
     private val backupStepSensorUseCase: BackupStepSensorUseCase,
+    private val getLatestStepTimeUseCase: GetLatestStepTimeUseCase,
     private val updateLastStepSensorUseCase: UpdateLastStepSensorUseCase,
     private val appLog: AppLog,
 ) : StepMeasurementController {
@@ -70,16 +72,21 @@ internal class IosStepMeasurementController(
         pedometer.stopPedometerUpdates()
     }
 
-    /** 같은 경계를 다시 적어도 PK 충돌이 REPLACE 라 안전하다. */
+    /** 마지막 기록 뒤부터만 메운다. 저장이 REPLACE 라 그 앞을 다시 적으면 옮겨 온 기록이 덮인다. */
     private suspend fun backfill() {
         val timeZone = TimeZone.currentSystemDefault()
         val today = todayLocalDate(timeZone)
+        val todayStartMillis = today.startOfDayMillis(timeZone)
         val nowMillis = Clock.System.now().toEpochMilliseconds()
+
+        val firstDayStartMillis = today.minus(BACKFILL_DAYS - 1, DateTimeUnit.DAY).startOfDayMillis(timeZone)
+        val storedUntilMillis = getLatestStepTimeUseCase(firstDayStartMillis, nowMillis)
+        lastWrittenBoundaryMillis = storedUntilMillis?.takeIf { it >= todayStartMillis }
 
         for (dayOffset in (BACKFILL_DAYS - 1) downTo 0) {
             val dayStartMillis = today.minus(dayOffset, DateTimeUnit.DAY).startOfDayMillis(timeZone)
 
-            for (point in StepSlotSchedule.forDay(dayStartMillis, nowMillis)) {
+            for (point in StepSlotSchedule.forDay(dayStartMillis, nowMillis, storedUntilMillis)) {
                 val steps = point.queryUntilMillis
                     ?.let { cumulativeStepsSince(dayStartMillis, it) ?: break }
                     ?: 0L
