@@ -7,32 +7,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.kintmin.presentation.platform.PlatformBottomSheetSystemBarEffect
 import com.kintmin.presentation.theme.JellyTubeTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadPlaylistSelectorBottomSheet(
     playlistList: List<DownloadPlaylistUiState>,
     onSelectPlaylist: (playlistId: Int) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-    ) {
-        KeepBottomSheetNavigationBarDark()
-
+    JellyTubeBottomSheet(onDismissRequest = onDismissRequest) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -64,12 +54,6 @@ fun DownloadPlaylistSelectorBottomSheet(
     }
 }
 
-@Suppress("DEPRECATION")
-@Composable
-private fun KeepBottomSheetNavigationBarDark() {
-    PlatformBottomSheetSystemBarEffect(lightNavigationBarIcons = false)
-}
-
 @Preview
 @Composable
 private fun DownloadPlaylistSelectorBottomSheetPreview() {
@@ -78,7 +62,7 @@ private fun DownloadPlaylistSelectorBottomSheetPreview() {
             playlistList = listOf(
                 DownloadPlaylistUiState(
                     id = 1,
-                    name = "기본 재생목록",
+                    name = "미분류",
                     isSelected = true,
                 ),
                 DownloadPlaylistUiState(
