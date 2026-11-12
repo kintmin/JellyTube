@@ -70,6 +70,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import com.kintmin.presentation.animation.PLAYBACK_POLLING_INTERVAL_MILLIS
 import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.extractDominantColor
@@ -138,7 +139,7 @@ fun PlayerDetailScreen(
     LifecycleResumeEffect(Unit) {
         val job = scope.launch {
             while (isActive) {
-                delay(300)
+                delay(PLAYBACK_POLLING_INTERVAL_MILLIS.toLong())
                 sendIntent(PlayerDetailIntent.OnRefreshMediaData)
             }
         }
@@ -450,7 +451,6 @@ fun PlayerDetailScreen(
                         .padding(bottom = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // 양옆 칩은 글자 길이만큼 가로로 늘고, 가운데 플레이리스트 이름이 남는 폭을 쓴다.
                     PlaybackPitchChip(
                         Modifier.widthIn(min = 52.dp),
                         semitone = data.playbackPitchSemitone,

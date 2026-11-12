@@ -234,8 +234,7 @@ fun AudioMediaDetailScreen(
                 )
             }
         }
-        // 사진은 제자리에 두고 글 카드가 사진 위로 올라온다. 리스트가 사진 위를 덮어 터치를 가져가므로
-        // 사진 탭은 투명한 첫 칸이 대신 받는다.
+        // 리스트가 사진 위를 덮어 터치를 가져가므로 사진 탭은 투명한 첫 칸이 받는다.
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()

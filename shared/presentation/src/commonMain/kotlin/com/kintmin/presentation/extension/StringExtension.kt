@@ -1,6 +1,5 @@
 package com.kintmin.presentation.extension
 
-/** 공백은 양쪽 모두 무시하고, 검색어가 이어진 글자로 들어 있는지 본다. 검색어 글자는 초성만 쳐도 맞는다. */
 internal fun String.matchKorean(query: String): Boolean {
     val queryParts = query.filterNot { it.isWhitespace() }.map { Korean(it) }
     if (queryParts.isEmpty()) return true

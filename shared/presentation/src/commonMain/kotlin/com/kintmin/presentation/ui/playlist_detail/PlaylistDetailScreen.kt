@@ -302,7 +302,7 @@ fun PlaylistDetailScreen(
                 }
             }
 
-            // 목록 위에 떠서 내려온다. 상단 바 안에 두면 innerPadding 이 늘어 목록이 통째로 밀린다.
+            // 상단 바 안에 두면 innerPadding 이 늘어 목록이 통째로 밀린다.
             AnimatedVisibility(
                 modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
                 visible = isSearchFieldVisible,
@@ -320,7 +320,7 @@ fun PlaylistDetailScreen(
                 OutlinedTextField(
                     modifier = Modifier
                         .fillMaxWidth()
-                        // 상단 바는 헤더 위에서 투명하다가 스크롤하면 background 로 차오른다. 그 사이 색을 같이 따라간다.
+                        // 상단 바는 헤더 위에서 투명하다가 스크롤하면 background 가 된다.
                         .background(
                             lerp(
                                 MaterialTheme.colorScheme.surfaceContainerHighest,

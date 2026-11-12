@@ -39,7 +39,7 @@ class JellyTubeApplication : Application() {
             )
         }
 
-        // 액티비티는 회전·재진입마다 다시 만들어진다. 사용자 등록과 로그 설정은 프로세스당 한 번이면 된다.
+        // 액티비티는 회전·재진입마다 다시 만들어져서 여기서 부른다.
         appScope.launch { get<RegisterUserUseCase>()() }
     }
 }

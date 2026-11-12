@@ -44,6 +44,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import com.kintmin.presentation.animation.PLAYBACK_POLLING_INTERVAL_MILLIS
 import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray20
@@ -67,7 +68,7 @@ fun PlayerBar(
         val job = scope.launch {
             while (isActive) {
                 sendIntent(PlayerBarIntent.OnRefreshMediaData)
-                delay(300)
+                delay(PLAYBACK_POLLING_INTERVAL_MILLIS.toLong())
             }
         }
         onStopOrDispose { job.cancel() }
