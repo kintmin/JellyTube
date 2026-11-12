@@ -15,7 +15,6 @@ sealed interface SettingIntent {
     data class OnSelectImportPlaylist(val playlistId: Int) : SettingIntent
     data object OnDismissImportPlaylistBottomSheet : SettingIntent
     data object OnClickDeviceSaveTile : SettingIntent
-    data object OnClickShareTile : SettingIntent
     data object OnClickFileShareReceiveTile : SettingIntent
     data object OnClickDataMigrationSendTile : SettingIntent
     data object OnClickDataMigrationReceiveTile : SettingIntent

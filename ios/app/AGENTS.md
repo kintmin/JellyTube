@@ -108,6 +108,7 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 조용히 빠지므로 "설정했다" 고 믿고 넘어가면 기동 크래시나 백그라운드 중단으로 돌아온다.
 
 지금 파일에 있는 것: `CADisableMinimumFrameDurationOnPhone`(CMP 필수) ·
+`UILaunchScreen`(배경색 `LaunchBackground` — 빌드 설정의 자동 생성은 끄고 여기서만 정한다) ·
 `NSMotionUsageDescription`(걸음수) · `CFBundleURLTypes`(딥링크 스킴) ·
 `CFBundleDocumentTypes`(공유 수신) · `UIBackgroundModes: audio`(백그라운드 재생) ·
 `NSLocalNetworkUsageDescription` + `NSBonjourServices`(데이터 이전 탐색 — 둘 중 하나라도 없으면

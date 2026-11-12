@@ -22,7 +22,7 @@ internal object StepSlotSchedule {
         if (dayStartMillis > nowMillis) return emptyList()
 
         val dayEndMillis = dayStartMillis + DAY_MILLIS
-        val points = mutableListOf(StepWritePoint(dayStartMillis, queryUntilMillis = null))
+        val points = mutableListOf(StepWritePoint(dayStartMillis + 1, queryUntilMillis = null))
         boundaries(dayStartMillis, afterMillis = dayStartMillis, nowMillis = nowMillis)
             .mapTo(points) { StepWritePoint(it, queryUntilMillis = it) }
 
@@ -31,6 +31,17 @@ internal object StepSlotSchedule {
         }
         return points
     }
+
+    /**
+     * iPhone 이 통째로 다시 쓰는 그날의 구간. 한 날 안에 다른 기기의 기록이 섞이면 누적 기준이 달라
+     * 계산이 깨지므로 지우고 다시 쓴다.
+     *
+     * 0시 정각은 뺀다. 그 자리는 앞날의 마감과 겹치는 칸이라(Android 는 전날 마지막 센서값을 0시에
+     * 적는다) 지우면 앞날의 마지막 걸음이 사라진다. 그래서 0 은 0시 1ms 뒤에 심는다 — 0시 값보다
+     * 작아져도 계산은 재부팅처럼 그 하락을 건너뛰고 0 부터 센다.
+     */
+    fun ownedRange(dayStartMillis: Long): LongRange =
+        (dayStartMillis + 1) until (dayStartMillis + DAY_MILLIS)
 
     fun boundaries(dayStartMillis: Long, afterMillis: Long, nowMillis: Long): List<Long> {
         val dayEndMillis = dayStartMillis + DAY_MILLIS

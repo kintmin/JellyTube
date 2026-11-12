@@ -50,8 +50,6 @@ import com.kintmin.presentation.ui.setting.data_migration_send.navigation.naviga
 import com.kintmin.presentation.ui.setting.data_migration_send.navigation.settingDataMigrationSendScreen
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.navigateToSettingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.settingFileShareReceiveScreen
-import com.kintmin.presentation.ui.setting.quick_share.navigation.navigateToSettingShareScreen
-import com.kintmin.presentation.ui.setting.quick_share.navigation.settingShareScreen
 import com.kintmin.presentation.ui.step.navigation.navigateToStepScreen
 import com.kintmin.presentation.ui.step.navigation.stepScreen
 import kotlinx.coroutines.flow.Flow
@@ -211,9 +209,6 @@ fun MainNavHost(
             navigateToAppLog = {
                 navController.navigateToAppLogScreen(navOptions)
             },
-            navigateToShare = {
-                navController.navigateToSettingShareScreen(navOptions)
-            },
             navigateToFileShareReceive = {
                 navController.navigateToSettingFileShareReceiveScreen(navOptions)
             },
@@ -232,10 +227,6 @@ fun MainNavHost(
             )
 
             stepScreen(
-                navigateToBack = { navController.popBackStack() },
-            )
-
-            settingShareScreen(
                 navigateToBack = { navController.popBackStack() },
             )
 

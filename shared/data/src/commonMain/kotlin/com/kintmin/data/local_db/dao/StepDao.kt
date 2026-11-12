@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.kintmin.data.local_db.model.StepEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -37,6 +38,19 @@ interface StepDao {
     """
     )
     fun getEntitiesBetweenFlow(startUtc: Long, endUtc: Long): Flow<List<StepEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entities: List<StepEntity>)
+
+    @Query("DELETE FROM STEP WHERE rawCreatedTime >= :startUtc AND rawCreatedTime <= :endUtc")
+    suspend fun deleteBetween(startUtc: Long, endUtc: Long)
+
+    /** 지우고 다시 적는 사이에 화면이 빈 구간을 보지 않게 한 번에 바꾼다. */
+    @Transaction
+    suspend fun replaceBetween(startUtc: Long, endUtc: Long, entities: List<StepEntity>) {
+        deleteBetween(startUtc, endUtc)
+        insertAll(entities)
+    }
 
     @Query("SELECT * FROM STEP")
     suspend fun getAll(): List<StepEntity>

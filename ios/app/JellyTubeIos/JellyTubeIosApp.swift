@@ -108,7 +108,10 @@ struct JellyTubeIosApp: App {
 private struct ComposeRootView: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.mainViewController()
+        let controller = MainViewControllerKt.mainViewController()
+        // Compose 의 첫 프레임 전까지 이 배경이 보인다. 런치 스크린과 같은 색이라야 흰 화면이 끼지 않는다.
+        controller.view.backgroundColor = UIColor(named: "LaunchBackground")
+        return controller
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}

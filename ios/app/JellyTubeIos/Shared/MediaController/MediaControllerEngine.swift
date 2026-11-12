@@ -35,7 +35,10 @@ final class MediaControllerEngine {
     /// 구간을 걸 때마다 올린다. `stop()` 도 걸려 있던 구간의 완료 콜백을 부르므로, 콜백이 걸린 번호와
     /// 지금 번호가 다르면 이미 다른 곡으로 넘어간 뒤에 늦게 온 콜백이다. 그대로 따르면 한 곡을 더 건너뛴다.
     private var scheduleGeneration = 0
-    /// 엔진이 멈추면 재생 위치를 읽을 수 없다. 엔진이 돌 때 마지막으로 읽은 위치로 이어서 건다.
+    /// 노드에 아직 재생할 구간이 걸려 있다. 없는 채로 `play()` 하면 소리 없이 재생 중으로 보인다.
+    private var hasScheduledSegment = false
+    /// 멈춘 엔진·노드에서는 재생 위치를 읽을 수 없다. 그동안은 이 값이 위치다.
+    /// 읽을 수 있을 때마다, 그리고 구간을 새로 걸 때 갱신한다.
     private var lastKnownPosition: TimeInterval = 0
     private var isPlayingIntent = false
     private var didConfigureAudioSession = false
@@ -94,25 +97,32 @@ final class MediaControllerEngine {
         let startId = (targetIndex < items.count) ? items[targetIndex].id : nil
         let scheduleIndex = startId.flatMap { id in queue.firstIndex(where: { $0.id == id }) } ?? 0
         isPlayingIntent = true
-        if schedulePlayable(from: scheduleIndex, startingSeconds: 0) {
-            playerNode.play()
-        }
+        playIfIntended(schedulePlayable(from: scheduleIndex, startingSeconds: 0))
         broadcast()
     }
 
     func pause() {
-        guard playerNode.isPlaying else {
-            isPlayingIntent = false
-            broadcast()
-            return
+        if playerNode.isPlaying {
+            lastKnownPosition = currentTimeInItem
+            playerNode.pause()
         }
-        playerNode.pause()
+        pauseEngine()
         isPlayingIntent = false
         broadcast()
     }
 
     func resume() {
-        ensureEngineRunning()
+        // 큐가 끝나 걸린 구간이 없으면 지금 곡을 처음부터 다시 건다.
+        if !hasScheduledSegment {
+            guard currentItem != nil, schedulePlayable(from: currentIndex, startingSeconds: 0) else {
+                broadcast()
+                return
+            }
+        }
+        guard ensureEngineRunning() else {
+            broadcast()
+            return
+        }
         if !playerNode.isPlaying {
             playerNode.play()
         }
@@ -203,7 +213,9 @@ final class MediaControllerEngine {
             stopPlayer()
             currentFile = nil
             currentIndex = 0
+            lastKnownPosition = 0
             isPlayingIntent = false
+            pauseEngine()
         } else if wasCurrent {
             // 빠진 자리를 이어받은 곡으로 넘어간다. 마지막 곡이었으면 한 칸 앞으로.
             let nextIndex = min(index, queue.count - 1)
@@ -278,22 +290,26 @@ final class MediaControllerEngine {
         }
         isPlayingIntent = false
         stopPlayer()
+        pauseEngine()
         return false
     }
 
+    /// 멈춘 엔진에서 `playerNode.play()` 를 부르면 예외로 죽는다.
     private func playIfIntended(_ scheduled: Bool) {
-        if scheduled, isPlayingIntent { playerNode.play() }
+        if scheduled, isPlayingIntent, engine.isRunning { playerNode.play() }
     }
 
     /// `stop()` 은 걸려 있던 구간의 완료 콜백을 부른다. 세대를 함께 올려야 그 콜백이 다음 곡으로 넘기지 않는다.
     private func stopPlayer() {
         scheduleGeneration += 1
+        hasScheduledSegment = false
         playerNode.stop()
     }
 
     private func scheduleItem(at index: Int, startingSeconds: TimeInterval) -> ScheduleResult {
         guard queue.indices.contains(index) else { return .unreadable }
         stopPlayer()
+        lastKnownPosition = startingSeconds
         let generation = scheduleGeneration
 
         let item = queue[index]
@@ -332,10 +348,12 @@ final class MediaControllerEngine {
                 self.advanceOnCompletion()
             }
         }
+        hasScheduledSegment = true
         return .scheduled
     }
 
     private func advanceOnCompletion() {
+        hasScheduledSegment = false
         guard isPlayingIntent else { return }
         playIfIntended(schedulePlayable(from: currentIndex + 1, startingSeconds: 0))
         broadcast()
@@ -343,15 +361,24 @@ final class MediaControllerEngine {
 
     // MARK: - Engine / session
 
-    private func ensureEngineRunning() {
+    @discardableResult
+    private func ensureEngineRunning() -> Bool {
         if !engine.isRunning {
             do {
+                // 끼어들기가 끝나면 세션이 꺼져 있다. 다시 켜지 않으면 start() 가 계속 실패한다.
+                if didConfigureAudioSession { try AVAudioSession.sharedInstance().setActive(true) }
                 try engine.start()
                 didStartEngine = true
             } catch {
                 mcLog.error("engine.start failed: \(error.localizedDescription, privacy: .public)")
             }
         }
+        return engine.isRunning
+    }
+
+    /// iOS 는 엔진이 돌면 앱을 재생 중으로 본다. 소리가 멎는 자리마다 엔진도 세워야 제어 센터가 따라온다.
+    private func pauseEngine() {
+        if engine.isRunning { engine.pause() }
     }
 
     private func configureAudioSessionIfNeeded() {
@@ -418,7 +445,8 @@ final class MediaControllerEngine {
 
     private func handleConfigurationChange() {
         mcLog.info("engine configuration changed → restart at \(self.lastKnownPosition)")
-        ensureEngineRunning()
+        // 일시정지 중에 켜면 제어 센터가 다시 재생 중으로 바뀐다. 이어 듣기는 resume() 이 켠다.
+        if isPlayingIntent { ensureEngineRunning() }
         guard currentFile != nil else { return }
         playIfIntended(schedulePlayable(from: currentIndex, startingSeconds: lastKnownPosition))
         broadcast()
@@ -455,11 +483,12 @@ final class MediaControllerEngine {
     // MARK: - Time tracking
 
     private var currentTimeInItem: TimeInterval {
-        guard let file = currentFile else { return currentItemBaseOffset }
-        guard let nodeTime = playerNode.lastRenderTime,
+        guard engine.isRunning,
+              let file = currentFile,
+              let nodeTime = playerNode.lastRenderTime,
               let playerTime = playerNode.playerTime(forNodeTime: nodeTime),
               playerTime.sampleRate > 0 else {
-            return currentItemBaseOffset
+            return lastKnownPosition
         }
         let elapsedInSegment = Double(playerTime.sampleTime) / playerTime.sampleRate
         let total = currentItemBaseOffset + max(0, elapsedInSegment)
@@ -481,7 +510,7 @@ final class MediaControllerEngine {
 
     private func broadcast() {
         let snapshot = currentSnapshot()
-        if engine.isRunning { lastKnownPosition = snapshot.positionSeconds }
+        lastKnownPosition = snapshot.positionSeconds
         nowPlaying.update(snapshot: snapshot)
         for continuation in continuations.values {
             continuation.yield(snapshot)

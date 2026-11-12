@@ -18,7 +18,6 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.SaveAlt
 import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -64,7 +63,6 @@ fun SettingScreen(
     navigateToBack: () -> Unit,
     navigateToStep: () -> Unit,
     navigateToAppLog: () -> Unit,
-    navigateToShare: () -> Unit,
     navigateToFileShareReceive: () -> Unit,
     navigateToDataMigrationSend: () -> Unit,
     navigateToDataMigrationReceive: () -> Unit,
@@ -90,7 +88,6 @@ fun SettingScreen(
             when (event) {
                 SettingEvent.NavigateToStepScreen -> navigateToStep()
                 SettingEvent.NavigateToAppLogScreen -> navigateToAppLog()
-                SettingEvent.NavigateToShareScreen -> navigateToShare()
                 SettingEvent.NavigateToFileShareReceiveScreen -> navigateToFileShareReceive()
                 SettingEvent.NavigateToDataMigrationSendScreen -> navigateToDataMigrationSend()
                 SettingEvent.NavigateToDataMigrationReceiveScreen -> navigateToDataMigrationReceive()
@@ -219,7 +216,7 @@ fun SettingScreen(
 
             SettingSectionView(title = "가져오기 및 내보내기") {
                 SettingItemView(
-                    title = "음원 파일 선택해서 가져오기",
+                    title = "기기에서 음원 파일 가져오기",
                     icon = Icons.Rounded.AudioFile,
                     enabled = !uiState.isImporting,
                     onClick = { sendIntent(SettingIntent.OnClickImportAudioTile) },
@@ -233,12 +230,6 @@ fun SettingScreen(
                     } else {
                         null
                     },
-                )
-                SettingItemView(
-                    title = "Quick Share로 공유받기",
-                    icon = Icons.Rounded.Share,
-                    onClick = { sendIntent(SettingIntent.OnClickShareTile) },
-                    trailing = { SettingNavigateIcon(contentDescription = "Quick Share 화면으로 이동") },
                 )
                 if (isFileShareReceiveSupported) {
                     SettingItemView(
