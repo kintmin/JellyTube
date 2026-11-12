@@ -59,7 +59,7 @@ class SettingDataMigrationSendViewModel constructor(
     private fun DataMigrationSendStatus.toStep(): DataMigrationSendStep = when (this) {
         DataMigrationSendStatus.Idle -> DataMigrationSendStep.Disconnected
         is DataMigrationSendStatus.WaitingForPair -> DataMigrationSendStep.WaitingForPair(code)
-        DataMigrationSendStatus.Paired -> DataMigrationSendStep.Sending
+        is DataMigrationSendStatus.Paired -> DataMigrationSendStep.Sending(peerName)
         is DataMigrationSendStatus.Finished -> DataMigrationSendStep.Finished(newAudioMediaCount, failedCount)
         DataMigrationSendStatus.Locked -> DataMigrationSendStep.Locked
     }

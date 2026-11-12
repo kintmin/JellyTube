@@ -165,7 +165,7 @@ class FileShareForegroundService : Service(), KoinComponent {
         if (migrationLockJob?.isActive == true) return
         migrationLockJob = serviceScope.launch {
             MigrationSessionHolder.state.collect { status ->
-                val isConnected = status == DataMigrationSendStatus.Paired || status is DataMigrationSendStatus.Finished
+                val isConnected = status is DataMigrationSendStatus.Paired || status is DataMigrationSendStatus.Finished
                 if (isConnected) acquireMigrationLocks() else releaseMigrationLocks()
             }
         }

@@ -20,8 +20,8 @@ class MigrationSessionHolderTest {
         val session = MigrationSessionHolder.open()
         assertEquals(DataMigrationSendStatus.WaitingForPair(session.code), MigrationSessionHolder.state.value)
 
-        session.pair(session.code)
-        assertEquals(DataMigrationSendStatus.Paired, MigrationSessionHolder.state.value)
+        session.pair(session.code, "192.168.0.10", "iPhone")
+        assertEquals(DataMigrationSendStatus.Paired("iPhone"), MigrationSessionHolder.state.value)
 
         session.finish(MigrationFinishRequest(newAudioMediaCount = 3, failedCount = 1))
         assertEquals(DataMigrationSendStatus.Finished(3, 1), MigrationSessionHolder.state.value)
@@ -31,7 +31,7 @@ class MigrationSessionHolderTest {
     fun `코드를 여러 번 틀리면 잠기고 세션을 비운다`() {
         val session = MigrationSessionHolder.open()
 
-        repeat(MigrationSession.MAX_FAILED_ATTEMPTS) { session.pair("x") }
+        repeat(MigrationSession.MAX_FAILED_ATTEMPTS) { session.pair("x", "192.168.0.10", "iPhone") }
 
         assertEquals(DataMigrationSendStatus.Locked, MigrationSessionHolder.state.value)
         assertNull(MigrationSessionHolder.session.value)
@@ -40,7 +40,7 @@ class MigrationSessionHolderTest {
     @Test
     fun `닫으면 대기 상태로 돌아가고 이전 세션의 알림은 무시한다`() {
         val old = MigrationSessionHolder.open()
-        old.pair(old.code)
+        old.pair(old.code, "192.168.0.10", "iPhone")
 
         MigrationSessionHolder.close()
         old.finish(MigrationFinishRequest(1, 0))

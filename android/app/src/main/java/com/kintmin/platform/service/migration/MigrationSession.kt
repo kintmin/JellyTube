@@ -6,6 +6,7 @@ import java.security.SecureRandom
 
 /**
  * 데이터 이전 한 번의 인가 상태. 화면에 띄운 [code] 를 맞힌 기기 하나에만 토큰을 준다.
+ * 토큰은 페어링한 주소에서 온 요청만 인가한다. 평문 HTTP 라 같은 Wi-Fi 에서 토큰이 보일 수 있다.
  *
  * 코드를 [MAX_FAILED_ATTEMPTS] 번 틀리면 세션이 닫힌다. 6자리는 무차별 대입에 약해서
  * 시도 횟수로 막는다. 닫힌 세션은 다시 열 수 없다 — 새 세션(새 코드)을 만든다.
@@ -14,10 +15,11 @@ class MigrationSession(
     val code: String = generateCode(),
     private val generateToken: () -> String = ::generateToken,
     private val onClosed: () -> Unit = {},
-    private val onPaired: () -> Unit = {},
+    private val onPaired: (deviceName: String) -> Unit = {},
     private val onFinished: (MigrationFinishRequest) -> Unit = {},
 ) {
     private var token: String? = null
+    private var pairedAddress: String? = null
     private var failedAttempts = 0
     private var allowedFiles: Set<Pair<String, String>> = emptySet()
 
@@ -26,7 +28,7 @@ class MigrationSession(
         private set
 
     /** 코드가 맞으면 토큰을 준다. 이미 다른 기기가 페어링했거나 닫혔으면 null. */
-    fun pair(code: String): String? {
+    fun pair(code: String, clientAddress: String, deviceName: String): String? {
         var hasLockedOut = false
         val issued = synchronized(this) {
             when {
@@ -36,18 +38,22 @@ class MigrationSession(
                     if (failedAttempts >= MAX_FAILED_ATTEMPTS) hasLockedOut = markClosed()
                     null
                 }
-                else -> generateToken().also { token = it }
+                else -> generateToken().also {
+                    token = it
+                    pairedAddress = clientAddress
+                }
             }
         }
         if (hasLockedOut) onClosed()
-        if (issued != null) onPaired()
+        if (issued != null) onPaired(deviceName)
         return issued
     }
 
     @Synchronized
-    fun isAuthorized(token: String?): Boolean {
+    fun isAuthorized(token: String?, clientAddress: String): Boolean {
         val issued = this.token
-        return !isClosed && issued != null && token != null && constantTimeEquals(token, issued)
+        return !isClosed && issued != null && token != null && clientAddress == pairedAddress &&
+            constantTimeEquals(token, issued)
     }
 
     /** manifest 로 내려준 파일만 받아 갈 수 있다. */

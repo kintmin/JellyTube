@@ -26,7 +26,7 @@ object MigrationSessionHolder {
         lateinit var opened: MigrationSession
         opened = MigrationSession(
             onClosed = { onClosed(opened) },
-            onPaired = { updateIfCurrent(opened, DataMigrationSendStatus.Paired) },
+            onPaired = { updateIfCurrent(opened, DataMigrationSendStatus.Paired(it)) },
             onFinished = { updateIfCurrent(opened, DataMigrationSendStatus.Finished(it.newAudioMediaCount, it.failedCount)) },
         )
         _session.value = opened

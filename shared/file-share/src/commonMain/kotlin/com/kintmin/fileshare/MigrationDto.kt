@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MigrationPairRequest(
     val code: String,
+    /** 보내는 기기 화면에 연결된 상대로 보여 준다. */
+    val deviceName: String,
 )
 
 @Serializable

@@ -6,7 +6,7 @@ data class SettingDataMigrationSendUiState(
     val step: DataMigrationSendStep = DataMigrationSendStep.Starting,
 ) {
     /** 받는 기기가 받는 중이다. 이 화면을 떠나면 받는 쪽이 실패하므로 뒤로가기를 막는다. */
-    val isSending: Boolean get() = step == DataMigrationSendStep.Sending
+    val isSending: Boolean get() = step is DataMigrationSendStep.Sending
 
     val keepsScreenOn: Boolean get() = step is DataMigrationSendStep.WaitingForPair || isSending
 
@@ -21,7 +21,7 @@ sealed interface DataMigrationSendStep {
     /** 이전 전에 끝나 있어야 하는 작업이 남아 있다. 연결을 열지 않는다. */
     data class Blocked(val runningWorks: Map<RunningWork, Int>) : DataMigrationSendStep
     data class WaitingForPair(val code: String) : DataMigrationSendStep
-    data object Sending : DataMigrationSendStep
+    data class Sending(val peerName: String) : DataMigrationSendStep
     data class Finished(val newAudioMediaCount: Int, val failedCount: Int) : DataMigrationSendStep
 
     /** 코드를 여러 번 틀려 연결을 막았다. */

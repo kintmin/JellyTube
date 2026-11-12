@@ -74,7 +74,8 @@ class SettingDataMigrationSendViewModelTest {
         assertTrue(viewModel.uiState.value.keepsScreenOn)
         assertFalse(viewModel.uiState.value.isSending)
 
-        statusFlow.value = DataMigrationSendStatus.Paired
+        statusFlow.value = DataMigrationSendStatus.Paired("iPhone")
+        assertEquals(DataMigrationSendStep.Sending("iPhone"), viewModel.uiState.value.step)
         assertTrue(viewModel.uiState.value.isSending)
         assertTrue(viewModel.uiState.value.keepsScreenOn)
 

@@ -1,5 +1,6 @@
 package com.kintmin.data.network.dataSourceImpl
 
+import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.data.network.dataSource.MigrationDataSource
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.MigrationFinishRequest
@@ -34,7 +35,7 @@ internal class MigrationDataSourceImpl(
         val response = client.post {
             migrationUrl(host, port, FileShareConstants.MIGRATION_PAIR_PATH)
             contentType(ContentType.Application.Json)
-            setBody(MigrationPairRequest(code))
+            setBody(MigrationPairRequest(code = code, deviceName = localDeviceName()))
         }
         when (response.status) {
             HttpStatusCode.OK -> response.body<MigrationPairResponse>().token

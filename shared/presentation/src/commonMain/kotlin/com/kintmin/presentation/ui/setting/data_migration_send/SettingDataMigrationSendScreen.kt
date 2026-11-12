@@ -150,7 +150,7 @@ private fun SettingDataMigrationSendScreenPreview() {
 private fun SettingDataMigrationSendScreenSendingPreview() {
     JellyTubeTheme {
         SettingDataMigrationSendScreen(
-            uiState = SettingDataMigrationSendUiState(step = DataMigrationSendStep.Sending),
+            uiState = SettingDataMigrationSendUiState(step = DataMigrationSendStep.Sending("iPhone")),
             navigateToBack = {},
             sendIntent = {},
         )

@@ -81,7 +81,7 @@ class MigrationRoutesTest {
     private suspend fun ApplicationTestBuilder.pair(code: String): HttpResponse =
         client.post(FileShareConstants.MIGRATION_PAIR_PATH) {
             contentType(ContentType.Application.Json)
-            setBody("""{"code":"$code"}""")
+            setBody("""{"code":"$code","deviceName":"iPhone"}""")
         }
 
     private suspend fun ApplicationTestBuilder.manifest(token: String?): HttpResponse =
