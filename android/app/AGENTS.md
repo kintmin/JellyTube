@@ -95,10 +95,12 @@ iOS 구현의 자리는 **`shared:presentation` 의 `iosMain/port/`** 다(`Media
 | 상태 | 광고 | 인스턴스 이름 |
 |---|---|---|
 | PC 수신만 켜짐 | `NSD_SERVICE_TYPE`(`_jellytube._tcp`) | `NSD_SERVICE_NAME` |
-| 이전 세션이 열림 | `MIGRATION_NSD_SERVICE_TYPE`(`_jellytube-mig._tcp`) + TXT `v`(프로토콜 버전) | 기기 이름(받는 기기가 이것으로 고른다) |
+| 이전 세션이 열리고 페어링 전 | `MIGRATION_NSD_SERVICE_TYPE`(`_jellytube-mig._tcp`) + TXT `v`(프로토콜 버전) | 기기 이름(받는 기기가 이것으로 고른다) |
+| 페어링 뒤(세션이 닫힐 때까지) | 없음 | — |
 
 - 이전 세션이 열려 있는 동안은 PC 업로드 타입을 내리고 `/upload*` 를 409 로 거절한다. Desktop 이 이전 중인 기기에 업로드하지 않게 하는 두 겹이다.
-- 이전 토큰은 페어링한 주소에서 온 요청만 인가한다.
+- 세션당 토큰은 코드를 맞힌 한 기기에만 준다. 이미 페어링한 세션에 다시 페어링하면 409 다. 토큰은 주소에 묶지 않는다(받는 기기의 IP 가 바뀌어도 이어 받는다).
+- 등록에 실패한 광고는 몇 번 다시 등록한다. 실패를 무시하면 받는 기기가 찾지 못한다.
 
 - Every foreground service must call `startForeground()` with a valid notification before Android OS enforces it.
 - Services that can be started/stopped externally expose a `companion object` with `startService(context)` / `stopService(context)` static helpers (see `StepForegroundService` for reference).
