@@ -35,6 +35,8 @@ final class MediaControllerEngine {
     /// 구간을 걸 때마다 올린다. `stop()` 도 걸려 있던 구간의 완료 콜백을 부르므로, 콜백이 걸린 번호와
     /// 지금 번호가 다르면 이미 다른 곡으로 넘어간 뒤에 늦게 온 콜백이다. 그대로 따르면 한 곡을 더 건너뛴다.
     private var scheduleGeneration = 0
+    /// 노드에 아직 재생할 구간이 걸려 있다. 없는 채로 `play()` 하면 소리 없이 재생 중으로 보인다.
+    private var hasScheduledSegment = false
     /// 멈춘 엔진·노드에서는 재생 위치를 읽을 수 없다. 그동안은 이 값이 위치다.
     /// 읽을 수 있을 때마다, 그리고 구간을 새로 걸 때 갱신한다.
     private var lastKnownPosition: TimeInterval = 0
@@ -100,20 +102,23 @@ final class MediaControllerEngine {
     }
 
     func pause() {
-        guard playerNode.isPlaying else {
-            isPlayingIntent = false
-            broadcast()
-            return
+        if playerNode.isPlaying {
+            lastKnownPosition = currentTimeInItem
+            playerNode.pause()
         }
-        lastKnownPosition = currentTimeInItem
-        playerNode.pause()
-        // iOS 는 오디오 출력이 살아 있으면 앱을 재생 중으로 본다. 엔진까지 세워야 제어 센터가 일시정지로 바뀐다.
-        engine.pause()
+        pauseEngine()
         isPlayingIntent = false
         broadcast()
     }
 
     func resume() {
+        // 큐가 끝나 걸린 구간이 없으면 지금 곡을 처음부터 다시 건다.
+        if !hasScheduledSegment {
+            guard currentItem != nil, schedulePlayable(from: currentIndex, startingSeconds: 0) else {
+                broadcast()
+                return
+            }
+        }
         guard ensureEngineRunning() else {
             broadcast()
             return
@@ -210,6 +215,7 @@ final class MediaControllerEngine {
             currentIndex = 0
             lastKnownPosition = 0
             isPlayingIntent = false
+            pauseEngine()
         } else if wasCurrent {
             // 빠진 자리를 이어받은 곡으로 넘어간다. 마지막 곡이었으면 한 칸 앞으로.
             let nextIndex = min(index, queue.count - 1)
@@ -284,6 +290,7 @@ final class MediaControllerEngine {
         }
         isPlayingIntent = false
         stopPlayer()
+        pauseEngine()
         return false
     }
 
@@ -295,6 +302,7 @@ final class MediaControllerEngine {
     /// `stop()` 은 걸려 있던 구간의 완료 콜백을 부른다. 세대를 함께 올려야 그 콜백이 다음 곡으로 넘기지 않는다.
     private func stopPlayer() {
         scheduleGeneration += 1
+        hasScheduledSegment = false
         playerNode.stop()
     }
 
@@ -340,10 +348,12 @@ final class MediaControllerEngine {
                 self.advanceOnCompletion()
             }
         }
+        hasScheduledSegment = true
         return .scheduled
     }
 
     private func advanceOnCompletion() {
+        hasScheduledSegment = false
         guard isPlayingIntent else { return }
         playIfIntended(schedulePlayable(from: currentIndex + 1, startingSeconds: 0))
         broadcast()
@@ -355,6 +365,8 @@ final class MediaControllerEngine {
     private func ensureEngineRunning() -> Bool {
         if !engine.isRunning {
             do {
+                // 끼어들기가 끝나면 세션이 꺼져 있다. 다시 켜지 않으면 start() 가 계속 실패한다.
+                if didConfigureAudioSession { try AVAudioSession.sharedInstance().setActive(true) }
                 try engine.start()
                 didStartEngine = true
             } catch {
@@ -362,6 +374,11 @@ final class MediaControllerEngine {
             }
         }
         return engine.isRunning
+    }
+
+    /// iOS 는 엔진이 돌면 앱을 재생 중으로 본다. 소리가 멎는 자리마다 엔진도 세워야 제어 센터가 따라온다.
+    private func pauseEngine() {
+        if engine.isRunning { engine.pause() }
     }
 
     private func configureAudioSessionIfNeeded() {
