@@ -37,6 +37,20 @@ class IosMigrationSourceDiscoveryTest {
     }
 
     @Test
+    fun `인터페이스마다 따로 잡힌 같은 기기는 하나로 합치고 이름순으로 둔다`() = runBlocking {
+        bridge.browsed = listOf(
+            service("Pixel 9", FileShareConstants.MIGRATION_FORMAT_VERSION.toString()),
+            IosBrowsedService("Galaxy S24", emptyMap()),
+            service("Galaxy S24", (FileShareConstants.MIGRATION_FORMAT_VERSION + 1).toString()),
+        )
+
+        assertEquals(
+            listOf(MigrationSource("Galaxy S24", isCompatible = false), MigrationSource("Pixel 9", isCompatible = true)),
+            discovery.discover(),
+        )
+    }
+
+    @Test
     fun `고른 기기의 이름으로 주소를 푼다`() = runBlocking {
         bridge.resolved = mapOf("Galaxy S24" to IosResolvedService("192.168.0.2", 52847))
 

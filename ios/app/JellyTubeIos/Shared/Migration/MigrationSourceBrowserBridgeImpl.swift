@@ -63,18 +63,12 @@ private final class ServiceBrowse {
         queue.asyncAfter(deadline: .now() + timeout) { self.finish(self.latest) }
     }
 
-    /// 인터페이스마다 같은 기기가 따로 잡힌다. 이름이 주소를 푸는 열쇠라 이름으로 하나만 남긴다.
     private static func services(from results: Set<NWBrowser.Result>) -> [IosBrowsedService] {
-        var byName: [String: [String: String]] = [:]
-        for result in results {
-            guard case let .service(name, _, _, _) = result.endpoint else { continue }
-            var txt = byName[name] ?? [:]
-            if case let .bonjour(record) = result.metadata {
-                txt.merge(record.dictionary) { _, new in new }
-            }
-            byName[name] = txt
+        results.compactMap { result in
+            guard case let .service(name, _, _, _) = result.endpoint else { return nil }
+            guard case let .bonjour(record) = result.metadata else { return IosBrowsedService(name: name, txtRecord: [:]) }
+            return IosBrowsedService(name: name, txtRecord: record.dictionary)
         }
-        return byName.keys.sorted().map { IosBrowsedService(name: $0, txtRecord: byName[$0] ?? [:]) }
     }
 
     private func finish(_ services: [IosBrowsedService]) {

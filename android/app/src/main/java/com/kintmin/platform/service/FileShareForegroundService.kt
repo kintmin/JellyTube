@@ -266,7 +266,7 @@ class FileShareForegroundService : Service(), KoinComponent {
         }
     }
 
-    // 받는 기기가 보내는 기기를 고르는 이름이다. 사용자가 정한 기기 이름이 없으면 모델명을 쓴다.
+    // 받는 기기가 이 이름으로 보내는 기기를 고른다.
     private fun deviceName(): String =
         Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
             ?.takeIf { it.isNotBlank() }

@@ -4,8 +4,8 @@ package com.kintmin.ios.migration
 interface IosMigrationSourceBrowserBridge {
 
     /**
-     * [serviceType] 을 광고하는 기기들. 첫 기기를 찾은 뒤 목록이 [settleMillis] 동안 그대로면 끝낸다.
-     * 아무것도 못 찾으면 [timeoutMillis] 에 빈 목록으로 끝낸다.
+     * [serviceType] 탐색 결과를 그대로 준다. 같은 기기가 네트워크 인터페이스마다 따로 올 수 있다.
+     * 첫 결과 뒤 목록이 [settleMillis] 동안 그대로면 끝내고, 아무것도 없으면 [timeoutMillis] 에 끝낸다.
      */
     suspend fun browse(serviceType: String, settleMillis: Long, timeoutMillis: Long): List<IosBrowsedService>
 

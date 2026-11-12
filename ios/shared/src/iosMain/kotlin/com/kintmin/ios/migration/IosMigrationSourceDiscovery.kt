@@ -11,20 +11,25 @@ internal class IosMigrationSourceDiscovery(
 
     override suspend fun discover(): List<MigrationSource> =
         bridge.browse(FileShareConstants.MIGRATION_NSD_SERVICE_TYPE, SETTLE_MILLIS, DISCOVERY_TIMEOUT_MILLIS)
-            .map { it.toMigrationSource() }
+            .toMigrationSources()
 
     override suspend fun resolve(source: MigrationSource): MigrationEndpoint? =
         bridge.resolve(FileShareConstants.MIGRATION_NSD_SERVICE_TYPE, source.name, RESOLVE_TIMEOUT_MILLIS)
             ?.let { MigrationEndpoint(host = it.host, port = it.port) }
 }
 
-// TXT 가 늦게 풀려 버전이 비면 고르게 둔다. 버전이 정말 다르면 manifest 단계가 막는다.
-internal fun IosBrowsedService.toMigrationSource() = MigrationSource(
-    name = name,
-    isCompatible = txtRecord[FileShareConstants.MIGRATION_TXT_FORMAT_VERSION]
-        ?.let { it == FileShareConstants.MIGRATION_FORMAT_VERSION.toString() }
-        ?: true,
-)
+// 이름이 주소를 푸는 열쇠라 이름으로 하나만 남긴다. TXT 가 늦게 풀려 버전이 비면 고르게 둔다 —
+// 버전이 정말 다르면 manifest 단계가 막는다.
+internal fun List<IosBrowsedService>.toMigrationSources(): List<MigrationSource> =
+    groupBy { it.name }
+        .map { (name, services) ->
+            val version = services.firstNotNullOfOrNull { it.txtRecord[FileShareConstants.MIGRATION_TXT_FORMAT_VERSION] }
+            MigrationSource(
+                name = name,
+                isCompatible = version == null || version == FileShareConstants.MIGRATION_FORMAT_VERSION.toString(),
+            )
+        }
+        .sortedBy { it.name }
 
 private const val SETTLE_MILLIS = 1_500L
 private const val DISCOVERY_TIMEOUT_MILLIS = 10_000L
