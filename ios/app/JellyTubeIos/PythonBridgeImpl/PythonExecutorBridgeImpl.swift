@@ -210,18 +210,21 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     private static let methodTransliterateToKorean = "transliterate_to_korean"
 }
 
+/// PythonKit 은 GIL 을 다루지 않는다. 파이썬 호출은 전부 [withGIL] 안에서 한다.
 private final class PythonRuntime {
-    private var didConfigurePython = false
+    // 인터프리터는 프로세스에 하나라 초기화 상태도 인스턴스가 아니라 타입이 가진다.
+    private static var didConfigurePython = false
+    private static let configureLock = NSLock()
 
     func callFunction(
         moduleName: String,
         functionName: String,
         arguments: [String]
     ) throws -> [String] {
-        configurePythonIfNeeded()
-
-        let result = try call(moduleName: moduleName, functionName: functionName, arguments: arguments)
-        return convertPythonSequenceToStrings(result)
+        try withGIL {
+            let result = try call(moduleName: moduleName, functionName: functionName, arguments: arguments)
+            return convertPythonSequenceToStrings(result)
+        }
     }
 
     /// 문자열 하나를 돌려주는 함수용. 시퀀스 변환을 쓰면 문자열이 글자 단위로 쪼개진다.
@@ -230,10 +233,18 @@ private final class PythonRuntime {
         functionName: String,
         arguments: [String]
     ) throws -> String {
-        configurePythonIfNeeded()
+        try withGIL {
+            let result = try call(moduleName: moduleName, functionName: functionName, arguments: arguments)
+            return String(result) ?? String(Python.str(result)) ?? ""
+        }
+    }
 
-        let result = try call(moduleName: moduleName, functionName: functionName, arguments: arguments)
-        return String(result) ?? String(Python.str(result)) ?? ""
+    /// `PythonObject` 를 밖으로 내보내지 않는다. 해제가 `Py_DecRef` 라 GIL 밖에서 풀리면 죽는다.
+    private func withGIL<T>(_ body: () throws -> T) rethrows -> T {
+        configurePythonIfNeeded()
+        let state = PythonGIL.ensure()
+        defer { PythonGIL.release(state) }
+        return try body()
     }
 
     /// `Python.import` 와 `dynamicallyCall` 은 파이썬 예외에서 **트랩한다**. throwing 변형을 써야
@@ -274,8 +285,18 @@ private final class PythonRuntime {
     }
 
     private func configurePythonIfNeeded() {
-        guard !didConfigurePython else { return }
+        Self.configureLock.lock()
+        defer { Self.configureLock.unlock() }
+        guard !Self.didConfigurePython else { return }
 
+        configurePython()
+        // `Py_Initialize` 는 GIL 을 쥔 채 돌아온다. 놓지 않으면 다른 스레드의 `PyGILState_Ensure` 가
+        // 영영 기다린다. `configurePython` 의 `PythonObject` 가 다 풀린 뒤라야 해서 함수를 나눴다.
+        PythonGIL.releaseAfterInitialize()
+        Self.didConfigurePython = true
+    }
+
+    private func configurePython() {
         let bundlePath = Bundle.main.bundlePath
         let pythonHome = "\(bundlePath)/python"
         let appPackages = "\(bundlePath)/app-packages"
@@ -302,8 +323,6 @@ private final class PythonRuntime {
             setenv("SSL_CERT_FILE", caBundle, 1)
             setenv("REQUESTS_CA_BUNDLE", caBundle, 1)
         }
-
-        didConfigurePython = true
     }
 
     private var pythonLibraryPath: String? {
@@ -324,6 +343,31 @@ private final class PythonRuntime {
             "\(bundlePath)/src/python",
         ].compactMap { $0 }
         return candidates.first ?? bundlePath
+    }
+}
+
+/// PythonKit 이 노출하지 않는 GIL C API. Python.xcframework 가 링크돼 있어 전역 심볼로 찾는다.
+private enum PythonGIL {
+    private typealias EnsureFunction = @convention(c) () -> Int32
+    private typealias ReleaseFunction = @convention(c) (Int32) -> Void
+    private typealias SaveThreadFunction = @convention(c) () -> OpaquePointer?
+
+    private static let ensureFunction: EnsureFunction = load("PyGILState_Ensure")
+    private static let releaseFunction: ReleaseFunction = load("PyGILState_Release")
+    private static let saveThreadFunction: SaveThreadFunction = load("PyEval_SaveThread")
+
+    static func ensure() -> Int32 { ensureFunction() }
+
+    static func release(_ state: Int32) { releaseFunction(state) }
+
+    static func releaseAfterInitialize() { _ = saveThreadFunction() }
+
+    private static func load<T>(_ name: String) -> T {
+        // RTLD_DEFAULT. 매크로라 Swift 로 들어오지 않는다.
+        guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2), name) else {
+            fatalError("\(name) 를 찾을 수 없습니다")
+        }
+        return unsafeBitCast(symbol, to: T.self)
     }
 }
 

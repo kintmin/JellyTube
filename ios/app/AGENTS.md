@@ -97,6 +97,9 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 - 비동기는 `completionHandler` 로 받는다. SKIE 가 Swift `async` 로 바꿔 준다
 - Swift 구현이 `@MainActor` 타입에 기대면 `@MainActor init` + `MainActor.assumeIsolated` 로
   **메인스레드 계약을 코드에 적는다**. nonisolated 로 두고 넘어가지 않는다
+- **파이썬 호출은 `PythonRuntime` 의 `withGIL` 안에서만** 한다. PythonKit 은 GIL 을 다루지 않아,
+  밖에서 부르면 호출이 겹칠 때 SIGSEGV 로 죽는다. `PythonObject` 도 그 안에서 Swift 값으로 바꿔 끝낸다
+  (해제가 `Py_DecRef` 다). 직렬 큐로 대신하지 않는다 — 3.12 부터는 스레드가 바뀌기만 해도 죽는다
 
 ---
 
@@ -181,3 +184,11 @@ xcodebuild -project ios/app/JellyTubeIos.xcodeproj -scheme JellyTubeIos \
 
 Xcode 빌드는 `:ios:shared:embedAndSignAppleFrameworkForXcode` 를 빌드 페이즈로 부른다 —
 Kotlin 을 고쳤으면 Xcode 빌드만 돌려도 반영된다.
+
+Swift 테스트는 `JellyTubeIosTests`(앱을 호스트로 띄우는 XCTest)에 둔다. 번들의 파이썬 런타임처럼
+앱 안에서만 확인되는 것을 검증한다. 순수 로직은 여기가 아니라 Kotlin `iosTest` 로 뺀다.
+
+```bash
+xcodebuild -project ios/app/JellyTubeIos.xcodeproj -scheme JellyTubeIos \
+  -destination 'platform=iOS Simulator,name=iPhone 17' test
+```

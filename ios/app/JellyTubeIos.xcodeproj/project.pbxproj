@@ -23,6 +23,7 @@
 		4A00000000000000000000A2 /* AppLogBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000A1 /* AppLogBridgeImpl.swift */; };
 		4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008D /* NowPlayingCoordinator.swift */; };
 		4A00000000000000000000C1 /* LyricsTranslatorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000C0 /* LyricsTranslatorBridgeImpl.swift */; };
+		4A00000000000000000000E1 /* PythonExecutorBridgeImplTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000E2 /* PythonExecutorBridgeImplTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +43,8 @@
 		4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerBridgeImpl.swift; sourceTree = "<group>"; };
 		4A00000000000000000000A1 /* AppLogBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogBridgeImpl.swift; sourceTree = "<group>"; };
 		4A000000000000000000008D /* NowPlayingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingCoordinator.swift; sourceTree = "<group>"; };
+		4A00000000000000000000E2 /* PythonExecutorBridgeImplTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonExecutorBridgeImplTests.swift; sourceTree = "<group>"; };
+		4A00000000000000000000E3 /* JellyTubeIosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = JellyTubeIosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,7 +57,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4A00000000000000000000E6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		4A00000000000000000000E8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4A0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4A0000000000000000000002;
+			remoteInfo = JellyTubeIos;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		4A0000000000000000000065 /* Embed Frameworks */ = {
@@ -75,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				4A0000000000000000000005 /* JellyTubeIos */,
+				4A00000000000000000000E4 /* JellyTubeIosTests */,
 				4A0000000000000000000067 /* Vendor */,
 				4A0000000000000000000006 /* Products */,
 			);
@@ -114,6 +135,7 @@
 			isa = PBXGroup;
 			children = (
 				4A0000000000000000000003 /* JellyTubeIos.app */,
+				4A00000000000000000000E3 /* JellyTubeIosTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -173,6 +195,14 @@
 			path = Translation;
 			sourceTree = "<group>";
 		};
+		4A00000000000000000000E4 /* JellyTubeIosTests */ = {
+			isa = PBXGroup;
+			children = (
+				4A00000000000000000000E2 /* PythonExecutorBridgeImplTests.swift */,
+			);
+			path = JellyTubeIosTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -199,6 +229,24 @@
 			productReference = 4A0000000000000000000003 /* JellyTubeIos.app */;
 			productType = "com.apple.product-type.application";
 		};
+		4A00000000000000000000EA /* JellyTubeIosTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4A00000000000000000000EB /* Build configuration list for PBXNativeTarget "JellyTubeIosTests" */;
+			buildPhases = (
+				4A00000000000000000000E5 /* Sources */,
+				4A00000000000000000000E6 /* Frameworks */,
+				4A00000000000000000000E7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4A00000000000000000000E9 /* PBXTargetDependency */,
+			);
+			name = JellyTubeIosTests;
+			productName = JellyTubeIosTests;
+			productReference = 4A00000000000000000000E3 /* JellyTubeIosTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -213,6 +261,10 @@
 					4A0000000000000000000002 = {
 						CreatedOnToolsVersion = 26.5;
 						ProvisioningStyle = Automatic;
+					};
+					4A00000000000000000000EA = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = 4A0000000000000000000002;
 					};
 				};
 			};
@@ -233,6 +285,7 @@
 			projectRoot = "";
 			targets = (
 				4A0000000000000000000002 /* JellyTubeIos */,
+				4A00000000000000000000EA /* JellyTubeIosTests */,
 			);
 		};
 /* End PBXProject section */
@@ -245,6 +298,13 @@
 				4A000000000000000000000C /* Assets.xcassets in Resources */,
 				C9E4F40D2FD13000009FB07B /* python in Resources */,
 				4A0000000000000000000064 /* app_packages in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4A00000000000000000000E7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -309,7 +369,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4A00000000000000000000E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A00000000000000000000E1 /* PythonExecutorBridgeImplTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4A00000000000000000000E9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4A0000000000000000000002 /* JellyTubeIos */;
+			targetProxy = 4A00000000000000000000E8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		4A0000000000000000000012 /* Debug */ = {
@@ -499,6 +575,55 @@
 			};
 			name = Release;
 		};
+		4A00000000000000000000EC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../ios/shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kintmin.JellyTubeIosTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/JellyTubeIos.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/JellyTubeIos";
+			};
+			name = Debug;
+		};
+		4A00000000000000000000ED /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../../ios/shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kintmin.JellyTubeIosTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/JellyTubeIos.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/JellyTubeIos";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -516,6 +641,15 @@
 			buildConfigurations = (
 				4A0000000000000000000015 /* Debug */,
 				4A0000000000000000000016 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4A00000000000000000000EB /* Build configuration list for PBXNativeTarget "JellyTubeIosTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A00000000000000000000EC /* Debug */,
+				4A00000000000000000000ED /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
