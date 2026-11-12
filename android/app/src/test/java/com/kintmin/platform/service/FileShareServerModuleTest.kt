@@ -20,6 +20,8 @@ import io.ktor.http.contentType
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.utils.io.writeFully
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -222,6 +224,30 @@ class FileShareServerModuleTest {
         coVerify(exactly = 0) { saveImageUseCase(any()) }
     }
 
+    @Test
+    fun `거절할 때도 본문을 끝까지 읽어 보내던 클라이언트가 응답을 받게 한다`() = serverTest(migrationSession = MigrationSession()) {
+        val chunk = ByteArray(64 * 1024)
+        var writtenBytes = 0L
+        val body = object : OutgoingContent.WriteChannelContent() {
+            override val contentLength = chunk.size * LARGE_BODY_CHUNKS.toLong()
+            override suspend fun writeTo(channel: ByteWriteChannel) {
+                repeat(LARGE_BODY_CHUNKS) {
+                    channel.writeFully(chunk)
+                    channel.flush()
+                    writtenBytes += chunk.size
+                }
+            }
+        }
+
+        val conflict = client.post(FileShareConstants.HTTP_UPLOAD_PATH) {
+            header(FileShareConstants.HEADER_FILE_NAME, "song.m4a")
+            setBody(body)
+        }
+
+        assertEquals(HttpStatusCode.Conflict, conflict.status)
+        assertEquals(body.contentLength, writtenBytes)
+    }
+
     private fun audioMedia(id: Int, name: String) = AudioMedia(
         id = id,
         source = "s",
@@ -234,3 +260,5 @@ class FileShareServerModuleTest {
         createdTime = LocalDateTime(2026, 1, 1, 0, 0),
     )
 }
+
+private const val LARGE_BODY_CHUNKS = 128
