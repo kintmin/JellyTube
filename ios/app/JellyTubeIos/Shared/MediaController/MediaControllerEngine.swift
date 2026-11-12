@@ -37,6 +37,8 @@ final class MediaControllerEngine {
     private var scheduleGeneration = 0
     /// 엔진이 멈추면 재생 위치를 읽을 수 없다. 엔진이 돌 때 마지막으로 읽은 위치로 이어서 건다.
     private var lastKnownPosition: TimeInterval = 0
+    /// 멈춘 노드는 `playerTime` 이 nil 이라 위치를 읽을 수 없다. 멈추기 직전 위치를 쥐고 있는다.
+    private var pausedPosition: TimeInterval?
     private var isPlayingIntent = false
     private var didConfigureAudioSession = false
     private var didStartEngine = false
@@ -106,7 +108,10 @@ final class MediaControllerEngine {
             broadcast()
             return
         }
+        pausedPosition = currentTimeInItem
         playerNode.pause()
+        // iOS 는 오디오 출력이 살아 있으면 앱을 재생 중으로 본다. 엔진까지 세워야 제어 센터가 일시정지로 바뀐다.
+        engine.pause()
         isPlayingIntent = false
         broadcast()
     }
@@ -116,6 +121,7 @@ final class MediaControllerEngine {
         if !playerNode.isPlaying {
             playerNode.play()
         }
+        pausedPosition = nil
         isPlayingIntent = true
         broadcast()
     }
@@ -294,6 +300,7 @@ final class MediaControllerEngine {
     private func scheduleItem(at index: Int, startingSeconds: TimeInterval) -> ScheduleResult {
         guard queue.indices.contains(index) else { return .unreadable }
         stopPlayer()
+        pausedPosition = nil
         let generation = scheduleGeneration
 
         let item = queue[index]
@@ -418,7 +425,8 @@ final class MediaControllerEngine {
 
     private func handleConfigurationChange() {
         mcLog.info("engine configuration changed → restart at \(self.lastKnownPosition)")
-        ensureEngineRunning()
+        // 일시정지 중에 켜면 제어 센터가 다시 재생 중으로 바뀐다. 이어 듣기는 resume() 이 켠다.
+        if isPlayingIntent { ensureEngineRunning() }
         guard currentFile != nil else { return }
         playIfIntended(schedulePlayable(from: currentIndex, startingSeconds: lastKnownPosition))
         broadcast()
@@ -455,6 +463,7 @@ final class MediaControllerEngine {
     // MARK: - Time tracking
 
     private var currentTimeInItem: TimeInterval {
+        if let pausedPosition { return pausedPosition }
         guard let file = currentFile else { return currentItemBaseOffset }
         guard let nodeTime = playerNode.lastRenderTime,
               let playerTime = playerNode.playerTime(forNodeTime: nodeTime),
