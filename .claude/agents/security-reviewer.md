@@ -17,7 +17,7 @@ Reference standard: **OWASP MASVS / MASTG** (mobile app security). Cite the rele
 
 ## Threat surface of THIS project (check these first when in scope)
 
-1. **File-share Ktor server (HIGHEST RISK)** — `android:app`'s `com.kintmin.platform.service.FileShareForegroundService` runs a Ktor CIO HTTP + WebSocket server on `FileShareConstants.DEFAULT_PORT` (52847), advertised over mDNS (`_jellytube._tcp.`). Endpoints: `/upload`, `/upload/artist`, `/upload/thumbnail`, `/ws/status`. Check:
+1. **File-share Ktor server (HIGHEST RISK)** — `android:app`'s `com.kintmin.platform.service.FileShareForegroundService` runs a Ktor CIO HTTP + WebSocket server on `FileShareConstants.DEFAULT_PORT` (52847), advertised over mDNS (`_jellytube._tcp.` for PC 수신, `_jellytube-mig._tcp.` while a data migration session waits for pairing). Endpoints: `/upload`, `/upload/artist`, `/upload/thumbnail`, `/ws/status`, `/migration/*`(one token per session, issued to the device that entered the code; plaintext HTTP). Check:
    - **Authentication / pairing**: are uploads/mutations unauthenticated? Anyone on the same LAN/Wi-Fi (incl. coffee-shop, corporate, attacker hotspot) can hit these. Look for any token/PIN/pairing handshake. Its absence is a finding.
    - **Path traversal**: `HEADER_FILE_NAME` (`X-File-Name`) → where does the filename land on disk? `../` / absolute path / null bytes must be rejected; write only to an app-private dir with a sanitized basename (CWE-22).
    - **Bind address**: bound to the intended LAN interface, not unintentionally reachable; confirm it's stopped with the service lifecycle.

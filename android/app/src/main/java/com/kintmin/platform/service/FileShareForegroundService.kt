@@ -13,10 +13,12 @@ import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
+import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
+import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
 import com.kintmin.fileshare.FileShareConstants
@@ -39,6 +41,8 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
@@ -47,6 +51,7 @@ import org.koin.core.component.inject
 class FileShareForegroundService : Service(), KoinComponent {
 
     private val importUploadedAudioMediaUseCase: ImportUploadedAudioMediaUseCase by inject()
+    private val validateUploadedAudioFileNameUseCase: ValidateUploadedAudioFileNameUseCase by inject()
     private val updateAudioMediaUseCase: UpdateAudioMediaUseCase by inject()
     private val saveAudioMediaImageUseCase: SaveAudioMediaImageUseCase by inject()
     private val cleanupAnomalousDataUseCase: CleanupAnomalousDataUseCase by inject()
@@ -56,9 +61,11 @@ class FileShareForegroundService : Service(), KoinComponent {
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var ktorServer: io.ktor.server.engine.EmbeddedServer<*, *>? = null
-    private var nsdManager: NsdManager? = null
-    private var registeredServiceName: String? = null
-    private var nsdRegistrationListener: NsdManager.RegistrationListener? = null
+    private val nsdRegistrations = mutableMapOf<String, NsdManager.RegistrationListener>()
+    private var nsdAdvertiseJob: Job? = null
+    private var nsdTargets: Set<String> = emptySet()
+    private var nsdRetryCount = 0
+    private var isNsdClosed = false
     private var migrationWakeLock: PowerManager.WakeLock? = null
     private var migrationWifiLock: WifiManager.WifiLock? = null
     private var migrationLockJob: Job? = null
@@ -85,7 +92,7 @@ class FileShareForegroundService : Service(), KoinComponent {
         val notification = if (Owner.DATA_MIGRATION in owners.value) DataMigrationSendNotification else FileShareServerNotification
         runCatching { startForegroundWith(notification) }.onSuccess {
             startKtorServer()
-            registerNsdService()
+            advertiseWhileRunning()
             holdLocksWhileMigrating()
         }.onFailure {
             stopSelf()
@@ -107,7 +114,7 @@ class FileShareForegroundService : Service(), KoinComponent {
     override fun onDestroy() {
         clearOwnersIfCurrent(generation)
         releaseMigrationLocks()
-        unregisterNsdService()
+        closeNsdRegistrations()
         ktorServer?.let { server ->
             runCatching { server.stop(500L, 500L) }
         }
@@ -128,6 +135,7 @@ class FileShareForegroundService : Service(), KoinComponent {
                 ktorServer = embeddedServer(CIO, port = FileShareConstants.DEFAULT_PORT) {
                     fileShareModule(
                         importUploadedAudioMedia = importUseCase,
+                        validateUploadedAudioFileName = validateUploadedAudioFileNameUseCase,
                         updateAudioMedia = updateUseCase,
                         saveAudioMediaImage = saveImageUseCase,
                         uploadCacheDir = uploadCacheDir,
@@ -162,7 +170,7 @@ class FileShareForegroundService : Service(), KoinComponent {
         if (migrationLockJob?.isActive == true) return
         migrationLockJob = serviceScope.launch {
             MigrationSessionHolder.state.collect { status ->
-                val isConnected = status == DataMigrationSendStatus.Paired || status is DataMigrationSendStatus.Finished
+                val isConnected = status is DataMigrationSendStatus.Paired || status is DataMigrationSendStatus.Finished
                 if (isConnected) acquireMigrationLocks() else releaseMigrationLocks()
             }
         }
@@ -211,35 +219,72 @@ class FileShareForegroundService : Service(), KoinComponent {
         migrationWifiLock = null
     }
 
-    private fun registerNsdService() {
-        runCatching {
-            val serviceInfo = NsdServiceInfo().apply {
-                serviceType = FileShareConstants.NSD_SERVICE_TYPE
-                serviceName = FileShareConstants.NSD_SERVICE_NAME
-                port = FileShareConstants.DEFAULT_PORT
-            }
-
-            val listener = object : NsdManager.RegistrationListener {
-                override fun onRegistrationFailed(info: NsdServiceInfo, errorCode: Int) {}
-                override fun onUnregistrationFailed(info: NsdServiceInfo, errorCode: Int) {}
-                override fun onServiceRegistered(info: NsdServiceInfo) {
-                    registeredServiceName = info.serviceName
-                }
-                override fun onServiceUnregistered(info: NsdServiceInfo) {}
-            }
-
-            nsdRegistrationListener = listener
-            nsdManager = getSystemService(NSD_SERVICE) as NsdManager
-            nsdManager?.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, listener)
+    private fun advertiseWhileRunning() {
+        if (nsdAdvertiseJob?.isActive == true) return
+        nsdAdvertiseJob = serviceScope.launch {
+            combine(owners, MigrationSessionHolder.state, ::advertisedServiceTypes)
+                .distinctUntilChanged()
+                .collect(::syncNsdRegistrations)
         }
     }
 
-    private fun unregisterNsdService() {
-        runCatching {
-            val listener = nsdRegistrationListener ?: return
-            nsdManager?.unregisterService(listener)
-            nsdRegistrationListener = null
-            nsdManager = null
+    // 수집이 취소된 뒤에도 이미 꺼낸 값으로 한 번 더 불릴 수 있다. 닫힌 뒤에는 다시 등록하지 않는다.
+    @Synchronized
+    private fun syncNsdRegistrations(serviceTypes: Set<String>) {
+        if (serviceTypes != nsdTargets) nsdRetryCount = 0
+        nsdTargets = serviceTypes
+        val manager = getSystemService(NSD_SERVICE) as NsdManager
+        val targets = if (isNsdClosed) emptySet() else serviceTypes
+        (nsdRegistrations.keys - targets).forEach { serviceType ->
+            nsdRegistrations.remove(serviceType)?.let { runCatching { manager.unregisterService(it) } }
+        }
+        (targets - nsdRegistrations.keys).forEach { serviceType ->
+            val listener = object : NsdManager.RegistrationListener {
+                override fun onRegistrationFailed(info: NsdServiceInfo, errorCode: Int) = onNsdRegistrationFailed(serviceType, this)
+                override fun onUnregistrationFailed(info: NsdServiceInfo, errorCode: Int) {}
+                override fun onServiceRegistered(info: NsdServiceInfo) {}
+                override fun onServiceUnregistered(info: NsdServiceInfo) {}
+            }
+            runCatching { manager.registerService(nsdServiceInfo(serviceType), NsdManager.PROTOCOL_DNS_SD, listener) }
+                .onSuccess { nsdRegistrations[serviceType] = listener }
+                .onFailure { retryNsdRegistrations() }
+        }
+    }
+
+    // 실패한 등록을 남겨 두면 등록된 줄 알고 다시 시도하지 않아 받는 기기가 찾지 못한다.
+    @Synchronized
+    private fun onNsdRegistrationFailed(serviceType: String, listener: NsdManager.RegistrationListener) {
+        if (nsdRegistrations[serviceType] !== listener) return
+        nsdRegistrations.remove(serviceType)
+        retryNsdRegistrations()
+    }
+
+    // 광고 대상이 그대로면 다시 맞출 계기가 없다. 직접 다시 맞춘다.
+    @Synchronized
+    private fun retryNsdRegistrations() {
+        if (nsdRetryCount >= NSD_MAX_RETRIES) return
+        nsdRetryCount++
+        serviceScope.launch {
+            delay(NSD_RETRY_DELAY_MS)
+            syncNsdRegistrations(nsdTargets)
+        }
+    }
+
+    @Synchronized
+    private fun closeNsdRegistrations() {
+        nsdAdvertiseJob?.cancel()
+        isNsdClosed = true
+        syncNsdRegistrations(emptySet())
+    }
+
+    private fun nsdServiceInfo(serviceType: String) = NsdServiceInfo().apply {
+        this.serviceType = serviceType
+        port = FileShareConstants.DEFAULT_PORT
+        if (serviceType == FileShareConstants.MIGRATION_NSD_SERVICE_TYPE) {
+            serviceName = toDnsSdInstanceName(localDeviceName(this@FileShareForegroundService))
+            setAttribute(FileShareConstants.MIGRATION_TXT_FORMAT_VERSION, FileShareConstants.MIGRATION_FORMAT_VERSION.toString())
+        } else {
+            serviceName = FileShareConstants.NSD_SERVICE_NAME
         }
     }
 
@@ -250,6 +295,9 @@ class FileShareForegroundService : Service(), KoinComponent {
         private const val NO_GENERATION = -1
 
         private const val MIGRATION_LOCK_TAG = "JellyTube:migration"
+
+        private const val NSD_MAX_RETRIES = 3
+        private const val NSD_RETRY_DELAY_MS = 2_000L
 
         // 놓친 해제가 배터리를 끝까지 잡지 않도록 상한을 둔다.
         private const val MIGRATION_LOCK_TIMEOUT_MS = 2 * 60 * 60 * 1000L

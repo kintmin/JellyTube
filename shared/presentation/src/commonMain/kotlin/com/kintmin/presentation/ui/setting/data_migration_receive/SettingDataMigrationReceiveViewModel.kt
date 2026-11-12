@@ -9,6 +9,8 @@ import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationSenderCleanupFailedException
 import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
+import com.kintmin.domain.data_migration.model.MigrationSourceBusyException
+import com.kintmin.domain.data_migration.model.MigrationSourceClosedException
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
@@ -18,8 +20,11 @@ import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.presentation.platform.continueInBackgroundWhile
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningWorkMonitor
+import com.kintmin.presentation.port.model.MigrationSource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,9 +56,15 @@ class SettingDataMigrationReceiveViewModel constructor(
 
     private var runJob: Job? = null
 
+    /** 찾기와 고르기는 화면을 덮어쓰므로 마지막 하나만 남긴다. */
+    private var discoveryJob: Job? = null
+
     fun sendIntent(intent: SettingDataMigrationReceiveIntent) {
         when (intent) {
             SettingDataMigrationReceiveIntent.OnClickSearch -> search()
+            is SettingDataMigrationReceiveIntent.OnSelectSource -> if (intent.source.isCompatible) {
+                discover { resolve(intent.source) }
+            }
             is SettingDataMigrationReceiveIntent.OnChangeCode -> _uiState.update { state ->
                 state.copy(code = intent.code.filter(Char::isDigit).take(SettingDataMigrationReceiveUiState.CODE_LENGTH))
             }
@@ -65,16 +76,37 @@ class SettingDataMigrationReceiveViewModel constructor(
 
     private fun search() {
         token = null
-        updatePhase(DataMigrationReceivePhase.Searching)
-        viewModelScope.launch {
+        endpoint = null
+        _uiState.update { it.copy(phase = DataMigrationReceivePhase.Searching, source = null) }
+        discover {
             val runningWorks = runningWorkMonitor.runningWorks()
             if (runningWorks.isNotEmpty()) {
                 updatePhase(DataMigrationReceivePhase.Blocked(runningWorks))
-                return@launch
+                return@discover
             }
-            endpoint = migrationSourceDiscovery.discover()
-            updatePhase(if (endpoint != null) DataMigrationReceivePhase.CodeInput() else DataMigrationReceivePhase.NotFound)
+            val sources = migrationSourceDiscovery.discover()
+            currentCoroutineContext().ensureActive()
+            val only = sources.singleOrNull()
+            when {
+                sources.isEmpty() -> updatePhase(DataMigrationReceivePhase.NotFound)
+                only != null && only.isCompatible -> resolve(only)
+                else -> updatePhase(DataMigrationReceivePhase.SelectSource(sources))
+            }
         }
+    }
+
+    private suspend fun resolve(source: MigrationSource) {
+        _uiState.update { it.copy(phase = DataMigrationReceivePhase.Searching, source = source) }
+        val resolved = migrationSourceDiscovery.resolve(source)
+        currentCoroutineContext().ensureActive()
+        endpoint = resolved
+        updatePhase(if (endpoint != null) DataMigrationReceivePhase.CodeInput() else DataMigrationReceivePhase.NotFound)
+    }
+
+    // iOS 브릿지는 취소돼도 결과가 올 때까지 돌아오지 않는다. [block] 은 결과를 받을 때마다 ensureActive 로 확인한다.
+    private fun discover(block: suspend () -> Unit) {
+        discoveryJob?.cancel()
+        discoveryJob = viewModelScope.launch { block() }
     }
 
     private fun connect() {
@@ -201,7 +233,9 @@ class SettingDataMigrationReceiveViewModel constructor(
     }
 
     private fun Throwable.toMessage(): String = when (this) {
-        is MigrationPairRejectedException -> "코드가 맞지 않거나 Android 기기의 보내기 화면이 닫혔습니다."
+        is MigrationPairRejectedException -> "코드가 맞지 않습니다. Android 화면의 코드를 확인하고, 계속 안 되면 Android에서 새 코드를 받아 주세요."
+        is MigrationSourceBusyException -> "이 Android 기기는 이미 연결된 기기에 데이터를 보내고 있습니다. 이 iPhone이 연결했던 것이라면 Android에서 보내기를 멈추고 새 코드를 받아 입력해 주세요."
+        is MigrationSourceClosedException -> "Android 기기의 보내기 화면이 닫혔거나 코드를 여러 번 틀려 잠겼습니다. Android에서 새 코드를 받아 입력해 주세요."
         is MigrationVersionMismatchException -> message.orEmpty()
         is MigrationSenderCleanupFailedException -> "Android 기기에서 보내기 전 데이터 정리에 실패했습니다. 다시 시도해도 같으면 Android 앱 로그를 확인해 주세요."
         is MigrationSessionExpiredException -> "Android 기기와의 연결이 끊겼습니다. Android 화면에 보이는 코드를 다시 입력해 주세요. 받은 파일은 이어서 받습니다."

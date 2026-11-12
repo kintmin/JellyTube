@@ -58,8 +58,9 @@ fun DataMigrationSendStatusView(
                     )
                     StatusText("iPhone에 이 코드를 입력해 주세요.")
                 }
-                DataMigrationSendStep.Sending -> {
+                is DataMigrationSendStep.Sending -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                    StatusText("연결된 기기: ${step.peerName}")
                     StatusText("iPhone이 데이터를 받고 있습니다. 처음에는 보내기 전에 데이터를 점검합니다.")
                 }
                 is DataMigrationSendStep.Finished -> {
@@ -106,6 +107,14 @@ private fun StatusText(text: String) {
 private fun DataMigrationSendStatusViewWaitingPreview() {
     JellyTubeTheme {
         DataMigrationSendStatusView(step = DataMigrationSendStep.WaitingForPair("482913"), sendIntent = {})
+    }
+}
+
+@Preview
+@Composable
+private fun DataMigrationSendStatusViewSendingPreview() {
+    JellyTubeTheme {
+        DataMigrationSendStatusView(step = DataMigrationSendStep.Sending("iPhone"), sendIntent = {})
     }
 }
 

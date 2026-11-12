@@ -27,13 +27,13 @@
 
 	<!--
 	  데이터 이전: 같은 Wi-Fi 의 Android 기기를 Bonjour 로 찾는다. 둘 중 하나라도 없으면 탐색이
-	  오류 없이 0건으로 끝난다. 서비스 타입의 진원지는 `FileShareConstants.NSD_SERVICE_TYPE` 이다.
+	  오류 없이 0건으로 끝난다. 서비스 타입의 진원지는 `FileShareConstants.MIGRATION_NSD_SERVICE_TYPE` 이다.
 	-->
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Android 기기의 JellyTube 데이터를 옮겨 오기 위해 같은 네트워크의 기기를 찾습니다.</string>
 	<key>NSBonjourServices</key>
 	<array>
-		<string>_jellytube._tcp</string>
+		<string>_jellytube-mig._tcp</string>
 	</array>
 
 	<!-- 데이터 이전: 보내는 기기의 서버는 평문 HTTP 다. -->

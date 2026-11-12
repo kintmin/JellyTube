@@ -23,6 +23,7 @@ import io.ktor.http.contentType
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
+import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
@@ -65,6 +66,7 @@ class MigrationRoutesTest {
         application {
             fileShareModule(
                 importUploadedAudioMedia = mockk(),
+                validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
                 updateAudioMedia = mockk(),
                 saveAudioMediaImage = mockk(),
                 uploadCacheDir = tempFolder.root,
@@ -81,7 +83,7 @@ class MigrationRoutesTest {
     private suspend fun ApplicationTestBuilder.pair(code: String): HttpResponse =
         client.post(FileShareConstants.MIGRATION_PAIR_PATH) {
             contentType(ContentType.Application.Json)
-            setBody("""{"code":"$code"}""")
+            setBody("""{"code":"$code","deviceName":"iPhone"}""")
         }
 
     private suspend fun ApplicationTestBuilder.manifest(token: String?): HttpResponse =
@@ -107,6 +109,14 @@ class MigrationRoutesTest {
 
         assertEquals(HttpStatusCode.OK, response.status)
         assertTrue(response.bodyAsText().contains(TOKEN))
+    }
+
+    @Test
+    fun `이미 다른 기기가 페어링했으면 맞는 코드에만 409 이고 틀린 코드는 401 이다`() = serverTest {
+        pair(CODE)
+
+        assertEquals(HttpStatusCode.Conflict, pair(CODE).status)
+        assertEquals(HttpStatusCode.Unauthorized, pair("000000").status)
     }
 
     @Test

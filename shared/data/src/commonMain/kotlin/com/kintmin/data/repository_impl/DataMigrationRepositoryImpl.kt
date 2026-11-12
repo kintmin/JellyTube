@@ -14,6 +14,8 @@ import com.kintmin.domain.data_migration.model.MigrationFileEntry
 import com.kintmin.domain.data_migration.model.MigrationFileKind
 import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
+import com.kintmin.domain.data_migration.model.MigrationSourceBusyException
+import com.kintmin.domain.data_migration.model.MigrationSourceClosedException
 import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationSenderCleanupFailedException
 import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
@@ -68,10 +70,8 @@ class DataMigrationRepositoryImpl constructor(
     override fun isPlayableAudioFile(fileName: String): Boolean =
         isPlayableAudioExtension(fileName.substringAfterLast('.', missingDelimiterValue = ""))
 
-    override suspend fun pair(endpoint: MigrationEndpoint, code: String): Result<String> = runCatching {
-        migrationDataSource.pair(endpoint.host, endpoint.port, code).getOrThrow()
-            ?: throw MigrationPairRejectedException()
-    }
+    override suspend fun pair(endpoint: MigrationEndpoint, code: String): Result<String> =
+        migrationDataSource.pair(endpoint.host, endpoint.port, code).recoverCatching { throw it.asPairFailure() }
 
     override suspend fun fetchRemoteExport(endpoint: MigrationEndpoint, token: String): Result<MigrationExport> =
         runCatching {
@@ -180,6 +180,13 @@ class DataMigrationRepositoryImpl constructor(
 
     private fun stagedPath(file: MigrationFile): Path =
         fileManager.getMigrationStagingDirPath().getOrThrow().toPath() / file.kind.name / file.name
+}
+
+internal fun Throwable.asPairFailure(): Throwable = when ((this as? ClientRequestException)?.response?.status) {
+    HttpStatusCode.Unauthorized -> MigrationPairRejectedException()
+    HttpStatusCode.NotFound -> MigrationSourceClosedException()
+    HttpStatusCode.Conflict -> MigrationSourceBusyException()
+    else -> this
 }
 
 internal fun FileSystem.moveFile(source: Path, destination: Path) {

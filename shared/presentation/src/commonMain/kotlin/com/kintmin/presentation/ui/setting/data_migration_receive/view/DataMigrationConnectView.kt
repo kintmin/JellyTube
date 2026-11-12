@@ -12,6 +12,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,12 +22,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.port.model.MigrationSource
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationReceivePhase
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveIntent
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveUiState
 
-/** 연결 전 단계(탐색 → 코드 입력 → 연결)를 그린다. */
+/** 연결 전 단계(탐색 → 기기 선택 → 코드 입력 → 연결)를 그린다. */
 @Composable
 fun DataMigrationConnectView(
     uiState: SettingDataMigrationReceiveUiState,
@@ -54,7 +56,22 @@ fun DataMigrationConnectView(
                 }
                 DataMigrationReceivePhase.Searching -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                    StatusText("Android 기기를 찾는 중입니다.")
+                    StatusText(uiState.source?.let { "${it.name}에 연결하는 중입니다." } ?: "Android 기기를 찾는 중입니다.")
+                }
+                is DataMigrationReceivePhase.SelectSource -> {
+                    StatusText("데이터를 보낼 Android 기기를 골라 주세요.")
+                    phase.sources.forEach { source ->
+                        OutlinedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = source.isCompatible,
+                            onClick = { sendIntent(SettingDataMigrationReceiveIntent.OnSelectSource(source)) },
+                        ) {
+                            Text(if (source.isCompatible) source.name else "${source.name} (앱 업데이트 필요)")
+                        }
+                    }
+                    Button(onClick = { sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch) }) {
+                        Text("다시 찾기")
+                    }
                 }
                 DataMigrationReceivePhase.NotFound -> {
                     StatusText(
@@ -66,7 +83,7 @@ fun DataMigrationConnectView(
                     }
                 }
                 is DataMigrationReceivePhase.CodeInput -> {
-                    StatusText("Android 화면에 보이는 6자리 코드를 입력해 주세요.")
+                    StatusText("${uiState.source?.name ?: "Android"} 화면에 보이는 6자리 코드를 입력해 주세요.")
                     OutlinedTextField(
                         value = uiState.code,
                         onValueChange = { sendIntent(SettingDataMigrationReceiveIntent.OnChangeCode(it)) },
@@ -114,7 +131,26 @@ private fun DataMigrationConnectViewCodeInputPreview() {
         DataMigrationConnectView(
             uiState = SettingDataMigrationReceiveUiState(
                 phase = DataMigrationReceivePhase.CodeInput(errorMessage = "코드가 맞지 않습니다."),
+                source = MigrationSource(name = "Galaxy S24", isCompatible = true),
                 code = "4829",
+            ),
+            sendIntent = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun DataMigrationConnectViewSelectSourcePreview() {
+    JellyTubeTheme {
+        DataMigrationConnectView(
+            uiState = SettingDataMigrationReceiveUiState(
+                phase = DataMigrationReceivePhase.SelectSource(
+                    listOf(
+                        MigrationSource(name = "Galaxy S24", isCompatible = true),
+                        MigrationSource(name = "Pixel 9", isCompatible = false),
+                    ),
+                ),
             ),
             sendIntent = {},
         )

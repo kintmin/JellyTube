@@ -1,9 +1,12 @@
 package com.kintmin.presentation.ui.setting.data_migration_receive
 
+import com.kintmin.presentation.port.model.MigrationSource
 import com.kintmin.presentation.port.model.RunningWork
 
 data class SettingDataMigrationReceiveUiState(
     val phase: DataMigrationReceivePhase = DataMigrationReceivePhase.Idle,
+    /** 코드를 입력할 상대. 받는 동안에도 유지한다. */
+    val source: MigrationSource? = null,
     val code: String = "",
     val stages: List<DataMigrationStageItem> = emptyList(),
 ) {
@@ -47,6 +50,9 @@ sealed interface DataMigrationReceivePhase {
     /** 이전 전에 끝나 있어야 하는 작업이 남아 있다. */
     data class Blocked(val runningWorks: Map<RunningWork, Int>) : DataMigrationReceivePhase
     data object NotFound : DataMigrationReceivePhase
+
+    /** 여러 대를 찾았거나, 찾은 한 대가 버전이 달라 고를 수 없다. */
+    data class SelectSource(val sources: List<MigrationSource>) : DataMigrationReceivePhase
     data class CodeInput(val errorMessage: String? = null) : DataMigrationReceivePhase
     data object Pairing : DataMigrationReceivePhase
     data object Running : DataMigrationReceivePhase

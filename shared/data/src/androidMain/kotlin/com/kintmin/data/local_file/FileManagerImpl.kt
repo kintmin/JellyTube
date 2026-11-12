@@ -183,7 +183,9 @@ internal class FileManagerImpl(
 
     override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = runCatching {
         withContext(Dispatchers.IO) {
-            val ext = originalFileName.substringAfterLast(".", "").ifBlank { "mp3" }
+            // 업로드 경로가 검증한 이름만 넘긴다. 확장자가 없으면 그 검증을 거치지 않은 호출이다.
+            val ext = originalFileName.substringAfterLast(".", "")
+            require(ext.isNotBlank()) { "확장자가 없는 파일명입니다: $originalFileName" }
             val fileName = UUID.randomUUID().toString()
             val fileNameWithExt = "$fileName.$ext"
             val targetFile = audioDir().resolve(fileNameWithExt)

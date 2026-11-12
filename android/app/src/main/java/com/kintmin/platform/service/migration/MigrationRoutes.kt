@@ -36,8 +36,11 @@ internal fun Route.migrationRoutes(
         val session = currentSession() ?: return@post call.respond(HttpStatusCode.NotFound)
         val request = runCatching { call.receive<MigrationPairRequest>() }
             .getOrElse { return@post call.respond(HttpStatusCode.BadRequest) }
-        val token = session.pair(request.code) ?: return@post call.respond(HttpStatusCode.Unauthorized)
-        call.respond(MigrationPairResponse(token))
+        when (val result = session.pair(request.code, request.deviceName)) {
+            is PairResult.Issued -> call.respond(MigrationPairResponse(result.token))
+            PairResult.Rejected -> call.respond(HttpStatusCode.Unauthorized)
+            PairResult.Busy -> call.respond(HttpStatusCode.Conflict)
+        }
     }
 
     get(FileShareConstants.MIGRATION_MANIFEST_PATH) {

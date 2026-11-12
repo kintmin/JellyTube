@@ -2,6 +2,7 @@ package com.kintmin.data.di
 
 import com.kintmin.data.audio_edit.AudioEditor
 import com.kintmin.data.audio_edit.AudioEditorImpl
+import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.device_status.DeviceStatusImpl
 import com.kintmin.data.local_datastore.createIosPreferencesDataStore
@@ -9,6 +10,8 @@ import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.database.createIosJellyTubeDatabase
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.local_file.FileManagerImpl
+import com.kintmin.data.network.dataSource.MigrationDataSource
+import com.kintmin.data.network.dataSourceImpl.MigrationDataSourceImpl
 import com.kintmin.data.python_bridge.IosLyricsTransliterator
 import com.kintmin.data.python_bridge.IosPythonExecutorAdapter
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
@@ -35,6 +38,7 @@ fun dataIosModule(
     single<DeviceStatus> { DeviceStatusImpl() }
     single<AudioEditor> { AudioEditorImpl() }
     single<FileManager> { FileManagerImpl() }
+    single<MigrationDataSource> { MigrationDataSourceImpl(get(), ::localDeviceName) }
     single<PythonExecutor> { IosPythonExecutorAdapter(pythonExecutorBridge) }
     // 브릿지 자체도 꺼낼 수 있어야 한다 — 끝난 전송 목록처럼 PythonExecutor 밖의 일이 있다.
     single<IosPythonExecutorBridge> { pythonExecutorBridge }

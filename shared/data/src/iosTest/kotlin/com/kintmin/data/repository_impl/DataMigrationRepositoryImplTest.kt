@@ -161,7 +161,7 @@ class DataMigrationRepositoryImplTest {
     )
 
     private inner class FakeDataSource : MigrationDataSource {
-        override suspend fun pair(host: String, port: Int, code: String) = Result.success<String?>("t")
+        override suspend fun pair(host: String, port: Int, code: String) = Result.success("t")
         override suspend fun fetchManifest(host: String, port: Int, token: String) =
             Result.failure<MigrationManifestDto>(UnsupportedOperationException())
 
