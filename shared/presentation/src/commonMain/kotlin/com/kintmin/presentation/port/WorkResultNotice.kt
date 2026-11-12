@@ -23,9 +23,11 @@ sealed interface WorkResultNotice {
             override val deepLink = DeepLinkConstants.UrlBuilder.playlistContentScreen(playlistId, audioMediaId)
         }
 
-        data object Failure : Download {
+        data class Failure(
+            val reason: String? = null,
+        ) : Download {
             override val title = "음원 다운로드 실패"
-            override val body = "다운에 실패했습니다. 로그를 확인해주세요."
+            override val body = reason ?: "다운에 실패했습니다. 로그를 확인해주세요."
             override val deepLink = DeepLinkConstants.UrlBuilder.appLogScreen()
         }
     }

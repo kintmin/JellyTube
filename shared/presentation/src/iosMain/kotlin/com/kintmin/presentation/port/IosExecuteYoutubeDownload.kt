@@ -70,7 +70,7 @@ internal class IosExecuteYoutubeDownload(
                     appLog.sendDebugLog(
                         DebugLog("IosExecuteYoutubeDownload", throwable.message.orEmpty()),
                     )
-                    IosLocalNotification.show(WorkResultNotice.Download.Failure)
+                    IosLocalNotification.show(WorkResultNotice.Download.Failure())
                 }
         }
     }
