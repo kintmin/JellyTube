@@ -6,8 +6,8 @@ import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
 import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
 import com.kintmin.presentation.port.ExecuteYoutubeDownload
-import com.kintmin.presentation.port.LOCAL_NOTIFICATION_DEEP_LINK_KEY
 import com.kintmin.presentation.port.StepMeasurementController
+import com.kintmin.presentation.port.localNotificationDeepLinkOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -66,7 +66,7 @@ fun handleDeepLink(url: String) {
 }
 
 fun handleNotificationTap(userInfo: Map<Any?, *>) {
-    val deepLink = userInfo[LOCAL_NOTIFICATION_DEEP_LINK_KEY] as? String ?: return
+    val deepLink = localNotificationDeepLinkOf(userInfo) ?: return
     appViewModel.handleDeepLink(deepLink)
 }
 

@@ -29,8 +29,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        defer { completionHandler() }
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
         MainViewControllerKt.handleNotificationTap(userInfo: response.notification.request.content.userInfo)
-        completionHandler()
     }
 
     func application(
