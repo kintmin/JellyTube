@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import androidx.core.net.toUri
 import com.kintmin.platform.deeplink.DeepLinkConstants
 import com.kintmin.presentation.deeplink.DeepLinkConstants.PlayerScreenEntry
 
@@ -37,41 +38,27 @@ internal fun Context.stepScreenPendingIntent() = PendingIntent.getActivity(
     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
 )
 
-internal fun Context.downloadResultPendingIntent(
-    playlistId: Int,
-    audioMediaId: Int,
-) = PendingIntent.getActivity(
-    this,
-    IntentRequestCode.DOWNLOAD_RESULT_NOTIFICATION,
-    Intent().apply {
-        action = Intent.ACTION_VIEW
-        data = DeepLinkConstants.UriBuilder.playlistContentScreen(
-            playlistId = playlistId,
-            audioMediaId = audioMediaId,
-        )
-        component = ComponentName(
-            packageName,
-            TARGET_ACTIVITY_NAME,
-        )
-    },
-    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-)
+/** 갈 화면이 없는 알림도 탭하면 앱은 연다. 탭해도 반응이 없으면 멈춘 것처럼 보인다. */
+internal fun Context.workResultPendingIntent(
+    requestCode: Int,
+    deepLink: String?,
+): PendingIntent {
+    if (deepLink == null) return bringAppToFrontPendingIntent()
 
-internal fun Context.lyricsViewerPendingIntent(
-    audioMediaId: Int,
-) = PendingIntent.getActivity(
-    this,
-    IntentRequestCode.LYRICS_VARIANT_RESULT_NOTIFICATION,
-    Intent().apply {
-        action = Intent.ACTION_VIEW
-        data = DeepLinkConstants.UriBuilder.lyricsViewerScreen(audioMediaId)
-        component = ComponentName(
-            packageName,
-            TARGET_ACTIVITY_NAME,
-        )
-    },
-    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-)
+    return PendingIntent.getActivity(
+        this,
+        requestCode,
+        Intent().apply {
+            action = Intent.ACTION_VIEW
+            data = deepLink.toUri()
+            component = ComponentName(
+                packageName,
+                TARGET_ACTIVITY_NAME,
+            )
+        },
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+}
 
 internal fun Context.audioMediaDetailPendingIntent(
     audioMediaId: Int,

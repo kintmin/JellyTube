@@ -38,7 +38,7 @@ Obj-C 헤더로 쏟아진다.
 2. `IosKoin.kt` — `initIosKoin(...)`. `android:app` 의 `JellyTubeApplication` 과 짝이다.
    한쪽에 모듈을 더하면 다른 쪽도 본다
 3. `MainViewController.kt` — Swift 에 노출되는 최상위 함수들
-   (`startApp` / `mainViewController` / `handleDeepLink` / `handleSharedAudioFile`)
+   (`startApp` / `mainViewController` / `handleDeepLink` / `handleNotificationTap` / `handleSharedAudioFile`)
 4. 도메인 포트의 iOS 구현 — `domain` 에 플랫폼 구현을 넣지 않기 위해서다
 5. Swift 가 구현할 Kotlin 인터페이스 — 프레임워크에 들어가는 모듈이라야 Swift 가 본다
    (`IosMediaControllerBridge`, `IosAppLogBridge`, `IosMigrationSourceBrowserBridge`)
@@ -121,11 +121,15 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 |---|---|---|
 | 딥링크(`jellytube://`) | `onOpenURL` | `MainViewControllerKt.handleDeepLink` |
 | 다른 앱의 "JellyTube 로 열기" | `onOpenURL` (`url.isFileURL`) | `MainViewControllerKt.handleSharedAudioFile` |
+| 로컬 알림 탭 | `AppDelegate.userNotificationCenter(_:didReceive:)` | `MainViewControllerKt.handleNotificationTap` |
 | 백그라운드 전송 완료 | `AppDelegate.handleEventsForBackgroundURLSession` | `YoutubeDownloader.shared` |
 
 **Rules**:
-- 진입 통로는 `onOpenURL` **하나**다. `application(_:open:options:)` /
+- 주소 진입 통로는 `onOpenURL` **하나**다. `application(_:open:options:)` /
   `scene(_:openURLContexts:)` / `NSUserActivity` 를 쓰지 않는다
+- 알림 탭은 `userInfo` 를 **그대로** Kotlin 에 넘긴다. 작업 결과 알림의 문구와 갈 화면은
+  공통 `WorkResultNotice` 가 정하고 Android 알림도 같은 것을 쓴다.
+  `userInfo` 를 쓰고 읽는 것은 둘 다 `IosLocalNotification.kt` 에 있다. Swift 는 키를 모른다
 - Swift 가 하는 분기는 `url.isFileURL` 하나뿐이다. 그 뒤 판정은 전부 공통 코드가 한다
 - 딥링크 경로·쿼리 키의 진원지는 `shared:presentation` 의 `DeepLinkConstants` 다.
   스킴을 바꾸면 `Info.plist` 의 `CFBundleURLSchemes` 도 함께 바꾼다

@@ -23,6 +23,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         completionHandler([.banner, .list, .sound])
     }
 
+    /// 앱이 꺼져 있다가 알림 탭으로 떠도 `App.init`(Koin) 뒤에 불리므로 바로 넘겨도 된다.
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        defer { completionHandler() }
+        guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
+        MainViewControllerKt.handleNotificationTap(userInfo: response.notification.request.content.userInfo)
+    }
+
     func application(
         _ application: UIApplication,
         handleEventsForBackgroundURLSession identifier: String,

@@ -27,6 +27,7 @@ import com.kintmin.platform.push_notification.notifications.DownloadResultNotifi
 import com.kintmin.platform.push_notification.notifications.FileShareServerNotification
 import com.kintmin.platform.push_notification.notifications.PushNotification
 import com.kintmin.platform.service.migration.MigrationSessionHolder
+import com.kintmin.presentation.port.WorkResultNotice
 import com.kintmin.presentation.port.model.DataMigrationSendStatus
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
@@ -133,10 +134,12 @@ class FileShareForegroundService : Service(), KoinComponent {
                         onUploadImported = { result ->
                             notificationManager.sendNotification(
                                 DownloadResultNotification(
-                                    resultType = DownloadResultNotification.ResultType.Success,
-                                    contentText = "${result.audioMedia.artist} - ${result.audioMedia.name}",
-                                    playlistId = result.playlistIdOnDownload,
-                                    audioMediaId = result.audioMedia.id,
+                                    WorkResultNotice.Download.Success(
+                                        artist = result.audioMedia.artist,
+                                        name = result.audioMedia.name,
+                                        playlistId = result.playlistIdOnDownload,
+                                        audioMediaId = result.audioMedia.id,
+                                    ),
                                 ),
                             )
                         },

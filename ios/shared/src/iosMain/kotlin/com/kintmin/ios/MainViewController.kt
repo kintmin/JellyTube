@@ -7,6 +7,7 @@ import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
 import com.kintmin.presentation.port.ExecuteYoutubeDownload
 import com.kintmin.presentation.port.StepMeasurementController
+import com.kintmin.presentation.port.localNotificationDeepLinkOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -62,6 +63,11 @@ fun mainViewController(): UIViewController = ComposeUIViewController {
 /** SwiftUI 의 `onOpenURL` 이 넘겨준다. 검증은 [AppViewModel.handleDeepLink] 가 한다. */
 fun handleDeepLink(url: String) {
     appViewModel.handleDeepLink(url)
+}
+
+fun handleNotificationTap(userInfo: Map<Any?, *>) {
+    val deepLink = localNotificationDeepLinkOf(userInfo) ?: return
+    appViewModel.handleDeepLink(deepLink)
 }
 
 /**

@@ -14,6 +14,7 @@ import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.DownloadNotification
 import com.kintmin.platform.push_notification.notifications.DownloadResultNotification
 import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.WorkResultNotice
 import com.kintmin.platform.service_controller.mapper.toMediaControlData
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlinx.coroutines.Dispatchers
@@ -54,12 +55,7 @@ class YoutubeDownloadWorker(
             val exception = foregroundResult.exceptionOrNull()
             val errorMessage = "포그라운드 서비스 시작 실패: ${exception?.message ?: "알 수 없는 오류"}"
 
-            pushNotificationManager.sendNotification(
-                DownloadResultNotification(
-                    resultType = DownloadResultNotification.ResultType.Failure,
-                    contentText = errorMessage,
-                )
-            )
+            pushNotificationManager.sendNotification(DownloadResultNotification(WorkResultNotice.Download.Failure))
             appLog.sendDebugLog(DebugLog("YoutubeDownloadWorker", errorMessage))
             return Result.failure()
         }
@@ -84,10 +80,12 @@ class YoutubeDownloadWorker(
                 // 곡 먼저: 성공 알림 + 재생목록 반영 (가사 job과 병렬)
                 pushNotificationManager.sendNotification(
                     DownloadResultNotification(
-                        resultType = DownloadResultNotification.ResultType.Success,
-                        contentText = "${result.audioMedia.artist} - ${result.audioMedia.name}",
-                        playlistId = result.playlistIdOnDownload,
-                        audioMediaId = result.audioMedia.id,
+                        WorkResultNotice.Download.Success(
+                            artist = result.audioMedia.artist,
+                            name = result.audioMedia.name,
+                            playlistId = result.playlistIdOnDownload,
+                            audioMediaId = result.audioMedia.id,
+                        )
                     )
                 )
                 withContext(Dispatchers.Main) {
@@ -112,12 +110,7 @@ class YoutubeDownloadWorker(
             pushNotificationManager.cancelNotification(downloadNotification.id)
 
             val errorMessage = it.message.toString()
-            pushNotificationManager.sendNotification(
-                DownloadResultNotification(
-                    resultType = DownloadResultNotification.ResultType.Failure,
-                    contentText = "다운에 실패했습니다. 로그를 확인해주세요.",
-                )
-            )
+            pushNotificationManager.sendNotification(DownloadResultNotification(WorkResultNotice.Download.Failure))
             appLog.sendDebugLog(DebugLog("YoutubeDownloadWorker", errorMessage))
         }
 
