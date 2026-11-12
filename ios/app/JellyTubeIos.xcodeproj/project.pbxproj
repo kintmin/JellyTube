@@ -24,6 +24,7 @@
 		4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008D /* NowPlayingCoordinator.swift */; };
 		4A00000000000000000000C1 /* LyricsTranslatorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000C0 /* LyricsTranslatorBridgeImpl.swift */; };
 		4A00000000000000000000E1 /* PythonExecutorBridgeImplTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000E2 /* PythonExecutorBridgeImplTests.swift */; };
+		4A00000000000000000000E0 /* PythonRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000EE /* PythonRuntimeTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +46,7 @@
 		4A000000000000000000008D /* NowPlayingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingCoordinator.swift; sourceTree = "<group>"; };
 		4A00000000000000000000E2 /* PythonExecutorBridgeImplTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonExecutorBridgeImplTests.swift; sourceTree = "<group>"; };
 		4A00000000000000000000E3 /* JellyTubeIosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = JellyTubeIosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4A00000000000000000000EE /* PythonRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonRuntimeTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -199,6 +201,7 @@
 			isa = PBXGroup;
 			children = (
 				4A00000000000000000000E2 /* PythonExecutorBridgeImplTests.swift */,
+				4A00000000000000000000EE /* PythonRuntimeTests.swift */,
 			);
 			path = JellyTubeIosTests;
 			sourceTree = "<group>";
@@ -374,6 +377,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4A00000000000000000000E1 /* PythonExecutorBridgeImplTests.swift in Sources */,
+				4A00000000000000000000E0 /* PythonRuntimeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

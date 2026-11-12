@@ -210,11 +210,15 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     private static let methodTransliterateToKorean = "transliterate_to_korean"
 }
 
-/// PythonKit 은 GIL 을 다루지 않는다. 파이썬 호출은 전부 [withGIL] 안에서 한다.
-private final class PythonRuntime {
-    // 인터프리터는 프로세스에 하나라 초기화 상태도 인스턴스가 아니라 타입이 가진다.
-    private static var didConfigurePython = false
-    private static let configureLock = NSLock()
+/// PythonKit 은 GIL 을 다루지 않는다. 파이썬 호출은 전부 `withGIL` 안에서 한다.
+final class PythonRuntime {
+    // 인터프리터는 프로세스에 하나라 인스턴스가 아니라 타입이 한 번 초기화한다.
+    // `Py_Initialize` 는 GIL 을 쥔 채 돌아온다. 놓지 않으면 다른 스레드의 `PyGILState_Ensure` 가
+    // 영영 기다린다. `configurePython` 의 `PythonObject` 가 다 풀린 뒤라야 해서 함수를 나눴다.
+    private static let configured: Void = {
+        configurePython()
+        PythonGIL.releaseAfterInitialize()
+    }()
 
     func callFunction(
         moduleName: String,
@@ -241,7 +245,7 @@ private final class PythonRuntime {
 
     /// `PythonObject` 를 밖으로 내보내지 않는다. 해제가 `Py_DecRef` 라 GIL 밖에서 풀리면 죽는다.
     private func withGIL<T>(_ body: () throws -> T) rethrows -> T {
-        configurePythonIfNeeded()
+        _ = Self.configured
         let state = PythonGIL.ensure()
         defer { PythonGIL.release(state) }
         return try body()
@@ -284,19 +288,7 @@ private final class PythonRuntime {
         return list
     }
 
-    private func configurePythonIfNeeded() {
-        Self.configureLock.lock()
-        defer { Self.configureLock.unlock() }
-        guard !Self.didConfigurePython else { return }
-
-        configurePython()
-        // `Py_Initialize` 는 GIL 을 쥔 채 돌아온다. 놓지 않으면 다른 스레드의 `PyGILState_Ensure` 가
-        // 영영 기다린다. `configurePython` 의 `PythonObject` 가 다 풀린 뒤라야 해서 함수를 나눴다.
-        PythonGIL.releaseAfterInitialize()
-        Self.didConfigurePython = true
-    }
-
-    private func configurePython() {
+    private static func configurePython() {
         let bundlePath = Bundle.main.bundlePath
         let pythonHome = "\(bundlePath)/python"
         let appPackages = "\(bundlePath)/app-packages"
@@ -325,7 +317,7 @@ private final class PythonRuntime {
         }
     }
 
-    private var pythonLibraryPath: String? {
+    private static var pythonLibraryPath: String? {
         let candidates = [
             Bundle.main.privateFrameworksPath.map { "\($0)/Python.framework/Python" },
             Bundle.main.path(forResource: "Python", ofType: "framework").map { "\($0)/Python" },
@@ -333,7 +325,7 @@ private final class PythonRuntime {
         return candidates.first
     }
 
-    private func pythonSourcePath() -> String {
+    private static func pythonSourcePath() -> String {
         let bundlePath = Bundle.main.bundlePath
         let processPath = ProcessInfo.processInfo.environment["PWD"]
         let candidates = [
