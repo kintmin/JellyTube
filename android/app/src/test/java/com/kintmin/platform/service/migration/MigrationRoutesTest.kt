@@ -23,6 +23,7 @@ import io.ktor.http.contentType
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
+import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
@@ -65,6 +66,7 @@ class MigrationRoutesTest {
         application {
             fileShareModule(
                 importUploadedAudioMedia = mockk(),
+                validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
                 updateAudioMedia = mockk(),
                 saveAudioMediaImage = mockk(),
                 uploadCacheDir = tempFolder.root,

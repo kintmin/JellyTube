@@ -113,6 +113,7 @@ val dataCommonModule: Module = module {
     factoryOf(::FetchAllAudioMediaListFlowUseCase)
     factoryOf(::ImportSharedAudioMediaUseCase)
     factoryOf(::ImportUploadedAudioMediaUseCase)
+    factoryOf(::ValidateUploadedAudioFileNameUseCase)
     factoryOf(::SaveAudioMediaImageUseCase)
     factoryOf(::UpdateAudioMediaUseCase)
     factoryOf(::SearchLyricsUseCase)

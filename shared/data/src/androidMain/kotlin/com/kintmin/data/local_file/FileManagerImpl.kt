@@ -183,7 +183,7 @@ internal class FileManagerImpl(
 
     override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = runCatching {
         withContext(Dispatchers.IO) {
-            val ext = originalFileName.substringAfterLast(".", "").ifBlank { "mp3" }
+            val ext = originalFileName.substringAfterLast(".")
             val fileName = UUID.randomUUID().toString()
             val fileNameWithExt = "$fileName.$ext"
             val targetFile = audioDir().resolve(fileNameWithExt)

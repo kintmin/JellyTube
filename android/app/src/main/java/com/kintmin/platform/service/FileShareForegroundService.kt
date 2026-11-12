@@ -18,6 +18,7 @@ import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
+import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
 import com.kintmin.fileshare.FileShareConstants
@@ -50,6 +51,7 @@ import org.koin.core.component.inject
 class FileShareForegroundService : Service(), KoinComponent {
 
     private val importUploadedAudioMediaUseCase: ImportUploadedAudioMediaUseCase by inject()
+    private val validateUploadedAudioFileNameUseCase: ValidateUploadedAudioFileNameUseCase by inject()
     private val updateAudioMediaUseCase: UpdateAudioMediaUseCase by inject()
     private val saveAudioMediaImageUseCase: SaveAudioMediaImageUseCase by inject()
     private val cleanupAnomalousDataUseCase: CleanupAnomalousDataUseCase by inject()
@@ -131,6 +133,7 @@ class FileShareForegroundService : Service(), KoinComponent {
                 ktorServer = embeddedServer(CIO, port = FileShareConstants.DEFAULT_PORT) {
                     fileShareModule(
                         importUploadedAudioMedia = importUseCase,
+                        validateUploadedAudioFileName = validateUploadedAudioFileNameUseCase,
                         updateAudioMedia = updateUseCase,
                         saveAudioMediaImage = saveImageUseCase,
                         uploadCacheDir = uploadCacheDir,

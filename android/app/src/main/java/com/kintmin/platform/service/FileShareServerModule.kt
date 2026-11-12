@@ -6,6 +6,7 @@ import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
+import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
 import com.kintmin.fileshare.BulkArtistUpdateRequest
@@ -37,6 +38,7 @@ import java.io.FileOutputStream
 
 internal fun Application.fileShareModule(
     importUploadedAudioMedia: ImportUploadedAudioMediaUseCase,
+    validateUploadedAudioFileName: ValidateUploadedAudioFileNameUseCase,
     updateAudioMedia: UpdateAudioMediaUseCase,
     saveAudioMediaImage: SaveAudioMediaImageUseCase,
     uploadCacheDir: File,
@@ -67,8 +69,11 @@ internal fun Application.fileShareModule(
          */
         post(FileShareConstants.HTTP_UPLOAD_PATH) {
             if (call.rejectWhileMigrating(currentMigrationSession)) return@post
-            val originalFileName = call.request.header(FileShareConstants.HEADER_FILE_NAME)
-                ?: "upload.mp3"
+            val originalFileName = validateUploadedAudioFileName(call.request.header(FileShareConstants.HEADER_FILE_NAME))
+                .getOrElse { error ->
+                    call.respond(HttpStatusCode.BadRequest, UploadResponse(success = false, message = error.message.orEmpty()))
+                    return@post
+                }
 
             // 대용량 WAV도 힙에 통째로 올리지 않도록 임시 파일로 스트리밍 수신한다.
             val tempFile = File.createTempFile(TEMP_UPLOAD_PREFIX, null, uploadCacheDir)

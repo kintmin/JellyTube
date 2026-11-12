@@ -6,6 +6,7 @@ import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
+import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.platform.service.migration.MigrationSession
 import io.ktor.client.request.header
@@ -51,6 +52,7 @@ class FileShareServerModuleTest {
         application {
             fileShareModule(
                 importUploadedAudioMedia = importUseCase,
+                validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
                 updateAudioMedia = updateUseCase,
                 saveAudioMediaImage = saveImageUseCase,
                 uploadCacheDir = tempFolder.root,
@@ -93,11 +95,29 @@ class FileShareServerModuleTest {
     fun `이미 있는 음원 업로드는 422 와 중복 안내를 돌려준다`() = serverTest {
         coEvery { importUseCase(any(), any()) } returns Result.failure(AlreadyDownloadedMedia())
 
-        val response = client.post(FileShareConstants.HTTP_UPLOAD_PATH) { setBody(byteArrayOf(1)) }
+        val response = client.post(FileShareConstants.HTTP_UPLOAD_PATH) {
+            header(FileShareConstants.HEADER_FILE_NAME, "song.mp3")
+            setBody(byteArrayOf(1))
+        }
 
         assertEquals(HttpStatusCode.UnprocessableEntity, response.status)
         assertTrue(response.bodyAsText().contains("이미 저장된 파일입니다."))
         assertTrue(imported.isEmpty())
+    }
+
+    @Test
+    fun `파일 이름이 없거나 확장자가 없으면 받지 않고 400 이다`() = serverTest {
+        val missing = client.post(FileShareConstants.HTTP_UPLOAD_PATH) { setBody(byteArrayOf(1)) }
+        val noExtension = client.post(FileShareConstants.HTTP_UPLOAD_PATH) {
+            header(FileShareConstants.HEADER_FILE_NAME, "song")
+            setBody(byteArrayOf(1))
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, missing.status)
+        assertEquals(HttpStatusCode.BadRequest, noExtension.status)
+        assertTrue(noExtension.bodyAsText().contains("확장자가 없는 파일은 저장할 수 없습니다."))
+        coVerify(exactly = 0) { importUseCase(any(), any()) }
+        assertTrue(tempFolder.root.listFiles().isNullOrEmpty())
     }
 
     @Test
