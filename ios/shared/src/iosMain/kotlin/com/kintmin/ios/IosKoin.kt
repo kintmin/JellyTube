@@ -3,6 +3,7 @@ package com.kintmin.ios
 import com.kintmin.data.di.dataCommonModule
 import com.kintmin.data.di.dataIosModule
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
+import com.kintmin.data.translation.IosLyricsTranslatorBridge
 import com.kintmin.domain.step.worker.RegisterDailyResetImmediatelyWorker
 import com.kintmin.domain.step.worker.RegisterLoadBalancedDailyResetWorker
 import com.kintmin.ios.log.IosAppLog
@@ -35,6 +36,7 @@ private val iosDomainPortModule = module {
  */
 fun initIosKoin(
     pythonExecutorBridge: IosPythonExecutorBridge,
+    lyricsTranslatorBridge: IosLyricsTranslatorBridge,
     mediaControllerBridge: IosMediaControllerBridge,
     appLogBridge: IosAppLogBridge,
     migrationSourceBrowserBridge: IosMigrationSourceBrowserBridge,
@@ -42,7 +44,7 @@ fun initIosKoin(
     startKoin {
         modules(
             dataCommonModule,
-            dataIosModule(pythonExecutorBridge),
+            dataIosModule(pythonExecutorBridge, lyricsTranslatorBridge),
             presentationModule,
             presentationIosModule,
             iosDomainPortModule,

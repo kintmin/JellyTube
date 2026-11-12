@@ -22,6 +22,7 @@
 		4A0000000000000000000092 /* MediaControllerBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */; };
 		4A00000000000000000000A2 /* AppLogBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000A1 /* AppLogBridgeImpl.swift */; };
 		4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008D /* NowPlayingCoordinator.swift */; };
+		4A00000000000000000000C1 /* LyricsTranslatorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000C0 /* LyricsTranslatorBridgeImpl.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		C9E4F40E2FD13000009FB07B /* python */ = {isa = PBXFileReference; lastKnownFileType = folder; name = python; path = ../../shared/data/src/python; sourceTree = SOURCE_ROOT; };
 		C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonExecutorBridgeImpl.swift; sourceTree = "<group>"; };
 		4A0000000000000000000093 /* YoutubeDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeDownloader.swift; sourceTree = "<group>"; };
+		4A00000000000000000000C0 /* LyricsTranslatorBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsTranslatorBridgeImpl.swift; sourceTree = "<group>"; };
 		4A00000000000000000000B0 /* MigrationSourceBrowserBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationSourceBrowserBridgeImpl.swift; sourceTree = "<group>"; };
 		4A0000000000000000000060 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Python.xcframework; path = Vendor/Python/Python.xcframework; sourceTree = SOURCE_ROOT; };
 		4A0000000000000000000063 /* app_packages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = app_packages; path = Vendor/Python/app-packages; sourceTree = SOURCE_ROOT; };
@@ -131,6 +133,7 @@
 				4A0000000000000000000086 /* MediaController */,
 				4A00000000000000000000A3 /* Log */,
 				4A00000000000000000000B2 /* Migration */,
+				4A00000000000000000000C2 /* Translation */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -160,6 +163,14 @@
 				4A00000000000000000000B0 /* MigrationSourceBrowserBridgeImpl.swift */,
 			);
 			path = Migration;
+			sourceTree = "<group>";
+		};
+		4A00000000000000000000C2 /* Translation */ = {
+			isa = PBXGroup;
+			children = (
+				4A00000000000000000000C0 /* LyricsTranslatorBridgeImpl.swift */,
+			);
+			path = Translation;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -289,6 +300,7 @@
 				C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */,
 				4A0000000000000000000094 /* YoutubeDownloader.swift in Sources */,
 				4A00000000000000000000B1 /* MigrationSourceBrowserBridgeImpl.swift in Sources */,
+				4A00000000000000000000C1 /* LyricsTranslatorBridgeImpl.swift in Sources */,
 				4A0000000000000000000088 /* MediaControllerItem.swift in Sources */,
 				4A000000000000000000008A /* MediaControllerEngine.swift in Sources */,
 				4A0000000000000000000092 /* MediaControllerBridgeImpl.swift in Sources */,
@@ -317,7 +329,7 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -354,7 +366,7 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -426,7 +438,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -480,7 +492,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;

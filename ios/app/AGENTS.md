@@ -62,7 +62,9 @@ Compose 밖(`onOpenURL`)에서 들어온 이벤트를 화면과 **같은 인스�
 
 **Swift 가 맡는 것은 둘뿐이다.**
 
-1. **Kotlin/Native 가 부를 수 없는 SDK** — Firebase(`Shared/Log/`), PythonKit(`PythonBridgeImpl/`)
+1. **Kotlin/Native 가 부를 수 없는 SDK** — Firebase(`Shared/Log/`), PythonKit(`PythonBridgeImpl/`),
+   Apple `Translation`(`Shared/Translation/` — 세션이 SwiftUI `.translationTask` 로만 나와서
+   루트 뷰에 `LyricsTranslationHostModifier` 를 붙여 둔다. 떼면 번역 요청이 영영 끝나지 않는다)
 2. **Kotlin 으로 쓰면 더 나빠지는 네이티브 엔진** — `AVAudioEngine` 재생(`Shared/MediaController/`),
    background `URLSession`(`PythonBridgeImpl/YoutubeDownloader.swift`)
 
@@ -70,8 +72,9 @@ Compose 밖(`onOpenURL`)에서 들어온 이벤트를 화면과 **같은 인스�
 
 ## 브릿지 패턴 — Swift 가 Kotlin 인터페이스를 구현한다
 
-네 군데가 같은 모양이다: `IosPythonExecutorBridge`(data), `IosMediaControllerBridge`(ios/shared),
-`IosAppLogBridge`(ios/shared), `IosMigrationSourceBrowserBridge`(ios/shared — `NWBrowser` 탐색).
+다섯 군데가 같은 모양이다: `IosPythonExecutorBridge`(data), `IosLyricsTranslatorBridge`(data — Apple
+`Translation`), `IosMediaControllerBridge`(ios/shared), `IosAppLogBridge`(ios/shared),
+`IosMigrationSourceBrowserBridge`(ios/shared — `NWBrowser` 탐색).
 
 ```kotlin
 // Kotlin — 프레임워크에 들어가는 모듈에 선언한다
@@ -156,7 +159,6 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 | PC 파일 수신 | 수신 서버(Ktor CIO)와 그 서버를 붙잡아 두는 포그라운드 서비스가 Android 에만 있다 |
 | 드로잉 / 플로팅 UI | `MotionEvent` + S펜 전제. Apple Pencil 에 대응물이 없다 |
 | 기기 저장(벨소리/알람/알림음) | 세 타깃 전부 30초 트리밍 + 포맷 변환이 선행 조건이라 음원 편집과 묶인다 |
-| 번역(ML Kit) | 대응물이 iOS 18+ `Translation` 뿐인데 배포 타깃이 17.0 이다 |
 | iosX64(인텔 맥 시뮬레이터) | CMP 가 1.11.0-alpha01 이후 배포하지 않는다 |
 
 **Android 와 보장이 다른 것**: 사용자가 앱 스위처에서 강제 종료하면 background `URLSession`
