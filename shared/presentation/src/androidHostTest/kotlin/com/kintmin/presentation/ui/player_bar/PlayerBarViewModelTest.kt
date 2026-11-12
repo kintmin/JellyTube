@@ -43,4 +43,16 @@ class PlayerBarViewModelTest {
         assertTrue(state.isPlaying)
         assertEquals(3_000L.milliseconds, state.currentDuration)
     }
+
+    @Test
+    fun `같은 곡이 편집돼 길이가 바뀌면 재생바 길이도 바뀐다`() {
+        playing = media
+        isPlaying = true
+        val viewModel = PlayerBarViewModel(manager)
+        playing = media.copy(mediaDurationMs = 40_000L)
+
+        viewModel.sendIntent(PlayerBarIntent.OnRefreshMediaData)
+
+        assertEquals(40_000L.milliseconds, viewModel.currentMediaItem.value.playbackDuration)
+    }
 }

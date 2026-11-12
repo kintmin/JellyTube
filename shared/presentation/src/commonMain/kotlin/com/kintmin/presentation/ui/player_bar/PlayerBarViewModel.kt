@@ -51,7 +51,8 @@ class PlayerBarViewModel constructor(
 
                 if (!_isHandling) {
                     val playingMediaItem = mediaControllerManager.playingMediaItem
-                    val isSameMedia = currentMediaItem.value.id == (playingMediaItem?.mediaId ?: "")
+                    val isSameMedia = currentMediaItem.value.id == (playingMediaItem?.mediaId ?: "") &&
+                        currentMediaItem.value.playbackDuration == (playingMediaItem?.mediaDurationMs ?: 0L).milliseconds
                     val isChangePlaying = mediaControllerManager.isPlaying != currentMediaItem.value.isPlaying || currentDuration == null
                     if (!isSameMedia) {
                         _currentMediaItem.update { buildUiState(playingMediaItem) }
