@@ -200,7 +200,7 @@ fun MainFloatingActionButtonPreview() {
     JellyTubeTheme {
         MainFloatingActionButton(
             uiState = MainFloatingActionUiState(
-                playlistIdOnDownloadName = "기본",
+                playlistIdOnDownloadName = "미분류",
             ),
             currentUrl = "https://m.youtube.com/watch?v=test",
             onClickPickMedia = {},

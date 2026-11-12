@@ -63,7 +63,7 @@ class SettingViewModel constructor(
             .map { playlist ->
                 DownloadPlaylistUiState(
                     id = playlist.id,
-                    name = if (playlist.type == PlaylistType.UNCATEGORIZED) "기본" else playlist.name,
+                    name = if (playlist.type == PlaylistType.UNCATEGORIZED) "미분류" else playlist.name,
                     isSelected = playlist.id == effectiveTargetId,
                 )
             }
@@ -71,7 +71,7 @@ class SettingViewModel constructor(
         SettingUiState(
             shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
             playlistIdOnDownload = effectiveTargetId,
-            playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.isSelected }?.name ?: "기본",
+            playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.isSelected }?.name ?: "미분류",
             selectablePlaylistList = selectablePlaylistList,
             isPlaylistIdOnDownloadBottomSheetVisible = isBottomSheetVisible,
         )

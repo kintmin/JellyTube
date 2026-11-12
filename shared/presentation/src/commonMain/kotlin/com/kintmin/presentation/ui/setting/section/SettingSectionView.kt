@@ -54,7 +54,7 @@ fun SettingSectionViewPreview() {
         SettingSectionView(title = "다운로드") {
             SettingItemView(
                 title = "다운로드 시 재생목록",
-                description = "기본",
+                description = "미분류",
                 onClick = {},
             )
         }

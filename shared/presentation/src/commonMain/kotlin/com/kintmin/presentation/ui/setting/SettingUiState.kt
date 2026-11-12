@@ -5,7 +5,7 @@ import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 data class SettingUiState(
     val shouldInsertAtTopOnDownload: Boolean = false,
     val playlistIdOnDownload: Int? = null,
-    val playlistIdOnDownloadName: String = "기본",
+    val playlistIdOnDownloadName: String = "미분류",
     val selectablePlaylistList: List<DownloadPlaylistUiState> = emptyList(),
     val isPlaylistIdOnDownloadBottomSheetVisible: Boolean = false,
     val isImportPlaylistBottomSheetVisible: Boolean = false,
