@@ -23,6 +23,8 @@ import com.kintmin.presentation.port.RunningWorkMonitor
 import com.kintmin.presentation.port.model.MigrationSource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,11 +56,14 @@ class SettingDataMigrationReceiveViewModel constructor(
 
     private var runJob: Job? = null
 
+    /** 찾기와 고르기는 화면을 덮어쓰므로 마지막 하나만 남긴다. */
+    private var discoveryJob: Job? = null
+
     fun sendIntent(intent: SettingDataMigrationReceiveIntent) {
         when (intent) {
             SettingDataMigrationReceiveIntent.OnClickSearch -> search()
             is SettingDataMigrationReceiveIntent.OnSelectSource -> if (intent.source.isCompatible) {
-                viewModelScope.launch { resolve(intent.source) }
+                discover { resolve(intent.source) }
             }
             is SettingDataMigrationReceiveIntent.OnChangeCode -> _uiState.update { state ->
                 state.copy(code = intent.code.filter(Char::isDigit).take(SettingDataMigrationReceiveUiState.CODE_LENGTH))
@@ -73,13 +78,14 @@ class SettingDataMigrationReceiveViewModel constructor(
         token = null
         endpoint = null
         _uiState.update { it.copy(phase = DataMigrationReceivePhase.Searching, source = null) }
-        viewModelScope.launch {
+        discover {
             val runningWorks = runningWorkMonitor.runningWorks()
             if (runningWorks.isNotEmpty()) {
                 updatePhase(DataMigrationReceivePhase.Blocked(runningWorks))
-                return@launch
+                return@discover
             }
             val sources = migrationSourceDiscovery.discover()
+            currentCoroutineContext().ensureActive()
             val only = sources.singleOrNull()
             when {
                 sources.isEmpty() -> updatePhase(DataMigrationReceivePhase.NotFound)
@@ -91,8 +97,16 @@ class SettingDataMigrationReceiveViewModel constructor(
 
     private suspend fun resolve(source: MigrationSource) {
         _uiState.update { it.copy(phase = DataMigrationReceivePhase.Searching, source = source) }
-        endpoint = migrationSourceDiscovery.resolve(source)
+        val resolved = migrationSourceDiscovery.resolve(source)
+        currentCoroutineContext().ensureActive()
+        endpoint = resolved
         updatePhase(if (endpoint != null) DataMigrationReceivePhase.CodeInput() else DataMigrationReceivePhase.NotFound)
+    }
+
+    // iOS 브릿지는 취소돼도 결과가 올 때까지 돌아오지 않는다. [block] 은 결과를 받을 때마다 ensureActive 로 확인한다.
+    private fun discover(block: suspend () -> Unit) {
+        discoveryJob?.cancel()
+        discoveryJob = viewModelScope.launch { block() }
     }
 
     private fun connect() {

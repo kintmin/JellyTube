@@ -25,11 +25,13 @@ import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -196,6 +198,44 @@ class SettingDataMigrationReceiveViewModelTest {
 
         assertTrue(messages.all { it != null })
         assertEquals(3, messages.toSet().size)
+    }
+
+    @Test
+    fun `고르는 사이 다른 기기를 다시 고르면 먼저 고른 기기의 결과는 버린다`() {
+        val other = MigrationSource(name = "Pixel 9", isCompatible = true)
+        val otherEndpoint = MigrationEndpoint("192.168.0.3", 52847)
+        val firstResolved = CompletableDeferred<MigrationEndpoint?>()
+        coEvery { discovery.discover() } returns listOf(source, other)
+        // iOS 브릿지처럼 취소돼도 결과가 올 때까지 돌아오지 않는다.
+        coEvery { discovery.resolve(source) } coAnswers { withContext(NonCancellable) { firstResolved.await() } }
+        coEvery { discovery.resolve(other) } returns otherEndpoint
+        coEvery { pair(otherEndpoint, "123456") } returns Result.failure(MigrationPairRejectedException())
+        val viewModel = viewModel()
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnSelectSource(source))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnSelectSource(other))
+        firstResolved.complete(endpoint)
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnChangeCode("123456"))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickConnect)
+
+        assertEquals(other, viewModel.uiState.value.source)
+        coVerify(exactly = 1) { pair(otherEndpoint, "123456") }
+        coVerify(exactly = 0) { pair(endpoint, any()) }
+    }
+
+    @Test
+    fun `찾는 중에 다시 찾으면 앞선 찾기 결과는 버린다`() {
+        val firstFound = CompletableDeferred<List<MigrationSource>>()
+        coEvery { discovery.discover() } coAnswers { withContext(NonCancellable) { firstFound.await() } } andThen listOf(source)
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
+        firstFound.complete(emptyList())
+
+        assertEquals(DataMigrationReceivePhase.CodeInput(), viewModel.uiState.value.phase)
+        assertEquals(source, viewModel.uiState.value.source)
     }
 
     @Test

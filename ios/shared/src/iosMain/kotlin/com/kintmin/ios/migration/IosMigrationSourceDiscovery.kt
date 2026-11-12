@@ -31,6 +31,7 @@ internal fun List<IosBrowsedService>.toMigrationSources(): List<MigrationSource>
         }
         .sortedBy { it.name }
 
-private const val SETTLE_MILLIS = 1_500L
+// 마지막 변화 뒤 이만큼 조용하면 끝낸다. 짧으면 늦게 보인 두 번째 기기를 놓치고 첫 기기에 자동으로 붙는다.
+private const val SETTLE_MILLIS = 3_000L
 private const val DISCOVERY_TIMEOUT_MILLIS = 10_000L
 private const val RESOLVE_TIMEOUT_MILLIS = 10_000L
