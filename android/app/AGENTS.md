@@ -51,9 +51,9 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 | `ExecuteLyricsVariantCreation` | `worker/usecase/ExecuteLyricsVariantCreationImpl` | `IosExecuteLyricsVariantCreation`(앱 수명 스코프 + 로컬 알림) |
 | `ExecuteAnomalyDataCheck` | `worker/usecase/ExecuteAnomalyDataCheckImpl` | `IosExecuteAnomalyDataCheck`(앱 수명 스코프 + 로컬 알림) |
 | `ExecuteAudioEditSave` | `worker/usecase/ExecuteAudioEditSaveImpl` | 미지원 스텁(음원 편집 제외) |
-| `DataMigrationSendController` | `service_controller/DataMigrationSendControllerImpl`(PC 수신과 같은 서버 + 페어링 세션) | 미지원 스텁(보내는 서버가 Android 에만 있다) |
+| `DataMigrationSendController` | `service_controller/DataMigrationSendControllerImpl`(PC 수신과 같은 서버 + 페어링 세션. 세션 동안은 이전 타입으로만 광고하고 `/upload*` 는 409) | 미지원 스텁(보내는 서버가 Android 에만 있다) |
 | `RunningWorkMonitor` | `running_work/RunningWorkMonitorImpl`(WorkManager 태그·고유 이름 + 편집 저장 + PC 수신) | `IosRunningWorkMonitor`(실행부가 세는 `IosRunningWorkTracker` + 편집 저장) |
-| `MigrationSourceDiscovery` | `data_migration/UnsupportedMigrationSourceDiscovery`(Android 는 보내는 쪽만) | `ios/shared` 의 `migration/IosMigrationSourceDiscovery`(Swift `NWBrowser` 브릿지) |
+| `MigrationSourceDiscovery` | `data_migration/UnsupportedMigrationSourceDiscovery`(Android 는 보내는 쪽만) | `ios/shared` 의 `migration/IosMigrationSourceDiscovery`(Swift `NWBrowser` 브릿지. 목록 탐색 → 고른 기기만 주소 풀기) |
 
 iOS 구현의 자리는 **`shared:presentation` 의 `iosMain/port/`** 다(`MediaControllerManager`·`MigrationSourceDiscovery` 는 예외 — Swift 브릿지에 기댄다). 이유는 `shared/presentation/AGENTS.md` §포트 와 `ios/app/AGENTS.md` 에 있다.
 
@@ -86,6 +86,19 @@ iOS 구현의 자리는 **`shared:presentation` 의 `iosMain/port/`** 다(`Media
 ---
 
 ## Services
+
+### 파일공유 서버의 mDNS 광고
+
+`FileShareForegroundService` 하나가 PC 수신과 데이터 이전을 함께 서비스한다. 광고는 용도별로 나눈다
+(`NsdAdvertisement.advertisedServiceTypes`).
+
+| 상태 | 광고 | 인스턴스 이름 |
+|---|---|---|
+| PC 수신만 켜짐 | `NSD_SERVICE_TYPE`(`_jellytube._tcp`) | `NSD_SERVICE_NAME` |
+| 이전 세션이 열림 | `MIGRATION_NSD_SERVICE_TYPE`(`_jellytube-mig._tcp`) + TXT `v`(프로토콜 버전) | 기기 이름(받는 기기가 이것으로 고른다) |
+
+- 이전 세션이 열려 있는 동안은 PC 업로드 타입을 내리고 `/upload*` 를 409 로 거절한다. Desktop 이 이전 중인 기기에 업로드하지 않게 하는 두 겹이다.
+- 이전 토큰은 페어링한 주소에서 온 요청만 인가한다.
 
 - Every foreground service must call `startForeground()` with a valid notification before Android OS enforces it.
 - Services that can be started/stopped externally expose a `companion object` with `startService(context)` / `stopService(context)` static helpers (see `StepForegroundService` for reference).

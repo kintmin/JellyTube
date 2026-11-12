@@ -110,8 +110,8 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 지금 파일에 있는 것: `CADisableMinimumFrameDurationOnPhone`(CMP 필수) ·
 `NSMotionUsageDescription`(걸음수) · `CFBundleURLTypes`(딥링크 스킴) ·
 `CFBundleDocumentTypes`(공유 수신) · `UIBackgroundModes: audio`(백그라운드 재생) ·
-`NSLocalNetworkUsageDescription` + `NSBonjourServices`(데이터 이전 탐색 — 둘 중 하나라도 없으면
-탐색이 오류 없이 0건) · `NSAppTransportSecurity.NSAllowsLocalNetworking`(보내는 기기의 평문 HTTP).
+`NSLocalNetworkUsageDescription` + `NSBonjourServices`(데이터 이전 탐색. `_jellytube-mig._tcp` 만 둔다 —
+둘 중 하나라도 없거나 타입이 다르면 탐색이 오류 없이 0건) · `NSAppTransportSecurity.NSAllowsLocalNetworking`(보내는 기기의 평문 HTTP).
 
 ---
 
