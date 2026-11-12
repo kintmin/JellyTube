@@ -63,6 +63,8 @@ class FileShareForegroundService : Service(), KoinComponent {
     private var ktorServer: io.ktor.server.engine.EmbeddedServer<*, *>? = null
     private val nsdRegistrations = mutableMapOf<String, NsdManager.RegistrationListener>()
     private var nsdAdvertiseJob: Job? = null
+    private var nsdTargets: Set<String> = emptySet()
+    private var nsdRetryCount = 0
     private var isNsdClosed = false
     private var migrationWakeLock: PowerManager.WakeLock? = null
     private var migrationWifiLock: WifiManager.WifiLock? = null
@@ -220,9 +222,7 @@ class FileShareForegroundService : Service(), KoinComponent {
     private fun advertiseWhileRunning() {
         if (nsdAdvertiseJob?.isActive == true) return
         nsdAdvertiseJob = serviceScope.launch {
-            combine(owners, MigrationSessionHolder.session) { currentOwners, session ->
-                advertisedServiceTypes(currentOwners, isMigrationSessionOpen = session != null)
-            }
+            combine(owners, MigrationSessionHolder.state, ::advertisedServiceTypes)
                 .distinctUntilChanged()
                 .collect(::syncNsdRegistrations)
         }
@@ -231,6 +231,8 @@ class FileShareForegroundService : Service(), KoinComponent {
     // 수집이 취소된 뒤에도 이미 꺼낸 값으로 한 번 더 불릴 수 있다. 닫힌 뒤에는 다시 등록하지 않는다.
     @Synchronized
     private fun syncNsdRegistrations(serviceTypes: Set<String>) {
+        if (serviceTypes != nsdTargets) nsdRetryCount = 0
+        nsdTargets = serviceTypes
         val manager = getSystemService(NSD_SERVICE) as NsdManager
         val targets = if (isNsdClosed) emptySet() else serviceTypes
         (nsdRegistrations.keys - targets).forEach { serviceType ->
@@ -238,13 +240,26 @@ class FileShareForegroundService : Service(), KoinComponent {
         }
         (targets - nsdRegistrations.keys).forEach { serviceType ->
             val listener = object : NsdManager.RegistrationListener {
-                override fun onRegistrationFailed(info: NsdServiceInfo, errorCode: Int) {}
+                override fun onRegistrationFailed(info: NsdServiceInfo, errorCode: Int) = onNsdRegistrationFailed(serviceType, this)
                 override fun onUnregistrationFailed(info: NsdServiceInfo, errorCode: Int) {}
                 override fun onServiceRegistered(info: NsdServiceInfo) {}
                 override fun onServiceUnregistered(info: NsdServiceInfo) {}
             }
             runCatching { manager.registerService(nsdServiceInfo(serviceType), NsdManager.PROTOCOL_DNS_SD, listener) }
                 .onSuccess { nsdRegistrations[serviceType] = listener }
+        }
+    }
+
+    // 실패한 등록을 남겨 두면 등록된 줄 알고 다시 시도하지 않아 받는 기기가 찾지 못한다.
+    @Synchronized
+    private fun onNsdRegistrationFailed(serviceType: String, listener: NsdManager.RegistrationListener) {
+        if (nsdRegistrations[serviceType] !== listener) return
+        nsdRegistrations.remove(serviceType)
+        if (nsdRetryCount >= NSD_MAX_RETRIES) return
+        nsdRetryCount++
+        serviceScope.launch {
+            delay(NSD_RETRY_DELAY_MS)
+            syncNsdRegistrations(nsdTargets)
         }
     }
 
@@ -279,6 +294,9 @@ class FileShareForegroundService : Service(), KoinComponent {
         private const val NO_GENERATION = -1
 
         private const val MIGRATION_LOCK_TAG = "JellyTube:migration"
+
+        private const val NSD_MAX_RETRIES = 3
+        private const val NSD_RETRY_DELAY_MS = 2_000L
 
         // 놓친 해제가 배터리를 끝까지 잡지 않도록 상한을 둔다.
         private const val MIGRATION_LOCK_TIMEOUT_MS = 2 * 60 * 60 * 1000L
