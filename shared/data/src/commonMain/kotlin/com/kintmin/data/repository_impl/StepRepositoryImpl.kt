@@ -60,6 +60,24 @@ class StepRepositoryImpl constructor(
         }
     }
 
+    override suspend fun replaceStepSensors(
+        startMillis: Long,
+        endMillis: Long,
+        stepDataList: List<StepData>,
+    ): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                stepDao.replaceBetween(
+                    startUtc = startMillis,
+                    endUtc = endMillis,
+                    entities = stepDataList.map {
+                        StepEntity(rawCreatedTime = it.rawCreatedTime, stepSensor = it.stepSensor)
+                    },
+                )
+            }
+        }
+    }
+
     override suspend fun getStepDataListByDate(date: String): Result<List<StepData>> {
         return withContext(Dispatchers.IO) {
             runCatching {

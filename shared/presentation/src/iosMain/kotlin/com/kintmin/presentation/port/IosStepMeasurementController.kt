@@ -2,7 +2,9 @@ package com.kintmin.presentation.port
 
 import com.kintmin.domain.extension.startOfDayMillis
 import com.kintmin.domain.extension.todayLocalDate
+import com.kintmin.domain.step.model.StepData
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
+import com.kintmin.domain.step.usecase.ReplaceStepSensorsUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
@@ -32,6 +34,7 @@ private const val BACKFILL_DAYS = 7
  */
 internal class IosStepMeasurementController(
     private val backupStepSensorUseCase: BackupStepSensorUseCase,
+    private val replaceStepSensorsUseCase: ReplaceStepSensorsUseCase,
     private val updateLastStepSensorUseCase: UpdateLastStepSensorUseCase,
     private val appLog: AppLog,
 ) : StepMeasurementController {
@@ -70,24 +73,33 @@ internal class IosStepMeasurementController(
         pedometer.stopPedometerUpdates()
     }
 
-    /** 같은 경계를 다시 적어도 PK 충돌이 REPLACE 라 안전하다. */
+    /** 소급하는 날은 [StepSlotSchedule.ownedRange] 를 통째로 iPhone 값으로 바꾼다. */
     private suspend fun backfill() {
         val timeZone = TimeZone.currentSystemDefault()
         val today = todayLocalDate(timeZone)
         val nowMillis = Clock.System.now().toEpochMilliseconds()
 
-        for (dayOffset in (BACKFILL_DAYS - 1) downTo 0) {
+        days@ for (dayOffset in (BACKFILL_DAYS - 1) downTo 0) {
             val dayStartMillis = today.minus(dayOffset, DateTimeUnit.DAY).startOfDayMillis(timeZone)
+            val points = StepSlotSchedule.forDay(dayStartMillis, nowMillis)
 
-            for (point in StepSlotSchedule.forDay(dayStartMillis, nowMillis)) {
-                val steps = point.queryUntilMillis
-                    ?.let { cumulativeStepsSince(dayStartMillis, it) ?: break }
-                    ?: 0L
-                backupStepSensorUseCase(stepSensor = steps, rawCreatedTime = point.rawCreatedTime)
-
-                if (dayOffset == 0 && point.queryUntilMillis == point.rawCreatedTime) {
-                    lastWrittenBoundaryMillis = point.rawCreatedTime
+            val stepDataList = mutableListOf<StepData>()
+            for (point in points) {
+                val queryUntilMillis = point.queryUntilMillis
+                // 하루를 다 읽지 못하면 그날은 손대지 않는다. 일부만 적으면 지운 나머지가 사라진다.
+                val steps = if (queryUntilMillis == null) {
+                    0L
+                } else {
+                    cumulativeStepsSince(dayStartMillis, queryUntilMillis) ?: continue@days
                 }
+                stepDataList += StepData(rawCreatedTime = point.rawCreatedTime, stepSensor = steps)
+            }
+
+            val range = StepSlotSchedule.ownedRange(dayStartMillis)
+            replaceStepSensorsUseCase(range.first, range.last, stepDataList)
+
+            if (dayOffset == 0) {
+                lastWrittenBoundaryMillis = points.lastOrNull { it.queryUntilMillis == it.rawCreatedTime }?.rawCreatedTime
             }
         }
     }
