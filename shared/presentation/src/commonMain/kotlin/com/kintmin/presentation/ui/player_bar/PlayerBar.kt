@@ -35,7 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.LifecycleStartEffect
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
@@ -56,16 +56,16 @@ fun PlayerBar(
     onClickBar: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
-    // RESUMED 동안만 폴링한다. repeatOnLifecycle 안에서 lifecycleScope.launch 로
-    // 빠져나가면 화면을 벗어나도 루프가 취소되지 않아 백그라운드에서 계속 돈다.
-    LifecycleResumeEffect(Unit) {
+    // 보이는(STARTED) 동안만 폴링한다. RESUMED 는 화면 전환 애니메이션이 끝나야 와서 바가 늦게 뜬다.
+    // repeatOnLifecycle 안에서 lifecycleScope.launch 로 빠져나가면 화면을 벗어나도 루프가 취소되지 않는다.
+    LifecycleStartEffect(Unit) {
         val job = scope.launch {
             while (isActive) {
-                delay(300)
                 sendIntent(PlayerBarIntent.OnRefreshMediaData)
+                delay(300)
             }
         }
-        onPauseOrDispose { job.cancel() }
+        onStopOrDispose { job.cancel() }
     }
 
     if (data.id == "") return

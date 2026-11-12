@@ -60,30 +60,28 @@ class PlayerBarViewModel constructor(
                 val currentDuration = mediaControllerManager.currentPosition?.toDuration(DurationUnit.MILLISECONDS)
 
                 if (!_isHandling) {
+                    val isSameMedia = currentMediaItem.value.id == (mediaControllerManager.playingMediaItem?.mediaId ?: "")
                     val isChangePlaying = mediaControllerManager.isPlaying != currentMediaItem.value.isPlaying || currentDuration == null
-                    if (isChangePlaying) {
+                    if (!isSameMedia) {
+                        _currentMediaItem.update {
+                            mediaControllerManager.playingMediaItem.let {
+                                PlayerBarUiState(
+                                    id = it?.mediaId ?: "",
+                                    title = it?.mediaTitle ?: "",
+                                    currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
+                                    playbackDuration = (it?.mediaDurationMs ?: 0L).milliseconds,
+                                    imageFileFullPath = it?.mediaArtworkFileUri,
+                                    isPlaying = mediaControllerManager.isPlaying,
+                                )
+                            }
+                        }
+                    } else if (isChangePlaying) {
                         _currentMediaItem.update {
                             it.copy(isPlaying = mediaControllerManager.isPlaying)
                         }
                     } else {
-                        val isSameMedia = currentMediaItem.value.id == mediaControllerManager.playingMediaItem?.mediaId
-                        if (isSameMedia) {
-                            _currentMediaItem.update {
-                                it.copy(currentDuration = currentDuration)
-                            }
-                        } else {
-                            _currentMediaItem.update {
-                                mediaControllerManager.playingMediaItem.let {
-                                    PlayerBarUiState(
-                                        id = it?.mediaId ?: "",
-                                        title = it?.mediaTitle ?: "",
-                                        currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
-                                        playbackDuration = (it?.mediaDurationMs ?: 0L).milliseconds,
-                                        imageFileFullPath = it?.mediaArtworkFileUri,
-                                        isPlaying = mediaControllerManager.isPlaying,
-                                    )
-                                }
-                            }
+                        _currentMediaItem.update {
+                            it.copy(currentDuration = currentDuration)
                         }
                     }
                 }
