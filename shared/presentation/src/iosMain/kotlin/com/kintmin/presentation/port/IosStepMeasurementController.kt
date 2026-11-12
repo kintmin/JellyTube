@@ -21,8 +21,8 @@ import platform.Foundation.NSTimeIntervalSince1970
 import kotlin.coroutines.resume
 import kotlin.time.Clock
 
-/** 소급 조회로 메울 날짜 수. `CMPedometer` 는 최대 7일을 들고 있다. */
-private const val BACKFILL_DAYS = 2
+/** 소급 조회로 메울 날짜 수. `CMPedometer` 가 들고 있는 최대치(7일)라 더 늘려도 비어 온다. */
+private const val BACKFILL_DAYS = 7
 
 /**
  * `CMPedometer` 기반 걸음수 측정. 적는 시점과 값은 [StepSlotSchedule] 이 정한다.
