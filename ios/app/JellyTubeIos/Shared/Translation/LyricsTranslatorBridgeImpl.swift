@@ -13,10 +13,7 @@ enum LyricsTranslatorBridgeError: LocalizedError {
     }
 }
 
-/// 가사를 Apple `Translation` 으로 번역한다. 줄 나누기와 빈 줄 판단은 Kotlin(`IosLyricsTranslator`)이 한다.
-///
-/// `TranslationSession` 은 `.translationTask` 가 붙은 뷰에서만 얻을 수 있다. 그래서 요청은
-/// [LyricsTranslationHost] 에 쌓고, 루트 뷰에 붙은 [LyricsTranslationHostModifier] 가 세션을 받아 처리한다.
+/// `TranslationSession` 은 `.translationTask` 가 붙은 뷰에서만 나온다. 요청은 [LyricsTranslationHost] 에 쌓는다.
 final class LyricsTranslatorBridgeImpl: IosLyricsTranslatorBridge {
 
     func __translateToKorean(
@@ -35,10 +32,8 @@ final class LyricsTranslatorBridgeImpl: IosLyricsTranslatorBridge {
     }
 }
 
-/// 번역 요청을 한 번에 하나씩 세션에 태운다.
-///
 /// [configuration] 이 바뀔 때마다 `.translationTask` 가 새 세션으로 [run] 을 부른다.
-/// 언어 모델이 없으면 그 세션을 쓰는 순간 시스템이 다운로드 시트를 띄운다.
+/// 언어 모델이 없으면 시스템이 다운로드 시트를 띄우므로 앱이 화면에 떠 있어야 진행된다.
 @MainActor
 final class LyricsTranslationHost: ObservableObject {
 
@@ -114,7 +109,7 @@ final class LyricsTranslationHost: ObservableObject {
     }
 }
 
-/// 루트 뷰에 붙어 [LyricsTranslationHost] 에 세션을 건넨다. 루트 뷰는 내려가지 않으므로 세션 창구가 늘 열려 있다.
+/// 루트 뷰에 붙인다. 붙은 뷰가 내려가면 쌓인 번역 요청이 끝나지 않는다.
 struct LyricsTranslationHostModifier: ViewModifier {
 
     @ObservedObject private var host = LyricsTranslationHost.shared

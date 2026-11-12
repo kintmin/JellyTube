@@ -1,9 +1,5 @@
 package com.kintmin.data.translation
 
-/**
- * Apple `Translation`(iOS 18+) 에 번역을 위임한다. 줄 구조 보존은 Android(`MlKitLyricsTranslator`)
- * 와 같은 규칙을 여기서 지킨다 — 빈 줄은 그대로 두고 나머지 줄만 번역한다.
- */
 internal class IosLyricsTranslator(
     private val bridge: IosLyricsTranslatorBridge,
 ) : LyricsTranslator {
