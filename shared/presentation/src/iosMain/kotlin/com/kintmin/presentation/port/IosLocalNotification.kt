@@ -5,7 +5,7 @@ import platform.UserNotifications.UNMutableNotificationContent
 import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNUserNotificationCenter
 
-/** 알림 `userInfo` 에 딥링크를 싣는 키. 탭을 받는 `ios/shared` 의 `handleNotificationTap` 과 짝이다. */
+/** 탭을 받는 `ios/shared` 가 읽어야 해서 internal 로 내리지 않는다. */
 const val LOCAL_NOTIFICATION_DEEP_LINK_KEY = "deepLink"
 
 /**
@@ -14,7 +14,6 @@ const val LOCAL_NOTIFICATION_DEEP_LINK_KEY = "deepLink"
  */
 internal object IosLocalNotification {
 
-    /** @param deepLink 탭했을 때 갈 화면. Android 알림의 `PendingIntent` 자리다. null 이면 앱만 연다. */
     fun show(title: String, body: String, deepLink: String? = null) {
         val content = UNMutableNotificationContent().apply {
             setTitle(title)

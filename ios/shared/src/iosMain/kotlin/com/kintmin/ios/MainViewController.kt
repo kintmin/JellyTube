@@ -5,8 +5,8 @@ import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
 import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
-import com.kintmin.presentation.port.LOCAL_NOTIFICATION_DEEP_LINK_KEY
 import com.kintmin.presentation.port.ExecuteYoutubeDownload
+import com.kintmin.presentation.port.LOCAL_NOTIFICATION_DEEP_LINK_KEY
 import com.kintmin.presentation.port.StepMeasurementController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -65,10 +65,6 @@ fun handleDeepLink(url: String) {
     appViewModel.handleDeepLink(url)
 }
 
-/**
- * 로컬 알림을 탭했을 때 `UNUserNotificationCenterDelegate` 가 `userInfo` 를 그대로 넘겨준다.
- * Android 알림의 `PendingIntent` 와 짝이다. 딥링크가 없는 알림이면 앱만 열린 채로 둔다.
- */
 fun handleNotificationTap(userInfo: Map<Any?, *>) {
     val deepLink = userInfo[LOCAL_NOTIFICATION_DEEP_LINK_KEY] as? String ?: return
     appViewModel.handleDeepLink(deepLink)
