@@ -2,7 +2,6 @@ package com.kintmin.data.di
 
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.core.DataStore
-import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.data.local_datastore.DatastoreUtil
 import com.kintmin.data.local_datastore.DatastoreUtilImpl
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
@@ -11,11 +10,9 @@ import com.kintmin.data.network.createHttpClient
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.network.dataSource.KaraokeDataSource
 import com.kintmin.data.network.dataSource.LyricsDataSource
-import com.kintmin.data.network.dataSource.MigrationDataSource
 import com.kintmin.data.network.dataSourceImpl.HttpDataSourceImpl
 import com.kintmin.data.network.dataSourceImpl.KaraokeDataSourceImpl
 import com.kintmin.data.network.dataSourceImpl.LyricsDataSourceImpl
-import com.kintmin.data.network.dataSourceImpl.MigrationDataSourceImpl
 import com.kintmin.data.repository_impl.*
 import com.kintmin.domain.app_log.repository.AppLogRepository
 import com.kintmin.domain.app_log.usecase.*
@@ -56,7 +53,6 @@ val dataCommonModule: Module = module {
     single<HttpDataSource> { HttpDataSourceImpl(get()) }
     single<LyricsDataSource> { LyricsDataSourceImpl(get()) }
     single<KaraokeDataSource> { KaraokeDataSourceImpl(get()) }
-    single<MigrationDataSource> { MigrationDataSourceImpl(get(), ::localDeviceName) }
     single<DatastoreUtil> { DatastoreUtilImpl(get<DataStore<Preferences>>()) }
 
     single { get<JellyTubeDatabase>().audioMediaDao() }

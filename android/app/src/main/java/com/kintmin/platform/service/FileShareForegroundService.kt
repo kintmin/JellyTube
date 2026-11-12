@@ -11,9 +11,9 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
+import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
@@ -247,6 +247,7 @@ class FileShareForegroundService : Service(), KoinComponent {
             }
             runCatching { manager.registerService(nsdServiceInfo(serviceType), NsdManager.PROTOCOL_DNS_SD, listener) }
                 .onSuccess { nsdRegistrations[serviceType] = listener }
+                .onFailure { retryNsdRegistrations() }
         }
     }
 
@@ -255,6 +256,12 @@ class FileShareForegroundService : Service(), KoinComponent {
     private fun onNsdRegistrationFailed(serviceType: String, listener: NsdManager.RegistrationListener) {
         if (nsdRegistrations[serviceType] !== listener) return
         nsdRegistrations.remove(serviceType)
+        retryNsdRegistrations()
+    }
+
+    // 광고 대상이 그대로면 다시 맞출 계기가 없다. 직접 다시 맞춘다.
+    @Synchronized
+    private fun retryNsdRegistrations() {
         if (nsdRetryCount >= NSD_MAX_RETRIES) return
         nsdRetryCount++
         serviceScope.launch {
@@ -274,18 +281,12 @@ class FileShareForegroundService : Service(), KoinComponent {
         this.serviceType = serviceType
         port = FileShareConstants.DEFAULT_PORT
         if (serviceType == FileShareConstants.MIGRATION_NSD_SERVICE_TYPE) {
-            serviceName = toDnsSdInstanceName(deviceName())
+            serviceName = toDnsSdInstanceName(localDeviceName(this@FileShareForegroundService))
             setAttribute(FileShareConstants.MIGRATION_TXT_FORMAT_VERSION, FileShareConstants.MIGRATION_FORMAT_VERSION.toString())
         } else {
             serviceName = FileShareConstants.NSD_SERVICE_NAME
         }
     }
-
-    // 받는 기기가 이 이름으로 보내는 기기를 고른다.
-    private fun deviceName(): String =
-        Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
-            ?.takeIf { it.isNotBlank() }
-            ?: Build.MODEL
 
     companion object {
         const val ACTION_STOP = "com.kintmin.platform.FILE_SHARE_STOP"
