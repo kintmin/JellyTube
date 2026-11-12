@@ -21,6 +21,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.request.contentLength
 import io.ktor.server.request.header
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveChannel
@@ -78,7 +79,7 @@ internal fun Application.fileShareModule(
             // 대용량 WAV도 힙에 통째로 올리지 않도록 임시 파일로 스트리밍 수신한다.
             val tempFile = File.createTempFile(TEMP_UPLOAD_PREFIX, null, uploadCacheDir)
             try {
-                runCatching {
+                val receivedBytes = runCatching {
                     call.receiveChannel().toInputStream().use { input ->
                         FileOutputStream(tempFile).use { output -> input.copyTo(output) }
                     }
@@ -87,6 +88,15 @@ internal fun Application.fileShareModule(
                         HttpStatusCode.BadRequest,
                         UploadResponse(success = false, message = "파일을 읽을 수 없습니다."),
                     )
+                    return@post
+                }
+                val rejection = when {
+                    receivedBytes == 0L -> "빈 파일은 저장할 수 없습니다."
+                    call.request.contentLength()?.let { it != receivedBytes } == true -> "전송이 중간에 끊겼습니다. 다시 보내 주세요."
+                    else -> null
+                }
+                if (rejection != null) {
+                    call.respond(HttpStatusCode.BadRequest, UploadResponse(success = false, message = rejection))
                     return@post
                 }
 

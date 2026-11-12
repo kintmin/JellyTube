@@ -15,9 +15,11 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
+import io.ktor.utils.io.ByteReadChannel
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -118,6 +120,36 @@ class FileShareServerModuleTest {
         assertTrue(noExtension.bodyAsText().contains("확장자가 없는 파일은 저장할 수 없습니다."))
         coVerify(exactly = 0) { importUseCase(any(), any()) }
         assertTrue(tempFolder.root.listFiles().isNullOrEmpty())
+    }
+
+    @Test
+    fun `빈 본문은 가져오지 않고 400 이다`() = serverTest {
+        val response = client.post(FileShareConstants.HTTP_UPLOAD_PATH) {
+            header(FileShareConstants.HEADER_FILE_NAME, "song.mp3")
+            setBody(ByteArray(0))
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertTrue(response.bodyAsText().contains("빈 파일은 저장할 수 없습니다."))
+        coVerify(exactly = 0) { importUseCase(any(), any()) }
+        assertTrue(tempFolder.root.listFiles().isNullOrEmpty())
+    }
+
+    @Test
+    fun `알린 길이보다 덜 받으면 가져오지 않고 400 이다`() = serverTest {
+        val response = client.post(FileShareConstants.HTTP_UPLOAD_PATH) {
+            header(FileShareConstants.HEADER_FILE_NAME, "song.mp3")
+            setBody(
+                object : OutgoingContent.ReadChannelContent() {
+                    override val contentLength: Long = 10
+                    override fun readFrom(): ByteReadChannel = ByteReadChannel(byteArrayOf(1, 2, 3))
+                },
+            )
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        assertTrue(response.bodyAsText().contains("전송이 중간에 끊겼습니다."))
+        coVerify(exactly = 0) { importUseCase(any(), any()) }
     }
 
     @Test
