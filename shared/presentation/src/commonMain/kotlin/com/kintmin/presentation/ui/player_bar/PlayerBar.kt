@@ -25,6 +25,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +44,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray20
 import com.kintmin.presentation.theme.gray60
@@ -70,6 +75,13 @@ fun PlayerBar(
 
     if (data.id == "") return
 
+    var isDragging by remember { mutableStateOf(false) }
+    val playbackSeconds = data.playbackDuration.inWholeMilliseconds / 1000f
+    val currentSeconds = animatePlaybackSeconds(
+        targetSeconds = data.currentDuration.inWholeMilliseconds / 1000f,
+        snap = isDragging || !data.isPlaying,
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -82,12 +94,14 @@ fun PlayerBar(
         ) {
             Slider(
                 modifier = Modifier.fillMaxWidth(),
-                valueRange = 0f..data.playbackDuration.inWholeSeconds.toFloat(),
-                value = data.currentDuration.inWholeSeconds.toFloat(),
+                valueRange = 0f..playbackSeconds,
+                value = currentSeconds,
                 onValueChange = {
+                    isDragging = true
                     sendIntent(PlayerBarIntent.OnChangeTimeSlider(it))
                 },
                 onValueChangeFinished = {
+                    isDragging = false
                     sendIntent(PlayerBarIntent.OnChangeFinishTimeSlider)
                 },
                 track = { sliderState ->
@@ -99,7 +113,7 @@ fun PlayerBar(
                     )
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(data.currentDuration.inWholeSeconds / data.playbackDuration.inWholeSeconds.toFloat())
+                            .fillMaxWidth(if (playbackSeconds > 0f) (currentSeconds / playbackSeconds).coerceIn(0f, 1f) else 0f)
                             .height(16.dp)
                             .background(gray60)
                     )
