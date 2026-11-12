@@ -11,6 +11,7 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
@@ -39,6 +40,8 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
@@ -56,9 +59,9 @@ class FileShareForegroundService : Service(), KoinComponent {
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var ktorServer: io.ktor.server.engine.EmbeddedServer<*, *>? = null
-    private var nsdManager: NsdManager? = null
-    private var registeredServiceName: String? = null
-    private var nsdRegistrationListener: NsdManager.RegistrationListener? = null
+    private val nsdRegistrations = mutableMapOf<String, NsdManager.RegistrationListener>()
+    private var nsdAdvertiseJob: Job? = null
+    private var isNsdClosed = false
     private var migrationWakeLock: PowerManager.WakeLock? = null
     private var migrationWifiLock: WifiManager.WifiLock? = null
     private var migrationLockJob: Job? = null
@@ -85,7 +88,7 @@ class FileShareForegroundService : Service(), KoinComponent {
         val notification = if (Owner.DATA_MIGRATION in owners.value) DataMigrationSendNotification else FileShareServerNotification
         runCatching { startForegroundWith(notification) }.onSuccess {
             startKtorServer()
-            registerNsdService()
+            advertiseWhileRunning()
             holdLocksWhileMigrating()
         }.onFailure {
             stopSelf()
@@ -107,7 +110,7 @@ class FileShareForegroundService : Service(), KoinComponent {
     override fun onDestroy() {
         clearOwnersIfCurrent(generation)
         releaseMigrationLocks()
-        unregisterNsdService()
+        closeNsdRegistrations()
         ktorServer?.let { server ->
             runCatching { server.stop(500L, 500L) }
         }
@@ -211,37 +214,60 @@ class FileShareForegroundService : Service(), KoinComponent {
         migrationWifiLock = null
     }
 
-    private fun registerNsdService() {
-        runCatching {
-            val serviceInfo = NsdServiceInfo().apply {
-                serviceType = FileShareConstants.NSD_SERVICE_TYPE
-                serviceName = FileShareConstants.NSD_SERVICE_NAME
-                port = FileShareConstants.DEFAULT_PORT
+    private fun advertiseWhileRunning() {
+        if (nsdAdvertiseJob?.isActive == true) return
+        nsdAdvertiseJob = serviceScope.launch {
+            combine(owners, MigrationSessionHolder.session) { currentOwners, session ->
+                advertisedServiceTypes(currentOwners, isMigrationSessionOpen = session != null)
             }
+                .distinctUntilChanged()
+                .collect(::syncNsdRegistrations)
+        }
+    }
 
+    // 수집이 취소된 뒤에도 이미 꺼낸 값으로 한 번 더 불릴 수 있다. 닫힌 뒤에는 다시 등록하지 않는다.
+    @Synchronized
+    private fun syncNsdRegistrations(serviceTypes: Set<String>) {
+        val manager = getSystemService(NSD_SERVICE) as NsdManager
+        val targets = if (isNsdClosed) emptySet() else serviceTypes
+        (nsdRegistrations.keys - targets).forEach { serviceType ->
+            nsdRegistrations.remove(serviceType)?.let { runCatching { manager.unregisterService(it) } }
+        }
+        (targets - nsdRegistrations.keys).forEach { serviceType ->
             val listener = object : NsdManager.RegistrationListener {
                 override fun onRegistrationFailed(info: NsdServiceInfo, errorCode: Int) {}
                 override fun onUnregistrationFailed(info: NsdServiceInfo, errorCode: Int) {}
-                override fun onServiceRegistered(info: NsdServiceInfo) {
-                    registeredServiceName = info.serviceName
-                }
+                override fun onServiceRegistered(info: NsdServiceInfo) {}
                 override fun onServiceUnregistered(info: NsdServiceInfo) {}
             }
-
-            nsdRegistrationListener = listener
-            nsdManager = getSystemService(NSD_SERVICE) as NsdManager
-            nsdManager?.registerService(serviceInfo, NsdManager.PROTOCOL_DNS_SD, listener)
+            runCatching { manager.registerService(nsdServiceInfo(serviceType), NsdManager.PROTOCOL_DNS_SD, listener) }
+                .onSuccess { nsdRegistrations[serviceType] = listener }
         }
     }
 
-    private fun unregisterNsdService() {
-        runCatching {
-            val listener = nsdRegistrationListener ?: return
-            nsdManager?.unregisterService(listener)
-            nsdRegistrationListener = null
-            nsdManager = null
+    @Synchronized
+    private fun closeNsdRegistrations() {
+        nsdAdvertiseJob?.cancel()
+        isNsdClosed = true
+        syncNsdRegistrations(emptySet())
+    }
+
+    private fun nsdServiceInfo(serviceType: String) = NsdServiceInfo().apply {
+        this.serviceType = serviceType
+        port = FileShareConstants.DEFAULT_PORT
+        if (serviceType == FileShareConstants.MIGRATION_NSD_SERVICE_TYPE) {
+            serviceName = toDnsSdInstanceName(deviceName())
+            setAttribute(FileShareConstants.MIGRATION_TXT_FORMAT_VERSION, FileShareConstants.MIGRATION_FORMAT_VERSION.toString())
+        } else {
+            serviceName = FileShareConstants.NSD_SERVICE_NAME
         }
     }
+
+    // 받는 기기가 보내는 기기를 고르는 이름이다. 사용자가 정한 기기 이름이 없으면 모델명을 쓴다.
+    private fun deviceName(): String =
+        Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
+            ?.takeIf { it.isNotBlank() }
+            ?: Build.MODEL
 
     companion object {
         const val ACTION_STOP = "com.kintmin.platform.FILE_SHARE_STOP"
