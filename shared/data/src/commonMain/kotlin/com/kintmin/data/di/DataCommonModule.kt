@@ -2,6 +2,7 @@ package com.kintmin.data.di
 
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.core.DataStore
+import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.data.local_datastore.DatastoreUtil
 import com.kintmin.data.local_datastore.DatastoreUtilImpl
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
@@ -55,7 +56,7 @@ val dataCommonModule: Module = module {
     single<HttpDataSource> { HttpDataSourceImpl(get()) }
     single<LyricsDataSource> { LyricsDataSourceImpl(get()) }
     single<KaraokeDataSource> { KaraokeDataSourceImpl(get()) }
-    single<MigrationDataSource> { MigrationDataSourceImpl(get()) }
+    single<MigrationDataSource> { MigrationDataSourceImpl(get(), ::localDeviceName) }
     single<DatastoreUtil> { DatastoreUtilImpl(get<DataStore<Preferences>>()) }
 
     single { get<JellyTubeDatabase>().audioMediaDao() }

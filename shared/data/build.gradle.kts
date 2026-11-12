@@ -81,6 +81,7 @@ kotlin {
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.ktor.client.mock)
                 implementation("com.github.axet:TarsosDSP:2.4-1@jar")
             }
         }

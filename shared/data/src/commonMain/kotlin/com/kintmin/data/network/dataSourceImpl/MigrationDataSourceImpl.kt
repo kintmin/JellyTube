@@ -1,6 +1,5 @@
 package com.kintmin.data.network.dataSourceImpl
 
-import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.data.network.dataSource.MigrationDataSource
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.MigrationFinishRequest
@@ -28,6 +27,7 @@ import io.ktor.utils.io.readAvailable
 
 internal class MigrationDataSourceImpl(
     private val client: HttpClient,
+    private val localDeviceName: suspend () -> String,
 ) : MigrationDataSource {
 
     override suspend fun pair(host: String, port: Int, code: String): Result<String> = runCatching {

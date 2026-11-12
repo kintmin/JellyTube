@@ -70,13 +70,7 @@ class DataMigrationRepositoryImpl constructor(
         isPlayableAudioExtension(fileName.substringAfterLast('.', missingDelimiterValue = ""))
 
     override suspend fun pair(endpoint: MigrationEndpoint, code: String): Result<String> =
-        migrationDataSource.pair(endpoint.host, endpoint.port, code).recoverCatching { error ->
-            throw when ((error as? ClientRequestException)?.response?.status) {
-                HttpStatusCode.Unauthorized -> MigrationPairRejectedException()
-                HttpStatusCode.NotFound -> MigrationSourceClosedException()
-                else -> error
-            }
-        }
+        migrationDataSource.pair(endpoint.host, endpoint.port, code).recoverCatching { throw it.asPairFailure() }
 
     override suspend fun fetchRemoteExport(endpoint: MigrationEndpoint, token: String): Result<MigrationExport> =
         runCatching {
@@ -185,6 +179,12 @@ class DataMigrationRepositoryImpl constructor(
 
     private fun stagedPath(file: MigrationFile): Path =
         fileManager.getMigrationStagingDirPath().getOrThrow().toPath() / file.kind.name / file.name
+}
+
+internal fun Throwable.asPairFailure(): Throwable = when ((this as? ClientRequestException)?.response?.status) {
+    HttpStatusCode.Unauthorized -> MigrationPairRejectedException()
+    HttpStatusCode.NotFound -> MigrationSourceClosedException()
+    else -> this
 }
 
 internal fun FileSystem.moveFile(source: Path, destination: Path) {
