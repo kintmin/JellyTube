@@ -23,12 +23,6 @@ data class AnomalyCheckResultNotification(
             .setGroup(channel.id)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
-            .apply {
-                notice.deepLink?.let { deepLink ->
-                    setContentIntent(
-                        context.workResultPendingIntent(IntentRequestCode.APP_LOG_NOTIFICATION, deepLink),
-                    )
-                }
-            }
+            .setContentIntent(context.workResultPendingIntent(IntentRequestCode.APP_LOG_NOTIFICATION, notice.deepLink))
             .build()
 }

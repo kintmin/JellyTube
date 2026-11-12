@@ -55,9 +55,7 @@ class YoutubeDownloadWorker(
             val exception = foregroundResult.exceptionOrNull()
             val errorMessage = "포그라운드 서비스 시작 실패: ${exception?.message ?: "알 수 없는 오류"}"
 
-            pushNotificationManager.sendNotification(
-                DownloadResultNotification(WorkResultNotice.Download.Failure(reason = errorMessage)),
-            )
+            pushNotificationManager.sendNotification(DownloadResultNotification(WorkResultNotice.Download.Failure))
             appLog.sendDebugLog(DebugLog("YoutubeDownloadWorker", errorMessage))
             return Result.failure()
         }
@@ -112,7 +110,7 @@ class YoutubeDownloadWorker(
             pushNotificationManager.cancelNotification(downloadNotification.id)
 
             val errorMessage = it.message.toString()
-            pushNotificationManager.sendNotification(DownloadResultNotification(WorkResultNotice.Download.Failure()))
+            pushNotificationManager.sendNotification(DownloadResultNotification(WorkResultNotice.Download.Failure))
             appLog.sendDebugLog(DebugLog("YoutubeDownloadWorker", errorMessage))
         }
 

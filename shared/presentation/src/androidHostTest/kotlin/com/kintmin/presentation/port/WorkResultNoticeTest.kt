@@ -32,7 +32,7 @@ class WorkResultNoticeTest {
     @Test
     fun `실패 알림은 앱 로그로 간다`() {
         listOf(
-            WorkResultNotice.Download.Failure(),
+            WorkResultNotice.Download.Failure,
             WorkResultNotice.LyricsVariantCreation.Failure(LyricsVariant.TRANSLITERATION),
             WorkResultNotice.AnomalyCheck.Failure,
         ).forEach { notice ->

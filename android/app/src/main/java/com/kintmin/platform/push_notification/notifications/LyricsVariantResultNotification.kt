@@ -23,12 +23,8 @@ data class LyricsVariantResultNotification(
             .setGroup(channel.id)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
-            .apply {
-                notice.deepLink?.let { deepLink ->
-                    setContentIntent(
-                        context.workResultPendingIntent(IntentRequestCode.LYRICS_VARIANT_RESULT_NOTIFICATION, deepLink),
-                    )
-                }
-            }
+            .setContentIntent(
+                context.workResultPendingIntent(IntentRequestCode.LYRICS_VARIANT_RESULT_NOTIFICATION, notice.deepLink),
+            )
             .build()
 }
