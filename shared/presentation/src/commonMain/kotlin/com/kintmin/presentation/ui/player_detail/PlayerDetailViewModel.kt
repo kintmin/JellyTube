@@ -260,7 +260,7 @@ class PlayerDetailViewModel constructor(
             is PlayerDetailIntent.OnChangeTimeSlider -> {
                 isHandlingSlider = true
                 _data.update {
-                    it.copy(currentDuration = intent.duration.toLong().seconds)
+                    it.copy(currentDuration = intent.duration.toDouble().seconds)
                 }
             }
 

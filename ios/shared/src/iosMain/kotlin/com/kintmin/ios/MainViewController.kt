@@ -22,7 +22,7 @@ private val appViewModel: AppViewModel by lazy { KoinPlatform.getKoin().get() }
 
 private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-/** Koin 초기화 직후 한 번 부른다. `android:app` 의 `MainActivity.onCreate` 와 짝이다. */
+/** Koin 초기화 직후 한 번 부른다. 사용자 등록은 `android:app` 의 `JellyTubeApplication.onCreate`, 나머지는 `MainActivity.onCreate` 와 짝이다. */
 fun startApp() {
     appScope.launch { KoinPlatform.getKoin().get<RegisterUserUseCase>()() }
     appViewModel.initializeMediaController()

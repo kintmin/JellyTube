@@ -76,52 +76,12 @@ fun PlayerBar(
 
     if (data.id == "") return
 
-    var isDragging by remember { mutableStateOf(false) }
-    val playbackSeconds = data.playbackDuration.inWholeMilliseconds / 1000f
-    val currentSeconds = animatePlaybackSeconds(
-        targetSeconds = data.currentDuration.inWholeMilliseconds / 1000f,
-        snap = isDragging || !data.isPlaying,
-    )
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.Transparent),
     ) {
-        Box(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surfaceDim)
-                .height(16.dp)
-        ) {
-            Slider(
-                modifier = Modifier.fillMaxWidth(),
-                valueRange = 0f..playbackSeconds,
-                value = currentSeconds,
-                onValueChange = {
-                    isDragging = true
-                    sendIntent(PlayerBarIntent.OnChangeTimeSlider(it))
-                },
-                onValueChangeFinished = {
-                    isDragging = false
-                    sendIntent(PlayerBarIntent.OnChangeFinishTimeSlider)
-                },
-                track = { sliderState ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(16.dp)
-                            .background(gray20)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(if (playbackSeconds > 0f) (currentSeconds / playbackSeconds).coerceIn(0f, 1f) else 0f)
-                            .height(16.dp)
-                            .background(gray60)
-                    )
-                },
-                thumb = {},
-            )
-        }
+        PlayerBarProgress(data = data, sendIntent = sendIntent)
         Row(
             modifier = Modifier
                 .height(64.dp)
@@ -211,11 +171,72 @@ fun PlayerBar(
     }
 }
 
+/** 프레임마다 바뀌는 재생 위치를 여기서만 읽는다. 바깥에서 읽으면 재생바 전체가 매 프레임 다시 그려진다. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PlayerBarProgress(
+    data: PlayerBarUiState,
+    sendIntent: (PlayerBarIntent) -> Unit,
+) {
+    var isDragging by remember { mutableStateOf(false) }
+    val playbackSeconds = data.playbackDuration.inWholeMilliseconds / 1000f
+    val currentSeconds = animatePlaybackSeconds(
+        targetSeconds = data.currentDuration.inWholeMilliseconds / 1000f,
+        snap = isDragging || !data.isPlaying,
+    )
+
+    Box(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.surfaceDim)
+            .height(16.dp)
+    ) {
+        Slider(
+            modifier = Modifier.fillMaxWidth(),
+            valueRange = 0f..playbackSeconds,
+            value = currentSeconds,
+            onValueChange = {
+                isDragging = true
+                sendIntent(PlayerBarIntent.OnChangeTimeSlider(it))
+            },
+            onValueChangeFinished = {
+                isDragging = false
+                sendIntent(PlayerBarIntent.OnChangeFinishTimeSlider)
+            },
+            track = { sliderState ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(16.dp)
+                        .background(gray20)
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(if (playbackSeconds > 0f) (currentSeconds / playbackSeconds).coerceIn(0f, 1f) else 0f)
+                        .height(16.dp)
+                        .background(gray60)
+                )
+            },
+            thumb = {},
+        )
+    }
+}
+
 @Preview
 @Composable
 fun PlayerBarPreview() {
     JellyTubeTheme {
         PlayerBar(
+            data = PlayerBarUiState.getMock(),
+            sendIntent = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun PlayerBarProgressPreview() {
+    JellyTubeTheme {
+        PlayerBarProgress(
             data = PlayerBarUiState.getMock(),
             sendIntent = {},
         )
