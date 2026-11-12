@@ -4,8 +4,8 @@ import com.kintmin.fileshare.MigrationManifestDto
 
 interface MigrationDataSource {
 
-    /** 거부되면(401/404) null. */
-    suspend fun pair(host: String, port: Int, code: String): Result<String?>
+    /** 거부되면 상태 코드(401 코드 틀림, 404 세션 없음)를 담은 `ClientRequestException` 으로 실패한다. */
+    suspend fun pair(host: String, port: Int, code: String): Result<String>
 
     suspend fun fetchManifest(host: String, port: Int, token: String): Result<MigrationManifestDto>
 

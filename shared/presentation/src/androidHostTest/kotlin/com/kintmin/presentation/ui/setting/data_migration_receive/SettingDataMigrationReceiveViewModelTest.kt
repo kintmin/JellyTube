@@ -7,6 +7,7 @@ import com.kintmin.domain.data_migration.model.MigrationFailureReason
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
+import com.kintmin.domain.data_migration.model.MigrationSourceClosedException
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
@@ -14,6 +15,7 @@ import com.kintmin.domain.data_migration.usecase.ImportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningWorkMonitor
+import com.kintmin.presentation.port.model.MigrationSource
 import com.kintmin.presentation.port.model.RunningWork
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -38,8 +40,10 @@ import org.junit.Test
 class SettingDataMigrationReceiveViewModelTest {
 
     private val endpoint = MigrationEndpoint("192.168.0.2", 52847)
+    private val source = MigrationSource(name = "Galaxy S24", isCompatible = true)
     private val discovery = mockk<MigrationSourceDiscovery> {
-        coEvery { discover() } returns endpoint
+        coEvery { discover() } returns listOf(source)
+        coEvery { resolve(source) } returns endpoint
     }
     private val pair = mockk<PairMigrationSourceUseCase> {
         coEvery { this@mockk(endpoint, "123456") } returns Result.success("token")
@@ -90,7 +94,61 @@ class SettingDataMigrationReceiveViewModelTest {
 
     @Test
     fun `기기를 못 찾으면 NotFound 다`() {
-        coEvery { discovery.discover() } returns null
+        coEvery { discovery.discover() } returns emptyList()
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
+
+        assertEquals(DataMigrationReceivePhase.NotFound, viewModel.uiState.value.phase)
+    }
+
+    @Test
+    fun `한 대만 찾으면 고르지 않고 그 기기의 코드를 입력받는다`() {
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
+
+        assertEquals(DataMigrationReceivePhase.CodeInput(), viewModel.uiState.value.phase)
+        assertEquals(source, viewModel.uiState.value.source)
+    }
+
+    @Test
+    fun `여러 대를 찾으면 고른 기기에만 연결한다`() {
+        val other = MigrationSource(name = "Pixel 9", isCompatible = true)
+        val otherEndpoint = MigrationEndpoint("192.168.0.3", 52847)
+        coEvery { discovery.discover() } returns listOf(source, other)
+        coEvery { discovery.resolve(other) } returns otherEndpoint
+        coEvery { pair(otherEndpoint, "123456") } returns Result.failure(MigrationPairRejectedException())
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
+        assertEquals(DataMigrationReceivePhase.SelectSource(listOf(source, other)), viewModel.uiState.value.phase)
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnSelectSource(other))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnChangeCode("123456"))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickConnect)
+
+        assertEquals(other, viewModel.uiState.value.source)
+        coVerify(exactly = 0) { discovery.resolve(source) }
+        coVerify(exactly = 1) { pair(otherEndpoint, "123456") }
+    }
+
+    @Test
+    fun `버전이 다른 기기는 한 대뿐이어도 고를 수 없다`() {
+        val outdated = MigrationSource(name = "Pixel 9", isCompatible = false)
+        coEvery { discovery.discover() } returns listOf(outdated)
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnSelectSource(outdated))
+
+        assertEquals(DataMigrationReceivePhase.SelectSource(listOf(outdated)), viewModel.uiState.value.phase)
+        coVerify(exactly = 0) { discovery.resolve(any()) }
+    }
+
+    @Test
+    fun `고른 기기가 그 사이 광고를 내렸으면 NotFound 다`() {
+        coEvery { discovery.resolve(source) } returns null
         val viewModel = viewModel()
 
         viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
@@ -119,6 +177,21 @@ class SettingDataMigrationReceiveViewModelTest {
         val phase = viewModel.uiState.value.phase
         assertTrue(phase is DataMigrationReceivePhase.CodeInput && phase.errorMessage != null)
         assertEquals("", viewModel.uiState.value.code)
+    }
+
+    @Test
+    fun `보내기 세션이 없으면 코드 틀림과 다른 안내로 다시 입력받는다`() {
+        coEvery { pair(endpoint, "000000") } returns Result.failure(MigrationPairRejectedException())
+        coEvery { pair(endpoint, "111111") } returns Result.failure(MigrationSourceClosedException())
+        val viewModel = viewModel()
+
+        viewModel.connect("000000")
+        val rejected = viewModel.uiState.value.phase as DataMigrationReceivePhase.CodeInput
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnChangeCode("111111"))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickConnect)
+        val closed = viewModel.uiState.value.phase as DataMigrationReceivePhase.CodeInput
+
+        assertTrue(closed.errorMessage != null && closed.errorMessage != rejected.errorMessage)
     }
 
     @Test

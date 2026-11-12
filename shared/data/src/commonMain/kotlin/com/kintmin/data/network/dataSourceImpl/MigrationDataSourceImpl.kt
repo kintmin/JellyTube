@@ -20,7 +20,6 @@ import io.ktor.client.request.prepareGet
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.ContentType
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLProtocol
 import io.ktor.http.appendPathSegments
 import io.ktor.http.contentType
@@ -31,17 +30,13 @@ internal class MigrationDataSourceImpl(
     private val client: HttpClient,
 ) : MigrationDataSource {
 
-    override suspend fun pair(host: String, port: Int, code: String): Result<String?> = runCatching {
-        val response = client.post {
+    override suspend fun pair(host: String, port: Int, code: String): Result<String> = runCatching {
+        client.post {
             migrationUrl(host, port, FileShareConstants.MIGRATION_PAIR_PATH)
             contentType(ContentType.Application.Json)
             setBody(MigrationPairRequest(code = code, deviceName = localDeviceName()))
-        }
-        when (response.status) {
-            HttpStatusCode.OK -> response.body<MigrationPairResponse>().token
-            HttpStatusCode.Unauthorized, HttpStatusCode.NotFound -> null
-            else -> error("페어링 실패: ${response.status}")
-        }
+            expectSuccess = true
+        }.body<MigrationPairResponse>().token
     }
 
     override suspend fun fetchManifest(host: String, port: Int, token: String): Result<MigrationManifestDto> =
