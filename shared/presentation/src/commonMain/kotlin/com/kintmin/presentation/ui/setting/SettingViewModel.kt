@@ -148,11 +148,6 @@ class SettingViewModel constructor(
                     _eventFlow.emit(SettingEvent.NavigateToDeviceSaveScreen)
                 }
             }
-            SettingIntent.OnClickShareTile -> {
-                viewModelScope.launch {
-                    _eventFlow.emit(SettingEvent.NavigateToShareScreen)
-                }
-            }
             SettingIntent.OnClickFileShareReceiveTile -> {
                 viewModelScope.launch {
                     _eventFlow.emit(SettingEvent.NavigateToFileShareReceiveScreen)

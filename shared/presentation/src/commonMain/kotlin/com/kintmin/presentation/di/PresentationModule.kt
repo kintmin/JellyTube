@@ -25,7 +25,6 @@ import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMig
 import com.kintmin.presentation.ui.setting.data_migration_send.SettingDataMigrationSendViewModel
 import com.kintmin.presentation.ui.setting.file_share_receive.SettingFileShareReceiveViewModel
 import com.kintmin.presentation.ui.setting.device_save_select.SettingDeviceSaveSelectViewModel
-import com.kintmin.presentation.ui.setting.quick_share.SettingShareViewModel
 import com.kintmin.presentation.ui.step.StepViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
@@ -39,7 +38,6 @@ val presentationModule: Module = module {
     viewModelOf(::SettingFileShareReceiveViewModel)
     viewModelOf(::SettingDataMigrationSendViewModel)
     viewModelOf(::SettingDataMigrationReceiveViewModel)
-    viewModelOf(::SettingShareViewModel)
     viewModelOf(::SettingDeviceSaveSelectViewModel)
     viewModelOf(::AppLogViewModel)
     viewModelOf(::PlayerDetailViewModel)
