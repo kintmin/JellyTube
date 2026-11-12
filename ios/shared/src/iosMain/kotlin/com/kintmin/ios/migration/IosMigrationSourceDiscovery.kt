@@ -9,7 +9,7 @@ internal class IosMigrationSourceDiscovery(
 ) : MigrationSourceDiscovery {
 
     override suspend fun discover(): MigrationEndpoint? =
-        bridge.findService(FileShareConstants.NSD_SERVICE_TYPE, DISCOVERY_TIMEOUT_MILLIS)
+        bridge.findService(FileShareConstants.MIGRATION_NSD_SERVICE_TYPE, DISCOVERY_TIMEOUT_MILLIS)
             ?.let { MigrationEndpoint(host = it.host, port = it.port) }
 }
 
