@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.player_bar
 
 import androidx.lifecycle.ViewModel
 import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.model.MediaControlData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -14,18 +15,7 @@ class PlayerBarViewModel constructor(
     private val mediaControllerManager: MediaControllerManager,
 ) : ViewModel() {
 
-    private val _currentMediaItem = mediaControllerManager.playingMediaItem.let {
-        MutableStateFlow(
-            PlayerBarUiState(
-                id = it?.mediaId ?: "",
-                title = it?.mediaTitle ?: "",
-                currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
-                playbackDuration = (it?.mediaDurationMs ?: 0L).milliseconds,
-                imageFileFullPath = it?.mediaArtworkFileUri,
-                isPlaying = mediaControllerManager.isPlaying,
-            )
-        )
-    }
+    private val _currentMediaItem = MutableStateFlow(buildUiState(mediaControllerManager.playingMediaItem))
 
     val currentMediaItem = _currentMediaItem.asStateFlow()
 
@@ -60,21 +50,11 @@ class PlayerBarViewModel constructor(
                 val currentDuration = mediaControllerManager.currentPosition?.toDuration(DurationUnit.MILLISECONDS)
 
                 if (!_isHandling) {
-                    val isSameMedia = currentMediaItem.value.id == (mediaControllerManager.playingMediaItem?.mediaId ?: "")
+                    val playingMediaItem = mediaControllerManager.playingMediaItem
+                    val isSameMedia = currentMediaItem.value.id == (playingMediaItem?.mediaId ?: "")
                     val isChangePlaying = mediaControllerManager.isPlaying != currentMediaItem.value.isPlaying || currentDuration == null
                     if (!isSameMedia) {
-                        _currentMediaItem.update {
-                            mediaControllerManager.playingMediaItem.let {
-                                PlayerBarUiState(
-                                    id = it?.mediaId ?: "",
-                                    title = it?.mediaTitle ?: "",
-                                    currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
-                                    playbackDuration = (it?.mediaDurationMs ?: 0L).milliseconds,
-                                    imageFileFullPath = it?.mediaArtworkFileUri,
-                                    isPlaying = mediaControllerManager.isPlaying,
-                                )
-                            }
-                        }
+                        _currentMediaItem.update { buildUiState(playingMediaItem) }
                     } else if (isChangePlaying) {
                         _currentMediaItem.update {
                             it.copy(isPlaying = mediaControllerManager.isPlaying)
@@ -88,4 +68,13 @@ class PlayerBarViewModel constructor(
             }
         }
     }
+
+    private fun buildUiState(item: MediaControlData?) = PlayerBarUiState(
+        id = item?.mediaId ?: "",
+        title = item?.mediaTitle ?: "",
+        currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
+        playbackDuration = (item?.mediaDurationMs ?: 0L).milliseconds,
+        imageFileFullPath = item?.mediaArtworkFileUri,
+        isPlaying = mediaControllerManager.isPlaying,
+    )
 }
