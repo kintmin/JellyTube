@@ -56,6 +56,7 @@ struct JellyTubeIosApp: App {
         // 순서가 중요하다 — Koin 이 먼저 서야 startApp 이 앱 레벨 ViewModel 을 꺼낼 수 있다.
         IosKoinKt.doInitIosKoin(
             pythonExecutorBridge: PythonExecutorBridgeImpl(),
+            lyricsTranslatorBridge: LyricsTranslatorBridgeImpl(),
             mediaControllerBridge: MediaControllerBridgeImpl(),
             appLogBridge: appLogBridge,
             migrationSourceBrowserBridge: MigrationSourceBrowserBridgeImpl()
@@ -90,6 +91,8 @@ struct JellyTubeIosApp: App {
                 // ComposeUIViewController 가 safe area 를 직접 Compose 로 넘기므로 화면 전체를
                 // 덮어야 한다. 인셋 처리는 각 화면의 Scaffold(innerPadding)가 한다.
                 .ignoresSafeArea(.all)
+                // 가사 번역 세션은 뷰에서만 얻을 수 있다. 화면과 무관하게 루트에 붙여 둔다.
+                .modifier(LyricsTranslationHostModifier())
                 .onOpenURL { url in
                     // 판정은 공통 코드가 한다. Swift 는 "파일이냐 아니냐"만 가른다.
                     if url.isFileURL {
