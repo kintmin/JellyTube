@@ -33,6 +33,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -676,6 +677,8 @@ private fun PlaybackPitchChip(
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             softWrap = false,
+            // 숫자 폭을 같게 해 값이 바뀔 때 칩 폭이 흔들리지 않게 한다.
+            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
         )
     }
 }
@@ -702,6 +705,8 @@ private fun PlaybackSpeedChip(
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             softWrap = false,
+            // 숫자 폭을 같게 해 값이 바뀔 때 칩 폭이 흔들리지 않게 한다.
+            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
         )
     }
 }
