@@ -16,20 +16,20 @@ fun localNotificationDeepLinkOf(userInfo: Map<Any?, *>): String? = userInfo[DEEP
  */
 internal object IosLocalNotification {
 
-    fun show(title: String, body: String, deepLink: String? = null) {
+    fun show(notice: WorkResultNotice) {
         val request = UNNotificationRequest.requestWithIdentifier(
             identifier = NSUUID().UUIDString,
-            content = contentOf(title, body, deepLink),
+            content = contentOf(notice),
             trigger = null,
         )
         UNUserNotificationCenter.currentNotificationCenter()
             .addNotificationRequest(request, withCompletionHandler = null)
     }
 
-    fun contentOf(title: String, body: String, deepLink: String?) = UNMutableNotificationContent().apply {
-        setTitle(title)
-        setBody(body)
-        if (deepLink != null) {
+    fun contentOf(notice: WorkResultNotice) = UNMutableNotificationContent().apply {
+        setTitle(notice.title)
+        setBody(notice.body)
+        notice.deepLink?.let { deepLink ->
             setUserInfo(mapOf(DEEP_LINK_KEY to deepLink))
         }
     }

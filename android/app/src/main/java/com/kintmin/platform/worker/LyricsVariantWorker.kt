@@ -9,6 +9,7 @@ import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.LyricsVariantResultNotification
+import com.kintmin.presentation.port.WorkResultNotice
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -41,10 +42,7 @@ class LyricsVariantWorker(
             onSuccess = {
                 pushNotificationManager.sendNotification(
                     LyricsVariantResultNotification(
-                        variant = variant,
-                        resultType = LyricsVariantResultNotification.ResultType.Success,
-                        contentText = "탭하여 결과를 확인하세요.",
-                        audioMediaId = audioMediaId,
+                        WorkResultNotice.LyricsVariantCreation.Success(variant, audioMediaId),
                     )
                 )
                 Result.success()
@@ -52,11 +50,7 @@ class LyricsVariantWorker(
             onFailure = { error ->
                 appLog.sendDebugLog(DebugLog("LyricsVariantWorker", error.message.toString()))
                 pushNotificationManager.sendNotification(
-                    LyricsVariantResultNotification(
-                        variant = variant,
-                        resultType = LyricsVariantResultNotification.ResultType.Failure,
-                        contentText = "번역에 실패했습니다. 로그를 확인해주세요.",
-                    )
+                    LyricsVariantResultNotification(WorkResultNotice.LyricsVariantCreation.Failure(variant)),
                 )
                 Result.failure()
             },

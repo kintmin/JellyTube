@@ -2,18 +2,14 @@ package com.kintmin.platform.push_notification.notifications
 
 import android.content.Context
 import androidx.core.app.NotificationCompat
-import com.kintmin.domain.lyrics.model.LyricsVariant
-import com.kintmin.presentation.port.label
-import com.kintmin.platform.intent.appLogPendingIntent
-import com.kintmin.platform.intent.lyricsViewerPendingIntent
+import com.kintmin.platform.intent.IntentRequestCode
+import com.kintmin.platform.intent.workResultPendingIntent
 import com.kintmin.platform.push_notification.PushNotificationIdGenerator
 import com.kintmin.platform.push_notification.channels.TranslationResultChannel
+import com.kintmin.presentation.port.WorkResultNotice
 
 data class LyricsVariantResultNotification(
-    val variant: LyricsVariant,
-    val resultType: ResultType,
-    val contentText: String,
-    val audioMediaId: Int? = null,
+    val notice: WorkResultNotice.LyricsVariantCreation,
 ) : PushNotification() {
 
     override val id = PushNotificationIdGenerator.random()
@@ -21,33 +17,18 @@ data class LyricsVariantResultNotification(
 
     override fun buildNotification(context: Context) =
         NotificationCompat.Builder(context, channel.id)
-            .setContentTitle(title())
-            .setContentText(contentText)
+            .setContentTitle(notice.title)
+            .setContentText(notice.body)
             .setSmallIcon(android.R.drawable.stat_notify_chat)
             .setGroup(channel.id)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
             .apply {
-                when (resultType) {
-                    ResultType.Success -> if (audioMediaId != null) {
-                        setContentIntent(context.lyricsViewerPendingIntent(audioMediaId))
-                    }
-
-                    ResultType.Failure -> setContentIntent(context.appLogPendingIntent())
+                notice.deepLink?.let { deepLink ->
+                    setContentIntent(
+                        context.workResultPendingIntent(IntentRequestCode.LYRICS_VARIANT_RESULT_NOTIFICATION, deepLink),
+                    )
                 }
             }
             .build()
-
-    private fun title(): String {
-        val suffix = when (resultType) {
-            ResultType.Success -> "완료"
-            ResultType.Failure -> "실패"
-        }
-        return "${variant.label} $suffix"
-    }
-
-    enum class ResultType {
-        Success,
-        Failure,
-    }
 }

@@ -2,16 +2,14 @@ package com.kintmin.platform.push_notification.notifications
 
 import android.content.Context
 import androidx.core.app.NotificationCompat
-import com.kintmin.platform.intent.appLogPendingIntent
-import com.kintmin.platform.intent.downloadResultPendingIntent
+import com.kintmin.platform.intent.IntentRequestCode
+import com.kintmin.platform.intent.workResultPendingIntent
 import com.kintmin.platform.push_notification.PushNotificationIdGenerator
 import com.kintmin.platform.push_notification.channels.DownloadResultChannel
+import com.kintmin.presentation.port.WorkResultNotice
 
 data class DownloadResultNotification(
-    val resultType: ResultType,
-    val contentText: String,
-    val playlistId: Int? = null,
-    val audioMediaId: Int? = null,
+    val notice: WorkResultNotice.Download,
 ) : PushNotification() {
 
     override val id = PushNotificationIdGenerator.random()
@@ -19,26 +17,18 @@ data class DownloadResultNotification(
 
     override fun buildNotification(context: Context) =
         NotificationCompat.Builder(context, channel.id)
-            .setContentTitle(resultType.title)
-            .setContentText(contentText)
+            .setContentTitle(notice.title)
+            .setContentText(notice.body)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setGroup(channel.id)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
             .apply {
-                when (resultType) {
-                    ResultType.Success -> {
-                        if (playlistId != null && audioMediaId != null) {
-                            setContentIntent(context.downloadResultPendingIntent(playlistId, audioMediaId))
-                        }
-                    }
-                    ResultType.Failure -> setContentIntent(context.appLogPendingIntent())
+                notice.deepLink?.let { deepLink ->
+                    setContentIntent(
+                        context.workResultPendingIntent(IntentRequestCode.DOWNLOAD_RESULT_NOTIFICATION, deepLink),
+                    )
                 }
             }
             .build()
-
-    enum class ResultType(val title: String) {
-        Success("음원 다운로드 완료"),
-        Failure("음원 다운로드 실패"),
-    }
 }

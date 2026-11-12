@@ -5,7 +5,6 @@ import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
-import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.port.model.MediaControlData
 import com.kintmin.presentation.port.model.RunningWork
 import kotlinx.coroutines.CoroutineScope
@@ -49,9 +48,9 @@ internal class IosExecuteYoutubeDownload(
                     }
 
                     IosLocalNotification.show(
-                        title = "다운로드 완료",
-                        body = "${result.audioMedia.artist} - ${result.audioMedia.name}",
-                        deepLink = DeepLinkConstants.UrlBuilder.playlistContentScreen(
+                        WorkResultNotice.Download.Success(
+                            artist = result.audioMedia.artist,
+                            name = result.audioMedia.name,
                             playlistId = result.playlistIdOnDownload,
                             audioMediaId = result.audioMedia.id,
                         ),
@@ -71,11 +70,7 @@ internal class IosExecuteYoutubeDownload(
                     appLog.sendDebugLog(
                         DebugLog("IosExecuteYoutubeDownload", throwable.message.orEmpty()),
                     )
-                    IosLocalNotification.show(
-                        title = "다운로드 실패",
-                        body = throwable.message ?: "다운에 실패했습니다. 로그를 확인해주세요.",
-                        deepLink = DeepLinkConstants.UrlBuilder.appLogScreen(),
-                    )
+                    IosLocalNotification.show(WorkResultNotice.Download.Failure)
                 }
         }
     }

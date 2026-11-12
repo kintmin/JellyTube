@@ -124,8 +124,8 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 **Rules**:
 - 주소 진입 통로는 `onOpenURL` **하나**다. `application(_:open:options:)` /
   `scene(_:openURLContexts:)` / `NSUserActivity` 를 쓰지 않는다
-- 알림 탭은 `userInfo` 를 **그대로** Kotlin 에 넘긴다. 갈 화면은 띄울 때
-  `IosLocalNotification.show(deepLink = DeepLinkConstants.UrlBuilder...)` 로 싣는다.
+- 알림 탭은 `userInfo` 를 **그대로** Kotlin 에 넘긴다. 작업 결과 알림의 문구와 갈 화면은
+  공통 `WorkResultNotice` 가 정하고 Android 알림도 같은 것을 쓴다.
   `userInfo` 를 쓰고 읽는 것은 둘 다 `IosLocalNotification.kt` 에 있다. Swift 는 키를 모른다
 - Swift 가 하는 분기는 `url.isFileURL` 하나뿐이다. 그 뒤 판정은 전부 공통 코드가 한다
 - 딥링크 경로·쿼리 키의 진원지는 `shared:presentation` 의 `DeepLinkConstants` 다.

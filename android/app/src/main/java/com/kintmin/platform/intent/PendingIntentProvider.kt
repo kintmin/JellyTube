@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import androidx.core.net.toUri
 import com.kintmin.platform.deeplink.DeepLinkConstants
 import com.kintmin.presentation.deeplink.DeepLinkConstants.PlayerScreenEntry
 
@@ -37,34 +38,15 @@ internal fun Context.stepScreenPendingIntent() = PendingIntent.getActivity(
     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
 )
 
-internal fun Context.downloadResultPendingIntent(
-    playlistId: Int,
-    audioMediaId: Int,
+internal fun Context.workResultPendingIntent(
+    requestCode: Int,
+    deepLink: String,
 ) = PendingIntent.getActivity(
     this,
-    IntentRequestCode.DOWNLOAD_RESULT_NOTIFICATION,
+    requestCode,
     Intent().apply {
         action = Intent.ACTION_VIEW
-        data = DeepLinkConstants.UriBuilder.playlistContentScreen(
-            playlistId = playlistId,
-            audioMediaId = audioMediaId,
-        )
-        component = ComponentName(
-            packageName,
-            TARGET_ACTIVITY_NAME,
-        )
-    },
-    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-)
-
-internal fun Context.lyricsViewerPendingIntent(
-    audioMediaId: Int,
-) = PendingIntent.getActivity(
-    this,
-    IntentRequestCode.LYRICS_VARIANT_RESULT_NOTIFICATION,
-    Intent().apply {
-        action = Intent.ACTION_VIEW
-        data = DeepLinkConstants.UriBuilder.lyricsViewerScreen(audioMediaId)
+        data = deepLink.toUri()
         component = ComponentName(
             packageName,
             TARGET_ACTIVITY_NAME,
