@@ -6,6 +6,7 @@ import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.model.AlreadyDownloadingMedia
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.DownloadedAudioMediaResult
+import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.log.AppLog
@@ -53,9 +54,7 @@ class DownloadAudioMediaUseCase constructor(
             throw AlreadyDownloadedMedia()
         }
 
-        val downloadedAudioMediaTimedValue = measureTimedValue {
-            audioMediaRepository.downloadAudioMedia(downloadUrl).getOrThrow()
-        }
+        val downloadedAudioMediaTimedValue = measureTimedValue { downloadWithThumbnail(downloadUrl) }
         appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "downloadAudioMedia: ${downloadedAudioMediaTimedValue.duration}"))
 
         val downloadedAudioMedia = downloadedAudioMediaTimedValue.value
@@ -78,6 +77,20 @@ class DownloadAudioMediaUseCase constructor(
             playlistIdOnDownload = added.resolvedPlaylistIdOnDownload,
             totalPlaylistId = added.totalPlaylistId,
             shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
+        )
+    }
+
+    // 썸네일은 없어도 곡은 들일 수 있어 실패를 무시한다.
+    private suspend fun downloadWithThumbnail(downloadUrl: String): DownloadedMedia {
+        val audio = audioMediaRepository.downloadYoutubeAudio(downloadUrl).getOrThrow()
+        return DownloadedMedia(
+            downloadUrl = downloadUrl,
+            title = audio.title,
+            audioFileNameWithExt = audio.audioFileNameWithExt,
+            imageFileNameWithExt = audioMediaRepository.saveThumbnail(audio.thumbnailUrl, audio.fileName).getOrNull(),
+            duration = audio.duration,
+            uploader = audio.uploader,
+            description = audio.description,
         )
     }
 }

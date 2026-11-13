@@ -6,11 +6,15 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
 import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
+import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlinx.coroutines.flow.Flow
 
 interface AudioMediaRepository {
-    suspend fun downloadAudioMedia(downloadUrl: String): Result<DownloadedMedia>
+    suspend fun downloadYoutubeAudio(downloadUrl: String): Result<DownloadedYoutubeAudio>
+
+    /** 받은 썸네일을 [fileName] 으로 압축해 저장하고 확장자 붙은 이름을 돌려준다. */
+    suspend fun saveThumbnail(thumbnailUrl: String, fileName: String): Result<String>
 
     /**
      * 이 기기에서 재생할 수 있는 형식으로 음원 파일만 받는다. 행을 만들지 않으므로 쓰지 않게 되면 호출자가 지운다.

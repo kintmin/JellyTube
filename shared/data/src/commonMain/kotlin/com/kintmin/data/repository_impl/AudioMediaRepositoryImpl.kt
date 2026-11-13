@@ -16,6 +16,7 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
 import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
+import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlinx.coroutines.Dispatchers
@@ -40,46 +41,36 @@ internal class AudioMediaRepositoryImpl constructor(
     private val pythonExecutor: PythonExecutor,
 ) : AudioMediaRepository {
 
-    override suspend fun downloadAudioMedia(downloadUrl: String): Result<DownloadedMedia> {
-        return withContext(Dispatchers.IO) {
+    override suspend fun downloadYoutubeAudio(downloadUrl: String): Result<DownloadedYoutubeAudio> =
+        withContext(Dispatchers.IO) {
             runCatching {
-
                 val fileName = Uuid.random().toString()
-
-                val audioDownloadBasePath = fileManager.getAudioDownloadBasePath(
-                    fileName = fileName,
-                ).getOrThrow()
-
                 val downloadDto = pythonExecutor.downloadYoutubeMedia(
                     youtubeUrl = downloadUrl,
-                    audioDownloadPath = audioDownloadBasePath,
+                    audioDownloadPath = fileManager.getAudioDownloadBasePath(fileName = fileName).getOrThrow(),
                 ).getOrThrow()
-
-                val audioFileNameWithExt = downloadDto.audioFileNameWithExt.ifBlank {
-                    throw Exception("다운로드한 오디오 파일명을 확인할 수 없습니다.")
-                }
-
-                val imageFileExt = httpDataSource.downloadImage(
-                    imageUrl = downloadDto.thumbnailDownloadUrl
-                ).getOrNull()?.let { image ->
-                    fileManager.saveImageWithCompression(
-                        imageData = image,
-                        fileName = fileName,
-                    ).getOrNull()
-                }
-
-                DownloadedMedia(
-                    downloadUrl = downloadUrl,
+                DownloadedYoutubeAudio(
+                    fileName = fileName,
+                    audioFileNameWithExt = downloadDto.audioFileNameWithExt.ifBlank {
+                        throw Exception("다운로드한 오디오 파일명을 확인할 수 없습니다.")
+                    },
                     title = downloadDto.title,
-                    audioFileNameWithExt = audioFileNameWithExt,
-                    imageFileNameWithExt = imageFileExt?.let { "${fileName}.${it}" },
+                    thumbnailUrl = downloadDto.thumbnailDownloadUrl,
                     duration = downloadDto.duration,
                     uploader = downloadDto.uploader,
                     description = downloadDto.description,
                 )
             }
         }
-    }
+
+    override suspend fun saveThumbnail(thumbnailUrl: String, fileName: String): Result<String> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val image = httpDataSource.downloadImage(imageUrl = thumbnailUrl).getOrThrow()
+                val ext = fileManager.saveImageWithCompression(imageData = image, fileName = fileName).getOrThrow()
+                "$fileName.$ext"
+            }
+        }
 
     override suspend fun downloadAudioFile(downloadUrl: String): Result<DownloadedAudioFile> =
         withContext(Dispatchers.IO) {
