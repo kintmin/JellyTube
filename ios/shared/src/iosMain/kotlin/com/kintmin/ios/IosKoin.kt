@@ -12,9 +12,9 @@ import com.kintmin.ios.media.IosMediaControllerBridge
 import com.kintmin.ios.media.IosMediaControllerManager
 import com.kintmin.ios.migration.IosMigrationSourceBrowserBridge
 import com.kintmin.ios.migration.IosMigrationSourceDiscovery
+import com.kintmin.ios.port.iosPortModule
 import com.kintmin.ios.step.IosRegisterDailyResetImmediatelyWorker
 import com.kintmin.ios.step.IosRegisterLoadBalancedDailyResetWorker
-import com.kintmin.presentation.di.presentationIosModule
 import com.kintmin.log.AppLog
 import com.kintmin.presentation.port.MediaControllerManager
 import com.kintmin.presentation.port.MigrationSourceDiscovery
@@ -22,7 +22,7 @@ import com.kintmin.presentation.di.presentationModule
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 
-/** 도메인 포트의 iOS 구현. 플랫폼 포트는 `presentationIosModule` 이 맡는다. */
+/** 도메인 포트의 iOS 구현. presentation 포트는 `iosPortModule` 이 맡는다. */
 private val iosDomainPortModule = module {
     single<RegisterDailyResetImmediatelyWorker> { IosRegisterDailyResetImmediatelyWorker() }
     single<RegisterLoadBalancedDailyResetWorker> { IosRegisterLoadBalancedDailyResetWorker() }
@@ -46,7 +46,7 @@ fun initIosKoin(
             dataCommonModule,
             dataIosModule(pythonExecutorBridge, lyricsTranslatorBridge),
             presentationModule,
-            presentationIosModule,
+            iosPortModule,
             iosDomainPortModule,
             module {
                 single<MediaControllerManager> { IosMediaControllerManager(mediaControllerBridge) }

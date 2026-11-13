@@ -55,7 +55,7 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 | `RunningWorkMonitor` | `running_work/RunningWorkMonitorImpl`(WorkManager 태그·고유 이름 + 편집 저장 + PC 수신) | `IosRunningWorkMonitor`(실행부가 세는 `IosRunningWorkTracker` + 편집 저장 + PC 수신) |
 | `MigrationSourceDiscovery` | `data_migration/UnsupportedMigrationSourceDiscovery`(Android 는 보내는 쪽만) | `ios/shared` 의 `migration/IosMigrationSourceDiscovery`(Swift `NWBrowser` 브릿지. 목록 탐색 → 고른 기기만 주소 풀기) |
 
-iOS 구현의 자리는 **`shared:presentation` 의 `iosMain/port/`** 다(`MediaControllerManager`·`MigrationSourceDiscovery` 는 예외 — Swift 브릿지에 기댄다). 이유는 `shared/presentation/AGENTS.md` §포트 와 `ios/app/AGENTS.md` 에 있다.
+iOS 구현의 자리는 **`ios/shared`** 다(이 모듈의 짝인 iOS 조립 모듈). `port/` 에 두고 `port/IosPortModule.kt` 가 바인딩한다. Swift 브릿지에 기대는 `MediaControllerManager`·`MigrationSourceDiscovery` 는 `media/`·`migration/` 에 있다.
 
 **Rules**:
 - 새 포트가 필요하면 인터페이스는 `presentation/port/`에, 구현체는 여기에 두고 `platform/di/PlatformModule.kt`에 `single<Port> { PortImpl(androidContext()) }`로 등록한다.

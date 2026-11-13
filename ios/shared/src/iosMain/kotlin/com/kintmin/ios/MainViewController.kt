@@ -4,11 +4,11 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
+import com.kintmin.ios.port.localNotificationDeepLinkOf
 import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
 import com.kintmin.presentation.port.ExecuteYoutubeDownload
 import com.kintmin.presentation.port.StepMeasurementController
-import com.kintmin.presentation.port.localNotificationDeepLinkOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

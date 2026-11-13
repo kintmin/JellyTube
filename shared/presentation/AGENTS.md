@@ -12,7 +12,7 @@
 | `src/androidMain/kotlin` | `expect` 선언의 Android `actual`, 그리고 공통화가 불가능해 의도적으로 Android 전용으로 남긴 코드 |
 | `src/androidHostTest/kotlin` | 단위테스트. **`commonTest`를 만들지 않는다** — mockk 가 JVM 전용이라 iOS 컴파일이 깨진다 |
 | `src/iosTest/kotlin` | iOS 전용 코드의 단위테스트(`kotlin.test`). `./gradlew :shared:presentation:iosSimulatorArm64Test` |
-| `src/iosMain/kotlin` | iOS `actual`(`platform/`)과 **포트의 iOS 구현**(`port/`) |
+| `src/iosMain/kotlin` | iOS `actual`(`platform/`)만. 포트의 iOS 구현은 `ios/shared` 다 |
 
 **순수성 게이트는 여전히 필요하다.** macOS 에서는 iOS 컴파일이 돌아 위반을 잡아 주지만, Windows 에서 작업하면 돌지 않는다 — 그쪽에서 `commonMain` 에 Android/JVM 전용 API 를 넣어도 **컴파일러가 잡아주지 않는다.** 아래 게이트를 그 자리의 통과 기준으로 쓴다.
 
@@ -33,7 +33,7 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 |---|---|---|
 | `commonMain` | **212** | 화면·ViewModel·Intent·UiState·Event·Navigation·theme·extension·port 전부 |
 | `androidMain` | 12 | `platform/` actual 9 + 공통화 불가 3 |
-| `iosMain` | — | `platform/` actual 전부 + `port/` 의 iOS 구현 + `di/PresentationIosModule` |
+| `iosMain` | — | `platform/` actual 전부 |
 
 **화면 코드는 212 / 215(98.6%)가 `commonMain`** 이다. `androidMain` 에 남은 화면 코드 3개는 **의도적 잔류**이며 해소할 생각이 없다.
 
@@ -105,7 +105,7 @@ framework 는 **`ios/shared`** 하나가 선언한다(`baseName = "shared"`, SKI
 
 Android 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 구현체는 `android:app` 에 둔다. 배치 규칙과 현재 포트 목록은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
 
-**iOS 구현은 이 모듈의 `iosMain/port/` 에 둔다.** Android 와 달리 `Context` 류가 필요 없고 Kotlin/Native 가 UIKit·AVFoundation·CoreMotion 인터롭을 기본 제공해 인터페이스와 같은 모듈에서 구현된다. 바인딩은 `di/PresentationIosModule.kt`. 예외는 `MediaControllerManager`·`MigrationSourceDiscovery` 로, 구현이 Swift 에 기대서 `ios/shared` 가 가진다.
+**iOS 구현은 이 모듈에 두지 않고 `ios/shared` 의 `port/` 에 둔다.** Android 구현이 `android:app` 에 있는 것과 같은 자리다. 이 모듈은 화면이고, 포트 구현은 OS 기능(걸음 측정·백그라운드 작업·로컬 알림)이다. 바인딩은 `ios/shared` 의 `port/IosPortModule.kt`.
 
 - **인자 전달로 해결되면 포트를 만들지 않는다.** 값 하나를 넘기면 되는 경우(예: `isDebugTabVisible`)는 Screen/NavGraph 파라미터로 받는다.
 - 순수 판정 로직은 포트가 아니다. `shared:domain` 에 둔다.

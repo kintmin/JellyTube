@@ -1,4 +1,4 @@
-package com.kintmin.presentation.port
+package com.kintmin.presentation.platform
 
 import platform.UIKit.UIApplication
 import platform.UIKit.UIBackgroundTaskInvalid

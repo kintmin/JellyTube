@@ -6,7 +6,7 @@ iOS 쪽은 두 곳으로 나뉜다. **둘 다 "조립과 OS 호출" 만 한다 �
 
 | 경로 | 언어 | 역할 |
 |---|---|---|
-| `ios/shared/` | Kotlin | iOS Composition Root. 프레임워크 선언 · Koin 조립 · Compose 진입점 · 도메인 워커 포트 구현 |
+| `ios/shared/` | Kotlin | iOS Composition Root. 프레임워크 선언 · Koin 조립 · Compose 진입점 · 도메인 워커 포트 구현 · presentation 포트 구현 |
 | `ios/app/` | Swift | Xcode 앱. 진입점(`JellyTubeIosApp`) · Kotlin 인터페이스의 Swift 구현(브릿지) · Info.plist |
 
 > **TCA 는 더 이상 쓰지 않는다.** `~Client` / `~Feature` / `~ScreenView` / `IosFacades` /
@@ -40,7 +40,8 @@ Obj-C 헤더로 쏟아진다.
 3. `MainViewController.kt` — Swift 에 노출되는 최상위 함수들
    (`startApp` / `mainViewController` / `handleDeepLink` / `handleNotificationTap` / `handleSharedAudioFile`)
 4. 도메인 포트의 iOS 구현 — `domain` 에 플랫폼 구현을 넣지 않기 위해서다
-5. Swift 가 구현할 Kotlin 인터페이스 — 프레임워크에 들어가는 모듈이라야 Swift 가 본다
+5. `presentation/port` 의 iOS 구현(`port/`, 바인딩 `port/IosPortModule.kt`) — `android:app` 이 Android 구현을 가지는 것과 같은 자리다
+6. Swift 가 구현할 Kotlin 인터페이스 — 프레임워크에 들어가는 모듈이라야 Swift 가 본다
    (`IosMediaControllerBridge`, `IosAppLogBridge`, `IosMigrationSourceBrowserBridge`)
 
 **앱 레벨 ViewModel 은 파일 최상위에 `by lazy` 로 한 벌만** 둔다. iOS 는 단일 윈도우이고,
@@ -52,11 +53,7 @@ Compose 밖(`onOpenURL`)에서 들어온 이벤트를 화면과 **같은 인스�
 
 ### `shared/presentation/src/iosMain/` (Kotlin)
 
-- `platform/*.ios.kt` — `expect`/`actual` 탈출구
-- **`port/` 의 iOS 구현도 여기다.** Android 는 `Context` 가 필요해 `android:app` 에 두지만,
-  iOS 구현은 그런 것이 없고 Kotlin/Native 가 UIKit·AVFoundation·CoreMotion 인터롭을 기본
-  제공해서 인터페이스와 같은 모듈에서 구현된다. 바인딩은 `di/PresentationIosModule.kt`
-- 예외는 `MediaControllerManager` 하나다 — 구현이 Swift 엔진에 기대서 `ios/shared` 가 가진다
+- `platform/*.ios.kt` — `expect`/`actual` 탈출구만 둔다. 포트 구현은 `ios/shared` 다
 
 ### `ios/app/JellyTubeIos/` (Swift)
 

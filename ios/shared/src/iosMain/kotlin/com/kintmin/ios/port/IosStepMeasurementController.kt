@@ -1,13 +1,14 @@
-package com.kintmin.presentation.port
+package com.kintmin.ios.port
 
 import com.kintmin.domain.extension.startOfDayMillis
 import com.kintmin.domain.extension.todayLocalDate
 import com.kintmin.domain.step.model.StepData
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
 import com.kintmin.domain.step.usecase.ReplaceStepSensorsUseCase
+import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
-import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
+import com.kintmin.presentation.port.StepMeasurementController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -16,12 +17,12 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
+import kotlin.coroutines.resume
+import kotlin.time.Clock
 import platform.CoreMotion.CMAuthorizationStatusAuthorized
 import platform.CoreMotion.CMPedometer
 import platform.Foundation.NSDate
 import platform.Foundation.NSTimeIntervalSince1970
-import kotlin.coroutines.resume
-import kotlin.time.Clock
 
 /** 소급 조회로 메울 날짜 수. `CMPedometer` 가 들고 있는 최대치(7일)라 더 늘려도 비어 온다. */
 private const val BACKFILL_DAYS = 7

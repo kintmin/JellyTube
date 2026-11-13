@@ -1,4 +1,4 @@
-package com.kintmin.presentation.port
+package com.kintmin.ios.port
 
 /** @param queryUntilMillis 그날 0시부터 이 시각까지의 누적을 적는다. null 이면 0 을 적는다. */
 internal data class StepWritePoint(

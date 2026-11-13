@@ -1,5 +1,6 @@
-package com.kintmin.presentation.port
+package com.kintmin.ios.port
 
+import com.kintmin.presentation.port.WorkResultNotice
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

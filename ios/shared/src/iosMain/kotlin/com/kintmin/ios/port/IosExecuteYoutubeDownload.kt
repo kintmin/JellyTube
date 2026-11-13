@@ -1,10 +1,14 @@
-package com.kintmin.presentation.port
+package com.kintmin.ios.port
 
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.presentation.platform.continueInBackgroundWhile
+import com.kintmin.presentation.port.ExecuteYoutubeDownload
+import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.WorkResultNotice
 import com.kintmin.presentation.port.model.MediaControlData
 import com.kintmin.presentation.port.model.RunningWork
 import kotlinx.coroutines.CoroutineScope
@@ -32,12 +36,12 @@ internal class IosExecuteYoutubeDownload(
     override fun invoke(url: String) {
         scope.launch {
             IosRunningWorkTracker.track(RunningWork.YOUTUBE_DOWNLOAD) {
-                withBackgroundExecutionWindow(WINDOW_NAME) { downloadAudioMediaUseCase(url) }
+                continueInBackgroundWhile { downloadAudioMediaUseCase(url) }
             }
                 .onSuccess { result ->
                     // 가사는 실패해도 음원 등록을 되돌리지 않는다. 등록이 끝난 뒤라 고아가 생기지 않는다.
                     scope.launch {
-                        withBackgroundExecutionWindow(LYRICS_WINDOW_NAME) {
+                        continueInBackgroundWhile {
                             downloadLyricsForAudioMediaUseCase(
                                 audioMediaId = result.audioMedia.id,
                                 title = result.audioMedia.name,
@@ -89,8 +93,6 @@ internal class IosExecuteYoutubeDownload(
     }
 }
 
-private const val WINDOW_NAME = "youtube-download"
-private const val LYRICS_WINDOW_NAME = "youtube-download-lyrics"
 
 private fun AudioMedia.toMediaControlData() = MediaControlData(
     mediaId = id.toString(),
