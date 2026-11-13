@@ -58,6 +58,23 @@ class BuildLyricsSearchQueryUseCaseTest {
     }
 
     @Test
+    fun `전각 구분자만으로 된 단어도 버린다`() {
+        assertEquals("YOASOBI アイドル", useCase("YOASOBI ／ アイドル"))
+        assertEquals("ヨルシカ 花に亡霊", useCase("ヨルシカ － 花に亡霊 ・ 、"))
+    }
+
+    @Test
+    fun `전각 대괄호도 내용째 제거한다`() {
+        assertEquals("Song", useCase("［MV］ Song"))
+    }
+
+    @Test
+    fun `Music Video 는 단어 경계에서만 제거한다`() {
+        assertEquals("Song", useCase("Song Music Video"))
+        assertEquals("Song Music Videos", useCase("Song Music Videos"))
+    }
+
+    @Test
     fun `하이픈이 붙은 단어는 유지한다`() {
         assertEquals("Spider-Man theme", useCase("Spider-Man theme"))
     }
