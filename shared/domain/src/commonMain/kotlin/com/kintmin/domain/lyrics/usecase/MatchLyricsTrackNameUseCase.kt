@@ -11,8 +11,7 @@ class MatchLyricsTrackNameUseCase(
     operator fun invoke(title: String, trackName: String?): Boolean {
         if (trackName.isNullOrBlank()) return false
         val titleWords = words(title)
-        // 괄호 밖 곡명("Don't Stop Me Now (Remastered 2011)" -> "Don't Stop Me Now")과 괄호 안 내용을 각각 본다.
-        val candidates = listOf(trackName.replace(bracketContentRegex, " ")) +
+        val candidates = listOf(trackName) +
             bracketContentRegex.findAll(trackName).map { it.groupValues[1] }
         return candidates.any { titleWords.containsInOrder(words(it)) }
     }
