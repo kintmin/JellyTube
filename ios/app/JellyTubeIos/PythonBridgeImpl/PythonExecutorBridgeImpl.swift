@@ -54,6 +54,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
         youtubeUrl: String,
         audioDownloadPath: String,
         remainingRetryCount: Int,
+        preferHls: Bool = false,
         completionHandler: @escaping @Sendable (YoutubeDownloadDto?, Error?) -> Void
     ) {
         DispatchQueue.global(qos: .userInitiated).async {
@@ -66,7 +67,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                 let result = try self.runtime.callFunction(
                     moduleName: Self.fileName,
                     functionName: Self.methodExtractAudioSource,
-                    arguments: [youtubeUrl]
+                    arguments: [youtubeUrl, preferHls ? "1" : "0"]
                 )
                 SwiftAppLogKt.swiftDebugLog(
                     tag: "YoutubeExtract",
@@ -77,41 +78,91 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                     throw PythonExecutorBridgeError.invalidDirectUrl
                 }
 
-                let ext = result[safe: 2].flatMap { $0.isEmpty ? nil : $0 } ?? "m4a"
-                let source = YoutubeAudioSource(
-                    sourceUrl: youtubeUrl,
-                    destinationPath: "\(audioDownloadPath).\(ext)",
-                    fileNameWithExt: "\((audioDownloadPath as NSString).lastPathComponent).\(ext)",
-                    title: result[safe: 3].flatMap { $0.isEmpty ? nil : $0 } ?? "알 수 없음",
-                    thumbnailUrl: result[safe: 4] ?? "",
-                    duration: result[safe: 5].flatMap { $0.isEmpty ? nil : $0 } ?? "0",
-                    uploader: result[safe: 6].flatMap { $0.isEmpty ? nil : $0 } ?? "알 수 없음",
-                    description: result[safe: 7] ?? ""
-                )
+                func makeSource(ext: String) -> YoutubeAudioSource {
+                    YoutubeAudioSource(
+                        sourceUrl: youtubeUrl,
+                        destinationPath: "\(audioDownloadPath).\(ext)",
+                        fileNameWithExt: "\((audioDownloadPath as NSString).lastPathComponent).\(ext)",
+                        title: result[safe: 3].flatMap { $0.isEmpty ? nil : $0 } ?? "알 수 없음",
+                        thumbnailUrl: result[safe: 4] ?? "",
+                        duration: result[safe: 5].flatMap { $0.isEmpty ? nil : $0 } ?? "0",
+                        uploader: result[safe: 6].flatMap { $0.isEmpty ? nil : $0 } ?? "알 수 없음",
+                        description: result[safe: 7] ?? ""
+                    )
+                }
+                let source = makeSource(ext: result[safe: 2].flatMap { $0.isEmpty ? nil : $0 } ?? "m4a")
+                let headers = Self.parseHeaders(result[1])
+                let formatId = result[safe: 9] ?? ""
+                let transferProtocol = result[safe: 10] ?? ""
+                let isHls = transferProtocol.contains("m3u8")
 
-                YoutubeDownloader.shared.download(
-                    from: remoteUrl,
-                    headers: Self.parseHeaders(result[1]),
-                    // 크기를 미리 알면 구간 전부를 앱이 떠 있는 동안 등록할 수 있다.
-                    totalBytes: result[safe: 8].flatMap { Int64($0) },
-                    source: source
-                ) { error in
+                let onTransferEnd: (Error?) -> Void = { error in
                     guard let error else {
                         completionHandler(source.toDto(), nil)
                         return
                     }
 
                     if remainingRetryCount > 0, Self.isWorthReextracting(error) {
+                        // visionos 는 https 주소만 거부하는 경우가 있어 HLS 로 다시 받는다.
                         self.attemptDownload(
                             youtubeUrl: youtubeUrl,
                             audioDownloadPath: audioDownloadPath,
                             remainingRetryCount: remainingRetryCount - 1,
+                            preferHls: true,
                             completionHandler: completionHandler
                         )
                     } else {
                         completionHandler(nil, error as NSError)
                     }
                 }
+
+                guard isHls else {
+                    SwiftAppLogKt.swiftDebugLog(tag: "YoutubeRoute", message: "route=https format=\(formatId)")
+                    YoutubeDownloader.shared.download(
+                        from: remoteUrl,
+                        headers: headers,
+                        // 크기를 미리 알면 구간 전부를 앱이 떠 있는 동안 등록할 수 있다.
+                        totalBytes: result[safe: 8].flatMap { Int64($0) },
+                        source: source,
+                        completion: onTransferEnd
+                    )
+                    return
+                }
+
+                let playlist = HlsMediaPlaylist.companion.parse(
+                    text: result[safe: 11] ?? "",
+                    baseUrl: remoteUrl.absoluteString
+                )
+                guard let reason = playlist.unsupportedReason else {
+                    SwiftAppLogKt.swiftDebugLog(
+                        tag: "YoutubeRoute",
+                        message: "route=hls format=\(formatId) segments=\(playlist.segmentUrls.count)"
+                    )
+                    YoutubeDownloader.shared.downloadSegments(
+                        playlistUrl: remoteUrl,
+                        segmentUrls: playlist.segmentUrls,
+                        headers: headers,
+                        source: source,
+                        completion: onTransferEnd
+                    )
+                    return
+                }
+
+                SwiftAppLogKt.swiftYoutubeDownloadFallbackLog(
+                    source: youtubeUrl,
+                    reason: reason,
+                    formatId: formatId,
+                    transferProtocol: transferProtocol
+                )
+                let downloaded = try self.runtime.callFunction(
+                    moduleName: Self.fileName,
+                    functionName: Self.methodDownloadHlsAudio,
+                    arguments: [youtubeUrl, audioDownloadPath, formatId]
+                )
+                guard let fileName = downloaded[safe: 0], !fileName.isEmpty else {
+                    throw PythonExecutorBridgeError.invalidDownloadResult
+                }
+                completionHandler(makeSource(ext: (fileName as NSString).pathExtension).toDto(), nil)
             } catch {
                 completionHandler(nil, error as NSError)
             }
@@ -196,6 +247,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     private static let methodExtractVideoUrlsFromPlaylist = "extract_video_urls_from_playlist"
     private static let methodExtractAudioSource = "extract_audio_source"
     private static let methodDownloadPlayableAudio = "download_playable_audio"
+    private static let methodDownloadHlsAudio = "download_hls_audio"
 
     /// 재추출 재시도 횟수. 계속 거부되는 것은 주소가 상한 것이 아니라 그 영상을 받을 수 없는 것이다.
     private static let extractRetryCount = 1

@@ -2,6 +2,7 @@ package com.kintmin.ios.log
 
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.FirebaseEvent
 import org.koin.mp.KoinPlatform
 
 /**
@@ -16,4 +17,13 @@ fun swiftDebugLog(tag: String, message: String) {
     runCatching { KoinPlatform.getKoin().get<AppLog>() }
         .getOrNull()
         ?.sendDebugLog(DebugLog(tag, message))
+}
+
+/** HLS fallback 건수를 세는 이벤트와 같은 내용의 디버그 로그를 함께 남긴다. */
+fun swiftYoutubeDownloadFallbackLog(source: String, reason: String, formatId: String, transferProtocol: String) {
+    val appLog = runCatching { KoinPlatform.getKoin().get<AppLog>() }.getOrNull() ?: return
+    appLog.sendFirebaseEvent(FirebaseEvent.YoutubeDownloadFallback(source, reason, formatId, transferProtocol))
+    appLog.sendDebugLog(
+        DebugLog("YoutubeHlsFallback", "reason=$reason format=$formatId protocol=$transferProtocol source=$source"),
+    )
 }
