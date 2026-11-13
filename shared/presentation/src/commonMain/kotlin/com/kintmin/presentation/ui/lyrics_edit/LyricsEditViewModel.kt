@@ -5,13 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
+import com.kintmin.domain.lyrics.model.EditedLyricsRow
 import com.kintmin.domain.lyrics.model.LyricsLine
 import com.kintmin.domain.lyrics.model.LyricsVariant
-import com.kintmin.domain.lyrics.usecase.ApplyLyricsToAudioMediaUseCase
-import com.kintmin.domain.lyrics.usecase.GetAudioMediaLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
-import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
-import com.kintmin.domain.lyrics.usecase.SerializeLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.SaveEditedLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SplitLyricsByNewlineUseCase
 import com.kintmin.presentation.ui.lyrics_edit.LyricsEditUiState.EditRow
 import com.kintmin.presentation.ui.lyrics_edit.navigation.LyricsEditScreenRoute
@@ -27,12 +26,10 @@ import kotlinx.coroutines.launch
 class LyricsEditViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
-    private val getAudioMediaLyricsUseCase: GetAudioMediaLyricsUseCase,
+    private val getParsedLyricsUseCase: GetParsedLyricsUseCase,
     private val getLyricsVariantUseCase: GetLyricsVariantUseCase,
-    private val parseLyricsUseCase: ParseLyricsUseCase,
-    private val serializeLyricsUseCase: SerializeLyricsUseCase,
     private val splitLyricsByNewlineUseCase: SplitLyricsByNewlineUseCase,
-    private val applyLyricsToAudioMediaUseCase: ApplyLyricsToAudioMediaUseCase,
+    private val saveEditedLyricsUseCase: SaveEditedLyricsUseCase,
 ) : ViewModel() {
 
     private val audioMediaId = savedStateHandle.toRoute<LyricsEditScreenRoute>().audioMediaId
@@ -79,8 +76,7 @@ class LyricsEditViewModel constructor(
                         val loadedRows = if (lyricFileFullPath == null) {
                             emptyList()
                         } else {
-                            val rawLyrics = getAudioMediaLyricsUseCase(lyricFileFullPath).getOrNull().orEmpty()
-                            val parsed = parseLyricsUseCase(rawLyrics)
+                            val parsed = getParsedLyricsUseCase(lyricFileFullPath)
                             when {
                                 parsed.isEmpty() -> emptyList()
                                 // 모든 줄의 시작 시간이 0 이면 타이밍이 없는(plain) 가사로 보고 한 행에 전체를 담는다.
@@ -234,22 +230,13 @@ class LyricsEditViewModel constructor(
             _data.update { it.copy(isSaving = true) }
             val state = _data.value
             val rows = state.rows
-            val syncedLyrics = serializeLyricsUseCase(
-                rows.map { LyricsLine(timeMs = it.timeMs, text = it.text) },
-            )
-            // 번역/음차는 원본과 같은 타임코드로 각각 별도 파일에 저장한다(인덱스 정렬 유지).
-            val translationLyrics = if (state.hasTranslation) {
-                serializeLyricsUseCase(rows.map { LyricsLine(timeMs = it.timeMs, text = it.translation) })
-            } else null
-            val transliterationLyrics = if (state.hasTransliteration) {
-                serializeLyricsUseCase(rows.map { LyricsLine(timeMs = it.timeMs, text = it.transliteration) })
-            } else null
-            val result = applyLyricsToAudioMediaUseCase(
+            val result = saveEditedLyricsUseCase(
                 audioMediaId = audioMediaId,
-                plainLyrics = null,
-                syncedLyrics = syncedLyrics,
-                translationLyrics = translationLyrics,
-                transliterationLyrics = transliterationLyrics,
+                rows = rows.map {
+                    EditedLyricsRow(timeMs = it.timeMs, text = it.text, translation = it.translation, transliteration = it.transliteration)
+                },
+                hasTranslation = state.hasTranslation,
+                hasTransliteration = state.hasTransliteration,
                 previousLyricFileFullPath = previousLyricFileFullPath,
             )
             _data.update { it.copy(isSaving = false) }

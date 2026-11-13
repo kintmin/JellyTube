@@ -1,5 +1,6 @@
 package com.kintmin.data.local_file
 
+import com.kintmin.domain.lyrics.LyricsFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
@@ -50,7 +51,7 @@ internal class FileManagerCore(
     fun getMigrationStagingDirPath(): Result<String> = runCatching { directories.migrationStaging().ensured().toString() }
 
     suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<String> = io {
-        val ext = if (synced) SYNCED_LYRICS_EXT else PLAIN_LYRICS_EXT
+        val ext = if (synced) LyricsFile.SYNCED_EXT else LyricsFile.PLAIN_EXT
         fileSystem.write(lyricDir() / "$fileName.$ext") { writeUtf8(text) }
         ext
     }
@@ -99,8 +100,6 @@ internal class FileManagerCore(
     private suspend fun <T> io(block: () -> T): Result<T> = runCatching { withContext(Dispatchers.IO) { block() } }
 
     companion object {
-        const val SYNCED_LYRICS_EXT = "lrc"
-        const val PLAIN_LYRICS_EXT = "txt"
         const val LOG_EXT = "log"
     }
 }

@@ -13,8 +13,7 @@ import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackSpeedUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.audio_track.usecase.ToggleFavoriteUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
-import com.kintmin.domain.lyrics.usecase.GetAudioMediaLyricsUseCase
-import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
@@ -49,8 +48,7 @@ class PlayerDetailViewModel constructor(
     private val fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val getAudioMediaLyricsUseCase: GetAudioMediaLyricsUseCase,
-    private val parseLyricsUseCase: ParseLyricsUseCase,
+    private val getParsedLyricsUseCase: GetParsedLyricsUseCase,
 ) : ViewModel() {
 
     private val _eventFlow = MutableSharedFlow<PlayerDetailEvent>()
@@ -362,8 +360,7 @@ class PlayerDetailViewModel constructor(
             return
         }
         viewModelScope.launch {
-            val rawLyrics = getAudioMediaLyricsUseCase(lyricFileFullPath).getOrNull().orEmpty()
-            parsedLyricLines = parseLyricsUseCase(rawLyrics)
+            parsedLyricLines = getParsedLyricsUseCase(lyricFileFullPath)
             refreshLyricLine()
         }
     }

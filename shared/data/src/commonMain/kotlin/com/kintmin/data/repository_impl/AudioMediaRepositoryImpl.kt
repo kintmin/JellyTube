@@ -18,6 +18,7 @@ import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.lyrics.LyricsFile
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -199,7 +200,7 @@ internal class AudioMediaRepositoryImpl constructor(
         return withContext(Dispatchers.IO) {
             runCatching {
                 val (baseName, extName) = splitLyricFileName(baseLyricFileFullPath)
-                val synced = extName.equals("lrc", ignoreCase = true)
+                val synced = extName.equals(LyricsFile.SYNCED_EXT, ignoreCase = true)
                 fileManager.saveLyrics(text, "$baseName.${variant.infix()}", synced).getOrThrow()
                 Unit
             }
