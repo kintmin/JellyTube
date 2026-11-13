@@ -5,38 +5,20 @@ import androidx.compose.runtime.remember
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGRectMake
-import platform.Foundation.NSDocumentDirectory
-import platform.Foundation.NSFileManager
 import platform.Foundation.NSURL
-import platform.Foundation.NSUserDomainMask
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIPopoverPresentationController
 import platform.UIKit.UIViewController
 import platform.UIKit.popoverPresentationController
-
-/** `shared:data` 의 `FileManagerImpl` 이 쓰는 이름과 같아야 한다. 다르면 빈 목록이 된다. */
-private const val LOG_DIR_NAME = "app_logs"
-private const val LOG_FILE_EXTENSION = "log"
 
 /**
  * 로그 파일을 공유 시트로 넘긴다. Android 와 달리 수신자를 지정할 공개 수단이 없어
  * 어디로 보낼지는 사용자가 고르고, 시트가 항상 떠서 `NoShareTarget` 이 서지 않는다.
  */
 @OptIn(ExperimentalForeignApi::class)
-private fun shareAppLogs(): AppLogShareResult {
-    val logDirectory = documentDirectory()?.appendPathComponent(LOG_DIR_NAME)
-        ?: return AppLogShareResult.Failed
-
-    val fileUrls = (
-        NSFileManager.defaultManager.contentsOfDirectoryAtPath(logDirectory, error = null)
-            ?.filterIsInstance<String>()
-            ?: emptyList()
-        )
-        .filter { name -> name.endsWith(".$LOG_FILE_EXTENSION") }
-        .sortedDescending()
-        .map { name -> NSURL.fileURLWithPath(logDirectory.appendPathComponent(name)) }
-
-    if (fileUrls.isEmpty()) return AppLogShareResult.NoLogFiles
+private fun shareAppLogs(fileFullPaths: List<String>): AppLogShareResult {
+    if (fileFullPaths.isEmpty()) return AppLogShareResult.NoLogFiles
+    val fileUrls = fileFullPaths.map { NSURL.fileURLWithPath(it) }
 
     val presenter = topViewController() ?: return AppLogShareResult.Failed
     val controller = UIActivityViewController(
@@ -64,15 +46,4 @@ private fun shareAppLogs(): AppLogShareResult {
 }
 
 @Composable
-actual fun rememberAppLogSharer(): AppLogSharer = remember { AppLogSharer { shareAppLogs() } }
-
-@OptIn(ExperimentalForeignApi::class)
-private fun documentDirectory(): String? = NSFileManager.defaultManager.URLForDirectory(
-    directory = NSDocumentDirectory,
-    inDomain = NSUserDomainMask,
-    appropriateForURL = null,
-    create = false,
-    error = null,
-)?.path
-
-private fun String.appendPathComponent(component: String): String = trimEnd('/') + "/" + component
+actual fun rememberAppLogSharer(): AppLogSharer = remember { AppLogSharer { shareAppLogs(it) } }

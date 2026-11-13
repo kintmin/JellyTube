@@ -38,4 +38,6 @@ class AppLogRepositoryImpl constructor(
     override suspend fun fetchAppLogDateList(): Result<List<String>> = fileManager.fetchAppLogDateList()
 
     override suspend fun fetchAppLogLineList(date: String): Result<List<String>> = fileManager.fetchAppLogLineList(date)
+
+    override suspend fun fetchAppLogFileFullPaths(): Result<List<String>> = fileManager.fetchAppLogFileFullPaths()
 }

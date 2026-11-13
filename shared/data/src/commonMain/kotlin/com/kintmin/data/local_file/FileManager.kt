@@ -44,4 +44,5 @@ interface FileManager {
     suspend fun appendAppLog(date: String, line: String): Result<Unit>
     suspend fun fetchAppLogDateList(): Result<List<String>>
     suspend fun fetchAppLogLineList(date: String): Result<List<String>>
+    suspend fun fetchAppLogFileFullPaths(): Result<List<String>>
 }

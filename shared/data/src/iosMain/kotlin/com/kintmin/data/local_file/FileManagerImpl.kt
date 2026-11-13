@@ -171,6 +171,8 @@ internal class FileManagerImpl : FileManager {
 
     override suspend fun fetchAppLogLineList(date: String) = core.fetchAppLogLineList(date)
 
+    override suspend fun fetchAppLogFileFullPaths() = core.fetchAppLogFileFullPaths()
+
     private fun audioDir(): String = core.audioDir().toString()
 
     private fun imageDir(): String = core.imageDir().toString()

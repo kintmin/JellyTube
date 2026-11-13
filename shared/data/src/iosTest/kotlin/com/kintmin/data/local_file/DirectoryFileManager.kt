@@ -35,4 +35,5 @@ internal class DirectoryFileManager(private val root: Path) : FileManager {
     override suspend fun appendAppLog(date: String, line: String): Result<Unit> = TODO()
     override suspend fun fetchAppLogDateList(): Result<List<String>> = TODO()
     override suspend fun fetchAppLogLineList(date: String): Result<List<String>> = TODO()
+    override suspend fun fetchAppLogFileFullPaths(): Result<List<String>> = TODO()
 }
