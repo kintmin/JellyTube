@@ -56,7 +56,7 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
-            // 파일 공유 받는 서버(PC 수신·데이터 보내기). 앱 모듈은 Ktor 를 모른다.
+            // 파일 공유 받는 서버(PC 수신·데이터 보내기).
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.cio)
             implementation(libs.ktor.server.content.negotiation)

@@ -157,7 +157,6 @@ class AudioMediaFacade constructor(
         }
     }
 
-    // 화면이 고를 수 있는 곳(PlaylistType.canBeDownloadTarget)만 받는다. 아니면 미분류(없으면 생성)로 간다.
     private suspend fun resolveDownloadTargetId(requestedPlaylistId: Int?): Int {
         val type = requestedPlaylistId?.let { playlistDao.getTypeById(it) }
             ?.let { runCatching { PlaylistType.valueOf(it) }.getOrNull() }

@@ -1,6 +1,6 @@
 package com.kintmin.domain.audio_play_setting
 
-/** 재생 속도·피치로 고를 수 있는 범위. 화면과 두 플랫폼 플레이어가 같은 범위를 써야 표시와 소리가 맞는다. */
+/** 재생 속도·피치로 고를 수 있는 범위. */
 object PlaybackRange {
     const val MIN_SPEED = 0.25f
     const val MAX_SPEED = 3.0f

@@ -54,7 +54,6 @@ class MigrationRoutesTest {
     private val exportUseCase = mockk<ExportMigrationDataUseCase>()
     private val resolvePathUseCase = mockk<ResolveMigrationFilePathUseCase>()
 
-    // 실제 조합(OpenMigrationSendUseCase)이 만든 처리기를 쓴다.
     private fun migrationSendHandler(): MigrationSendHandler {
         val handler = slot<MigrationSendHandler>()
         val repository = mockk<MigrationSendServerRepository> { every { open(capture(handler)) } just Runs }

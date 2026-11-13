@@ -1,7 +1,7 @@
 package com.kintmin.log.model
 
 /**
- * GA4 제약에 맞춰 자른 이벤트. 두 플랫폼 구현이 이것을 그대로 보낸다.
+ * GA4 제약에 맞춰 자른 이벤트.
  * https://support.google.com/analytics/answer/9267744
  */
 data class AnalyticsEvent(val name: String, val params: Map<String, String>)

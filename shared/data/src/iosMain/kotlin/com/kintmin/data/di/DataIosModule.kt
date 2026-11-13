@@ -47,6 +47,6 @@ fun dataIosModule(
     single<LyricsTranslator> { IosLyricsTranslator(lyricsTranslatorBridge) }
     single<LyricsTransliterator> { IosLyricsTransliterator(pythonExecutorBridge) }
 
-    // ReceiveKeepAlive 는 백그라운드 유예를 쓰는 presentation 이 바인딩한다.
+    // ReceiveKeepAlive 는 백그라운드 유예를 쓰는 ios/shared 가 바인딩한다.
     single<PcFileShareServerRepository> { PcFileShareServerRepositoryImpl(get(), get()) }
 }

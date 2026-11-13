@@ -52,7 +52,7 @@ PC 수신(Android·iOS)과 데이터 보내기(Android)가 쓰는 받는 서버�
 | `iosMain/file_share/` | `PcFileShareServerRepositoryImpl`(Bonjour 광고·재등록, 복귀 때 서버 재기동), `PlayableOnlyPcUploadHandler`(재생 못 하는 형식은 받기 전에 거절) |
 
 - **경로는 전송과 인가만 맡고 처리는 domain 의 처리기(`PcUploadHandler`·`MigrationSendHandler`)에 넘긴다.** data 가 UseCase 를 부르면 의존 방향이 거꾸로 된다. 처리기는 UseCase 가 만든다.
-- 받는 도중 앱이 잠시 내려가도 마저 받는 일은 `ReceiveKeepAlive` 가 맡는다. iOS 구현은 백그라운드 유예를 가진 presentation 이 바인딩하고, Android 는 포그라운드 서비스가 붙잡아 그냥 실행한다.
+- 받는 도중 앱이 잠시 내려가도 마저 받는 일은 `ReceiveKeepAlive` 가 맡는다. iOS 구현은 `ios/shared` 가 바인딩하고(`continueInBackgroundWhile` 사용), Android 는 포그라운드 서비스가 붙잡아 그냥 실행한다.
 
 ### mDNS 광고
 

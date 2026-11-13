@@ -13,7 +13,6 @@ import com.kintmin.presentation.port.StepMeasurementController
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-/** `presentation/port` 의 iOS 구현 바인딩. Android 쪽 짝은 `android:app` 의 `platform/di/PlatformModule` 이다. */
 internal val iosPortModule: Module = module {
     single<AudioPreviewPlayer> { IosAudioPreviewPlayerStub() }
     single<StepMeasurementController> { IosStepMeasurementController(get(), get(), get(), get()) }
