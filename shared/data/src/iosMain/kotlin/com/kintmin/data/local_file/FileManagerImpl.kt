@@ -167,22 +167,28 @@ internal class FileManagerImpl : FileManager {
             val fileNameWithExt = "$fileName.${uploadedName.ext}"
             val targetPath = audioDir() + "/$fileNameWithExt"
 
-            if (!NSFileManager.defaultManager.copyItemAtPath(sourceFileFullPath, toPath = targetPath, error = null)) {
+            // 복사하면 대용량 WAV 를 한 번 더 쓰게 되어 백그라운드 유예 안에 끝내기 어렵다.
+            if (!NSFileManager.defaultManager.moveItemAtPath(sourceFileFullPath, toPath = targetPath, error = null)) {
                 error("파일을 저장할 수 없습니다.")
             }
-            // 대용량 WAV 도 힙에 통째로 올리지 않도록 매핑해서 해시한다.
-            val data = NSData.dataWithContentsOfFile(targetPath, options = NSDataReadingMappedIfSafe, error = null)
-                ?: error("파일을 읽을 수 없습니다.")
+            try {
+                // 대용량 WAV 도 힙에 통째로 올리지 않도록 매핑해서 해시한다.
+                val data = NSData.dataWithContentsOfFile(targetPath, options = NSDataReadingMappedIfSafe, error = null)
+                    ?: error("파일을 읽을 수 없습니다.")
 
-            val metadata = readAudioMetadata(targetPath, fileName)
-            CopiedAudioInfo(
-                fileNameWithExt = fileNameWithExt,
-                sha256Hex = data.sha256Hex(),
-                title = metadata.title?.takeIf { it.isNotBlank() } ?: uploadedName.fallbackTitle,
-                artist = metadata.artist?.takeIf { it.isNotBlank() },
-                durationMs = metadata.durationMs,
-                imageFileNameWithExt = metadata.imageFileNameWithExt,
-            )
+                val metadata = readAudioMetadata(targetPath, fileName)
+                CopiedAudioInfo(
+                    fileNameWithExt = fileNameWithExt,
+                    sha256Hex = data.sha256Hex(),
+                    title = metadata.title?.takeIf { it.isNotBlank() } ?: uploadedName.fallbackTitle,
+                    artist = metadata.artist?.takeIf { it.isNotBlank() },
+                    durationMs = metadata.durationMs,
+                    imageFileNameWithExt = metadata.imageFileNameWithExt,
+                )
+            } catch (e: Throwable) {
+                NSFileManager.defaultManager.removeItemAtPath(targetPath, error = null)
+                throw e
+            }
         }
     }
 

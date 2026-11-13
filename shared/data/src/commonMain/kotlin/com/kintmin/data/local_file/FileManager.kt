@@ -25,6 +25,7 @@ interface FileManager {
 
     suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo>
 
+    /** [sourceFileFullPath] 의 파일은 옮겨질 수 있다. 호출 뒤 그 경로를 다시 읽지 않는다. */
     suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo>
 
     suspend fun exportAudioToPublicStorage(

@@ -125,18 +125,21 @@ fun Route.pcUploadEndpoints(
             return@post
         }
 
-        val result = runCatching {
-            request.audioMediaIds.forEach { id ->
-                updateAudioMedia(id = id, artist = request.artist).getOrThrow()
+        // 여러 곡에 적용하다 서스펜드되면 일부에만 적용된 채 PC 는 끊김만 받는다.
+        continueInBackgroundWhile {
+            val result = runCatching {
+                request.audioMediaIds.forEach { id ->
+                    updateAudioMedia(id = id, artist = request.artist).getOrThrow()
+                }
             }
+            call.respond(
+                if (result.isSuccess) HttpStatusCode.OK else HttpStatusCode.UnprocessableEntity,
+                FileShareResponse(
+                    success = result.isSuccess,
+                    message = result.exceptionOrNull()?.message ?: "아티스트 적용 완료",
+                ),
+            )
         }
-        call.respond(
-            if (result.isSuccess) HttpStatusCode.OK else HttpStatusCode.UnprocessableEntity,
-            FileShareResponse(
-                success = result.isSuccess,
-                message = result.exceptionOrNull()?.message ?: "아티스트 적용 완료",
-            ),
-        )
     }
 
     post(FileShareConstants.HTTP_BULK_THUMBNAIL_PATH) {
@@ -153,27 +156,29 @@ fun Route.pcUploadEndpoints(
             return@post
         }
 
-        val bytes = runCatching { call.receive<ByteArray>() }
-            .getOrElse {
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    FileShareResponse(success = false, message = "이미지를 읽을 수 없습니다."),
-                )
-                return@post
+        continueInBackgroundWhile {
+            val bytes = runCatching { call.receive<ByteArray>() }
+                .getOrElse {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        FileShareResponse(success = false, message = "이미지를 읽을 수 없습니다."),
+                    )
+                    return@continueInBackgroundWhile
+                }
+            val result = runCatching {
+                ids.forEach { id ->
+                    val imageFileFullPath = saveAudioMediaImage(bytes).getOrThrow()
+                    updateAudioMedia(id = id, imageFileFullPath = imageFileFullPath).getOrThrow()
+                }
             }
-        val result = runCatching {
-            ids.forEach { id ->
-                val imageFileFullPath = saveAudioMediaImage(bytes).getOrThrow()
-                updateAudioMedia(id = id, imageFileFullPath = imageFileFullPath).getOrThrow()
-            }
+            call.respond(
+                if (result.isSuccess) HttpStatusCode.OK else HttpStatusCode.UnprocessableEntity,
+                FileShareResponse(
+                    success = result.isSuccess,
+                    message = result.exceptionOrNull()?.message ?: "썸네일 적용 완료",
+                ),
+            )
         }
-        call.respond(
-            if (result.isSuccess) HttpStatusCode.OK else HttpStatusCode.UnprocessableEntity,
-            FileShareResponse(
-                success = result.isSuccess,
-                message = result.exceptionOrNull()?.message ?: "썸네일 적용 완료",
-            ),
-        )
     }
 }
 
