@@ -1,4 +1,4 @@
-package com.kintmin.presentation.port.model
+package com.kintmin.domain.data_migration.model
 
 sealed interface DataMigrationSendStatus {
     data object Idle : DataMigrationSendStatus

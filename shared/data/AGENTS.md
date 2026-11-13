@@ -36,6 +36,33 @@ The decision tree for where to place code:
 
 ---
 
+## 파일 공유 서버 (`file_share/`)
+
+PC 수신(Android·iOS)과 데이터 보내기(Android)가 쓰는 받는 서버는 **이 모듈에만 둔다.** Ktor 서버 의존성은 앱 모듈·presentation 에 두지 않는다. `shared:file-share` 는 Desktop 과 공유하는 프로토콜(상수·DTO)만 가진다.
+
+| 자리 | 무엇 |
+|---|---|
+| `commonMain/file_share/FileShareServer` | 엔진(CIO) 한 벌. 바인드 뒤 취소·실패해도 포트를 놓고, 앞 서버가 포트를 놓은 뒤 다시 띄운다 |
+| `commonMain/file_share/PcUploadRoutes` | `/upload`·`/upload/artist`·`/upload/thumbnail` 전송 처리 |
+| `androidMain/file_share/` | `AndroidFileShareServerRepository`(PC 수신·데이터 보내기가 한 서버를 같이 쓴다), `FileShareServerModule`(이전 중 PC 경로 409), `migration/`(세션·경로), `NsdAdvertiser` |
+| `iosMain/file_share/` | `PcFileShareServerRepositoryImpl`(Bonjour 광고·재등록, 복귀 때 서버 재기동) |
+
+- **경로는 전송과 인가만 맡고 처리는 domain 의 처리기(`PcUploadHandler`·`MigrationSendHandler`)에 넘긴다.** data 가 UseCase 를 부르면 의존 방향이 거꾸로 된다. 처리기는 UseCase 가 만든다.
+- 받는 도중 앱이 잠시 내려가도 마저 받는 일은 `ReceiveKeepAlive` 가 맡는다. iOS 구현은 백그라운드 유예를 가진 presentation 이 바인딩하고, Android 는 포그라운드 서비스가 붙잡아 그냥 실행한다.
+
+### mDNS 광고
+
+| 상태 | 광고 | 인스턴스 이름 |
+|---|---|---|
+| PC 수신만 켜짐 | `NSD_SERVICE_TYPE`(`_jellytube._tcp`) | `NSD_SERVICE_NAME` |
+| 이전 세션이 열리고 페어링 전 (Android) | `MIGRATION_NSD_SERVICE_TYPE`(`_jellytube-mig._tcp`) + TXT `v`(프로토콜 버전) | 기기 이름(받는 기기가 이것으로 고른다) |
+| 페어링 뒤(세션이 닫힐 때까지) | 없음 | — |
+
+- 이전 세션이 열려 있는 동안은 PC 업로드 타입을 내리고 `/upload*` 를 409 로 거절한다. Desktop 이 이전 중인 기기에 업로드하지 않게 하는 두 겹이다. PC 가 데이터를 바꾸는 경로는 `FileShareServerModule` 의 `pcUploadRoutes { }` 안에 둔다 — 409 가 거기서 한 번에 걸린다.
+- 본문을 받기 전에 거절할 때는 본문을 끝까지 읽어 버린다. 읽지 않으면 보내던 클라이언트가 응답 대신 연결 끊김을 받는다.
+- 세션당 토큰은 코드를 맞힌 한 기기에만 준다. 이미 페어링한 세션에 맞는 코드로 다시 페어링하면 409, 틀린 코드면 401 이다(코드 없이 이전 중인지 알 수 없게). 토큰은 주소에 묶지 않는다(받는 기기의 IP 가 바뀌어도 이어 받는다).
+- 등록에 실패한 광고는 몇 번 다시 등록한다. 실패를 무시하면 받는 기기가 찾지 못한다.
+
 ## Local DB Conventions
 
 - Database schema changes require a migration. Do not increment the version without providing a migration strategy.

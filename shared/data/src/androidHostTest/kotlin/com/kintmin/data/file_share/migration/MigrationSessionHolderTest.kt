@@ -1,7 +1,7 @@
-package com.kintmin.platform.service.migration
+package com.kintmin.data.file_share.migration
 
+import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import com.kintmin.fileshare.MigrationFinishRequest
-import com.kintmin.presentation.port.model.DataMigrationSendStatus
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

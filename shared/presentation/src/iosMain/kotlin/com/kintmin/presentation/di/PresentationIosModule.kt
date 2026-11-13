@@ -1,5 +1,6 @@
 package com.kintmin.presentation.di
 
+import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.presentation.port.AudioPreviewPlayer
 import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.ExecuteAnomalyDataCheck
@@ -14,6 +15,7 @@ import com.kintmin.presentation.port.IosExecuteAudioEditSaveStub
 import com.kintmin.presentation.port.IosExecuteLyricsVariantCreation
 import com.kintmin.presentation.port.IosExecuteYoutubeDownload
 import com.kintmin.presentation.port.IosFileShareServerController
+import com.kintmin.presentation.port.IosReceiveKeepAlive
 import com.kintmin.presentation.port.IosRunningWorkMonitor
 import com.kintmin.presentation.port.IosStepMeasurementController
 import com.kintmin.presentation.port.RunningWorkMonitor
@@ -34,6 +36,7 @@ val presentationIosModule: Module = module {
     single<AudioPreviewPlayer> { IosAudioPreviewPlayerStub() }
     single<StepMeasurementController> { IosStepMeasurementController(get(), get(), get(), get()) }
     single<FileShareServerController> { IosFileShareServerController(get(), get(), get()) }
+    single<ReceiveKeepAlive> { IosReceiveKeepAlive() }
     single<ExecuteYoutubeDownload> { IosExecuteYoutubeDownload(get(), get(), get(), get()) }
     single<ExecuteAnomalyDataCheck> { IosExecuteAnomalyDataCheck(get(), get()) }
     single<ExecuteLyricsVariantCreation> { IosExecuteLyricsVariantCreation(get(), get()) }

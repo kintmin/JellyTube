@@ -1,6 +1,6 @@
-package com.kintmin.platform.service.migration
+package com.kintmin.data.file_share.migration
 
-import com.kintmin.presentation.port.model.DataMigrationSendStatus
+import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

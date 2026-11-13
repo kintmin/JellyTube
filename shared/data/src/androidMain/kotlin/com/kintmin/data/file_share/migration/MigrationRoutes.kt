@@ -1,11 +1,9 @@
-package com.kintmin.platform.service.migration
+package com.kintmin.data.file_share.migration
 
 import com.kintmin.data.data_migration.toManifestDto
-import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
+import com.kintmin.domain.data_migration.MigrationSendHandler
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileKind
-import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
-import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.MigrationFinishRequest
 import com.kintmin.fileshare.MigrationPairRequest
@@ -28,9 +26,7 @@ import java.io.File
  */
 internal fun Route.migrationRoutes(
     currentSession: () -> MigrationSession?,
-    cleanupAnomalousData: CleanupAnomalousDataUseCase,
-    exportMigrationData: ExportMigrationDataUseCase,
-    resolveMigrationFilePath: ResolveMigrationFilePathUseCase,
+    handler: MigrationSendHandler,
 ) {
     post(FileShareConstants.MIGRATION_PAIR_PATH) {
         val session = currentSession() ?: return@post call.respond(HttpStatusCode.NotFound)
@@ -46,8 +42,8 @@ internal fun Route.migrationRoutes(
     get(FileShareConstants.MIGRATION_MANIFEST_PATH) {
         val session = call.authorizedSession(currentSession) ?: return@get
         // 받는 쪽이 연결 실패와 구분해 "보내는 기기의 정리 실패"로 보여 준다.
-        cleanupAnomalousData().onFailure { return@get call.respond(HttpStatusCode.ServiceUnavailable) }
-        exportMigrationData()
+        handler.cleanup().onFailure { return@get call.respond(HttpStatusCode.ServiceUnavailable) }
+        handler.export()
             .onSuccess { export ->
                 session.allowFiles(export.files.map { it.file.kind.name to it.file.name }.toSet())
                 call.respond(export.toManifestDto())
@@ -70,7 +66,7 @@ internal fun Route.migrationRoutes(
         if (!session.isFileAllowed(kind, name)) return@get call.respond(HttpStatusCode.NotFound)
 
         // 세션 없음(404)과 구분해야 받는 쪽이 이 파일만 빼고 이어 간다.
-        val file = resolveMigrationFilePath(MigrationFile(MigrationFileKind.valueOf(kind), name))
+        val file = handler.resolveFilePath(MigrationFile(MigrationFileKind.valueOf(kind), name))
             .getOrNull()
             ?.let(::File)
             ?.takeIf { it.isFile }

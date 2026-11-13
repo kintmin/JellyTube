@@ -46,12 +46,12 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 | `MediaControllerManager` | `service_controller/MediaControllerManagerImpl` | `ios/shared` 의 `media/IosMediaControllerManager`(Swift 엔진 브릿지) |
 | `AudioPreviewPlayer` | `audio_preview/AudioPreviewPlayerImpl` | 미지원 스텁(음원 편집 제외) |
 | `StepMeasurementController` | `service_controller/StepMeasurementControllerImpl` | `IosStepMeasurementController`(CMPedometer) |
-| `FileShareServerController` | `service_controller/FileShareServerControllerImpl` | `IosFileShareServerController`(UseCase 로 서버를 켜고 끈다. 서버·`NSNetService` 광고는 `shared:data` iosMain 의 `PcFileShareServerRepositoryImpl`. 포그라운드 서비스가 없어 앱이 서스펜드되면 멈추고, 복귀 때 리슨 소켓이 죽었으면 다시 띄운다) |
+| `FileShareServerController` | `service_controller/FileShareServerControllerImpl`(UseCase 로 서버를 켜고 끄고, `FileShareForegroundService` 로 프로세스를 붙잡는다) | `IosFileShareServerController`(UseCase 로 서버를 켜고 끈다. 포그라운드 서비스가 없어 앱이 서스펜드되면 멈춘다) |
 | `ExecuteYoutubeDownload` | `worker/usecase/ExecuteYoutubeDownloadImpl` | `IosExecuteYoutubeDownload`(추출 + background URLSession) |
 | `ExecuteLyricsVariantCreation` | `worker/usecase/ExecuteLyricsVariantCreationImpl` | `IosExecuteLyricsVariantCreation`(앱 수명 스코프 + 로컬 알림) |
 | `ExecuteAnomalyDataCheck` | `worker/usecase/ExecuteAnomalyDataCheckImpl` | `IosExecuteAnomalyDataCheck`(앱 수명 스코프 + 로컬 알림) |
 | `ExecuteAudioEditSave` | `worker/usecase/ExecuteAudioEditSaveImpl` | 미지원 스텁(음원 편집 제외) |
-| `DataMigrationSendController` | `service_controller/DataMigrationSendControllerImpl`(PC 수신과 같은 서버 + 페어링 세션. 세션 동안은 이전 타입으로만 광고하고 `/upload*` 는 409) | 미지원 스텁(보내는 서버가 Android 에만 있다) |
+| `DataMigrationSendController` | `service_controller/DataMigrationSendControllerImpl`(UseCase 로 이전 세션을 열고 닫는다. PC 수신과 같은 서버를 쓴다) | 미지원 스텁(보내는 서버가 Android 에만 있다) |
 | `RunningWorkMonitor` | `running_work/RunningWorkMonitorImpl`(WorkManager 태그·고유 이름 + 편집 저장 + PC 수신) | `IosRunningWorkMonitor`(실행부가 세는 `IosRunningWorkTracker` + 편집 저장 + PC 수신) |
 | `MigrationSourceDiscovery` | `data_migration/UnsupportedMigrationSourceDiscovery`(Android 는 보내는 쪽만) | `ios/shared` 의 `migration/IosMigrationSourceDiscovery`(Swift `NWBrowser` 브릿지. 목록 탐색 → 고른 기기만 주소 풀기) |
 
@@ -87,21 +87,11 @@ iOS 구현의 자리는 **`shared:presentation` 의 `iosMain/port/`** 다(`Media
 
 ## Services
 
-### 파일공유 서버의 mDNS 광고
+### 파일공유 서버
 
-`FileShareForegroundService` 하나가 PC 수신과 데이터 이전을 함께 서비스한다. 광고는 용도별로 나눈다
-(`NsdAdvertisement.advertisedServiceTypes`).
+`FileShareForegroundService` 는 **프로세스를 살려 두는 일만** 한다(포그라운드 알림, 데이터 보내기 중 CPU·Wi-Fi 잠금). 서버·광고·경로·이전 세션은 `shared:data` 의 `file_share/` 가 가지며, 규칙은 `shared/data/AGENTS.md` §파일 공유 서버가 단일 진원지다.
 
-| 상태 | 광고 | 인스턴스 이름 |
-|---|---|---|
-| PC 수신만 켜짐 | `NSD_SERVICE_TYPE`(`_jellytube._tcp`) | `NSD_SERVICE_NAME` |
-| 이전 세션이 열리고 페어링 전 | `MIGRATION_NSD_SERVICE_TYPE`(`_jellytube-mig._tcp`) + TXT `v`(프로토콜 버전) | 기기 이름(받는 기기가 이것으로 고른다) |
-| 페어링 뒤(세션이 닫힐 때까지) | 없음 | — |
-
-- 이전 세션이 열려 있는 동안은 PC 업로드 타입을 내리고 `/upload*` 를 409 로 거절한다. Desktop 이 이전 중인 기기에 업로드하지 않게 하는 두 겹이다. PC 가 데이터를 바꾸는 경로는 `FileShareServerModule` 의 `pcUploadRoutes { }` 안에 둔다 — 409 가 거기서 한 번에 걸린다. 경로 본체는 iOS 와 같이 쓰는 `shared:data` 의 `file_share/pcUploadEndpoints` 이고, 처리는 domain 의 `PcUploadHandler`(`CreatePcUploadHandlerUseCase`)에 넘긴다.
-- 본문을 받기 전에 거절할 때는 본문을 끝까지 읽어 버린다. 읽지 않으면 보내던 클라이언트가 응답 대신 연결 끊김을 받는다.
-- 세션당 토큰은 코드를 맞힌 한 기기에만 준다. 이미 페어링한 세션에 맞는 코드로 다시 페어링하면 409, 틀린 코드면 401 이다(코드 없이 이전 중인지 알 수 없게). 토큰은 주소에 묶지 않는다(받는 기기의 IP 가 바뀌어도 이어 받는다).
-- 등록에 실패한 광고는 몇 번 다시 등록한다. 실패를 무시하면 받는 기기가 찾지 못한다.
+- **이 모듈은 Ktor 에 의존하지 않는다.** 서버를 켜고 끄는 것은 컨트롤러가 UseCase 로 한다. 서비스가 알림의 중지나 OS 에 의해 내려가면 `onDestroy` 에서 UseCase 로 서버도 내린다.
 
 - Every foreground service must call `startForeground()` with a valid notification before Android OS enforces it.
 - Services that can be started/stopped externally expose a `companion object` with `startService(context)` / `stopService(context)` static helpers (see `StepForegroundService` for reference).

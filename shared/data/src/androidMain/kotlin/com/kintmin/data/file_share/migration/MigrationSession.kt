@@ -1,4 +1,4 @@
-package com.kintmin.platform.service.migration
+package com.kintmin.data.file_share.migration
 
 import com.kintmin.fileshare.MigrationFinishRequest
 import java.security.MessageDigest

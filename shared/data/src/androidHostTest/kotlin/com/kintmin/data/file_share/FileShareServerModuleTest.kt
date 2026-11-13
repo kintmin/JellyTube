@@ -1,5 +1,6 @@
-package com.kintmin.platform.service
+package com.kintmin.data.file_share
 
+import com.kintmin.data.file_share.migration.MigrationSession
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
@@ -9,7 +10,6 @@ import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
 import com.kintmin.fileshare.FileShareConstants
-import com.kintmin.platform.service.migration.MigrationSession
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -64,9 +64,7 @@ class FileShareServerModuleTest {
                 ).invoke { imported += it },
                 uploadCacheDir = tempFolder.root,
                 currentMigrationSession = { migrationSession },
-                cleanupAnomalousData = mockk(),
-                exportMigrationData = mockk(),
-                resolveMigrationFilePath = mockk(),
+                migrationSendHandler = mockk(),
             )
         }
         block()

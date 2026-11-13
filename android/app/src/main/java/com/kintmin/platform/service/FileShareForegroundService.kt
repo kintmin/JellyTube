@@ -5,31 +5,20 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.net.nsd.NsdManager
-import android.net.nsd.NsdServiceInfo
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
-import com.kintmin.data.data_migration.localDeviceName
-import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
-import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
-import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
-import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
-import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
+import com.kintmin.domain.data_migration.usecase.CloseMigrationSendUseCase
+import com.kintmin.domain.data_migration.usecase.FetchMigrationSendStatusUseCase
+import com.kintmin.domain.file_share.usecase.StopPcFileShareServerUseCase
 import com.kintmin.platform.push_notification.PushNotificationIds
-import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.DataMigrationSendNotification
-import com.kintmin.platform.push_notification.notifications.DownloadResultNotification
 import com.kintmin.platform.push_notification.notifications.FileShareServerNotification
 import com.kintmin.platform.push_notification.notifications.PushNotification
-import com.kintmin.platform.service.migration.MigrationSessionHolder
-import com.kintmin.presentation.port.WorkResultNotice
-import com.kintmin.presentation.port.model.DataMigrationSendStatus
-import io.ktor.server.cio.CIO
-import io.ktor.server.engine.embeddedServer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -38,28 +27,18 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class FileShareForegroundService : Service(), KoinComponent {
 
-    private val createPcUploadHandlerUseCase: CreatePcUploadHandlerUseCase by inject()
-    private val cleanupAnomalousDataUseCase: CleanupAnomalousDataUseCase by inject()
-    private val exportMigrationDataUseCase: ExportMigrationDataUseCase by inject()
-    private val resolveMigrationFilePathUseCase: ResolveMigrationFilePathUseCase by inject()
-    private val pushNotificationManager: PushNotificationManager by inject()
+    private val fetchMigrationSendStatusUseCase: FetchMigrationSendStatusUseCase by inject()
+    private val stopPcFileShareServerUseCase: StopPcFileShareServerUseCase by inject()
+    private val closeMigrationSendUseCase: CloseMigrationSendUseCase by inject()
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private var ktorServer: io.ktor.server.engine.EmbeddedServer<*, *>? = null
-    private val nsdRegistrations = mutableMapOf<String, NsdManager.RegistrationListener>()
-    private var nsdAdvertiseJob: Job? = null
-    private var nsdTargets: Set<String> = emptySet()
-    private var nsdRetryCount = 0
-    private var isNsdClosed = false
+    private var isForeground = false
     private var migrationWakeLock: PowerManager.WakeLock? = null
     private var migrationWifiLock: WifiManager.WifiLock? = null
     private var migrationLockJob: Job? = null
@@ -76,17 +55,15 @@ class FileShareForegroundService : Service(), KoinComponent {
             return START_NOT_STICKY
         }
         if (intent?.action == ACTION_REPOST_NOTIFICATION) {
-            if (ktorServer != null && Owner.DATA_MIGRATION in owners.value) startForegroundWith(DataMigrationSendNotification)
+            if (isForeground && Owner.DATA_MIGRATION in owners.value) startForegroundWith(DataMigrationSendNotification)
             return START_NOT_STICKY
         }
         intent?.getIntExtra(EXTRA_GENERATION, NO_GENERATION)?.takeIf { it != NO_GENERATION }?.let { generation = it }
-        // 다시 붙이면 같은 포트에 서버가 두 번 뜬다.
-        if (ktorServer != null) return START_NOT_STICKY
+        if (isForeground) return START_NOT_STICKY
 
         val notification = if (Owner.DATA_MIGRATION in owners.value) DataMigrationSendNotification else FileShareServerNotification
         runCatching { startForegroundWith(notification) }.onSuccess {
-            startKtorServer()
-            advertiseWhileRunning()
+            isForeground = true
             holdLocksWhileMigrating()
         }.onFailure {
             stopSelf()
@@ -106,47 +83,14 @@ class FileShareForegroundService : Service(), KoinComponent {
     }
 
     override fun onDestroy() {
-        clearOwnersIfCurrent(generation)
-        releaseMigrationLocks()
-        closeNsdRegistrations()
-        ktorServer?.let { server ->
-            runCatching { server.stop(500L, 500L) }
+        // 알림의 중지나 OS 가 서비스를 내린 경우다. 서버도 함께 내린다.
+        if (clearOwnersIfCurrent(generation)) {
+            stopPcFileShareServerUseCase()
+            closeMigrationSendUseCase()
         }
-        ktorServer = null
+        releaseMigrationLocks()
         serviceScope.coroutineContext.cancelChildren()
         super.onDestroy()
-    }
-
-    private fun startKtorServer() {
-        serviceScope.launch {
-            runCatching {
-                val notificationManager = pushNotificationManager
-                val uploadCacheDir = cacheDir
-                val pcUploadHandler = createPcUploadHandlerUseCase { result ->
-                    notificationManager.sendNotification(
-                        DownloadResultNotification(
-                            WorkResultNotice.Download.Success(
-                                artist = result.audioMedia.artist,
-                                name = result.audioMedia.name,
-                                playlistId = result.playlistIdOnDownload,
-                                audioMediaId = result.audioMedia.id,
-                            ),
-                        ),
-                    )
-                }
-
-                ktorServer = embeddedServer(CIO, port = FileShareConstants.DEFAULT_PORT) {
-                    fileShareModule(
-                        pcUploadHandler = pcUploadHandler,
-                        uploadCacheDir = uploadCacheDir,
-                        currentMigrationSession = { MigrationSessionHolder.session.value },
-                        cleanupAnomalousData = cleanupAnomalousDataUseCase,
-                        exportMigrationData = exportMigrationDataUseCase,
-                        resolveMigrationFilePath = resolveMigrationFilePathUseCase,
-                    )
-                }.start(wait = false)
-            }
-        }
     }
 
     /**
@@ -157,7 +101,7 @@ class FileShareForegroundService : Service(), KoinComponent {
     private fun holdLocksWhileMigrating() {
         if (migrationLockJob?.isActive == true) return
         migrationLockJob = serviceScope.launch {
-            MigrationSessionHolder.state.collect { status ->
+            fetchMigrationSendStatusUseCase().collect { status ->
                 val isConnected = status is DataMigrationSendStatus.Paired || status is DataMigrationSendStatus.Finished
                 if (isConnected) acquireMigrationLocks() else releaseMigrationLocks()
             }
@@ -207,75 +151,6 @@ class FileShareForegroundService : Service(), KoinComponent {
         migrationWifiLock = null
     }
 
-    private fun advertiseWhileRunning() {
-        if (nsdAdvertiseJob?.isActive == true) return
-        nsdAdvertiseJob = serviceScope.launch {
-            combine(owners, MigrationSessionHolder.state, ::advertisedServiceTypes)
-                .distinctUntilChanged()
-                .collect(::syncNsdRegistrations)
-        }
-    }
-
-    // 수집이 취소된 뒤에도 이미 꺼낸 값으로 한 번 더 불릴 수 있다. 닫힌 뒤에는 다시 등록하지 않는다.
-    @Synchronized
-    private fun syncNsdRegistrations(serviceTypes: Set<String>) {
-        if (serviceTypes != nsdTargets) nsdRetryCount = 0
-        nsdTargets = serviceTypes
-        val manager = getSystemService(NSD_SERVICE) as NsdManager
-        val targets = if (isNsdClosed) emptySet() else serviceTypes
-        (nsdRegistrations.keys - targets).forEach { serviceType ->
-            nsdRegistrations.remove(serviceType)?.let { runCatching { manager.unregisterService(it) } }
-        }
-        (targets - nsdRegistrations.keys).forEach { serviceType ->
-            val listener = object : NsdManager.RegistrationListener {
-                override fun onRegistrationFailed(info: NsdServiceInfo, errorCode: Int) = onNsdRegistrationFailed(serviceType, this)
-                override fun onUnregistrationFailed(info: NsdServiceInfo, errorCode: Int) {}
-                override fun onServiceRegistered(info: NsdServiceInfo) {}
-                override fun onServiceUnregistered(info: NsdServiceInfo) {}
-            }
-            runCatching { manager.registerService(nsdServiceInfo(serviceType), NsdManager.PROTOCOL_DNS_SD, listener) }
-                .onSuccess { nsdRegistrations[serviceType] = listener }
-                .onFailure { retryNsdRegistrations() }
-        }
-    }
-
-    // 실패한 등록을 남겨 두면 등록된 줄 알고 다시 시도하지 않아 받는 기기가 찾지 못한다.
-    @Synchronized
-    private fun onNsdRegistrationFailed(serviceType: String, listener: NsdManager.RegistrationListener) {
-        if (nsdRegistrations[serviceType] !== listener) return
-        nsdRegistrations.remove(serviceType)
-        retryNsdRegistrations()
-    }
-
-    // 광고 대상이 그대로면 다시 맞출 계기가 없다. 직접 다시 맞춘다.
-    @Synchronized
-    private fun retryNsdRegistrations() {
-        if (nsdRetryCount >= NSD_MAX_RETRIES) return
-        nsdRetryCount++
-        serviceScope.launch {
-            delay(NSD_RETRY_DELAY_MS)
-            syncNsdRegistrations(nsdTargets)
-        }
-    }
-
-    @Synchronized
-    private fun closeNsdRegistrations() {
-        nsdAdvertiseJob?.cancel()
-        isNsdClosed = true
-        syncNsdRegistrations(emptySet())
-    }
-
-    private fun nsdServiceInfo(serviceType: String) = NsdServiceInfo().apply {
-        this.serviceType = serviceType
-        port = FileShareConstants.DEFAULT_PORT
-        if (serviceType == FileShareConstants.MIGRATION_NSD_SERVICE_TYPE) {
-            serviceName = toDnsSdInstanceName(localDeviceName(this@FileShareForegroundService))
-            setAttribute(FileShareConstants.MIGRATION_TXT_FORMAT_VERSION, FileShareConstants.MIGRATION_FORMAT_VERSION.toString())
-        } else {
-            serviceName = FileShareConstants.NSD_SERVICE_NAME
-        }
-    }
-
     companion object {
         const val ACTION_STOP = "com.kintmin.platform.FILE_SHARE_STOP"
         const val ACTION_REPOST_NOTIFICATION = "com.kintmin.platform.FILE_SHARE_REPOST_NOTIFICATION"
@@ -284,9 +159,6 @@ class FileShareForegroundService : Service(), KoinComponent {
 
         private const val MIGRATION_LOCK_TAG = "JellyTube:migration"
 
-        private const val NSD_MAX_RETRIES = 3
-        private const val NSD_RETRY_DELAY_MS = 2_000L
-
         // 놓친 해제가 배터리를 끝까지 잡지 않도록 상한을 둔다.
         private const val MIGRATION_LOCK_TIMEOUT_MS = 2 * 60 * 60 * 1000L
         private const val MIGRATION_LOCK_RENEW_MS = MIGRATION_LOCK_TIMEOUT_MS - 10 * 60 * 1000L
@@ -294,23 +166,19 @@ class FileShareForegroundService : Service(), KoinComponent {
         private val _owners = MutableStateFlow<Set<Owner>>(emptySet())
         val owners = _owners.asStateFlow()
 
-        private val _isPcFileShareRunning = MutableStateFlow(false)
-        val isPcFileShareRunning = _isPcFileShareRunning.asStateFlow()
-
         private var startedGeneration = NO_GENERATION
 
         @Synchronized
         private fun setOwners(owners: Set<Owner>) {
             _owners.value = owners
-            _isPcFileShareRunning.value = Owner.PC_FILE_SHARE in owners
         }
 
         /** 나갔다 바로 다시 들어오면 앞 서비스의 onDestroy 가 새로 연 뒤에 온다. 마지막으로 띄운 서비스일 때만 비운다. */
         @Synchronized
-        private fun clearOwnersIfCurrent(generation: Int) {
-            if (generation != startedGeneration) return
+        private fun clearOwnersIfCurrent(generation: Int): Boolean {
+            if (generation != startedGeneration) return false
             setOwners(emptySet())
-            MigrationSessionHolder.close()
+            return true
         }
 
         @Synchronized

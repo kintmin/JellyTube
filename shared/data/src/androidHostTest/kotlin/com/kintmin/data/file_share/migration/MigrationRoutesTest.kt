@@ -1,15 +1,21 @@
-package com.kintmin.platform.service.migration
+package com.kintmin.data.file_share.migration
 
+import com.kintmin.data.file_share.fileShareModule
+import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
+import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
+import com.kintmin.domain.data_migration.MigrationSendHandler
 import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileEntry
 import com.kintmin.domain.data_migration.model.MigrationFileKind
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
+import com.kintmin.domain.data_migration.repository.MigrationSendServerRepository
 import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
+import com.kintmin.domain.data_migration.usecase.OpenMigrationSendUseCase
 import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
+import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.MigrationFinishRequest
-import com.kintmin.platform.service.fileShareModule
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -22,14 +28,14 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
-import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
-import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
-import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.slot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -47,6 +53,14 @@ class MigrationRoutesTest {
     }
     private val exportUseCase = mockk<ExportMigrationDataUseCase>()
     private val resolvePathUseCase = mockk<ResolveMigrationFilePathUseCase>()
+
+    // 실제 조합(OpenMigrationSendUseCase)이 만든 처리기를 쓴다.
+    private fun migrationSendHandler(): MigrationSendHandler {
+        val handler = slot<MigrationSendHandler>()
+        val repository = mockk<MigrationSendServerRepository> { every { open(capture(handler)) } just Runs }
+        OpenMigrationSendUseCase(repository, cleanupUseCase, exportUseCase, resolvePathUseCase)()
+        return handler.captured
+    }
     private var session: MigrationSession? = MigrationSession(code = CODE, generateToken = { TOKEN })
 
     private val audioFile = MigrationFile(MigrationFileKind.AUDIO, "a.m4a")
@@ -74,9 +88,7 @@ class MigrationRoutesTest {
                 ).invoke {},
                 uploadCacheDir = tempFolder.root,
                 currentMigrationSession = { session },
-                cleanupAnomalousData = cleanupUseCase,
-                exportMigrationData = exportUseCase,
-                resolveMigrationFilePath = resolvePathUseCase,
+                migrationSendHandler = migrationSendHandler(),
             )
         }
         block()

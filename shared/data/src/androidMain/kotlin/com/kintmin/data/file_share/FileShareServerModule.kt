@@ -1,15 +1,11 @@
-package com.kintmin.platform.service
+package com.kintmin.data.file_share
 
-import com.kintmin.data.file_share.discardBody
-import com.kintmin.data.file_share.installFileShareContentNegotiation
-import com.kintmin.data.file_share.pcUploadEndpoints
-import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
-import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
-import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
+import com.kintmin.data.file_share.migration.MigrationSession
+import com.kintmin.data.file_share.migration.migrationRoutes
+import com.kintmin.domain.data_migration.MigrationSendHandler
 import com.kintmin.domain.file_share.PcUploadHandler
+import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.fileshare.FileShareResponse
-import com.kintmin.platform.service.migration.MigrationSession
-import com.kintmin.platform.service.migration.migrationRoutes
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.createRouteScopedPlugin
@@ -26,16 +22,18 @@ internal fun Application.fileShareModule(
     pcUploadHandler: PcUploadHandler,
     uploadCacheDir: File,
     currentMigrationSession: () -> MigrationSession?,
-    cleanupAnomalousData: CleanupAnomalousDataUseCase,
-    exportMigrationData: ExportMigrationDataUseCase,
-    resolveMigrationFilePath: ResolveMigrationFilePathUseCase,
+    migrationSendHandler: MigrationSendHandler,
 ) {
     installFileShareContentNegotiation()
     routing {
-        migrationRoutes(currentMigrationSession, cleanupAnomalousData, exportMigrationData, resolveMigrationFilePath)
+        migrationRoutes(currentMigrationSession, migrationSendHandler)
 
         pcUploadRoutes(currentMigrationSession) {
-            pcUploadEndpoints(handler = pcUploadHandler, uploadTempDir = uploadCacheDir.path)
+            pcUploadEndpoints(
+                handler = pcUploadHandler,
+                uploadTempDir = uploadCacheDir.path,
+                receiveKeepAlive = KeepAliveByForegroundService,
+            )
         }
     }
 }
@@ -66,4 +64,9 @@ private val RejectWhileMigrating = createRouteScopedPlugin("RejectWhileMigrating
         call.discardBody()
         call.respond(HttpStatusCode.Conflict, FileShareResponse(success = false, message = "다른 기기와 데이터 이전 중입니다."))
     }
+}
+
+/** 포그라운드 서비스가 프로세스를 붙잡아 두므로 따로 유예를 청하지 않는다. */
+private object KeepAliveByForegroundService : ReceiveKeepAlive {
+    override suspend fun <T> keepAlive(block: suspend () -> T): T = block()
 }

@@ -22,11 +22,7 @@ import com.kintmin.data.translation.IosLyricsTranslator
 import com.kintmin.data.translation.IosLyricsTranslatorBridge
 import com.kintmin.data.translation.LyricsTranslator
 import com.kintmin.domain.file_share.repository.PcFileShareServerRepository
-import com.kintmin.domain.file_share.usecase.FetchPcFileShareServerRunningUseCase
-import com.kintmin.domain.file_share.usecase.StartPcFileShareServerUseCase
-import com.kintmin.domain.file_share.usecase.StopPcFileShareServerUseCase
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
 /**
@@ -51,9 +47,6 @@ fun dataIosModule(
     single<LyricsTranslator> { IosLyricsTranslator(lyricsTranslatorBridge) }
     single<LyricsTransliterator> { IosLyricsTransliterator(pythonExecutorBridge) }
 
-    // Android 는 PC 수신 서버를 android:app 의 포그라운드 서비스가 직접 띄워 이 저장소가 없다.
-    single<PcFileShareServerRepository> { PcFileShareServerRepositoryImpl(get()) }
-    factoryOf(::StartPcFileShareServerUseCase)
-    factoryOf(::StopPcFileShareServerUseCase)
-    factoryOf(::FetchPcFileShareServerRunningUseCase)
+    // ReceiveKeepAlive 는 백그라운드 유예를 쓰는 presentation 이 바인딩한다.
+    single<PcFileShareServerRepository> { PcFileShareServerRepositoryImpl(get(), get()) }
 }

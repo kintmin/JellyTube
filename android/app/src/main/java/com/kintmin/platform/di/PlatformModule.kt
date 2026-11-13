@@ -37,7 +37,7 @@ val platformModule: Module = module {
     single<MediaControllerManager> { MediaControllerManagerImpl(androidContext()) }
     single<AudioPreviewPlayer> { AudioPreviewPlayerImpl(androidContext()) }
     single<StepMeasurementController> { StepMeasurementControllerImpl(androidContext()) }
-    single<FileShareServerController> { FileShareServerControllerImpl(androidContext()) }
+    single<FileShareServerController> { FileShareServerControllerImpl(androidContext(), get(), get(), get(), get()) }
     single<RegisterDailyResetImmediatelyWorker> {
         RegisterDailyResetImmediatelyWorkerImpl(androidContext())
     }
@@ -49,6 +49,6 @@ val platformModule: Module = module {
     single<ExecuteLyricsVariantCreation> { ExecuteLyricsVariantCreationImpl(androidContext()) }
     single<ExecuteAudioEditSave> { ExecuteAudioEditSaveImpl(androidContext()) }
     single<MigrationSourceDiscovery> { UnsupportedMigrationSourceDiscovery() }
-    single<DataMigrationSendController> { DataMigrationSendControllerImpl(androidContext()) }
-    single<RunningWorkMonitor> { RunningWorkMonitorImpl(androidContext(), get()) }
+    single<DataMigrationSendController> { DataMigrationSendControllerImpl(androidContext(), get(), get(), get()) }
+    single<RunningWorkMonitor> { RunningWorkMonitorImpl(androidContext(), get(), get()) }
 }

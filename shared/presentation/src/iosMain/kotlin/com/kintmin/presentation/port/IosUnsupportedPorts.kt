@@ -2,7 +2,7 @@ package com.kintmin.presentation.port
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
-import com.kintmin.presentation.port.model.DataMigrationSendStatus
+import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
