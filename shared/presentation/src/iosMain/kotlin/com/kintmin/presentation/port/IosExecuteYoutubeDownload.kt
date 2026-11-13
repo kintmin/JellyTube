@@ -1,12 +1,12 @@
 package com.kintmin.presentation.port
 
-import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.port.model.MediaControlData
 import com.kintmin.presentation.port.model.RunningWork
+import com.kintmin.presentation.port.model.toMediaControlData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -91,13 +91,3 @@ internal class IosExecuteYoutubeDownload(
 
 private const val WINDOW_NAME = "youtube-download"
 private const val LYRICS_WINDOW_NAME = "youtube-download-lyrics"
-
-private fun AudioMedia.toMediaControlData() = MediaControlData(
-    mediaId = id.toString(),
-    mediaFileUri = playbackFileFullPath,
-    mediaTitle = name,
-    mediaDescription = description,
-    mediaArtist = artist,
-    mediaDurationMs = playbackDuration?.inWholeMilliseconds ?: 0L,
-    mediaArtworkFileUri = imageFileFullPath,
-)

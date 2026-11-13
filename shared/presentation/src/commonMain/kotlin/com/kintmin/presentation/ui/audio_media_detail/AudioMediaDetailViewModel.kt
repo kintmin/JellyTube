@@ -6,12 +6,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_edit.usecase.ObserveAudioEditSavingUseCase
 import com.kintmin.domain.audio_edit.usecase.RevertAudioEditUseCase
-import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.karaoke.usecase.DeleteAudioMediaKaraokeNumberUseCase
 import com.kintmin.presentation.port.MediaControllerManager
-import com.kintmin.presentation.port.model.MediaControlData
+import com.kintmin.presentation.port.model.toMediaControlData
 import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -104,13 +103,3 @@ class AudioMediaDetailViewModel constructor(
         }
     }
 }
-
-private fun AudioMedia.toMediaControlData() = MediaControlData(
-    mediaId = id.toString(),
-    mediaFileUri = playbackFileFullPath,
-    mediaTitle = name,
-    mediaDescription = description,
-    mediaArtist = artist,
-    mediaDurationMs = playbackDuration?.inWholeMilliseconds ?: 0L,
-    mediaArtworkFileUri = imageFileFullPath,
-)

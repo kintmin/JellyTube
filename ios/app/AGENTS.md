@@ -158,19 +158,21 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 ## iOS 에서 제공하지 않는 것
 
 진입점을 숨기고, 포트는 **명시적 미지원 스텁**으로 바인딩한다
-(`presentation/port/IosUnsupportedPorts.kt`, `data/audio_edit/AudioEditorImpl.kt`).
+(`presentation/port/IosUnsupportedPorts.kt`).
 스텁이 없으면 그 화면에 들어가는 순간 Koin 이 터진다 — 바인딩을 비워 두는 선택지는 없다.
 
 | 항목 | 이유 |
 |---|---|
-| 음원 편집 | Media3 Transformer + TarsosDSP 기반이라 전면 재작성이다 |
 | PC 파일 수신 | 수신 서버(Ktor CIO)와 그 서버를 붙잡아 두는 포그라운드 서비스가 Android 에만 있다 |
 | 드로잉 / 플로팅 UI | `MotionEvent` + S펜 전제. Apple Pencil 에 대응물이 없다 |
-| 기기 저장(벨소리/알람/알림음) | 세 타깃 전부 30초 트리밍 + 포맷 변환이 선행 조건이라 음원 편집과 묶인다 |
+| 기기 저장(벨소리/알람/알림음) | iOS 는 앱이 벨소리·알람·알림음을 시스템에 등록할 수 없다 |
 | iosX64(인텔 맥 시뮬레이터) | CMP 가 1.11.0-alpha01 이후 배포하지 않는다 |
 
-**Android 와 보장이 다른 것**: 사용자가 앱 스위처에서 강제 종료하면 background `URLSession`
-전송도 OS 가 취소한다. 정책이라 우회 수단이 없다 — WorkManager 와 같은 보장은 iOS 에 없다.
+**Android 와 보장이 다른 것**
+- 사용자가 앱 스위처에서 강제 종료하면 background `URLSession` 전송도 OS 가 취소한다.
+  정책이라 우회 수단이 없다 — WorkManager 와 같은 보장은 iOS 에 없다.
+- 음원 편집 저장은 앱 프로세스에서 렌더한다. 앱이 내려가면 유예 시간(길어야 수십 초) 뒤 멈추고,
+  그사이 OS 가 앱을 종료하지 않았다면 다시 올라올 때 이어서 돈다.
 
 ---
 
