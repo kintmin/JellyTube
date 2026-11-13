@@ -38,7 +38,7 @@ fun Application.installFileShareContentNegotiation() {
     }
 }
 
-/** PC(Desktop) 가 보내는 업로드 경로. [installFileShareContentNegotiation] 이 설치돼 있어야 한다. */
+/** [installFileShareContentNegotiation] 이 설치돼 있어야 JSON 본문을 읽고 쓴다. */
 @OptIn(ExperimentalUuidApi::class)
 fun Route.pcUploadEndpoints(
     importUploadedAudioMedia: ImportUploadedAudioMediaUseCase,
@@ -48,11 +48,6 @@ fun Route.pcUploadEndpoints(
     uploadTempDir: String,
     onUploadImported: (ImportedAudioMediaResult) -> Unit,
 ) {
-    /**
-     * POST /upload
-     * Header: X-File-Name: <original file name with extension>
-     * Body: raw audio bytes
-     */
     post(FileShareConstants.HTTP_UPLOAD_PATH) {
         val originalFileName = validateUploadedAudioFileName(call.request.header(FileShareConstants.HEADER_FILE_NAME))
             .getOrElse { error ->

@@ -32,10 +32,7 @@ import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSTemporaryDirectory
 import platform.UIKit.UIApplicationWillEnterForegroundNotification
 
-/**
- * PC(Desktop) 업로드 수신 서버와 그 Bonjour 광고. Android 는 포그라운드 서비스가 붙잡아 두지만
- * iOS 에는 그런 장치가 없어 **앱이 서스펜드되면 함께 멈춘다.**
- */
+/** PC 업로드 수신 서버와 그 Bonjour 광고. 앱이 서스펜드되면 함께 멈춘다. */
 internal class IosFileShareServerController(
     private val importUploadedAudioMedia: ImportUploadedAudioMediaUseCase,
     private val validateUploadedAudioFileName: ValidateUploadedAudioFileNameUseCase,
@@ -52,15 +49,8 @@ internal class IosFileShareServerController(
     private var serving: Job? = null
 
     init {
-        // 다른 화면에 있어도 자동 잠금이 오면 서스펜드되어 서버가 멈추므로, 화면이 아니라 서버에 묶는다.
-        scope.launch {
-            var holding = false
-            _isRunning.collect { running ->
-                if (running == holding) return@collect
-                holding = running
-                if (running) ScreenAwake.acquire() else ScreenAwake.release()
-            }
-        }
+        // 수신 화면이 아니라 서버에 묶는다. 다른 화면에서도 자동 잠금이 오면 서스펜드되어 서버가 멈춘다.
+        scope.launch { ScreenAwake.holdWhile(_isRunning) }
 
         // 서스펜드된 동안 OS 가 리슨 소켓을 회수할 수 있다. 회수되면 오류 없이 접속만 거절된다.
         NSNotificationCenter.defaultCenter.addObserverForName(

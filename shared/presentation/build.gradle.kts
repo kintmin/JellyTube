@@ -65,7 +65,7 @@ kotlin {
             implementation(libs.io.coil.compose)   // coil3 는 멀티플랫폼이다
             implementation(libs.okio)              // Coil 입력 경로를 okio.Path 로 준다
 
-            // PC 업로드 수신 경로. 서버 엔진은 플랫폼이 고른다
+            // PC 업로드 수신 경로. 서버 엔진은 플랫폼이 고른다.
             implementation(project(":shared:file-share"))
             implementation(libs.ktor.server.core)
             implementation(libs.ktor.server.content.negotiation)
