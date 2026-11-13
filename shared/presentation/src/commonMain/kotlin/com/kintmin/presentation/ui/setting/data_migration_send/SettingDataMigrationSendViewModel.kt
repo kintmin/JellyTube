@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.RunningWorkMonitor
-import com.kintmin.presentation.port.model.DataMigrationSendStatus
+import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

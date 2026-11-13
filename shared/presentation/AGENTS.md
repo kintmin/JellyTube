@@ -12,7 +12,7 @@
 | `src/androidMain/kotlin` | `expect` 선언의 Android `actual`, 그리고 공통화가 불가능해 의도적으로 Android 전용으로 남긴 코드 |
 | `src/androidHostTest/kotlin` | 단위테스트. **`commonTest`를 만들지 않는다** — mockk 가 JVM 전용이라 iOS 컴파일이 깨진다 |
 | `src/iosTest/kotlin` | iOS 전용 코드의 단위테스트(`kotlin.test`). `./gradlew :shared:presentation:iosSimulatorArm64Test` |
-| `src/iosMain/kotlin` | iOS `actual`(`platform/`)과 **포트의 iOS 구현**(`port/`) |
+| `src/iosMain/kotlin` | iOS `actual`(`platform/`)만. 포트의 iOS 구현은 `ios/shared` 다 |
 
 **순수성 게이트는 여전히 필요하다.** macOS 에서는 iOS 컴파일이 돌아 위반을 잡아 주지만, Windows 에서 작업하면 돌지 않는다 — 그쪽에서 `commonMain` 에 Android/JVM 전용 API 를 넣어도 **컴파일러가 잡아주지 않는다.** 아래 게이트를 그 자리의 통과 기준으로 쓴다.
 
@@ -33,7 +33,7 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 |---|---|---|
 | `commonMain` | **212** | 화면·ViewModel·Intent·UiState·Event·Navigation·theme·extension·port 전부 |
 | `androidMain` | 12 | `platform/` actual 9 + 공통화 불가 3 |
-| `iosMain` | — | `platform/` actual 전부 + `port/` 의 iOS 구현 + `di/PresentationIosModule` |
+| `iosMain` | — | `platform/` actual 전부 |
 
 **화면 코드는 212 / 215(98.6%)가 `commonMain`** 이다. `androidMain` 에 남은 화면 코드 3개는 **의도적 잔류**이며 해소할 생각이 없다.
 
@@ -77,7 +77,7 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 | `platform/KeepScreenOnEffect(enabled)` | `@Composable expect fun`. Android 는 `LocalView.keepScreenOn`, iOS 는 `idleTimerDisabled` 를 `ScreenAwake` 로 붙잡는다(앱에 하나뿐인 값이라 붙잡은 쪽을 센다). 화면을 떠나면 풀린다 | 데이터 보내기·받기 화면. iOS PC 수신 서버는 화면이 아니라 서버 상태로 `ScreenAwake` 를 직접 붙잡는다 |
 | `platform/rememberAppVersionName()` | `expect`/`actual`. Android 는 `PackageManager`(SDK 33 분기), iOS 는 `NSBundle` 의 `CFBundleShortVersionString` | `SettingScreen` |
 | `platform/extractDominantColor(imageFileFullPath)` | `expect`/`actual` **suspend 함수**(Compose 로컬이 필요 없다). Android 는 `BitmapFactory` 2패스 다운샘플 + `Palette`, iOS 는 CoreGraphics 로 32x32 에 그린 뒤 색을 묶어 최빈 묶음의 평균색을 낸다. `Dispatchers.IO` 가 JVM 전용이라 디스패처 선택도 actual 이 한다. 호출자는 null 이면 기본 그라데이션으로 떨어진다 | `PlayerDetailScreen` |
-| `platform/AppLogSharer` + `rememberAppLogSharer()` | `fun interface` + `expect`/`actual`. Android 는 `filesDir/app_logs` 의 `.log` 를 모아 FileProvider URI 로 `ACTION_SEND_MULTIPLE` chooser 를 띄운다. iOS 는 `UIActivityViewController` 로 파일만 넘긴다(수신자를 지정하는 공개 수단이 없어 `NoShareTarget` 이 서지 않는다). 결과는 `AppLogShareResult` enum 으로 돌려주고 **안내 문구는 호출자가 정한다** | `AppLogScreen` |
+| `platform/AppLogSharer` + `rememberAppLogSharer()` | `fun interface` + `expect`/`actual`. 파일 목록은 data(`FetchAppLogFileFullPathsUseCase`)가 주고 이것은 넘기기만 한다. Android 는 FileProvider URI 로 `ACTION_SEND_MULTIPLE` chooser 를 띄운다. iOS 는 `UIActivityViewController` 로 파일만 넘긴다(수신자를 지정하는 공개 수단이 없어 `NoShareTarget` 이 서지 않는다). 결과는 `AppLogShareResult` enum 으로 돌려주고 **안내 문구는 호출자가 정한다** | `AppLogScreen` |
 | `platform/SystemSettingsOpener` + `rememberSystemSettingsOpener()` | `fun interface` + `expect`/`actual`. 목적지를 `SystemSettingsTarget`(`Alarm`/`Sound`) enum 으로 받고 인텐트 폴백 체인은 actual 이 품는다(SHOW_ALARMS 미지원 기기 → SET_ALARM). iOS 는 시스템 설정의 특정 화면으로 보낼 수 없어 항상 false | `SettingDeviceSaveScreen` |
 | `platform/WebViewHandle` + `rememberWebViewHandle()` + `PlatformWebView(...)` | `@Stable interface` + `expect`/`actual`. **플랫폼 뷰 객체를 노출하지 않는다** — 노출하면 그 타입이 시그니처를 타고 호출자까지 전염된다(실제로 `MainScreen` 이 `WebView` 를 들고 있었다). 핸들이 생명주기(`stopLoading`/`removeView`/`destroy`)와 생성 실패 상태까지 소유한다. Android actual 이 `AndroidView` + `WebViewClient` 스킴 라우팅(`intent://` 의 `browser_fallback_url` 폴백 포함) + 쿠키·Referer 설정을 품는다. iOS 는 `WKWebView` + `UIKitView`(**`UIKitInteropInteractionMode.Cooperative`** — 기본값이면 웹뷰 위에 겹친 Compose 가 터치를 못 받는다) + `WKUserScript` 로 SPA 주소를 추적한다 | `MainScreen`, `YoutubeWebView` |
 
@@ -105,7 +105,7 @@ framework 는 **`ios/shared`** 하나가 선언한다(`baseName = "shared"`, SKI
 
 Android 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 구현체는 `android:app` 에 둔다. 배치 규칙과 현재 포트 목록은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
 
-**iOS 구현은 이 모듈의 `iosMain/port/` 에 둔다.** Android 와 달리 `Context` 류가 필요 없고 Kotlin/Native 가 UIKit·AVFoundation·CoreMotion 인터롭을 기본 제공해 인터페이스와 같은 모듈에서 구현된다. 바인딩은 `di/PresentationIosModule.kt`. 예외는 `MediaControllerManager`·`MigrationSourceDiscovery` 로, 구현이 Swift 에 기대서 `ios/shared` 가 가진다.
+**iOS 구현은 이 모듈에 두지 않고 `ios/shared` 의 `port/` 에 둔다.** Android 구현이 `android:app` 에 있는 것과 같은 자리다. 이 모듈은 화면이고, 포트 구현은 OS 기능(걸음 측정·백그라운드 작업·로컬 알림)이다. 바인딩은 `ios/shared` 의 `port/IosPortModule.kt`.
 
 - **인자 전달로 해결되면 포트를 만들지 않는다.** 값 하나를 넘기면 되는 경우(예: `isDebugTabVisible`)는 Screen/NavGraph 파라미터로 받는다.
 - 순수 판정 로직은 포트가 아니다. `shared:domain` 에 둔다.
@@ -288,7 +288,7 @@ When a screen's `~UiState` field is filled from an **async source** (a `Flow`/DB
 | `navigation/MainNavHost` | `NavHost` + `navigationIntentFlow` 소비 |
 
 플랫폼에 남는 것은 진입 통로와 OS 배선뿐이다 — Android 는 Manifest `intent-filter`,
-`MainViewModel.handleIntent()`(Intent → 문자열), `PendingIntent` 용 `Uri` 어댑터
+`MainActivity.handleIntent()`(Intent → 문자열, `AppViewModel.handleDeepLink` 로 넘긴다), `PendingIntent` 용 `Uri` 어댑터
 (`android:app` 의 `com.kintmin.platform.deeplink.DeepLinkConstants`). iOS 는 `onOpenURL`.
 
 새 목적지를 더하는 절차는 `.claude/skills/add-deep-link` 가 단일 진원지다.

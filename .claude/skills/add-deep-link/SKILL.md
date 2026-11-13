@@ -10,7 +10,7 @@ description: JellyTube에 새 딥링크 목적지를 규약대로 추가한다. 
 그래프는 `com.kintmin.presentation.navigation` 이다.
 
 플랫폼에 남는 것은 **진입 통로와 OS 배선뿐**이다 — Android 는 Manifest `intent-filter` 와
-`MainViewModel.handleIntent(intent)`(Intent → 문자열), `PendingIntent` 가 `Uri` 를 요구하는
+`MainActivity.handleIntent(intent)`(Intent → 문자열), `PendingIntent` 가 `Uri` 를 요구하는
 자리를 메우는 `com.kintmin.platform.deeplink.DeepLinkConstants` 어댑터. iOS 는 `onOpenURL`.
 
 **판정은 공통이 하고 플랫폼은 실행만 한다.** 두 플랫폼이 같은 주소에 다른 답을 내면 그 자체가
@@ -50,8 +50,8 @@ description: JellyTube에 새 딥링크 목적지를 규약대로 추가한다. 
 - 모든 파일 UTF-8(BOM 없음).
 
 ## 흐름 참고
-- **Android**: `MainActivity.onNewIntent()/onCreate()` → `MainViewModel.handleIntent(intent)` →
-  `onDeepLink(uri.toString())` → `DeepLinkParser.parse(url, 재생상태)` →
+- **Android**: `MainActivity.onNewIntent()/onCreate()` → `MainActivity.handleIntent(intent)` →
+  `AppViewModel.handleDeepLink(uri.toString())` → `DeepLinkParser.parse(url, 재생상태)` →
   `navigationIntentChannel`(capacity=8) → `MainNavHost` 가 `navigationIntentFlow` 수집 →
   `NavController` 호출.
 - **iOS**: `onOpenURL` → 조립 모듈(`:ios:shared`)의 최상위 `handleDeepLink(url)` → 같은 파서.

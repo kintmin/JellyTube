@@ -4,29 +4,19 @@ import com.kintmin.data.di.dataCommonModule
 import com.kintmin.data.di.dataIosModule
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.data.translation.IosLyricsTranslatorBridge
-import com.kintmin.domain.step.worker.RegisterDailyResetImmediatelyWorker
-import com.kintmin.domain.step.worker.RegisterLoadBalancedDailyResetWorker
 import com.kintmin.ios.log.IosAppLog
 import com.kintmin.ios.log.IosAppLogBridge
 import com.kintmin.ios.media.IosMediaControllerBridge
 import com.kintmin.ios.media.IosMediaControllerManager
 import com.kintmin.ios.migration.IosMigrationSourceBrowserBridge
 import com.kintmin.ios.migration.IosMigrationSourceDiscovery
-import com.kintmin.ios.step.IosRegisterDailyResetImmediatelyWorker
-import com.kintmin.ios.step.IosRegisterLoadBalancedDailyResetWorker
-import com.kintmin.presentation.di.presentationIosModule
+import com.kintmin.ios.port.iosPortModule
 import com.kintmin.log.AppLog
 import com.kintmin.presentation.port.MediaControllerManager
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.di.presentationModule
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
-
-/** 도메인 포트의 iOS 구현. 플랫폼 포트는 `presentationIosModule` 이 맡는다. */
-private val iosDomainPortModule = module {
-    single<RegisterDailyResetImmediatelyWorker> { IosRegisterDailyResetImmediatelyWorker() }
-    single<RegisterLoadBalancedDailyResetWorker> { IosRegisterLoadBalancedDailyResetWorker() }
-}
 
 /**
  * Swift 가 `IosKoinKt.doInitIosKoin(...)` 으로 부른다.
@@ -46,8 +36,7 @@ fun initIosKoin(
             dataCommonModule,
             dataIosModule(pythonExecutorBridge, lyricsTranslatorBridge),
             presentationModule,
-            presentationIosModule,
-            iosDomainPortModule,
+            iosPortModule,
             module {
                 single<MediaControllerManager> { IosMediaControllerManager(mediaControllerBridge) }
                 single<AppLog> { IosAppLog(appLogBridge, get()) }

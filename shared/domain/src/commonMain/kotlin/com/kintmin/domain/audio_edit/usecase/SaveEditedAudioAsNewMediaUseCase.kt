@@ -3,6 +3,8 @@ package com.kintmin.domain.audio_edit.usecase
 import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
 import com.kintmin.domain.audio_edit.model.AudioEditPart
+import com.kintmin.domain.audio_edit.model.BlankEditedAudioName
+import com.kintmin.domain.audio_edit.model.EmptyAudioEditSegment
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.log.AppLog
@@ -49,7 +51,3 @@ class SaveEditedAudioAsNewMediaUseCase constructor(
         return result
     }
 }
-
-class BlankEditedAudioName(
-    override val message: String = "저장할 음원 이름을 입력해주세요."
-) : Throwable()

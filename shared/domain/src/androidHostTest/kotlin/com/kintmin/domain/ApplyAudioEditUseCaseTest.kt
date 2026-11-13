@@ -3,7 +3,7 @@ package com.kintmin.domain
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
-import com.kintmin.domain.audio_edit.usecase.EmptyAudioEditSegment
+import com.kintmin.domain.audio_edit.model.EmptyAudioEditSegment
 import com.kintmin.domain.audio_edit.usecase.RevertAudioEditUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.log.AppLog

@@ -2,6 +2,7 @@ package com.kintmin.domain.step.usecase
 
 import com.kintmin.domain.extension.parseBasicIsoDate
 import com.kintmin.domain.extension.startOfDayMillis
+import com.kintmin.domain.step.StepSlot
 import com.kintmin.domain.step.model.StepData
 import com.kintmin.domain.step.repository.StepRepository
 import kotlinx.coroutines.flow.Flow
@@ -44,19 +45,18 @@ class GetHalfHourlyStepsUseCase constructor(
 
     private fun calculateHalfHourlySteps(date: String, stepDataList: List<StepData>): List<Int> {
         if (stepDataList.isEmpty()) {
-            return List(48) { 0 }
+            return List(StepSlot.PER_DAY) { 0 }
         }
 
         val timeZone = TimeZone.currentSystemDefault()
         val targetDate = date.parseBasicIsoDate()
         val dayStartMillis = targetDate.startOfDayMillis(timeZone)
-        val halfHourMillis = 30 * 60 * 1000L
 
         val sortedData = stepDataList.sortedBy { it.rawCreatedTime }
 
-        return List(48) { slot ->
-            val bucketStart = dayStartMillis + (slot * halfHourMillis)
-            val bucketEnd = bucketStart + halfHourMillis
+        return List(StepSlot.PER_DAY) { slot ->
+            val bucketStart = dayStartMillis + (slot * StepSlot.MILLIS)
+            val bucketEnd = bucketStart + StepSlot.MILLIS
 
             val bucketData = sortedData
                 .asSequence()

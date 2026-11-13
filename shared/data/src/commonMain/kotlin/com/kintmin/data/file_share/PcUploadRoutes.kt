@@ -1,7 +1,8 @@
 package com.kintmin.data.file_share
 
-import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.file_share.PcUploadHandler
+import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.fileshare.BulkArtistUpdateRequest
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.FileShareResponse
@@ -35,7 +36,7 @@ fun Application.installFileShareContentNegotiation() {
 
 /** [installFileShareContentNegotiation] 이 설치돼 있어야 JSON 본문을 읽고 쓴다. */
 @OptIn(ExperimentalUuidApi::class)
-fun Route.pcUploadEndpoints(handler: PcUploadHandler, uploadTempDir: String) {
+fun Route.pcUploadEndpoints(handler: PcUploadHandler, uploadTempDir: String, receiveKeepAlive: ReceiveKeepAlive) {
     post(FileShareConstants.HTTP_UPLOAD_PATH) {
         val originalFileName = handler.validateFileName(call.request.header(FileShareConstants.HEADER_FILE_NAME))
             .getOrElse { error ->
@@ -44,7 +45,7 @@ fun Route.pcUploadEndpoints(handler: PcUploadHandler, uploadTempDir: String) {
                 return@post
             }
 
-        continueInBackgroundWhile {
+        receiveKeepAlive.keepAlive {
             // 대용량 WAV도 힙에 통째로 올리지 않도록 임시 파일로 스트리밍 수신한다.
             val tempPath = Path(uploadTempDir, TEMP_UPLOAD_PREFIX + Uuid.random())
             try {
@@ -55,7 +56,7 @@ fun Route.pcUploadEndpoints(handler: PcUploadHandler, uploadTempDir: String) {
                         HttpStatusCode.BadRequest,
                         UploadResponse(success = false, message = "파일을 읽을 수 없습니다."),
                     )
-                    return@continueInBackgroundWhile
+                    return@keepAlive
                 }
                 val rejection = when {
                     receivedBytes == 0L -> "빈 파일은 저장할 수 없습니다."
@@ -64,7 +65,7 @@ fun Route.pcUploadEndpoints(handler: PcUploadHandler, uploadTempDir: String) {
                 }
                 if (rejection != null) {
                     call.respond(HttpStatusCode.BadRequest, UploadResponse(success = false, message = rejection))
-                    return@continueInBackgroundWhile
+                    return@keepAlive
                 }
 
                 handler.importUploadedAudio(tempPath.toString(), originalFileName)
@@ -113,7 +114,7 @@ fun Route.pcUploadEndpoints(handler: PcUploadHandler, uploadTempDir: String) {
         }
 
         // 여러 곡에 적용하다 서스펜드되면 일부에만 적용된 채 PC 는 끊김만 받는다.
-        continueInBackgroundWhile {
+        receiveKeepAlive.keepAlive {
             val result = handler.applyArtist(request.audioMediaIds, request.artist)
             call.respond(
                 if (result.isSuccess) HttpStatusCode.OK else HttpStatusCode.UnprocessableEntity,
@@ -139,14 +140,14 @@ fun Route.pcUploadEndpoints(handler: PcUploadHandler, uploadTempDir: String) {
             return@post
         }
 
-        continueInBackgroundWhile {
+        receiveKeepAlive.keepAlive {
             val bytes = runCatching { call.receive<ByteArray>() }
                 .getOrElse {
                     call.respond(
                         HttpStatusCode.BadRequest,
                         FileShareResponse(success = false, message = "이미지를 읽을 수 없습니다."),
                     )
-                    return@continueInBackgroundWhile
+                    return@keepAlive
                 }
             val result = handler.applyThumbnail(ids, bytes)
             call.respond(

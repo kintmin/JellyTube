@@ -21,16 +21,14 @@ import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.UUID
 import androidx.core.net.toUri
+import okio.Path
+import okio.Path.Companion.toOkioPath
 
 internal class FileManagerImpl(
     private val appContext: Context,
 ) : FileManager {
 
     private companion object {
-
-        const val LOG_DIR_NAME = "app_logs"
-        const val LYRIC_DIR_NAME = "lyrics"
-        const val MIGRATION_STAGING_DIR_NAME = "migration_staging"
 
         const val EXPORT_DIR_NAME = "JellyTube"
 
@@ -50,30 +48,20 @@ internal class FileManagerImpl(
         val WHITESPACE_REGEX = Regex("\\s+")
     }
 
-    override fun getFileNameWithExt(fileFullPath: String) = runCatching {
-        File(fileFullPath).name
-    }
+    private val core = FileManagerCore(AndroidAppDirectories(appContext))
 
-    override fun getAudioDownloadBasePath(fileName: String) = runCatching {
-        audioDir().resolve(fileName).absolutePath
-    }
+    override fun getFileNameWithExt(fileFullPath: String) = core.getFileNameWithExt(fileFullPath)
 
-    override fun getAudioFileFullPath(fileNameWithExt: String) = runCatching {
-        audioDir().resolve(fileNameWithExt).absolutePath
-    }
+    override fun getAudioDownloadBasePath(fileName: String) = core.getAudioDownloadBasePath(fileName)
 
-    override fun getImageFileFullPath(fileNameWithExt: String) = runCatching {
-        imageDir().resolve(fileNameWithExt).absolutePath
-    }
+    override fun getAudioFileFullPath(fileNameWithExt: String) = core.getAudioFileFullPath(fileNameWithExt)
 
-    override fun getLyricFileFullPath(fileNameWithExt: String) = runCatching {
-        lyricDir().resolve(fileNameWithExt).absolutePath
-    }
+    override fun getImageFileFullPath(fileNameWithExt: String) = core.getImageFileFullPath(fileNameWithExt)
+
+    override fun getLyricFileFullPath(fileNameWithExt: String) = core.getLyricFileFullPath(fileNameWithExt)
 
     // Android 는 받는 쪽이 아니지만 계약을 채운다. 음원 디렉터리와 볼륨이 달라 옮기기는 복사로 떨어진다.
-    override fun getMigrationStagingDirPath() = runCatching {
-        resolveDirectory(appContext.filesDir.resolve(MIGRATION_STAGING_DIR_NAME)).absolutePath
-    }
+    override fun getMigrationStagingDirPath() = core.getMigrationStagingDirPath()
 
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String) =
         runCatching {
@@ -110,22 +98,9 @@ internal class FileManagerImpl(
         }
     }
 
-    override suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<String> = runCatching {
-        withContext(Dispatchers.IO) {
-            val ext = if (synced) "lrc" else "txt"
-            val outputFile = lyricDir().resolve("$fileName.$ext")
-            outputFile.writeText(text)
-            ext
-        }
-    }
+    override suspend fun saveLyrics(text: String, fileName: String, synced: Boolean) = core.saveLyrics(text, fileName, synced)
 
-    override suspend fun fetchLyrics(fileNameWithExt: String): Result<String> = runCatching {
-        withContext(Dispatchers.IO) {
-            val file = lyricDir().resolve(fileNameWithExt)
-            if (!file.exists()) throw Exception("가사 파일을 찾을 수 없습니다.")
-            file.readText()
-        }
-    }
+    override suspend fun fetchLyrics(fileNameWithExt: String) = core.fetchLyrics(fileNameWithExt)
 
     override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = runCatching {
         withContext(Dispatchers.IO) {
@@ -536,93 +511,34 @@ internal class FileManagerImpl(
         else -> null
     }
 
-    override suspend fun deleteFileAtFullPath(fileFullPath: String): Result<Unit> = runCatching {
-        withContext(Dispatchers.IO) {
-            val file = File(fileFullPath)
-            if (file.exists()) {
-                file.delete()
-            }
-        }
-    }
+    override suspend fun deleteFileAtFullPath(fileFullPath: String) = core.deleteFileAtFullPath(fileFullPath)
 
-    override suspend fun listAudioAndImageFileFullPaths(): Result<List<String>> = runCatching {
-        withContext(Dispatchers.IO) {
-            val audioFilePaths = audioDir().listFiles()
-                ?.filter { it.isFile }
-                ?.map { it.absolutePath }
-                ?: emptyList()
-            val imageFilePaths = imageDir().listFiles()
-                ?.filter { it.isFile }
-                ?.map { it.absolutePath }
-                ?: emptyList()
-            audioFilePaths + imageFilePaths
-        }
-    }
+    override suspend fun listAudioAndImageFileFullPaths() = core.listAudioAndImageFileFullPaths()
 
     override fun clearDiskCache(): Result<Unit> = runCatching {
         appContext.cacheDir.deleteRecursively()
     }
 
-    override suspend fun appendAppLog(date: String, line: String): Result<Unit> = runCatching {
-        withContext(Dispatchers.IO) {
-            val file = getLogDirectory().resolve("$date.log")
-            file.appendText("$line\n")
-            cleanupOldLogFile()
-        }
-    }
+    override suspend fun appendAppLog(date: String, line: String) = core.appendAppLog(date, line)
 
-    override suspend fun fetchAppLogDateList(): Result<List<String>> = runCatching {
-        withContext(Dispatchers.IO) {
-            getLogDirectory()
-                .listFiles()
-                ?.filter { file -> file.isFile && file.extension == "log" }
-                ?.map { file -> file.nameWithoutExtension }
-                ?.sortedDescending()
-                ?: emptyList()
-        }
-    }
+    override suspend fun fetchAppLogDateList() = core.fetchAppLogDateList()
 
-    override suspend fun fetchAppLogLineList(date: String): Result<List<String>> = runCatching {
-        withContext(Dispatchers.IO) {
-            val targetFile = getLogDirectory().resolve("$date.log")
-            if (!targetFile.exists()) return@withContext emptyList()
-            targetFile.readLines().asReversed()
-        }
-    }
+    override suspend fun fetchAppLogLineList(date: String) = core.fetchAppLogLineList(date)
 
-    private fun audioDir(): File =
-        resolveDirectory(appContext.getExternalFilesDir(Environment.DIRECTORY_MUSIC))
+    override suspend fun fetchAppLogFileFullPaths() = core.fetchAppLogFileFullPaths()
 
-    private fun imageDir(): File =
-        resolveDirectory(appContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES))
+    private fun audioDir(): File = core.audioDir().toFile()
 
-    private fun lyricDir(): File =
-        resolveDirectory(appContext.filesDir.resolve(LYRIC_DIR_NAME))
+    private fun imageDir(): File = core.imageDir().toFile()
+}
 
-    private fun resolveDirectory(dir: File?): File {
-        return dir?.takeIf { it.exists() || it.mkdirs() }
-            ?: throw Exception("디렉토리를 찾을 수 없습니다.")
-    }
+private class AndroidAppDirectories(private val context: Context) : AppDirectories {
+    override fun audio() = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC).required()
+    override fun image() = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES).required()
+    override fun lyric() = context.filesDir.resolve(AppDirectories.LYRIC_DIR_NAME).toOkioPath()
+    override fun log() = context.filesDir.resolve(AppDirectories.LOG_DIR_NAME).toOkioPath()
+    override fun migrationStaging() = context.filesDir.resolve(AppDirectories.MIGRATION_STAGING_DIR_NAME).toOkioPath()
 
-    private fun getLogDirectory(): File {
-        val dir = appContext.filesDir.resolve(LOG_DIR_NAME)
-        if (!dir.exists()) {
-            dir.mkdirs()
-        }
-        return dir
-    }
-
-    private fun cleanupOldLogFile() {
-        val allLogFile = getLogDirectory()
-            .listFiles()
-            ?.filter { file ->
-                file.isFile && file.extension == "log"
-            }
-            ?.sortedByDescending { file -> file.nameWithoutExtension }
-            ?: return
-
-        allLogFile.drop(MAX_LOG_FILE_COUNT).forEach { file ->
-            file.delete()
-        }
-    }
+    // 외부 저장소를 쓸 수 없으면 null 이다.
+    private fun File?.required(): Path = (this ?: throw Exception("디렉토리를 찾을 수 없습니다.")).toOkioPath()
 }

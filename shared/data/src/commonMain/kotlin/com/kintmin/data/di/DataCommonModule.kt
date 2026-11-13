@@ -23,6 +23,9 @@ import com.kintmin.domain.audio_edit.usecase.*
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.*
 import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
+import com.kintmin.domain.file_share.usecase.FetchPcFileShareServerRunningUseCase
+import com.kintmin.domain.file_share.usecase.StartPcFileShareServerUseCase
+import com.kintmin.domain.file_share.usecase.StopPcFileShareServerUseCase
 import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingRepository
 import com.kintmin.domain.audio_play_setting.usecase.*
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
@@ -80,14 +83,17 @@ val dataCommonModule: Module = module {
 
     factoryOf(::FetchAppLogDateListUseCase)
     factoryOf(::FetchAppLogLineListUseCase)
+    factoryOf(::FetchAppLogFileFullPathsUseCase)
     factoryOf(::FetchIsStepEnabledFlowUseCase)
     factoryOf(::FetchPlaylistIdOnDownloadFlowUseCase)
     factoryOf(::FetchShouldInsertAtTopOnDownloadFlowUseCase)
     factoryOf(::UpdateIsStepEnabledUseCase)
     factoryOf(::UpdatePlaylistIdOnDownloadUseCase)
+    factoryOf(::FetchDownloadTargetPlaylistsFlowUseCase)
     factoryOf(::UpdateShouldInsertAtTopOnDownloadUseCase)
     factoryOf(::ExtractAudioWaveformUseCase)
     factoryOf(::ApplyAudioEditUseCase)
+    factoryOf(::SaveAudioEditUseCase)
     factoryOf(::FetchAudioEditTimelineUseCase)
     factoryOf(::ObserveAudioEditSavingUseCase)
     factoryOf(::FetchSavingAudioMediaIdsFlowUseCase)
@@ -101,6 +107,7 @@ val dataCommonModule: Module = module {
     factoryOf(::ResolveMigrationFilePathUseCase)
     factoryOf(::PairMigrationSourceUseCase)
     factoryOf(::ImportMigrationDataUseCase)
+    factoryOf(::ReceiveMigrationDataUseCase)
     factoryOf(::ClearMigrationStagingUseCase)
 
     factoryOf(::CleanupAnomalousDataUseCase)
@@ -113,6 +120,9 @@ val dataCommonModule: Module = module {
     factoryOf(::ImportUploadedAudioMediaUseCase)
     factoryOf(::ValidateUploadedAudioFileNameUseCase)
     factoryOf(::CreatePcUploadHandlerUseCase)
+    factoryOf(::StartPcFileShareServerUseCase)
+    factoryOf(::StopPcFileShareServerUseCase)
+    factoryOf(::FetchPcFileShareServerRunningUseCase)
     factoryOf(::SaveAudioMediaImageUseCase)
     factoryOf(::UpdateAudioMediaUseCase)
     factoryOf(::SearchLyricsUseCase)
@@ -123,6 +133,8 @@ val dataCommonModule: Module = module {
     factoryOf(::GetAudioMediaLyricsUseCase)
     factoryOf(::DeleteAudioMediaLyricsUseCase)
     factoryOf(::ParseLyricsUseCase)
+    factoryOf(::GetParsedLyricsUseCase)
+    factoryOf(::SaveEditedLyricsUseCase)
     factoryOf(::SerializeLyricsUseCase)
     factoryOf(::DetectLyricsLanguageUseCase)
     factoryOf(::CreateLyricsVariantUseCase)
@@ -164,7 +176,6 @@ val dataCommonModule: Module = module {
     factoryOf(::GetMonthlyDailyStepsUseCase)
     factoryOf(::GetStepCountUseCase)
     factoryOf(::ReplaceStepSensorsUseCase)
-    factoryOf(::RegisterDailyResetWorkerUseCase)
     factoryOf(::ResetDataOncePerDayUseCase)
     factoryOf(::UpdateAccelerateStepUseCase)
     factoryOf(::UpdateLastStepSensorUseCase)

@@ -1,6 +1,7 @@
 package com.kintmin.domain.audio_edit.usecase
 
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
+import com.kintmin.domain.audio_edit.model.EmptyAudioEditSegment
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.log.AppLog
@@ -36,11 +37,3 @@ class ApplyAudioEditUseCase constructor(
         return timedValue.value
     }
 }
-
-class AudioEditAlreadySaving(
-    override val message: String = "이미 편집본을 저장하고 있습니다. 끝난 뒤 다시 시도해주세요."
-) : Throwable()
-
-class EmptyAudioEditSegment(
-    override val message: String = "소리가 남은 조각이 하나 이상 있어야 합니다."
-) : Throwable()

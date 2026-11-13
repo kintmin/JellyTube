@@ -49,6 +49,7 @@ import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.UploadStatus
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.datatransfer.DataFlavor
@@ -484,10 +485,7 @@ private fun MainScreenPreview() {
     )
 }
 
-private fun isAudioFile(file: File): Boolean {
-    val audioExtensions = setOf("mp3", "wav", "flac", "aac", "ogg", "m4a", "wma", "opus", "aiff")
-    return file.extension.lowercase() in audioExtensions
-}
+private fun isAudioFile(file: File): Boolean = file.extension.lowercase() in FileShareConstants.UPLOAD_AUDIO_EXTENSIONS
 
 private fun isImageFile(file: File): Boolean {
     val imageExtensions = setOf("jpg", "jpeg", "png", "webp")

@@ -56,8 +56,9 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
-            // PC 업로드 수신 경로. Android 는 엔진을 android:app 의 포그라운드 서비스가 띄운다.
+            // 파일 공유 받는 서버(PC 수신·데이터 보내기).
             implementation(libs.ktor.server.core)
+            implementation(libs.ktor.server.cio)
             implementation(libs.ktor.server.content.negotiation)
             implementation(libs.koin.core)
             implementation(libs.okio)
@@ -73,7 +74,6 @@ kotlin {
 
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
-            implementation(libs.ktor.server.cio)
         }
 
         iosTest.dependencies {
@@ -86,6 +86,8 @@ kotlin {
                 implementation(libs.junit)
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.ktor.client.mock)
+                implementation(libs.mockk)
+                implementation(libs.ktor.server.test.host)
                 implementation("com.github.axet:TarsosDSP:2.4-1@jar")
             }
         }

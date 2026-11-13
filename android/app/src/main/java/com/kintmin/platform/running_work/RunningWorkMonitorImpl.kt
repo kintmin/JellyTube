@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.kintmin.domain.audio_edit.usecase.FetchSavingAudioMediaIdsFlowUseCase
-import com.kintmin.platform.service.FileShareForegroundService
+import com.kintmin.domain.file_share.usecase.FetchPcFileShareServerRunningUseCase
 import com.kintmin.platform.worker.usecase.ExecuteAnomalyDataCheckImpl
 import com.kintmin.platform.worker.usecase.ExecuteLyricsVariantCreationImpl
 import com.kintmin.platform.worker.usecase.ExecuteYoutubeDownloadImpl
@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.first
 class RunningWorkMonitorImpl(
     private val appContext: Context,
     private val fetchSavingAudioMediaIdsFlowUseCase: FetchSavingAudioMediaIdsFlowUseCase,
+    private val fetchPcFileShareServerRunningUseCase: FetchPcFileShareServerRunningUseCase,
 ) : RunningWorkMonitor {
 
     override suspend fun runningWorks(): Map<RunningWork, Int> {
@@ -29,7 +30,7 @@ class RunningWorkMonitorImpl(
             RunningWork.ANOMALY_DATA_CHECK to
                 workManager.getWorkInfosForUniqueWorkFlow(ExecuteAnomalyDataCheckImpl.WORK_NAME).first().unfinished(),
             RunningWork.AUDIO_EDIT_SAVE to fetchSavingAudioMediaIdsFlowUseCase().first().size,
-            RunningWork.PC_FILE_SHARE to if (FileShareForegroundService.isPcFileShareRunning.value) 1 else 0,
+            RunningWork.PC_FILE_SHARE to if (fetchPcFileShareServerRunningUseCase().value) 1 else 0,
         ).filterValues { it > 0 }
     }
 }

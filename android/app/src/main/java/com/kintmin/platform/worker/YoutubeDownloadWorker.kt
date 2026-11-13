@@ -14,9 +14,8 @@ import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.DownloadNotification
 import com.kintmin.platform.push_notification.notifications.DownloadResultNotification
 import com.kintmin.presentation.port.MediaControllerManager
-import com.kintmin.presentation.port.WorkResultNotice
-import com.kintmin.platform.service_controller.mapper.toMediaControlData
-import com.kintmin.presentation.port.model.MediaControlData
+import com.kintmin.presentation.port.addDownloadedMedia
+import com.kintmin.presentation.work_notice.WorkResultNotice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -88,22 +87,7 @@ class YoutubeDownloadWorker(
                         )
                     )
                 )
-                withContext(Dispatchers.Main) {
-                    val mediaControlData = result.audioMedia.toMediaControlData()
-                    tryAddMediaItem(
-                        playlistId = result.totalPlaylistId,
-                        mediaControlData = mediaControlData,
-                        shouldInsertAtTop = result.shouldInsertAtTopOnDownload,
-                    )
-
-                    if (result.playlistIdOnDownload != result.totalPlaylistId) {
-                        tryAddMediaItem(
-                            playlistId = result.playlistIdOnDownload,
-                            mediaControlData = mediaControlData,
-                            shouldInsertAtTop = result.shouldInsertAtTopOnDownload,
-                        )
-                    }
-                }
+                withContext(Dispatchers.Main) { mediaControllerManager.addDownloadedMedia(result) }
             }
             return Result.success()
         }.onFailure {
@@ -119,17 +103,5 @@ class YoutubeDownloadWorker(
 
     companion object {
         const val INPUT_DATA_URL = "youtube_url"
-    }
-
-    private fun tryAddMediaItem(
-        playlistId: Int,
-        mediaControlData: MediaControlData,
-        shouldInsertAtTop: Boolean,
-    ) {
-        if (shouldInsertAtTop) {
-            mediaControllerManager.tryAddFirstMediaItem(playlistId, mediaControlData)
-        } else {
-            mediaControllerManager.tryAddLastMediaItem(playlistId, mediaControlData)
-        }
     }
 }

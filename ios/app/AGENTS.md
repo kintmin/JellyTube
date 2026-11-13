@@ -6,7 +6,7 @@ iOS 쪽은 두 곳으로 나뉜다. **둘 다 "조립과 OS 호출" 만 한다 �
 
 | 경로 | 언어 | 역할 |
 |---|---|---|
-| `ios/shared/` | Kotlin | iOS Composition Root. 프레임워크 선언 · Koin 조립 · Compose 진입점 · 도메인 워커 포트 구현 |
+| `ios/shared/` | Kotlin | iOS Composition Root. 프레임워크 선언 · Koin 조립 · Compose 진입점 · presentation 포트 구현 |
 | `ios/app/` | Swift | Xcode 앱. 진입점(`JellyTubeIosApp`) · Kotlin 인터페이스의 Swift 구현(브릿지) · Info.plist |
 
 > **TCA 는 더 이상 쓰지 않는다.** `~Client` / `~Feature` / `~ScreenView` / `IosFacades` /
@@ -39,7 +39,7 @@ Obj-C 헤더로 쏟아진다.
    한쪽에 모듈을 더하면 다른 쪽도 본다
 3. `MainViewController.kt` — Swift 에 노출되는 최상위 함수들
    (`startApp` / `mainViewController` / `handleDeepLink` / `handleNotificationTap` / `handleSharedAudioFile`)
-4. 도메인 포트의 iOS 구현 — `domain` 에 플랫폼 구현을 넣지 않기 위해서다
+4. `presentation/port` 의 iOS 구현(`port/`, 바인딩 `port/IosPortModule.kt`) — `android:app` 이 Android 구현을 가지는 것과 같은 자리다
 5. Swift 가 구현할 Kotlin 인터페이스 — 프레임워크에 들어가는 모듈이라야 Swift 가 본다
    (`IosMediaControllerBridge`, `IosAppLogBridge`, `IosMigrationSourceBrowserBridge`)
 
@@ -52,11 +52,7 @@ Compose 밖(`onOpenURL`)에서 들어온 이벤트를 화면과 **같은 인스�
 
 ### `shared/presentation/src/iosMain/` (Kotlin)
 
-- `platform/*.ios.kt` — `expect`/`actual` 탈출구
-- **`port/` 의 iOS 구현도 여기다.** Android 는 `Context` 가 필요해 `android:app` 에 두지만,
-  iOS 구현은 그런 것이 없고 Kotlin/Native 가 UIKit·AVFoundation·CoreMotion 인터롭을 기본
-  제공해서 인터페이스와 같은 모듈에서 구현된다. 바인딩은 `di/PresentationIosModule.kt`
-- 예외는 `MediaControllerManager` 하나다 — 구현이 Swift 엔진에 기대서 `ios/shared` 가 가진다
+- `platform/*.ios.kt` — `expect`/`actual` 탈출구만 둔다. 포트 구현은 `ios/shared` 다
 
 ### `ios/app/JellyTubeIos/` (Swift)
 
@@ -94,6 +90,11 @@ final class AppLogBridgeImpl: IosAppLogBridge {
   Swift 가 볼 수 없어서다(export 하지 않는다). `IosMediaItem` 이 그래서 있는 거울 DTO 다
 - **판정은 Kotlin 이 한다.** Swift 는 "시킨 일" 만 한다. 같은 판단을 두 플랫폼이 다르게 내리면
   그 자체가 버그다 — 딥링크 파싱, 로그 자르기 규칙, A-B 구간반복이 전부 Kotlin 에 있는 이유다
+  - 예외는 URLSession 전송 엔진의 세부다. 추출 결과에서 주소·헤더·확장자·크기를 읽어 전송을 거는 일과
+    403/404/410 이면 다시 추출하는 재시도는 전송을 쥔 Swift 에 둔다. 곡 정보의 기본값("알 수 없음" 등)은
+    Kotlin(`YoutubeDownloadDto.withDefaults`)이 채운다
+  - 재생 엔진도 범위를 정하지 않는다. 속도·피치 범위는 Kotlin(`PlaybackRange`)이 맞춰 넘긴다. "3초 안이면
+    이전 곡", "셔플 때 지금 곡은 자리 지키기" 는 Android media3 의 기본 동작과 같게 맞춘 엔진 동작이라 Swift 에 둔다
 - 비동기는 `completionHandler` 로 받는다. SKIE 가 Swift `async` 로 바꿔 준다
 - Swift 구현이 `@MainActor` 타입에 기대면 `@MainActor init` + `MainActor.assumeIsolated` 로
   **메인스레드 계약을 코드에 적는다**. nonisolated 로 두고 넘어가지 않는다

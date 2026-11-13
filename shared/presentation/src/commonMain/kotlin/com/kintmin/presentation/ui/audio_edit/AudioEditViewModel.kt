@@ -14,19 +14,20 @@ import com.kintmin.domain.audio_edit.usecase.ReleaseAudioEditSaveUseCase
 import com.kintmin.domain.audio_edit.usecase.ReserveAudioEditSaveUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
+import com.kintmin.domain.lyrics.LyricsFile
 import com.kintmin.presentation.port.AudioPreviewPlayer
 import com.kintmin.presentation.port.ExecuteAudioEditSave
 import com.kintmin.presentation.ui.audio_edit.navigation.AudioEditScreenRoute
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -97,7 +98,7 @@ class AudioEditViewModel constructor(
                 originAudioFileFullPath = audioMedia.audioFileFullPath,
                 hasEditedAudio = audioMedia.editedAudioFileFullPath != null,
                 // 싱크 가사(.lrc)만 편집으로 타임스탬프가 어긋난다
-                hasSyncedLyrics = audioMedia.lyricFileFullPath?.endsWith(".lrc") == true,
+                hasSyncedLyrics = audioMedia.lyricFileFullPath?.let(LyricsFile::isSynced) == true,
             )
         }
 

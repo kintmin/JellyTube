@@ -46,8 +46,21 @@ fun AppLogScreen(
     val viewModel = koinViewModel<AppLogViewModel>()
     val uiState by viewModel.uiState.collectAsState()
 
+    val toaster = rememberToaster()
+    val appLogSharer = rememberAppLogSharer()
+
     LaunchedEffect(Unit) {
         viewModel.sendIntent(AppLogIntent.OnInit)
+        viewModel.eventFlow.collect { event ->
+            when (event) {
+                is AppLogEvent.ShareLogFiles -> when (appLogSharer.share(event.fileFullPaths)) {
+                    AppLogShareResult.Started -> Unit
+                    AppLogShareResult.NoLogFiles -> toaster.show("전송할 로그 파일이 없습니다.")
+                    AppLogShareResult.NoShareTarget -> toaster.show("메일 앱을 찾을 수 없습니다.")
+                    AppLogShareResult.Failed -> toaster.show("로그 전송을 시작하지 못했습니다.")
+                }
+            }
+        }
     }
 
     AppLogScreen(
@@ -64,9 +77,6 @@ fun AppLogScreen(
     navigateToBack: () -> Unit,
     sendIntent: (AppLogIntent) -> Unit,
 ) {
-    val toaster = rememberToaster()
-    val appLogSharer = rememberAppLogSharer()
-
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -82,17 +92,7 @@ fun AppLogScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = {
-                            when (appLogSharer.share()) {
-                                AppLogShareResult.Started -> Unit
-                                AppLogShareResult.NoLogFiles ->
-                                    toaster.show("전송할 로그 파일이 없습니다.")
-                                AppLogShareResult.NoShareTarget ->
-                                    toaster.show("메일 앱을 찾을 수 없습니다.")
-                                AppLogShareResult.Failed ->
-                                    toaster.show("로그 전송을 시작하지 못했습니다.")
-                            }
-                        },
+                        onClick = { sendIntent(AppLogIntent.OnClickShare) },
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.Send,

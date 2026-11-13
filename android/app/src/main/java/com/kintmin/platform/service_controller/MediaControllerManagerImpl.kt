@@ -9,12 +9,13 @@ import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
-import com.kintmin.platform.service_controller.mapper.toMediaItem
+import com.kintmin.domain.audio_play_setting.PlaybackRange
+import com.kintmin.domain.audio_play_setting.RepeatRange
+import com.kintmin.domain.audio_play_setting.model.RepeatRangeState
 import com.kintmin.platform.service.PlaybackService
 import com.kintmin.platform.service_controller.mapper.toMediaControlData
+import com.kintmin.platform.service_controller.mapper.toMediaItem
 import com.kintmin.presentation.port.MediaControllerManager
-import com.kintmin.presentation.port.RepeatRange
-import com.kintmin.presentation.port.RepeatRangeState
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlin.math.pow
 import kotlin.time.Duration
@@ -30,6 +31,8 @@ class MediaControllerManagerImpl(
     private var currentPlaylistIdState: Int? = null
     private var playbackSpeedState = 1.0f
     private var playbackPitchSemitoneState = 0
+    private var isRepeatState = false
+    private var isShuffleState = false
     private val repeatRange = RepeatRange()
 
     private fun getMediaController(): MediaController? {
@@ -46,6 +49,9 @@ class MediaControllerManagerImpl(
                 runCatching {
                     mediaController = get().also {
                         applyPlaybackParameters(it)
+                        // 연결 전에 받은 반복·셔플 설정도 연결되면 건다.
+                        it.repeatMode = if (isRepeatState) REPEAT_MODE_ALL else REPEAT_MODE_OFF
+                        it.shuffleModeEnabled = isShuffleState
                     }
                 }.onFailure {
                     controllerFuture = null
@@ -178,6 +184,7 @@ class MediaControllerManagerImpl(
     }
 
     override fun setShuffleMode(isShuffle: Boolean) {
+        isShuffleState = isShuffle
         val mediaController = getMediaController() ?: return
         if (mediaController.shuffleModeEnabled == isShuffle) return
         mediaController.shuffleModeEnabled = isShuffle
@@ -185,16 +192,17 @@ class MediaControllerManagerImpl(
     }
 
     override fun setRepeatMode(isRepeat: Boolean) {
+        isRepeatState = isRepeat
         getMediaController()?.repeatMode = if (isRepeat) REPEAT_MODE_ALL else REPEAT_MODE_OFF
     }
 
     override fun setPlaybackSpeed(speed: Float) {
-        playbackSpeedState = speed
+        playbackSpeedState = PlaybackRange.clampSpeed(speed)
         applyPlaybackParameters(getMediaController())
     }
 
     override fun setPlaybackPitchSemitone(semitone: Int) {
-        playbackPitchSemitoneState = semitone
+        playbackPitchSemitoneState = PlaybackRange.clampPitchSemitone(semitone)
         applyPlaybackParameters(getMediaController())
     }
 

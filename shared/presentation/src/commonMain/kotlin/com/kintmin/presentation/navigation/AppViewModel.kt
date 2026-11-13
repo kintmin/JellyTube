@@ -3,10 +3,16 @@ package com.kintmin.presentation.navigation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
+import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlowUseCase
+import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
+import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
+import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
 import com.kintmin.domain.playlist.usecase.EnsureSystemPlaylistsUseCase
 import com.kintmin.presentation.deeplink.DeepLinkParser
 import com.kintmin.presentation.port.MediaControllerManager
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -20,6 +26,10 @@ class AppViewModel(
     private val mediaControllerManager: MediaControllerManager,
     private val importSharedAudioMediaUseCase: ImportSharedAudioMediaUseCase,
     private val ensureSystemPlaylistsUseCase: EnsureSystemPlaylistsUseCase,
+    private val fetchIsPlaybackRepeatingFlowUseCase: FetchIsPlaybackRepeatingFlowUseCase,
+    private val fetchIsPlaybackShufflingFlowUseCase: FetchIsPlaybackShufflingFlowUseCase,
+    private val fetchPlaybackSpeedFlowUseCase: FetchPlaybackSpeedFlowUseCase,
+    private val fetchPlaybackPitchSemitoneFlowUseCase: FetchPlaybackPitchSemitoneFlowUseCase,
 ) : ViewModel() {
 
     private val navigationIntentChannel = Channel<NavigationIntent>(capacity = 8)
@@ -29,6 +39,15 @@ class AppViewModel(
         viewModelScope.launch {
             ensureSystemPlaylistsUseCase()
         }
+        applyPlaybackSettings()
+    }
+
+    // 저장한 재생 설정은 화면이 아니라 여기서 플레이어에 건다. 화면에 두면 그 화면을 열기 전까지 적용되지 않는다.
+    private fun applyPlaybackSettings() {
+        fetchIsPlaybackRepeatingFlowUseCase().onEach(mediaControllerManager::setRepeatMode).launchIn(viewModelScope)
+        fetchIsPlaybackShufflingFlowUseCase().onEach(mediaControllerManager::setShuffleMode).launchIn(viewModelScope)
+        fetchPlaybackSpeedFlowUseCase().onEach(mediaControllerManager::setPlaybackSpeed).launchIn(viewModelScope)
+        fetchPlaybackPitchSemitoneFlowUseCase().onEach(mediaControllerManager::setPlaybackPitchSemitone).launchIn(viewModelScope)
     }
 
     fun initializeMediaController() {

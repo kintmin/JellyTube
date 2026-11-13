@@ -3,15 +3,14 @@ package com.kintmin.presentation.ui.setting
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
-import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.UpdateIsStepEnabledUseCase
 import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
 import com.kintmin.domain.app_setting.usecase.UpdateShouldInsertAtTopOnDownloadUseCase
-import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
-import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
+import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
 import com.kintmin.presentation.port.ExecuteAnomalyDataCheck
 import com.kintmin.presentation.port.StepMeasurementController
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
@@ -26,8 +25,7 @@ import kotlinx.coroutines.launch
 
 class SettingViewModel constructor(
     fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase,
-    fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase,
-    fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
+    fetchDownloadTargetPlaylistsFlowUseCase: FetchDownloadTargetPlaylistsFlowUseCase,
     fetchIsStepEnabledFlowUseCase: FetchIsStepEnabledFlowUseCase,
     private val updateShouldInsertAtTopOnDownloadUseCase: UpdateShouldInsertAtTopOnDownloadUseCase,
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
@@ -49,28 +47,20 @@ class SettingViewModel constructor(
 
     val uiState: StateFlow<SettingUiState> = combine(
         fetchShouldInsertAtTopOnDownloadFlowUseCase(),
-        fetchPlaylistIdOnDownloadFlowUseCase(),
-        fetchAllPlaylistFlowUseCase(),
+        fetchDownloadTargetPlaylistsFlowUseCase(),
         isPlaylistIdOnDownloadBottomSheetVisible,
-    ) { shouldInsertAtTopOnDownload, playlistIdOnDownload, playlistList, isBottomSheetVisible ->
-        // 다운로드 대상은 USER 플레이리스트 + 미분류(기본)만. 전체/즐겨찾기는 제외.
-        val uncategorizedId = playlistList.firstOrNull { it.type == PlaylistType.UNCATEGORIZED }?.id
-        val effectiveTargetId =
-            playlistIdOnDownload?.takeIf { id -> playlistList.any { it.id == id } } ?: uncategorizedId
-
-        val selectablePlaylistList = playlistList
-            .filter { it.type == PlaylistType.USER || it.type == PlaylistType.UNCATEGORIZED }
-            .map { playlist ->
-                DownloadPlaylistUiState(
-                    id = playlist.id,
-                    name = if (playlist.type == PlaylistType.UNCATEGORIZED) PlaylistType.UNCATEGORIZED.defaultName else playlist.name,
-                    isSelected = playlist.id == effectiveTargetId,
-                )
-            }
+    ) { shouldInsertAtTopOnDownload, downloadTarget, isBottomSheetVisible ->
+        val selectablePlaylistList = downloadTarget.selectable.map { playlist ->
+            DownloadPlaylistUiState(
+                id = playlist.id,
+                name = if (playlist.type == PlaylistType.UNCATEGORIZED) PlaylistType.UNCATEGORIZED.defaultName else playlist.name,
+                isSelected = playlist.id == downloadTarget.targetId,
+            )
+        }
 
         SettingUiState(
             shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
-            playlistIdOnDownload = effectiveTargetId,
+            playlistIdOnDownload = downloadTarget.targetId,
             playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.isSelected }?.name ?: PlaylistType.UNCATEGORIZED.defaultName,
             selectablePlaylistList = selectablePlaylistList,
             isPlaylistIdOnDownloadBottomSheetVisible = isBottomSheetVisible,

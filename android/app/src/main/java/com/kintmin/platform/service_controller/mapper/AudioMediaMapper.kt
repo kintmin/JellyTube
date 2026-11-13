@@ -3,7 +3,6 @@ package com.kintmin.platform.service_controller.mapper
 import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.presentation.port.model.MediaControlData
 import java.io.File
 
@@ -33,14 +32,4 @@ internal fun MediaItem.toMediaControlData() = MediaControlData(
     mediaArtist = mediaMetadata.artist.toString(),
     mediaDurationMs = mediaMetadata.durationMs ?: 0L,
     mediaArtworkFileUri = mediaMetadata.artworkUri?.path,
-)
-
-internal fun AudioMedia.toMediaControlData() = MediaControlData(
-    mediaId = id.toString(),
-    mediaFileUri = playbackFileFullPath,
-    mediaTitle = name,
-    mediaDescription = description,
-    mediaArtist = artist,
-    mediaDurationMs = playbackDuration?.inWholeMilliseconds ?: 0L,
-    mediaArtworkFileUri = imageFileFullPath,
 )

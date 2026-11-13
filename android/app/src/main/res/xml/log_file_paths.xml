@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
+    <!-- shared:data AppDirectories.LOG_DIR_NAME 과 같아야 한다. 다르면 로그 공유가 FileProvider 에서 거절된다. -->
     <files-path
         name="app_logs"
         path="app_logs/" />

@@ -3,19 +3,26 @@ package com.kintmin.presentation.ui.setting.app_log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.app_log.usecase.FetchAppLogDateListUseCase
+import com.kintmin.domain.app_log.usecase.FetchAppLogFileFullPathsUseCase
 import com.kintmin.domain.app_log.usecase.FetchAppLogLineListUseCase
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AppLogViewModel constructor(
     private val fetchAppLogDateListUseCase: FetchAppLogDateListUseCase,
     private val fetchAppLogLineListUseCase: FetchAppLogLineListUseCase,
+    private val fetchAppLogFileFullPathsUseCase: FetchAppLogFileFullPathsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AppLogUiState())
     val uiState = _uiState.asStateFlow()
+
+    private val _eventFlow = Channel<AppLogEvent>(Channel.BUFFERED)
+    val eventFlow = _eventFlow.receiveAsFlow()
 
     private var fullLogLineList: List<String> = emptyList()
     private val pageSize = 200
@@ -25,6 +32,9 @@ class AppLogViewModel constructor(
             AppLogIntent.OnInit -> initialize()
             is AppLogIntent.OnClickLogDate -> selectLogDate(intent.date)
             AppLogIntent.OnRequestNextPage -> loadNextPage()
+            AppLogIntent.OnClickShare -> viewModelScope.launch {
+                _eventFlow.send(AppLogEvent.ShareLogFiles(fetchAppLogFileFullPathsUseCase().getOrElse { emptyList() }))
+            }
         }
     }
 

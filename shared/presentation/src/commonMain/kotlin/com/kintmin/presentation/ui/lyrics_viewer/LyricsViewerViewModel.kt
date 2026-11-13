@@ -9,12 +9,11 @@ import com.kintmin.domain.lyrics.model.LyricsLine
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.DeleteAudioMediaLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.DetectLyricsLanguageUseCase
-import com.kintmin.domain.lyrics.usecase.GetAudioMediaLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
-import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
-import com.kintmin.presentation.port.MediaControllerManager
 import com.kintmin.presentation.port.ExecuteLyricsVariantCreation
+import com.kintmin.presentation.port.MediaControllerManager
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.LyricsViewerScreenRoute
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,8 +27,7 @@ import kotlinx.coroutines.launch
 class LyricsViewerViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
-    private val getAudioMediaLyricsUseCase: GetAudioMediaLyricsUseCase,
-    private val parseLyricsUseCase: ParseLyricsUseCase,
+    private val getParsedLyricsUseCase: GetParsedLyricsUseCase,
     private val deleteAudioMediaLyricsUseCase: DeleteAudioMediaLyricsUseCase,
     private val detectLyricsLanguageUseCase: DetectLyricsLanguageUseCase,
     private val getLyricsVariantUseCase: GetLyricsVariantUseCase,
@@ -82,8 +80,7 @@ class LyricsViewerViewModel constructor(
                             )
                         }
                     } else {
-                        val rawLyrics = getAudioMediaLyricsUseCase(path).getOrNull().orEmpty()
-                        parsedLines = parseLyricsUseCase(rawLyrics)
+                        parsedLines = getParsedLyricsUseCase(path)
 
                         val language = detectLyricsLanguageUseCase(parsedLines)
                         sourceLanguage = language.sourceLanguage

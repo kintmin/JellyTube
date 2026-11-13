@@ -3,7 +3,7 @@ package com.kintmin.presentation.ui.setting.data_migration_send
 import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.RunningWorkMonitor
 import com.kintmin.presentation.port.model.RunningWork
-import com.kintmin.presentation.port.model.DataMigrationSendStatus
+import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

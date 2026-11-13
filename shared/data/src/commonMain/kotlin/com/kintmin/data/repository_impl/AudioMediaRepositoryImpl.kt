@@ -10,19 +10,24 @@ import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.domain.audio_media.model.AddedAudioMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.model.AudioExportTarget
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
 import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
+import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
-import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
+import com.kintmin.domain.lyrics.LyricsFile
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.uuid.ExperimentalUuidApi
@@ -37,46 +42,36 @@ internal class AudioMediaRepositoryImpl constructor(
     private val pythonExecutor: PythonExecutor,
 ) : AudioMediaRepository {
 
-    override suspend fun downloadAudioMedia(downloadUrl: String): Result<DownloadedMedia> {
-        return withContext(Dispatchers.IO) {
+    override suspend fun downloadYoutubeAudio(downloadUrl: String): Result<DownloadedYoutubeAudio> =
+        withContext(Dispatchers.IO) {
             runCatching {
-
                 val fileName = Uuid.random().toString()
-
-                val audioDownloadBasePath = fileManager.getAudioDownloadBasePath(
-                    fileName = fileName,
-                ).getOrThrow()
-
                 val downloadDto = pythonExecutor.downloadYoutubeMedia(
                     youtubeUrl = downloadUrl,
-                    audioDownloadPath = audioDownloadBasePath,
+                    audioDownloadPath = fileManager.getAudioDownloadBasePath(fileName = fileName).getOrThrow(),
                 ).getOrThrow()
-
-                val audioFileNameWithExt = downloadDto.audioFileNameWithExt.ifBlank {
-                    throw Exception("다운로드한 오디오 파일명을 확인할 수 없습니다.")
-                }
-
-                val imageFileExt = httpDataSource.downloadImage(
-                    imageUrl = downloadDto.thumbnailDownloadUrl
-                ).getOrNull()?.let { image ->
-                    fileManager.saveImageWithCompression(
-                        imageData = image,
-                        fileName = fileName,
-                    ).getOrNull()
-                }
-
-                DownloadedMedia(
-                    downloadUrl = downloadUrl,
+                DownloadedYoutubeAudio(
+                    fileName = fileName,
+                    audioFileNameWithExt = downloadDto.audioFileNameWithExt.ifBlank {
+                        throw Exception("다운로드한 오디오 파일명을 확인할 수 없습니다.")
+                    },
                     title = downloadDto.title,
-                    audioFileNameWithExt = audioFileNameWithExt,
-                    imageFileNameWithExt = imageFileExt?.let { "${fileName}.${it}" },
+                    thumbnailUrl = downloadDto.thumbnailDownloadUrl,
                     duration = downloadDto.duration,
                     uploader = downloadDto.uploader,
                     description = downloadDto.description,
                 )
             }
         }
-    }
+
+    override suspend fun saveThumbnail(thumbnailUrl: String, fileName: String): Result<String> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val image = httpDataSource.downloadImage(imageUrl = thumbnailUrl).getOrThrow()
+                val ext = fileManager.saveImageWithCompression(imageData = image, fileName = fileName).getOrThrow()
+                "$fileName.$ext"
+            }
+        }
 
     override suspend fun downloadAudioFile(downloadUrl: String): Result<DownloadedAudioFile> =
         withContext(Dispatchers.IO) {
@@ -126,6 +121,14 @@ internal class AudioMediaRepositoryImpl constructor(
                 added.toAddedAudioMedia(audioMediaEntityToSave)
             }
         }
+    }
+
+    private val downloadingSources = MutableStateFlow<Set<String>>(emptySet())
+
+    override fun reserveDownload(source: String): Boolean = source !in downloadingSources.getAndUpdate { it + source }
+
+    override fun releaseDownload(source: String) {
+        downloadingSources.update { it - source }
     }
 
     override suspend fun getAudioMediaBySource(source: String): Result<AudioMedia> {
@@ -197,7 +200,7 @@ internal class AudioMediaRepositoryImpl constructor(
         return withContext(Dispatchers.IO) {
             runCatching {
                 val (baseName, extName) = splitLyricFileName(baseLyricFileFullPath)
-                val synced = extName.equals("lrc", ignoreCase = true)
+                val synced = extName.equals(LyricsFile.SYNCED_EXT, ignoreCase = true)
                 fileManager.saveLyrics(text, "$baseName.${variant.infix()}", synced).getOrThrow()
                 Unit
             }

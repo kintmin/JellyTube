@@ -1,8 +1,9 @@
 package com.kintmin.ios.media
 
+import com.kintmin.domain.audio_play_setting.PlaybackRange
+import com.kintmin.domain.audio_play_setting.RepeatRange
+import com.kintmin.domain.audio_play_setting.model.RepeatRangeState
 import com.kintmin.presentation.port.MediaControllerManager
-import com.kintmin.presentation.port.RepeatRange
-import com.kintmin.presentation.port.RepeatRangeState
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -120,13 +121,13 @@ internal class IosMediaControllerManager(
     override fun setRepeatMode(isRepeat: Boolean) = bridge.setRepeatMode(isRepeat)
 
     override fun setPlaybackSpeed(speed: Float) {
-        playbackSpeedState = speed
-        bridge.setPlaybackSpeed(speed)
+        playbackSpeedState = PlaybackRange.clampSpeed(speed)
+        bridge.setPlaybackSpeed(playbackSpeedState)
     }
 
     override fun setPlaybackPitchSemitone(semitone: Int) {
-        playbackPitchSemitoneState = semitone
-        bridge.setPlaybackPitchSemitone(semitone)
+        playbackPitchSemitoneState = PlaybackRange.clampPitchSemitone(semitone)
+        bridge.setPlaybackPitchSemitone(playbackPitchSemitoneState)
     }
 }
 

@@ -13,7 +13,6 @@ import java.time.format.DateTimeFormatter
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.chaquopy)
     alias(libs.plugins.google.services)
@@ -158,13 +157,11 @@ dependencies {
     implementation(project(":shared:log"))
     implementation(project(":shared:domain"))
     implementation(project(":shared:data"))
-    implementation(project(":shared:file-share"))
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
 
-    implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.koin.android)
     implementation(libs.koin.workmanager)
@@ -175,13 +172,7 @@ dependencies {
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.exoplayer)
 
-    // 파일공유 수신 서버 (FileShareForegroundService)
-    implementation(libs.ktor.server.core)
-    implementation(libs.ktor.server.cio)
-    implementation(libs.ktor.server.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.splashscreen)
     // Compose 는 :shared:presentation 이 api 로 내보내는 CMP 아티팩트를 쓴다.
@@ -191,7 +182,6 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.ktor.server.test.host)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.core)
