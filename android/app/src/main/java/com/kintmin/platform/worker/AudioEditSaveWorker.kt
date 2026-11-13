@@ -10,9 +10,9 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.kintmin.domain.audio_edit.model.AudioEditClip
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
-import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
+import com.kintmin.domain.audio_edit.model.SavedAudioEdit
 import com.kintmin.domain.audio_edit.usecase.ReleaseAudioEditSaveUseCase
-import com.kintmin.domain.audio_edit.usecase.SaveEditedAudioAsNewMediaUseCase
+import com.kintmin.domain.audio_edit.usecase.SaveAudioEditUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.platform.push_notification.PushNotificationIdGenerator
@@ -31,8 +31,7 @@ class AudioEditSaveWorker(
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams), KoinComponent {
 
-    private val applyAudioEditUseCase: ApplyAudioEditUseCase by inject()
-    private val saveEditedAudioAsNewMediaUseCase: SaveEditedAudioAsNewMediaUseCase by inject()
+    private val saveAudioEditUseCase: SaveAudioEditUseCase by inject()
     private val releaseAudioEditSaveUseCase: ReleaseAudioEditSaveUseCase by inject()
     private val mediaControllerManager: MediaControllerManager by inject()
     private val pushNotificationManager: PushNotificationManager by inject()
@@ -70,26 +69,18 @@ class AudioEditSaveWorker(
             notifyFailure("저장할 편집 정보를 읽지 못했습니다.")
             return Result.failure()
         }
-        // 이름이 있으면 새 음원으로 저장, 없으면 덮어쓰기
         val newMediaName = inputData.getString(INPUT_DATA_NEW_MEDIA_NAME)
 
         val progressNotification = AudioEditSaveNotification(id = progressNotificationId)
         pushNotificationManager.sendNotification(progressNotification)
 
-        val result = if (newMediaName == null) {
-            applyAudioEditUseCase(audioMediaId = audioMediaId, timeline = timeline)
-        } else {
-            saveEditedAudioAsNewMediaUseCase(
-                audioMediaId = audioMediaId,
-                parts = timeline.toParts(),
-                name = newMediaName,
-            )
-        }
+        val result = saveAudioEditUseCase(audioMediaId = audioMediaId, timeline = timeline, newMediaName = newMediaName)
         pushNotificationManager.cancelNotification(progressNotification.id)
 
         return result.fold(
-            onSuccess = { audioMedia ->
-                if (newMediaName == null) {
+            onSuccess = { saved ->
+                val audioMedia = saved.audioMedia
+                if (saved is SavedAudioEdit.Overwritten) {
                     // 재생 큐는 같은 플레이리스트를 다시 재생할 때 갱신되지 않아서 직접 교체해야 편집본이 재생된다.
                     withContext(Dispatchers.Main) {
                         mediaControllerManager.tryReplaceMediaItem(
@@ -100,10 +91,9 @@ class AudioEditSaveWorker(
                 }
                 pushNotificationManager.sendNotification(
                     AudioEditSaveResultNotification(
-                        resultType = if (newMediaName == null) {
-                            AudioEditSaveResultNotification.ResultType.OverwriteSuccess
-                        } else {
-                            AudioEditSaveResultNotification.ResultType.NewMediaSuccess
+                        resultType = when (saved) {
+                            is SavedAudioEdit.Overwritten -> AudioEditSaveResultNotification.ResultType.OverwriteSuccess
+                            is SavedAudioEdit.SavedAsNew -> AudioEditSaveResultNotification.ResultType.NewMediaSuccess
                         },
                         contentText = audioMedia.name,
                         audioMediaId = audioMedia.id,

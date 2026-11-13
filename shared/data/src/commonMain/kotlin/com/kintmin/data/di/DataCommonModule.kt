@@ -93,6 +93,7 @@ val dataCommonModule: Module = module {
     factoryOf(::UpdateShouldInsertAtTopOnDownloadUseCase)
     factoryOf(::ExtractAudioWaveformUseCase)
     factoryOf(::ApplyAudioEditUseCase)
+    factoryOf(::SaveAudioEditUseCase)
     factoryOf(::FetchAudioEditTimelineUseCase)
     factoryOf(::ObserveAudioEditSavingUseCase)
     factoryOf(::FetchSavingAudioMediaIdsFlowUseCase)
