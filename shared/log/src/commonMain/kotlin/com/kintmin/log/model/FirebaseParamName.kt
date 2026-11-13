@@ -19,4 +19,7 @@ enum class FirebaseParamName {
     AudioMediaCount,
     PlaylistId,
     PlaylistTitle,
+    FallbackReason,
+    FormatId,
+    Protocol,
 }
