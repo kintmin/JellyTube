@@ -70,5 +70,6 @@ class IosAppLogTest {
 
         override suspend fun fetchAppLogDateList() = Result.success(emptyList<String>())
         override suspend fun fetchAppLogLineList(date: String) = Result.success(emptyList<String>())
+        override suspend fun fetchAppLogFileFullPaths() = Result.success(emptyList<String>())
     }
 }

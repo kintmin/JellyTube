@@ -4,6 +4,8 @@ import com.kintmin.domain.app_log.repository.AppLogRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.FirebaseEvent
+import com.kintmin.log.model.analyticsUserId
+import com.kintmin.log.model.toAnalyticsEvent
 
 /**
  * `android:app` 의 `AppLogImpl` 에 대응하는 iOS 구현.
@@ -17,7 +19,7 @@ internal class IosAppLog(
 ) : AppLog {
 
     override fun setLogConfig(userId: String) {
-        val trimmed = userId.take(MAX_USER_ID_LENGTH)
+        val trimmed = analyticsUserId(userId)
         bridge.setUserId(trimmed)
         appLogRepository.appendAppLog("FIREBASE_CONFIG", "setUserId=$trimmed")
     }
@@ -28,25 +30,14 @@ internal class IosAppLog(
     }
 
     override fun sendFirebaseEvent(firebaseEvent: FirebaseEvent) {
-        val logName = firebaseEvent.logName.name.take(MAX_NAME_LENGTH)
-        val params = firebaseEvent.params
-            .take(MAX_PARAM_COUNT)
-            .mapNotNull { (key, value) ->
-                value?.let { key.name.take(MAX_NAME_LENGTH) to it.take(MAX_VALUE_LENGTH) }
-            }
-            .toMap()
+        val event = firebaseEvent.toAnalyticsEvent()
+        val logName = event.name
+        val params = event.params
 
         bridge.event(logName, params)
         appLogRepository.appendAppLog(
             "FIREBASE_EVENT",
             "$logName {${params.entries.joinToString(", ") { "${it.key}=${it.value}" }}}",
         )
-    }
-
-    private companion object {
-        const val MAX_USER_ID_LENGTH = 256
-        const val MAX_NAME_LENGTH = 40
-        const val MAX_VALUE_LENGTH = 100
-        const val MAX_PARAM_COUNT = 25
     }
 }

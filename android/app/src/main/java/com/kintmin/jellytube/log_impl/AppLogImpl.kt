@@ -10,13 +10,15 @@ import com.kintmin.jellytube.BuildConfig
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.FirebaseEvent
+import com.kintmin.log.model.analyticsUserId
+import com.kintmin.log.model.toAnalyticsEvent
 
 class AppLogImpl(
     private val appLogRepository: AppLogRepository,
 ) : AppLog {
 
     override fun setLogConfig(userId: String) {
-        val userId = userId.take(256)
+        val userId = analyticsUserId(userId)
         FirebaseCrashlytics.getInstance().setUserId(userId)
         Firebase.analytics.setUserId(userId)
         appLogRepository.appendAppLog("FIREBASE_CONFIG", "setUserId=$userId")
@@ -27,22 +29,10 @@ class AppLogImpl(
         appLogRepository.appendAppLog("DEBUG", "${debugLog.tag}: ${debugLog.message}")
     }
 
-    /**
-     * [GA4 제약사항]
-     * 이벤트명 제한: 최대 길이는 영문 기준 40자
-     * param key 제한: 최대 길이는 영문 기준 40자
-     * param value 제한: 최대 길이는 영문 기준 100자
-     * param 개수 제한: 한 로그 당 params 최대 개수는 25개
-     * https://support.google.com/analytics/answer/9267744
-     */
     override fun sendFirebaseEvent(firebaseEvent: FirebaseEvent) {
-        val logName = firebaseEvent.logName.name.take(40)
-
-        val pairs = firebaseEvent.params.map {
-            it.first.name.take(40) to it.second?.take(100)
-        }.take(25).toTypedArray()
-
-        val params = bundleOf(*pairs)
+        val event = firebaseEvent.toAnalyticsEvent()
+        val logName = event.name
+        val params = bundleOf(*event.params.toList().toTypedArray())
 
         if (BuildConfig.DEBUG) {
             val logMessage = if (!params.isEmpty) {

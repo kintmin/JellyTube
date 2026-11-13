@@ -25,6 +25,10 @@ Each app module registers its implementation with the DI container at startup.
 
 ---
 
+## 두 구현이 같은 값을 보내야 하는 규칙
+
+GA4 제약(이름 40자·값 100자·파라미터 25개·userId 256자, 값 없는 파라미터는 빼기)은 `model/AnalyticsEvent` 의 순수 함수 하나가 정한다. 플랫폼 구현은 이것을 그대로 보낸다.
+
 ## Size constraint
 
 This module must stay small. If you find yourself adding non-trivial logic here, you are doing it wrong. The total line count of this module should remain in the low hundreds. If it grows beyond that, reassess.
