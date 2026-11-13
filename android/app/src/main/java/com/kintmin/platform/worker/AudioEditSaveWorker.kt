@@ -20,7 +20,7 @@ import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.AudioEditSaveNotification
 import com.kintmin.platform.push_notification.notifications.AudioEditSaveResultNotification
 import com.kintmin.presentation.port.MediaControllerManager
-import com.kintmin.platform.service_controller.mapper.toMediaControlData
+import com.kintmin.presentation.port.model.toMediaControlData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent

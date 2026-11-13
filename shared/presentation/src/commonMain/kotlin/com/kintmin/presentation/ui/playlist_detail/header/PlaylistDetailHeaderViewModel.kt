@@ -6,13 +6,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
-import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdateIsPlaybackShufflingUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
-import com.kintmin.presentation.port.MediaControllerManager
-import com.kintmin.presentation.port.model.MediaControlData
+import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
+import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.model.toMediaControlData
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.util.Throttle
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -93,17 +93,7 @@ class PlaylistDetailHeaderViewModel constructor(
 
     private fun playbackPlaylist() {
         viewModelScope.launch {
-            val mediaControlDataList = fetchAudioMediaListFlowUseCase(playlistId).first().map {
-                MediaControlData(
-                    mediaId = it.audioMedia.id.toString(),
-                    mediaFileUri = it.audioMedia.playbackFileFullPath,
-                    mediaTitle = it.audioMedia.name,
-                    mediaDescription = it.audioMedia.description,
-                    mediaArtist = it.audioMedia.artist,
-                    mediaDurationMs = it.audioMedia.playbackDuration?.inWholeMilliseconds ?: 0L,
-                    mediaArtworkFileUri = it.audioMedia.imageFileFullPath,
-                )
-            }
+            val mediaControlDataList = fetchAudioMediaListFlowUseCase(playlistId).first().map { it.audioMedia.toMediaControlData() }
             mediaControllerManager.playFromPlaylist(playlistId, null, mediaControlDataList)
         }
     }

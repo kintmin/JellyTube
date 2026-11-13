@@ -1,6 +1,5 @@
 package com.kintmin.ios.port
 
-import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
 import com.kintmin.log.AppLog
@@ -8,7 +7,7 @@ import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.platform.continueInBackgroundWhile
 import com.kintmin.presentation.port.ExecuteYoutubeDownload
 import com.kintmin.presentation.port.MediaControllerManager
-import com.kintmin.presentation.port.model.MediaControlData
+import com.kintmin.presentation.port.addDownloadedMedia
 import com.kintmin.presentation.port.model.RunningWork
 import com.kintmin.presentation.work_notice.WorkResultNotice
 import kotlinx.coroutines.CoroutineScope
@@ -60,15 +59,7 @@ internal class IosExecuteYoutubeDownload(
                         ),
                     )
 
-                    val mediaControlData = result.audioMedia.toMediaControlData()
-                    addToPlayingQueue(result.totalPlaylistId, mediaControlData, result.shouldInsertAtTopOnDownload)
-                    if (result.playlistIdOnDownload != result.totalPlaylistId) {
-                        addToPlayingQueue(
-                            result.playlistIdOnDownload,
-                            mediaControlData,
-                            result.shouldInsertAtTopOnDownload,
-                        )
-                    }
+                    mediaControllerManager.addDownloadedMedia(result)
                 }
                 .onFailure { throwable ->
                     appLog.sendDebugLog(
@@ -78,28 +69,4 @@ internal class IosExecuteYoutubeDownload(
                 }
         }
     }
-
-    /** 지금 그 플레이리스트를 듣고 있을 때만 큐에 반영된다. 아니면 포트가 조용히 넘긴다. */
-    private fun addToPlayingQueue(
-        playlistId: Int,
-        mediaControlData: MediaControlData,
-        shouldInsertAtTop: Boolean,
-    ) {
-        if (shouldInsertAtTop) {
-            mediaControllerManager.tryAddFirstMediaItem(playlistId, mediaControlData)
-        } else {
-            mediaControllerManager.tryAddLastMediaItem(playlistId, mediaControlData)
-        }
-    }
 }
-
-
-private fun AudioMedia.toMediaControlData() = MediaControlData(
-    mediaId = id.toString(),
-    mediaFileUri = playbackFileFullPath,
-    mediaTitle = name,
-    mediaDescription = description,
-    mediaArtist = artist,
-    mediaDurationMs = playbackDuration?.inWholeMilliseconds ?: 0L,
-    mediaArtworkFileUri = imageFileFullPath,
-)
