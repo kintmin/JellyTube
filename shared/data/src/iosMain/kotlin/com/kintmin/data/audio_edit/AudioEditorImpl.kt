@@ -13,6 +13,7 @@ import kotlinx.cinterop.alloc
 import kotlinx.cinterop.get
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.plus
+import kotlinx.cinterop.pointed
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.value
 import kotlinx.coroutines.CancellationException
@@ -24,6 +25,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
+import platform.AVFAudio.AVAudioConverter
+import platform.AVFAudio.AVAudioConverterInputStatus_EndOfStream
+import platform.AVFAudio.AVAudioConverterInputStatus_HaveData
+import platform.AVFAudio.AVAudioConverterOutputStatus_EndOfStream
+import platform.AVFAudio.AVAudioConverterOutputStatus_Error
 import platform.AVFAudio.AVAudioFile
 import platform.AVFAudio.AVAudioFormat
 import platform.AVFAudio.AVAudioPCMBuffer
@@ -48,6 +54,8 @@ internal class AudioEditorImpl : AudioEditor {
     private companion object {
 
         const val CHUNK_FRAME_COUNT = 32_768u
+
+        const val MAX_AAC_SAMPLE_RATE = 48_000.0
 
         /** 읽는 중간 결과를 내보내는 최소 간격. 너무 잦으면 매번 배열 복사와 다시 그리기가 일어난다. */
         val PROGRESS_EMIT_INTERVAL = 300.milliseconds
@@ -131,42 +139,101 @@ internal class AudioEditorImpl : AudioEditor {
         outputFileFullPath: String,
     ) {
         openForReading(sourceFileFullPath).use { input ->
-            val format = input.processingFormat
-            openForWriting(outputFileFullPath, format).use { output ->
-                val buffer = pcmBuffer(format)
-
-                fun writeSilence(frameCount: Long) {
-                    var remaining = frameCount
-                    while (remaining > 0) {
-                        val chunkFrameCount = minOf(remaining, CHUNK_FRAME_COUNT.toLong()).toUInt()
-                        buffer.setFrameLength(chunkFrameCount)
-                        for (channel in 0 until format.channelCount.toInt()) {
-                            memset(buffer.floatChannelData!![channel], 0, chunkFrameCount.toULong() * Float.SIZE_BYTES.toULong())
-                        }
-                        output.writeChunk(buffer)
-                        remaining -= chunkFrameCount.toLong()
+            val sourceFormat = input.processingFormat
+            val outputFormat = encodableFormatOf(sourceFormat)
+            val chunks = EditedPcmChunks(
+                input = input,
+                spans = parts.toFrameSpans(sampleRate = sourceFormat.sampleRate, sourceFrameCount = input.length),
+            )
+            openForWriting(outputFileFullPath, outputFormat).use { output ->
+                if (outputFormat.isEqual(sourceFormat)) {
+                    while (true) {
+                        currentCoroutineContext().ensureActive()
+                        output.writeChunk(chunks.next() ?: break)
                     }
+                } else {
+                    writeConverted(chunks, sourceFormat, outputFormat, output)
+                }
+            }
+        }
+    }
+
+    /** AAC 인코더가 받는 형식. 48kHz 를 넘는 원본은 거절당하고, 다채널은 스테레오로 내려 쓴다. */
+    private fun encodableFormatOf(source: AVAudioFormat): AVAudioFormat =
+        if (source.sampleRate <= MAX_AAC_SAMPLE_RATE && source.channelCount <= 2u) {
+            source
+        } else {
+            AVAudioFormat(
+                standardFormatWithSampleRate = minOf(source.sampleRate, MAX_AAC_SAMPLE_RATE),
+                channels = minOf(source.channelCount, 2u),
+            )
+        }
+
+    private suspend fun writeConverted(
+        chunks: EditedPcmChunks,
+        sourceFormat: AVAudioFormat,
+        outputFormat: AVAudioFormat,
+        output: AVAudioFile,
+    ) {
+        val converter = AVAudioConverter(fromFormat = sourceFormat, toFormat = outputFormat)
+        converter.downmix = true
+        val buffer = pcmBuffer(outputFormat)
+        var isInputEnded = false
+        // ObjC 블록 밖으로 예외가 나가면 Kotlin/Native 가 앱을 죽이므로 잡아 두었다가 밖에서 던진다
+        var inputError: Throwable? = null
+
+        while (true) {
+            currentCoroutineContext().ensureActive()
+            val status = throwingNSError("음원을 변환하지 못했습니다.") { error ->
+                converter.convertToBuffer(buffer, error = error) { _, inputStatus ->
+                    val chunk = if (isInputEnded) null else runCatching { chunks.next() }.onFailure { inputError = it }.getOrNull()
+                    if (chunk == null) isInputEnded = true
+                    inputStatus!!.pointed.value =
+                        if (chunk == null) AVAudioConverterInputStatus_EndOfStream else AVAudioConverterInputStatus_HaveData
+                    chunk
+                }
+            }
+            inputError?.let { throw it }
+            if (status == AVAudioConverterOutputStatus_Error) throw Exception("음원을 변환하지 못했습니다.")
+            if (buffer.frameLength > 0u) output.writeChunk(buffer)
+            if (status == AVAudioConverterOutputStatus_EndOfStream) break
+        }
+    }
+
+    /** 편집본 PCM 을 원본 형식의 청크로 차례로 내준다. 소리 조각은 원본에서 읽고 무음은 0 으로 채운다. */
+    private inner class EditedPcmChunks(
+        private val input: AVAudioFile,
+        spans: List<AudioEditFrameSpan>,
+    ) {
+        private val pendingSpans = ArrayDeque(spans)
+        private var currentSpan: AudioEditFrameSpan? = null
+        private var remainingFrameCount = 0L
+
+        /** 변환기가 앞 청크를 아직 들고 있을 수 있어 청크마다 새 버퍼를 준다. 끝이면 null. */
+        fun next(): AVAudioPCMBuffer? {
+            while (remainingFrameCount == 0L) {
+                val span = pendingSpans.removeFirstOrNull() ?: return null
+                currentSpan = span
+                remainingFrameCount = span.frameCount
+                if (span is AudioEditFrameSpan.Audio) input.framePosition = span.sourceStartFrame
+            }
+            val buffer = pcmBuffer(input.processingFormat)
+            val frameCount = minOf(remainingFrameCount, CHUNK_FRAME_COUNT.toLong()).toUInt()
+            when (currentSpan) {
+                is AudioEditFrameSpan.Audio -> {
+                    input.readChunk(buffer, frameCount)
+                    if (buffer.frameLength == 0u) throw Exception("음원을 끝까지 읽지 못했습니다.")
                 }
 
-                for (span in parts.toFrameSpans(sampleRate = format.sampleRate, sourceFrameCount = input.length)) {
-                    currentCoroutineContext().ensureActive()
-                    when (span) {
-                        is AudioEditFrameSpan.Audio -> {
-                            input.framePosition = span.sourceStartFrame
-                            var remaining = span.frameCount
-                            while (remaining > 0) {
-                                currentCoroutineContext().ensureActive()
-                                input.readChunk(buffer, minOf(remaining, CHUNK_FRAME_COUNT.toLong()).toUInt())
-                                if (buffer.frameLength == 0u) throw Exception("음원을 끝까지 읽지 못했습니다.")
-                                output.writeChunk(buffer)
-                                remaining -= buffer.frameLength.toLong()
-                            }
-                        }
-
-                        is AudioEditFrameSpan.Silence -> writeSilence(span.frameCount)
+                else -> {
+                    buffer.setFrameLength(frameCount)
+                    for (channel in 0 until input.processingFormat.channelCount.toInt()) {
+                        memset(buffer.floatChannelData!![channel], 0, frameCount.toULong() * Float.SIZE_BYTES.toULong())
                     }
                 }
             }
+            remainingFrameCount -= buffer.frameLength.toLong()
+            return buffer
         }
     }
 

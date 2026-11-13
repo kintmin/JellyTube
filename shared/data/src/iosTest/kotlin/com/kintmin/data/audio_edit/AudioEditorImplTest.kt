@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
+import platform.AVFAudio.AVAudioChannelLayout
 import platform.AVFAudio.AVAudioFile
 import platform.AVFAudio.AVAudioFormat
 import platform.AVFAudio.AVAudioPCMBuffer
@@ -18,6 +19,7 @@ import platform.AVFAudio.AVEncoderBitRateKey
 import platform.AVFAudio.AVFormatIDKey
 import platform.AVFAudio.AVNumberOfChannelsKey
 import platform.AVFAudio.AVSampleRateKey
+import platform.CoreAudioTypes.kAudioChannelLayoutTag_MPEG_5_1_A
 import platform.CoreAudioTypes.kAudioFormatMPEG4AAC
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
@@ -113,6 +115,37 @@ class AudioEditorImplTest {
     }
 
     @Test
+    fun `AAC 가 받지 않는 고샘플레이트·다채널 원본은 48kHz 이하 스테레오로 내려 저장한다`() = runTest(timeout = 1.minutes) {
+        listOf(
+            AVAudioFormat(standardFormatWithSampleRate = 96_000.0, channels = 2u),
+            AVAudioFormat(
+                standardFormatWithSampleRate = 48_000.0,
+                channelLayout = AVAudioChannelLayout(layoutTag = kAudioChannelLayoutTag_MPEG_5_1_A),
+            ),
+        ).forEach { format ->
+            val path = (root / "source-${format.sampleRate.toInt()}-${format.channelCount}.wav").toString()
+            writeToneSource(path, format, seconds = 2)
+
+            val durationMs = editor.render(
+                path,
+                listOf(AudioEditPart.Silence(500), AudioEditPart.Audio(startMs = 0, endMs = 1_000)),
+                outputPath,
+            ).getOrThrow()
+
+            assertEquals(1_500L, durationMs, "$format")
+            val output = AVAudioFile(forReading = NSURL.fileURLWithPath(outputPath), error = null)
+            assertTrue(output.processingFormat.sampleRate <= 48_000.0, "$format → ${output.processingFormat}")
+            assertTrue(output.processingFormat.channelCount <= 2u, "$format → ${output.processingFormat}")
+            output.close()
+            val samples = decode(outputPath)
+            val outputRate = samples.size / 1.5
+            assertTrue(rms(window(samples, centerMs = 250, rate = outputRate)) < 0.01f, "$format 앞 무음")
+            assertTrue(rms(window(samples, centerMs = 1_000, rate = outputRate)) > 0.2f, "$format 소리")
+            fileSystem.delete(outputPath.toPath())
+        }
+    }
+
+    @Test
     fun `원본을 열지 못하면 실패하고 출력 파일을 남기지 않는다`() = runTest {
         val missingPath = (root / "missing.m4a").toString()
 
@@ -180,10 +213,30 @@ class AudioEditorImplTest {
         return FloatArray(buffer.frameLength.toInt()) { channel[it] }
     }
 
-    private fun window(samples: FloatArray, centerMs: Long, widthMs: Long = 80): List<Float> {
-        val center = (centerMs * SAMPLE_RATE / 1000).toInt()
-        val half = (widthMs * SAMPLE_RATE / 2000).toInt()
+    private fun window(samples: FloatArray, centerMs: Long, widthMs: Long = 80, rate: Double = SAMPLE_RATE): List<Float> {
+        val center = (centerMs * rate / 1000).toInt()
+        val half = (widthMs * rate / 2000).toInt()
         return samples.slice((center - half).coerceAtLeast(0) until (center + half).coerceAtMost(samples.size))
+    }
+
+    /** [format] 그대로의 비압축 WAV. 모든 채널에 진폭 0.5 의 440Hz 를 담는다. */
+    private fun writeToneSource(path: String, format: AVAudioFormat, seconds: Int) {
+        val frameCount = (format.sampleRate * seconds).toInt()
+        val buffer = AVAudioPCMBuffer(pCMFormat = format, frameCapacity = frameCount.toUInt())
+        buffer.setFrameLength(frameCount.toUInt())
+        for (channel in 0 until format.channelCount.toInt()) {
+            val samples = buffer.floatChannelData!![channel]!!
+            for (i in 0 until frameCount) samples[i] = (0.5 * sin(2 * PI * 440 * i / format.sampleRate)).toFloat()
+        }
+        val file = AVAudioFile(
+            forWriting = NSURL.fileURLWithPath(path),
+            settings = format.settings,
+            commonFormat = AVAudioPCMFormatFloat32,
+            interleaved = false,
+            error = null,
+        )
+        file.writeFromBuffer(buffer, error = null)
+        file.close()
     }
 
     private fun rms(window: List<Float>): Float = sqrt(window.sumOf { (it * it).toDouble() } / window.size).toFloat()
