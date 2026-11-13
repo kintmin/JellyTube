@@ -246,7 +246,7 @@ final class YoutubeDownloader: NSObject {
 
         var request = makeRequest(url, for: transfer)
         request.setValue(chunk.headerValue, forHTTPHeaderField: "Range")
-        enqueue(request, for: transfer, label: "range=\(chunk.headerValue)", delay: delay)
+        enqueue(request, for: transfer, segment: nil, label: "range=\(chunk.headerValue)", delay: delay)
     }
 
     private func requestSegment(_ index: Int, url: String, for transfer: YoutubeTransfer, delay: TimeInterval = 0) {
@@ -254,7 +254,7 @@ final class YoutubeDownloader: NSObject {
             fail(sourceUrl: transfer.source.sourceUrl, error: URLError(.badURL))
             return
         }
-        enqueue(makeRequest(url, for: transfer), for: transfer, label: "segment=\(index)", delay: delay)
+        enqueue(makeRequest(url, for: transfer), for: transfer, segment: index, label: "segment=\(index)", delay: delay)
     }
 
     private func makeRequest(_ url: URL, for transfer: YoutubeTransfer) -> URLRequest {
@@ -269,12 +269,18 @@ final class YoutubeDownloader: NSObject {
         return request
     }
 
-    private func enqueue(_ request: URLRequest, for transfer: YoutubeTransfer, label: String, delay: TimeInterval) {
+    private func enqueue(
+        _ request: URLRequest,
+        for transfer: YoutubeTransfer,
+        segment: Int?,
+        label: String,
+        delay: TimeInterval
+    ) {
         let session = transfer.usesBackgroundSession ? backgroundSession : foregroundSession
         let task = session.downloadTask(with: request)
         // `taskIdentifier` 는 세션 인스턴스 안에서만 유일하다. 앱이 다시 뜨면 1 부터 다시 매겨져
         // 지난 생애의 기록과 엉킨다. 기록은 주소로 찾고, 태스크에는 그 주소를 붙여 둔다.
-        task.taskDescription = transfer.source.sourceUrl
+        task.taskDescription = Self.taskDescription(sourceUrl: transfer.source.sourceUrl, segment: segment)
 
         // 조각은 수백 개라 처음 등록까지 찍으면 로그가 넘친다. 재시도만 남긴다.
         if transfer.segmentsPath == nil || delay > 0 {
@@ -395,10 +401,19 @@ final class YoutubeDownloader: NSObject {
         return urls
     }
 
-    /// 유튜브 조각 주소는 `/sq/번호` 가 있어 서로 다르다. 주소로 몇 번 조각인지 찾는다.
-    private func segmentIndex(of task: URLSessionTask, in transfer: YoutubeTransfer) -> Int? {
-        guard let url = task.originalRequest?.url?.absoluteString else { return nil }
-        return segmentUrls(for: transfer)?.firstIndex(of: url)
+    /// 조각 번호는 태스크에 같이 싣는다. 요청 주소로 되찾으면 `URL` 정규화가 끼어 못 찾을 수 있다.
+    private static let segmentSeparator = "\u{1F}"
+
+    private static func taskDescription(sourceUrl: String, segment: Int?) -> String {
+        guard let segment else { return sourceUrl }
+        return sourceUrl + segmentSeparator + String(segment)
+    }
+
+    private static func parseTaskDescription(_ description: String?) -> (sourceUrl: String, segment: Int?)? {
+        guard let description else { return nil }
+        let parts = description.components(separatedBy: segmentSeparator)
+        guard parts.count == 2 else { return (description, nil) }
+        return (parts[0], Int(parts[1]))
     }
 
     private static func put(_ transfer: YoutubeTransfer) {
@@ -427,7 +442,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
-        guard let sourceUrl = downloadTask.taskDescription else { return }
+        guard let (sourceUrl, segment) = Self.parseTaskDescription(downloadTask.taskDescription) else { return }
 
         lock.lock()
         let stored = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)[sourceUrl]
@@ -445,7 +460,14 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         let byteCount = Self.fileSize(atPath: location.path)
 
         if transfer.segmentsPath != nil {
-            finishSegment(downloadTask, location: location, transfer: transfer, statusCode: statusCode, byteCount: byteCount)
+            finishSegment(
+                downloadTask,
+                segment: segment,
+                location: location,
+                transfer: transfer,
+                statusCode: statusCode,
+                byteCount: byteCount
+            )
             return
         }
 
@@ -544,9 +566,19 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         let shouldEnqueueRest = !transfer.didEnqueueAll
         transfer.didEnqueueAll = true
 
+        // 위에서 읽은 기록을 통째로 쓰면 그 사이 메인 스레드가 넘기며 바꾼 세션 표시를 되돌린다.
+        // 다시 읽고 이 응답이 알게 된 것만 얹는다.
         lock.lock()
-        Self.put(transfer)
+        guard var latest = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)[sourceUrl] else {
+            lock.unlock()
+            return
+        }
+        latest.totalBytes = transfer.totalBytes
+        latest.didEnqueueAll = true
+        latest.receivedStarts = Array(Set(latest.receivedStarts).union(transfer.receivedStarts))
+        Self.put(latest)
         lock.unlock()
+        transfer = latest
 
         guard !missing.isEmpty else {
             finalize(transfer, totalBytes: totalBytes)
@@ -558,9 +590,10 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        guard let error, let sourceUrl = task.taskDescription else { return }
+        guard let error, let sourceUrl = Self.parseTaskDescription(task.taskDescription)?.sourceUrl else { return }
         // 취소는 우리가 낸 것이다 — 한 구간이 깨지면 같은 주소의 나머지를 접는다.
         guard (error as? URLError)?.code != .cancelled else { return }
+        guard !isAlreadyReceived(task, sourceUrl: sourceUrl) else { return }
 
         // 구간을 전부 동시에 등록하므로 하나가 넘어졌다고 전체를 버리면 실패가 구간 수만큼
         // 잦아진다. 받아 둔 조각은 남아 있으니 그 구간만 다시 받는다.
@@ -572,11 +605,30 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
     }
 
     private func failOrRetry(_ task: URLSessionTask, sourceUrl: String, statusCode: Int) {
+        guard !isAlreadyReceived(task, sourceUrl: sourceUrl) else { return }
         if TransferRetryPlan.shared.isTransient(statusCode: Int32(statusCode)),
            retry(task, sourceUrl: sourceUrl, reason: "HTTP \(statusCode)") {
             return
         }
         fail(sourceUrl: sourceUrl, error: YoutubeDownloadError.httpStatus(statusCode))
+    }
+
+    /// 넘기면서 두 세션에 겹쳐 등록된 요청은 하나가 이미 받았을 수 있다. 그 나머지의 실패로 전송을 버리지 않는다.
+    /// 전송이 이미 끝났어도 true 다 — 더 할 일이 없다.
+    private func isAlreadyReceived(_ task: URLSessionTask, sourceUrl: String) -> Bool {
+        lock.lock()
+        let transfer = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)[sourceUrl]
+        lock.unlock()
+        guard let transfer else { return true }
+
+        if transfer.segmentsPath != nil {
+            guard let index = Self.parseTaskDescription(task.taskDescription)?.segment else { return false }
+            return (transfer.receivedSegments ?? []).contains(index)
+        }
+        guard let start = RangeChunkPlan.shared.parseRequestedStart(
+            rangeHeader: task.originalRequest?.value(forHTTPHeaderField: "Range")
+        )?.int64Value else { return false }
+        return transfer.receivedStarts.contains(start)
     }
 
     /// 한도를 넘었거나 어느 구간·조각인지 되읽을 수 없으면 false.
@@ -589,10 +641,11 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         let key: String
         let resend: (TimeInterval) -> Void
         if transfer.segmentsPath != nil {
-            guard let index = segmentIndex(of: task, in: transfer),
-                  !(transfer.receivedSegments ?? []).contains(index),
-                  let url = segmentUrls(for: transfer)?[index]
+            guard let index = Self.parseTaskDescription(task.taskDescription)?.segment,
+                  let urls = segmentUrls(for: transfer),
+                  urls.indices.contains(index)
             else { return false }
+            let url = urls[index]
             key = "\(sourceUrl)#seg\(index)"
             resend = { self.requestSegment(index, url: url, for: transfer, delay: $0) }
         } else {
@@ -625,6 +678,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
 
     private func finishSegment(
         _ task: URLSessionDownloadTask,
+        segment: Int?,
         location: URL,
         transfer: YoutubeTransfer,
         statusCode: Int,
@@ -639,59 +693,60 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
             fail(sourceUrl: sourceUrl, error: YoutubeDownloadError.emptyBody)
             return
         }
-        guard let index = segmentIndex(of: task, in: transfer),
-              let segmentCount = segmentUrls(for: transfer)?.count
-        else {
-            downloadLog("unknown segment for \(sourceUrl)")
+        guard let index = segment, let segmentCount = segmentUrls(for: transfer)?.count else {
+            fail(sourceUrl: sourceUrl, error: CocoaError(.fileReadCorruptFile))
             return
         }
 
-        // 이 함수가 끝나면 OS 가 임시 파일을 지운다. 반드시 여기서 옮겨야 한다.
+        // 위에서 읽은 기록을 통째로 쓰면 그 사이 메인 스레드가 넘기며 바꾼 세션 표시를 되돌린다.
+        // 잠금 안에서 다시 읽고 받은 번호만 얹는다.
+        lock.lock()
+        guard var latest = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)[sourceUrl],
+              !(latest.receivedSegments ?? []).contains(index)
+        else {
+            lock.unlock()
+            return
+        }
         do {
+            // 이 함수가 끝나면 OS 가 임시 파일을 지운다. 반드시 여기서 옮겨야 한다.
             try FileManager.default.createDirectory(
-                atPath: transfer.segmentDirectory,
+                atPath: latest.segmentDirectory,
                 withIntermediateDirectories: true
             )
-            let segmentPath = "\(transfer.segmentDirectory)/\(index)"
+            let segmentPath = "\(latest.segmentDirectory)/\(index)"
             if FileManager.default.fileExists(atPath: segmentPath) {
                 try FileManager.default.removeItem(atPath: segmentPath)
             }
             try FileManager.default.moveItem(atPath: location.path, toPath: segmentPath)
         } catch {
+            lock.unlock()
             downloadLog("segment move failed: \(error.localizedDescription)")
             fail(sourceUrl: sourceUrl, error: error)
             return
         }
-
-        var updated = transfer
-        var received = updated.receivedSegments ?? []
-        if !received.contains(index) {
-            received.append(index)
-        }
-        updated.receivedSegments = received
-
-        lock.lock()
-        Self.put(updated)
+        let received = (latest.receivedSegments ?? []) + [index]
+        latest.receivedSegments = received
+        Self.put(latest)
         let startedDate = startedAt[sourceUrl]
         lock.unlock()
+
         if received.count % 50 == 0 {
             downloadLog("segments received=\(received.count)/\(segmentCount) elapsed=\(seconds(since: startedDate))s")
         }
-
         guard received.count == segmentCount else { return }
 
         do {
-            try Self.concatenateSegments(count: segmentCount, from: updated.segmentDirectory, to: updated.partPath)
+            try Self.concatenateSegments(count: segmentCount, from: latest.segmentDirectory, to: latest.partPath)
         } catch {
             downloadLog("concatenate failed: \(error.localizedDescription)")
             fail(sourceUrl: sourceUrl, error: error)
             return
         }
         downloadLog(
-            "done bytes=\(Self.fileSize(atPath: updated.partPath)) segments=\(segmentCount) "
+            "done bytes=\(Self.fileSize(atPath: latest.partPath)) segments=\(segmentCount) "
                 + "elapsed=\(seconds(since: startedDate))s"
         )
-        moveToDestination(updated)
+        moveToDestination(latest)
     }
 
     func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
@@ -775,7 +830,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
             group.enter()
             session.getAllTasks { tasks in
                 tasks
-                    .filter { $0.taskDescription == sourceUrl }
+                    .filter { Self.parseTaskDescription($0.taskDescription)?.sourceUrl == sourceUrl }
                     .forEach { $0.cancel() }
                 group.leave()
             }

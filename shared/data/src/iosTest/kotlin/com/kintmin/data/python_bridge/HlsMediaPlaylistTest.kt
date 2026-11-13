@@ -76,4 +76,27 @@ class HlsMediaPlaylistTest {
         assertEquals("https://rr1.googlevideo.com/abs/1.ts", HlsMediaPlaylist.resolve(base, "/abs/1.ts"))
         assertEquals("https://other.example/1.ts", HlsMediaPlaylist.resolve(base, "https://other.example/1.ts"))
     }
+
+    /** RFC 3986 5.4 의 예시 중 재생목록에 나올 만한 것들. */
+    @Test
+    fun `상대 주소 풀이는 RFC 3986 을 따른다`() {
+        val rfcBase = "http://a/b/c/d;p?q"
+        mapOf(
+            "g" to "http://a/b/c/g",
+            "./g" to "http://a/b/c/g",
+            "g/" to "http://a/b/c/g/",
+            "//g" to "http://g",
+            "?y" to "http://a/b/c/d;p?y",
+            "g?y" to "http://a/b/c/g?y",
+            "../g" to "http://a/b/g",
+            "../../g" to "http://a/g",
+            "../../../g" to "http://a/g",
+            "." to "http://a/b/c/",
+            ".." to "http://a/b/",
+            "" to "http://a/b/c/d;p?q",
+        ).forEach { (reference, expected) ->
+            assertEquals(expected, HlsMediaPlaylist.resolve(rfcBase, reference), reference)
+        }
+        assertEquals("https://host/seg.ts", HlsMediaPlaylist.resolve("https://host?x=1", "seg.ts"))
+    }
 }

@@ -54,14 +54,49 @@ data class HlsMediaPlaylist(
 
         private fun unsupported(reason: String) = HlsMediaPlaylist(emptyList(), reason)
 
-        /** 조각 주소는 리다이렉트된 뒤의 재생목록 주소를 기준으로 푼다. */
+        private val SCHEME = Regex("^[A-Za-z][A-Za-z0-9+.-]*:")
+
+        /** RFC 3986 5.2 상대 참조 풀이. 조각 주소는 리다이렉트된 뒤의 재생목록 주소를 기준으로 푼다. */
         internal fun resolve(baseUrl: String, reference: String): String {
-            if ("://" in reference) return reference
-            val origin = baseUrl.substringBefore("://") + "://" +
-                baseUrl.substringAfter("://").substringBefore('/')
-            if (reference.startsWith("/")) return origin + reference
-            val directory = baseUrl.substringBefore('?').substringBeforeLast('/')
-            return "$directory/$reference"
+            if (SCHEME.containsMatchIn(reference)) return reference
+
+            val scheme = baseUrl.substringBefore(':')
+            if (reference.startsWith("//")) return "$scheme:$reference"
+
+            val hierarchy = baseUrl.substringAfter("://")
+            val authorityEnd = hierarchy.indexOfAny(charArrayOf('/', '?', '#')).let { if (it < 0) hierarchy.length else it }
+            val authority = hierarchy.substring(0, authorityEnd)
+            val basePathAndQuery = hierarchy.substring(authorityEnd).substringBefore('#')
+            val basePath = basePathAndQuery.substringBefore('?')
+            val prefix = "$scheme://$authority"
+
+            if (reference.isEmpty()) return prefix + basePathAndQuery
+            if (reference.startsWith("?")) return prefix + basePath + reference
+
+            val referencePath = reference.substringBefore('?').substringBefore('#')
+            val referenceRest = reference.substring(referencePath.length)
+            val mergedPath = when {
+                referencePath.startsWith("/") -> referencePath
+                basePath.isEmpty() -> "/$referencePath"
+                else -> basePath.substringBeforeLast('/') + "/" + referencePath
+            }
+            return prefix + removeDotSegments(mergedPath) + referenceRest
+        }
+
+        private fun removeDotSegments(path: String): String {
+            val output = ArrayDeque<String>()
+            val segments = path.split('/').drop(1)
+            segments.forEachIndexed { index, segment ->
+                when (segment) {
+                    "." -> if (index == segments.lastIndex) output.addLast("")
+                    ".." -> {
+                        output.removeLastOrNull()
+                        if (index == segments.lastIndex) output.addLast("")
+                    }
+                    else -> output.addLast(segment)
+                }
+            }
+            return "/" + output.joinToString("/")
         }
     }
 }
