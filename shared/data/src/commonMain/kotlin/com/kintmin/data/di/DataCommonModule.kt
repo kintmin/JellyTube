@@ -170,7 +170,6 @@ val dataCommonModule: Module = module {
     factoryOf(::GetMonthlyDailyStepsUseCase)
     factoryOf(::GetStepCountUseCase)
     factoryOf(::ReplaceStepSensorsUseCase)
-    factoryOf(::RegisterDailyResetWorkerUseCase)
     factoryOf(::ResetDataOncePerDayUseCase)
     factoryOf(::UpdateAccelerateStepUseCase)
     factoryOf(::UpdateLastStepSensorUseCase)

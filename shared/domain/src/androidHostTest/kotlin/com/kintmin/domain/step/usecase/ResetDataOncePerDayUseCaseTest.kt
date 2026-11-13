@@ -1,5 +1,6 @@
 package com.kintmin.domain.step.usecase
 
+import com.kintmin.domain.step.ScheduleDailyStepClosing
 import io.mockk.mockk
 import io.mockk.verify
 import kotlin.time.Clock
@@ -11,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class ResetDataOncePerDayUseCaseTest {
 
-    private val registerWorker: RegisterDailyResetWorkerUseCase = mockk(relaxed = true)
+    private val registerWorker: ScheduleDailyStepClosing = mockk(relaxed = true)
     private val zoneId = TimeZone.UTC
     private val today = Clock.System.now().toLocalDateTime(zoneId).date.toEpochDays().toLong()
 

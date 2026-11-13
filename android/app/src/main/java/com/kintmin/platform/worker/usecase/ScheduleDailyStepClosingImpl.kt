@@ -5,12 +5,12 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.kintmin.domain.step.worker.RegisterDailyResetImmediatelyWorker
+import com.kintmin.domain.step.ScheduleDailyStepClosing
 import com.kintmin.platform.worker.DailyResetImmediatelyWorker
 
-class RegisterDailyResetImmediatelyWorkerImpl(
+class ScheduleDailyStepClosingImpl(
     private val appContext: Context,
-): RegisterDailyResetImmediatelyWorker {
+): ScheduleDailyStepClosing {
 
     override fun invoke(targetDate: String, lastDailyStep: Int, lastStepSensor: Long?) {
         runCatching {

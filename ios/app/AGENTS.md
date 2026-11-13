@@ -6,7 +6,7 @@ iOS 쪽은 두 곳으로 나뉜다. **둘 다 "조립과 OS 호출" 만 한다 �
 
 | 경로 | 언어 | 역할 |
 |---|---|---|
-| `ios/shared/` | Kotlin | iOS Composition Root. 프레임워크 선언 · Koin 조립 · Compose 진입점 · 도메인 워커 포트 구현 · presentation 포트 구현 |
+| `ios/shared/` | Kotlin | iOS Composition Root. 프레임워크 선언 · Koin 조립 · Compose 진입점 · presentation 포트 구현 |
 | `ios/app/` | Swift | Xcode 앱. 진입점(`JellyTubeIosApp`) · Kotlin 인터페이스의 Swift 구현(브릿지) · Info.plist |
 
 > **TCA 는 더 이상 쓰지 않는다.** `~Client` / `~Feature` / `~ScreenView` / `IosFacades` /
@@ -39,9 +39,8 @@ Obj-C 헤더로 쏟아진다.
    한쪽에 모듈을 더하면 다른 쪽도 본다
 3. `MainViewController.kt` — Swift 에 노출되는 최상위 함수들
    (`startApp` / `mainViewController` / `handleDeepLink` / `handleNotificationTap` / `handleSharedAudioFile`)
-4. 도메인 포트의 iOS 구현 — `domain` 에 플랫폼 구현을 넣지 않기 위해서다
-5. `presentation/port` 의 iOS 구현(`port/`, 바인딩 `port/IosPortModule.kt`) — `android:app` 이 Android 구현을 가지는 것과 같은 자리다
-6. Swift 가 구현할 Kotlin 인터페이스 — 프레임워크에 들어가는 모듈이라야 Swift 가 본다
+4. `presentation/port` 의 iOS 구현(`port/`, 바인딩 `port/IosPortModule.kt`) — `android:app` 이 Android 구현을 가지는 것과 같은 자리다
+5. Swift 가 구현할 Kotlin 인터페이스 — 프레임워크에 들어가는 모듈이라야 Swift 가 본다
    (`IosMediaControllerBridge`, `IosAppLogBridge`, `IosMigrationSourceBrowserBridge`)
 
 **앱 레벨 ViewModel 은 파일 최상위에 `by lazy` 로 한 벌만** 둔다. iOS 는 단일 윈도우이고,

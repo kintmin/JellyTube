@@ -1,7 +1,6 @@
 package com.kintmin.platform.di
 
-import com.kintmin.domain.step.worker.RegisterDailyResetImmediatelyWorker
-import com.kintmin.domain.step.worker.RegisterLoadBalancedDailyResetWorker
+import com.kintmin.domain.step.ScheduleDailyStepClosing
 import com.kintmin.platform.audio_preview.AudioPreviewPlayerImpl
 import com.kintmin.platform.data_migration.UnsupportedMigrationSourceDiscovery
 import com.kintmin.platform.push_notification.PushNotificationManager
@@ -15,8 +14,7 @@ import com.kintmin.platform.worker.usecase.ExecuteAnomalyDataCheckImpl
 import com.kintmin.platform.worker.usecase.ExecuteAudioEditSaveImpl
 import com.kintmin.platform.worker.usecase.ExecuteLyricsVariantCreationImpl
 import com.kintmin.platform.worker.usecase.ExecuteYoutubeDownloadImpl
-import com.kintmin.platform.worker.usecase.RegisterDailyResetImmediatelyWorkerImpl
-import com.kintmin.platform.worker.usecase.RegisterLoadBalancedDailyResetWorkerImpl
+import com.kintmin.platform.worker.usecase.ScheduleDailyStepClosingImpl
 import com.kintmin.presentation.port.AudioPreviewPlayer
 import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.ExecuteAnomalyDataCheck
@@ -38,12 +36,7 @@ val platformModule: Module = module {
     single<AudioPreviewPlayer> { AudioPreviewPlayerImpl(androidContext()) }
     single<StepMeasurementController> { StepMeasurementControllerImpl(androidContext()) }
     single<FileShareServerController> { FileShareServerControllerImpl(androidContext(), get(), get(), get(), get()) }
-    single<RegisterDailyResetImmediatelyWorker> {
-        RegisterDailyResetImmediatelyWorkerImpl(androidContext())
-    }
-    single<RegisterLoadBalancedDailyResetWorker> {
-        RegisterLoadBalancedDailyResetWorkerImpl(androidContext(), get())
-    }
+    single<ScheduleDailyStepClosing> { ScheduleDailyStepClosingImpl(androidContext()) }
     single<ExecuteYoutubeDownload> { ExecuteYoutubeDownloadImpl(androidContext()) }
     single<ExecuteAnomalyDataCheck> { ExecuteAnomalyDataCheckImpl(androidContext()) }
     single<ExecuteLyricsVariantCreation> { ExecuteLyricsVariantCreationImpl(androidContext()) }

@@ -1,6 +1,7 @@
 package com.kintmin.domain.step.usecase
 
 import com.kintmin.domain.extension.toBasicIsoString
+import com.kintmin.domain.step.ScheduleDailyStepClosing
 import kotlinx.atomicfu.atomic
 import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
@@ -8,7 +9,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 class ResetDataOncePerDayUseCase constructor(
-    private val registerDailyResetWorkerUseCase: RegisterDailyResetWorkerUseCase,
+    private val scheduleDailyStepClosing: ScheduleDailyStepClosing,
 ) {
 
     // atomicfu의 JVM 바이트코드 변환은 atomic 필드가 private일 때만 적용된다.
@@ -23,9 +24,9 @@ class ResetDataOncePerDayUseCase constructor(
 
     /** 테스트에서 시작 기준일을 주입하기 위한 생성자. private atomic 캡슐화를 유지한다. */
     internal constructor(
-        registerDailyResetWorkerUseCase: RegisterDailyResetWorkerUseCase,
+        scheduleDailyStepClosing: ScheduleDailyStepClosing,
         initialEpochDay: Long,
-    ) : this(registerDailyResetWorkerUseCase) {
+    ) : this(scheduleDailyStepClosing) {
         cachedEpochDay.value = initialEpochDay
     }
 
@@ -33,7 +34,6 @@ class ResetDataOncePerDayUseCase constructor(
      * 날짜 보장:
      * - atomic.compareAndSet으로 중복 초기화 방지
      * - resetAction은 즉시 동기 호출하여 코루틴 지연으로 인한 임시 0걸음 이슈 방지
-     * - registerDailyResetWorkerUseCase는 WorkManager 등록(비기 API)을 직접 호출
      */
     operator fun invoke(
         currentStep: Int,
@@ -49,6 +49,6 @@ class ResetDataOncePerDayUseCase constructor(
 
         val targetDate = LocalDate.fromEpochDays(prevDay.toInt()).toBasicIsoString()
         resetAction()
-        registerDailyResetWorkerUseCase(targetDate, currentStep, currentStepSensor)
+        scheduleDailyStepClosing(targetDate, currentStep, currentStepSensor)
     }
 }
