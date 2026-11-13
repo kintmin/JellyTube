@@ -224,17 +224,23 @@ internal class AudioEditorImpl : AudioEditor {
             close()
         }
 
-    /** Cocoa 규약상 error 는 반환값이 실패(false)일 때만 유효하다. 성공한 호출도 error 를 채울 수 있다. */
+    /**
+     * Cocoa 규약상 error 는 반환값이 false 일 때만 유효하다. Kotlin/Native 는 init 이 nil 을 돌려주면
+     * 예외로 올리는데, 그때도 error 는 채워져 있어 원인을 붙인다.
+     */
     private inline fun <T> throwingNSError(failureMessage: String, block: (CPointer<ObjCObjectVar<NSError?>>) -> T): T =
         memScoped {
             val error = alloc<ObjCObjectVar<NSError?>>()
-            val result = block(error.ptr)
-            if (result == false) {
-                val detail = error.value?.let { " (${it.domain} ${it.code}: ${it.localizedDescription})" } ?: ""
-                throw Exception(failureMessage + detail)
+            val result = try {
+                block(error.ptr)
+            } catch (e: Exception) {
+                throw Exception(failureMessage + error.value.toDetail(), e)
             }
+            if (result == false) throw Exception(failureMessage + error.value.toDetail())
             result
         }
+
+    private fun NSError?.toDetail(): String = this?.let { " (${it.domain} ${it.code}: ${it.localizedDescription})" } ?: ""
 
     private fun maxMagnitude(samples: CPointer<FloatVar>, frameCount: Long): Float = memScoped {
         val result = alloc<FloatVar>()

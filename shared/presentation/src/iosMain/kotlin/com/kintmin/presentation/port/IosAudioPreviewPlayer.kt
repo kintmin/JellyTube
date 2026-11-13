@@ -77,8 +77,9 @@ internal class IosAudioPreviewPlayer : AudioPreviewPlayer {
 
         val generation = ++playGeneration
         val onPlayedBack: (Long) -> Unit = {
+            // 엔진이 돌고 있으면 OS 가 앱을 재생 중으로 보고 백그라운드에서 서스펜드하지 않는다
             dispatch_async(dispatch_get_main_queue()) {
-                if (playGeneration == generation) isPlayingState = false
+                if (playGeneration == generation) release()
             }
         }
         scheduleSpans(node, file, format, spans, onPlayedBack)
@@ -169,9 +170,17 @@ internal class IosAudioPreviewPlayer : AudioPreviewPlayer {
         isPlayingState = false
     }
 
+    /**
+     * 실패하면 null. Cocoa 규약상 error 는 반환값이 false 일 때만 유효하고,
+     * Kotlin/Native 는 init 이 nil 을 돌려주면 예외로 올린다.
+     */
     private inline fun <T> withNSError(block: (CPointer<ObjCObjectVar<NSError?>>) -> T): T? = memScoped {
         val error = alloc<ObjCObjectVar<NSError?>>()
-        val result = block(error.ptr)
-        if (error.value != null) null else result
+        val result = try {
+            block(error.ptr)
+        } catch (e: Exception) {
+            return@memScoped null
+        }
+        result.takeUnless { it == false }
     }
 }

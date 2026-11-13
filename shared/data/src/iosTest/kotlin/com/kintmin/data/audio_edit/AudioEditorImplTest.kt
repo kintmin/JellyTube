@@ -118,7 +118,8 @@ class AudioEditorImplTest {
 
         val result = editor.render(missingPath, listOf(AudioEditPart.Audio(startMs = 0, endMs = 1_000)), outputPath)
 
-        assertTrue(result.isFailure)
+        val message = result.exceptionOrNull()?.message.orEmpty()
+        assertTrue(message.startsWith("음원을 열지 못했습니다. ("), "NSError 원인이 붙어야 한다: $message")
         assertFalse(fileSystem.exists(outputPath.toPath()))
         assertTrue(editor.measureDurationMs(missingPath).isFailure)
     }
