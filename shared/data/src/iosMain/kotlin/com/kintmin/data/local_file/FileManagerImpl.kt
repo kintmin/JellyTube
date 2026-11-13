@@ -33,6 +33,7 @@ import platform.AVFoundation.duration
 import platform.CoreCrypto.CC_SHA256
 import platform.CoreCrypto.CC_SHA256_DIGEST_LENGTH
 import platform.Foundation.NSData
+import platform.Foundation.NSDataReadingMappedIfSafe
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileHandle
 import platform.Foundation.NSFileManager
@@ -159,7 +160,33 @@ internal class FileManagerImpl : FileManager {
         }
     }
 
-    override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = unsupported()
+    override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = runCatching {
+        withContext(Dispatchers.IO) {
+            // 업로드 경로가 검증한 이름만 넘긴다. 확장자가 없으면 그 검증을 거치지 않은 호출이다.
+            val ext = originalFileName.substringAfterLast('.', "")
+            require(ext.isNotBlank()) { "확장자가 없는 파일명입니다: $originalFileName" }
+            val fileName = NSUUID().UUIDString()
+            val fileNameWithExt = "$fileName.$ext"
+            val targetPath = audioDir() + "/$fileNameWithExt"
+
+            if (!NSFileManager.defaultManager.copyItemAtPath(sourceFileFullPath, toPath = targetPath, error = null)) {
+                error("파일을 저장할 수 없습니다.")
+            }
+            // 대용량 WAV 도 힙에 통째로 올리지 않도록 매핑해서 해시한다.
+            val data = NSData.dataWithContentsOfFile(targetPath, options = NSDataReadingMappedIfSafe, error = null)
+                ?: error("파일을 읽을 수 없습니다.")
+
+            val metadata = readAudioMetadata(targetPath, fileName)
+            CopiedAudioInfo(
+                fileNameWithExt = fileNameWithExt,
+                sha256Hex = data.sha256Hex(),
+                title = metadata.title?.takeIf { it.isNotBlank() } ?: originalFileName.substringBeforeLast('.'),
+                artist = metadata.artist?.takeIf { it.isNotBlank() },
+                durationMs = metadata.durationMs,
+                imageFileNameWithExt = metadata.imageFileNameWithExt,
+            )
+        }
+    }
 
     override suspend fun exportAudioToPublicStorage(
         sourceAudioFileFullPath: String,

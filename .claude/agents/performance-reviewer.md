@@ -31,7 +31,7 @@ You are a performance reviewer for the **JellyTube** Kotlin Multiplatform projec
 - **Main-thread blocking**: I/O, DB, file, Python, or network on the main dispatcher; repositories should `flowOn`/`withContext(Dispatchers.IO)` at the data layer.
 - **Over-collection / churn**: missing `distinctUntilChanged`, re-subscribing flows, `stateIn`/`shareIn` for shared cold flows, `collectLatest` where appropriate; avoid launching a coroutine per list item.
 - **Operator cost**: heavy `map`/sort inside a flow that re-emits often; `buffer`/`conflate` for fast producers; combine vs nested collects.
-- **Leaks / over-launch** (perf angle, not correctness): long-running jobs not cancelled, duplicate subscriptions (cross-check with the file-share `/ws/status` WebSocket and step counter). Cancellation *correctness* belongs to error-handling-reviewer; here flag the wasted work/leak.
+- **Leaks / over-launch** (perf angle, not correctness): long-running jobs not cancelled, duplicate subscriptions (cross-check with the step counter). Cancellation *correctness* belongs to error-handling-reviewer; here flag the wasted work/leak.
 
 ### Room (`shared:data`, Room)
 - Main-thread queries forbidden (no `allowMainThreadQueries`); queries return `Flow`/`suspend`.

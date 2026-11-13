@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.platform.KeepScreenOnEffect
 import com.kintmin.presentation.theme.JellyTubeTheme
 
 @Composable
@@ -66,6 +67,8 @@ fun SettingFileShareReceiveScreen(
     navigateToBack: () -> Unit,
     sendIntent: (SettingFileShareReceiveIntent) -> Unit,
 ) {
+    // iOS 는 화면이 잠기면 앱이 서스펜드되어 서버도 멈춘다.
+    KeepScreenOnEffect(enabled = uiState.serverStatus == ServerStatus.RUNNING)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

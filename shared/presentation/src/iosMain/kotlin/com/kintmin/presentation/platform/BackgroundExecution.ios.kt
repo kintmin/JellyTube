@@ -9,4 +9,4 @@ import com.kintmin.presentation.port.withBackgroundExecutionWindow
 actual suspend fun <T> continueInBackgroundWhile(block: suspend () -> T): T =
     withBackgroundExecutionWindow(WINDOW_NAME) { block() }
 
-private const val WINDOW_NAME = "data-migration"
+private const val WINDOW_NAME = "receive"

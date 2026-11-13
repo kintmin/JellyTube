@@ -111,7 +111,7 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 `UILaunchScreen`(배경색 `LaunchBackground` — 빌드 설정의 자동 생성은 끄고 여기서만 정한다) ·
 `NSMotionUsageDescription`(걸음수) · `CFBundleURLTypes`(딥링크 스킴) ·
 `CFBundleDocumentTypes`(공유 수신) · `UIBackgroundModes: audio`(백그라운드 재생) ·
-`NSLocalNetworkUsageDescription` + `NSBonjourServices`(데이터 이전 탐색. `_jellytube-mig._tcp` 만 둔다 —
+`NSLocalNetworkUsageDescription` + `NSBonjourServices`(데이터 이전 탐색용 `_jellytube-mig._tcp` 와 PC 수신 광고용 `_jellytube._tcp` 둘을 둔다 —
 둘 중 하나라도 없거나 타입이 다르면 탐색이 오류 없이 0건) · `NSAppTransportSecurity.NSAllowsLocalNetworking`(보내는 기기의 평문 HTTP).
 
 ---
@@ -161,13 +161,15 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 | 항목 | 이유 |
 |---|---|
 | 음원 편집 | Media3 Transformer + TarsosDSP 기반이라 전면 재작성이다 |
-| PC 파일 수신 | 수신 서버(Ktor CIO)와 그 서버를 붙잡아 두는 포그라운드 서비스가 Android 에만 있다 |
 | 드로잉 / 플로팅 UI | `MotionEvent` + S펜 전제. Apple Pencil 에 대응물이 없다 |
 | 기기 저장(벨소리/알람/알림음) | 세 타깃 전부 30초 트리밍 + 포맷 변환이 선행 조건이라 음원 편집과 묶인다 |
 | iosX64(인텔 맥 시뮬레이터) | CMP 가 1.11.0-alpha01 이후 배포하지 않는다 |
 
 **Android 와 보장이 다른 것**: 사용자가 앱 스위처에서 강제 종료하면 background `URLSession`
 전송도 OS 가 취소한다. 정책이라 우회 수단이 없다 — WorkManager 와 같은 보장은 iOS 에 없다.
+
+PC 수신 서버도 포그라운드 서비스 같은 장치가 없어 **앱이 서스펜드되면 멈춘다.** 수신 화면은 서버가 켜진 동안
+화면을 켜 두고, 받던 업로드는 백그라운드 유예로 마저 받는다. 복귀 때 리슨 소켓이 회수됐으면 서버를 다시 띄운다.
 
 ---
 
