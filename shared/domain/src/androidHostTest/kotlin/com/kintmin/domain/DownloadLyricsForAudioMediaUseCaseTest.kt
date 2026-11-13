@@ -51,9 +51,9 @@ class DownloadLyricsForAudioMediaUseCaseTest {
     }
 
     @Test
-    fun `시간 오차 5초 내 한글 가사면 적용하고 변형은 만들지 않는다`() = runTest {
+    fun `길이가 같은 한글 가사면 적용하고 변형은 만들지 않는다`() = runTest {
         coEvery { searchLyrics(any()) } returns Result.success(
-            listOf(result(duration = 202.0, plain = "안녕", synced = "[00:01.00] 안녕하세요"))
+            listOf(result(duration = 200.0, plain = "안녕", synced = "[00:01.00] 안녕하세요"))
         )
         stubApplyAndVariant()
 
@@ -65,9 +65,9 @@ class DownloadLyricsForAudioMediaUseCaseTest {
     }
 
     @Test
-    fun `시간 오차가 5초를 넘으면 적용하지 않는다`() = runTest {
+    fun `길이가 1초라도 다르면 적용하지 않는다`() = runTest {
         coEvery { searchLyrics(any()) } returns Result.success(
-            listOf(result(duration = 210.0, plain = "hello", synced = null))
+            listOf(result(duration = 201.0, plain = "hello", synced = null))
         )
         stubApplyAndVariant()
 
@@ -80,7 +80,7 @@ class DownloadLyricsForAudioMediaUseCaseTest {
     @Test
     fun `한글이 없으면 번역 변형을 생성한다`() = runTest {
         coEvery { searchLyrics(any()) } returns Result.success(
-            listOf(result(duration = 201.0, plain = "hello world", synced = null))
+            listOf(result(duration = 200.0, plain = "hello world", synced = null))
         )
         stubApplyAndVariant()
 
@@ -94,7 +94,7 @@ class DownloadLyricsForAudioMediaUseCaseTest {
     @Test
     fun `일본어면 번역과 음차 변형을 모두 생성한다`() = runTest {
         coEvery { searchLyrics(any()) } returns Result.success(
-            listOf(result(duration = 201.0, plain = null, synced = "[00:01.00] こんにちは"))
+            listOf(result(duration = 200.0, plain = null, synced = "[00:01.00] こんにちは"))
         )
         stubApplyAndVariant()
 
@@ -103,6 +103,32 @@ class DownloadLyricsForAudioMediaUseCaseTest {
         assertTrue(r.isSuccess)
         coVerify(exactly = 1) { createVariant(lyricPath, LyricsVariant.TRANSLATION, "ja") }
         coVerify(exactly = 1) { createVariant(lyricPath, LyricsVariant.TRANSLITERATION, "ja") }
+    }
+
+    @Test
+    fun `소수 길이는 반올림한 초가 같으면 적용한다`() = runTest {
+        coEvery { searchLyrics(any()) } returns Result.success(
+            listOf(result(duration = 341.438844, plain = "안녕", synced = null))
+        )
+        stubApplyAndVariant()
+
+        val r = useCase(audioMediaId = 1, title = "곡", targetDurationSeconds = 341.0)
+
+        assertTrue(r.isSuccess)
+        coVerify(exactly = 1) { applyLyrics(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `음원 길이를 모르면 적용하지 않는다`() = runTest {
+        coEvery { searchLyrics(any()) } returns Result.success(
+            listOf(result(duration = 200.0, plain = "안녕", synced = null))
+        )
+        stubApplyAndVariant()
+
+        val r = useCase(audioMediaId = 1, title = "곡", targetDurationSeconds = null)
+
+        assertTrue(r.isSuccess)
+        coVerify(exactly = 0) { applyLyrics(any(), any(), any(), any(), any(), any()) }
     }
 
     @Test
