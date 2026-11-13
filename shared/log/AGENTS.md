@@ -10,7 +10,7 @@
 
 **Concrete implementations live in the app modules**:
 - Android: `android:app` → `log_impl/AppLogImpl`
-- iOS: `ios/app` → (iOS log implementation)
+- iOS: `ios/shared` → `log/IosAppLog` (Swift 수집기는 `IosAppLogBridge` 로 받는다)
 - Desktop: `desktop` → (Desktop log implementation)
 
 Each app module registers its implementation with the DI container at startup.

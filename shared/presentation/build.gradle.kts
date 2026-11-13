@@ -70,10 +70,7 @@ kotlin {
             // 임시 수용소. commonMain 승격이 끝나면 대부분 사라진다.
             implementation(libs.androidx.activity.compose)       // ActivityResult / BackHandler
             implementation(libs.androidx.core.ktx)
-            implementation(libs.androidx.lifecycle.runtime.ktx)  // lifecycleScope
             implementation(libs.androidx.palette.ktx)
-            implementation(libs.koin.android)
-            implementation(libs.koin.androidx.compose)
         }
 
         getByName("androidHostTest").dependencies {

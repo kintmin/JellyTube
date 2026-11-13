@@ -5,7 +5,7 @@
 This module owns:
 - `JellyTubeApplication` — Koin init, app-level setup
 - `MainActivity` — edge-to-edge enablement, intent handling, lifecycle
-- `MainViewModel` — Intent 어댑터(딥링크 문자열 추출 · 공유 파일 수신) + `NavigationIntent` 디스패치
+- `MainActivity.handleIntent` — Intent 어댑터(딥링크 문자열 추출 · 공유 파일 수신). 판정과 `NavigationIntent` 디스패치는 `shared:presentation` 의 `navigation/AppViewModel` 이 한다
 - `di/AppModule` — Koin module that wires runtime implementations to their interfaces
 - `log_impl/` — concrete `AppLog` implementation (Firebase, Logcat, etc.)
 - `python_bridge_impl/` — concrete `PythonExecutor` implementation via Chaquopy
@@ -119,8 +119,8 @@ iOS 구현의 자리는 **`ios/shared`** 다(이 모듈의 짝인 iOS 조립 모
 ## Deep Link Handling — 진입 통로만 이 모듈이다
 
 **Flow**:
-1. `MainActivity.onNewIntent()` / `onCreate()` → `MainViewModel.handleIntent(intent)`
-2. `MainViewModel` 이 `intent.data` 를 꺼내 **문자열로** `onDeepLink(url)` 에 넘긴다
+1. `MainActivity.onNewIntent()` / `onCreate()` → `MainActivity.handleIntent(intent)`
+2. `intent.data` 를 꺼내 **문자열로** `AppViewModel.handleDeepLink(url)` 에 넘긴다(공유 파일은 `importSharedAudio`)
 3. 판정과 명령 생성은 `shared:presentation` 의 `DeepLinkParser.parse(url, 재생상태)` 가 한다
 4. 결과 `NavigationIntent` 들을 `navigationIntentChannel`(capacity=8)로 보낸다
 5. 공통 `MainNavHost` 가 `navigationIntentFlow` 를 수집해 `NavController` 를 부른다

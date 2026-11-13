@@ -288,7 +288,7 @@ When a screen's `~UiState` field is filled from an **async source** (a `Flow`/DB
 | `navigation/MainNavHost` | `NavHost` + `navigationIntentFlow` 소비 |
 
 플랫폼에 남는 것은 진입 통로와 OS 배선뿐이다 — Android 는 Manifest `intent-filter`,
-`MainViewModel.handleIntent()`(Intent → 문자열), `PendingIntent` 용 `Uri` 어댑터
+`MainActivity.handleIntent()`(Intent → 문자열, `AppViewModel.handleDeepLink` 로 넘긴다), `PendingIntent` 용 `Uri` 어댑터
 (`android:app` 의 `com.kintmin.platform.deeplink.DeepLinkConstants`). iOS 는 `onOpenURL`.
 
 새 목적지를 더하는 절차는 `.claude/skills/add-deep-link` 가 단일 진원지다.

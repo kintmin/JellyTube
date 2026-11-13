@@ -13,7 +13,6 @@ import java.time.format.DateTimeFormatter
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.chaquopy)
     alias(libs.plugins.google.services)
@@ -158,13 +157,11 @@ dependencies {
     implementation(project(":shared:log"))
     implementation(project(":shared:domain"))
     implementation(project(":shared:data"))
-    implementation(project(":shared:file-share"))
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
 
-    implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.koin.android)
     implementation(libs.koin.workmanager)
@@ -176,7 +173,6 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
 
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.splashscreen)
     // Compose 는 :shared:presentation 이 api 로 내보내는 CMP 아티팩트를 쓴다.
