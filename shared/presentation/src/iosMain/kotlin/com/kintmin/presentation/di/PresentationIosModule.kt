@@ -7,10 +7,10 @@ import com.kintmin.presentation.port.ExecuteAudioEditSave
 import com.kintmin.presentation.port.ExecuteLyricsVariantCreation
 import com.kintmin.presentation.port.ExecuteYoutubeDownload
 import com.kintmin.presentation.port.FileShareServerController
-import com.kintmin.presentation.port.IosAudioPreviewPlayerStub
+import com.kintmin.presentation.port.IosAudioPreviewPlayer
 import com.kintmin.presentation.port.IosDataMigrationSendControllerStub
 import com.kintmin.presentation.port.IosExecuteAnomalyDataCheck
-import com.kintmin.presentation.port.IosExecuteAudioEditSaveStub
+import com.kintmin.presentation.port.IosExecuteAudioEditSave
 import com.kintmin.presentation.port.IosExecuteLyricsVariantCreation
 import com.kintmin.presentation.port.IosExecuteYoutubeDownload
 import com.kintmin.presentation.port.IosFileShareServerControllerStub
@@ -31,13 +31,13 @@ import org.koin.dsl.module
  * 프레임워크에 export 되는 모듈에 있어야 해서 조립 모듈(`:ios:shared`)이 가진다.
  */
 val presentationIosModule: Module = module {
-    single<AudioPreviewPlayer> { IosAudioPreviewPlayerStub() }
+    single<AudioPreviewPlayer> { IosAudioPreviewPlayer() }
     single<StepMeasurementController> { IosStepMeasurementController(get(), get(), get(), get()) }
     single<FileShareServerController> { IosFileShareServerControllerStub() }
     single<ExecuteYoutubeDownload> { IosExecuteYoutubeDownload(get(), get(), get(), get()) }
     single<ExecuteAnomalyDataCheck> { IosExecuteAnomalyDataCheck(get(), get()) }
     single<ExecuteLyricsVariantCreation> { IosExecuteLyricsVariantCreation(get(), get()) }
-    single<ExecuteAudioEditSave> { IosExecuteAudioEditSaveStub() }
+    single<ExecuteAudioEditSave> { IosExecuteAudioEditSave(get(), get(), get(), get()) }
     single<DataMigrationSendController> { IosDataMigrationSendControllerStub() }
     single<RunningWorkMonitor> { IosRunningWorkMonitor(get()) }
 }

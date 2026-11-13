@@ -29,12 +29,7 @@ object DeepLinkConstants {
 
         fun stepScreen(): Uri = SharedDeepLink.UrlBuilder.stepScreen().toUri()
 
-        fun appLogScreen(): Uri = SharedDeepLink.UrlBuilder.appLogScreen().toUri()
-
         fun playlistAudioMediaDetailScreen(playlistId: Int, audioMediaId: Int): Uri =
             SharedDeepLink.UrlBuilder.playlistAudioMediaDetailScreen(playlistId, audioMediaId).toUri()
-
-        fun audioMediaDetailScreen(audioMediaId: Int): Uri =
-            SharedDeepLink.UrlBuilder.audioMediaDetailScreen(audioMediaId).toUri()
     }
 }

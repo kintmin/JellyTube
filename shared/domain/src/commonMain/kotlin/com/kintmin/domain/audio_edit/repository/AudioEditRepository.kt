@@ -16,7 +16,6 @@ interface AudioEditRepository {
      */
     fun reserveSaving(audioMediaId: Int): Boolean
 
-    /** 저장을 맡기지 못했거나 저장이 시작 전에 끝났을 때 예약을 푼다. */
     fun releaseSaving(audioMediaId: Int)
 
     /** 파일의 실제 길이(ms). */

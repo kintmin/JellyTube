@@ -2,15 +2,14 @@ package com.kintmin.platform.push_notification.notifications
 
 import android.content.Context
 import androidx.core.app.NotificationCompat
-import com.kintmin.platform.intent.appLogPendingIntent
-import com.kintmin.platform.intent.audioMediaDetailPendingIntent
+import com.kintmin.platform.intent.IntentRequestCode
+import com.kintmin.platform.intent.workResultPendingIntent
 import com.kintmin.platform.push_notification.PushNotificationIdGenerator
 import com.kintmin.platform.push_notification.channels.AudioEditSaveResultChannel
+import com.kintmin.presentation.port.WorkResultNotice
 
 data class AudioEditSaveResultNotification(
-    val resultType: ResultType,
-    val contentText: String,
-    val audioMediaId: Int? = null,
+    val notice: WorkResultNotice.AudioEditSave,
 ) : PushNotification() {
 
     override val id = PushNotificationIdGenerator.random()
@@ -18,26 +17,14 @@ data class AudioEditSaveResultNotification(
 
     override fun buildNotification(context: Context) =
         NotificationCompat.Builder(context, channel.id)
-            .setContentTitle(resultType.title)
-            .setContentText(contentText)
+            .setContentTitle(notice.title)
+            .setContentText(notice.body)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setGroup(channel.id)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
-            .apply {
-                when (resultType) {
-                    ResultType.OverwriteSuccess, ResultType.NewMediaSuccess -> if (audioMediaId != null) {
-                        setContentIntent(context.audioMediaDetailPendingIntent(audioMediaId))
-                    }
-
-                    ResultType.Failure -> setContentIntent(context.appLogPendingIntent())
-                }
-            }
+            .setContentIntent(
+                context.workResultPendingIntent(IntentRequestCode.AUDIO_EDIT_SAVE_RESULT_NOTIFICATION, notice.deepLink),
+            )
             .build()
-
-    enum class ResultType(val title: String) {
-        OverwriteSuccess("편집본 저장 완료"),
-        NewMediaSuccess("편집본을 새 음원으로 저장 완료"),
-        Failure("편집본 저장 실패"),
-    }
 }

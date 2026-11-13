@@ -60,36 +60,6 @@ internal fun Context.workResultPendingIntent(
     )
 }
 
-internal fun Context.audioMediaDetailPendingIntent(
-    audioMediaId: Int,
-) = PendingIntent.getActivity(
-    this,
-    IntentRequestCode.AUDIO_EDIT_SAVE_RESULT_NOTIFICATION,
-    Intent().apply {
-        action = Intent.ACTION_VIEW
-        data = DeepLinkConstants.UriBuilder.audioMediaDetailScreen(audioMediaId)
-        component = ComponentName(
-            packageName,
-            TARGET_ACTIVITY_NAME,
-        )
-    },
-    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-)
-
-internal fun Context.appLogPendingIntent() = PendingIntent.getActivity(
-    this,
-    IntentRequestCode.APP_LOG_NOTIFICATION,
-    Intent().apply {
-        action = Intent.ACTION_VIEW
-        data = DeepLinkConstants.UriBuilder.appLogScreen()
-        component = ComponentName(
-            packageName,
-            TARGET_ACTIVITY_NAME,
-        )
-    },
-    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-)
-
 /** 딥링크는 화면 스택을 비워 떠 있던 보내기 화면과 이전 세션을 닫는다. 앱을 앞으로 가져오기만 한다. */
 internal fun Context.bringAppToFrontPendingIntent() = PendingIntent.getActivity(
     this,
