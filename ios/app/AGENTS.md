@@ -90,6 +90,9 @@ final class AppLogBridgeImpl: IosAppLogBridge {
   Swift 가 볼 수 없어서다(export 하지 않는다). `IosMediaItem` 이 그래서 있는 거울 DTO 다
 - **판정은 Kotlin 이 한다.** Swift 는 "시킨 일" 만 한다. 같은 판단을 두 플랫폼이 다르게 내리면
   그 자체가 버그다 — 딥링크 파싱, 로그 자르기 규칙, A-B 구간반복이 전부 Kotlin 에 있는 이유다
+  - 예외는 URLSession 전송 엔진의 세부다. 추출 결과에서 주소·헤더·확장자·크기를 읽어 전송을 거는 일과
+    403/404/410 이면 다시 추출하는 재시도는 전송을 쥔 Swift 에 둔다. 곡 정보의 기본값("알 수 없음" 등)은
+    Kotlin(`YoutubeDownloadDto.withDefaults`)이 채운다
 - 비동기는 `completionHandler` 로 받는다. SKIE 가 Swift `async` 로 바꿔 준다
 - Swift 구현이 `@MainActor` 타입에 기대면 `@MainActor init` + `MainActor.assumeIsolated` 로
   **메인스레드 계약을 코드에 적는다**. nonisolated 로 두고 넘어가지 않는다

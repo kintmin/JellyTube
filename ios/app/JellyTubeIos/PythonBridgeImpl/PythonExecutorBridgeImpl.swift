@@ -82,10 +82,10 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                     sourceUrl: youtubeUrl,
                     destinationPath: "\(audioDownloadPath).\(ext)",
                     fileNameWithExt: "\((audioDownloadPath as NSString).lastPathComponent).\(ext)",
-                    title: result[safe: 3].flatMap { $0.isEmpty ? nil : $0 } ?? "알 수 없음",
+                    title: result[safe: 3] ?? "",
                     thumbnailUrl: result[safe: 4] ?? "",
-                    duration: result[safe: 5].flatMap { $0.isEmpty ? nil : $0 } ?? "0",
-                    uploader: result[safe: 6].flatMap { $0.isEmpty ? nil : $0 } ?? "알 수 없음",
+                    duration: result[safe: 5] ?? "",
+                    uploader: result[safe: 6] ?? "",
                     description: result[safe: 7] ?? ""
                 )
 
