@@ -35,9 +35,14 @@ class DownloadLyricsForAudioMediaUseCaseTest {
         createLyricsVariant = createVariant,
     )
 
-    private fun result(duration: Double?, plain: String?, synced: String?) = LyricsSearchResult(
+    private fun result(
+        duration: Double?,
+        plain: String?,
+        synced: String?,
+        trackName: String? = "곡",
+    ) = LyricsSearchResult(
         id = 1,
-        trackName = null,
+        trackName = trackName,
         artistName = null,
         albumName = null,
         duration = duration,
@@ -65,9 +70,9 @@ class DownloadLyricsForAudioMediaUseCaseTest {
     }
 
     @Test
-    fun `길이가 1초라도 다르면 적용하지 않는다`() = runTest {
+    fun `길이 오차가 1초를 넘으면 적용하지 않는다`() = runTest {
         coEvery { searchLyrics(any()) } returns Result.success(
-            listOf(result(duration = 201.0, plain = "hello", synced = null))
+            listOf(result(duration = 201.5, plain = "hello", synced = null))
         )
         stubApplyAndVariant()
 
@@ -106,7 +111,7 @@ class DownloadLyricsForAudioMediaUseCaseTest {
     }
 
     @Test
-    fun `소수 길이는 반올림한 초가 같으면 적용한다`() = runTest {
+    fun `길이 오차가 1초 이내면 적용한다`() = runTest {
         coEvery { searchLyrics(any()) } returns Result.success(
             listOf(result(duration = 341.438844, plain = "안녕", synced = null))
         )
@@ -116,6 +121,85 @@ class DownloadLyricsForAudioMediaUseCaseTest {
 
         assertTrue(r.isSuccess)
         coVerify(exactly = 1) { applyLyrics(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `곡명이 제목에 없으면 길이가 같아도 적용하지 않는다`() = runTest {
+        coEvery { searchLyrics(any()) } returns Result.success(
+            listOf(result(duration = 200.0, plain = "hello", synced = null, trackName = "Daydreaming"))
+        )
+        stubApplyAndVariant()
+
+        val r = useCase(audioMediaId = 1, title = "Leo", targetDurationSeconds = 200.0)
+
+        assertTrue(r.isSuccess)
+        coVerify(exactly = 0) { applyLyrics(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `곡명은 단어 단위로 비교해 다른 단어 속 일부는 일치로 보지 않는다`() = runTest {
+        coEvery { searchLyrics(any()) } returns Result.success(
+            listOf(result(duration = 200.0, plain = "hello", synced = null, trackName = "Leo"))
+        )
+        stubApplyAndVariant()
+
+        val r = useCase(audioMediaId = 1, title = "Cleopatra", targetDurationSeconds = 200.0)
+
+        assertTrue(r.isSuccess)
+        coVerify(exactly = 0) { applyLyrics(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `제목 앞뒤에 다른 단어가 있어도 곡명이 연속으로 들어 있으면 적용한다`() = runTest {
+        coEvery { searchLyrics(any()) } returns Result.success(
+            listOf(
+                result(
+                    duration = 200.0,
+                    plain = "hello",
+                    synced = null,
+                    trackName = "Don't Stop Me Now (Remastered 2011)",
+                )
+            )
+        )
+        stubApplyAndVariant()
+
+        val r = useCase(
+            audioMediaId = 1,
+            title = "AAA BBB - don't stop me now DDD (Official Video)",
+            targetDurationSeconds = 200.0,
+        )
+
+        assertTrue(r.isSuccess)
+        coVerify(exactly = 1) { applyLyrics(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `곡명 순서가 다르면 적용하지 않는다`() = runTest {
+        coEvery { searchLyrics(any()) } returns Result.success(
+            listOf(result(duration = 200.0, plain = "hello", synced = null, trackName = "Stop Me"))
+        )
+        stubApplyAndVariant()
+
+        val r = useCase(audioMediaId = 1, title = "Me Stop", targetDurationSeconds = 200.0)
+
+        assertTrue(r.isSuccess)
+        coVerify(exactly = 0) { applyLyrics(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `최상위가 곡명이 다르면 조건을 만족하는 다음 결과를 적용한다`() = runTest {
+        coEvery { searchLyrics(any()) } returns Result.success(
+            listOf(
+                result(duration = 200.0, plain = "wrong", synced = null, trackName = "Daydreaming"),
+                result(duration = 200.8, plain = "right", synced = null, trackName = "Leo"),
+            )
+        )
+        stubApplyAndVariant()
+
+        val r = useCase(audioMediaId = 1, title = "Leo", targetDurationSeconds = 200.0)
+
+        assertTrue(r.isSuccess)
+        coVerify(exactly = 1) { applyLyrics(any(), "right", any(), any(), any(), any()) }
     }
 
     @Test
