@@ -3,9 +3,9 @@ package com.kintmin.presentation.port
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
 import com.kintmin.domain.audio_edit.usecase.SaveEditedAudioAsNewMediaUseCase
+import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
-import com.kintmin.presentation.port.model.toMediaControlData
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,29 +25,15 @@ internal class IosExecuteAudioEditSave(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    override fun overwrite(audioMediaId: Int, timeline: AudioEditTimeline): Result<Unit> = launchSave {
-        applyAudioEditUseCase(audioMediaId = audioMediaId, timeline = timeline).onSuccess { audioMedia ->
-            // 재생 큐는 같은 플레이리스트를 다시 재생할 때 갱신되지 않아서 직접 교체해야 편집본이 재생된다
-            mediaControllerManager.tryReplaceMediaItem(
-                mediaId = audioMedia.id,
-                mediaItem = audioMedia.toMediaControlData(),
-            )
-            IosLocalNotification.show(WorkResultNotice.AudioEditSave.OverwriteSuccess(audioMedia.name, audioMedia.id))
-        }
-    }
+    override fun overwrite(audioMediaId: Int, timeline: AudioEditTimeline): Result<Unit> =
+        launchSave(isOverwrite = true) { applyAudioEditUseCase(audioMediaId = audioMediaId, timeline = timeline) }
 
     override fun saveAsNewMedia(audioMediaId: Int, timeline: AudioEditTimeline, name: String): Result<Unit> =
-        launchSave {
-            saveEditedAudioAsNewMediaUseCase(
-                audioMediaId = audioMediaId,
-                parts = timeline.toParts(),
-                name = name,
-            ).onSuccess { audioMedia ->
-                IosLocalNotification.show(WorkResultNotice.AudioEditSave.NewMediaSuccess(audioMedia.name, audioMedia.id))
-            }
+        launchSave(isOverwrite = false) {
+            saveEditedAudioAsNewMediaUseCase(audioMediaId = audioMediaId, parts = timeline.toParts(), name = name)
         }
 
-    private fun launchSave(save: suspend () -> Result<*>): Result<Unit> {
+    private fun launchSave(isOverwrite: Boolean, save: suspend () -> Result<AudioMedia>): Result<Unit> {
         scope.launch {
             // 이 스코프에는 예외 처리기가 없어 새는 예외는 앱을 죽인다
             val result = try {
@@ -55,14 +41,23 @@ internal class IosExecuteAudioEditSave(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
-                Result.failure<Unit>(e)
+                Result.failure(e)
             }
 
-            result.onFailure { throwable ->
-                appLog.sendDebugLog(DebugLog("IosExecuteAudioEditSave", throwable.message ?: "알 수 없는 오류"))
-                IosLocalNotification.show(WorkResultNotice.AudioEditSave.Failure)
-            }
+            result
+                .onSuccess { audioMedia ->
+                    runCatching { IosLocalNotification.show(mediaControllerManager.completeAudioEditSave(audioMedia, isOverwrite)) }
+                        .onFailure { log(it) }
+                }
+                .onFailure { throwable ->
+                    log(throwable)
+                    IosLocalNotification.show(WorkResultNotice.AudioEditSave.Failure)
+                }
         }
         return Result.success(Unit)
+    }
+
+    private suspend fun log(throwable: Throwable) {
+        appLog.sendDebugLog(DebugLog("IosExecuteAudioEditSave", throwable.message ?: "알 수 없는 오류"))
     }
 }

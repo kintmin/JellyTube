@@ -12,7 +12,7 @@ data class MediaControlData(
     val mediaArtworkFileUri: String?,
 )
 
-internal fun AudioMedia.toMediaControlData() = MediaControlData(
+fun AudioMedia.toMediaControlData() = MediaControlData(
     mediaId = id.toString(),
     mediaFileUri = playbackFileFullPath,
     mediaTitle = name,

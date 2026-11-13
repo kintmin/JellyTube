@@ -15,7 +15,7 @@ import com.kintmin.platform.push_notification.notifications.DownloadNotification
 import com.kintmin.platform.push_notification.notifications.DownloadResultNotification
 import com.kintmin.presentation.port.MediaControllerManager
 import com.kintmin.presentation.port.WorkResultNotice
-import com.kintmin.platform.service_controller.mapper.toMediaControlData
+import com.kintmin.presentation.port.model.toMediaControlData
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
