@@ -1,16 +1,11 @@
-package com.kintmin.presentation.port
+package com.kintmin.data.file_share
 
 import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
-import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
-import com.kintmin.domain.audio_media.usecase.ImportedAudioMediaResult
-import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
-import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
-import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
+import com.kintmin.domain.file_share.PcUploadHandler
 import com.kintmin.fileshare.BulkArtistUpdateRequest
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.FileShareResponse
 import com.kintmin.fileshare.UploadResponse
-import com.kintmin.presentation.platform.continueInBackgroundWhile
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -40,16 +35,9 @@ fun Application.installFileShareContentNegotiation() {
 
 /** [installFileShareContentNegotiation] 이 설치돼 있어야 JSON 본문을 읽고 쓴다. */
 @OptIn(ExperimentalUuidApi::class)
-fun Route.pcUploadEndpoints(
-    importUploadedAudioMedia: ImportUploadedAudioMediaUseCase,
-    validateUploadedAudioFileName: ValidateUploadedAudioFileNameUseCase,
-    updateAudioMedia: UpdateAudioMediaUseCase,
-    saveAudioMediaImage: SaveAudioMediaImageUseCase,
-    uploadTempDir: String,
-    onUploadImported: (ImportedAudioMediaResult) -> Unit,
-) {
+fun Route.pcUploadEndpoints(handler: PcUploadHandler, uploadTempDir: String) {
     post(FileShareConstants.HTTP_UPLOAD_PATH) {
-        val originalFileName = validateUploadedAudioFileName(call.request.header(FileShareConstants.HEADER_FILE_NAME))
+        val originalFileName = handler.validateFileName(call.request.header(FileShareConstants.HEADER_FILE_NAME))
             .getOrElse { error ->
                 call.discardBody()
                 call.respond(HttpStatusCode.BadRequest, UploadResponse(success = false, message = error.message.orEmpty()))
@@ -79,9 +67,8 @@ fun Route.pcUploadEndpoints(
                     return@continueInBackgroundWhile
                 }
 
-                importUploadedAudioMedia(tempPath.toString(), originalFileName)
+                handler.importUploadedAudio(tempPath.toString(), originalFileName)
                     .onSuccess { result ->
-                        onUploadImported(result)
                         call.respond(
                             HttpStatusCode.OK,
                             UploadResponse(
@@ -127,11 +114,7 @@ fun Route.pcUploadEndpoints(
 
         // 여러 곡에 적용하다 서스펜드되면 일부에만 적용된 채 PC 는 끊김만 받는다.
         continueInBackgroundWhile {
-            val result = runCatching {
-                request.audioMediaIds.forEach { id ->
-                    updateAudioMedia(id = id, artist = request.artist).getOrThrow()
-                }
-            }
+            val result = handler.applyArtist(request.audioMediaIds, request.artist)
             call.respond(
                 if (result.isSuccess) HttpStatusCode.OK else HttpStatusCode.UnprocessableEntity,
                 FileShareResponse(
@@ -165,12 +148,7 @@ fun Route.pcUploadEndpoints(
                     )
                     return@continueInBackgroundWhile
                 }
-            val result = runCatching {
-                ids.forEach { id ->
-                    val imageFileFullPath = saveAudioMediaImage(bytes).getOrThrow()
-                    updateAudioMedia(id = id, imageFileFullPath = imageFileFullPath).getOrThrow()
-                }
-            }
+            val result = handler.applyThumbnail(ids, bytes)
             call.respond(
                 if (result.isSuccess) HttpStatusCode.OK else HttpStatusCode.UnprocessableEntity,
                 FileShareResponse(

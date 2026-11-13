@@ -12,4 +12,4 @@ actual suspend fun <T> continueInBackgroundWhile(block: suspend () -> T): T =
 /** 포그라운드 서비스 같은 장치가 없어 서스펜드되면 서버도 멈춘다. */
 actual val keepsReceivingInBackground: Boolean = false
 
-private const val WINDOW_NAME = "receive"
+private const val WINDOW_NAME = "data-migration"

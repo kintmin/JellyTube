@@ -7,6 +7,7 @@ import com.kintmin.domain.audio_media.usecase.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
+import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.platform.service.migration.MigrationSession
 import io.ktor.client.request.header
@@ -55,12 +56,13 @@ class FileShareServerModuleTest {
     ) = testApplication {
         application {
             fileShareModule(
-                importUploadedAudioMedia = importUseCase,
-                validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
-                updateAudioMedia = updateUseCase,
-                saveAudioMediaImage = saveImageUseCase,
+                pcUploadHandler = CreatePcUploadHandlerUseCase(
+                    importUploadedAudioMedia = importUseCase,
+                    validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
+                    updateAudioMedia = updateUseCase,
+                    saveAudioMediaImage = saveImageUseCase,
+                ).invoke { imported += it },
                 uploadCacheDir = tempFolder.root,
-                onUploadImported = { imported += it },
                 currentMigrationSession = { migrationSession },
                 cleanupAnomalousData = mockk(),
                 exportMigrationData = mockk(),

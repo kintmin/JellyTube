@@ -1,19 +1,15 @@
 package com.kintmin.platform.service
 
+import com.kintmin.data.file_share.discardBody
+import com.kintmin.data.file_share.installFileShareContentNegotiation
+import com.kintmin.data.file_share.pcUploadEndpoints
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
-import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
-import com.kintmin.domain.audio_media.usecase.ImportedAudioMediaResult
-import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
-import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
-import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
+import com.kintmin.domain.file_share.PcUploadHandler
 import com.kintmin.fileshare.FileShareResponse
 import com.kintmin.platform.service.migration.MigrationSession
 import com.kintmin.platform.service.migration.migrationRoutes
-import com.kintmin.presentation.port.discardBody
-import com.kintmin.presentation.port.installFileShareContentNegotiation
-import com.kintmin.presentation.port.pcUploadEndpoints
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.createRouteScopedPlugin
@@ -27,12 +23,8 @@ import io.ktor.server.routing.routing
 import java.io.File
 
 internal fun Application.fileShareModule(
-    importUploadedAudioMedia: ImportUploadedAudioMediaUseCase,
-    validateUploadedAudioFileName: ValidateUploadedAudioFileNameUseCase,
-    updateAudioMedia: UpdateAudioMediaUseCase,
-    saveAudioMediaImage: SaveAudioMediaImageUseCase,
+    pcUploadHandler: PcUploadHandler,
     uploadCacheDir: File,
-    onUploadImported: (ImportedAudioMediaResult) -> Unit,
     currentMigrationSession: () -> MigrationSession?,
     cleanupAnomalousData: CleanupAnomalousDataUseCase,
     exportMigrationData: ExportMigrationDataUseCase,
@@ -43,14 +35,7 @@ internal fun Application.fileShareModule(
         migrationRoutes(currentMigrationSession, cleanupAnomalousData, exportMigrationData, resolveMigrationFilePath)
 
         pcUploadRoutes(currentMigrationSession) {
-            pcUploadEndpoints(
-                importUploadedAudioMedia = importUploadedAudioMedia,
-                validateUploadedAudioFileName = validateUploadedAudioFileName,
-                updateAudioMedia = updateAudioMedia,
-                saveAudioMediaImage = saveAudioMediaImage,
-                uploadTempDir = uploadCacheDir.path,
-                onUploadImported = onUploadImported,
-            )
+            pcUploadEndpoints(handler = pcUploadHandler, uploadTempDir = uploadCacheDir.path)
         }
     }
 }

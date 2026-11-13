@@ -64,12 +64,6 @@ kotlin {
 
             implementation(libs.io.coil.compose)   // coil3 는 멀티플랫폼이다
             implementation(libs.okio)              // Coil 입력 경로를 okio.Path 로 준다
-
-            // PC 업로드 수신 경로. 서버 엔진은 플랫폼이 고른다.
-            implementation(project(":shared:file-share"))
-            implementation(libs.ktor.server.core)
-            implementation(libs.ktor.server.content.negotiation)
-            implementation(libs.ktor.serialization.kotlinx.json)
         }
 
         androidMain.dependencies {
@@ -80,11 +74,6 @@ kotlin {
             implementation(libs.androidx.palette.ktx)
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
-        }
-
-        iosMain.dependencies {
-            // Android 는 같은 서버를 android:app 의 포그라운드 서비스가 띄운다.
-            implementation(libs.ktor.server.cio)
         }
 
         getByName("androidHostTest").dependencies {

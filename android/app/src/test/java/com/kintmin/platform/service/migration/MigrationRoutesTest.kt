@@ -24,6 +24,7 @@ import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
+import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
@@ -65,12 +66,13 @@ class MigrationRoutesTest {
 
         application {
             fileShareModule(
-                importUploadedAudioMedia = mockk(),
-                validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
-                updateAudioMedia = mockk(),
-                saveAudioMediaImage = mockk(),
+                pcUploadHandler = CreatePcUploadHandlerUseCase(
+                    importUploadedAudioMedia = mockk(),
+                    validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
+                    updateAudioMedia = mockk(),
+                    saveAudioMediaImage = mockk(),
+                ).invoke {},
                 uploadCacheDir = tempFolder.root,
-                onUploadImported = {},
                 currentMigrationSession = { session },
                 cleanupAnomalousData = cleanupUseCase,
                 exportMigrationData = exportUseCase,

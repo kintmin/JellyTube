@@ -15,12 +15,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
-import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
-import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
-import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
-import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.ResolveMigrationFilePathUseCase
+import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.platform.push_notification.PushNotificationIds
 import com.kintmin.platform.push_notification.PushNotificationManager
@@ -50,10 +47,7 @@ import org.koin.core.component.inject
 
 class FileShareForegroundService : Service(), KoinComponent {
 
-    private val importUploadedAudioMediaUseCase: ImportUploadedAudioMediaUseCase by inject()
-    private val validateUploadedAudioFileNameUseCase: ValidateUploadedAudioFileNameUseCase by inject()
-    private val updateAudioMediaUseCase: UpdateAudioMediaUseCase by inject()
-    private val saveAudioMediaImageUseCase: SaveAudioMediaImageUseCase by inject()
+    private val createPcUploadHandlerUseCase: CreatePcUploadHandlerUseCase by inject()
     private val cleanupAnomalousDataUseCase: CleanupAnomalousDataUseCase by inject()
     private val exportMigrationDataUseCase: ExportMigrationDataUseCase by inject()
     private val resolveMigrationFilePathUseCase: ResolveMigrationFilePathUseCase by inject()
@@ -126,31 +120,25 @@ class FileShareForegroundService : Service(), KoinComponent {
     private fun startKtorServer() {
         serviceScope.launch {
             runCatching {
-                val importUseCase = importUploadedAudioMediaUseCase
-                val updateUseCase = updateAudioMediaUseCase
-                val saveImageUseCase = saveAudioMediaImageUseCase
                 val notificationManager = pushNotificationManager
                 val uploadCacheDir = cacheDir
+                val pcUploadHandler = createPcUploadHandlerUseCase { result ->
+                    notificationManager.sendNotification(
+                        DownloadResultNotification(
+                            WorkResultNotice.Download.Success(
+                                artist = result.audioMedia.artist,
+                                name = result.audioMedia.name,
+                                playlistId = result.playlistIdOnDownload,
+                                audioMediaId = result.audioMedia.id,
+                            ),
+                        ),
+                    )
+                }
 
                 ktorServer = embeddedServer(CIO, port = FileShareConstants.DEFAULT_PORT) {
                     fileShareModule(
-                        importUploadedAudioMedia = importUseCase,
-                        validateUploadedAudioFileName = validateUploadedAudioFileNameUseCase,
-                        updateAudioMedia = updateUseCase,
-                        saveAudioMediaImage = saveImageUseCase,
+                        pcUploadHandler = pcUploadHandler,
                         uploadCacheDir = uploadCacheDir,
-                        onUploadImported = { result ->
-                            notificationManager.sendNotification(
-                                DownloadResultNotification(
-                                    WorkResultNotice.Download.Success(
-                                        artist = result.audioMedia.artist,
-                                        name = result.audioMedia.name,
-                                        playlistId = result.playlistIdOnDownload,
-                                        audioMediaId = result.audioMedia.id,
-                                    ),
-                                ),
-                            )
-                        },
                         currentMigrationSession = { MigrationSessionHolder.session.value },
                         cleanupAnomalousData = cleanupAnomalousDataUseCase,
                         exportMigrationData = exportMigrationDataUseCase,
