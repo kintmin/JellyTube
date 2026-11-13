@@ -19,6 +19,10 @@ The decision tree for where to place code:
 
 ---
 
+### 파일 (`local_file/`)
+
+`FileManagerImpl` 은 플랫폼마다 있지만 같은 일은 `commonMain` 의 `FileManagerCore`(okio)가 한다. 경로 조립, 가사, 앱 로그, 삭제·목록이 여기다. 플랫폼은 디렉터리 자리(`AppDirectories`)와 플랫폼 API 가 필요한 일(메타데이터 추출, 이미지 압축, content URI, 공용 저장소 내보내기)만 갖는다.
+
 ## Repository Implementation Conventions
 
 - One implementation per repository interface, named `~RepositoryImpl.kt`.
