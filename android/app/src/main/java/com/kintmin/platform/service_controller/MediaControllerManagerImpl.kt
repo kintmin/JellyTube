@@ -30,6 +30,8 @@ class MediaControllerManagerImpl(
     private var currentPlaylistIdState: Int? = null
     private var playbackSpeedState = 1.0f
     private var playbackPitchSemitoneState = 0
+    private var isRepeatState = false
+    private var isShuffleState = false
     private val repeatRange = RepeatRange()
 
     private fun getMediaController(): MediaController? {
@@ -46,6 +48,9 @@ class MediaControllerManagerImpl(
                 runCatching {
                     mediaController = get().also {
                         applyPlaybackParameters(it)
+                        // 연결 전에 받은 반복·셔플 설정도 연결되면 건다.
+                        it.repeatMode = if (isRepeatState) REPEAT_MODE_ALL else REPEAT_MODE_OFF
+                        it.shuffleModeEnabled = isShuffleState
                     }
                 }.onFailure {
                     controllerFuture = null
@@ -178,6 +183,7 @@ class MediaControllerManagerImpl(
     }
 
     override fun setShuffleMode(isShuffle: Boolean) {
+        isShuffleState = isShuffle
         val mediaController = getMediaController() ?: return
         if (mediaController.shuffleModeEnabled == isShuffle) return
         mediaController.shuffleModeEnabled = isShuffle
@@ -185,6 +191,7 @@ class MediaControllerManagerImpl(
     }
 
     override fun setRepeatMode(isRepeat: Boolean) {
+        isRepeatState = isRepeat
         getMediaController()?.repeatMode = if (isRepeat) REPEAT_MODE_ALL else REPEAT_MODE_OFF
     }
 

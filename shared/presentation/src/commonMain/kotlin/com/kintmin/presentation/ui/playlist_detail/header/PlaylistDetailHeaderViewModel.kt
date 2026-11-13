@@ -60,9 +60,6 @@ class PlaylistDetailHeaderViewModel constructor(
                 isShuffling = isShuffling,
                 isBasePlaylist = playlist.isBasePlaylist,
             )
-        }.onEach {
-            mediaControllerManager.setRepeatMode(it.isRepeating)
-            mediaControllerManager.setShuffleMode(it.isShuffling)
         }.stateIn(
             viewModelScope, SharingStarted.WhileSubscribed(5000), PlaylistDetailHeaderUiState(
                 id = 0,

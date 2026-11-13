@@ -91,25 +91,21 @@ class PlayerDetailViewModel constructor(
         viewModelScope.launch {
             fetchIsPlaybackRepeatingFlowUseCase().collect {
                 _data.update { prev -> prev.copy(isRepeating = it) }
-                mediaControllerManager.setRepeatMode(it)
             }
         }
         viewModelScope.launch {
             fetchIsPlaybackShufflingFlowUseCase().collect {
                 _data.update { prev -> prev.copy(isShuffling = it) }
-                mediaControllerManager.setShuffleMode(it)
             }
         }
         viewModelScope.launch {
             fetchPlaybackSpeedFlowUseCase().collect { speed ->
                 _data.update { prev -> prev.copy(playbackSpeed = speed) }
-                mediaControllerManager.setPlaybackSpeed(speed)
             }
         }
         viewModelScope.launch {
             fetchPlaybackPitchSemitoneFlowUseCase().collect { semitone ->
                 _data.update { prev -> prev.copy(playbackPitchSemitone = semitone) }
-                mediaControllerManager.setPlaybackPitchSemitone(semitone)
             }
         }
     }
