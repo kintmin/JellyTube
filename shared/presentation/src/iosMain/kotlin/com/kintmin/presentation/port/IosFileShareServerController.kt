@@ -5,6 +5,7 @@ import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.presentation.platform.ScreenAwake
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.aSocket
 import io.ktor.server.cio.CIO
@@ -51,6 +52,16 @@ internal class IosFileShareServerController(
     private var serving: Job? = null
 
     init {
+        // 다른 화면에 있어도 자동 잠금이 오면 서스펜드되어 서버가 멈추므로, 화면이 아니라 서버에 묶는다.
+        scope.launch {
+            var holding = false
+            _isRunning.collect { running ->
+                if (running == holding) return@collect
+                holding = running
+                if (running) ScreenAwake.acquire() else ScreenAwake.release()
+            }
+        }
+
         // 서스펜드된 동안 OS 가 리슨 소켓을 회수할 수 있다. 회수되면 오류 없이 접속만 거절된다.
         NSNotificationCenter.defaultCenter.addObserverForName(
             name = UIApplicationWillEnterForegroundNotification,
