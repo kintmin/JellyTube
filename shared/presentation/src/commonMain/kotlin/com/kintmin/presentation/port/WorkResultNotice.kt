@@ -50,6 +50,33 @@ sealed interface WorkResultNotice {
         }
     }
 
+    sealed interface AudioEditSave : WorkResultNotice {
+
+        data class OverwriteSuccess(
+            val name: String,
+            val audioMediaId: Int,
+        ) : AudioEditSave {
+            override val title = "편집본 저장 완료"
+            override val body = name
+            override val deepLink = DeepLinkConstants.UrlBuilder.audioMediaDetailScreen(audioMediaId)
+        }
+
+        data class NewMediaSuccess(
+            val name: String,
+            val audioMediaId: Int,
+        ) : AudioEditSave {
+            override val title = "편집본을 새 음원으로 저장 완료"
+            override val body = name
+            override val deepLink = DeepLinkConstants.UrlBuilder.audioMediaDetailScreen(audioMediaId)
+        }
+
+        data object Failure : AudioEditSave {
+            override val title = "편집본 저장 실패"
+            override val body = "저장에 실패했습니다. 로그를 확인해주세요."
+            override val deepLink = DeepLinkConstants.UrlBuilder.appLogScreen()
+        }
+    }
+
     sealed interface AnomalyCheck : WorkResultNotice {
 
         data class Success(

@@ -20,6 +20,7 @@ import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.AudioEditSaveNotification
 import com.kintmin.platform.push_notification.notifications.AudioEditSaveResultNotification
 import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.WorkResultNotice
 import com.kintmin.platform.service_controller.mapper.toMediaControlData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -100,13 +101,11 @@ class AudioEditSaveWorker(
                 }
                 pushNotificationManager.sendNotification(
                     AudioEditSaveResultNotification(
-                        resultType = if (newMediaName == null) {
-                            AudioEditSaveResultNotification.ResultType.OverwriteSuccess
+                        if (newMediaName == null) {
+                            WorkResultNotice.AudioEditSave.OverwriteSuccess(audioMedia.name, audioMedia.id)
                         } else {
-                            AudioEditSaveResultNotification.ResultType.NewMediaSuccess
+                            WorkResultNotice.AudioEditSave.NewMediaSuccess(audioMedia.name, audioMedia.id)
                         },
-                        contentText = audioMedia.name,
-                        audioMediaId = audioMedia.id,
                     )
                 )
                 Result.success()
@@ -120,12 +119,7 @@ class AudioEditSaveWorker(
 
     private suspend fun notifyFailure(errorMessage: String) {
         appLog.sendDebugLog(DebugLog("AudioEditSaveWorker", errorMessage))
-        pushNotificationManager.sendNotification(
-            AudioEditSaveResultNotification(
-                resultType = AudioEditSaveResultNotification.ResultType.Failure,
-                contentText = "저장에 실패했습니다. 로그를 확인해주세요.",
-            )
-        )
+        pushNotificationManager.sendNotification(AudioEditSaveResultNotification(WorkResultNotice.AudioEditSave.Failure))
     }
 
     companion object {
