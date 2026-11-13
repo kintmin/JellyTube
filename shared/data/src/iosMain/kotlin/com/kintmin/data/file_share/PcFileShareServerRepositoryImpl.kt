@@ -74,7 +74,7 @@ internal class PcFileShareServerRepositoryImpl(
 
     override fun start(handler: PcUploadHandler) {
         if (_isRunning.value) return
-        this.handler = handler
+        this.handler = PlayableOnlyPcUploadHandler(handler)
         _isRunning.value = true
         launchServing()
     }
