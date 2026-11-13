@@ -2,7 +2,6 @@ package com.kintmin.domain.audio_edit.model
 
 import kotlin.math.roundToLong
 
-/** [AudioEditPart]를 샘플 프레임 단위로 옮긴 것. */
 sealed interface AudioEditFrameSpan {
 
     val frameCount: Long

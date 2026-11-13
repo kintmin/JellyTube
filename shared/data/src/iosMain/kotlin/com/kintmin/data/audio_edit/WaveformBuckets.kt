@@ -15,6 +15,5 @@ internal class WaveformBuckets(
     /** [index] 칸 다음 칸이 시작하는 프레임. */
     fun endFrameOf(index: Int): Long = ((index + 1L) * totalFrameCount + bucketCount - 1) / bucketCount
 
-    /** 앞에서부터 [readFrameCount] 프레임을 읽었을 때 다 채워진 칸 수. */
     fun loadedCountAfter(readFrameCount: Long): Int = (readFrameCount * bucketCount / totalFrameCount).toInt()
 }

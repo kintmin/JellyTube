@@ -55,6 +55,7 @@ internal class AudioEditorImpl : AudioEditor {
 
         const val CHUNK_FRAME_COUNT = 32_768u
 
+        /** AAC 인코더가 받는 최대 샘플레이트. 넘으면 쓰기가 -50 으로 거절된다. */
         const val MAX_AAC_SAMPLE_RATE = 48_000.0
 
         /** 읽는 중간 결과를 내보내는 최소 간격. 너무 잦으면 매번 배열 복사와 다시 그리기가 일어난다. */
@@ -158,7 +159,6 @@ internal class AudioEditorImpl : AudioEditor {
         }
     }
 
-    /** AAC 인코더가 받는 형식. 48kHz 를 넘는 원본은 거절당하고, 다채널은 스테레오로 내려 쓴다. */
     private fun encodableFormatOf(source: AVAudioFormat): AVAudioFormat =
         if (source.sampleRate <= MAX_AAC_SAMPLE_RATE && source.channelCount <= 2u) {
             source
@@ -200,7 +200,6 @@ internal class AudioEditorImpl : AudioEditor {
         }
     }
 
-    /** 편집본 PCM 을 원본 형식의 청크로 차례로 내준다. 소리 조각은 원본에서 읽고 무음은 0 으로 채운다. */
     private inner class EditedPcmChunks(
         private val input: AVAudioFile,
         spans: List<AudioEditFrameSpan>,
@@ -209,7 +208,7 @@ internal class AudioEditorImpl : AudioEditor {
         private var currentSpan: AudioEditFrameSpan? = null
         private var remainingFrameCount = 0L
 
-        /** 변환기가 앞 청크를 아직 들고 있을 수 있어 청크마다 새 버퍼를 준다. 끝이면 null. */
+        /** 변환기가 앞 청크를 아직 들고 있을 수 있어 청크마다 새 버퍼를 준다. */
         fun next(): AVAudioPCMBuffer? {
             while (remainingFrameCount == 0L) {
                 val span = pendingSpans.removeFirstOrNull() ?: return null
@@ -291,10 +290,7 @@ internal class AudioEditorImpl : AudioEditor {
             close()
         }
 
-    /**
-     * Cocoa 규약상 error 는 반환값이 false 일 때만 유효하다. Kotlin/Native 는 init 이 nil 을 돌려주면
-     * 예외로 올리는데, 그때도 error 는 채워져 있어 원인을 붙인다.
-     */
+    /** Cocoa 규약상 error 는 반환값이 false 일 때만 유효하다. 성공한 호출도 error 를 채울 수 있다. */
     private inline fun <T> throwingNSError(failureMessage: String, block: (CPointer<ObjCObjectVar<NSError?>>) -> T): T =
         memScoped {
             val error = alloc<ObjCObjectVar<NSError?>>()

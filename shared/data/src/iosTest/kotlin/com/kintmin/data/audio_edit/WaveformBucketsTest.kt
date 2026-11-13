@@ -16,7 +16,6 @@ class WaveformBucketsTest {
                 val index = buckets.indexOf(frame)
                 val endFrame = buckets.endFrameOf(index)
                 assertTrue(endFrame > frame, "frame=$frame index=$index end=$endFrame")
-                // 칸 안의 프레임은 모두 같은 칸이고, 끝 프레임부터는 다음 칸이다
                 assertEquals(index, buckets.indexOf(endFrame - 1))
                 if (endFrame < totalFrameCount) assertTrue(buckets.indexOf(endFrame) > index)
                 frame = endFrame

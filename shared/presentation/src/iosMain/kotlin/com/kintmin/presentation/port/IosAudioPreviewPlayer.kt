@@ -170,10 +170,7 @@ internal class IosAudioPreviewPlayer : AudioPreviewPlayer {
         isPlayingState = false
     }
 
-    /**
-     * 실패하면 null. Cocoa 규약상 error 는 반환값이 false 일 때만 유효하고,
-     * Kotlin/Native 는 init 이 nil 을 돌려주면 예외로 올린다.
-     */
+    /** 실패하면 null. Cocoa 규약상 error 는 반환값이 false 일 때만 유효하다. */
     private inline fun <T> withNSError(block: (CPointer<ObjCObjectVar<NSError?>>) -> T): T? = memScoped {
         val error = alloc<ObjCObjectVar<NSError?>>()
         val result = try {
