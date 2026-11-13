@@ -183,11 +183,9 @@ internal class FileManagerImpl(
 
     override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = runCatching {
         withContext(Dispatchers.IO) {
-            // 업로드 경로가 검증한 이름만 넘긴다. 확장자가 없으면 그 검증을 거치지 않은 호출이다.
-            val ext = originalFileName.substringAfterLast(".", "")
-            require(ext.isNotBlank()) { "확장자가 없는 파일명입니다: $originalFileName" }
+            val uploadedName = UploadedAudioFileName(originalFileName)
             val fileName = UUID.randomUUID().toString()
-            val fileNameWithExt = "$fileName.$ext"
+            val fileNameWithExt = "$fileName.${uploadedName.ext}"
             val targetFile = audioDir().resolve(fileNameWithExt)
 
             // 파일 복사 + SHA-256 해시 계산 (대용량 파일도 메모리에 올리지 않는다)
@@ -209,7 +207,7 @@ internal class FileManagerImpl(
             CopiedAudioInfo(
                 fileNameWithExt = fileNameWithExt,
                 sha256Hex = sha256Hex,
-                title = metadata.title?.takeIf { it.isNotBlank() } ?: originalFileName.substringBeforeLast("."),
+                title = metadata.title?.takeIf { it.isNotBlank() } ?: uploadedName.fallbackTitle,
                 artist = metadata.artist?.takeIf { it.isNotBlank() },
                 durationMs = metadata.durationMs,
                 imageFileNameWithExt = metadata.imageFileNameWithExt,

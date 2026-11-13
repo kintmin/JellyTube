@@ -25,9 +25,14 @@ internal object IosRunningWorkTracker {
 
 internal class IosRunningWorkMonitor(
     private val fetchSavingAudioMediaIdsFlowUseCase: FetchSavingAudioMediaIdsFlowUseCase,
+    private val fileShareServerController: FileShareServerController,
 ) : RunningWorkMonitor {
 
     override suspend fun runningWorks(): Map<RunningWork, Int> =
-        (IosRunningWorkTracker.snapshot() + (RunningWork.AUDIO_EDIT_SAVE to fetchSavingAudioMediaIdsFlowUseCase().first().size))
+        (
+            IosRunningWorkTracker.snapshot() +
+                (RunningWork.AUDIO_EDIT_SAVE to fetchSavingAudioMediaIdsFlowUseCase().first().size) +
+                (RunningWork.PC_FILE_SHARE to if (fileShareServerController.isRunning.value) 1 else 0)
+            )
             .filterValues { it > 0 }
 }

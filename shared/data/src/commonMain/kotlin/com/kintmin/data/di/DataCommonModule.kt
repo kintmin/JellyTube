@@ -22,6 +22,7 @@ import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_edit.usecase.*
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.*
+import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
 import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingRepository
 import com.kintmin.domain.audio_play_setting.usecase.*
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
@@ -111,6 +112,7 @@ val dataCommonModule: Module = module {
     factoryOf(::ImportSharedAudioMediaUseCase)
     factoryOf(::ImportUploadedAudioMediaUseCase)
     factoryOf(::ValidateUploadedAudioFileNameUseCase)
+    factoryOf(::CreatePcUploadHandlerUseCase)
     factoryOf(::SaveAudioMediaImageUseCase)
     factoryOf(::UpdateAudioMediaUseCase)
     factoryOf(::SearchLyricsUseCase)

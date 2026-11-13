@@ -5,6 +5,7 @@ import com.kintmin.data.audio_edit.AudioEditorImpl
 import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.device_status.DeviceStatusImpl
+import com.kintmin.data.file_share.PcFileShareServerRepositoryImpl
 import com.kintmin.data.local_datastore.createIosPreferencesDataStore
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.database.createIosJellyTubeDatabase
@@ -20,7 +21,12 @@ import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.data.translation.IosLyricsTranslator
 import com.kintmin.data.translation.IosLyricsTranslatorBridge
 import com.kintmin.data.translation.LyricsTranslator
+import com.kintmin.domain.file_share.repository.PcFileShareServerRepository
+import com.kintmin.domain.file_share.usecase.FetchPcFileShareServerRunningUseCase
+import com.kintmin.domain.file_share.usecase.StartPcFileShareServerUseCase
+import com.kintmin.domain.file_share.usecase.StopPcFileShareServerUseCase
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
 /**
@@ -44,4 +50,10 @@ fun dataIosModule(
     single<IosPythonExecutorBridge> { pythonExecutorBridge }
     single<LyricsTranslator> { IosLyricsTranslator(lyricsTranslatorBridge) }
     single<LyricsTransliterator> { IosLyricsTransliterator(pythonExecutorBridge) }
+
+    // Android 는 PC 수신 서버를 android:app 의 포그라운드 서비스가 직접 띄워 이 저장소가 없다.
+    single<PcFileShareServerRepository> { PcFileShareServerRepositoryImpl(get()) }
+    factoryOf(::StartPcFileShareServerUseCase)
+    factoryOf(::StopPcFileShareServerUseCase)
+    factoryOf(::FetchPcFileShareServerRunningUseCase)
 }

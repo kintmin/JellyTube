@@ -50,7 +50,8 @@ fun DataMigrationConnectView(
                 is DataMigrationReceivePhase.Blocked -> {
                     StatusText("아직 끝나지 않은 작업이 있습니다. 모두 끝난 뒤에 데이터를 옮길 수 있습니다.")
                     phase.runningWorks.forEach { (work, count) -> StatusText("· ${work.label} ${count}건") }
-                    Button(onClick = { sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch) }) {
+                    // 페어링 뒤 막혔으면 보내는 기기가 광고를 내린 뒤라 다시 찾으면 못 찾는다.
+                    Button(onClick = { sendIntent(SettingDataMigrationReceiveIntent.OnClickRetry) }) {
                         Text("다시 확인")
                     }
                 }

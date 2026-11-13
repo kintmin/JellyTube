@@ -310,6 +310,27 @@ class SettingDataMigrationReceiveViewModelTest {
     }
 
     @Test
+    fun `멈춘 사이 다른 작업이 켜졌으면 받지 않고 기다렸다가 끝나면 코드 없이 이어 받는다`() {
+        coEvery { import(endpoint, "token", any()) } returns Result.failure(IllegalStateException("끊김"))
+        val viewModel = viewModel()
+        viewModel.connect()
+
+        val running = mapOf(RunningWork.PC_FILE_SHARE to 1)
+        coEvery { monitor.runningWorks() } returns running
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickRetry)
+
+        assertEquals(DataMigrationReceivePhase.Blocked(running), viewModel.uiState.value.phase)
+        coVerify(exactly = 1) { import(any(), any(), any()) }
+
+        coEvery { monitor.runningWorks() } returns emptyMap()
+        coEvery { import(endpoint, "token", any()) } returns Result.success(summary())
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickRetry)
+
+        assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Finished)
+        coVerify(exactly = 1) { pair(any(), any()) }
+    }
+
+    @Test
     fun `세션이 끝났으면 다시 시도 대신 새 코드를 받는다`() {
         coEvery { import(endpoint, "token", any()) } returns Result.failure(MigrationSessionExpiredException())
         coEvery { pair(endpoint, "654321") } returns Result.success("new-token")

@@ -13,7 +13,7 @@ import com.kintmin.presentation.port.IosExecuteAnomalyDataCheck
 import com.kintmin.presentation.port.IosExecuteAudioEditSaveStub
 import com.kintmin.presentation.port.IosExecuteLyricsVariantCreation
 import com.kintmin.presentation.port.IosExecuteYoutubeDownload
-import com.kintmin.presentation.port.IosFileShareServerControllerStub
+import com.kintmin.presentation.port.IosFileShareServerController
 import com.kintmin.presentation.port.IosRunningWorkMonitor
 import com.kintmin.presentation.port.IosStepMeasurementController
 import com.kintmin.presentation.port.RunningWorkMonitor
@@ -33,11 +33,11 @@ import org.koin.dsl.module
 val presentationIosModule: Module = module {
     single<AudioPreviewPlayer> { IosAudioPreviewPlayerStub() }
     single<StepMeasurementController> { IosStepMeasurementController(get(), get(), get(), get()) }
-    single<FileShareServerController> { IosFileShareServerControllerStub() }
+    single<FileShareServerController> { IosFileShareServerController(get(), get(), get()) }
     single<ExecuteYoutubeDownload> { IosExecuteYoutubeDownload(get(), get(), get(), get()) }
     single<ExecuteAnomalyDataCheck> { IosExecuteAnomalyDataCheck(get(), get()) }
     single<ExecuteLyricsVariantCreation> { IosExecuteLyricsVariantCreation(get(), get()) }
     single<ExecuteAudioEditSave> { IosExecuteAudioEditSaveStub() }
     single<DataMigrationSendController> { IosDataMigrationSendControllerStub() }
-    single<RunningWorkMonitor> { IosRunningWorkMonitor(get()) }
+    single<RunningWorkMonitor> { IosRunningWorkMonitor(get(), get()) }
 }

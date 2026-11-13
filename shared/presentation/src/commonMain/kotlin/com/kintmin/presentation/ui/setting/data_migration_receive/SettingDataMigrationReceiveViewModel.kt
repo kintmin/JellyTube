@@ -135,6 +135,12 @@ class SettingDataMigrationReceiveViewModel constructor(
             )
         }
         runJob = viewModelScope.launch {
+            // 찾은 뒤 다시 시도하기 전까지 PC 수신 등이 새로 켜졌을 수 있다. 받는 중에는 DB 를 바꾸면 안 된다.
+            val runningWorks = runningWorkMonitor.runningWorks()
+            if (runningWorks.isNotEmpty()) {
+                updatePhase(DataMigrationReceivePhase.Blocked(runningWorks))
+                return@launch
+            }
             // 지난 시도가 강제 종료로 남긴 파일을 먼저 치운다. 실패해도 이전은 할 수 있다.
             updateStage(DataMigrationStageItem(DataMigrationStageKind.CLEANUP, DataMigrationStageStatus.IN_PROGRESS))
             cleanupAnomalousDataUseCase()
