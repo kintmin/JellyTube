@@ -3,6 +3,7 @@ package com.kintmin.domain.audio_media.usecase
 import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import kotlinx.coroutines.flow.first
 
@@ -29,8 +30,3 @@ class ImportUploadedAudioMediaUseCase constructor(
         )
     }
 }
-
-data class ImportedAudioMediaResult(
-    val audioMedia: AudioMedia,
-    val playlistIdOnDownload: Int,
-)

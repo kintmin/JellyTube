@@ -16,7 +16,7 @@ import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
 import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
-import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO

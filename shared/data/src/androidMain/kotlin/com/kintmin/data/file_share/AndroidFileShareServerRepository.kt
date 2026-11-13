@@ -2,7 +2,7 @@ package com.kintmin.data.file_share
 
 import android.content.Context
 import com.kintmin.data.file_share.migration.MigrationSessionHolder
-import com.kintmin.domain.audio_media.usecase.ImportedAudioMediaResult
+import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
 import com.kintmin.domain.data_migration.MigrationSendHandler
 import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import com.kintmin.domain.data_migration.model.MigrationExport

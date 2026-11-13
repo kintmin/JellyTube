@@ -1,6 +1,6 @@
 package com.kintmin.data.file_share
 
-import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.file_share.PcUploadHandler
 import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.fileshare.BulkArtistUpdateRequest

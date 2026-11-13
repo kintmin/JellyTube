@@ -2,9 +2,9 @@ package com.kintmin.data.file_share
 
 import com.kintmin.data.file_share.migration.MigrationSession
 import com.kintmin.domain.audio_media.model.AudioMedia
-import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
-import com.kintmin.domain.audio_media.usecase.ImportedAudioMediaResult
+import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase

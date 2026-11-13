@@ -1,7 +1,7 @@
 package com.kintmin.domain.file_share.usecase
 
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
-import com.kintmin.domain.audio_media.usecase.ImportedAudioMediaResult
+import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase

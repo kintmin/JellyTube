@@ -1,9 +1,12 @@
 package com.kintmin.domain.audio_media.usecase
 
-import com.kintmin.domain.audio_media.model.AudioMedia
-import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
+import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadingMedia
+import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.domain.audio_media.model.DownloadedAudioMediaResult
+import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
@@ -78,18 +81,3 @@ class DownloadAudioMediaUseCase constructor(
         downloadAttemptUrlList -= downloadUrl
     }
 }
-
-class AlreadyDownloadingMedia(
-    override val message: String = "같은 출처의 미디어가 현재 다운로드중입니다."
-) : Throwable()
-
-class AlreadyDownloadedMedia(
-    override val message: String = "이미 저장된 미디어입니다."
-) : Throwable()
-
-data class DownloadedAudioMediaResult(
-    val audioMedia: AudioMedia,
-    val playlistIdOnDownload: Int,
-    val totalPlaylistId: Int,
-    val shouldInsertAtTopOnDownload: Boolean,
-)
