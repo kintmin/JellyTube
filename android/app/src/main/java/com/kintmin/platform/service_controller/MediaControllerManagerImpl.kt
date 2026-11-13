@@ -9,6 +9,7 @@ import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
+import com.kintmin.domain.audio_play_setting.PlaybackRange
 import com.kintmin.domain.audio_play_setting.RepeatRange
 import com.kintmin.domain.audio_play_setting.model.RepeatRangeState
 import com.kintmin.platform.service.PlaybackService
@@ -196,12 +197,12 @@ class MediaControllerManagerImpl(
     }
 
     override fun setPlaybackSpeed(speed: Float) {
-        playbackSpeedState = speed
+        playbackSpeedState = PlaybackRange.clampSpeed(speed)
         applyPlaybackParameters(getMediaController())
     }
 
     override fun setPlaybackPitchSemitone(semitone: Int) {
-        playbackPitchSemitoneState = semitone
+        playbackPitchSemitoneState = PlaybackRange.clampPitchSemitone(semitone)
         applyPlaybackParameters(getMediaController())
     }
 

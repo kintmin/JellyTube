@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kintmin.domain.audio_play_setting.PlaybackRange
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 import kotlin.math.roundToInt
 
@@ -173,8 +174,8 @@ private fun PlaybackPitchOptionChip(
     }
 }
 
-private const val MinPlaybackPitchSemitone = -10
-private const val MaxPlaybackPitchSemitone = 10
+private const val MinPlaybackPitchSemitone = PlaybackRange.MIN_PITCH_SEMITONE
+private const val MaxPlaybackPitchSemitone = PlaybackRange.MAX_PITCH_SEMITONE
 private const val PlaybackPitchStep = 1
 
 private val PlaybackPitchOptions = listOf(-4, -2, 0, 2, 4)

@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kintmin.domain.audio_play_setting.PlaybackRange
 import com.kintmin.presentation.extension.toFixed
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 import kotlin.math.roundToInt
@@ -172,8 +173,8 @@ private fun PlaybackSpeedOptionChip(
     }
 }
 
-private const val MinPlaybackSpeed = 0.25f
-private const val MaxPlaybackSpeed = 3.0f
+private const val MinPlaybackSpeed = PlaybackRange.MIN_SPEED
+private const val MaxPlaybackSpeed = PlaybackRange.MAX_SPEED
 private const val PlaybackSpeedStep = 0.01f
 
 private val PlaybackSpeedOptions = listOf(1.0f, 1.25f, 1.5f, 2.0f, 3.0f)
