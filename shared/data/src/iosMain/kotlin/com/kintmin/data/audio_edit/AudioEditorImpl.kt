@@ -141,19 +141,18 @@ internal class AudioEditorImpl : AudioEditor {
     ) {
         openForReading(sourceFileFullPath).use { input ->
             val sourceFormat = input.processingFormat
-            val outputFormat = encodableFormatOf(sourceFormat)
             val chunks = EditedPcmChunks(
                 input = input,
                 spans = parts.toFrameSpans(sampleRate = sourceFormat.sampleRate, sourceFrameCount = input.length),
             )
-            openForWriting(outputFileFullPath, outputFormat).use { output ->
-                if (outputFormat.isEqual(sourceFormat)) {
+            openForWriting(outputFileFullPath, encodableFormatOf(sourceFormat)).use { output ->
+                if (output.processingFormat.isEqual(sourceFormat)) {
                     while (true) {
                         currentCoroutineContext().ensureActive()
                         output.writeChunk(chunks.next() ?: break)
                     }
                 } else {
-                    writeConverted(chunks, sourceFormat, outputFormat, output)
+                    writeConverted(chunks, sourceFormat, output.processingFormat, output)
                 }
             }
         }
