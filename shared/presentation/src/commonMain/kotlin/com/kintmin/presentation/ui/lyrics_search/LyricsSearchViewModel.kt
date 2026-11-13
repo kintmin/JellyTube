@@ -87,7 +87,7 @@ class LyricsSearchViewModel constructor(
         }
         _data.update { it.copy(isLoading = true) }
         val results = searchLyricsUseCase(query).getOrNull().orEmpty()
-            .let { sortLyricsSearchResultsUseCase(it, route.durationSeconds) }
+            .let { sortLyricsSearchResultsUseCase(it, query, route.durationSeconds) }
             .map { it.toItem() }
         _data.update { it.copy(isLoading = false, results = results) }
     }

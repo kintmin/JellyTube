@@ -7,6 +7,7 @@ import com.kintmin.domain.lyrics.usecase.BuildLyricsSearchQueryUseCase
 import com.kintmin.domain.lyrics.usecase.CreateLyricsVariantUseCase
 import com.kintmin.domain.lyrics.usecase.DetectLyricsLanguageUseCase
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
+import com.kintmin.domain.lyrics.usecase.MatchLyricsTrackNameUseCase
 import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SearchLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SortLyricsSearchResultsUseCase
@@ -25,10 +26,13 @@ class DownloadLyricsForAudioMediaUseCaseTest {
 
     private val lyricPath = "/lyrics/x.lrc"
 
+    private val matchTrackName = MatchLyricsTrackNameUseCase(BuildLyricsSearchQueryUseCase())
+
     private val useCase = DownloadLyricsForAudioMediaUseCase(
         buildLyricsSearchQuery = BuildLyricsSearchQueryUseCase(),
         searchLyrics = searchLyrics,
-        sortLyricsSearchResults = SortLyricsSearchResultsUseCase(),
+        sortLyricsSearchResults = SortLyricsSearchResultsUseCase(matchTrackName),
+        matchLyricsTrackName = matchTrackName,
         applyLyricsToAudioMedia = applyLyrics,
         parseLyrics = ParseLyricsUseCase(),
         detectLyricsLanguage = DetectLyricsLanguageUseCase(),
