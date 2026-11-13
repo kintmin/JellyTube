@@ -6,7 +6,7 @@ import com.kintmin.platform.intent.IntentRequestCode
 import com.kintmin.platform.intent.workResultPendingIntent
 import com.kintmin.platform.push_notification.PushNotificationIdGenerator
 import com.kintmin.platform.push_notification.channels.DownloadResultChannel
-import com.kintmin.presentation.port.WorkResultNotice
+import com.kintmin.presentation.work_notice.WorkResultNotice
 
 data class DownloadResultNotification(
     val notice: WorkResultNotice.Download,

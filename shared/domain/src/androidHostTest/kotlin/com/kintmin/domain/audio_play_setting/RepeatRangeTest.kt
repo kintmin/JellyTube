@@ -1,6 +1,5 @@
-package com.kintmin.presentation
+package com.kintmin.domain.audio_play_setting
 
-import com.kintmin.presentation.port.RepeatRange
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue

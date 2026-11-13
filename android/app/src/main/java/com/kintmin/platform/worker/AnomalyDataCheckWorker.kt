@@ -8,7 +8,7 @@ import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.AnomalyCheckResultNotification
-import com.kintmin.presentation.port.WorkResultNotice
+import com.kintmin.presentation.work_notice.WorkResultNotice
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 

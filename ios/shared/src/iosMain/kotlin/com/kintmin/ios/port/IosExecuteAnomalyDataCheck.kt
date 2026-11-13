@@ -4,8 +4,8 @@ import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.port.ExecuteAnomalyDataCheck
-import com.kintmin.presentation.port.WorkResultNotice
 import com.kintmin.presentation.port.model.RunningWork
+import com.kintmin.presentation.work_notice.WorkResultNotice
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

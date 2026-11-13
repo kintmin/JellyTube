@@ -1,4 +1,4 @@
-package com.kintmin.presentation.port
+package com.kintmin.presentation.work_notice
 
 import com.kintmin.domain.lyrics.model.LyricsVariant
 

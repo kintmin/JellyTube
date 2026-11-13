@@ -4,7 +4,7 @@ import com.kintmin.domain.file_share.usecase.FetchPcFileShareServerRunningUseCas
 import com.kintmin.domain.file_share.usecase.StartPcFileShareServerUseCase
 import com.kintmin.domain.file_share.usecase.StopPcFileShareServerUseCase
 import com.kintmin.presentation.port.FileShareServerController
-import com.kintmin.presentation.port.WorkResultNotice
+import com.kintmin.presentation.work_notice.WorkResultNotice
 import kotlinx.coroutines.flow.StateFlow
 
 internal class IosFileShareServerController(

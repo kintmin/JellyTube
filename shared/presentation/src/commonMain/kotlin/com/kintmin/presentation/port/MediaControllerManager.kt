@@ -1,13 +1,8 @@
 package com.kintmin.presentation.port
 
+import com.kintmin.domain.audio_play_setting.model.RepeatRangeState
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlin.time.Duration
-
-data class RepeatRangeState(
-    val mediaId: String? = null,
-    val startDuration: Duration? = null,
-    val endDuration: Duration? = null,
-)
 
 interface MediaControllerManager {
 

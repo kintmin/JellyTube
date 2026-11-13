@@ -1,12 +1,12 @@
-package com.kintmin.presentation.port
+package com.kintmin.domain.audio_play_setting
 
+import com.kintmin.domain.audio_play_setting.model.RepeatRangeState
 import kotlin.time.Duration
 
 /**
  * A-B 구간반복 상태.
  *
- * 플랫폼 구현이 각자 들면 두 플랫폼이 다른 답을 낼 수 있어 여기 한 벌만 둔다.
- * 플레이어가 주는 기능이 아니라 앱이 직접 쓴 로직이라 공통 코드에 있다.
+ * 플레이어가 주는 기능이 아니라 앱이 직접 쓴 로직이다. 두 플랫폼의 재생 구현이 이것을 같이 쓴다.
  */
 class RepeatRange {
 

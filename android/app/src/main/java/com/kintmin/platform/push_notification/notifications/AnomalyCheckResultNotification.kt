@@ -6,7 +6,7 @@ import com.kintmin.platform.intent.IntentRequestCode
 import com.kintmin.platform.intent.workResultPendingIntent
 import com.kintmin.platform.push_notification.PushNotificationIdGenerator
 import com.kintmin.platform.push_notification.channels.AnomalyCheckResultChannel
-import com.kintmin.presentation.port.WorkResultNotice
+import com.kintmin.presentation.work_notice.WorkResultNotice
 
 data class AnomalyCheckResultNotification(
     val notice: WorkResultNotice.AnomalyCheck,
