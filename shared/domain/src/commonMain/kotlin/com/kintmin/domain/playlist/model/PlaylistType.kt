@@ -15,4 +15,7 @@ enum class PlaylistType(val defaultName: String) {
     ;
 
     val isSystem: Boolean get() = this != USER
+
+    /** 다운로드·가져오기한 곡을 넣을 수 있는가. 전체·즐겨찾기는 곡을 직접 넣는 곳이 아니다. */
+    val canBeDownloadTarget: Boolean get() = this == USER || this == UNCATEGORIZED
 }

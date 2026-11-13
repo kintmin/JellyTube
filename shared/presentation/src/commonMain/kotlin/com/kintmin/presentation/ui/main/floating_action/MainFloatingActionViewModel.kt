@@ -2,10 +2,9 @@ package com.kintmin.presentation.ui.main.floating_action
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
-import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
+import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
 import com.kintmin.domain.youtube.YoutubeUrl
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -18,8 +17,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class MainFloatingActionViewModel constructor(
-    fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase,
-    fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
+    fetchDownloadTargetPlaylistsFlowUseCase: FetchDownloadTargetPlaylistsFlowUseCase,
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
 ) : ViewModel() {
 
@@ -29,27 +27,19 @@ class MainFloatingActionViewModel constructor(
     val eventFlow = _eventFlow.asSharedFlow()
 
     val uiState: StateFlow<MainFloatingActionUiState> = combine(
-        fetchPlaylistIdOnDownloadFlowUseCase(),
-        fetchAllPlaylistFlowUseCase(),
+        fetchDownloadTargetPlaylistsFlowUseCase(),
         isPlaylistBottomSheetVisible,
-    ) { playlistIdOnDownload, playlistList, isBottomSheetVisible ->
-        // 다운로드 대상은 USER 플레이리스트 + 미분류(기본)만. 전체/즐겨찾기는 제외.
-        val uncategorizedId = playlistList.firstOrNull { it.type == PlaylistType.UNCATEGORIZED }?.id
-        val effectiveTargetId =
-            playlistIdOnDownload?.takeIf { id -> playlistList.any { it.id == id } } ?: uncategorizedId
-
-        val selectablePlaylistList = playlistList
-            .filter { it.type == PlaylistType.USER || it.type == PlaylistType.UNCATEGORIZED }
-            .map { playlist ->
-                DownloadPlaylistUiState(
-                    id = playlist.id,
-                    name = if (playlist.type == PlaylistType.UNCATEGORIZED) PlaylistType.UNCATEGORIZED.defaultName else playlist.name,
-                    isSelected = playlist.id == effectiveTargetId,
-                )
-            }
+    ) { downloadTarget, isBottomSheetVisible ->
+        val selectablePlaylistList = downloadTarget.selectable.map { playlist ->
+            DownloadPlaylistUiState(
+                id = playlist.id,
+                name = if (playlist.type == PlaylistType.UNCATEGORIZED) PlaylistType.UNCATEGORIZED.defaultName else playlist.name,
+                isSelected = playlist.id == downloadTarget.targetId,
+            )
+        }
 
         MainFloatingActionUiState(
-            playlistIdOnDownload = effectiveTargetId,
+            playlistIdOnDownload = downloadTarget.targetId,
             playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.isSelected }?.name ?: PlaylistType.UNCATEGORIZED.defaultName,
             selectablePlaylistList = selectablePlaylistList,
             isPlaylistBottomSheetVisible = isBottomSheetVisible,

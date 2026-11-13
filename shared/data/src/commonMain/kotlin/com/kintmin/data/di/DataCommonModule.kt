@@ -88,6 +88,7 @@ val dataCommonModule: Module = module {
     factoryOf(::FetchShouldInsertAtTopOnDownloadFlowUseCase)
     factoryOf(::UpdateIsStepEnabledUseCase)
     factoryOf(::UpdatePlaylistIdOnDownloadUseCase)
+    factoryOf(::FetchDownloadTargetPlaylistsFlowUseCase)
     factoryOf(::UpdateShouldInsertAtTopOnDownloadUseCase)
     factoryOf(::ExtractAudioWaveformUseCase)
     factoryOf(::ApplyAudioEditUseCase)
