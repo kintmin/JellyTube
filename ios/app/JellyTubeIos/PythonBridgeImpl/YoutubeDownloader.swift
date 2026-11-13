@@ -58,10 +58,8 @@ private struct YoutubeTransfer: Codable {
     var didEnqueueAll: Bool
     /// 실행 유예가 끝나 OS 데몬에 넘긴 전송인지. 앱 생애를 넘겨도 같은 세션으로 이어야 한다.
     var usesBackgroundSession: Bool
-    /// HLS 조각 주소 목록(JSON 배열) 파일. 있으면 범위 요청 대신 조각을 받는다.
-    /// 목록이 길어 전송 기록(UserDefaults)에 넣지 않는다 — 조각마다 기록을 통째로 다시 쓴다.
+    /// 있으면 조각 모드다. 조각 주소는 수백 개라, 조각마다 통째로 다시 쓰는 이 기록에 넣지 않고 파일로 둔다.
     var segmentsPath: String?
-    /// 받아 둔 조각 번호.
     var receivedSegments: [Int]?
 
     /// 완주한 뒤에야 목적지로 옮긴다. 중간에 끊겨도 반쪽 파일이 자리에 남지 않는다.
@@ -91,8 +89,6 @@ final class YoutubeDownloader: NSObject {
     private static let inFlightKey = "youtubeDownload.inFlight"
     private static let completedKey = "youtubeDownload.completed"
     private static let executionWindowName = "youtube-download"
-    /// 재시도 간격(초). 개수가 재시도 횟수 상한이다.
-    private static let retryDelays: [TimeInterval] = [1, 3]
 
     /// 백그라운드 세션을 되살려 달라고 OS 가 앱을 깨울 때 쥐여 주는 마무리 콜백.
     var backgroundCompletionHandler: (() -> Void)?
@@ -124,7 +120,6 @@ final class YoutubeDownloader: NSObject {
     private var startedAt: [String: Date] = [:]
     /// `주소#시작오프셋` · `주소#seg번호` 별 재시도 횟수.
     private var chunkRetryCounts: [String: Int] = [:]
-    /// `segmentsPath` 별 조각 주소. 응답마다 파일을 다시 읽지 않으려고 둔다.
     private var segmentUrlsCache: [String: [String]] = [:]
     /// 메인 스레드에서만 만진다.
     private var executionWindow: UIBackgroundTaskIdentifier = .invalid
@@ -201,14 +196,21 @@ final class YoutubeDownloader: NSObject {
         chunks.forEach { request($0, for: transfer) }
     }
 
-    /// HLS 조각을 전부 한 번에 등록하고, 다 모이면 순서대로 이어 붙인다.
     func downloadSegments(
         playlistUrl: URL,
-        segmentsPath: String,
+        segmentUrls: [String],
         headers: [String: String],
         source: YoutubeAudioSource,
         completion: @escaping (Error?) -> Void
     ) {
+        let segmentsPath = source.destinationPath + ".segments.json"
+        do {
+            try JSONEncoder().encode(segmentUrls).write(to: URL(fileURLWithPath: segmentsPath))
+        } catch {
+            completion(error)
+            return
+        }
+
         let transfer = YoutubeTransfer(
             source: source,
             remoteUrl: playlistUrl.absoluteString,
@@ -230,13 +232,8 @@ final class YoutubeDownloader: NSObject {
         lock.unlock()
         refreshExecutionWindow()
 
-        guard let urls = segmentUrls(for: transfer), !urls.isEmpty else {
-            fail(sourceUrl: source.sourceUrl, error: CocoaError(.fileReadCorruptFile))
-            return
-        }
-
-        downloadLog("begin segments=\(urls.count)")
-        for (index, url) in urls.enumerated() {
+        downloadLog("begin segments=\(segmentUrls.count)")
+        for (index, url) in segmentUrls.enumerated() {
             requestSegment(index, url: url, for: transfer)
         }
     }
@@ -398,7 +395,7 @@ final class YoutubeDownloader: NSObject {
         return urls
     }
 
-    /// 응답이 몇 번 조각인지. 유튜브 조각 주소는 `/sq/번호` 가 있어 서로 다르다.
+    /// 유튜브 조각 주소는 `/sq/번호` 가 있어 서로 다르다. 주소로 몇 번 조각인지 찾는다.
     private func segmentIndex(of task: URLSessionTask, in transfer: YoutubeTransfer) -> Int? {
         guard let url = task.originalRequest?.url?.absoluteString else { return nil }
         return segmentUrls(for: transfer)?.firstIndex(of: url)
@@ -574,17 +571,15 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         fail(sourceUrl: sourceUrl, error: error)
     }
 
-    /// 5xx·429 는 서버가 잠시 못 받는 것이라 같은 주소로 다시 받는다. 403·404·410 은 주소가 상한 것이라
-    /// 호출자가 다시 추출한다.
     private func failOrRetry(_ task: URLSessionTask, sourceUrl: String, statusCode: Int) {
-        let isTransient = statusCode == 429 || (500...599).contains(statusCode)
-        if isTransient, retry(task, sourceUrl: sourceUrl, reason: "HTTP \(statusCode)") {
+        if TransferRetryPlan.shared.isTransient(statusCode: Int32(statusCode)),
+           retry(task, sourceUrl: sourceUrl, reason: "HTTP \(statusCode)") {
             return
         }
         fail(sourceUrl: sourceUrl, error: YoutubeDownloadError.httpStatus(statusCode))
     }
 
-    /// 같은 구간·조각을 간격을 두고 다시 등록한다. 한도를 넘었거나 어느 구간인지 되읽을 수 없으면 false.
+    /// 한도를 넘었거나 어느 구간·조각인지 되읽을 수 없으면 false.
     private func retry(_ task: URLSessionTask, sourceUrl: String, reason: String) -> Bool {
         lock.lock()
         let transfer = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)[sourceUrl]
@@ -619,10 +614,12 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         let attempt = (chunkRetryCounts[key] ?? 0) + 1
         chunkRetryCounts[key] = attempt
         lock.unlock()
-        guard attempt <= Self.retryDelays.count else { return false }
+        guard let delay = TransferRetryPlan.shared.delaySeconds(attempt: Int32(attempt))?.doubleValue else {
+            return false
+        }
 
         downloadLog("retry \(key.dropFirst(sourceUrl.count)) attempt=\(attempt): \(reason)")
-        resend(Self.retryDelays[attempt - 1])
+        resend(delay)
         return true
     }
 
@@ -808,7 +805,6 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         waiter?(error)
     }
 
-    /// 조각을 번호 순으로 이어 붙인다. yt-dlp 의 HLS 다운로더와 같은 결과 바이트다.
     private static func concatenateSegments(count: Int, from directory: String, to path: String) throws {
         let manager = FileManager.default
         if manager.fileExists(atPath: path) {
