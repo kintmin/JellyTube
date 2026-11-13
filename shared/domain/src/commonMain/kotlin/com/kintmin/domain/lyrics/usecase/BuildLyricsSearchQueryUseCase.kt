@@ -3,9 +3,8 @@ package com.kintmin.domain.lyrics.usecase
 /** 유튜브 제목 원문에서 괄호·구분자·잡음 단어를 걷어 가사 검색어를 만든다. */
 class BuildLyricsSearchQueryUseCase {
 
-    private val bracketRegex = Regex("""[(\[{（【［].*?[)\]}）】］]""")
-    // 「」『』 등은 곡명을 감싸는 괄호라 bracketRegex 와 달리 내용을 남긴다.
-    private val keepContentSymbolRegex = Regex("""[「」『』《》〈〉<>"“”|｜·]""")
+    // 괄호 안에도 곡명이나 아티스트 영문 표기가 들어가므로(음율 (UmYull)) 기호만 지우고 내용은 남긴다.
+    private val bracketSymbolRegex = Regex("""[(\[{（【［)\]}）】］「」『』《》〈〉<>"“”|｜·]""")
     private val musicVideoRegex = Regex("""\bmusic\s+video\b""", RegexOption.IGNORE_CASE)
     private val whitespaceRegex = Regex("""\s+""")
     private val separatorOnlyRegex = Regex("""[-–—_/:~.,／－：～・、]+""")
@@ -15,8 +14,7 @@ class BuildLyricsSearchQueryUseCase {
 
     operator fun invoke(rawTitle: String): String =
         rawTitle
-            .replace(bracketRegex, " ")
-            .replace(keepContentSymbolRegex, " ")
+            .replace(bracketSymbolRegex, " ")
             .replace(musicVideoRegex, " ")
             .split(whitespaceRegex)
             .map { it.trim(*apostrophes) }
