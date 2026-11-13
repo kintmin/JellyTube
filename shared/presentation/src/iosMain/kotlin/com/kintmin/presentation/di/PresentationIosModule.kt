@@ -37,7 +37,7 @@ val presentationIosModule: Module = module {
     single<ExecuteYoutubeDownload> { IosExecuteYoutubeDownload(get(), get(), get(), get()) }
     single<ExecuteAnomalyDataCheck> { IosExecuteAnomalyDataCheck(get(), get()) }
     single<ExecuteLyricsVariantCreation> { IosExecuteLyricsVariantCreation(get(), get()) }
-    single<ExecuteAudioEditSave> { IosExecuteAudioEditSave(get(), get(), get(), get(), get()) }
+    single<ExecuteAudioEditSave> { IosExecuteAudioEditSave(get(), get(), get(), get()) }
     single<DataMigrationSendController> { IosDataMigrationSendControllerStub() }
     single<RunningWorkMonitor> { IosRunningWorkMonitor(get()) }
 }

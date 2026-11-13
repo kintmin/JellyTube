@@ -15,25 +15,27 @@ class ApplyAudioEditUseCase constructor(
         audioMediaId: Int,
         timeline: AudioEditTimeline,
     ): Result<AudioMedia> {
-        if (!timeline.hasAudio) {
-            return Result.failure(EmptyAudioEditSegment())
-        }
+        audioEditRepository.withSavingMark(audioMediaId) {
+            if (!timeline.hasAudio) {
+                return Result.failure(EmptyAudioEditSegment())
+            }
 
-        val timedValue = measureTimedValue {
-            audioEditRepository.applyEditedAudio(
-                audioMediaId = audioMediaId,
-                timeline = timeline,
-            )
-        }
+            val timedValue = measureTimedValue {
+                audioEditRepository.applyEditedAudio(
+                    audioMediaId = audioMediaId,
+                    timeline = timeline,
+                )
+            }
 
-        appLog.sendDebugLog(
-            DebugLog(
-                tag = "ApplyAudioEditUseCase",
-                message = "편집본 적용: 조각 ${timeline.clips.size}개, 소요 ${timedValue.duration}, " +
-                    "결과 ${timedValue.value.exceptionOrNull() ?: "성공"}",
+            appLog.sendDebugLog(
+                DebugLog(
+                    tag = "ApplyAudioEditUseCase",
+                    message = "편집본 적용: 조각 ${timeline.clips.size}개, 소요 ${timedValue.duration}, " +
+                        "결과 ${timedValue.value.exceptionOrNull() ?: "성공"}",
+                )
             )
-        )
-        return timedValue.value
+            return timedValue.value
+        }
     }
 }
 

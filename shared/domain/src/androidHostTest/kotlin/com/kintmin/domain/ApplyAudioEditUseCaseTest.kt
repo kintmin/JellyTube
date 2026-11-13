@@ -7,10 +7,15 @@ import com.kintmin.domain.audio_edit.usecase.EmptyAudioEditSegment
 import com.kintmin.domain.audio_edit.usecase.RevertAudioEditUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.log.AppLog
+import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDateTime
 import org.junit.After
@@ -48,6 +53,8 @@ class ApplyAudioEditUseCaseTest {
 
     @Before
     fun setup() {
+        every { audioEditRepository.reserveSaving(any()) } returns true
+        every { audioEditRepository.releaseSaving(any()) } just Runs
         applyAudioEditUseCase = ApplyAudioEditUseCase(
             audioEditRepository = audioEditRepository,
             appLog = appLog,
@@ -119,6 +126,32 @@ class ApplyAudioEditUseCaseTest {
         )
 
         assert(result.isFailure)
+    }
+
+    @Test
+    fun `적용하는 동안 저장 중으로 표시하고 끝나면 푼다`() = runTest {
+        val timeline = AudioEditTimeline.initial(ORIGIN_DURATION_MS).split(1_000)
+        coEvery {
+            audioEditRepository.applyEditedAudio(AUDIO_MEDIA_ID, timeline)
+        } returns Result.success(editedAudioMedia)
+
+        applyAudioEditUseCase(audioMediaId = AUDIO_MEDIA_ID, timeline = timeline)
+
+        coVerifyOrder {
+            audioEditRepository.reserveSaving(AUDIO_MEDIA_ID)
+            audioEditRepository.applyEditedAudio(AUDIO_MEDIA_ID, timeline)
+            audioEditRepository.releaseSaving(AUDIO_MEDIA_ID)
+        }
+    }
+
+    @Test
+    fun `리포지토리에 닿기 전에 실패해도 저장 중 표시를 푼다`() = runTest {
+        applyAudioEditUseCase(
+            audioMediaId = AUDIO_MEDIA_ID,
+            timeline = AudioEditTimeline.initial(ORIGIN_DURATION_MS).delete(0),
+        )
+
+        verify(exactly = 1) { audioEditRepository.releaseSaving(AUDIO_MEDIA_ID) }
     }
 
     @Test

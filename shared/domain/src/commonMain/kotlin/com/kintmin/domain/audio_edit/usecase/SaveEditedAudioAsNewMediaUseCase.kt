@@ -24,29 +24,31 @@ class SaveEditedAudioAsNewMediaUseCase constructor(
         parts: List<AudioEditPart>,
         name: String,
     ): Result<AudioMedia> {
-        if (parts.none { it is AudioEditPart.Audio }) {
-            return Result.failure(EmptyAudioEditSegment())
-        }
-        if (name.isBlank()) {
-            return Result.failure(BlankEditedAudioName())
-        }
+        audioEditRepository.withSavingMark(audioMediaId) {
+            if (parts.none { it is AudioEditPart.Audio }) {
+                return Result.failure(EmptyAudioEditSegment())
+            }
+            if (name.isBlank()) {
+                return Result.failure(BlankEditedAudioName())
+            }
 
-        val result = audioEditRepository.saveEditedAudioAsNewMedia(
-            audioMediaId = audioMediaId,
-            parts = parts,
-            name = name.trim(),
-            playlistIdOnDownload = fetchPlaylistIdOnDownloadFlowUseCase().first(),
-            shouldInsertAtTopOnDownload = fetchShouldInsertAtTopOnDownloadFlowUseCase().first(),
-        )
-
-        appLog.sendDebugLog(
-            DebugLog(
-                tag = "SaveEditedAudioAsNewMediaUseCase",
-                message = "편집본을 새 음원으로 저장: 원본 id $audioMediaId, 조각 ${parts.size}개, " +
-                    "결과 ${result.exceptionOrNull() ?: "성공"}",
+            val result = audioEditRepository.saveEditedAudioAsNewMedia(
+                audioMediaId = audioMediaId,
+                parts = parts,
+                name = name.trim(),
+                playlistIdOnDownload = fetchPlaylistIdOnDownloadFlowUseCase().first(),
+                shouldInsertAtTopOnDownload = fetchShouldInsertAtTopOnDownloadFlowUseCase().first(),
             )
-        )
-        return result
+
+            appLog.sendDebugLog(
+                DebugLog(
+                    tag = "SaveEditedAudioAsNewMediaUseCase",
+                    message = "편집본을 새 음원으로 저장: 원본 id $audioMediaId, 조각 ${parts.size}개, " +
+                        "결과 ${result.exceptionOrNull() ?: "성공"}",
+                )
+            )
+            return result
+        }
     }
 }
 

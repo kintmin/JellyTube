@@ -2,7 +2,6 @@ package com.kintmin.presentation.port
 
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
-import com.kintmin.domain.audio_edit.usecase.ReleaseAudioEditSaveUseCase
 import com.kintmin.domain.audio_edit.usecase.SaveEditedAudioAsNewMediaUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
@@ -20,14 +19,13 @@ import kotlinx.coroutines.launch
 internal class IosExecuteAudioEditSave(
     private val applyAudioEditUseCase: ApplyAudioEditUseCase,
     private val saveEditedAudioAsNewMediaUseCase: SaveEditedAudioAsNewMediaUseCase,
-    private val releaseAudioEditSaveUseCase: ReleaseAudioEditSaveUseCase,
     private val mediaControllerManager: MediaControllerManager,
     private val appLog: AppLog,
 ) : ExecuteAudioEditSave {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    override fun overwrite(audioMediaId: Int, timeline: AudioEditTimeline): Result<Unit> = launchSave(audioMediaId) {
+    override fun overwrite(audioMediaId: Int, timeline: AudioEditTimeline): Result<Unit> = launchSave {
         applyAudioEditUseCase(audioMediaId = audioMediaId, timeline = timeline).onSuccess { audioMedia ->
             // 재생 큐는 같은 플레이리스트를 다시 재생할 때 갱신되지 않아서 직접 교체해야 편집본이 재생된다
             mediaControllerManager.tryReplaceMediaItem(
@@ -39,7 +37,7 @@ internal class IosExecuteAudioEditSave(
     }
 
     override fun saveAsNewMedia(audioMediaId: Int, timeline: AudioEditTimeline, name: String): Result<Unit> =
-        launchSave(audioMediaId) {
+        launchSave {
             saveEditedAudioAsNewMediaUseCase(
                 audioMediaId = audioMediaId,
                 parts = timeline.toParts(),
@@ -49,7 +47,7 @@ internal class IosExecuteAudioEditSave(
             }
         }
 
-    private fun launchSave(audioMediaId: Int, save: suspend () -> Result<*>): Result<Unit> {
+    private fun launchSave(save: suspend () -> Result<*>): Result<Unit> {
         scope.launch {
             // 이 스코프에는 예외 처리기가 없어 새는 예외는 앱을 죽인다
             val result = try {
@@ -61,8 +59,6 @@ internal class IosExecuteAudioEditSave(
             }
 
             result.onFailure { throwable ->
-                // Repository 에 닿기 전에 실패하면 화면이 건 저장 중 예약이 남는다
-                releaseAudioEditSaveUseCase(audioMediaId)
                 appLog.sendDebugLog(DebugLog("IosExecuteAudioEditSave", throwable.message ?: "알 수 없는 오류"))
                 IosLocalNotification.show(WorkResultNotice.AudioEditSave.Failure)
             }
