@@ -1,29 +1,33 @@
 package com.kintmin.domain
 
-import com.kintmin.domain.audio_media.model.AudioMedia
-import com.kintmin.domain.audio_media.model.DownloadedMedia
-import com.kintmin.domain.audio_media.model.AddedAudioMedia
-import com.kintmin.domain.audio_media.repository.AudioMediaRepository
-import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
-import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
+import com.kintmin.domain.audio_media.model.AddedAudioMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadingMedia
+import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.domain.audio_media.model.DownloadedMedia
+import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.FirebaseEvent
+import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 class DownloadAudioMediaUseCaseTest {
@@ -45,6 +49,8 @@ class DownloadAudioMediaUseCaseTest {
         coEvery { fetchShouldInsertAtTopOnDownloadFlowUseCase() } returns flowOf(false)
         coEvery { fetchPlaylistIdOnDownloadFlowUseCase() } returns flowOf(UNCATEGORIZED_ID)
         coEvery { audioMediaRepository.getAudioMediaBySource(any()) } returns Result.failure(Exception())
+        every { audioMediaRepository.reserveDownload(any()) } returns true
+        every { audioMediaRepository.releaseDownload(any()) } just Runs
         everyLogDefaults()
 
         useCase = DownloadAudioMediaUseCase(
@@ -89,6 +95,26 @@ class DownloadAudioMediaUseCaseTest {
             fetchPlaylistIdOnDownloadFlowUseCase,
             appLog,
         )
+    }
+
+    @Test
+    fun `같은 출처를 받는 중이면 받지 않고 남의 예약도 풀지 않는다`() = runTest {
+        every { audioMediaRepository.reserveDownload(downloadUrl) } returns false
+
+        val result = useCase(downloadUrl)
+
+        assert(result.exceptionOrNull() is AlreadyDownloadingMedia)
+        coVerify(inverse = true) { audioMediaRepository.downloadAudioMedia(any()) }
+        verify(inverse = true) { audioMediaRepository.releaseDownload(any()) }
+    }
+
+    @Test
+    fun `받기가 끝나면 실패해도 예약을 푼다`() = runTest {
+        coEvery { audioMediaRepository.downloadAudioMedia(downloadUrl) } returns Result.failure(IllegalStateException())
+
+        useCase(downloadUrl)
+
+        verify(exactly = 1) { audioMediaRepository.releaseDownload(downloadUrl) }
     }
 
     @Test

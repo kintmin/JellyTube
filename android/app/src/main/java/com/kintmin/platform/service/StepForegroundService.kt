@@ -20,6 +20,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
+import com.kintmin.domain.extension.toBasicIsoString
+import com.kintmin.domain.step.DailyResetMark
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
 import com.kintmin.domain.step.usecase.GetLastStepSensorForTodayUseCase
 import com.kintmin.domain.step.usecase.GetStepCountUseCase
@@ -28,7 +30,6 @@ import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
 import com.kintmin.platform.push_notification.PushNotificationIds
 import com.kintmin.platform.push_notification.PushNotificationManager
 import com.kintmin.platform.push_notification.notifications.SensorStepNotification
-import com.kintmin.domain.extension.toBasicIsoString
 import com.kintmin.platform.receiver.DateChangeBroadcastReceiver
 import com.kintmin.platform.service.sensor.StepCounterSensorListener
 import kotlinx.coroutines.CoroutineScope
@@ -43,11 +44,11 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.time.Clock
 
 /**
  * Known Issue: 자정에 Foreground가 안 켜져 있었다면, 당일 걸음수는 누락될 수 있음.
@@ -92,6 +93,7 @@ class StepForegroundService : Service(), KoinComponent {
 
     private val pushNotificationManager: PushNotificationManager by inject()
     private val resetDataOncePerDayUseCase: ResetDataOncePerDayUseCase by inject()
+    private val dailyResetMark = DailyResetMark.today()
     private val backupStepSensorUseCase: BackupStepSensorUseCase by inject()
     private val fetchIsStepEnabledFlowUseCase: FetchIsStepEnabledFlowUseCase by inject()
 
@@ -294,7 +296,7 @@ class StepForegroundService : Service(), KoinComponent {
     }
 
     private fun checkDailyReset() {
-        resetDataOncePerDayUseCase.invoke(currentStep.value, currentStepSensor.value, timeZoneFlow.value) {
+        resetDataOncePerDayUseCase.invoke(dailyResetMark, currentStep.value, currentStepSensor.value, timeZoneFlow.value) {
             currentStep.update { 0 }
             todayLastSavedStepSensorWhenStarted = null
         }

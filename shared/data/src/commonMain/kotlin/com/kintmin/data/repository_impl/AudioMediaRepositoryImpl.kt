@@ -10,19 +10,22 @@ import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.dataSource.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.domain.audio_media.model.AddedAudioMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.model.AudioExportTarget
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
 import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
-import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.uuid.ExperimentalUuidApi
@@ -126,6 +129,14 @@ internal class AudioMediaRepositoryImpl constructor(
                 added.toAddedAudioMedia(audioMediaEntityToSave)
             }
         }
+    }
+
+    private val downloadingSources = MutableStateFlow<Set<String>>(emptySet())
+
+    override fun reserveDownload(source: String): Boolean = source !in downloadingSources.getAndUpdate { it + source }
+
+    override fun releaseDownload(source: String) {
+        downloadingSources.update { it - source }
     }
 
     override suspend fun getAudioMediaBySource(source: String): Result<AudioMedia> {

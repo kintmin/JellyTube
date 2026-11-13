@@ -21,14 +21,34 @@ class DownloadAudioMediaUseCase constructor(
     private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase,
     private val appLog: AppLog,
 ) {
-    private var downloadAttemptUrlList = mutableSetOf<String>()
-
     suspend operator fun invoke(downloadUrl: String): Result<DownloadedAudioMediaResult> = runCatching {
-        if (downloadAttemptUrlList.contains(downloadUrl)) {
-            throw AlreadyDownloadingMedia()
+        if (!audioMediaRepository.reserveDownload(downloadUrl)) throw AlreadyDownloadingMedia()
+        try {
+            download(downloadUrl)
+        } finally {
+            audioMediaRepository.releaseDownload(downloadUrl)
         }
-        downloadAttemptUrlList += downloadUrl
+    }.onFailure { exception ->
+        val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()
+        val connectionStatus = deviceStatusRepository.getConnectionStatus().getOrNull()
 
+        appLog.sendFirebaseEvent(
+            FirebaseEvent.FailedDownloadAudioMedia(
+                source = downloadUrl,
+                exception = exception,
+                availableRemMemory = systemMemory?.availableRemMemory,
+                isLowRemMemory = systemMemory?.isLowRemMemory,
+                availableStorage = systemMemory?.availableStorage,
+                isConnected = connectionStatus?.isConnected,
+                isWifi = connectionStatus?.isWifi,
+                isCellular = connectionStatus?.isCellular,
+                downstreamKbps = connectionStatus?.downstreamKbps,
+                upstreamKbps = connectionStatus?.upstreamKbps,
+            )
+        )
+    }
+
+    private suspend fun download(downloadUrl: String): DownloadedAudioMediaResult {
         audioMediaRepository.getAudioMediaBySource(source = downloadUrl).onSuccess {
             throw AlreadyDownloadedMedia()
         }
@@ -53,31 +73,11 @@ class DownloadAudioMediaUseCase constructor(
         }.getOrThrow()
 
         appLog.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(downloadUrl, added.totalPlaylistMediaCount))
-        DownloadedAudioMediaResult(
+        return DownloadedAudioMediaResult(
             audioMedia = added.audioMedia,
             playlistIdOnDownload = added.resolvedPlaylistIdOnDownload,
             totalPlaylistId = added.totalPlaylistId,
             shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
         )
-    }.onFailure { exception ->
-        val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()
-        val connectionStatus = deviceStatusRepository.getConnectionStatus().getOrNull()
-
-        appLog.sendFirebaseEvent(
-            FirebaseEvent.FailedDownloadAudioMedia(
-                source = downloadUrl,
-                exception = exception,
-                availableRemMemory = systemMemory?.availableRemMemory,
-                isLowRemMemory = systemMemory?.isLowRemMemory,
-                availableStorage = systemMemory?.availableStorage,
-                isConnected = connectionStatus?.isConnected,
-                isWifi = connectionStatus?.isWifi,
-                isCellular = connectionStatus?.isCellular,
-                downstreamKbps = connectionStatus?.downstreamKbps,
-                upstreamKbps = connectionStatus?.upstreamKbps,
-            )
-        )
-    }.also {
-        downloadAttemptUrlList -= downloadUrl
     }
 }

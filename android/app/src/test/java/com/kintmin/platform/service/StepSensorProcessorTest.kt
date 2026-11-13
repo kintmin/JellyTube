@@ -279,7 +279,7 @@ class StepSensorProcessorTest {
 
     @Test
     fun `서비스 재시작 시 자정 버킷이어도 onDailyReset은 호출되지 않는다`() {
-        // ResetDataOncePerDayUseCase.cachedEpochDay는 프로세스 시작 시 오늘로 초기화되므로 항상 no-op
+        // 서비스의 DailyResetMark 는 시작 시 오늘로 초기화되므로 항상 no-op
         processor.updateStep(null, 50L, utcMillis(0, 15), todayLastSavedStepSensor = null, bootMillis = bootBeforeToday) {
             stepDeltaCalls.add(it)
         }

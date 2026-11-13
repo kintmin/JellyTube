@@ -37,6 +37,7 @@ class FetchAllPlaylistsUseCase(
 - `operator fun invoke(...)` is the single public entry point.
 - Return `Flow<T>` for reactive streams, `suspend fun` for one-shot operations.
 - Never catch exceptions inside a use case unless you are transforming the error type for a domain reason. Let callers handle failures.
+- **Use cases hold no state.** They are injected with `factoryOf`, so a field resets on every injection and only works by accident where the caller happens to keep one instance. In-progress marks belong to a `single` repository (`AudioEditRepository.reserveSaving`, `AudioMediaRepository.reserveDownload`); per-caller state is held by the caller and passed in (`DailyResetMark`).
 
 ---
 

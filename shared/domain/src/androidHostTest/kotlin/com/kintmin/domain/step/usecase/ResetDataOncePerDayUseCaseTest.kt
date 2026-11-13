@@ -1,5 +1,6 @@
 package com.kintmin.domain.step.usecase
 
+import com.kintmin.domain.step.DailyResetMark
 import com.kintmin.domain.step.ScheduleDailyStepClosing
 import io.mockk.mockk
 import io.mockk.verify
@@ -16,47 +17,46 @@ class ResetDataOncePerDayUseCaseTest {
     private val zoneId = TimeZone.UTC
     private val today = Clock.System.now().toLocalDateTime(zoneId).date.toEpochDays().toLong()
 
-    private fun buildUseCase(initialEpochDay: Long = today): ResetDataOncePerDayUseCase =
-        ResetDataOncePerDayUseCase(registerWorker, initialEpochDay)
+    private val useCase = ResetDataOncePerDayUseCase(registerWorker)
 
     // ─── 기본 동작 ──────────────────────────────────────────────────────
 
     @Test
     fun `같은 날 호출 시 resetAction이 실행되지 않는다`() {
-        val useCase = buildUseCase(initialEpochDay = today)
+        val mark = DailyResetMark(today)
         var resetCount = 0
 
-        useCase(0, null, zoneId) { resetCount++ }
+        useCase(mark, 0, null, zoneId) { resetCount++ }
 
         assertEquals(0, resetCount)
     }
 
     @Test
     fun `다음 날 단일 호출 시 resetAction이 1회 실행된다`() {
-        val useCase = buildUseCase(initialEpochDay = today - 1)
+        val mark = DailyResetMark(today - 1)
         var resetCount = 0
 
-        useCase(0, null, zoneId) { resetCount++ }
+        useCase(mark, 0, null, zoneId) { resetCount++ }
 
         assertEquals(1, resetCount)
     }
 
     @Test
     fun `다음 날 호출 시 registerDailyResetWorkerUseCase가 1회 호출된다`() {
-        val useCase = buildUseCase(initialEpochDay = today - 1)
+        val mark = DailyResetMark(today - 1)
 
-        useCase(0, null, zoneId) {}
+        useCase(mark, 0, null, zoneId) {}
 
         verify(exactly = 1) { registerWorker(any(), any(), any()) }
     }
 
     @Test
     fun `연속 두 번 호출 시 resetAction은 첫 번째 호출에만 1회 실행된다`() {
-        val useCase = buildUseCase(initialEpochDay = today - 1)
+        val mark = DailyResetMark(today - 1)
         var resetCount = 0
 
-        useCase(0, null, zoneId) { resetCount++ }
-        useCase(0, null, zoneId) { resetCount++ }
+        useCase(mark, 0, null, zoneId) { resetCount++ }
+        useCase(mark, 0, null, zoneId) { resetCount++ }
 
         assertEquals(1, resetCount)
     }
@@ -65,11 +65,11 @@ class ResetDataOncePerDayUseCaseTest {
 
     @Test
     fun `동시 다발 호출 시 resetAction은 정확히 1번만 실행된다`() {
-        val useCase = buildUseCase(initialEpochDay = today - 1)
+        val mark = DailyResetMark(today - 1)
         val resetCount = AtomicInteger(0)
 
         val threads = List(100) {
-            Thread { useCase(0, null, zoneId) { resetCount.incrementAndGet() } }
+            Thread { useCase(mark, 0, null, zoneId) { resetCount.incrementAndGet() } }
         }
         threads.forEach { it.start() }
         threads.forEach { it.join() }
@@ -79,10 +79,10 @@ class ResetDataOncePerDayUseCaseTest {
 
     @Test
     fun `동시 다발 호출 시 registerDailyResetWorkerUseCase는 정확히 1번만 호출된다`() {
-        val useCase = buildUseCase(initialEpochDay = today - 1)
+        val mark = DailyResetMark(today - 1)
 
         val threads = List(100) {
-            Thread { useCase(0, null, zoneId) {} }
+            Thread { useCase(mark, 0, null, zoneId) {} }
         }
         threads.forEach { it.start() }
         threads.forEach { it.join() }

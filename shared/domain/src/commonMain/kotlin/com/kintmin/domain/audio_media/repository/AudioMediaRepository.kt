@@ -23,6 +23,11 @@ interface AudioMediaRepository {
         shouldInsertAtTopOnDownload: Boolean,
     ): Result<AddedAudioMedia>
     suspend fun getAudioMediaBySource(source: String): Result<AudioMedia>
+
+    /** 같은 출처를 받는 중이면 false. 받는 일은 화면·작업 하나보다 오래 살아서 앱에 하나인 여기서 센다. */
+    fun reserveDownload(source: String): Boolean
+
+    fun releaseDownload(source: String)
     fun getAudioMediaListFlow(): Flow<List<AudioMedia>>
     suspend fun updateAudioMedia(
         id: Int,
