@@ -1,22 +1,16 @@
 package com.kintmin.domain.lyrics.usecase
 
-/**
- * 제목 원문으로부터 가사 검색어를 만든다.
- * - 잡음 괄호(및 그 안의 내용)를 제거한다. (), [], {}, （）, 【】 를 대상으로 한다.
- * - 곡명이 담기는 괄호/따옴표는 기호만 지우고 내용은 남긴다. 「」, 『』, 《》, 〈〉, <>, ", “”, ‘’
- * - 구분자(-, |, _, /, :, ~ 등)만으로 된 단어와 유튜브 잡음 단어(MV, Official 등)는 버린다.
- *
- * 예) "sample(ft. temp) to sample" -> "sample to sample"
- * 예) "【MV】YOASOBI「アイドル」" -> "YOASOBI アイドル"
- */
+/** 유튜브 제목 원문에서 괄호·구분자·잡음 단어를 걷어 가사 검색어를 만든다. */
 class BuildLyricsSearchQueryUseCase {
 
     private val bracketRegex = Regex("""[(\[{（【].*?[)\]}）】]""")
+    // 「」『』 등은 곡명을 감싸는 괄호라 bracketRegex 와 달리 내용을 남긴다.
     private val keepContentSymbolRegex = Regex("""[「」『』《》〈〉<>"“”|｜·]""")
     private val musicVideoRegex = Regex("""music\s+video""", RegexOption.IGNORE_CASE)
     private val whitespaceRegex = Regex("""\s+""")
     private val separatorOnlyRegex = Regex("""[-–—_/:~.,]+""")
     private val apostrophes = charArrayOf('\'', '‘', '’')
+    // music·video·audio 단독은 곡명일 수 있어("Video Games") 넣지 않는다.
     private val noiseWords = setOf("mv", "m/v", "official", "lyrics", "가사", "뮤직비디오")
 
     operator fun invoke(rawTitle: String): String =
@@ -25,7 +19,6 @@ class BuildLyricsSearchQueryUseCase {
             .replace(keepContentSymbolRegex, " ")
             .replace(musicVideoRegex, " ")
             .split(whitespaceRegex)
-            // 'Butter' 처럼 단어를 감싼 따옴표만 벗긴다. (don't 같은 단어 안 아포스트로피는 유지)
             .map { it.trim(*apostrophes) }
             .filter { it.isNotBlank() }
             .filterNot { it.matches(separatorOnlyRegex) }

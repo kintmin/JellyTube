@@ -29,7 +29,6 @@ class LyricsSearchViewModel constructor(
     private val route = savedStateHandle.toRoute<LyricsSearchScreenRoute>()
     private val audioMediaId = route.audioMediaId
 
-    // 제목 원문을 검색어 규칙(괄호·구분자·잡음 단어 제거)으로 정제해 초기 쿼리로 쓴다.
     private val initialQuery = buildLyricsSearchQueryUseCase(route.initialQuery)
 
     private val _data = MutableStateFlow(
