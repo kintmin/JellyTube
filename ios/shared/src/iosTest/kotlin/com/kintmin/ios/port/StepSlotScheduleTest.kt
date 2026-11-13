@@ -1,5 +1,6 @@
 package com.kintmin.ios.port
 
+import com.kintmin.domain.step.StepSlot
 import com.kintmin.domain.step.model.StepData
 import com.kintmin.domain.step.usecase.CalculateStepCountUseCase
 import kotlin.test.Test
@@ -44,15 +45,15 @@ class StepSlotScheduleTest {
 
     @Test
     fun `오늘은 지나간 경계까지만 적고 마감하지 않는다`() {
-        val now = dayStart + StepSlotSchedule.SLOT_MILLIS * 3 + 1
+        val now = dayStart + StepSlot.MILLIS * 3 + 1
         val points = StepSlotSchedule.forDay(dayStart, nowMillis = now)
 
         assertEquals(
             listOf(
                 dayStart + 1,
-                dayStart + StepSlotSchedule.SLOT_MILLIS,
-                dayStart + StepSlotSchedule.SLOT_MILLIS * 2,
-                dayStart + StepSlotSchedule.SLOT_MILLIS * 3,
+                dayStart + StepSlot.MILLIS,
+                dayStart + StepSlot.MILLIS * 2,
+                dayStart + StepSlot.MILLIS * 3,
             ),
             points.map { it.rawCreatedTime },
         )
@@ -60,11 +61,11 @@ class StepSlotScheduleTest {
 
     @Test
     fun `경계 목록은 마지막으로 적은 지점 다음부터 준다`() {
-        val lastWritten = dayStart + StepSlotSchedule.SLOT_MILLIS * 2
-        val now = lastWritten + StepSlotSchedule.SLOT_MILLIS * 2
+        val lastWritten = dayStart + StepSlot.MILLIS * 2
+        val now = lastWritten + StepSlot.MILLIS * 2
 
         assertEquals(
-            listOf(lastWritten + StepSlotSchedule.SLOT_MILLIS, now),
+            listOf(lastWritten + StepSlot.MILLIS, now),
             StepSlotSchedule.boundaries(dayStart, afterMillis = lastWritten, nowMillis = now),
         )
     }
@@ -73,11 +74,11 @@ class StepSlotScheduleTest {
     fun `경계 목록은 그날을 넘지 않는다`() {
         val boundaries = StepSlotSchedule.boundaries(
             dayStartMillis = dayStart,
-            afterMillis = dayEnd - StepSlotSchedule.SLOT_MILLIS * 2,
+            afterMillis = dayEnd - StepSlot.MILLIS * 2,
             nowMillis = dayEnd + StepSlotSchedule.DAY_MILLIS,
         )
 
-        assertEquals(listOf(dayEnd - StepSlotSchedule.SLOT_MILLIS), boundaries)
+        assertEquals(listOf(dayEnd - StepSlot.MILLIS), boundaries)
     }
 
     @Test
@@ -94,13 +95,13 @@ class StepSlotScheduleTest {
         // Android 는 30분 경계와 아무 시각(재부팅 기준점)에 센서 누적을 적고, 하루 마감을 다음 날 0시에 적는다.
         val migrated = listOf(
             StepData(prevDayStart, 50_000),
-            StepData(prevDayStart + StepSlotSchedule.SLOT_MILLIS * 20, 53_000),
+            StepData(prevDayStart + StepSlot.MILLIS * 20, 53_000),
             StepData(dayStart, 56_000),
-            StepData(dayStart + StepSlotSchedule.SLOT_MILLIS * 5 + 7, 56_400),
+            StepData(dayStart + StepSlot.MILLIS * 5 + 7, 56_400),
         )
         // 30분마다 10걸음씩 걸은 iPhone 의 하루 누적.
         val iphone = StepSlotSchedule.forDay(dayStart, nowMillis = dayEnd + 1).map { point ->
-            val steps = point.queryUntilMillis?.let { (it - dayStart) / StepSlotSchedule.SLOT_MILLIS * 10 } ?: 0L
+            val steps = point.queryUntilMillis?.let { (it - dayStart) / StepSlot.MILLIS * 10 } ?: 0L
             StepData(point.rawCreatedTime, steps)
         }
 

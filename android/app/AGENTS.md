@@ -87,6 +87,10 @@ iOS 구현의 자리는 **`ios/shared`** 다(이 모듈의 짝인 iOS 조립 모
 
 ## Services
 
+### 걸음수
+
+`StepSensorProcessor` 는 Android 걸음 센서(부팅 뒤 누적값, 재부팅으로 0 부터 다시 셈)에 맞춘 계산이라 이 모듈에 둔다. iOS 는 CMPedometer 가 그날 누적을 바로 주어 같은 계산이 필요 없다. 두 플랫폼이 같이 써야 하는 것은 차트 한 칸(`shared:domain` 의 `StepSlot`)뿐이다.
+
 ### 파일공유 서버
 
 `FileShareForegroundService` 는 **프로세스를 살려 두는 일만** 한다(포그라운드 알림, 데이터 보내기 중 CPU·Wi-Fi 잠금). 서버·광고·경로·이전 세션은 `shared:data` 의 `file_share/` 가 가지며, 규칙은 `shared/data/AGENTS.md` §파일 공유 서버가 단일 진원지다.

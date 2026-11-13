@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
 import com.kintmin.domain.extension.toBasicIsoString
 import com.kintmin.domain.step.DailyResetMark
+import com.kintmin.domain.step.StepSlot
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
 import com.kintmin.domain.step.usecase.GetLastStepSensorForTodayUseCase
 import com.kintmin.domain.step.usecase.GetStepCountUseCase
@@ -57,8 +58,6 @@ import kotlin.time.Clock
 class StepForegroundService : Service(), KoinComponent {
 
     companion object {
-
-        const val BACKUP_UNIT_MILLIS = 30 * 60 * 1000L
 
         fun startService(context: Context): Result<Unit> {
             return runCatching {
@@ -114,7 +113,7 @@ class StepForegroundService : Service(), KoinComponent {
     private val timeZoneFlow = MutableStateFlow(TimeZone.currentSystemDefault())
 
     private val stepSensorProcessor = StepSensorProcessor(
-        backupUnitMillis = BACKUP_UNIT_MILLIS,
+        backupUnitMillis = StepSlot.MILLIS,
         getTimeZone = { timeZoneFlow.value },
         onBackupSensor = { sensor, saveMillis ->
             foregroundServiceScope.launch { backupStepSensorUseCase(sensor, saveMillis) }

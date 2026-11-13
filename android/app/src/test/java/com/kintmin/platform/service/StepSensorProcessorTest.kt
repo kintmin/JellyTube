@@ -1,6 +1,6 @@
 package com.kintmin.platform.service
 
-import kotlin.time.Instant
+import com.kintmin.domain.step.StepSlot
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -8,11 +8,12 @@ import kotlinx.datetime.toLocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Instant
 
 class StepSensorProcessorTest {
 
     private val utc: TimeZone = TimeZone.UTC
-    private val backupUnit = 30 * 60 * 1000L
+    private val backupUnit = StepSlot.MILLIS
 
     // 테스트 기준일은 2024-01-15.
     // 부팅이 어제 이전이면 오늘 기준점이 없을 때 오늘 몫을 산정할 수 없다.

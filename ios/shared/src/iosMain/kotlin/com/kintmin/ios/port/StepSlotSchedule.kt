@@ -1,5 +1,7 @@
 package com.kintmin.ios.port
 
+import com.kintmin.domain.step.StepSlot
+
 /** @param queryUntilMillis 그날 0시부터 이 시각까지의 누적을 적는다. null 이면 0 을 적는다. */
 internal data class StepWritePoint(
     val rawCreatedTime: Long,
@@ -14,8 +16,6 @@ internal data class StepWritePoint(
  */
 internal object StepSlotSchedule {
 
-    /** 차트 한 칸. `GetHalfHourlyStepsUseCase` 가 하루를 48칸으로 나눈다. */
-    const val SLOT_MILLIS = 30L * 60L * 1000L
     const val DAY_MILLIS = 24L * 60L * 60L * 1000L
 
     fun forDay(dayStartMillis: Long, nowMillis: Long): List<StepWritePoint> {
@@ -47,10 +47,10 @@ internal object StepSlotSchedule {
         val dayEndMillis = dayStartMillis + DAY_MILLIS
         val result = mutableListOf<Long>()
 
-        var boundaryMillis = afterMillis + SLOT_MILLIS
+        var boundaryMillis = afterMillis + StepSlot.MILLIS
         while (boundaryMillis <= nowMillis && boundaryMillis < dayEndMillis) {
             result += boundaryMillis
-            boundaryMillis += SLOT_MILLIS
+            boundaryMillis += StepSlot.MILLIS
         }
         return result
     }
