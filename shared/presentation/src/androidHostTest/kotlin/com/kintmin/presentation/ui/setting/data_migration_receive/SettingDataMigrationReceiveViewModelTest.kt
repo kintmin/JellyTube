@@ -14,6 +14,7 @@ import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
 import com.kintmin.domain.data_migration.usecase.ImportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
+import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningWorkMonitor
 import com.kintmin.presentation.port.model.MigrationSource
@@ -73,7 +74,9 @@ class SettingDataMigrationReceiveViewModelTest {
         coEvery { runningWorks() } returns emptyMap()
     }
 
-    private fun viewModel() = SettingDataMigrationReceiveViewModel(discovery, pair, import, cleanup, clearStaging, monitor)
+    private fun viewModel() = SettingDataMigrationReceiveViewModel(
+        discovery, pair, ReceiveMigrationDataUseCase(cleanup, import), clearStaging, monitor,
+    )
 
     private fun SettingDataMigrationReceiveViewModel.connect(code: String = "123456") {
         sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)

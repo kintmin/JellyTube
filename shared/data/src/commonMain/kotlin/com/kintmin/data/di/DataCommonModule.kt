@@ -107,6 +107,7 @@ val dataCommonModule: Module = module {
     factoryOf(::ResolveMigrationFilePathUseCase)
     factoryOf(::PairMigrationSourceUseCase)
     factoryOf(::ImportMigrationDataUseCase)
+    factoryOf(::ReceiveMigrationDataUseCase)
     factoryOf(::ClearMigrationStagingUseCase)
 
     factoryOf(::CleanupAnomalousDataUseCase)

@@ -2,7 +2,6 @@ package com.kintmin.presentation.ui.setting.data_migration_receive
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
@@ -15,17 +14,17 @@ import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
 import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
-import com.kintmin.domain.data_migration.usecase.ImportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
+import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
 import com.kintmin.presentation.platform.continueInBackgroundWhile
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningWorkMonitor
 import com.kintmin.presentation.port.model.MigrationSource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,8 +36,7 @@ import kotlinx.coroutines.launch
 class SettingDataMigrationReceiveViewModel constructor(
     private val migrationSourceDiscovery: MigrationSourceDiscovery,
     private val pairMigrationSourceUseCase: PairMigrationSourceUseCase,
-    private val importMigrationDataUseCase: ImportMigrationDataUseCase,
-    private val cleanupAnomalousDataUseCase: CleanupAnomalousDataUseCase,
+    private val receiveMigrationDataUseCase: ReceiveMigrationDataUseCase,
     private val clearMigrationStagingUseCase: ClearMigrationStagingUseCase,
     private val runningWorkMonitor: RunningWorkMonitor,
 ) : ViewModel() {
@@ -141,13 +139,8 @@ class SettingDataMigrationReceiveViewModel constructor(
                 updatePhase(DataMigrationReceivePhase.Blocked(runningWorks))
                 return@launch
             }
-            // 지난 시도가 강제 종료로 남긴 파일을 먼저 치운다. 실패해도 이전은 할 수 있다.
-            updateStage(DataMigrationStageItem(DataMigrationStageKind.CLEANUP, DataMigrationStageStatus.IN_PROGRESS))
-            cleanupAnomalousDataUseCase()
-            updateStage(DataMigrationStageItem(DataMigrationStageKind.CLEANUP, DataMigrationStageStatus.DONE))
-
             continueInBackgroundWhile {
-                importMigrationDataUseCase(endpoint, token) { progress -> updateStage(progress.toStageItem()) }
+                receiveMigrationDataUseCase(endpoint, token) { progress -> updateStage(progress.toStageItem()) }
             }
                 .onSuccess { summary -> finish(summary) }
                 .onFailure { error -> interrupt(error) }
@@ -220,6 +213,7 @@ class SettingDataMigrationReceiveViewModel constructor(
 
     private fun MigrationProgress.toStageItem() = DataMigrationStageItem(
         kind = when (stage) {
+            MigrationStage.CLEANUP -> DataMigrationStageKind.CLEANUP
             MigrationStage.PLANNING -> DataMigrationStageKind.PLANNING
             MigrationStage.REDOWNLOAD -> DataMigrationStageKind.REDOWNLOAD
             MigrationStage.TRANSFER -> DataMigrationStageKind.TRANSFER
