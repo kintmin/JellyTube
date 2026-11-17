@@ -1,7 +1,10 @@
-package com.kintmin.ios.migration
+package com.kintmin.ios.port
 
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.ios.bridge.IosBrowsedService
+import com.kintmin.ios.bridge.IosMigrationSourceBrowserBridge
+import com.kintmin.ios.bridge.IosResolvedService
 import com.kintmin.presentation.port.model.MigrationSource
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test

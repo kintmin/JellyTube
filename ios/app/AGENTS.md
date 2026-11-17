@@ -32,16 +32,27 @@ Obj-C 헤더로 쏟아진다.
 
 ### `ios/shared/` (Kotlin)
 
-넷뿐이다. **그 외의 것을 여기 두지 않는다.**
+**패키지는 Swift 와의 계약 방향으로 가른다.** 프레임워크 헤더에 나오는 것(public)과 Kotlin
+안에서만 쓰는 것(internal)이 섞이면 무엇이 Swift 와의 약속인지 읽히지 않는다.
 
-1. `build.gradle.kts` — framework + SKIE
-2. `IosKoin.kt` — `initIosKoin(...)`. `android:app` 의 `JellyTubeApplication` 과 짝이다.
-   한쪽에 모듈을 더하면 다른 쪽도 본다
-3. `MainViewController.kt` — Swift 에 노출되는 최상위 함수들
-   (`startApp` / `mainViewController` / `handleDeepLink` / `handleNotificationTap` / `handleSharedAudioFile`)
-4. `presentation/port` 의 iOS 구현(`port/`, 바인딩 `port/IosPortModule.kt`) — `android:app` 이 Android 구현을 가지는 것과 같은 자리다
-5. Swift 가 구현할 Kotlin 인터페이스 — 프레임워크에 들어가는 모듈이라야 Swift 가 본다
-   (`IosMediaControllerBridge`, `IosAppLogBridge`, `IosMigrationSourceBrowserBridge`)
+| 자리 | 가시성 | 무엇 |
+|---|---|---|
+| 최상위 (`IosKoin.kt` · `MainViewController.kt` · `SwiftAppLog.kt`) | public | **Swift 가 부르는** 함수. `initIosKoin` / `startApp` / `mainViewController` / `handleDeepLink` / `handleNotificationTap` / `handleSharedAudioFile` / `swiftDebugLog` |
+| `bridge/` | public | **Swift 가 구현하는** Kotlin 인터페이스와 거울 DTO. `IosMediaControllerBridge`(+`IosMediaItem`) · `IosAppLogBridge` · `IosMigrationSourceBrowserBridge`(+`IosBrowsedService`·`IosResolvedService`) |
+| `port/` | internal | 포트의 iOS 구현 전부(`presentation/port` 와 `domain` 양쪽) + 바인딩 `IosPortModule.kt`. `android:app` 이 Android 구현을 가지는 것과 같은 자리다 |
+| `notification/` · `step/` | internal | 포트가 아닌 iOS 내부 로직(로컬 알림 규약, 걸음수 슬롯 계산) |
+| `build.gradle.kts` | — | framework + SKIE |
+
+**그 외의 것을 여기 두지 않는다.**
+
+**Rules**:
+- **포트 구현은 `port/` 하나에 모은다.** Swift 브릿지에 기대는지 여부로 나누지 않는다 —
+  브릿지를 쓰는 것도 그냥 포트 구현이다. 가르는 선은 Swift 가 보는가(public)뿐이다
+- **포트가 아니면 `port/` 에 두지 않는다.** `IosLocalNotification`·`StepSlotSchedule` 이
+  그래서 나와 있다. 진입점(`MainViewController`)이 `port/` 를 import 하는 모양이 되면 신호다
+- Koin 바인딩은 `port/IosPortModule.kt` **하나**다. `IosKoin.kt` 에 인라인 `module { }` 을
+  두지 않는다 — 브릿지를 넘겨야 하면 `iosPortModule(...)` 처럼 모듈을 함수로 만든다
+  (`data` 의 `dataIosModule(...)` 과 같은 모양)
 
 **앱 레벨 ViewModel 은 파일 최상위에 `by lazy` 로 한 벌만** 둔다. iOS 는 단일 윈도우이고,
 Compose 밖(`onOpenURL`)에서 들어온 이벤트를 화면과 **같은 인스턴스**로 넘겨야 한다.
@@ -69,8 +80,8 @@ Compose 밖(`onOpenURL`)에서 들어온 이벤트를 화면과 **같은 인스�
 ## 브릿지 패턴 — Swift 가 Kotlin 인터페이스를 구현한다
 
 다섯 군데가 같은 모양이다: `IosPythonExecutorBridge`(data), `IosLyricsTranslatorBridge`(data — Apple
-`Translation`), `IosMediaControllerBridge`(ios/shared), `IosAppLogBridge`(ios/shared),
-`IosMigrationSourceBrowserBridge`(ios/shared — `NWBrowser` 탐색).
+`Translation`), 그리고 `ios/shared` 의 `bridge/` 에 `IosMediaControllerBridge` ·
+`IosAppLogBridge` · `IosMigrationSourceBrowserBridge`(`NWBrowser` 탐색).
 
 ```kotlin
 // Kotlin — 프레임워크에 들어가는 모듈에 선언한다
@@ -131,7 +142,7 @@ final class AppLogBridgeImpl: IosAppLogBridge {
   `scene(_:openURLContexts:)` / `NSUserActivity` 를 쓰지 않는다
 - 알림 탭은 `userInfo` 를 **그대로** Kotlin 에 넘긴다. 작업 결과 알림의 문구와 갈 화면은
   공통 `WorkResultNotice` 가 정하고 Android 알림도 같은 것을 쓴다.
-  `userInfo` 를 쓰고 읽는 것은 둘 다 `IosLocalNotification.kt` 에 있다. Swift 는 키를 모른다
+  `userInfo` 를 쓰고 읽는 것은 둘 다 `notification/IosLocalNotification.kt` 에 있다. Swift 는 키를 모른다
 - Swift 가 하는 분기는 `url.isFileURL` 하나뿐이다. 그 뒤 판정은 전부 공통 코드가 한다
 - 딥링크 경로·쿼리 키의 진원지는 `shared:presentation` 의 `DeepLinkConstants` 다.
   스킴을 바꾸면 `Info.plist` 의 `CFBundleURLSchemes` 도 함께 바꾼다
@@ -156,7 +167,7 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 ## iOS 에서 제공하지 않는 것
 
 진입점을 숨기고, 포트는 **명시적 미지원 스텁**으로 바인딩한다
-(`presentation/port/IosUnsupportedPorts.kt`, `data/audio_edit/AudioEditorImpl.kt`).
+(`ios/shared` 의 `port/IosUnsupportedPorts.kt`, `shared:data` 의 `audio_edit/AudioEditorImpl.kt`).
 스텁이 없으면 그 화면에 들어가는 순간 Koin 이 터진다 — 바인딩을 비워 두는 선택지는 없다.
 
 | 항목 | 이유 |

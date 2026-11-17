@@ -43,7 +43,13 @@ Kotlin Multiplatform(KMP) 멀티플랫폼 앱. 하나의 공유 코어를 Androi
 
 ## 빌드
 - 모듈 경로는 콜론: `:shared:data` 등.
-- **Windows / PowerShell**: Gradle은 `./gradlew.bat`(NOT `./gradlew`). iOS 빌드 검증 불가.
+- **Windows / PowerShell**: Gradle은 `./gradlew.bat`(NOT `./gradlew`).
+  iOS Kotlin 은 **컴파일까지 검증된다** — `:ios:shared:compileKotlinIosSimulatorArm64` 와
+  `:ios:shared:compileTestKotlinIosSimulatorArm64`(실기기는 `…IosArm64`). Kotlin 2.4.20 의
+  klib 크로스 컴파일이 기본 동작이고 `~/.konan` 의 Windows 네이티브 컴파일러가 `platform.*`
+  인터롭까지 풀어 준다 — gradle.properties 에 따로 켠 플래그는 없다.
+  **프레임워크 링크(`linkDebugFramework…`)·`xcodebuild`·테스트 실행은 macOS 전용**이다
+  (Apple SDK/링커가 필요하고 `~/.konan/dependencies` 는 Windows 에서 채울 수 없다).
 - **macOS**: `./gradlew`. iOS 프레임워크는 `./gradlew :ios:shared:linkDebugFrameworkIosSimulatorArm64`, 앱은
   `xcodebuild -project ios/app/JellyTubeIos.xcodeproj -scheme JellyTubeIos -destination 'platform=iOS Simulator,name=iPhone 17' build`.
   **클론 직후에는 `scripts/setup-ios-vendor.sh` 를 한 번 돌려야 한다** — `ios/app/Vendor/`(Python.xcframework · yt-dlp · pykakasi)가 gitignore 대상이라 비어 있다.

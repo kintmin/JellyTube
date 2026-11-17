@@ -1,5 +1,7 @@
-package com.kintmin.ios.media
+package com.kintmin.ios.port
 
+import com.kintmin.ios.bridge.IosMediaControllerBridge
+import com.kintmin.ios.bridge.IosMediaItem
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

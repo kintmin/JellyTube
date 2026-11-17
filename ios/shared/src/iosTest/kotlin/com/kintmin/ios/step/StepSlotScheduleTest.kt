@@ -1,4 +1,4 @@
-package com.kintmin.ios.port
+package com.kintmin.ios.step
 
 import com.kintmin.domain.step.StepSlot
 import com.kintmin.domain.step.model.StepData

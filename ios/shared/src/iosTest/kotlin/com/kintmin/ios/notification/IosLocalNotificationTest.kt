@@ -1,4 +1,4 @@
-package com.kintmin.ios.port
+package com.kintmin.ios.notification
 
 import com.kintmin.presentation.work_notice.WorkResultNotice
 import kotlin.test.Test

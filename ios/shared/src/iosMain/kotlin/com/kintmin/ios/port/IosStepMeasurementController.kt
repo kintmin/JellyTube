@@ -6,6 +6,7 @@ import com.kintmin.domain.step.model.StepData
 import com.kintmin.domain.step.usecase.BackupStepSensorUseCase
 import com.kintmin.domain.step.usecase.ReplaceStepSensorsUseCase
 import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
+import com.kintmin.ios.step.StepSlotSchedule
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.port.StepMeasurementController

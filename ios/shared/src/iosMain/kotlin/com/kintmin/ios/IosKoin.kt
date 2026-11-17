@@ -4,19 +4,12 @@ import com.kintmin.data.di.dataCommonModule
 import com.kintmin.data.di.dataIosModule
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.data.translation.IosLyricsTranslatorBridge
-import com.kintmin.ios.log.IosAppLog
-import com.kintmin.ios.log.IosAppLogBridge
-import com.kintmin.ios.media.IosMediaControllerBridge
-import com.kintmin.ios.media.IosMediaControllerManager
-import com.kintmin.ios.migration.IosMigrationSourceBrowserBridge
-import com.kintmin.ios.migration.IosMigrationSourceDiscovery
+import com.kintmin.ios.bridge.IosAppLogBridge
+import com.kintmin.ios.bridge.IosMediaControllerBridge
+import com.kintmin.ios.bridge.IosMigrationSourceBrowserBridge
 import com.kintmin.ios.port.iosPortModule
-import com.kintmin.log.AppLog
-import com.kintmin.presentation.port.MediaControllerManager
-import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.di.presentationModule
 import org.koin.core.context.startKoin
-import org.koin.dsl.module
 
 /**
  * Swift 가 `IosKoinKt.doInitIosKoin(...)` 으로 부른다.
@@ -36,12 +29,7 @@ fun initIosKoin(
             dataCommonModule,
             dataIosModule(pythonExecutorBridge, lyricsTranslatorBridge),
             presentationModule,
-            iosPortModule,
-            module {
-                single<MediaControllerManager> { IosMediaControllerManager(mediaControllerBridge) }
-                single<AppLog> { IosAppLog(appLogBridge, get()) }
-                single<MigrationSourceDiscovery> { IosMigrationSourceDiscovery(migrationSourceBrowserBridge) }
-            },
+            iosPortModule(mediaControllerBridge, appLogBridge, migrationSourceBrowserBridge),
         )
     }
 }

@@ -1,8 +1,10 @@
-package com.kintmin.ios.media
+package com.kintmin.ios.port
 
 import com.kintmin.domain.audio_play_setting.PlaybackRange
 import com.kintmin.domain.audio_play_setting.RepeatRange
 import com.kintmin.domain.audio_play_setting.model.RepeatRangeState
+import com.kintmin.ios.bridge.IosMediaControllerBridge
+import com.kintmin.ios.bridge.IosMediaItem
 import com.kintmin.presentation.port.MediaControllerManager
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlin.time.Duration

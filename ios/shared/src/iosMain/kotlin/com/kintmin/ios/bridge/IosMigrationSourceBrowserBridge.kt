@@ -1,4 +1,4 @@
-package com.kintmin.ios.migration
+package com.kintmin.ios.bridge
 
 /** Swift 가 구현하는 Bonjour 탐색 창구. 구현은 `MigrationSourceBrowserBridgeImpl`(NWBrowser) 이다. */
 interface IosMigrationSourceBrowserBridge {

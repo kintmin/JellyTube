@@ -1,6 +1,7 @@
-package com.kintmin.ios.log
+package com.kintmin.ios.port
 
 import com.kintmin.domain.app_log.repository.AppLogRepository
+import com.kintmin.ios.bridge.IosAppLogBridge
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.FirebaseEvent
 import kotlin.test.Test
