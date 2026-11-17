@@ -5,9 +5,7 @@ import com.kintmin.data.di.dataAndroidModule
 import com.kintmin.data.di.dataCommonModule
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
 import com.kintmin.jellytube.di.appModule
-import com.kintmin.jellytube.di.logModule
-import com.kintmin.platform.di.platformModule
-import com.kintmin.platform.worker.di.workerModule
+import com.kintmin.jellytube.di.workerModule
 import com.kintmin.presentation.di.presentationModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.android.get
@@ -31,11 +29,9 @@ class JellyTubeApplication : Application() {
             modules(
                 dataCommonModule,
                 dataAndroidModule,
-                logModule,
-                platformModule,
-                workerModule,
                 presentationModule,
                 appModule,
+                workerModule,
             )
         }
 

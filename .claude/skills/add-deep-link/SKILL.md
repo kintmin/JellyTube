@@ -11,7 +11,7 @@ description: JellyTube에 새 딥링크 목적지를 규약대로 추가한다. 
 
 플랫폼에 남는 것은 **진입 통로와 OS 배선뿐**이다 — Android 는 Manifest `intent-filter` 와
 `MainActivity.handleIntent(intent)`(Intent → 문자열), `PendingIntent` 가 `Uri` 를 요구하는
-자리를 메우는 `com.kintmin.platform.deeplink.DeepLinkConstants` 어댑터. iOS 는 `onOpenURL`.
+자리를 메우는 `com.kintmin.jellytube.deeplink.DeepLinkConstants` 어댑터. iOS 는 `onOpenURL`.
 
 **판정은 공통이 하고 플랫폼은 실행만 한다.** 두 플랫폼이 같은 주소에 다른 답을 내면 그 자체가
 버그다. 단일 진원지는 `shared/presentation/AGENTS.md` 와 `android/app/AGENTS.md` 이며,

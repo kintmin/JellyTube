@@ -7,11 +7,16 @@ This module owns:
 - `MainActivity` — edge-to-edge enablement, intent handling, lifecycle
 - `MainActivity.handleIntent` — Intent 어댑터(딥링크 문자열 추출 · 공유 파일 수신). 판정과 `NavigationIntent` 디스패치는 `shared:presentation` 의 `navigation/AppViewModel` 이 한다
 - `di/AppModule` — Koin module that wires runtime implementations to their interfaces
+- `di/WorkerModule` — Worker 바인딩만 따로 (**아래 Rules** 참고)
 - `log_impl/` — concrete `AppLog` implementation (Firebase, Logcat, etc.)
 - `python_bridge_impl/` — concrete `PythonExecutor` implementation via Chaquopy
-- `com.kintmin.platform.*` — OS-level features (see **OS-level features** below)
+- OS-level features (see **OS-level features** below)
 
-> **패키지 두 개가 공존한다.** `com.kintmin.jellytube.*`(진입점/네비/DI)와 `com.kintmin.platform.*`(OS 기능). 후자는 과거 `:android:platform` 모듈이었고, CMP 전환 과정에서 이 모듈로 합쳤다. 패키지명을 유지한 이유는 `AndroidManifest.xml`이 Service/Receiver를 FQCN으로 선언하고 있어서다. namespace(`com.kintmin.jellytube`)와 소스 패키지가 다른 것은 적법하다.
+> **소스 패키지는 `com.kintmin.jellytube.*` 하나다.** 과거 `:android:platform` 모듈을 합치면서 한동안 `com.kintmin.platform.*` 이 함께 있었지만 지금은 없다. `AndroidManifest.xml` 은 namespace 덕에 `android:name=".service.PlaybackService"` 처럼 상대 표기를 쓴다.
+
+**Rules**:
+- Koin 모듈은 `appModule` 하나로 모은다. 새 구현을 추가하면 거기에 건다.
+- `workerModule` 만 나눠 둔다. `workerOf` 는 `workManagerFactory()` 가 쓰는 별도 해석 경로라 `single` 과 성격이 다르다.
 
 ---
 
@@ -24,16 +29,16 @@ Implementations that are **bound to the Android runtime**:
 - **Log implementation** (`log_impl/AppLogImpl`): The `shared:log` module defines only the API. The concrete implementation (Firebase Analytics, Crashlytics, Logcat) lives here. Register it in `di/AppModule`.
 - **Python bridge implementation** (`python_bridge_impl/PythonExecutorImpl`): Chaquopy is an Android build-time dependency; the implementation belongs here. Register it in `di/AppModule`.
 
-### OS-level features (`com.kintmin.platform.*`)
+### OS-level features
 
 Any code that directly uses Android OS APIs for background execution, inter-process communication, or system events:
 
-- `Service` subclasses (foreground or bound) → `platform/service/`
-- `BroadcastReceiver` subclasses → `platform/receiver/`
-- `Worker` / `CoroutineWorker` subclasses → `platform/worker/`, worker DI in `platform/worker/di/`
-- `NotificationChannel` creation, `NotificationCompat.Builder` usage → `platform/push_notification/`
-- `MediaSession`, `MediaController`, `MediaBrowser` bindings → `platform/service_controller/`
-- 딥링크 주소를 `Uri` 로 바꾸는 어댑터 → `platform/deeplink/` (**상수·조립은 `shared:presentation` 소유**)
+- `Service` subclasses (foreground or bound) → `service/`
+- `BroadcastReceiver` subclasses → `receiver/`
+- `Worker` / `CoroutineWorker` subclasses → `worker/`, worker DI 는 `di/WorkerModule.kt`
+- `NotificationChannel` creation, `NotificationCompat.Builder` usage → `push_notification/`
+- `MediaSession`, `MediaController`, `MediaBrowser` bindings → `service_controller/`
+- 딥링크 주소를 `Uri` 로 바꾸는 어댑터 → `deeplink/` (**상수·조립은 `shared:presentation` 소유**)
 
 ### Port implementations (`presentation`의 포트 구현)
 
@@ -41,7 +46,7 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 
 현재 포트와 구현체:
 
-| 포트 (`presentation/port/`) | Android 구현 (`com.kintmin.platform.*`) | iOS 구현 |
+| 포트 (`presentation/port/`) | Android 구현 | iOS 구현 |
 |---|---|---|
 | `MediaControllerManager` | `service_controller/MediaControllerManagerImpl` | `ios/shared` 의 `media/IosMediaControllerManager`(Swift 엔진 브릿지) |
 | `AudioPreviewPlayer` | `audio_preview/AudioPreviewPlayerImpl` | 미지원 스텁(음원 편집 제외) |
@@ -52,13 +57,13 @@ Any code that directly uses Android OS APIs for background execution, inter-proc
 | `ExecuteAnomalyDataCheck` | `worker/usecase/ExecuteAnomalyDataCheckImpl` | `IosExecuteAnomalyDataCheck`(앱 수명 스코프 + 로컬 알림) |
 | `ExecuteAudioEditSave` | `worker/usecase/ExecuteAudioEditSaveImpl` | 미지원 스텁(음원 편집 제외) |
 | `DataMigrationSendController` | `service_controller/DataMigrationSendControllerImpl`(UseCase 로 이전 세션을 열고 닫는다. PC 수신과 같은 서버를 쓴다) | 미지원 스텁(보내는 서버가 Android 에만 있다) |
-| `RunningWorkMonitor` | `running_work/RunningWorkMonitorImpl`(WorkManager 태그·고유 이름 + 편집 저장 + PC 수신) | `IosRunningWorkMonitor`(실행부가 세는 `IosRunningWorkTracker` + 편집 저장 + PC 수신) |
+| `RunningWorkMonitor` | `worker/RunningWorkMonitorImpl`(WorkManager 태그·고유 이름 + 편집 저장 + PC 수신) | `IosRunningWorkMonitor`(실행부가 세는 `IosRunningWorkTracker` + 편집 저장 + PC 수신) |
 | `MigrationSourceDiscovery` | `data_migration/UnsupportedMigrationSourceDiscovery`(Android 는 보내는 쪽만) | `ios/shared` 의 `migration/IosMigrationSourceDiscovery`(Swift `NWBrowser` 브릿지. 목록 탐색 → 고른 기기만 주소 풀기) |
 
 iOS 구현의 자리는 **`ios/shared`** 다(이 모듈의 짝인 iOS 조립 모듈). `port/` 에 두고 `port/IosPortModule.kt` 가 바인딩한다. Swift 브릿지에 기대는 `MediaControllerManager`·`MigrationSourceDiscovery` 는 `media/`·`migration/` 에 있다.
 
 **Rules**:
-- 새 포트가 필요하면 인터페이스는 `presentation/port/`에, 구현체는 여기에 두고 `platform/di/PlatformModule.kt`에 `single<Port> { PortImpl(androidContext()) }`로 등록한다.
+- 새 포트가 필요하면 인터페이스는 `presentation/port/`에, 구현체는 여기에 두고 `di/AppModule.kt`에 `single<Port> { PortImpl(androidContext()) }`로 등록한다.
 - **인자 전달로 해결되면 포트를 만들지 않는다.** 값 하나를 넘기면 되는 경우(예: `isDebugTabVisible`)는 Screen/NavGraph 파라미터로 준다. 포트는 ViewModel이 주입받아야 하거나 `Flow`를 노출해야 할 때만 만든다.
 - 도메인 규칙은 포트가 아니다. 순수 판정 로직은 `shared:domain`에 둔다.
 
@@ -106,15 +111,16 @@ iOS 구현의 자리는 **`ios/shared`** 다(이 모듈의 짝인 iOS 조립 모
 
 ## WorkManager Workers
 
-- Workers live under `platform/worker/`. Worker-specific DI modules live under `platform/worker/di/`.
+- Workers live under `worker/`. Worker 바인딩은 `di/WorkerModule.kt` 가 가진다.
 - Workers must not hold references to UI components.
-- Worker enqueue 는 `platform/worker/usecase/`의 `Execute~Impl`이 담당한다. ViewModel은 `presentation/port/`의 인터페이스만 본다.
+- Worker enqueue 는 `worker/usecase/`의 `Execute~Impl`이 담당한다. ViewModel은 `presentation/port/`의 인터페이스만 본다.
+- 읽는 쪽인 `worker/RunningWorkMonitorImpl` 도 같은 WorkManager 태그·고유 이름을 쓴다. 상수는 `Execute~Impl` 의 companion 이 단일 진원지다.
 
 ---
 
 ## BroadcastReceivers
 
-- Receivers live under `platform/receiver/`.
+- Receivers live under `receiver/`.
 - Receivers must be lightweight: do the minimum work, then delegate to a Service or Worker for anything long-running.
 - Register receivers that need runtime registration via the DI module.
 
