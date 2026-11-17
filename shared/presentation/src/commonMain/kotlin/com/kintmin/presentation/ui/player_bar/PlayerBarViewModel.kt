@@ -1,7 +1,7 @@
 package com.kintmin.presentation.ui.player_bar
 
 import androidx.lifecycle.ViewModel
-import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +12,7 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 class PlayerBarViewModel constructor(
-    private val mediaControllerManager: MediaControllerManager,
+    private val mediaControllerManager: PlaybackController,
 ) : ViewModel() {
 
     private val _currentMediaItem = MutableStateFlow(buildUiState(mediaControllerManager.playingMediaItem))

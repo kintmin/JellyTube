@@ -13,8 +13,8 @@ import com.kintmin.log.model.DebugLog
 import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.notifications.DownloadNotification
 import com.kintmin.jellytube.push_notification.notifications.DownloadResultNotification
-import com.kintmin.presentation.port.MediaControllerManager
-import com.kintmin.presentation.port.addDownloadedMedia
+import com.kintmin.presentation.port.PlaybackController
+import com.kintmin.presentation.playback.addDownloadedMedia
 import com.kintmin.presentation.work_notice.WorkResultNotice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -31,7 +31,7 @@ class YoutubeDownloadWorker(
 
     private val downloadAudioMediaUseCase: DownloadAudioMediaUseCase by inject()
     private val downloadLyricsForAudioMediaUseCase: DownloadLyricsForAudioMediaUseCase by inject()
-    private val mediaControllerManager: MediaControllerManager by inject()
+    private val mediaControllerManager: PlaybackController by inject()
     private val pushNotificationManager: PushNotificationManager by inject()
     private val appLog: AppLog by inject()
 

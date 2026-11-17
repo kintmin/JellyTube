@@ -16,7 +16,7 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.lyrics.LyricsFile
 import com.kintmin.presentation.port.AudioPreviewPlayer
-import com.kintmin.presentation.port.ExecuteAudioEditSave
+import com.kintmin.presentation.port.StartAudioEditSave
 import com.kintmin.presentation.ui.audio_edit.navigation.AudioEditScreenRoute
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -40,7 +40,7 @@ class AudioEditViewModel constructor(
     observeAudioEditSavingUseCase: ObserveAudioEditSavingUseCase,
     private val reserveAudioEditSaveUseCase: ReserveAudioEditSaveUseCase,
     private val releaseAudioEditSaveUseCase: ReleaseAudioEditSaveUseCase,
-    private val executeAudioEditSave: ExecuteAudioEditSave,
+    private val executeAudioEditSave: StartAudioEditSave,
     private val audioPreviewPlayer: AudioPreviewPlayer,
 ) : ViewModel() {
 

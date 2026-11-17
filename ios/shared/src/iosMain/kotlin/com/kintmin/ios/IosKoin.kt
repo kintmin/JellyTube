@@ -7,7 +7,7 @@ import com.kintmin.data.translation.IosLyricsTranslatorBridge
 import com.kintmin.ios.bridge.IosAppLogBridge
 import com.kintmin.ios.bridge.IosMediaControllerBridge
 import com.kintmin.ios.bridge.IosMigrationSourceBrowserBridge
-import com.kintmin.ios.port.iosPortModule
+import com.kintmin.ios.adapter.iosAdapterModule
 import com.kintmin.presentation.di.presentationModule
 import org.koin.core.context.startKoin
 
@@ -29,7 +29,7 @@ fun initIosKoin(
             dataCommonModule,
             dataIosModule(pythonExecutorBridge, lyricsTranslatorBridge),
             presentationModule,
-            iosPortModule(mediaControllerBridge, appLogBridge, migrationSourceBrowserBridge),
+            iosAdapterModule(mediaControllerBridge, appLogBridge, migrationSourceBrowserBridge),
         )
     }
 }

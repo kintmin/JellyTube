@@ -11,7 +11,7 @@ import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseC
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
-import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.toMediaControlData
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.util.Throttle
@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 
 class PlaylistDetailHeaderViewModel constructor(
     savedStateHandle: SavedStateHandle,
-    private val mediaControllerManager: MediaControllerManager,
+    private val mediaControllerManager: PlaybackController,
     fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
     fetchIsPlaybackRepeatingFlowUseCase: FetchIsPlaybackRepeatingFlowUseCase,
     fetchIsPlaybackShufflingFlowUseCase: FetchIsPlaybackShufflingFlowUseCase,

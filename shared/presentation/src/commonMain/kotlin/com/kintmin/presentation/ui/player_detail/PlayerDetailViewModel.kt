@@ -17,7 +17,7 @@ import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
-import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +36,7 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 class PlayerDetailViewModel constructor(
-    private val mediaControllerManager: MediaControllerManager,
+    private val mediaControllerManager: PlaybackController,
     fetchIsPlaybackRepeatingFlowUseCase: FetchIsPlaybackRepeatingFlowUseCase,
     fetchIsPlaybackShufflingFlowUseCase: FetchIsPlaybackShufflingFlowUseCase,
     fetchPlaybackSpeedFlowUseCase: FetchPlaybackSpeedFlowUseCase,

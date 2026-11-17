@@ -81,7 +81,7 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 | `platform/SystemSettingsOpener` + `rememberSystemSettingsOpener()` | `fun interface` + `expect`/`actual`. 목적지를 `SystemSettingsTarget`(`Alarm`/`Sound`) enum 으로 받고 인텐트 폴백 체인은 actual 이 품는다(SHOW_ALARMS 미지원 기기 → SET_ALARM). iOS 는 시스템 설정의 특정 화면으로 보낼 수 없어 항상 false | `SettingDeviceSaveScreen` |
 | `platform/WebViewHandle` + `rememberWebViewHandle()` + `PlatformWebView(...)` | `@Stable interface` + `expect`/`actual`. **플랫폼 뷰 객체를 노출하지 않는다** — 노출하면 그 타입이 시그니처를 타고 호출자까지 전염된다(실제로 `MainScreen` 이 `WebView` 를 들고 있었다). 핸들이 생명주기(`stopLoading`/`removeView`/`destroy`)와 생성 실패 상태까지 소유한다. Android actual 이 `AndroidView` + `WebViewClient` 스킴 라우팅(`intent://` 의 `browser_fallback_url` 폴백 포함) + 쿠키·Referer 설정을 품는다. iOS 는 `WKWebView` + `UIKitView`(**`UIKitInteropInteractionMode.Cooperative`** — 기본값이면 웹뷰 위에 겹친 Compose 가 터치를 못 받는다) + `WKUserScript` 로 SPA 주소를 추적한다 | `MainScreen`, `YoutubeWebView` |
 
-`port/` 의 포트 12개(`MediaControllerManager`, `AudioPreviewPlayer`, `Execute*` 4종, `StepMeasurementController`, `FileShareServerController`, `DataMigrationSendController`, `MigrationSourceDiscovery`, `RunningWorkMonitor`)는 후자이며 `android:app` 의 `di/AppModule.kt` 가 바인딩한다. 배치 규칙은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
+`port/` 의 포트 11개(`PlaybackController`, `AudioPreviewPlayer`, `Start*` 4종, `StepMeasurementController`, `FileShareServerController`, `DataMigrationSendController`, `MigrationSourceDiscovery`, `RunningTaskMonitor`)는 후자이며 `android:app` 의 `di/AppModule.kt` 가 바인딩한다. 배치 규칙은 `android/app/AGENTS.md` 의 **Adapter** 절과 **port 와 adapter** 절이 단일 진원지다.
 
 ### 추상화 없이 치환만으로 끝낸 것
 
@@ -103,9 +103,9 @@ framework 는 **`ios/shared`** 하나가 선언한다(`baseName = "shared"`, SKI
 
 ## 포트 (`port/`)
 
-Android 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 구현체는 `android:app` 에 둔다. 배치 규칙과 현재 포트 목록은 `android/app/AGENTS.md` 의 **Port implementations** 절이 단일 진원지다.
+Android 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 구현체는 `android:app` 에 둔다. 배치 규칙과 현재 포트 목록은 `android/app/AGENTS.md` 의 **Adapter** 절과 **port 와 adapter** 절이 단일 진원지다.
 
-**iOS 구현은 이 모듈에 두지 않고 `ios/shared` 의 `port/` 에 둔다.** Android 구현이 `android:app` 에 있는 것과 같은 자리다. 이 모듈은 화면이고, 포트 구현은 OS 기능(걸음 측정·백그라운드 작업·로컬 알림)이다. 바인딩은 `ios/shared` 의 `port/IosPortModule.kt`.
+**iOS 구현은 이 모듈에 두지 않고 `ios/shared` 의 `adapter/` 에 둔다.** Android 구현이 `android:app` 에 있는 것과 같은 자리다. 이 모듈은 화면이고, adapter는 OS 기능(걸음 측정·백그라운드 작업·로컬 알림)이다. 바인딩은 `ios/shared` 의 `adapter/IosAdapterModule.kt`.
 
 - **인자 전달로 해결되면 포트를 만들지 않는다.** 값 하나를 넘기면 되는 경우(예: `isDebugTabVisible`)는 Screen/NavGraph 파라미터로 받는다.
 - 순수 판정 로직은 포트가 아니다. `shared:domain` 에 둔다.

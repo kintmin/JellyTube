@@ -11,7 +11,7 @@ import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
-import com.kintmin.presentation.port.ExecuteAnomalyDataCheck
+import com.kintmin.presentation.port.StartAnomalyDataCheck
 import com.kintmin.presentation.port.StepMeasurementController
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -30,7 +30,7 @@ class SettingViewModel constructor(
     private val updateShouldInsertAtTopOnDownloadUseCase: UpdateShouldInsertAtTopOnDownloadUseCase,
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
     private val updateIsStepEnabledUseCase: UpdateIsStepEnabledUseCase,
-    private val executeAnomalyDataCheck: ExecuteAnomalyDataCheck,
+    private val executeAnomalyDataCheck: StartAnomalyDataCheck,
     private val importSharedAudioMediaUseCase: ImportSharedAudioMediaUseCase,
     private val stepMeasurementController: StepMeasurementController,
 ) : ViewModel() {

@@ -4,7 +4,7 @@ import shared
 /// Kotlin 의 `IosMediaControllerBridge` 를 `MediaControllerEngine` 에 잇는다.
 ///
 /// 이 창구는 **원시 조작만** 받는다. A-B 구간반복과 현재 플레이리스트 추적은 Kotlin 쪽
-/// `IosMediaControllerManager` 가 쥐고 있다 — 두 플랫폼이 같은 답을 내야 하는 로직이라서다.
+/// `IosPlaybackController` 가 쥐고 있다 — 두 플랫폼이 같은 답을 내야 하는 로직이라서다.
 ///
 /// **호출은 전부 메인 스레드에서 온다.** 화면 인텐트도 재생 상태 폴링도 Compose 의 메인
 /// 디스패처에서 돈다. 엔진이 `@MainActor` 라 `assumeIsolated` 로 그 약속을 코드에 박아 둔다 —

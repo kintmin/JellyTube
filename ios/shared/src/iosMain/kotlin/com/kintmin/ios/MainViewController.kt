@@ -7,7 +7,7 @@ import com.kintmin.domain.user.usecase.RegisterUserUseCase
 import com.kintmin.ios.notification.localNotificationDeepLinkOf
 import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
-import com.kintmin.presentation.port.ExecuteYoutubeDownload
+import com.kintmin.presentation.port.StartYoutubeDownload
 import com.kintmin.presentation.port.StepMeasurementController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +37,7 @@ private fun resumeFinishedDownloads() {
         val finishedUrls = koin.get<IosPythonExecutorBridge>().takeFinishedDownloadUrls()
         if (finishedUrls.isEmpty()) return@launch
 
-        val execute = koin.get<ExecuteYoutubeDownload>()
+        val execute = koin.get<StartYoutubeDownload>()
         finishedUrls.forEach { execute(it) }
     }
 }

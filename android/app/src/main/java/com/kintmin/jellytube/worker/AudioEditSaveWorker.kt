@@ -19,7 +19,7 @@ import com.kintmin.jellytube.push_notification.PushNotificationIdGenerator
 import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.notifications.AudioEditSaveNotification
 import com.kintmin.jellytube.push_notification.notifications.AudioEditSaveResultNotification
-import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.toMediaControlData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -33,7 +33,7 @@ class AudioEditSaveWorker(
 
     private val saveAudioEditUseCase: SaveAudioEditUseCase by inject()
     private val releaseAudioEditSaveUseCase: ReleaseAudioEditSaveUseCase by inject()
-    private val mediaControllerManager: MediaControllerManager by inject()
+    private val mediaControllerManager: PlaybackController by inject()
     private val pushNotificationManager: PushNotificationManager by inject()
     private val appLog: AppLog by inject()
 

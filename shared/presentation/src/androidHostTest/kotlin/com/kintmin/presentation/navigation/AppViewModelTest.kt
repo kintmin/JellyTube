@@ -4,7 +4,7 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlo
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
-import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.PlaybackController
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -21,7 +21,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppViewModelTest {
 
-    private val manager = mockk<MediaControllerManager>(relaxed = true)
+    private val manager = mockk<PlaybackController>(relaxed = true)
 
     @Before
     fun setUp() {

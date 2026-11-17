@@ -9,7 +9,7 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneF
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
 import com.kintmin.domain.playlist.usecase.EnsureSystemPlaylistsUseCase
 import com.kintmin.presentation.deeplink.DeepLinkParser
-import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
  * 인스턴스로 넘겨야 한다. 플랫폼은 문자열만 넘기고 판정은 전부 여기서 돈다.
  */
 class AppViewModel(
-    private val mediaControllerManager: MediaControllerManager,
+    private val mediaControllerManager: PlaybackController,
     private val importSharedAudioMediaUseCase: ImportSharedAudioMediaUseCase,
     private val ensureSystemPlaylistsUseCase: EnsureSystemPlaylistsUseCase,
     private val fetchIsPlaybackRepeatingFlowUseCase: FetchIsPlaybackRepeatingFlowUseCase,

@@ -39,20 +39,39 @@ Obj-C 헤더로 쏟아진다.
 |---|---|---|
 | 최상위 (`IosKoin.kt` · `MainViewController.kt` · `SwiftAppLog.kt`) | public | **Swift 가 부르는** 함수. `initIosKoin` / `startApp` / `mainViewController` / `handleDeepLink` / `handleNotificationTap` / `handleSharedAudioFile` / `swiftDebugLog` |
 | `bridge/` | public | **Swift 가 구현하는** Kotlin 인터페이스와 거울 DTO. `IosMediaControllerBridge`(+`IosMediaItem`) · `IosAppLogBridge` · `IosMigrationSourceBrowserBridge`(+`IosBrowsedService`·`IosResolvedService`) |
-| `port/` | internal | 포트의 iOS 구현 전부(`presentation/port` 와 `domain` 양쪽) + 바인딩 `IosPortModule.kt`. `android:app` 이 Android 구현을 가지는 것과 같은 자리다 |
-| `notification/` · `step/` | internal | 포트가 아닌 iOS 내부 로직(로컬 알림 규약, 걸음수 슬롯 계산) |
+| `adapter/` | internal | **port 의 iOS 구현 전부**(`presentation/port` 와 `domain` 양쪽) + 바인딩 `IosAdapterModule.kt`. `android:app` 이 Android adapter를 가지는 것과 같은 자리다 |
+| `notification/` · `step/` · `task/` | internal | adapter가 아닌 iOS 내부 로직(로컬 알림 규약, 걸음수 슬롯 계산, 진행 중 작업 카운터) |
 | `build.gradle.kts` | — | framework + SKIE |
 
-**그 외의 것을 여기 두지 않는다.**
+**그 외의 것을 여기 두지 않는다.** port(인터페이스)와 adapter(구현)의 구분은
+`android/app/AGENTS.md` 의 **port 와 adapter** 절이 단일 진원지다.
 
 **Rules**:
-- **포트 구현은 `port/` 하나에 모은다.** Swift 브릿지에 기대는지 여부로 나누지 않는다 —
-  브릿지를 쓰는 것도 그냥 포트 구현이다. 가르는 선은 Swift 가 보는가(public)뿐이다
-- **포트가 아니면 `port/` 에 두지 않는다.** `IosLocalNotification`·`StepSlotSchedule` 이
-  그래서 나와 있다. 진입점(`MainViewController`)이 `port/` 를 import 하는 모양이 되면 신호다
-- Koin 바인딩은 `port/IosPortModule.kt` **하나**다. `IosKoin.kt` 에 인라인 `module { }` 을
-  두지 않는다 — 브릿지를 넘겨야 하면 `iosPortModule(...)` 처럼 모듈을 함수로 만든다
+- **adapter는 `adapter/` 하나에 모은다.** Swift 브릿지에 기대는지 여부로 나누지 않는다 —
+  브릿지를 쓰는 것도 그냥 adapter다. 가르는 선은 Swift 가 보는가(public)뿐이다
+- **adapter가 아니면 `adapter/` 에 두지 않는다.** `IosLocalNotification`·`StepSlotSchedule`·
+  `IosRunningTaskTracker` 가 그래서 나와 있다(아무 port 도 구현하지 않는다).
+  진입점(`MainViewController`)이 `adapter/` 를 import 하는 모양이 되면 신호다
+- Koin 바인딩은 `adapter/IosAdapterModule.kt` **하나**다. `IosKoin.kt` 에 인라인 `module { }` 을
+  두지 않는다 — 브릿지를 넘겨야 하면 `iosAdapterModule(...)` 처럼 모듈을 함수로 만든다
   (`data` 의 `dataIosModule(...)` 과 같은 모양)
+
+### Android 처럼 OS 기구별로 나누지 않는 이유
+
+`android:app` 은 `service/`·`worker/`·`receiver/` 로 갈린다. OS 가 생명주기를 쥐고 Manifest
+등록이 필요한 **실체**가 Kotlin 쪽에 있기 때문이다. iOS 는 그 역할을 Swift(`ios/app`)가
+가져갔고 Kotlin 에는 얇은 껍데기만 남는다. adapter 14개 중:
+
+| | 수 |
+|---|---|
+| iOS 프레임워크를 직접 만짐 (`CMPedometer` · `UserNotifications`) | 2 |
+| Swift 브릿지로 넘김 | 3 |
+| **플랫폼 기구 없음 — 코루틴 스코프만** | 8 |
+
+기구 축으로 나누면 두 칸만 차고 나머지가 "기타" 로 몰린다. 그 둘은 이미 `step/` 과
+`notification/` 으로 나와 있다. **기능별 분류를 찾는다면 `ios/app`(Swift)을 봐야 한다** —
+`Shared/MediaController/` · `Shared/Migration/` · `Shared/Log/` · `PythonBridgeImpl/` 이
+Android 의 `service/`·`worker/` 에 대응하는 자리다.
 
 **앱 레벨 ViewModel 은 파일 최상위에 `by lazy` 로 한 벌만** 둔다. iOS 는 단일 윈도우이고,
 Compose 밖(`onOpenURL`)에서 들어온 이벤트를 화면과 **같은 인스턴스**로 넘겨야 한다.

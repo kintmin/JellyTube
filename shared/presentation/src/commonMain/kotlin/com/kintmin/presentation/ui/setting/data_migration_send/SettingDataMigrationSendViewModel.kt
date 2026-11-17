@@ -3,7 +3,7 @@ package com.kintmin.presentation.ui.setting.data_migration_send
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.presentation.port.DataMigrationSendController
-import com.kintmin.presentation.port.RunningWorkMonitor
+import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 /** 이 화면이 떠 있는 동안만 이전 엔드포인트가 열린다. */
 class SettingDataMigrationSendViewModel constructor(
     private val dataMigrationSendController: DataMigrationSendController,
-    private val runningWorkMonitor: RunningWorkMonitor,
+    private val runningWorkMonitor: RunningTaskMonitor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingDataMigrationSendUiState())
@@ -41,11 +41,11 @@ class SettingDataMigrationSendViewModel constructor(
     private fun startIfIdle() {
         _uiState.update { it.copy(step = DataMigrationSendStep.Starting) }
         viewModelScope.launch {
-            val runningWorks = runningWorkMonitor.runningWorks()
-            if (runningWorks.isEmpty()) {
+            val runningTasks = runningWorkMonitor.runningTasks()
+            if (runningTasks.isEmpty()) {
                 startSession()
             } else {
-                _uiState.update { it.copy(step = DataMigrationSendStep.Blocked(runningWorks)) }
+                _uiState.update { it.copy(step = DataMigrationSendStep.Blocked(runningTasks)) }
             }
         }
     }

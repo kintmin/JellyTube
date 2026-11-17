@@ -12,8 +12,8 @@ import com.kintmin.domain.lyrics.usecase.DetectLyricsLanguageUseCase
 import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
 import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
-import com.kintmin.presentation.port.ExecuteLyricsVariantCreation
-import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.StartLyricsVariantCreation
+import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.LyricsViewerScreenRoute
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,8 +31,8 @@ class LyricsViewerViewModel constructor(
     private val deleteAudioMediaLyricsUseCase: DeleteAudioMediaLyricsUseCase,
     private val detectLyricsLanguageUseCase: DetectLyricsLanguageUseCase,
     private val getLyricsVariantUseCase: GetLyricsVariantUseCase,
-    private val executeLyricsVariantCreation: ExecuteLyricsVariantCreation,
-    private val mediaControllerManager: MediaControllerManager,
+    private val executeLyricsVariantCreation: StartLyricsVariantCreation,
+    private val mediaControllerManager: PlaybackController,
 ) : ViewModel() {
 
     private val audioMediaId = savedStateHandle.toRoute<LyricsViewerScreenRoute>().audioMediaId

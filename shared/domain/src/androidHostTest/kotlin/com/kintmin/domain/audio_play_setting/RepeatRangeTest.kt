@@ -6,7 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.time.Duration.Companion.milliseconds
 
-/** 두 플랫폼의 `MediaControllerManager` 구현이 이것을 그대로 쓴다. */
+/** 두 플랫폼의 `PlaybackController` 구현이 이것을 그대로 쓴다. */
 class RepeatRangeTest {
 
     private val repeatRange = RepeatRange()

@@ -1,6 +1,6 @@
 package com.kintmin.presentation.ui.player_bar
 
-import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.MediaControlData
 import io.mockk.every
 import io.mockk.just
@@ -27,7 +27,7 @@ class PlayerBarViewModelTest {
     private var playing: MediaControlData? = null
     private var isPlaying = false
 
-    private val manager = mockk<MediaControllerManager> {
+    private val manager = mockk<PlaybackController> {
         every { playingMediaItem } answers { playing }
         every { isPlaying } answers { this@PlayerBarViewModelTest.isPlaying }
         every { currentPosition } returns 3_000L

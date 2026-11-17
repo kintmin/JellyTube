@@ -18,7 +18,7 @@ import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
 import com.kintmin.presentation.platform.continueInBackgroundWhile
 import com.kintmin.presentation.port.MigrationSourceDiscovery
-import com.kintmin.presentation.port.RunningWorkMonitor
+import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.model.MigrationSource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -38,7 +38,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     private val pairMigrationSourceUseCase: PairMigrationSourceUseCase,
     private val receiveMigrationDataUseCase: ReceiveMigrationDataUseCase,
     private val clearMigrationStagingUseCase: ClearMigrationStagingUseCase,
-    private val runningWorkMonitor: RunningWorkMonitor,
+    private val runningWorkMonitor: RunningTaskMonitor,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingDataMigrationReceiveUiState())
@@ -77,9 +77,9 @@ class SettingDataMigrationReceiveViewModel constructor(
         endpoint = null
         _uiState.update { it.copy(phase = DataMigrationReceivePhase.Searching, source = null) }
         discover {
-            val runningWorks = runningWorkMonitor.runningWorks()
-            if (runningWorks.isNotEmpty()) {
-                updatePhase(DataMigrationReceivePhase.Blocked(runningWorks))
+            val runningTasks = runningWorkMonitor.runningTasks()
+            if (runningTasks.isNotEmpty()) {
+                updatePhase(DataMigrationReceivePhase.Blocked(runningTasks))
                 return@discover
             }
             val sources = migrationSourceDiscovery.discover()
@@ -134,9 +134,9 @@ class SettingDataMigrationReceiveViewModel constructor(
         }
         runJob = viewModelScope.launch {
             // 찾은 뒤 다시 시도하기 전까지 PC 수신 등이 새로 켜졌을 수 있다. 받는 중에는 DB 를 바꾸면 안 된다.
-            val runningWorks = runningWorkMonitor.runningWorks()
-            if (runningWorks.isNotEmpty()) {
-                updatePhase(DataMigrationReceivePhase.Blocked(runningWorks))
+            val runningTasks = runningWorkMonitor.runningTasks()
+            if (runningTasks.isNotEmpty()) {
+                updatePhase(DataMigrationReceivePhase.Blocked(runningTasks))
                 return@launch
             }
             continueInBackgroundWhile {

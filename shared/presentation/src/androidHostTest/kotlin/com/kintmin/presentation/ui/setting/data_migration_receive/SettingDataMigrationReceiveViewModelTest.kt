@@ -16,9 +16,9 @@ import com.kintmin.domain.data_migration.usecase.ImportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
 import com.kintmin.presentation.port.MigrationSourceDiscovery
-import com.kintmin.presentation.port.RunningWorkMonitor
+import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.model.MigrationSource
-import com.kintmin.presentation.port.model.RunningWork
+import com.kintmin.presentation.port.model.RunningTask
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
@@ -70,8 +70,8 @@ class SettingDataMigrationReceiveViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private val monitor = mockk<RunningWorkMonitor> {
-        coEvery { runningWorks() } returns emptyMap()
+    private val monitor = mockk<RunningTaskMonitor> {
+        coEvery { runningTasks() } returns emptyMap()
     }
 
     private fun viewModel() = SettingDataMigrationReceiveViewModel(
@@ -88,8 +88,8 @@ class SettingDataMigrationReceiveViewModelTest {
 
     @Test
     fun `다른 작업이 돌고 있으면 찾지 않고 남은 작업을 보여 준다`() {
-        val running = mapOf(RunningWork.LYRICS_VARIANT to 1)
-        coEvery { monitor.runningWorks() } returns running
+        val running = mapOf(RunningTask.LYRICS_VARIANT to 1)
+        coEvery { monitor.runningTasks() } returns running
         val viewModel = viewModel()
 
         viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch)
@@ -318,14 +318,14 @@ class SettingDataMigrationReceiveViewModelTest {
         val viewModel = viewModel()
         viewModel.connect()
 
-        val running = mapOf(RunningWork.PC_FILE_SHARE to 1)
-        coEvery { monitor.runningWorks() } returns running
+        val running = mapOf(RunningTask.PC_FILE_SHARE to 1)
+        coEvery { monitor.runningTasks() } returns running
         viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickRetry)
 
         assertEquals(DataMigrationReceivePhase.Blocked(running), viewModel.uiState.value.phase)
         coVerify(exactly = 1) { import(any(), any(), any()) }
 
-        coEvery { monitor.runningWorks() } returns emptyMap()
+        coEvery { monitor.runningTasks() } returns emptyMap()
         coEvery { import(endpoint, "token", any()) } returns Result.success(summary())
         viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickRetry)
 

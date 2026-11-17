@@ -9,7 +9,7 @@ import com.kintmin.domain.audio_edit.usecase.RevertAudioEditUseCase
 import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.karaoke.usecase.DeleteAudioMediaKaraokeNumberUseCase
-import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.toMediaControlData
 import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -27,7 +27,7 @@ class AudioMediaDetailViewModel constructor(
     private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
     private val deleteAudioMediaKaraokeNumberUseCase: DeleteAudioMediaKaraokeNumberUseCase,
     private val revertAudioEditUseCase: RevertAudioEditUseCase,
-    private val mediaControllerManager: MediaControllerManager,
+    private val mediaControllerManager: PlaybackController,
 ) : ViewModel() {
 
     private val audioMediaId = savedStateHandle.toRoute<AudioMediaDetailScreenRoute>().audioMediaId

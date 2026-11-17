@@ -12,25 +12,25 @@ import com.kintmin.jellytube.python_bridge_impl.LyricsTransliteratorImpl
 import com.kintmin.jellytube.python_bridge_impl.PythonExecutorImpl
 import com.kintmin.jellytube.service_controller.DataMigrationSendControllerImpl
 import com.kintmin.jellytube.service_controller.FileShareServerControllerImpl
-import com.kintmin.jellytube.service_controller.MediaControllerManagerImpl
+import com.kintmin.jellytube.service_controller.PlaybackControllerImpl
 import com.kintmin.jellytube.service_controller.StepMeasurementControllerImpl
-import com.kintmin.jellytube.worker.RunningWorkMonitorImpl
-import com.kintmin.jellytube.worker.usecase.ExecuteAnomalyDataCheckImpl
-import com.kintmin.jellytube.worker.usecase.ExecuteAudioEditSaveImpl
-import com.kintmin.jellytube.worker.usecase.ExecuteLyricsVariantCreationImpl
-import com.kintmin.jellytube.worker.usecase.ExecuteYoutubeDownloadImpl
+import com.kintmin.jellytube.worker.RunningTaskMonitorImpl
+import com.kintmin.jellytube.worker.usecase.StartAnomalyDataCheckImpl
+import com.kintmin.jellytube.worker.usecase.StartAudioEditSaveImpl
+import com.kintmin.jellytube.worker.usecase.StartLyricsVariantCreationImpl
+import com.kintmin.jellytube.worker.usecase.StartYoutubeDownloadImpl
 import com.kintmin.jellytube.worker.usecase.ScheduleDailyStepClosingImpl
 import com.kintmin.log.AppLog
 import com.kintmin.presentation.port.AudioPreviewPlayer
 import com.kintmin.presentation.port.DataMigrationSendController
-import com.kintmin.presentation.port.ExecuteAnomalyDataCheck
-import com.kintmin.presentation.port.ExecuteAudioEditSave
-import com.kintmin.presentation.port.ExecuteLyricsVariantCreation
-import com.kintmin.presentation.port.ExecuteYoutubeDownload
+import com.kintmin.presentation.port.StartAnomalyDataCheck
+import com.kintmin.presentation.port.StartAudioEditSave
+import com.kintmin.presentation.port.StartLyricsVariantCreation
+import com.kintmin.presentation.port.StartYoutubeDownload
 import com.kintmin.presentation.port.FileShareServerController
-import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.MigrationSourceDiscovery
-import com.kintmin.presentation.port.RunningWorkMonitor
+import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.StepMeasurementController
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
@@ -51,16 +51,16 @@ val appModule: Module = module {
     single<LyricsTransliterator> { LyricsTransliteratorImpl(androidContext()) }
 
     single<PushNotificationManager> { PushNotificationManagerImpl(androidContext()) }
-    single<MediaControllerManager> { MediaControllerManagerImpl(androidContext()) }
+    single<PlaybackController> { PlaybackControllerImpl(androidContext()) }
     single<AudioPreviewPlayer> { AudioPreviewPlayerImpl(androidContext()) }
     single<StepMeasurementController> { StepMeasurementControllerImpl(androidContext()) }
     single<FileShareServerController> { FileShareServerControllerImpl(androidContext(), get(), get(), get(), get()) }
     single<ScheduleDailyStepClosing> { ScheduleDailyStepClosingImpl(androidContext()) }
-    single<ExecuteYoutubeDownload> { ExecuteYoutubeDownloadImpl(androidContext()) }
-    single<ExecuteAnomalyDataCheck> { ExecuteAnomalyDataCheckImpl(androidContext()) }
-    single<ExecuteLyricsVariantCreation> { ExecuteLyricsVariantCreationImpl(androidContext()) }
-    single<ExecuteAudioEditSave> { ExecuteAudioEditSaveImpl(androidContext()) }
+    single<StartYoutubeDownload> { StartYoutubeDownloadImpl(androidContext()) }
+    single<StartAnomalyDataCheck> { StartAnomalyDataCheckImpl(androidContext()) }
+    single<StartLyricsVariantCreation> { StartLyricsVariantCreationImpl(androidContext()) }
+    single<StartAudioEditSave> { StartAudioEditSaveImpl(androidContext()) }
     single<MigrationSourceDiscovery> { UnsupportedMigrationSourceDiscovery() }
     single<DataMigrationSendController> { DataMigrationSendControllerImpl(androidContext(), get(), get(), get()) }
-    single<RunningWorkMonitor> { RunningWorkMonitorImpl(androidContext(), get(), get()) }
+    single<RunningTaskMonitor> { RunningTaskMonitorImpl(androidContext(), get(), get()) }
 }
