@@ -251,6 +251,9 @@ fun MainNavHost(
 
             settingDeviceSaveSelectScreen(
                 navigateToBack = { navController.popBackStack() },
+                navigateToAudioEdit = { audioMediaId ->
+                    navController.navigateToAudioEditScreen(audioMediaId, navOptions)
+                },
             )
         }
 

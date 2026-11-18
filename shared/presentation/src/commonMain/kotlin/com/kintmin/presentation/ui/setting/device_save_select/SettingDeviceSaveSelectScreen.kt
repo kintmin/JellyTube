@@ -53,9 +53,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_media.model.AudioExportTarget
 import com.kintmin.presentation.platform.AppPermission
+import com.kintmin.presentation.platform.DeviceSaveFlow
+import com.kintmin.presentation.platform.deviceSaveFlow
+import com.kintmin.presentation.platform.rememberAudioFileSharer
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneDefaultChangeDialog
+import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneTooLongDialog
 import com.kintmin.presentation.ui.setting.device_save_select.list.SettingDeviceSaveSelectListItemView
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -63,20 +68,49 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun SettingDeviceSaveSelectScreen(
     navigateToBack: () -> Unit,
+    navigateToAudioEdit: (audioMediaId: Int) -> Unit,
 ) {
     val viewModel = koinViewModel<SettingDeviceSaveSelectViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val toaster = rememberToaster()
     val permissionController = rememberPermissionController()
+    val audioFileSharer = rememberAudioFileSharer()
+    var tooLongAudioMediaId by remember { mutableStateOf<Int?>(null) }
+    var pendingRingtoneShare by remember {
+        mutableStateOf<SettingDeviceSaveSelectEvent.ConfirmRingtoneShare?>(null)
+    }
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is SettingDeviceSaveSelectEvent.ShowToast ->
                     toaster.show(event.message)
+
+                is SettingDeviceSaveSelectEvent.ShowRingtoneTooLong ->
+                    tooLongAudioMediaId = event.audioMediaId
+
+                is SettingDeviceSaveSelectEvent.ConfirmRingtoneShare ->
+                    pendingRingtoneShare = event
             }
         }
     }
+
+    RingtoneTooLongDialog(
+        isShow = tooLongAudioMediaId != null,
+        onDismiss = { tooLongAudioMediaId = null },
+        onConfirmEdit = { tooLongAudioMediaId?.let(navigateToAudioEdit) },
+    )
+    RingtoneDefaultChangeDialog(
+        isShow = pendingRingtoneShare != null,
+        onDismiss = { pendingRingtoneShare = null },
+        onConfirmShare = {
+            pendingRingtoneShare?.let { share ->
+                if (!audioFileSharer.share(share.fileFullPath, share.title, share.artist)) {
+                    toaster.show("공유 화면을 열 수 없습니다.")
+                }
+            }
+        },
+    )
 
     SettingDeviceSaveSelectScreen(
         uiState = uiState,
@@ -108,6 +142,7 @@ fun SettingDeviceSaveSelectScreen(
     sendIntent: (SettingDeviceSaveSelectIntent) -> Unit,
 ) {
     var searchText by remember { mutableStateOf("") }
+    val isRingtoneShareFlow = deviceSaveFlow == DeviceSaveFlow.RingtoneShareSheet
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -115,7 +150,7 @@ fun SettingDeviceSaveSelectScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "기기에 저장할 음원 선택",
+                        text = if (isRingtoneShareFlow) "벨소리로 쓸 음원 선택" else "기기에 저장할 음원 선택",
                         fontSize = 16.sp,
                         lineHeight = 16.sp,
                     )
@@ -151,10 +186,12 @@ fun SettingDeviceSaveSelectScreen(
                     .imePadding()
                     .background(MaterialTheme.colorScheme.background),
             ) {
-                ExportTargetSelector(
-                    selectedTargetList = uiState.selectedTargetList,
-                    sendIntent = sendIntent,
-                )
+                if (!isRingtoneShareFlow) {
+                    ExportTargetSelector(
+                        selectedTargetList = uiState.selectedTargetList,
+                        sendIntent = sendIntent,
+                    )
+                }
                 Button(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -171,7 +208,7 @@ fun SettingDeviceSaveSelectScreen(
                         )
                         Spacer(Modifier.width(8.dp))
                     }
-                    Text(text = "${uiState.checkedItemCount}개 기기에 저장")
+                    Text(text = if (isRingtoneShareFlow) "벨소리로 사용" else "${uiState.checkedItemCount}개 기기에 저장")
                 }
                 Box(
                     modifier = Modifier

@@ -16,10 +16,12 @@ fun NavController.navigateToSettingDeviceSaveSelectScreen(
 
 fun NavGraphBuilder.settingDeviceSaveSelectScreen(
     navigateToBack: () -> Unit,
+    navigateToAudioEdit: (audioMediaId: Int) -> Unit,
 ) {
     composable<SettingDeviceSaveSelectScreenRoute> {
         SettingDeviceSaveSelectScreen(
             navigateToBack = navigateToBack,
+            navigateToAudioEdit = navigateToAudioEdit,
         )
     }
 }

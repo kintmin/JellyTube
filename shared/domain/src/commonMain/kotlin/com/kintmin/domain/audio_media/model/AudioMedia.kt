@@ -2,6 +2,7 @@ package com.kintmin.domain.audio_media.model
 
 import kotlinx.datetime.LocalDateTime
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 data class AudioMedia(
     val id: Int,
@@ -28,4 +29,13 @@ data class AudioMedia(
 
     /** 재생·화면 표시에 쓸 길이. 편집본이 있으면 편집본, 없으면 원본. */
     val playbackDuration: Duration? get() = editedAudioDuration ?: audioDuration
+
+    /** 길이를 모르면(null) 막지 않는다 — 길면 시스템이 등록을 거부한다. */
+    val fitsRingtoneLength: Boolean get() = playbackDuration?.let { it < RINGTONE_MAX_DURATION } ?: true
+
+    companion object {
+
+        /** iOS 가 벨소리로 받는 길이의 상한. 이 값 **미만**만 등록된다. */
+        val RINGTONE_MAX_DURATION: Duration = 30.seconds
+    }
 }

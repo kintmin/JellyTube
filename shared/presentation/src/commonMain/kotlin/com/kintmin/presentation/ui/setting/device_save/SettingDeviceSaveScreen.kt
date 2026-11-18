@@ -35,16 +35,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.platform.DeviceSaveFlow
 import com.kintmin.presentation.platform.SystemSettingsTarget
+import com.kintmin.presentation.platform.deviceSaveFlow
 import com.kintmin.presentation.platform.rememberSystemSettingsOpener
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.setting.device_save.ringtone.SettingDeviceSaveRingtoneScreen
 
 @Composable
 fun SettingDeviceSaveScreen(
     navigateToBack: () -> Unit,
     navigateToDeviceSaveSelect: () -> Unit,
 ) {
+    if (deviceSaveFlow != DeviceSaveFlow.MediaStore) {
+        SettingDeviceSaveRingtoneScreen(
+            navigateToBack = navigateToBack,
+            onClickGoToSelect = navigateToDeviceSaveSelect,
+            isOsSupported = deviceSaveFlow == DeviceSaveFlow.RingtoneShareSheet,
+        )
+        return
+    }
+
     val toaster = rememberToaster()
     val systemSettingsOpener = rememberSystemSettingsOpener()
 
@@ -155,7 +167,7 @@ fun SettingDeviceSaveScreen(
 }
 
 @Composable
-private fun ActionGuideCard(
+internal fun ActionGuideCard(
     icon: ImageVector,
     title: String,
     descriptionList: List<String>,
