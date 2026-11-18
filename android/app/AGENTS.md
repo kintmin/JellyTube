@@ -81,6 +81,8 @@ iOS adapter 의 자리는 **`ios/shared` 의 `adapter/`** 다(이 모듈의 짝�
   `RunningTaskMonitor` · `PlaybackController` 로 바뀌었다. Android 기구 모양으로 구멍을 뚫으면
   그 기구가 없는 플랫폼이 흉내를 내야 한다 — iOS 가 WorkManager 를 대신하려고
   `IosRunningTaskTracker` 를 직접 만든 것이 그 흔적이다.
+  **예외는 로그 수집기 하나다** — `shared:log` 의 `FirebaseEvent` 계열은 이름을 그대로 쓴다.
+  근거는 `shared/log/AGENTS.md` 의 **인정된 예외** 절이다.
 - `worker/starter/` 는 **UseCase 가 아니다.** Worker 를 enqueue 하는 adapter다.
   `shared:domain` 의 UseCase 와 헷갈리지 않게 이름을 가른다.
 - **port 는 인터페이스지만, `port/` 에 인터페이스만 있는 것은 아니다.** 경계를 오가는 데이터는
