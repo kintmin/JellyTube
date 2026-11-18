@@ -1,4 +1,4 @@
-package com.kintmin.ios
+package com.kintmin.ios.bridge
 
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog

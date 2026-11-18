@@ -33,7 +33,7 @@ Kotlin Multiplatform(KMP) 멀티플랫폼 앱. 하나의 공유 코어를 Androi
 
 ## 반드시 지킬 횡단 규칙 (상세는 루트 `AGENTS.md`)
 - **파일 인코딩**: 항상 UTF-8(BOM 없음). 한글 주석/문자열 보존. 한글 포함 파일 작성 후 U+FFFD(치환 문자, regex `\x{FFFD}`) 깨짐을 grep으로 0건 확인. U+FFFD는 전송 중 손실이라 재저장으로 복구 안 됨 — 원문에서 다시 작성.
-- **의존성 방향**: `shared:domain`은 아무것도 의존하지 않음. 구현체는 `android:app`(Composition Root)에서 Koin으로 주입. 빌드 의존성으로 강제됨.
+- **의존성 방향**: `shared:domain`은 `shared:log`(모든 레이어가 쓰는 바닥) 외에 아무것도 의존하지 않음. 구현체는 `android:app`·`ios:shared`(Composition Root)에서 Koin으로 주입. 빌드 의존성으로 강제됨.
 - **단순성/외과적 변경**: 요청한 것만, 최소 코드로. 무관한 코드 리팩터 금지.
 
 ## 자주 쓰는 스킬 / 에이전트 (`.claude/`)
