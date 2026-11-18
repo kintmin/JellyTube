@@ -1,125 +1,143 @@
-## 1. Think Before Coding
+# JellyTube — 에이전트 작업 규율
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+모든 응답·설명·커밋 메시지·문서는 **한국어**로 쓰고 항상 존댓말로 응답한다. 코드·변수명·기술
+용어는 영어를 쓰되 설명은 한국어로 한다.
 
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+## 1. 생각을 먼저 한다
 
-## 2. Simplicity First
+**짐작하지 않는다. 혼란을 감추지 않는다. 트레이드오프를 드러낸다.**
 
-**Minimum code that solves the problem. Nothing speculative.**
+구현에 들어가기 전에:
+- 전제를 분명히 말한다. 확실하지 않으면 묻는다.
+- 해석이 여러 개면 **고르지 말고 제시한다.**
+- 더 단순한 길이 있으면 말한다. 근거가 있으면 반박한다.
+- 불분명하면 멈춘다. 무엇이 불분명한지 이름을 붙이고 묻는다.
 
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
+## 2. 단순함이 우선이다
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+**문제를 푸는 최소한의 코드. 추측으로 더하지 않는다.**
 
-## 3. Surgical Changes
+- 요청 밖의 기능을 만들지 않는다.
+- **단일 사용처에 추상화를 만들지 않는다.**
+- 요청하지 않은 "유연함" 과 "설정 가능성" 을 넣지 않는다.
+- 일어날 수 없는 상황에 에러 처리를 두지 않는다.
+- 200줄을 썼는데 50줄로 되는 일이면 다시 쓴다.
 
-**Touch only what you must. Clean up only your own mess.**
+스스로 묻는다: "선임 엔지니어가 이걸 과하다고 할까?" 그렇다면 단순하게 만든다.
 
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
+## 3. 수술처럼 고친다
 
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
+**꼭 필요한 것만 건드린다. 내가 흘린 것만 치운다.**
 
-The test: Every changed line should trace directly to the user's request.
+기존 코드를 고칠 때:
+- 옆에 있는 코드·주석·서식을 "개선" 하지 않는다.
+- 깨지지 않은 것을 리팩터하지 않는다.
+- 내 취향과 달라도 기존 스타일에 맞춘다.
+- 무관한 죽은 코드를 발견하면 **말하고, 지우지 않는다.**
 
-## 4. Goal-Driven Execution
+내 변경이 고아를 만들었을 때:
+- **내 변경 때문에** 쓰이지 않게 된 import·변수·함수를 지운다.
+- 원래부터 죽어 있던 코드는 요청받지 않으면 지우지 않는다.
 
-**Define success criteria. Loop until verified.**
+가늠자: 바뀐 모든 줄이 사용자의 요청으로 곧바로 추적돼야 한다.
 
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
+## 4. 목표로 움직인다
 
-For multi-step tasks, state a brief plan:
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
+**성공 기준을 정한다. 검증될 때까지 돈다.**
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+작업을 검증 가능한 목표로 바꾼다:
+- "검증을 더해라" → "잘못된 입력에 대한 테스트를 쓰고, 통과시킨다"
+- "버그를 고쳐라" → "재현하는 테스트를 쓰고, 통과시킨다"
+- "리팩터해라" → "전과 후에 테스트가 통과하는 것을 확인한다"
 
-## 5. File Encoding
+여러 단계로 나뉘는 작업은 짧은 계획을 먼저 말한다 — 각 단계에 **무엇으로 확인하는지**를 붙인다.
 
-**Always use UTF-8 (without BOM) when writing or moving files.**
+기준이 단단하면 혼자 돌 수 있다. "되게 해 봐" 처럼 약한 기준은 매번 되묻게 만든다.
 
-- Every file write (`write`, `edit`, move, copy) must use UTF-8 encoding.
-- Never use EUC-KR, CP949, UTF-16, or any other encoding — even on Windows.
-- Korean comments, strings, and identifiers must be preserved as valid UTF-8.
-- If you see "The file was loaded in a wrong encoding" or garbled Korean text, the root cause is a non-UTF-8 write. Fix by rewriting the file explicitly as UTF-8.
-- Do not let the OS default encoding (e.g., Windows CP949) influence file output.
+## 5. 파일 인코딩
 
-### Mandatory post-write verification (this is what makes the rule effective)
+**파일을 쓰거나 옮길 때 항상 UTF-8(BOM 없음)을 쓴다.**
 
-"Save as UTF-8" alone does NOT prevent corruption. There are two distinct failure modes:
-1. **Wrong save encoding** (CP949/UTF-16) → fixable by re-saving as UTF-8.
-2. **Upstream character loss**: a multi-byte sequence is broken during generation/transport and arrives as the Unicode replacement character **U+FFFD** (the black-diamond "?" glyph). Saving as UTF-8 just faithfully stores the already-broken U+FFFD — it cannot recover the lost glyph.
+- 모든 파일 쓰기(쓰기·수정·이동·복사)는 UTF-8 이다.
+- EUC-KR·CP949·UTF-16 등 다른 인코딩을 쓰지 않는다 — Windows 에서도 마찬가지다.
+- 한글 주석·문자열·식별자는 유효한 UTF-8 로 보존돼야 한다.
+- "잘못된 인코딩으로 불러왔다" 는 경고나 깨진 한글이 보이면 원인은 UTF-8 이 아닌 쓰기다.
+  파일을 UTF-8 로 다시 써서 고친다.
+- OS 기본 인코딩이 출력에 영향을 주지 않게 한다.
 
-Because mode 2 cannot be prevented by the save step, every file write that contains non-ASCII text (e.g. Korean) MUST be verified and repaired:
+### 쓴 뒤의 검증이 이 규칙을 실제로 만든다
 
-- **After every `write`/`edit` of a file containing Korean, grep the file for U+FFFD** using the regex `\x{FFFD}` (ripgrep) or `\uFFFD`. A file is NOT "done" while any U+FFFD remains.
-- If U+FFFD is found, the text was corrupted in transit. Rewrite the affected lines from the intended source and re-grep until the count is zero. Do not just re-save.
-- **Never copy text that already contains U+FFFD into another file** (commit, new file, edit). Fix the source first, or the corruption propagates.
-- When unsure what the original glyph was, reconstruct from context/meaning rather than leaving a U+FFFD placeholder.
+"UTF-8 로 저장" 만으로는 손상을 막지 못한다. 실패 모드가 둘이다.
 
-## 6. Comments
+1. **잘못된 저장 인코딩** → UTF-8 로 다시 저장하면 고쳐진다.
+2. **상류에서의 문자 손실** — 멀티바이트 시퀀스가 생성·전송 중에 깨져 치환 문자
+   **U+FFFD** 로 도착한다. UTF-8 로 저장해도 이미 깨진 U+FFFD 를 충실히 보존할 뿐,
+   잃어버린 글자를 되살리지 못한다.
 
-**Write the constraint, not the story.** Default to one line; a KDoc over three lines needs a reason.
+2번은 저장 단계로 막을 수 없으므로, **비ASCII 텍스트를 담은 모든 파일 쓰기는 검증하고 고쳐야
+한다.**
 
-Keep a comment only when someone changing this code would otherwise undo something:
-- Platform/API traps — an API that misreads under Kotlin/Native, an interop view that takes touches before the Compose content drawn over it.
-- Non-obvious lifetime or ownership — a delegate held weakly, a lock released on a different thread than it was taken.
-- Why an absence exists — an empty override, a stub binding that Koin would otherwise fail on.
-- Magic numbers whose provenance isn't derivable from the code.
+- **한글이 든 파일을 쓰거나 고친 뒤에는 U+FFFD 를 grep 한다**(정규식 `\x{FFFD}`).
+  U+FFFD 가 하나라도 남아 있으면 그 파일은 **끝난 것이 아니다.**
+- 발견되면 전송 중에 깨진 것이다. 해당 줄을 원문에서 다시 써서 0건이 될 때까지 다시 grep 한다.
+  **다시 저장하는 것으로는 해결되지 않는다.**
+- **U+FFFD 가 이미 든 텍스트를 다른 곳으로 옮기지 않는다**(커밋·새 파일·수정). 원본을 먼저
+  고치지 않으면 손상이 번진다.
+- 원래 글자가 무엇이었는지 모르면 U+FFFD 를 남기지 말고 문맥과 의미로 복원한다.
 
-Delete:
-- Anything the name or signature already says.
-- Decision records, alternatives considered, what the code used to be, how it was measured — that belongs in the PR.
-- Restatements of what a test already pins.
-- Cross-references to tests. The test references the type; that is the link.
+## 6. 주석
 
-**A rule that must hold is a test, not a comment.** If the rule lives in platform code, pull the pure part out so it can be tested. iOS-only logic has `iosTest` source sets.
+**이야기가 아니라 제약을 쓴다.** 기본은 한 줄이고, 세 줄을 넘는 KDoc 에는 이유가 있어야 한다.
 
-**A rule the build can enforce belongs in the build, not in a comment.** A value duplicated into a manifest or plist is injected or cross-checked at build time, so drift fails the build instead of waiting for a reader.
+이 코드를 고치는 사람이 **모르면 되돌려 놓을 것**만 주석으로 남긴다:
+- 플랫폼·API 함정 — Kotlin/Native 에서 다르게 읽히는 API, 위에 그린 Compose 보다 터치를 먼저
+  먹는 인터옵 뷰 같은 것.
+- 자명하지 않은 수명과 소유권 — 약하게 잡는 델리게이트, 잡은 스레드와 다른 곳에서 푸는 잠금.
+- **부재의 이유** — 빈 override, 없으면 DI 가 터지는 스텁 바인딩.
+- 코드에서 유도되지 않는 magic number 의 출처.
 
-**"Both platforms must do X" is never a comment.** Put X in one shared place so it cannot drift. If it genuinely cannot be shared and cannot be tested, drop the claim rather than writing it down.
+지운다:
+- 이름이나 시그니처가 이미 말하는 것.
+- 결정 기록, 고려한 대안, 전에 어떤 코드였는지, 어떻게 측정했는지 — PR 몫이다.
+- 테스트가 이미 고정한 것의 재진술.
+- 테스트로의 교차 참조. 테스트가 그 타입을 참조하니 그것이 링크다.
 
-## 7. Documentation
+**지켜져야 하는 규칙은 주석이 아니라 테스트다.** 규칙이 플랫폼 코드에 있으면 순수한 부분을
+떼어내 테스트할 수 있게 만든다. iOS 전용 로직에는 `iosTest` 소스셋이 있다.
 
-**An `AGENTS.md` holds architecture and constraints that do not change.** This is §6 applied to documents: what the code already says belongs in neither a comment nor a doc.
+**빌드가 강제할 수 있는 규칙은 주석이 아니라 빌드로 간다.** manifest 나 plist 로 복제되는 값은
+빌드 때 주입하거나 대조한다. 그러면 어긋남이 읽는 사람을 기다리지 않고 빌드를 깨뜨린다.
 
-Do not write in a doc:
-- **Inventories of what is in the code** — lists and counts of ports, escape hatches, screens, entry points.
-- **Class names, file names, package paths.** Naming patterns are the exception: `~Screen.kt` is a convention, `FooScreen.kt` is a snapshot.
-- **Decision records, history, progress** — what was removed, what is no longer used, how far a migration got. That belongs in the PR.
-- **Synchronization the build or a test already guarantees.** "Change A, then also change B" becomes a build-time cross-check; the doc records only *that the guarantee exists*, so an absent value reads as deliberate rather than forgotten.
+**"두 플랫폼이 X 해야 한다" 는 절대 주석이 아니다.** X 를 공유되는 한 자리에 두어 어긋날 수
+없게 만든다. 정말로 공유할 수도 테스트할 수도 없으면, 적어 두지 말고 그 주장을 버린다.
 
-The test: **if an ordinary feature change forces a doc edit, that sentence is not architecture.**
+## 7. 문서
 
-### The folder is the inventory
+**`AGENTS.md` 는 아키텍처와 바뀌지 않는 제약만 담는다.** §6 을 문서에 적용한 것이다 — 코드가
+이미 말하는 것은 주석에도, 문서에도 쓰지 않는다.
 
-Before adding an escape hatch or a port, **open that folder and look for the same thing first.** That is why **a file name must say what is inside it** — if scanning the folder cannot answer "does this already exist?", the name is wrong. An inventory copied into a doc starts drifting the moment it is written.
+문서에 쓰지 않는 것:
+- **코드에 있는 것의 목록** — 포트·탈출구·화면·진입점의 나열과 개수.
+- **클래스명·파일명·패키지 경로.** 네이밍 패턴은 예외다 — `~Screen.kt` 는 규약이고
+  `FooScreen.kt` 는 현황이다.
+- **결정 기록과 과거 이력, 진행률** — 무엇을 걷어냈고 무엇을 더 이상 쓰지 않는지, 이전이 어디까지
+  갔는지는 PR 몫이다.
+- **빌드나 테스트가 이미 보증하는 동기화 지시.** "A 를 바꾸면 B 도 바꿔라" 는 빌드가 대조하게
+  만든다. 문서에는 **그 보증이 있다는 사실**만 적는다 — 그래야 값이 왜 여기 없는지 읽힌다.
 
-## 8. Module Map
+가늠자: **일반적인 기능 변경으로 문서를 손봐야 한다면, 그 문장은 아키텍처가 아니다.**
 
-**Before touching any file, read the AGENTS.md of every module involved.**
+### 목록 대신 폴더가 목록이다
 
-| Path prefix | Read this AGENTS.md |
+탈출구나 포트를 더하기 전에 **그 폴더를 열어 같은 것이 있는지 먼저 본다.** 그래서 **파일 이름은
+그 안에 무엇이 있는지 말해야 한다** — 폴더를 훑어서 "이미 있나" 를 답할 수 없으면 이름이 잘못된
+것이다. 목록을 문서에 복제하면 적는 순간부터 어긋나기 시작한다.
+
+## 8. 모듈 맵
+
+**어떤 파일이든 건드리기 전에, 관련된 모든 모듈의 `AGENTS.md` 를 읽는다.**
+
+| 경로 prefix | 읽을 문서 |
 |---|---|
 | `android/app/` | `android/app/AGENTS.md` |
 | `shared/presentation/` | `shared/presentation/AGENTS.md` |
@@ -130,4 +148,42 @@ Before adding an escape hatch or a port, **open that folder and look for the sam
 | `ios/app/`, `ios/shared/` | `ios/app/AGENTS.md` |
 | `desktop/` | `desktop/AGENTS.md` |
 
-If a task spans multiple modules (e.g., adding a deep link, adding navigation, adding a new screen), read ALL relevant AGENTS.md files before writing a single line of code.
+여러 모듈에 걸친 작업(딥링크 추가, 네비게이션 추가, 새 화면 등)은 **관련된 모든 `AGENTS.md` 를
+읽고** 코드를 한 줄도 쓰기 전에 시작한다.
+
+## 9. 프로젝트 구조
+
+Kotlin Multiplatform 앱. 하나의 공유 코어를 Android / iOS / Desktop 이 공유한다.
+
+| 자리 | 담당 |
+|---|---|
+| `shared/domain` | 순수 비즈니스 로직 — 모델·Repository 인터페이스·UseCase |
+| `shared/data` | 그 구현 — 로컬 DB·네트워크·파일·받는 서버 |
+| `shared/presentation` | Compose Multiplatform UI 와 UI 상태(MVI). 두 플랫폼이 이것을 그대로 쓴다 |
+| `shared/log` | 로깅 API 만. 구현은 앱 모듈 |
+| `shared/file-share` | 파일 공유 프로토콜 상수·DTO. 의존성 그래프의 잎 |
+| `android/app` | Android 진입점·조립과 **모든 OS 기능** |
+| `ios/shared` + `ios/app` | iOS 진입점·조립(Kotlin)과 Xcode 앱·Swift 브릿지 |
+| `desktop` | Compose Desktop. 파일 공유의 보내는 쪽 |
+
+**의존성 방향**: `domain` 은 `log` 외에 아무것도 의존하지 않는다. 구현은 앱·조립 모듈이 DI 로
+주입하고, 이 방향은 빌드 의존성으로 강제된다. 모듈별 상세는 각 `AGENTS.md` 다.
+
+## 10. 빌드
+
+- 모듈 경로는 콜론을 쓴다: `:shared:data`.
+- **Windows / PowerShell**: Gradle 은 `./gradlew.bat`(NOT `./gradlew`).
+  iOS Kotlin 은 **컴파일까지 검증된다** — `:ios:shared:compileKotlinIosSimulatorArm64` 와
+  `:ios:shared:compileTestKotlinIosSimulatorArm64`(실기기는 `…IosArm64`).
+  **프레임워크 링크·`xcodebuild`·테스트 실행은 macOS 전용**이다 — Apple SDK 와 링커가 필요하고
+  그 의존성은 Windows 에서 받을 수 없다.
+- **macOS**: `./gradlew`. 프레임워크를 링크한 뒤 `xcodebuild` 로 앱을 빌드한다.
+  **클론 직후에는 `scripts/setup-ios-vendor.sh` 를 한 번 돌려야 한다** — `ios/app/Vendor/` 가
+  gitignore 대상이라 비어 있다.
+
+## 11. 스킬 / 에이전트 (`.claude/`)
+
+- 스킬: `add-deep-link`, `room-entity-migration` — 여러 자리에 걸쳐 빠뜨리기 쉬운 작업만 둔다.
+  한 모듈 안에서 끝나는 작업은 해당 `AGENTS.md` 와 기존 코드를 따른다.
+- 에이전트: `error-handling-reviewer`, `security-reviewer`, `performance-reviewer`,
+  `build-verifier`. 일반 리뷰는 내장 `/code-review`·`/review`·`/security-review` 를 쓴다.
