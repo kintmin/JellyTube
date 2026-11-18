@@ -54,6 +54,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
         youtubeUrl: String,
         audioDownloadPath: String,
         remainingRetryCount: Int,
+        preferHls: Bool = false,
         completionHandler: @escaping @Sendable (YoutubeDownloadDto?, Error?) -> Void
     ) {
         DispatchQueue.global(qos: .userInitiated).async {
@@ -66,7 +67,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                 let result = try self.runtime.callFunction(
                     moduleName: Self.fileName,
                     functionName: Self.methodExtractAudioSource,
-                    arguments: [youtubeUrl]
+                    arguments: [youtubeUrl, preferHls ? "1" : "0"]
                 )
                 SwiftAppLogKt.swiftDebugLog(
                     tag: "YoutubeExtract",
@@ -77,41 +78,91 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                     throw PythonExecutorBridgeError.invalidDirectUrl
                 }
 
-                let ext = result[safe: 2].flatMap { $0.isEmpty ? nil : $0 } ?? "m4a"
-                let source = YoutubeAudioSource(
-                    sourceUrl: youtubeUrl,
-                    destinationPath: "\(audioDownloadPath).\(ext)",
-                    fileNameWithExt: "\((audioDownloadPath as NSString).lastPathComponent).\(ext)",
-                    title: result[safe: 3] ?? "",
-                    thumbnailUrl: result[safe: 4] ?? "",
-                    duration: result[safe: 5] ?? "",
-                    uploader: result[safe: 6] ?? "",
-                    description: result[safe: 7] ?? ""
-                )
+                func makeSource(ext: String) -> YoutubeAudioSource {
+                    YoutubeAudioSource(
+                        sourceUrl: youtubeUrl,
+                        destinationPath: "\(audioDownloadPath).\(ext)",
+                        fileNameWithExt: "\((audioDownloadPath as NSString).lastPathComponent).\(ext)",
+                        title: result[safe: 3] ?? "",
+                        thumbnailUrl: result[safe: 4] ?? "",
+                        duration: result[safe: 5] ?? "",
+                        uploader: result[safe: 6] ?? "",
+                        description: result[safe: 7] ?? ""
+                    )
+                }
+                let source = makeSource(ext: result[safe: 2].flatMap { $0.isEmpty ? nil : $0 } ?? "m4a")
+                let headers = Self.parseHeaders(result[1])
+                let formatId = result[safe: 9] ?? ""
+                let transferProtocol = result[safe: 10] ?? ""
+                let isHls = transferProtocol.contains("m3u8")
 
-                YoutubeDownloader.shared.download(
-                    from: remoteUrl,
-                    headers: Self.parseHeaders(result[1]),
-                    // 크기를 미리 알면 구간 전부를 앱이 떠 있는 동안 등록할 수 있다.
-                    totalBytes: result[safe: 8].flatMap { Int64($0) },
-                    source: source
-                ) { error in
+                let onTransferEnd: (Error?) -> Void = { error in
                     guard let error else {
                         completionHandler(source.toDto(), nil)
                         return
                     }
 
                     if remainingRetryCount > 0, Self.isWorthReextracting(error) {
+                        // visionos 는 https 주소만 거부하는 경우가 있어 HLS 로 다시 받는다.
                         self.attemptDownload(
                             youtubeUrl: youtubeUrl,
                             audioDownloadPath: audioDownloadPath,
                             remainingRetryCount: remainingRetryCount - 1,
+                            preferHls: true,
                             completionHandler: completionHandler
                         )
                     } else {
                         completionHandler(nil, error as NSError)
                     }
                 }
+
+                guard isHls else {
+                    SwiftAppLogKt.swiftDebugLog(tag: "YoutubeRoute", message: "route=https format=\(formatId)")
+                    YoutubeDownloader.shared.download(
+                        from: remoteUrl,
+                        headers: headers,
+                        // 크기를 미리 알면 구간 전부를 앱이 떠 있는 동안 등록할 수 있다.
+                        totalBytes: result[safe: 8].flatMap { Int64($0) },
+                        source: source,
+                        completion: onTransferEnd
+                    )
+                    return
+                }
+
+                let playlist = HlsMediaPlaylist.companion.parse(
+                    text: result[safe: 11] ?? "",
+                    baseUrl: remoteUrl.absoluteString
+                )
+                guard let reason = playlist.unsupportedReason else {
+                    SwiftAppLogKt.swiftDebugLog(
+                        tag: "YoutubeRoute",
+                        message: "route=hls format=\(formatId) segments=\(playlist.segmentUrls.count)"
+                    )
+                    YoutubeDownloader.shared.downloadSegments(
+                        playlistUrl: remoteUrl,
+                        segmentUrls: playlist.segmentUrls,
+                        headers: headers,
+                        source: source,
+                        completion: onTransferEnd
+                    )
+                    return
+                }
+
+                SwiftAppLogKt.swiftYoutubeDownloadFallbackLog(
+                    source: youtubeUrl,
+                    reason: reason,
+                    formatId: formatId,
+                    transferProtocol: transferProtocol
+                )
+                let downloaded = try self.runtime.callFunction(
+                    moduleName: Self.fileName,
+                    functionName: Self.methodDownloadHlsAudio,
+                    arguments: [youtubeUrl, audioDownloadPath, formatId]
+                )
+                guard let fileName = downloaded[safe: 0], !fileName.isEmpty else {
+                    throw PythonExecutorBridgeError.invalidDownloadResult
+                }
+                completionHandler(makeSource(ext: (fileName as NSString).pathExtension).toDto(), nil)
             } catch {
                 completionHandler(nil, error as NSError)
             }
@@ -196,6 +247,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     private static let methodExtractVideoUrlsFromPlaylist = "extract_video_urls_from_playlist"
     private static let methodExtractAudioSource = "extract_audio_source"
     private static let methodDownloadPlayableAudio = "download_playable_audio"
+    private static let methodDownloadHlsAudio = "download_hls_audio"
 
     /// 재추출 재시도 횟수. 계속 거부되는 것은 주소가 상한 것이 아니라 그 영상을 받을 수 없는 것이다.
     private static let extractRetryCount = 1
@@ -210,18 +262,25 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     private static let methodTransliterateToKorean = "transliterate_to_korean"
 }
 
-private final class PythonRuntime {
-    private var didConfigurePython = false
+/// PythonKit 은 GIL 을 다루지 않는다. 파이썬 호출은 전부 `withGIL` 안에서 한다.
+final class PythonRuntime {
+    // 인터프리터는 프로세스에 하나라 인스턴스가 아니라 타입이 한 번 초기화한다.
+    // `Py_Initialize` 는 GIL 을 쥔 채 돌아온다. 놓지 않으면 다른 스레드의 `PyGILState_Ensure` 가
+    // 영영 기다린다. `configurePython` 의 `PythonObject` 가 다 풀린 뒤라야 해서 함수를 나눴다.
+    private static let configured: Void = {
+        configurePython()
+        PythonGIL.releaseAfterInitialize()
+    }()
 
     func callFunction(
         moduleName: String,
         functionName: String,
         arguments: [String]
     ) throws -> [String] {
-        configurePythonIfNeeded()
-
-        let result = try call(moduleName: moduleName, functionName: functionName, arguments: arguments)
-        return convertPythonSequenceToStrings(result)
+        try withGIL {
+            let result = try call(moduleName: moduleName, functionName: functionName, arguments: arguments)
+            return convertPythonSequenceToStrings(result)
+        }
     }
 
     /// 문자열 하나를 돌려주는 함수용. 시퀀스 변환을 쓰면 문자열이 글자 단위로 쪼개진다.
@@ -230,10 +289,18 @@ private final class PythonRuntime {
         functionName: String,
         arguments: [String]
     ) throws -> String {
-        configurePythonIfNeeded()
+        try withGIL {
+            let result = try call(moduleName: moduleName, functionName: functionName, arguments: arguments)
+            return String(result) ?? String(Python.str(result)) ?? ""
+        }
+    }
 
-        let result = try call(moduleName: moduleName, functionName: functionName, arguments: arguments)
-        return String(result) ?? String(Python.str(result)) ?? ""
+    /// `PythonObject` 를 밖으로 내보내지 않는다. 해제가 `Py_DecRef` 라 GIL 밖에서 풀리면 죽는다.
+    private func withGIL<T>(_ body: () throws -> T) rethrows -> T {
+        _ = Self.configured
+        let state = PythonGIL.ensure()
+        defer { PythonGIL.release(state) }
+        return try body()
     }
 
     /// `Python.import` 와 `dynamicallyCall` 은 파이썬 예외에서 **트랩한다**. throwing 변형을 써야
@@ -273,9 +340,7 @@ private final class PythonRuntime {
         return list
     }
 
-    private func configurePythonIfNeeded() {
-        guard !didConfigurePython else { return }
-
+    private static func configurePython() {
         let bundlePath = Bundle.main.bundlePath
         let pythonHome = "\(bundlePath)/python"
         let appPackages = "\(bundlePath)/app-packages"
@@ -302,11 +367,9 @@ private final class PythonRuntime {
             setenv("SSL_CERT_FILE", caBundle, 1)
             setenv("REQUESTS_CA_BUNDLE", caBundle, 1)
         }
-
-        didConfigurePython = true
     }
 
-    private var pythonLibraryPath: String? {
+    private static var pythonLibraryPath: String? {
         let candidates = [
             Bundle.main.privateFrameworksPath.map { "\($0)/Python.framework/Python" },
             Bundle.main.path(forResource: "Python", ofType: "framework").map { "\($0)/Python" },
@@ -314,7 +377,7 @@ private final class PythonRuntime {
         return candidates.first
     }
 
-    private func pythonSourcePath() -> String {
+    private static func pythonSourcePath() -> String {
         let bundlePath = Bundle.main.bundlePath
         let processPath = ProcessInfo.processInfo.environment["PWD"]
         let candidates = [
@@ -324,6 +387,31 @@ private final class PythonRuntime {
             "\(bundlePath)/src/python",
         ].compactMap { $0 }
         return candidates.first ?? bundlePath
+    }
+}
+
+/// PythonKit 이 노출하지 않는 GIL C API. Python.xcframework 가 링크돼 있어 전역 심볼로 찾는다.
+private enum PythonGIL {
+    private typealias EnsureFunction = @convention(c) () -> Int32
+    private typealias ReleaseFunction = @convention(c) (Int32) -> Void
+    private typealias SaveThreadFunction = @convention(c) () -> OpaquePointer?
+
+    private static let ensureFunction: EnsureFunction = load("PyGILState_Ensure")
+    private static let releaseFunction: ReleaseFunction = load("PyGILState_Release")
+    private static let saveThreadFunction: SaveThreadFunction = load("PyEval_SaveThread")
+
+    static func ensure() -> Int32 { ensureFunction() }
+
+    static func release(_ state: Int32) { releaseFunction(state) }
+
+    static func releaseAfterInitialize() { _ = saveThreadFunction() }
+
+    private static func load<T>(_ name: String) -> T {
+        // RTLD_DEFAULT. 매크로라 Swift 로 들어오지 않는다.
+        guard let symbol = dlsym(UnsafeMutableRawPointer(bitPattern: -2), name) else {
+            fatalError("\(name) 를 찾을 수 없습니다")
+        }
+        return unsafeBitCast(symbol, to: T.self)
     }
 }
 

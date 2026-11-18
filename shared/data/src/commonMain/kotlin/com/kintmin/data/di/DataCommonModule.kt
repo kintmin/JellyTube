@@ -128,6 +128,7 @@ val dataCommonModule: Module = module {
     factoryOf(::SearchLyricsUseCase)
     factoryOf(::BuildLyricsSearchQueryUseCase)
     factoryOf(::SortLyricsSearchResultsUseCase)
+    factoryOf(::MatchLyricsTrackNameUseCase)
     factoryOf(::ApplyLyricsToAudioMediaUseCase)
     factoryOf(::DownloadLyricsForAudioMediaUseCase)
     factoryOf(::GetAudioMediaLyricsUseCase)

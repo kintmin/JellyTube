@@ -20,7 +20,8 @@ import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.notifications.AudioEditSaveNotification
 import com.kintmin.jellytube.push_notification.notifications.AudioEditSaveResultNotification
 import com.kintmin.presentation.port.PlaybackController
-import com.kintmin.presentation.port.model.toMediaControlData
+import com.kintmin.presentation.port.completeAudioEditSave
+import com.kintmin.presentation.port.model.WorkResultNotice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
@@ -79,26 +80,13 @@ class AudioEditSaveWorker(
 
         return result.fold(
             onSuccess = { saved ->
-                val audioMedia = saved.audioMedia
-                if (saved is SavedAudioEdit.Overwritten) {
-                    // 재생 큐는 같은 플레이리스트를 다시 재생할 때 갱신되지 않아서 직접 교체해야 편집본이 재생된다.
-                    withContext(Dispatchers.Main) {
-                        mediaControllerManager.tryReplaceMediaItem(
-                            mediaId = audioMedia.id,
-                            mediaItem = audioMedia.toMediaControlData(),
-                        )
-                    }
-                }
-                pushNotificationManager.sendNotification(
-                    AudioEditSaveResultNotification(
-                        resultType = when (saved) {
-                            is SavedAudioEdit.Overwritten -> AudioEditSaveResultNotification.ResultType.OverwriteSuccess
-                            is SavedAudioEdit.SavedAsNew -> AudioEditSaveResultNotification.ResultType.NewMediaSuccess
-                        },
-                        contentText = audioMedia.name,
-                        audioMediaId = audioMedia.id,
+                val notice = withContext(Dispatchers.Main) {
+                    mediaControllerManager.completeAudioEditSave(
+                        audioMedia = saved.audioMedia,
+                        isOverwrite = saved is SavedAudioEdit.Overwritten,
                     )
-                )
+                }
+                pushNotificationManager.sendNotification(AudioEditSaveResultNotification(notice))
                 Result.success()
             },
             onFailure = { error ->
@@ -110,12 +98,7 @@ class AudioEditSaveWorker(
 
     private suspend fun notifyFailure(errorMessage: String) {
         appLog.sendDebugLog(DebugLog("AudioEditSaveWorker", errorMessage))
-        pushNotificationManager.sendNotification(
-            AudioEditSaveResultNotification(
-                resultType = AudioEditSaveResultNotification.ResultType.Failure,
-                contentText = "저장에 실패했습니다. 로그를 확인해주세요.",
-            )
-        )
+        pushNotificationManager.sendNotification(AudioEditSaveResultNotification(WorkResultNotice.AudioEditSave.Failure))
     }
 
     companion object {

@@ -13,4 +13,5 @@ enum class FirebaseLogName {
     DeleteAudioMedia,
     AddPlaylist,
     DeletePlaylist,
+    YoutubeDownloadFallback,
 }

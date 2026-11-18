@@ -51,7 +51,6 @@ import org.koin.compose.viewmodel.koinViewModel
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
-import com.kintmin.presentation.platform.isAudioEditSupported
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_media_detail.dialog.AudioEditRevertDialog
@@ -399,64 +398,61 @@ fun AudioMediaDetailScreen(
                         }
                     }
 
-                    // 음원 편집을 제공하지 않는 플랫폼에서는 두 갈래 모두 숨긴다.
-                    if (isAudioEditSupported) {
-                        if (!data.hasEditedAudio) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .clickable {
-                                        navigateToAudioEdit(data.audioMediaId)
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    modifier = Modifier.weight(1f),
-                                    text = if (data.isAudioEditSaving) "편집본 저장 중..." else "음원 편집하기",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                Icon(
-                                    imageVector = Icons.Rounded.ChevronRight,
-                                    contentDescription = null,
-                                )
-                            }
-                        } else {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clickable { navigateToAudioEdit(data.audioMediaId) },
-                                    text = if (data.isAudioEditSaving) {
-                                        "편집본 저장 중..."
-                                    } else {
-                                        "편집본 사용 중 · ${data.playTime}"
-                                    },
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                // 저장이 끝나면 편집본이 다시 연결되므로 저장 중에는 되돌릴 수 없다
-                                IconButton(
-                                    enabled = !data.isAudioEditSaving,
-                                    onClick = { isShowAudioEditRevertDialog = true },
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.Close,
-                                        contentDescription = "원본으로 되돌리기",
-                                    )
+                    if (!data.hasEditedAudio) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .clickable {
+                                    navigateToAudioEdit(data.audioMediaId)
                                 }
+                                .padding(horizontal = 16.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                modifier = Modifier.weight(1f),
+                                text = if (data.isAudioEditSaving) "편집본 저장 중..." else "음원 편집하기",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Icon(
+                                imageVector = Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                            )
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { navigateToAudioEdit(data.audioMediaId) },
+                                text = if (data.isAudioEditSaving) {
+                                    "편집본 저장 중..."
+                                } else {
+                                    "편집본 사용 중 · ${data.playTime}"
+                                },
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            // 저장이 끝나면 편집본이 다시 연결되므로 저장 중에는 되돌릴 수 없다
+                            IconButton(
+                                enabled = !data.isAudioEditSaving,
+                                onClick = { isShowAudioEditRevertDialog = true },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = "원본으로 되돌리기",
+                                )
                             }
                         }
                     }

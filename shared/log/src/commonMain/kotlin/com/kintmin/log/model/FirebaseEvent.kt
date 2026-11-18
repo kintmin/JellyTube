@@ -72,4 +72,18 @@ sealed class FirebaseEvent(val logName: FirebaseLogName, vararg val params: Pair
         FirebaseParamName.PlaylistTitle to playlistTitle,
         FirebaseParamName.AudioMediaCount to audioMediaCount.toString(),
     )
+
+    /** 앱이 직접 받지 못하는 HLS 라 yt-dlp 가 앱 안에서 받은 경우. [reason] 이 지원하지 못한 형식이다. */
+    data class YoutubeDownloadFallback(
+        val source: String,
+        val reason: String,
+        val formatId: String,
+        val protocol: String,
+    ) : FirebaseEvent(
+        FirebaseLogName.YoutubeDownloadFallback,
+        FirebaseParamName.Source to source,
+        FirebaseParamName.FallbackReason to reason,
+        FirebaseParamName.FormatId to formatId,
+        FirebaseParamName.Protocol to protocol,
+    )
 }

@@ -30,11 +30,24 @@ class WorkResultNoticeTest {
     }
 
     @Test
+    fun `편집본을 저장하면 저장된 음원 상세로 간다`() {
+        assertEquals(
+            NavigationIntent.NavigateToAudioMedia(7),
+            destinationOf(WorkResultNotice.AudioEditSave.OverwriteSuccess(name = "곡", audioMediaId = 7)),
+        )
+        assertEquals(
+            NavigationIntent.NavigateToAudioMedia(8),
+            destinationOf(WorkResultNotice.AudioEditSave.NewMediaSuccess(name = "곡", audioMediaId = 8)),
+        )
+    }
+
+    @Test
     fun `실패 알림은 앱 로그로 간다`() {
         listOf(
             WorkResultNotice.Download.Failure,
             WorkResultNotice.LyricsVariantCreation.Failure(LyricsVariant.TRANSLITERATION),
             WorkResultNotice.AnomalyCheck.Failure,
+            WorkResultNotice.AudioEditSave.Failure,
         ).forEach { notice ->
             assertEquals(NavigationIntent.NavigateToSettingAppLog, destinationOf(notice))
         }

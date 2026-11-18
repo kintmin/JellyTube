@@ -28,14 +28,14 @@ internal fun iosAdapterModule(
     single<AppLog> { IosAppLog(appLogBridge, get()) }
     single<PlaybackController> { IosPlaybackController(mediaControllerBridge) }
     single<MigrationSourceDiscovery> { IosMigrationSourceDiscovery(migrationSourceBrowserBridge) }
-    single<AudioPreviewPlayer> { IosAudioPreviewPlayerStub() }
+    single<AudioPreviewPlayer> { IosAudioPreviewPlayer() }
     single<StepMeasurementController> { IosStepMeasurementController(get(), get(), get(), get()) }
     single<FileShareServerController> { IosFileShareServerController(get(), get(), get()) }
     single<ReceiveKeepAlive> { IosReceiveKeepAlive() }
     single<StartYoutubeDownload> { IosStartYoutubeDownload(get(), get(), get(), get()) }
     single<StartAnomalyDataCheck> { IosStartAnomalyDataCheck(get(), get()) }
     single<StartLyricsVariantCreation> { IosStartLyricsVariantCreation(get(), get()) }
-    single<StartAudioEditSave> { IosStartAudioEditSaveStub() }
+    single<StartAudioEditSave> { IosStartAudioEditSave(get(), get(), get(), get()) }
     single<DataMigrationSendController> { IosDataMigrationSendControllerStub() }
     single<RunningTaskMonitor> { IosRunningTaskMonitor(get(), get()) }
 }

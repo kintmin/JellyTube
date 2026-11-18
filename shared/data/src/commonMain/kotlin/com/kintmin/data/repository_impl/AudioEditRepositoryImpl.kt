@@ -56,20 +56,6 @@ internal class AudioEditRepositoryImpl constructor(
     override suspend fun measureAudioDurationMs(audioFileFullPath: String): Result<Long> =
         audioEditor.measureDurationMs(audioFileFullPath)
 
-    /**
-     * [audioMediaId]를 저장 중으로 표시한 채 [block]을 실행하고, 끝나면 표시를 지운다.
-     * 중복 저장은 [reserveSaving]에서 막는다. 예약 없이 실행되는 경우(프로세스가 죽은 뒤 작업이 다시 도는 등)도
-     * 여기서 표시한다.
-     */
-    private suspend fun <T> withSavingMark(audioMediaId: Int, block: suspend () -> Result<T>): Result<T> {
-        savingAudioMediaIds.update { it + audioMediaId }
-        return try {
-            block()
-        } finally {
-            savingAudioMediaIds.update { it - audioMediaId }
-        }
-    }
-
     override fun extractWaveform(
         audioFileFullPath: String,
         bucketCount: Int,
@@ -88,7 +74,7 @@ internal class AudioEditRepositoryImpl constructor(
     override suspend fun applyEditedAudio(
         audioMediaId: Int,
         timeline: AudioEditTimeline,
-    ): Result<AudioMedia> = withSavingMark(audioMediaId) { applyEditedAudioInternal(audioMediaId, timeline) }
+    ): Result<AudioMedia> = applyEditedAudioInternal(audioMediaId, timeline)
 
     private suspend fun applyEditedAudioInternal(
         audioMediaId: Int,
@@ -160,15 +146,13 @@ internal class AudioEditRepositoryImpl constructor(
         name: String,
         playlistIdOnDownload: Int?,
         shouldInsertAtTopOnDownload: Boolean,
-    ): Result<AudioMedia> = withSavingMark(audioMediaId) {
-        saveEditedAudioAsNewMediaInternal(
-            audioMediaId = audioMediaId,
-            parts = parts,
-            name = name,
-            playlistIdOnDownload = playlistIdOnDownload,
-            shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
-        )
-    }
+    ): Result<AudioMedia> = saveEditedAudioAsNewMediaInternal(
+        audioMediaId = audioMediaId,
+        parts = parts,
+        name = name,
+        playlistIdOnDownload = playlistIdOnDownload,
+        shouldInsertAtTopOnDownload = shouldInsertAtTopOnDownload,
+    )
 
     private suspend fun saveEditedAudioAsNewMediaInternal(
         audioMediaId: Int,
