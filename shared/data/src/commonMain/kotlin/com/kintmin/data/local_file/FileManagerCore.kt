@@ -25,7 +25,6 @@ internal interface AppDirectories {
     }
 }
 
-/** 두 플랫폼 `FileManagerImpl` 이 같이 쓰는 파일 일. 플랫폼 API 가 필요한 일만 각 구현에 남는다. */
 internal class FileManagerCore(
     private val directories: AppDirectories,
     private val fileSystem: FileSystem = FileSystem.SYSTEM,

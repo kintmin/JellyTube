@@ -8,7 +8,6 @@ import kotlinx.serialization.json.Json
 /**
  * AUDIO_EDIT_PROJECT.timelineJson 형식.
  *
- * 도메인 모델은 아무것도 의존하지 않아야 해서 직렬화 표시는 이 전용 DTO에만 둔다.
  * [version]은 타임라인 구조가 바뀌어도 DB 마이그레이션 없이 읽는 쪽에서 처리하기 위한 값이다.
  */
 @Serializable

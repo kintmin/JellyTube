@@ -26,10 +26,9 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 
 /**
- * `dataAndroidModule` 과 달리 함수인 이유: Python·번역 구현체가 Swift 쪽에 있어 런타임에만 손에
- * 들어온다. Android 는 같은 것을 `androidContext()` 로 받지만 iOS 에는 그 창구가 없다.
+ * Python·번역 구현체가 Swift 쪽에 있어 런타임에만 손에 들어온다. 그래서 `val` 이 아니라 함수다.
  *
- * `AppLog` 는 여기 없다 — 수집기 구현이 Swift 라 조립 모듈(`:ios:shared`)이 맡는다.
+ * `AppLog` 는 수집기 구현이 Swift 라 여기 없다.
  */
 fun dataIosModule(
     pythonExecutorBridge: IosPythonExecutorBridge,
@@ -47,6 +46,5 @@ fun dataIosModule(
     single<LyricsTranslator> { IosLyricsTranslator(lyricsTranslatorBridge) }
     single<LyricsTransliterator> { IosLyricsTransliterator(pythonExecutorBridge) }
 
-    // ReceiveKeepAlive 는 백그라운드 유예를 쓰는 ios/shared 가 바인딩한다.
     single<PcFileShareServerRepository> { PcFileShareServerRepositoryImpl(get(), get()) }
 }

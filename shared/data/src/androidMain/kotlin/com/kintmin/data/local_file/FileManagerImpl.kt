@@ -60,7 +60,7 @@ internal class FileManagerImpl(
 
     override fun getLyricFileFullPath(fileNameWithExt: String) = core.getLyricFileFullPath(fileNameWithExt)
 
-    // Android 는 받는 쪽이 아니지만 계약을 채운다. 음원 디렉터리와 볼륨이 달라 옮기기는 복사로 떨어진다.
+    // 음원 디렉터리와 볼륨이 달라 옮기기는 복사로 떨어진다.
     override fun getMigrationStagingDirPath() = core.getMigrationStagingDirPath()
 
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String) =
@@ -107,7 +107,6 @@ internal class FileManagerImpl(
             val uri = contentUriString.toUri()
             val contentResolver = appContext.contentResolver
 
-            // 파일명과 MIME 타입 조회
             val (displayName, mimeType) = contentResolver.query(
                 uri,
                 arrayOf(OpenableColumns.DISPLAY_NAME, MediaStore.MediaColumns.MIME_TYPE),
@@ -127,7 +126,6 @@ internal class FileManagerImpl(
             val fileNameWithExt = "$fileName.$targetExt"
             val targetFile = audioDir().resolve(fileNameWithExt)
 
-            // 파일 복사 + SHA-256 해시 계산
             val digest = MessageDigest.getInstance("SHA-256")
             contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(targetFile).use { output ->
@@ -142,7 +140,6 @@ internal class FileManagerImpl(
 
             val sha256Hex = digest.digest().joinToString("") { "%02x".format(it) }
 
-            // 메타데이터 추출
             val metadata = extractAudioMetadata(targetFile, fileName)
 
             CopiedAudioInfo(
@@ -163,7 +160,7 @@ internal class FileManagerImpl(
             val fileNameWithExt = "$fileName.${uploadedName.ext}"
             val targetFile = audioDir().resolve(fileNameWithExt)
 
-            // 파일 복사 + SHA-256 해시 계산 (대용량 파일도 메모리에 올리지 않는다)
+            // 대용량 파일도 메모리에 올리지 않는다.
             val digest = MessageDigest.getInstance("SHA-256")
             FileInputStream(File(sourceFileFullPath)).use { input ->
                 FileOutputStream(targetFile).use { output ->

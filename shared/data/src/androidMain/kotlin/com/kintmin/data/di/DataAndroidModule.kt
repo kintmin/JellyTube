@@ -38,7 +38,7 @@ val dataAndroidModule: Module = module {
         MigrationDataSourceImpl(get()) { localDeviceName(context) }
     }
 
-    // 보내는 쪽 서버는 Android 에만 있다. PC 수신과 한 서버를 같이 쓴다.
+    // PC 수신과 한 서버를 같이 쓴다.
     single { AndroidFileShareServerRepository(androidContext(), get()) }
         .binds(arrayOf(PcFileShareServerRepository::class, MigrationSendServerRepository::class))
     factoryOf(::OpenMigrationSendUseCase)

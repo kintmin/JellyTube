@@ -15,7 +15,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** 받는 서버 한 벌. 플랫폼은 언제 켜고 끌지와 무엇을 광고할지만 정한다. */
 internal class FileShareServer(
     private val scope: CoroutineScope,
     private val appLog: AppLog,

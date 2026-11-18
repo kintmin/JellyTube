@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.combine
 
 /**
  * PC 수신과 데이터 보내기가 한 서버(한 포트)를 같이 쓴다. 둘 중 하나라도 켜져 있으면 서버가 떠 있다.
- * 프로세스를 살려 두는 포그라운드 서비스는 android:app 이 따로 띄운다.
  */
 internal class AndroidFileShareServerRepository(
     context: Context,

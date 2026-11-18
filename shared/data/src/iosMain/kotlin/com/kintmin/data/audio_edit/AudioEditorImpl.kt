@@ -6,14 +6,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 /**
- * iOS 음원 편집 미구현 스텁.
- *
- * 음원 편집 UI는 Android에만 있다. iOS에서 이 기능을 쓰게 되면
- * AVMutableComposition + AVAssetExportSession(passthrough)으로 렌더하고
- * AVAssetReader로 파형을 뽑는 식으로 같은 인터페이스를 채울 수 있다.
- *
- * [AudioEditor]를 쓰는 Repository가 광범위 single로 등록되기 때문에,
- * 바인딩을 비워두면 iOS에서 해당 Repository를 꺼내는 순간 Koin이 터진다. 그래서 스텁을 둔다.
+ * 음원 편집 미구현 스텁. [AudioEditor]를 쓰는 Repository가 광범위 single로 등록되기 때문에,
+ * 바인딩을 비워두면 그 Repository를 꺼내는 순간 Koin이 터진다.
  */
 internal class AudioEditorImpl : AudioEditor {
 
