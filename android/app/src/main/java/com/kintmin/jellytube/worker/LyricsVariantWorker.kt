@@ -9,7 +9,7 @@ import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.notifications.LyricsVariantResultNotification
-import com.kintmin.presentation.work_notice.WorkResultNotice
+import com.kintmin.presentation.port.model.WorkResultNotice
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 

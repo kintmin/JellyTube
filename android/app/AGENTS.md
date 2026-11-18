@@ -70,6 +70,12 @@ iOS adapter 의 자리는 **`ios/shared` 의 `adapter/`** 다(이 모듈의 짝�
   `LyricsTransliterator`). **네 모듈에 흩어져 있는 것이 정상이다** — 각 레이어가 자기 구멍을 뚫는다.
 - **adapter 는 그 구멍에 끼우는 플랫폼 구현이다.** 이 모듈과 `ios/shared/adapter/` 에 있는 것이
   전부 adapter다. "포트 구현" 보다 adapter 가 정확하다.
+- **구멍이 모듈 밖까지 가지 않는 경우도 있다.** `shared:data` 의 `AudioEditor`(media3-transformer ↔
+  미지원 스텁) · `LyricsTranslator`(ML Kit ↔ Swift 브릿지)는 인터페이스와 adapter 가 **같은 모듈의
+  다른 소스셋**에 있고 Koin 바인딩도 그 모듈이 한다. **그런 adapter 를 여기로 가져오지 않는다** —
+  `PythonExecutor` 만 여기 있는 것은 `chaquopy` 가 애플리케이션 모듈 전용이라 어쩔 수 없어서지
+  규칙이 그래서가 아니다. 그래서 그 포트는 Android 구현만 밖에 있고 iOS 는 `shared:data` 안에 있다.
+  고르는 기준은 `shared/data/AGENTS.md` 의 **플랫폼 탈출구** 절이 단일 진원지다.
 - **port 이름에 플랫폼 기구를 넣지 않는다.** `ExecuteYoutubeDownload`(WorkManager enqueue) ·
   `RunningWorkMonitor`(WorkManager) · `MediaControllerManager`(media3) 가 그래서 `Start~` ·
   `RunningTaskMonitor` · `PlaybackController` 로 바뀌었다. Android 기구 모양으로 구멍을 뚫으면
@@ -77,6 +83,12 @@ iOS adapter 의 자리는 **`ios/shared` 의 `adapter/`** 다(이 모듈의 짝�
   `IosRunningTaskTracker` 를 직접 만든 것이 그 흔적이다.
 - `worker/starter/` 는 **UseCase 가 아니다.** Worker 를 enqueue 하는 adapter다.
   `shared:domain` 의 UseCase 와 헷갈리지 않게 이름을 가른다.
+- **port 는 인터페이스지만, `port/` 에 인터페이스만 있는 것은 아니다.** 경계를 오가는 데이터는
+  `presentation/port/model/`, 포트를 쓰는 공통 규칙은 `presentation/port/` 직하다. 둘 다
+  **양쪽 adapter 가 같은 것을 써야 해서** 거기 있다 — adapter 쪽에 같은 모양을 또 정의하지
+  않는다. 두 플랫폼이 다른 알림 문구를 띄우거나 받은 곡을 다른 큐에 넣으면 그 자체가 버그다.
+  상세는 `shared/presentation/AGENTS.md` 의 **`port/model/`** 절과 **포트를 쓰는 공통 규칙** 절이
+  단일 진원지다.
 
 **Rules**:
 - 새 포트가 필요하면 인터페이스는 `presentation/port/`에, adapter는 여기에 두고 `di/AppModule.kt`에 `single<Port> { PortImpl(androidContext()) }`로 등록한다.

@@ -1,6 +1,6 @@
 package com.kintmin.ios.notification
 
-import com.kintmin.presentation.work_notice.WorkResultNotice
+import com.kintmin.presentation.port.model.WorkResultNotice
 import platform.Foundation.NSUUID
 import platform.UserNotifications.UNMutableNotificationContent
 import platform.UserNotifications.UNNotificationRequest

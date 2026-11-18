@@ -6,7 +6,7 @@ import com.kintmin.jellytube.intent.IntentRequestCode
 import com.kintmin.jellytube.intent.workResultPendingIntent
 import com.kintmin.jellytube.push_notification.PushNotificationIdGenerator
 import com.kintmin.jellytube.push_notification.channels.DownloadResultChannel
-import com.kintmin.presentation.work_notice.WorkResultNotice
+import com.kintmin.presentation.port.model.WorkResultNotice
 
 data class DownloadResultNotification(
     val notice: WorkResultNotice.Download,

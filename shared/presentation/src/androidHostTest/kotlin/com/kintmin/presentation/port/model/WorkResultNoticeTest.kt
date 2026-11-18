@@ -1,4 +1,4 @@
-package com.kintmin.presentation.work_notice
+package com.kintmin.presentation.port.model
 
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.presentation.deeplink.DeepLinkParser

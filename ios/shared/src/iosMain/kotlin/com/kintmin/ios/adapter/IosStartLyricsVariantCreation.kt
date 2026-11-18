@@ -8,7 +8,7 @@ import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.port.StartLyricsVariantCreation
 import com.kintmin.presentation.port.model.RunningTask
-import com.kintmin.presentation.work_notice.WorkResultNotice
+import com.kintmin.presentation.port.model.WorkResultNotice
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

@@ -110,6 +110,43 @@ Android 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 �
 - **인자 전달로 해결되면 포트를 만들지 않는다.** 값 하나를 넘기면 되는 경우(예: `isDebugTabVisible`)는 Screen/NavGraph 파라미터로 받는다.
 - 순수 판정 로직은 포트가 아니다. `shared:domain` 에 둔다.
 
+### `port/model/` — 포트 경계를 오가는 데이터
+
+포트 자체는 인터페이스지만, 그 경계를 넘는 데이터와 **양쪽 adapter 가 같은 말을 써야 하는 사용자향 문구**는 여기 한 벌만 둔다.
+
+| 파일 | 무엇 | 등장 자리 |
+|---|---|---|
+| `MediaControlData` · `AudioMediaMediaControlData` | `PlaybackController` 에 실리는 재생 항목과 `AudioMedia` → 그 타입 변환 | 포트 시그니처 |
+| `RunningTask` | `RunningTaskMonitor` 가 돌려주는 작업 종류. 사용자향 `label` 을 들고 있다 | 포트 시그니처 |
+| `WorkResultNotice` · `LyricsVariantLabel` | 작업이 끝났을 때 띄우는 알림의 제목·본문·딥링크 | **adapter 내부** |
+
+- **포트 시그니처에 실리지 않아도 여기다.** `WorkResultNotice` 는 어느 포트 인자·반환에도 나오지
+  않고 `Start*` adapter 와 알림 코드가 내부에서만 쓴다. 그래도 방향이 같다 — **이 모듈이 선언하고
+  플랫폼이 소비한다.** `deepLink` 를 `deeplink/DeepLinkConstants` 로 조립하므로 `shared:domain`
+  으로 내릴 수도 없다(domain 은 아무것도 의존하지 않는다).
+- **화면이 쓰는 데이터는 여기가 아니다.** 그쪽은 `~UiState` 다. 판정 기준은 소비처다 — 화면이
+  읽으면 `UiState`, adapter 가 읽으면 `port/model/`.
+
+### 포트를 쓰는 공통 규칙 — `port/` 직하
+
+포트 **사용법**이 두 플랫폼에서 같아야 하면 확장 함수로 `port/` 직하에 둔다. 인터페이스가 아닌
+파일이 섞이지만, 그 대가로 adapter 두 벌이 같은 로직을 베끼지 않는다.
+
+| 파일 | 무엇 | 쓰는 쪽 |
+|---|---|---|
+| `DownloadedMediaQueue` (`PlaybackController.addDownloadedMedia`) | 받은 곡을 전체·다운로드 대상 플레이리스트 큐 양쪽에 넣고, 맨 위 설정을 따른다 | `android:app` 의 `YoutubeDownloadWorker`, `ios/shared` 의 `IosStartYoutubeDownload` |
+
+- **ViewModel 이 쓰는 포트 호출은 여기가 아니다.** 그건 그냥 ViewModel 안에서 부른다. 이 자리는
+  **adapter 두 벌이 같은 순서로 포트를 때려야 할 때**만 쓴다.
+- 포트가 끼지 않는 순수 판정은 `shared:domain` 이다. 위 함수는 `PlaybackController` 를 받으므로
+  domain 으로 내려갈 수 없다(domain 은 아무것도 의존하지 않는다).
+
+> **`work_notice/` 와 `playback/` 을 걷어낸 기록**: 둘 다 이 모듈 최상위 패키지였는데 소비처가
+> 모듈 안에 **0건**이었다 — 전부 `android:app` 의 Worker·알림과 `ios/shared` 의 adapter 였다.
+> 화면 모듈의 최상위에 화면이 안 쓰는 폴더가 둘 서 있어 "여기 왜 있지"가 반복됐다. 데이터인
+> `WorkResultNotice`·`LyricsVariantLabel` 은 `port/model/` 로, 동작인 `DownloadedMediaQueue` 는
+> `port/` 직하로 갈라 옮겼다. **판정은 소비처가 한다** — 화면이 안 쓰고 adapter 가 쓰면 `port` 쪽이다.
+
 ---
 
 ## Architecture: MVI

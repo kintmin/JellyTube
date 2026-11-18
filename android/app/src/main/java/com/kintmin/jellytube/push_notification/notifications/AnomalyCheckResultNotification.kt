@@ -6,7 +6,7 @@ import com.kintmin.jellytube.intent.IntentRequestCode
 import com.kintmin.jellytube.intent.workResultPendingIntent
 import com.kintmin.jellytube.push_notification.PushNotificationIdGenerator
 import com.kintmin.jellytube.push_notification.channels.AnomalyCheckResultChannel
-import com.kintmin.presentation.work_notice.WorkResultNotice
+import com.kintmin.presentation.port.model.WorkResultNotice
 
 data class AnomalyCheckResultNotification(
     val notice: WorkResultNotice.AnomalyCheck,

@@ -9,9 +9,9 @@ import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.platform.continueInBackgroundWhile
 import com.kintmin.presentation.port.StartYoutubeDownload
 import com.kintmin.presentation.port.PlaybackController
-import com.kintmin.presentation.playback.addDownloadedMedia
+import com.kintmin.presentation.port.addDownloadedMedia
 import com.kintmin.presentation.port.model.RunningTask
-import com.kintmin.presentation.work_notice.WorkResultNotice
+import com.kintmin.presentation.port.model.WorkResultNotice
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

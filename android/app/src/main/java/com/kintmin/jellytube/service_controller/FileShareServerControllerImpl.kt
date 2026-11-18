@@ -8,7 +8,7 @@ import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.notifications.DownloadResultNotification
 import com.kintmin.jellytube.service.FileShareForegroundService
 import com.kintmin.presentation.port.FileShareServerController
-import com.kintmin.presentation.work_notice.WorkResultNotice
+import com.kintmin.presentation.port.model.WorkResultNotice
 import kotlinx.coroutines.flow.StateFlow
 
 /** 서버는 data 가 띄우고, 프로세스는 foreground service 가 붙잡아 둔다. */

@@ -1,8 +1,7 @@
-package com.kintmin.presentation.playback
+package com.kintmin.presentation.port
 
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.DownloadedAudioMediaResult
-import com.kintmin.presentation.port.PlaybackController
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.datetime.LocalDateTime

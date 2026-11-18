@@ -17,6 +17,47 @@ The decision tree for where to place code:
 - Business logic split across `androidMain` and `iosMain`. If both platforms need the same logic, put it in `commonMain`.
 - Duplicate implementations in `androidMain` and `iosMain` that differ only in trivial details. Find a common abstraction and put it in `commonMain`.
 
+### 플랫폼 탈출구 — 네 갈래다
+
+`commonMain` 으로 안 되는 것이 나오면 아래에서 고른다. `presentation` 의 탈출구와 달리 이 모듈은
+**구현을 거의 전부 자기 안에 둔다** — 모듈 밖으로 뚫는 것은 빌드 플러그인이 강제할 때뿐이다.
+
+| 방식 | 언제 | 현재 |
+|---|---|---|
+| **`interface` + Koin** (구현을 양쪽 소스셋에) | 상태를 들고 있거나 Repository 가 주입받아야 하는 것 | `audio_edit/AudioEditor`, `translation/LyricsTranslator`, `file_share` 의 Repository 2종 |
+| **`expect`/`actual`** | 상태 없는 함수 하나로 끝나는 것 | `data_migration/isPlayableAudioExtension`, `network/createHttpClient`, `local_db/JellyTubeDatabaseConstructor`(Room 이 요구한다) |
+| **소스셋별 독립 함수**(`commonMain` 에 선언이 없다) | 양쪽 시그니처가 **애초에 다른** 것 | `data_migration/localDeviceName` — Android 는 `(Context)` 를 받고 iOS 는 `suspend` 다(UIKit 은 메인 스레드에서만 읽는다). 묶을 공통 시그니처가 없으니 묶지 않는다 |
+| **`interface` 만 두고 구현은 다른 모듈** | 빌드 플러그인이 애플리케이션 모듈을 요구할 때 | `python_bridge/PythonExecutor` · `LyricsTransliterator` — `chaquopy` 가 app 모듈 전용이라 **Android 구현만** `android:app` 에 있다. iOS 는 이 모듈 `iosMain` 의 브릿지다 — **비대칭이 정상이다** |
+
+- **클래스는 `expect class` 로 가르지 않는다.** 공통 테스트에서 인스턴스를 만들 수 없어 그것을 쓰는
+  Repository 가 통째로 테스트 불가가 된다. 계약은 `interface`, 바인딩은 Koin 이다 —
+  `shared/presentation/AGENTS.md` 의 같은 규칙과 한 몸이다.
+- **미지원 플랫폼도 바인딩을 비우지 않는다.** Repository 가 그 포트를 주입받으므로 비워 두면 그
+  Repository 를 꺼내는 순간 Koin 이 터진다. `iosMain/audio_edit/AudioEditorImpl` 이 미지원 스텁인
+  이유다. 진입점을 숨기는 일은 `presentation` 의 `isAudioEditSupported` 가 따로 한다 — **별개 일**이다.
+- 한 패키지가 한 방식을 쓰는 것이 아니다. `data_migration/` 안에 expect/actual 과 소스셋별 독립
+  함수와 순수 `commonMain` 코드가 함께 있다. **고르는 단위는 패키지가 아니라 선언 하나다.**
+
+### 플랫폼 라이브러리는 `androidMain`/`iosMain` 의존성에만 적는다
+
+`commonMain.dependencies` 에 넣으면 iOS 컴파일이 깨진다 — **그게 이 규율을 강제하는 장치다.**
+문서가 아니라 컴파일러가 막는다. 그래서 라이브러리가 새어 나갈 자리는 adapter 한 파일로 좁혀진다.
+
+| 라이브러리 | 소스셋 | 갇혀 있는 자리 |
+|---|---|---|
+| `media3-transformer` | `androidMain` | `audio_edit/AudioEditorImpl` |
+| `mlkit-translate` | `androidMain` | `translation/MlKitLyricsTranslator` |
+
+포트 시그니처에 그 라이브러리의 타입을 **하나도 올리지 않는다.** `AudioEditor` 는 경로 문자열과
+domain 모델과 `Flow` 만 주고받으므로 `commonMain` 의 `AudioEditRepositoryImpl` 은 media3 의 존재를
+모른다. adapter 는 `internal` 이라 모듈 밖으로도 나가지 않는다.
+
+> **`media3` 가 두 모듈에 있는 것처럼 보이는 것에 대해**: 같은 그룹명을 쓰는 **다른 artifact** 다.
+> 이 모듈은 `media3-transformer`(트랜스코더 — 파일 in, 파일 out)이고 `android:app` 은
+> `media3-exoplayer` · `media3-session`(재생기 — 서비스·알림·수명주기)이다. 재생은 OS 수명주기를
+> 타므로 `android:app` 에 두고 `PlaybackController` 포트로 뚫었고, 트랜스코딩은 파일 변환이라
+> 여기다. **UI 에 닿지 않는 것이 이 모듈에 있을 근거다** — 애매한 자리가 아니다.
+
 ---
 
 ### 파일 (`local_file/`)

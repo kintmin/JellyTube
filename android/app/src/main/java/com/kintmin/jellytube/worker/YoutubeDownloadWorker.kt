@@ -14,8 +14,8 @@ import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.notifications.DownloadNotification
 import com.kintmin.jellytube.push_notification.notifications.DownloadResultNotification
 import com.kintmin.presentation.port.PlaybackController
-import com.kintmin.presentation.playback.addDownloadedMedia
-import com.kintmin.presentation.work_notice.WorkResultNotice
+import com.kintmin.presentation.port.addDownloadedMedia
+import com.kintmin.presentation.port.model.WorkResultNotice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
