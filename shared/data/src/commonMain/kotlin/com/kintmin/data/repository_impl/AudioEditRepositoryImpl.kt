@@ -14,7 +14,7 @@ import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
-import com.kintmin.domain.audio_edit.usecase.AudioEditAlreadySaving
+import com.kintmin.domain.audio_edit.model.AudioEditAlreadySaving
 import com.kintmin.domain.audio_media.model.AudioMedia
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO

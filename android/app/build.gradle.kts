@@ -2,6 +2,7 @@ import com.android.build.api.artifact.ArtifactTransformationRequest
 import com.android.build.api.artifact.SingleArtifact
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 import com.kintmin.buildSrc.AppConfiguration
+import com.kintmin.buildSrc.DeepLinkConstantsSource
 import com.kintmin.buildSrc.ManifestPlaceholdersKey
 import com.kintmin.buildSrc.PropertyName
 import com.kintmin.buildSrc.SigningConfigName
@@ -13,7 +14,6 @@ import java.time.format.DateTimeFormatter
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.chaquopy)
     alias(libs.plugins.google.services)
@@ -32,6 +32,12 @@ android {
         versionName = AppConfiguration.VERSION_NAME
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // intent-filter 의 스킴·호스트는 DeepLinkConstants 에서 읽어 넣는다. 복제하면 한쪽만 바뀐다.
+        manifestPlaceholders[ManifestPlaceholdersKey.DEEP_LINK_SCHEME] =
+            DeepLinkConstantsSource.read(rootDir, "SCHEME")
+        manifestPlaceholders[ManifestPlaceholdersKey.DEEP_LINK_HOST] =
+            DeepLinkConstantsSource.read(rootDir, "HOST")
     }
 
     signingConfigs {
@@ -158,41 +164,29 @@ dependencies {
     implementation(project(":shared:log"))
     implementation(project(":shared:domain"))
     implementation(project(":shared:data"))
-    implementation(project(":shared:file-share"))
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
 
-    implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.koin.android)
     implementation(libs.koin.workmanager)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.kotlinx.datetime)
 
-    // 미디어 재생 (PlaybackService / MediaControllerManagerImpl / AudioPreviewPlayerImpl)
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.exoplayer)
 
-    // 파일공유 수신 서버 (FileShareForegroundService)
-    implementation(libs.ktor.server.core)
-    implementation(libs.ktor.server.cio)
-    implementation(libs.ktor.server.websockets)
-    implementation(libs.ktor.server.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.splashscreen)
-    // Compose 는 :shared:presentation 이 api 로 내보내는 CMP 아티팩트를 쓴다.
-    // androidx compose BOM 을 같이 두면 androidx.compose.ui 버전이 양쪽에서
-    // 고정되어 충돌하므로 선언하지 않는다. navigation 도 CMP 포크 한 벌만 쓴다.
+    // androidx compose BOM 을 같이 두면 androidx.compose.ui 버전이 CMP 포크와 충돌한다.
+    // compose·navigation 은 선언하지 않는다.
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.ktor.server.test.host)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.core)

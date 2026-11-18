@@ -1,23 +1,12 @@
 package com.kintmin.presentation.deeplink
 
-/**
- * 딥링크 경로·쿼리 키·주소 조립의 **단일 진원지**. 주소는 문자열로 다룬다 —
- * `Uri` 가 필요한 자리(`PendingIntent`)는 `android:app` 어댑터가 여기 결과를 바꿔 쓴다.
- */
 object DeepLinkConstants {
 
     const val SCHEME = "https"
 
-    /**
-     * iOS 진입용 커스텀 스킴. 호스트·경로 문법은 `https` 쪽과 같다
-     * (`jellytube://www.jellytube.com/main/...`).
-     *
-     * 커스텀 스킴은 다른 앱도 등록할 수 있다. **외부에서 값을 받는 링크가 생기면
-     * Universal Links 로 올라가야 한다** — `apple-app-site-association` 호스팅이 선행 조건이다.
-     */
+    /** 커스텀 스킴은 다른 앱도 등록할 수 있다. 외부에서 값을 받는 링크에는 쓸 수 없다. */
     const val APP_SCHEME = "jellytube"
 
-    /** 변경 시 `android:app` manifest 의 intent-filter 와 iOS `CFBundleURLTypes` 도 바꿔야 한다. */
     const val HOST = "www.jellytube.com"
 
     private const val SCHEME_AND_HOST = "$SCHEME://$HOST"

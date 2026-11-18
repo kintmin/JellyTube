@@ -19,7 +19,6 @@ class ImportSharedAudioMediaUseCase constructor(
         val shouldInsertAtTop = fetchShouldInsertAtTopOnDownloadFlowUseCase().first()
         val playlistId = playlistIdOverride ?: fetchPlaylistIdOnDownloadFlowUseCase().first()
 
-        // 대상 해석과 시스템 플레이리스트 보장은 데이터 계층이 담당한다.
         audioMediaRepository.importSharedAudio(
             contentUriString = contentUriString,
             playlistIdOnDownload = playlistId,

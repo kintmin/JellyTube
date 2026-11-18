@@ -157,10 +157,10 @@ class AudioMediaFacade constructor(
         }
     }
 
-    // 다운로드 대상 id 확정. 요청 id가 실제 존재하면 사용, 아니면 미분류(없으면 생성)로 fallback.
     private suspend fun resolveDownloadTargetId(requestedPlaylistId: Int?): Int {
-        val exists = requestedPlaylistId != null && playlistDao.getTypeById(requestedPlaylistId) != null
-        return if (exists) requestedPlaylistId!! else requireSystemPlaylistId(PlaylistType.UNCATEGORIZED)
+        val type = requestedPlaylistId?.let { playlistDao.getTypeById(it) }
+            ?.let { runCatching { PlaylistType.valueOf(it) }.getOrNull() }
+        return if (type?.canBeDownloadTarget == true) requestedPlaylistId else requireSystemPlaylistId(PlaylistType.UNCATEGORIZED)
     }
 
     suspend fun updateAudioMedia(
@@ -369,7 +369,6 @@ class AudioMediaFacade constructor(
     }
 
     // 시스템 플레이리스트(전체/미분류/즐겨찾기)가 없으면 만든다. 앱 시작 시 멱등 호출.
-    // id는 지정하지 않고(autoGenerate) type으로 구분한다.
     suspend fun ensureSystemPlaylists() {
         db.useWriterConnection { transactor ->
             transactor.immediateTransaction {

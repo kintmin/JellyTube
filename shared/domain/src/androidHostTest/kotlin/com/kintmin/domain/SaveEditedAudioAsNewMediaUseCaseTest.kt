@@ -4,7 +4,7 @@ import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCa
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
-import com.kintmin.domain.audio_edit.usecase.BlankEditedAudioName
+import com.kintmin.domain.audio_edit.model.BlankEditedAudioName
 import com.kintmin.domain.audio_edit.usecase.SaveEditedAudioAsNewMediaUseCase
 import com.kintmin.log.AppLog
 import io.mockk.Runs

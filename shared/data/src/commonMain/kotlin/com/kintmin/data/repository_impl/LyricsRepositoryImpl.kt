@@ -1,6 +1,6 @@
 package com.kintmin.data.repository_impl
 
-import com.kintmin.data.network.dataSource.LyricsDataSource
+import com.kintmin.data.network.data_source.LyricsDataSource
 import com.kintmin.data.network.model.LyricsSearchResultDto
 import com.kintmin.domain.lyrics.model.LyricsSearchResult
 import com.kintmin.domain.lyrics.repository.LyricsRepository

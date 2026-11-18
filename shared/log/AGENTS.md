@@ -1,30 +1,51 @@
 ## Module: shared:log
 
-**Role**: Ultra-lightweight KMP module that defines the logging API. Contains no implementation.
+**Role**: 로깅 API 와 그 모델만 정의한다. 구현은 하나도 없다.
 
 ---
 
-## This module is API-only
+## 이 모듈은 API 전용이다
 
-`shared:log` defines the `AppLog` interface/object and its associated models. It does NOT contain any implementation of logging (no Firebase, no Logcat, no file writing).
+로깅 인터페이스와 모델을 선언하고, 실제로 어디에 쓰는지는 모른다 — 수집기도, 콘솔도,
+파일도 여기 없다.
 
-**Concrete implementations live in the app modules**:
-- Android: `android:app` → `log_impl/AppLogImpl`
-- iOS: `ios/app` → (iOS log implementation)
-- Desktop: `desktop` → (Desktop log implementation)
+**구현은 각 앱 모듈이 갖고 시작할 때 DI 에 등록한다.** 수집기 SDK 를 Kotlin 에서 부를 수 없는
+플랫폼은 그 플랫폼 언어로 구현해 브릿지로 받는다.
 
-Each app module registers its implementation with the DI container at startup.
+## 여기 두지 않는 것
 
----
-
-## What does NOT belong here
-
-- Any platform SDK import (`android.*`, `firebase.*`, `NSLog`, etc.) → goes in the app module implementation
-- Actual log output (writing to Logcat, Firebase, file) → goes in the app module implementation
-- DI wiring of the implementation → goes in the app module's DI module
+- 플랫폼 SDK 의존 → 앱 모듈의 구현
+- 실제 로그 출력 → 앱 모듈의 구현
+- 구현의 DI 배선 → 앱 모듈의 DI
 
 ---
 
-## Size constraint
+## 두 구현이 같은 값을 보내야 한다
 
-This module must stay small. If you find yourself adding non-trivial logic here, you are doing it wrong. The total line count of this module should remain in the low hundreds. If it grows beyond that, reassess.
+수집기의 제약(이름·값 길이, 파라미터 개수, 사용자 식별자 길이, 값이 빈 파라미터 제거)에 맞춰
+자르는 일은 **이 모듈의 한 자리**에서 한다. 플랫폼 구현은 그 결과를 그대로 보낸다.
+
+플랫폼마다 따로 자르면 같은 이벤트가 기기별로 다른 값으로 쌓여, 지표를 믿을 수 없게 된다.
+
+---
+
+## 모델 이름에 수집기 이름이 들어가는 것 — 인정된 예외
+
+`android/app/AGENTS.md` 의 **"port 이름에 플랫폼 기구를 넣지 않는다"** 와 어긋나 보이지만
+**의도한 예외다.**
+
+- **수집기 선택이 제품 결정과 엮여 있다.** 어떤 이벤트를 분석 도구로 보내고 어떤 것을 크래시
+  리포터로 보낼지는 플랫폼 사정이 아니다. 수집기별로 보낼 것이 갈리면 그때 모델도 갈리는 것이
+  맞고, 그러면 이름이 수집기를 가리켜야 읽힌다.
+- **묶으면 제약을 둘 자리가 사라진다.** 수집기마다 이름 길이·파라미터 수·예약어가 달라서,
+  하나로 추상화하면 그 차이를 어디에 적을지가 없어진다.
+- 그 규칙은 **같은 일을 하는 기구가 플랫폼마다 다른** 경우를 위한 것이다(백그라운드 작업,
+  재생 엔진). 수집기는 반대로 **두 플랫폼이 같은 것**을 쓴다.
+
+OS 기능은 여전히 그 규칙을 따른다. 이 예외는 수집기에만 적용된다.
+
+---
+
+## 크기 제약
+
+이 모듈은 작게 유지한다. 여기에 사소하지 않은 로직을 더하고 있다면 자리를 잘못 고른 것이다.

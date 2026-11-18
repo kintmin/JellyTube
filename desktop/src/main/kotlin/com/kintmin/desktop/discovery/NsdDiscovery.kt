@@ -32,7 +32,6 @@ suspend fun discoverDevice(timeoutMs: Long = 3_000L): DiscoveredDevice? = withCo
                 val listener = object : ServiceListener {
                     override fun serviceAdded(event: ServiceEvent) {
                         println("[NsdDiscovery] serviceAdded name=${event.name} type=${event.type}")
-                        // requestServiceInfo로 실제 주소/포트 가져오기
                         event.dns.requestServiceInfo(event.type, event.name, 1_000)
                     }
 

@@ -1,9 +1,9 @@
 package com.kintmin.presentation.ui.setting.data_migration_send
 
 import com.kintmin.presentation.port.DataMigrationSendController
-import com.kintmin.presentation.port.RunningWorkMonitor
-import com.kintmin.presentation.port.model.RunningWork
-import com.kintmin.presentation.port.model.DataMigrationSendStatus
+import com.kintmin.presentation.port.RunningTaskMonitor
+import com.kintmin.presentation.port.model.RunningTask
+import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -30,8 +30,8 @@ class SettingDataMigrationSendViewModelTest {
         every { start() } answers { statusFlow.value = DataMigrationSendStatus.WaitingForPair("123456") }
     }
 
-    private val monitor = mockk<RunningWorkMonitor> {
-        coEvery { runningWorks() } returns emptyMap()
+    private val monitor = mockk<RunningTaskMonitor> {
+        coEvery { runningTasks() } returns emptyMap()
     }
 
     @Before
@@ -54,15 +54,15 @@ class SettingDataMigrationSendViewModelTest {
 
     @Test
     fun `다른 작업이 돌고 있으면 연결을 열지 않고 남은 작업을 보여 준다`() {
-        val running = mapOf(RunningWork.YOUTUBE_DOWNLOAD to 2, RunningWork.PC_FILE_SHARE to 1)
-        coEvery { monitor.runningWorks() } returns running
+        val running = mapOf(RunningTask.YOUTUBE_DOWNLOAD to 2, RunningTask.PC_FILE_SHARE to 1)
+        coEvery { monitor.runningTasks() } returns running
 
         val viewModel = SettingDataMigrationSendViewModel(controller, monitor)
 
         assertEquals(DataMigrationSendStep.Blocked(running), viewModel.uiState.value.step)
         verify(exactly = 0) { controller.start() }
 
-        coEvery { monitor.runningWorks() } returns emptyMap()
+        coEvery { monitor.runningTasks() } returns emptyMap()
         viewModel.sendIntent(SettingDataMigrationSendIntent.OnClickRecheck)
 
         assertEquals(DataMigrationSendStep.WaitingForPair("123456"), viewModel.uiState.value.step)

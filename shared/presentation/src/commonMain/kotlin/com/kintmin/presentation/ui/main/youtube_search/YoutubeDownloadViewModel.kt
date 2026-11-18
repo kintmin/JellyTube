@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.kintmin.presentation.port.ExecuteYoutubeDownload
+import com.kintmin.presentation.port.StartYoutubeDownload
 import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
 import com.kintmin.presentation.ui.main.navigation.mainScreenTypeMap
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 
 class YoutubeDownloadViewModel constructor(
     savedStateHandle: SavedStateHandle,
-    private val executeYoutubeDownload: ExecuteYoutubeDownload,
+    private val executeYoutubeDownload: StartYoutubeDownload,
 ) : ViewModel() {
 
     private val _currentUrl = MutableStateFlow(

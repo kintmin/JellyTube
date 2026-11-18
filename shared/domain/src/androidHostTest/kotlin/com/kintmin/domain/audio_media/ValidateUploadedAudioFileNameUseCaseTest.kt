@@ -1,6 +1,6 @@
 package com.kintmin.domain.audio_media
 
-import com.kintmin.domain.audio_media.usecase.InvalidUploadedFileNameException
+import com.kintmin.domain.audio_media.model.InvalidUploadedFileNameException
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

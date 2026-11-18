@@ -187,7 +187,7 @@ fun MainScreen(
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
-    // 핸들이 웹뷰 생명주기를 소유한다. 탭을 옮겨도 인스턴스를 유지하려고 여기서 만든다.
+    // 탭을 옮겨도 인스턴스를 유지하려고 여기서 만든다.
     val webViewHandle = rememberWebViewHandle()
 
     var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }

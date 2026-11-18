@@ -9,7 +9,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.kintmin.platform.service.StepForegroundService
+import com.kintmin.jellytube.service.StepForegroundService
 import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -48,10 +48,6 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
     }
 
-    /**
-     * `Intent` 를 문자열로 바꿔 [AppViewModel] 에 넘긴다. **여기서 판정하지 않는다** —
-     * 딥링크 해석은 공통 코드가 하고 iOS 와 같은 답을 내야 한다.
-     */
     private fun handleIntent(intent: Intent?) {
         intent ?: return
 
@@ -62,7 +58,6 @@ class MainActivity : ComponentActivity() {
             return
         }
 
-        // Quick Share / 공유 시트를 통한 오디오 파일 수신
         val sharedUris = when (intent.action) {
             Intent.ACTION_SEND -> listOfNotNull(intent.extraStream())
             Intent.ACTION_SEND_MULTIPLE -> intent.extraStreamList()

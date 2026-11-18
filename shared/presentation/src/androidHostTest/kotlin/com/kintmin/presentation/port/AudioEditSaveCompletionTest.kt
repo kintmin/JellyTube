@@ -1,6 +1,7 @@
 package com.kintmin.presentation.port
 
 import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.presentation.port.model.WorkResultNotice
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -11,7 +12,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class AudioEditSaveCompletionTest {
 
-    private val mediaControllerManager: MediaControllerManager = mockk {
+    private val mediaControllerManager: PlaybackController = mockk {
         every { tryReplaceMediaItem(any(), any()) } returns Result.success(Unit)
     }
 

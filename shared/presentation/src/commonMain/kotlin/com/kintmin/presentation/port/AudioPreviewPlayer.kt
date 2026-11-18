@@ -2,9 +2,7 @@ package com.kintmin.presentation.port
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 
-/**
- * 음원 편집 화면 전용 미리듣기 플레이어.
- */
+/** 음원 편집 화면 전용 미리듣기 플레이어. */
 interface AudioPreviewPlayer {
 
     val isPlaying: Boolean

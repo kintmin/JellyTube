@@ -1,6 +1,6 @@
 package com.kintmin.presentation.ui.setting.data_migration_send
 
-import com.kintmin.presentation.port.model.RunningWork
+import com.kintmin.presentation.port.model.RunningTask
 
 data class SettingDataMigrationSendUiState(
     val step: DataMigrationSendStep = DataMigrationSendStep.Starting,
@@ -19,7 +19,7 @@ sealed interface DataMigrationSendStep {
     data object Starting : DataMigrationSendStep
 
     /** 이전 전에 끝나 있어야 하는 작업이 남아 있다. 연결을 열지 않는다. */
-    data class Blocked(val runningWorks: Map<RunningWork, Int>) : DataMigrationSendStep
+    data class Blocked(val runningTasks: Map<RunningTask, Int>) : DataMigrationSendStep
     data class WaitingForPair(val code: String) : DataMigrationSendStep
     data class Sending(val peerName: String) : DataMigrationSendStep
     data class Finished(val newAudioMediaCount: Int, val failedCount: Int) : DataMigrationSendStep

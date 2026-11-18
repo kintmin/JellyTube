@@ -10,6 +10,8 @@ kotlin {
         namespace = "com.kintmin.log"
         compileSdk = AppConfiguration.COMPILE_SDK
         minSdk = AppConfiguration.MIN_SDK
+
+        withHostTestBuilder { }.configure { }
     }
     iosArm64()
     iosSimulatorArm64()
@@ -17,6 +19,9 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // no external dependencies; this is a pure API module
+        }
+        getByName("androidHostTest").dependencies {
+            implementation(libs.junit)
         }
     }
 }

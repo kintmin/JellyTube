@@ -65,12 +65,6 @@ internal fun AudioEditUiState.gestureHint(grab: TimelineGrab?): String {
 internal fun AudioEditUiState.splitOrMergeIntent(): AudioEditIntent =
     if (canMerge) AudioEditIntent.OnClickMerge else AudioEditIntent.OnClickSplit
 
-/**
- * 파형 아래 조작 영역(세로 화면처럼 높이가 넉넉할 때).
- *
- * 기준선 위치, 자르기·삭제·미리듣기 버튼, 조작 힌트를 위아래로 쌓는다.
- * 높이가 낮을 때는 [AudioEditCompactControlsView]를 쓴다.
- */
 @Composable
 fun AudioEditControlsView(
     data: AudioEditUiState,

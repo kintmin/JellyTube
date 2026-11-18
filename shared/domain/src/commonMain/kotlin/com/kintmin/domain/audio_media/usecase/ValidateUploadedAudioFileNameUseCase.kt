@@ -1,5 +1,7 @@
 package com.kintmin.domain.audio_media.usecase
 
+import com.kintmin.domain.audio_media.model.InvalidUploadedFileNameException
+
 /**
  * PC 업로드 헤더의 파일 이름을 저장할 형태로 바꾼다. 확장자는 저장 파일명(`<UUID>.<ext>`)에 그대로 들어가므로
  * 고치지 않고 거부한다. 고치거나 추측하면 확장자를 믿는 iOS 재생이 조용히 깨진다.
@@ -43,5 +45,3 @@ class ValidateUploadedAudioFileNameUseCase {
         val VALID_EXTENSION = Regex("[A-Za-z0-9_-]{1,$MAX_EXTENSION_LENGTH}")
     }
 }
-
-class InvalidUploadedFileNameException(message: String) : Exception(message)

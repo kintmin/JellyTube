@@ -2,7 +2,6 @@ package com.kintmin.presentation.platform
 
 import androidx.compose.runtime.Composable
 
-/** 짧은 안내 메시지. Android 는 네이티브 `Toast`, iOS 는 [PlatformToastHost] 가 그린다. */
 interface Toaster {
 
     fun show(message: String)

@@ -1,0 +1,14 @@
+package com.kintmin.jellytube.intent
+
+object IntentRequestCode {
+
+    const val MEDIA_SESSION_NOTIFICATION = 0
+    const val DOWNLOAD_RESULT_NOTIFICATION = 1
+    const val SENSOR_STEP_NOTIFICATION = 2
+    const val APP_LOG_NOTIFICATION = 3
+    const val FILE_SHARE_STOP_NOTIFICATION = 4
+    const val LYRICS_VARIANT_RESULT_NOTIFICATION = 5
+    const val AUDIO_EDIT_SAVE_RESULT_NOTIFICATION = 6
+    const val DATA_MIGRATION_SEND_NOTIFICATION = 7
+    const val DATA_MIGRATION_SEND_NOTIFICATION_DELETED = 8
+}

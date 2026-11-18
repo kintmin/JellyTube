@@ -1,10 +1,11 @@
 package com.kintmin.presentation.port
 
 import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.presentation.port.model.WorkResultNotice
 import com.kintmin.presentation.port.model.toMediaControlData
 
 /** 저장에 성공한 뒤의 처리. 돌려준 알림을 띄우면 된다. */
-fun MediaControllerManager.completeAudioEditSave(
+fun PlaybackController.completeAudioEditSave(
     audioMedia: AudioMedia,
     isOverwrite: Boolean,
 ): WorkResultNotice.AudioEditSave {

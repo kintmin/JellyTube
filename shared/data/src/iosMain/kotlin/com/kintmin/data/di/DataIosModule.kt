@@ -5,13 +5,14 @@ import com.kintmin.data.audio_edit.AudioEditorImpl
 import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.device_status.DeviceStatusImpl
+import com.kintmin.data.file_share.PcFileShareServerRepositoryImpl
 import com.kintmin.data.local_datastore.createIosPreferencesDataStore
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.database.createIosJellyTubeDatabase
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.local_file.FileManagerImpl
-import com.kintmin.data.network.dataSource.MigrationDataSource
-import com.kintmin.data.network.dataSourceImpl.MigrationDataSourceImpl
+import com.kintmin.data.network.data_source.MigrationDataSource
+import com.kintmin.data.network.data_source_impl.MigrationDataSourceImpl
 import com.kintmin.data.python_bridge.IosLyricsTransliterator
 import com.kintmin.data.python_bridge.IosPythonExecutorAdapter
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
@@ -20,14 +21,14 @@ import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.data.translation.IosLyricsTranslator
 import com.kintmin.data.translation.IosLyricsTranslatorBridge
 import com.kintmin.data.translation.LyricsTranslator
+import com.kintmin.domain.file_share.repository.PcFileShareServerRepository
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
 /**
- * `dataAndroidModule` 과 달리 함수인 이유: Python·번역 구현체가 Swift 쪽에 있어 런타임에만 손에
- * 들어온다. Android 는 같은 것을 `androidContext()` 로 받지만 iOS 에는 그 창구가 없다.
+ * Python·번역 구현체가 Swift 쪽에 있어 런타임에만 손에 들어온다. 그래서 `val` 이 아니라 함수다.
  *
- * `AppLog` 는 여기 없다 — 수집기 구현이 Swift 라 조립 모듈(`:ios:shared`)이 맡는다.
+ * `AppLog` 는 수집기 구현이 Swift 라 여기 없다.
  */
 fun dataIosModule(
     pythonExecutorBridge: IosPythonExecutorBridge,
@@ -44,4 +45,6 @@ fun dataIosModule(
     single<IosPythonExecutorBridge> { pythonExecutorBridge }
     single<LyricsTranslator> { IosLyricsTranslator(lyricsTranslatorBridge) }
     single<LyricsTransliterator> { IosLyricsTransliterator(pythonExecutorBridge) }
+
+    single<PcFileShareServerRepository> { PcFileShareServerRepositoryImpl(get(), get()) }
 }

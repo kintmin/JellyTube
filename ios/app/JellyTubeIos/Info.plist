@@ -26,14 +26,16 @@
 	<string>걸음수를 세기 위해 동작 및 피트니스 데이터를 사용합니다.</string>
 
 	<!--
-	  데이터 이전: 같은 Wi-Fi 의 Android 기기를 Bonjour 로 찾는다. 둘 중 하나라도 없으면 탐색이
-	  오류 없이 0건으로 끝난다. 서비스 타입의 진원지는 `FileShareConstants.MIGRATION_NSD_SERVICE_TYPE` 이다.
+	  데이터 이전: 같은 Wi-Fi 의 Android 기기를 Bonjour 로 찾는다. PC 수신: 이 기기를 Bonjour 로 광고한다.
+	  둘 중 하나라도 없으면 탐색·광고가 오류 없이 0건으로 끝난다. 서비스 타입의 진원지는
+	  `FileShareConstants.MIGRATION_NSD_SERVICE_TYPE` · `FileShareConstants.NSD_SERVICE_TYPE` 이다.
 	-->
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Android 기기의 JellyTube 데이터를 옮겨 오기 위해 같은 네트워크의 기기를 찾습니다.</string>
+	<string>Android 기기의 JellyTube 데이터를 옮겨 오고 PC에서 음원을 받기 위해 같은 네트워크의 기기와 연결합니다.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_jellytube-mig._tcp</string>
+		<string>_jellytube._tcp</string>
 	</array>
 
 	<!-- 데이터 이전: 보내는 기기의 서버는 평문 HTTP 다. -->

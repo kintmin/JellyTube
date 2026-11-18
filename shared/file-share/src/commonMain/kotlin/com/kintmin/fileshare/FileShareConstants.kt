@@ -1,11 +1,8 @@
 package com.kintmin.fileshare
 
 object FileShareConstants {
-    /** Android NSD로 광고할 mDNS 서비스 타입 */
     const val NSD_SERVICE_TYPE = "_jellytube._tcp."
-    /** NSD 서비스 이름 (discovery 시 검색 기준) */
     const val NSD_SERVICE_NAME = "JellyTubeFileShare"
-    /** Ktor 서버 포트 */
     const val DEFAULT_PORT = 52847
     /** 파일 업로드 HTTP POST endpoint */
     const val HTTP_UPLOAD_PATH = "/upload"
@@ -13,14 +10,12 @@ object FileShareConstants {
     const val HTTP_BULK_ARTIST_PATH = "/upload/artist"
     /** 업로드 성공 항목 썸네일 일괄 변경 HTTP POST endpoint */
     const val HTTP_BULK_THUMBNAIL_PATH = "/upload/thumbnail"
-    /** WebSocket 서버 상태 endpoint */
-    const val WS_STATUS_PATH = "/ws/status"
-    /** multipart 필드 이름 */
-    const val MULTIPART_FIELD_AUDIO = "audio"
     /** 바이너리 업로드 시 파일명 전달 헤더 */
     const val HEADER_FILE_NAME = "X-File-Name"
     /** 썸네일 일괄 변경 대상 audioMediaId 목록 전달 헤더 */
     const val HEADER_AUDIO_MEDIA_IDS = "X-Audio-Media-Ids"
+    /** PC 가 보낼 수 있는 음원 확장자(소문자). 받는 기기가 재생하지 못하는 형식은 받는 쪽이 이유와 함께 거절한다 */
+    val UPLOAD_AUDIO_EXTENSIONS = setOf("mp3", "wav", "flac", "aac", "ogg", "m4a", "wma", "opus", "aiff")
 
     /** 데이터 이전 페어링 HTTP POST endpoint. 화면에 띄운 코드를 토큰으로 바꾼다 */
     const val MIGRATION_PAIR_PATH = "/migration/pair"

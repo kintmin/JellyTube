@@ -2,154 +2,139 @@
 
 **Role**: iOS 진입점과 조립. UI 는 `shared:presentation`(CMP)을 그대로 쓴다.
 
-iOS 쪽은 두 곳으로 나뉜다. **둘 다 "조립과 OS 호출" 만 한다 — 화면도 비즈니스 로직도 없다.**
+iOS 쪽은 두 곳으로 나뉘고 **둘 다 "조립과 OS 호출" 만 한다 — 화면도 비즈니스 로직도 없다.**
 
 | 경로 | 언어 | 역할 |
 |---|---|---|
-| `ios/shared/` | Kotlin | iOS Composition Root. 프레임워크 선언 · Koin 조립 · Compose 진입점 · 도메인 워커 포트 구현 |
-| `ios/app/` | Swift | Xcode 앱. 진입점(`JellyTubeIosApp`) · Kotlin 인터페이스의 Swift 구현(브릿지) · Info.plist |
-
-> **TCA 는 더 이상 쓰지 않는다.** `~Client` / `~Feature` / `~ScreenView` / `IosFacades` /
-> `~Facade.kt` 규약은 CMP 전환으로 전부 폐기됐고 해당 파일도 리포에 없다. 옛 문서를 보고
-> 그 구조를 되살리지 않는다.
+| `ios/shared/` | Kotlin | iOS Composition Root. 프레임워크 선언 · DI 조립 · Compose 진입점 · 포트 구현 |
+| `ios/app/` | Swift | Xcode 앱. 진입점 · Kotlin 인터페이스의 Swift 구현(브릿지) · `Info.plist` |
 
 ---
 
 ## 프레임워크는 하나다
 
-`ios/shared` 만 framework 를 선언한다(`baseName = "shared"` — Swift 의 `import shared`).
+`ios/shared` 만 framework 를 선언한다.
 
-**둘로 쪼개면 안 된다.** Kotlin/Native 프레임워크를 2개 만들면 런타임·Koin·코루틴 디스패처가
-각각 따로 서서, 같은 타입이 서로 다른 클래스가 되고 Koin 그래프가 둘로 갈린다.
+**둘로 쪼개면 안 된다.** Kotlin/Native 프레임워크를 2개 만들면 런타임·DI·코루틴 디스패처가 각각
+따로 서서, 같은 타입이 서로 다른 클래스가 되고 DI 그래프가 둘로 갈린다. 이 모듈이 따로 있는
+이유가 그것이다 — 프레임워크 하나가 data 와 presentation 을 함께 봐야 하는데 두 모듈은 서로를
+모른다.
 
-`export()` 는 **Swift 가 직접 이름을 부르는 모듈만** 한다 — 지금은 `domain`·`log`·`data`.
-`presentation` 은 `api` 로 의존만 하고 export 하지 않는다. export 하면 화면과 ViewModel 전체가
-Obj-C 헤더로 쏟아진다.
-
----
-
-## 무엇을 어디에 두는가
-
-### `ios/shared/` (Kotlin)
-
-넷뿐이다. **그 외의 것을 여기 두지 않는다.**
-
-1. `build.gradle.kts` — framework + SKIE
-2. `IosKoin.kt` — `initIosKoin(...)`. `android:app` 의 `JellyTubeApplication` 과 짝이다.
-   한쪽에 모듈을 더하면 다른 쪽도 본다
-3. `MainViewController.kt` — Swift 에 노출되는 최상위 함수들
-   (`startApp` / `mainViewController` / `handleDeepLink` / `handleNotificationTap` / `handleSharedAudioFile`)
-4. 도메인 포트의 iOS 구현 — `domain` 에 플랫폼 구현을 넣지 않기 위해서다
-5. Swift 가 구현할 Kotlin 인터페이스 — 프레임워크에 들어가는 모듈이라야 Swift 가 본다
-   (`IosMediaControllerBridge`, `IosAppLogBridge`, `IosMigrationSourceBrowserBridge`)
-
-**앱 레벨 ViewModel 은 파일 최상위에 `by lazy` 로 한 벌만** 둔다. iOS 는 단일 윈도우이고,
-Compose 밖(`onOpenURL`)에서 들어온 이벤트를 화면과 **같은 인스턴스**로 넘겨야 한다.
-`by lazy` 인 이유는 Koin 이 서기 전에 초기화되는 것을 막기 위해서다.
-
-> `MainViewController.kt` 의 **파일 이름이 Obj-C 클래스 이름을 정한다**
-> (`MainViewControllerKt.startApp()`). 파일명을 바꾸면 Swift 호출부가 깨진다.
-
-### `shared/presentation/src/iosMain/` (Kotlin)
-
-- `platform/*.ios.kt` — `expect`/`actual` 탈출구
-- **`port/` 의 iOS 구현도 여기다.** Android 는 `Context` 가 필요해 `android:app` 에 두지만,
-  iOS 구현은 그런 것이 없고 Kotlin/Native 가 UIKit·AVFoundation·CoreMotion 인터롭을 기본
-  제공해서 인터페이스와 같은 모듈에서 구현된다. 바인딩은 `di/PresentationIosModule.kt`
-- 예외는 `MediaControllerManager` 하나다 — 구현이 Swift 엔진에 기대서 `ios/shared` 가 가진다
-
-### `ios/app/JellyTubeIos/` (Swift)
-
-**Swift 가 맡는 것은 둘뿐이다.**
-
-1. **Kotlin/Native 가 부를 수 없는 SDK** — Firebase(`Shared/Log/`), PythonKit(`PythonBridgeImpl/`),
-   Apple `Translation`(`Shared/Translation/` — 세션이 SwiftUI `.translationTask` 로만 나와서
-   루트 뷰에 `LyricsTranslationHostModifier` 를 붙여 둔다. 떼면 번역 요청이 영영 끝나지 않는다)
-2. **Kotlin 으로 쓰면 더 나빠지는 네이티브 엔진** — `AVAudioEngine` 재생(`Shared/MediaController/`),
-   background `URLSession`(`PythonBridgeImpl/YoutubeDownloader.swift`)
+**`export()` 는 Swift 가 직접 이름을 부르는 모듈만 한다.** `presentation` 은 의존만 하고 export
+하지 않는다 — export 하면 화면과 ViewModel 전체가 Obj-C 헤더로 쏟아진다. 그래서 **Swift 는
+`presentation` 의 타입을 볼 수 없고**, Swift 가 구현해야 하는 인터페이스는 이 모듈에 둔다.
 
 ---
 
-## 브릿지 패턴 — Swift 가 Kotlin 인터페이스를 구현한다
+## `ios/shared/` — 패키지는 Swift 와의 계약 방향으로 가른다
 
-다섯 군데가 같은 모양이다: `IosPythonExecutorBridge`(data), `IosLyricsTranslatorBridge`(data — Apple
-`Translation`), `IosMediaControllerBridge`(ios/shared), `IosAppLogBridge`(ios/shared),
-`IosMigrationSourceBrowserBridge`(ios/shared — `NWBrowser` 탐색).
+프레임워크 헤더에 나오는 것과 Kotlin 안에서만 쓰는 것이 섞이면 무엇이 Swift 와의 약속인지
+읽히지 않는다.
+
+| 자리 | 가시성 | 무엇 |
+|---|---|---|
+| 최상위 | public | **Swift 가 부르는** 함수 — DI 초기화, 앱 시작, 화면 컨트롤러, 외부 진입 전달 |
+| `bridge/` | public | **Swift 가 구현하는** Kotlin 인터페이스와 그 거울 DTO |
+| `adapter/` | internal | **port 의 iOS 구현 전부**와 그 바인딩 |
+| 그 외 | internal | adapter 가 아닌 iOS 내부 로직 |
+
+**Rules**:
+- **adapter 는 한 자리에 모은다.** Swift 브릿지에 기대는지 여부로 나누지 않는다 — 브릿지를 쓰는
+  것도 그냥 adapter다. 가르는 선은 **Swift 가 보는가**뿐이다.
+- **adapter 가 아니면 `adapter/` 에 두지 않는다.** 아무 port 도 구현하지 않는 내부 기구가 그렇다.
+  진입점이 `adapter/` 를 import 하는 모양이 되면 신호다.
+- DI 바인딩은 **한 자리**다. 진입점에 인라인으로 모듈을 두지 않는다 — 브릿지를 넘겨야 하면
+  모듈을 함수로 만든다.
+- **파일 이름이 Obj-C 클래스 이름을 정한다.** Swift 가 부르는 최상위 함수가 있는 파일은 이름을
+  바꾸면 호출부가 깨진다. 패키지를 옮기는 것은 무관하다.
+- **앱 레벨 ViewModel 은 한 벌만** 둔다. iOS 는 단일 윈도우이고, Compose 밖에서 들어온 이벤트를
+  화면과 **같은 인스턴스**로 넘겨야 한다. DI 가 서기 전에 만들어지지 않도록 지연 초기화한다.
+
+### Android 처럼 OS 기구별로 나누지 않는 이유
+
+Android 는 서비스·워커·리시버로 갈린다. OS 가 생명주기를 쥐고 Manifest 등록이 필요한 **실체**가
+Kotlin 쪽에 있기 때문이다. iOS 는 그 역할을 Swift 가 가져갔고 Kotlin 에는 얇은 껍데기만 남아,
+대부분의 adapter 가 플랫폼 기구 없이 코루틴 스코프만 쓴다. 기구 축으로 나누면 몇 칸만 차고
+나머지가 "기타" 로 몰린다.
+
+**기능별 분류를 찾는다면 Swift 쪽을 봐야 한다** — 거기가 Android 의 서비스·워커에 대응하는 자리다.
+
+---
+
+## `ios/app/` (Swift) — Swift 가 맡는 것은 둘뿐이다
+
+1. **Kotlin/Native 가 부를 수 없는 SDK** — cinterop 없이 호출이 불가능한 벤더 SDK, 그리고
+   SwiftUI 수명주기에 묶여야만 동작하는 API. 그런 API 는 **루트 뷰에 붙여 두어야** 요청이
+   끝난다 — 떼면 영영 완료되지 않는다.
+2. **Kotlin 으로 쓰면 더 나빠지는 네이티브 엔진** — 오디오 재생 엔진, 백그라운드 전송 세션.
+
+### 브릿지 패턴 — Swift 가 Kotlin 인터페이스를 구현한다
 
 ```kotlin
 // Kotlin — 프레임워크에 들어가는 모듈에 선언한다
-interface IosAppLogBridge {
-    fun debug(tag: String, message: String)
+interface SomethingBridge {
+    fun doSomething(value: String)
 }
 ```
 ```swift
-// Swift — 구현하고 doInitIosKoin 에 넘긴다
-final class AppLogBridgeImpl: IosAppLogBridge {
-    func debug(tag: String, message: String) { ... }
-}
+// Swift — 구현하고 DI 초기화에 넘긴다
+final class SomethingBridgeImpl: SomethingBridge { ... }
 ```
 
 **Rules**:
-- 브릿지는 **원시 타입과 거울 DTO** 만 주고받는다. 포트가 쓰는 `presentation` 타입은
-  Swift 가 볼 수 없어서다(export 하지 않는다). `IosMediaItem` 이 그래서 있는 거울 DTO 다
+- 브릿지는 **원시 타입과 거울 DTO** 만 주고받는다. 포트가 쓰는 `presentation` 타입은 Swift 가
+  볼 수 없어서다. 거울 DTO 가 있는 이유가 그것이다.
 - **판정은 Kotlin 이 한다.** Swift 는 "시킨 일" 만 한다. 같은 판단을 두 플랫폼이 다르게 내리면
-  그 자체가 버그다 — 딥링크 파싱, 로그 자르기 규칙, A-B 구간반복이 전부 Kotlin 에 있는 이유다
-- 비동기는 `completionHandler` 로 받는다. SKIE 가 Swift `async` 로 바꿔 준다
-- Swift 구현이 `@MainActor` 타입에 기대면 `@MainActor init` + `MainActor.assumeIsolated` 로
-  **메인스레드 계약을 코드에 적는다**. nonisolated 로 두고 넘어가지 않는다
-- **파이썬 호출은 `PythonRuntime` 의 `withGIL` 안에서만** 한다. PythonKit 은 GIL 을 다루지 않아,
-  밖에서 부르면 호출이 겹칠 때 SIGSEGV 로 죽는다. `PythonObject` 도 그 안에서 Swift 값으로 바꿔 끝낸다
-  (해제가 `Py_DecRef` 다). 직렬 큐로 대신하지 않는다 — 3.12 부터는 스레드가 바뀌기만 해도 죽는다
+  그 자체가 버그다 — 주소 파싱, 로그 자르기, 재생 구간 규칙이 전부 Kotlin 에 있는 이유다.
+  - 예외는 **전송·재생 엔진의 세부**다. 전송을 쥔 쪽이 재시도와 실패 분류를 하고, 엔진 기본
+    동작에 맞춘 조작도 그쪽에 둔다. 다만 **범위와 기본값은 Kotlin 이 정해 넘긴다.**
+- 비동기는 completion handler 로 받는다. SKIE 가 Swift `async` 로 바꿔 준다.
+- Swift 구현이 메인 액터에 묶인 타입에 기대면 **그 계약을 코드에 적는다.** 격리를 풀고 넘어가지
+  않는다.
+- **파이썬 호출은 GIL 을 쥔 자리 안에서만** 한다. PythonKit 은 GIL 을 다루지 않아 밖에서 부르면
+  호출이 겹칠 때 프로세스가 죽는다. 파이썬 객체도 그 안에서 Swift 값으로 바꿔 끝낸다(해제가
+  파이썬 호출이다). 직렬 큐로 대신하지 않는다 — 스레드가 바뀌기만 해도 죽는다.
 
 ---
 
-## Info.plist — `INFOPLIST_KEY_*` 를 믿지 않는다
+## `Info.plist` — 빌드 설정 키를 믿지 않는다
 
-**`GENERATE_INFOPLIST_FILE = YES` 라도 실제 `Info.plist` 파일을 둔다.**
-일부 키는 `INFOPLIST_KEY_*` 빌드 설정에 넣어도 **생성된 plist 에 들어가지 않는다**
-(확인된 것: `CADisableMinimumFrameDurationOnPhone`, `UIBackgroundModes`).
-조용히 빠지므로 "설정했다" 고 믿고 넘어가면 기동 크래시나 백그라운드 중단으로 돌아온다.
+**plist 자동 생성을 켜 두더라도 실제 `Info.plist` 파일을 둔다.**
+일부 키는 빌드 설정에 넣어도 **생성된 plist 에 들어가지 않는다.** 조용히 빠지므로 "설정했다" 고
+믿고 넘어가면 기동 크래시나 백그라운드 중단으로 돌아온다. 넣은 키가 실제 plist 에 있는지 확인한다.
 
-지금 파일에 있는 것: `CADisableMinimumFrameDurationOnPhone`(CMP 필수) ·
-`UILaunchScreen`(배경색 `LaunchBackground` — 빌드 설정의 자동 생성은 끄고 여기서만 정한다) ·
-`NSMotionUsageDescription`(걸음수) · `CFBundleURLTypes`(딥링크 스킴) ·
-`CFBundleDocumentTypes`(공유 수신) · `UIBackgroundModes: audio`(백그라운드 재생) ·
-`NSLocalNetworkUsageDescription` + `NSBonjourServices`(데이터 이전 탐색. `_jellytube-mig._tcp` 만 둔다 —
-둘 중 하나라도 없거나 타입이 다르면 탐색이 오류 없이 0건) · `NSAppTransportSecurity.NSAllowsLocalNetworking`(보내는 기기의 평문 HTTP).
+- 로컬 네트워크를 쓰는 기능은 **사용 설명과 서비스 타입을 모두** 선언해야 한다. 하나라도 빠지거나
+  타입이 다르면 탐색이 **오류 없이 0건**이 된다.
+- 딥링크 스킴처럼 Kotlin 상수와 겹치는 값은 **빌드가 대조한다.** 어긋나면 빌드가 실패하므로
+  문서나 주석으로 맞추지 않는다.
 
 ---
 
 ## 진입 통로
 
-| 들어오는 것 | 받는 자리 | 넘기는 곳 |
-|---|---|---|
-| 딥링크(`jellytube://`) | `onOpenURL` | `MainViewControllerKt.handleDeepLink` |
-| 다른 앱의 "JellyTube 로 열기" | `onOpenURL` (`url.isFileURL`) | `MainViewControllerKt.handleSharedAudioFile` |
-| 로컬 알림 탭 | `AppDelegate.userNotificationCenter(_:didReceive:)` | `MainViewControllerKt.handleNotificationTap` |
-| 백그라운드 전송 완료 | `AppDelegate.handleEventsForBackgroundURLSession` | `YoutubeDownloader.shared` |
+| 들어오는 것 | 받는 쪽 |
+|---|---|
+| 딥링크 | SwiftUI 의 URL 수신 |
+| 다른 앱의 "열기" | 같은 URL 수신에서 파일 URL 분기 |
+| 로컬 알림 탭 | 앱 델리게이트의 알림 콜백 |
+| 백그라운드 전송 완료 | 앱 델리게이트의 세션 이벤트 콜백 |
 
 **Rules**:
-- 주소 진입 통로는 `onOpenURL` **하나**다. `application(_:open:options:)` /
-  `scene(_:openURLContexts:)` / `NSUserActivity` 를 쓰지 않는다
-- 알림 탭은 `userInfo` 를 **그대로** Kotlin 에 넘긴다. 작업 결과 알림의 문구와 갈 화면은
-  공통 `WorkResultNotice` 가 정하고 Android 알림도 같은 것을 쓴다.
-  `userInfo` 를 쓰고 읽는 것은 둘 다 `IosLocalNotification.kt` 에 있다. Swift 는 키를 모른다
-- Swift 가 하는 분기는 `url.isFileURL` 하나뿐이다. 그 뒤 판정은 전부 공통 코드가 한다
-- 딥링크 경로·쿼리 키의 진원지는 `shared:presentation` 의 `DeepLinkConstants` 다.
-  스킴을 바꾸면 `Info.plist` 의 `CFBundleURLSchemes` 도 함께 바꾼다
+- **주소 진입 통로는 하나다.** 다른 URL 수신 API 를 병행하지 않는다.
+- 알림 탭은 payload 를 **그대로** Kotlin 에 넘긴다. 알림 문구와 갈 화면은 공통 코드가 정하고,
+  payload 를 쓰고 읽는 것도 Kotlin 한 자리다 — **Swift 는 키를 모른다.**
+- Swift 가 하는 분기는 **파일 URL 인지 하나**뿐이다. 그 뒤 판정은 전부 공통 코드가 한다.
 
 ---
 
 ## Vendor/
 
 `ios/app/Vendor/` 는 gitignore 대상이다. **클론 직후에는 비어 있어 빌드되지 않는다.**
-`scripts/setup-ios-vendor.sh` 를 한 번 돌려 Python.xcframework 와 app-packages
-(yt-dlp · pykakasi)를 받는다.
+`scripts/setup-ios-vendor.sh` 를 한 번 돌려 채운다.
 
-**yt-dlp 는 주기적으로 다시 받아야 한다.** Android 는 chaquopy 가 **빌드할 때마다**
-`install("yt-dlp")` 를 다시 풀어 최신이 들어가지만, iOS 의 `Vendor/` 는 한 번 받아 두고
-쓰는 스냅샷이라 가만두면 계속 묵는다. 묵은 yt-dlp 는 유튜브가 추출 경로를 바꾸면 서명이
-모자란 주소를 돌려주고 전송이 **403 으로 거부**된다.
+**거기 든 Python 패키지는 주기적으로 다시 받아야 한다.** Android 는 빌드할 때마다 다시 풀어
+최신이 들어가지만, iOS 쪽은 한 번 받아 두고 쓰는 **스냅샷**이라 가만두면 계속 묵는다. 묵은
+추출기는 대상 사이트가 경로를 바꾸면 서명이 모자란 주소를 돌려주고 전송이 거부된다.
 
 → **다운로드가 간헐적으로 실패하면 코드를 보기 전에 이 스크립트부터 다시 돌린다.**
 
@@ -157,22 +142,20 @@ final class AppLogBridgeImpl: IosAppLogBridge {
 
 ## iOS 에서 제공하지 않는 것
 
-진입점을 숨기고, 포트는 **명시적 미지원 스텁**으로 바인딩한다
-(`presentation/port/IosUnsupportedPorts.kt`).
-스텁이 없으면 그 화면에 들어가는 순간 Koin 이 터진다 — 바인딩을 비워 두는 선택지는 없다.
-
-| 항목 | 이유 |
-|---|---|
-| PC 파일 수신 | 수신 서버(Ktor CIO)와 그 서버를 붙잡아 두는 포그라운드 서비스가 Android 에만 있다 |
-| 드로잉 / 플로팅 UI | `MotionEvent` + S펜 전제. Apple Pencil 에 대응물이 없다 |
-| 기기 저장(벨소리/알람/알림음) | iOS 는 앱이 벨소리·알람·알림음을 시스템에 등록할 수 없다 |
-| iosX64(인텔 맥 시뮬레이터) | CMP 가 1.11.0-alpha01 이후 배포하지 않는다 |
+진입점을 숨기고, 포트는 **명시적 미지원 스텁**으로 바인딩한다. 스텁이 없으면 그 화면에 들어가는
+순간 DI 가 터진다 — 바인딩을 비워 두는 선택지는 없다. 진입점을 숨기는 일과 포트를 막는 일은
+**별개**다: 막아도 진입점이 보이면 눌린다.
 
 **Android 와 보장이 다른 것**
-- 사용자가 앱 스위처에서 강제 종료하면 background `URLSession` 전송도 OS 가 취소한다.
-  정책이라 우회 수단이 없다 — WorkManager 와 같은 보장은 iOS 에 없다.
-- 음원 편집 저장은 앱 프로세스에서 렌더한다. 앱이 내려가면 유예 시간(길어야 수십 초) 뒤 멈추고,
-  그사이 OS 가 앱을 종료하지 않았다면 다시 올라올 때 이어서 돈다.
+
+- 사용자가 앱을 강제 종료하면 백그라운드 전송도 OS 가 취소한다. 정책이라 우회 수단이 없다 —
+  Android 의 작업 큐와 같은 보장은 iOS 에 없다.
+- 앱 프로세스에서 렌더하는 작업(음원 편집 저장)은 앱이 내려가면 유예 시간(길어야 수십 초) 뒤
+  멈춘다. 그사이 OS 가 앱을 종료하지 않았다면 다시 올라올 때 이어서 돈다.
+- 받는 서버도 포그라운드 서비스 같은 장치가 없어 **앱이 서스펜드되면 멈춘다.** 서버가 켜진 동안
+  화면을 켜 두고(다른 화면에 있어도 자동 잠금이 오면 서스펜드된다), 받던 전송은 백그라운드
+  유예로 마저 받는다. 복귀 때 리슨 소켓이 회수됐으면 서버를 다시 띄우고, 살아 있으면 광고만
+  다시 등록한다.
 
 ---
 
@@ -184,13 +167,9 @@ xcodebuild -project ios/app/JellyTubeIos.xcodeproj -scheme JellyTubeIos \
   -destination 'platform=iOS Simulator,name=iPhone 17' build
 ```
 
-Xcode 빌드는 `:ios:shared:embedAndSignAppleFrameworkForXcode` 를 빌드 페이즈로 부른다 —
-Kotlin 을 고쳤으면 Xcode 빌드만 돌려도 반영된다.
+Xcode 빌드는 프레임워크 임베드 태스크를 빌드 페이즈로 부른다 — Kotlin 을 고쳤으면 Xcode 빌드만
+돌려도 반영된다. 프레임워크 링크와 `xcodebuild` 는 **macOS 전용**이고, Windows 에서는 Kotlin
+컴파일까지만 검증된다.
 
-Swift 테스트는 `JellyTubeIosTests`(앱을 호스트로 띄우는 XCTest)에 둔다. 번들의 파이썬 런타임처럼
-앱 안에서만 확인되는 것을 검증한다. 순수 로직은 여기가 아니라 Kotlin `iosTest` 로 뺀다.
-
-```bash
-xcodebuild -project ios/app/JellyTubeIos.xcodeproj -scheme JellyTubeIos \
-  -destination 'platform=iOS Simulator,name=iPhone 17' test
-```
+Swift 테스트는 앱을 호스트로 띄우는 XCTest 타깃에 둔다. 번들의 파이썬 런타임처럼 **앱 안에서만
+확인되는 것**을 검증한다. 순수 로직은 여기가 아니라 Kotlin `iosTest` 로 뺀다.

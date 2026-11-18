@@ -1,44 +1,113 @@
 ## Module: shared:data
 
-**Role**: KMP data layer — repository implementations, local DB, network, file access, and Python bridge data models.
+**Role**: KMP 데이터 계층 — Repository 구현, 로컬 DB, 네트워크, 파일 접근, 받는 서버.
 
 ---
 
-## Source Set Priority Rule
+## 소스셋 우선순위
 
-**Prefer `commonMain`. Use `androidMain` / `iosMain` only when unavoidable.**
+**`commonMain` 이 기본이다. `androidMain`/`iosMain` 은 불가피할 때만 쓴다.**
 
-The decision tree for where to place code:
+1. 플랫폼 SDK 없이 순수 Kotlin 으로 쓸 수 있나? → `commonMain`
+2. 플랫폼 드라이버나 API 가 반드시 필요한가? → 플랫폼 소스셋
 
-1. Can it be written in pure Kotlin without any platform SDK? → `commonMain`
-2. Does it require a platform-specific driver or API (e.g., SQLite driver, file path resolver)? → `androidMain` / `iosMain`
+**금지**
+- 비즈니스 로직이 `androidMain` 과 `iosMain` 에 갈려 있는 것. 양쪽이 같은 로직을 쓴다면 `commonMain` 이다.
+- 사소한 차이만 있는 중복 구현. 공통 부분을 찾아 `commonMain` 으로 올린다.
 
-**Forbidden**:
-- Business logic split across `androidMain` and `iosMain`. If both platforms need the same logic, put it in `commonMain`.
-- Duplicate implementations in `androidMain` and `iosMain` that differ only in trivial details. Find a common abstraction and put it in `commonMain`.
+### 플랫폼 탈출구 — 네 갈래다
+
+`commonMain` 으로 안 되는 것이 나오면 아래에서 고른다. 이 모듈은 **구현을 거의 전부 자기 안에
+둔다** — 모듈 밖으로 뚫는 것은 빌드 플러그인이 강제할 때뿐이다.
+
+| 방식 | 언제 |
+|---|---|
+| **`interface` + Koin** (구현을 양쪽 소스셋에) | 상태를 들고 있거나 Repository 가 주입받아야 하는 것 |
+| **`expect`/`actual`** | 상태 없는 함수 하나로 끝나는 것 |
+| **소스셋별 독립 함수**(`commonMain` 에 선언이 없다) | 양쪽 시그니처가 **애초에 다른** 것 |
+| **`interface` 만 두고 구현은 다른 모듈** | 빌드 플러그인이 애플리케이션 모듈을 요구할 때 |
+
+- **클래스는 `expect class` 로 가르지 않는다.** 공통 테스트에서 인스턴스를 만들 수 없어 그것을
+  쓰는 Repository 가 통째로 테스트 불가가 된다. 계약은 `interface`, 바인딩은 Koin 이다.
+- **미지원 플랫폼도 바인딩을 비우지 않는다.** Repository 가 그 포트를 주입받으므로 비워 두면 그
+  Repository 를 꺼내는 순간 Koin 이 터진다. 진입점을 숨기는 일은 `presentation` 이 따로 한다 —
+  **별개 일**이다.
+- 한 패키지가 한 방식을 쓰는 것이 아니다. **고르는 단위는 패키지가 아니라 선언 하나다.**
+- 마지막 갈래가 생기는 것은 플러그인이 애플리케이션 모듈에만 적용될 때다. 그 경우 한쪽 플랫폼
+  구현만 모듈 밖에 있고 다른 쪽은 안에 있는 **비대칭이 정상이다.**
+
+### 플랫폼 라이브러리는 플랫폼 소스셋 의존성에만 적는다
+
+`commonMain` 의존성에 넣으면 iOS 컴파일이 깨진다 — **그게 이 규율을 강제하는 장치다.**
+문서가 아니라 컴파일러가 막는다. 그래서 라이브러리가 새어 나갈 자리는 adapter 한 파일로 좁혀진다.
+
+**포트 시그니처에 그 라이브러리의 타입을 하나도 올리지 않는다.** 경로 문자열과 도메인 모델만
+주고받으면 `commonMain` 의 Repository 는 그 라이브러리의 존재를 모른다. adapter 는 `internal` 로
+두어 모듈 밖으로도 내보내지 않는다.
+
+> 미디어 라이브러리가 앱 모듈과 이 모듈에 함께 있는 것처럼 보일 수 있다. 같은 그룹명을 쓰는
+> **다른 artifact** 다 — 이 모듈은 트랜스코더(파일 in, 파일 out)이고, 앱 모듈은 재생기
+> (서비스·알림·수명주기)다. 재생은 OS 수명주기를 타므로 앱 모듈에 두고 포트로 뚫었고,
+> 트랜스코딩은 파일 변환이라 여기다. **UI 에 닿지 않는 것이 이 모듈에 있을 근거다.**
 
 ---
 
-## Repository Implementation Conventions
+## 파일 접근
 
-- One implementation per repository interface, named `~RepositoryImpl.kt`.
-- Implement the interface defined in `shared:domain`.
-- Inject DAO facades, network data sources, or DataStore — never inject `Context` directly if it can be avoided.
-- Repository methods that stream data must return `Flow<T>`.
-- Repository methods that perform mutations must be `suspend fun`.
-
-### Repository scope: pure data logic only (no repository-of-repository)
-
-- **A repository MUST NOT inject another repository.** Doing so is an overreach and a violation of these conventions.
-- A repository owns only **pure data logic** over its own data sources (DAO/facade, network, file, DataStore): CRUD, plus domain logic that must be wrapped in a **single transaction** (e.g. `AudioMediaFacade.deleteOrphanAudioMedia()` — query + delete in one `immediateTransaction`).
-- **Logic that is composed of multiple repositories — or that orchestrates several independent data-source operations together (read → transform → write across sources, conditional sequencing, cross-cutting concerns like logging) — belongs in a `shared:domain` UseCase, NOT in a repository.**
-- Rule of thumb: if an implementation finds itself coordinating several repositories, sequencing independent operations, or reaching for a logging/event dependency, move that orchestration up to the use case layer. Keep each repository method a thin, single-responsibility data operation that the use case can compose.
+플랫폼마다 구현이 있지만 **같은 일은 `commonMain` 이 한다.** 경로 조립, 읽고 쓰기, 삭제·목록이
+공통이고, 플랫폼에는 **디렉터리 자리**와 플랫폼 API 가 필요한 일(메타데이터 추출, 이미지 압축,
+플랫폼 식별자 해석, 공용 저장소 내보내기)만 남는다.
 
 ---
 
-## Local DB Conventions
+## Repository 구현 규약
 
-- Database schema changes require a migration. Do not increment the version without providing a migration strategy.
-- Entity models live in `local_db/model/`. They must NOT be exposed outside this module — map to domain models in `local_db/mapper/`.
-- DAO interfaces live in `local_db/dao/`. Facades that compose multiple DAOs live in `local_db/dao_facade/`.
-- **관찰 중 삭제될 수 있는 단일 행 `Flow` 쿼리는 반드시 nullable(`Flow<T?>`)로 선언한다.** Room은 관찰 중 테이블이 변경되면 재쿼리하는데, 반환형이 non-null 단일 객체(`Flow<T>`)면 결과가 0행일 때 `IllegalStateException("query result was empty...")`을 던진다. 관찰 도중 해당 행이 삭제될 수 있으면(예: 재생/상세 화면에서 트랙·플레이리스트 삭제) `Flow<T?>`로 선언하고 소비 측(RepositoryImpl)에서 `filterNotNull()`로 삭제 순간의 null emission을 흘려보낸다. 일회성 `suspend` 단일행 쿼리는 무효화 재실행이 없어 이 레이스와 무관하지만, 호출 시점에 행이 없을 수 있으면 nullable 또는 `runCatching` 방어가 필요하다.
+- Repository 인터페이스 하나에 구현 하나, `~RepositoryImpl.kt`.
+- `shared:domain` 이 정의한 인터페이스를 구현한다.
+- DAO facade·네트워크 데이터소스·설정 저장소를 주입받는다. 피할 수 있으면 플랫폼 컨텍스트를
+  직접 주입하지 않는다.
+- 스트림은 `Flow`, 변경은 `suspend fun`.
+
+### Repository 의 범위는 순수 데이터 로직뿐이다
+
+- **Repository 가 다른 Repository 를 주입받지 않는다.** 규약 위반이다.
+- Repository 는 **자기 데이터 출처에 대한 순수 데이터 로직**만 갖는다: CRUD 와, 한 트랜잭션으로
+  묶여야 하는 도메인 로직.
+- **여러 Repository 를 엮는 로직, 또는 서로 다른 출처의 작업을 순서대로 조율하는 로직**(읽고
+  바꿔 쓰기, 조건부 분기, 로깅 같은 횡단 관심사)은 **`shared:domain` 의 UseCase** 가 갖는다.
+- 가늠자: 구현이 여러 Repository 를 조율하거나 독립적인 작업을 순서 맞추거나 로깅 의존을
+  찾고 있다면, 그 조율은 UseCase 로 올라가야 한다.
+
+---
+
+## 파일 공유 받는 서버
+
+PC 수신과 기기 간 데이터 이전이 쓰는 **받는 서버는 이 모듈에만 둔다.** 서버 의존성을 앱 모듈이나
+`presentation` 에 두지 않는다. `shared:file-share` 는 보내는 쪽과 공유하는 프로토콜만 갖는다.
+
+- **경로는 전송과 인가만 맡고 처리는 도메인의 처리기에 넘긴다.** data 가 UseCase 를 부르면 의존
+  방향이 거꾸로 된다. 처리기는 UseCase 가 만든다.
+- 본문을 받기 전에 거절할 때는 **본문을 끝까지 읽어 버린다.** 읽지 않으면 보내던 클라이언트가
+  응답 대신 연결 끊김을 받아 거절 사유를 보여 주지 못한다.
+- 세션당 토큰은 코드를 맞힌 **한 기기에만** 준다. 코드 없이 이전 중인지 알 수 없어야 하므로,
+  틀린 코드와 이미 페어링된 상태를 구분해 응답한다.
+- 등록에 실패한 mDNS 광고는 다시 등록한다. 실패를 무시하면 받는 기기가 찾지 못한다.
+- 데이터 이전 세션이 열려 있는 동안은 **PC 업로드 경로를 막는다.** 보내는 기기의 데이터가
+  이전 중에 바뀌면 받는 쪽이 어긋난 것을 가져간다. PC 가 데이터를 바꾸는 경로는 한 자리에
+  모아 두어 막는 지점이 하나가 되게 한다.
+- 받는 도중 앱이 잠시 내려가도 마저 받는 일은 포트로 뚫어 플랫폼이 채운다.
+
+---
+
+## 로컬 DB 규약
+
+- **스키마를 바꾸면 버전을 올리고 반드시 마이그레이션을 제공한다.** 버전만 올리고 두면 기존
+  사용자 앱이 크래시한다. 절차와 체크리스트는 `room-entity-migration` 스킬에 있다.
+- entity 는 **이 모듈 밖으로 내보내지 않는다** — 매퍼에서 도메인 모델로 바꿔서만 나간다.
+- entity 는 `local_db/model/`, DAO 는 `local_db/dao/`, 여러 DAO 를 묶는 facade 는
+  `local_db/dao_facade/`.
+- **관찰 중 삭제될 수 있는 단일 행 쿼리는 nullable 로 선언한다.** Room 은 테이블이 바뀌면
+  재쿼리하는데, 반환형이 non-null 단일 객체면 결과가 0행일 때 예외를 던진다. 관찰 도중 그 행이
+  지워질 수 있으면(재생·상세 화면에서 삭제) nullable 로 선언하고 소비 측에서 삭제 순간의 null 을
+  흘려보낸다. 일회성 단일행 쿼리는 이 레이스와 무관하지만, 호출 시점에 행이 없을 수 있으면
+  nullable 이나 방어가 필요하다.

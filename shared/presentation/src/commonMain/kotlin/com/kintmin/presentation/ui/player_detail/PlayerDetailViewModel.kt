@@ -13,12 +13,11 @@ import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackSpeedUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.audio_track.usecase.ToggleFavoriteUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
-import com.kintmin.domain.lyrics.usecase.GetAudioMediaLyricsUseCase
-import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
-import com.kintmin.presentation.port.MediaControllerManager
+import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +36,7 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 class PlayerDetailViewModel constructor(
-    private val mediaControllerManager: MediaControllerManager,
+    private val mediaControllerManager: PlaybackController,
     fetchIsPlaybackRepeatingFlowUseCase: FetchIsPlaybackRepeatingFlowUseCase,
     fetchIsPlaybackShufflingFlowUseCase: FetchIsPlaybackShufflingFlowUseCase,
     fetchPlaybackSpeedFlowUseCase: FetchPlaybackSpeedFlowUseCase,
@@ -49,8 +48,7 @@ class PlayerDetailViewModel constructor(
     private val fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val getAudioMediaLyricsUseCase: GetAudioMediaLyricsUseCase,
-    private val parseLyricsUseCase: ParseLyricsUseCase,
+    private val getParsedLyricsUseCase: GetParsedLyricsUseCase,
 ) : ViewModel() {
 
     private val _eventFlow = MutableSharedFlow<PlayerDetailEvent>()
@@ -93,25 +91,21 @@ class PlayerDetailViewModel constructor(
         viewModelScope.launch {
             fetchIsPlaybackRepeatingFlowUseCase().collect {
                 _data.update { prev -> prev.copy(isRepeating = it) }
-                mediaControllerManager.setRepeatMode(it)
             }
         }
         viewModelScope.launch {
             fetchIsPlaybackShufflingFlowUseCase().collect {
                 _data.update { prev -> prev.copy(isShuffling = it) }
-                mediaControllerManager.setShuffleMode(it)
             }
         }
         viewModelScope.launch {
             fetchPlaybackSpeedFlowUseCase().collect { speed ->
                 _data.update { prev -> prev.copy(playbackSpeed = speed) }
-                mediaControllerManager.setPlaybackSpeed(speed)
             }
         }
         viewModelScope.launch {
             fetchPlaybackPitchSemitoneFlowUseCase().collect { semitone ->
                 _data.update { prev -> prev.copy(playbackPitchSemitone = semitone) }
-                mediaControllerManager.setPlaybackPitchSemitone(semitone)
             }
         }
     }
@@ -362,13 +356,11 @@ class PlayerDetailViewModel constructor(
             return
         }
         viewModelScope.launch {
-            val rawLyrics = getAudioMediaLyricsUseCase(lyricFileFullPath).getOrNull().orEmpty()
-            parsedLyricLines = parseLyricsUseCase(rawLyrics)
+            parsedLyricLines = getParsedLyricsUseCase(lyricFileFullPath)
             refreshLyricLine()
         }
     }
 
-    // 현재 재생 위치에 해당하는 싱크 가사 한 줄을 UI 상태에 반영한다.
     // 비싱크(시간정보 없음) 가사면 activeLyricIndex 가 -1 이라 빈 문자열로 둔다.
     private fun refreshLyricLine() {
         val line = if (parsedLyricLines.isEmpty()) {

@@ -1,29 +1,34 @@
 package com.kintmin.domain
 
-import com.kintmin.domain.audio_media.model.AudioMedia
-import com.kintmin.domain.audio_media.model.DownloadedMedia
-import com.kintmin.domain.audio_media.model.AddedAudioMedia
-import com.kintmin.domain.audio_media.repository.AudioMediaRepository
-import com.kintmin.domain.audio_media.usecase.AlreadyDownloadedMedia
-import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
+import com.kintmin.domain.audio_media.model.AddedAudioMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.model.AlreadyDownloadingMedia
+import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.domain.audio_media.model.DownloadedMedia
+import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
+import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.FirebaseEvent
+import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 class DownloadAudioMediaUseCaseTest {
@@ -39,12 +44,15 @@ class DownloadAudioMediaUseCaseTest {
     private lateinit var downloadUrl: String
     private lateinit var mockAudioMedia: AudioMedia
     private lateinit var mockDownloadedMedia: DownloadedMedia
+    private lateinit var mockYoutubeAudio: DownloadedYoutubeAudio
 
     @Before
     fun setup() {
         coEvery { fetchShouldInsertAtTopOnDownloadFlowUseCase() } returns flowOf(false)
         coEvery { fetchPlaylistIdOnDownloadFlowUseCase() } returns flowOf(UNCATEGORIZED_ID)
         coEvery { audioMediaRepository.getAudioMediaBySource(any()) } returns Result.failure(Exception())
+        every { audioMediaRepository.reserveDownload(any()) } returns true
+        every { audioMediaRepository.releaseDownload(any()) } just Runs
         everyLogDefaults()
 
         useCase = DownloadAudioMediaUseCase(
@@ -69,6 +77,17 @@ class DownloadAudioMediaUseCaseTest {
             createdTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
         )
 
+        mockYoutubeAudio = DownloadedYoutubeAudio(
+            fileName = "a",
+            audioFileNameWithExt = "a.mp3",
+            title = "name",
+            thumbnailUrl = "https://example.com/t.jpg",
+            duration = "200",
+            uploader = "artist",
+            description = "description",
+        )
+        coEvery { audioMediaRepository.saveThumbnail(any(), any()) } returns Result.failure(Exception())
+
         mockDownloadedMedia = DownloadedMedia(
             downloadUrl = downloadUrl,
             title = "name",
@@ -92,6 +111,37 @@ class DownloadAudioMediaUseCaseTest {
     }
 
     @Test
+    fun `같은 출처를 받는 중이면 받지 않고 남의 예약도 풀지 않는다`() = runTest {
+        every { audioMediaRepository.reserveDownload(downloadUrl) } returns false
+
+        val result = useCase(downloadUrl)
+
+        assert(result.exceptionOrNull() is AlreadyDownloadingMedia)
+        coVerify(inverse = true) { audioMediaRepository.downloadYoutubeAudio(any()) }
+        verify(inverse = true) { audioMediaRepository.releaseDownload(any()) }
+    }
+
+    @Test
+    fun `받기가 끝나면 실패해도 예약을 푼다`() = runTest {
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.failure(IllegalStateException())
+
+        useCase(downloadUrl)
+
+        verify(exactly = 1) { audioMediaRepository.releaseDownload(downloadUrl) }
+    }
+
+    @Test
+    fun `썸네일을 받으면 그 이름을 곡과 함께 넘긴다`() = runTest {
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
+        coEvery { audioMediaRepository.saveThumbnail(mockYoutubeAudio.thumbnailUrl, "a") } returns Result.success("a.webp")
+        val withImage = mockDownloadedMedia.copy(imageFileNameWithExt = "a.webp")
+        coEvery { audioMediaRepository.addAudioMedia(withImage, UNCATEGORIZED_ID, false) } returns
+            Result.success(addedResult(resolvedPlaylistId = UNCATEGORIZED_ID))
+
+        assert(useCase(downloadUrl).isSuccess)
+    }
+
+    @Test
     fun `기존 다운로드가 있으면 실패 반환 테스트`() = runTest {
         coEvery { audioMediaRepository.getAudioMediaBySource(downloadUrl) } returns Result.success(mockAudioMedia)
 
@@ -99,7 +149,7 @@ class DownloadAudioMediaUseCaseTest {
 
         assert(result.isFailure)
         assert(result.exceptionOrNull() is AlreadyDownloadedMedia)
-        coVerify(inverse = true) { audioMediaRepository.downloadAudioMedia(any()) }
+        coVerify(inverse = true) { audioMediaRepository.downloadYoutubeAudio(any()) }
         verifySuccessDownloadAudioMediaLog(inverse = true)
         verifyFailedDownloadAudioMediaLog(exception = AlreadyDownloadedMedia(), exactly = 1)
     }
@@ -108,7 +158,7 @@ class DownloadAudioMediaUseCaseTest {
     fun `다운로드 성공 시 설정값으로 저장 테스트`() = runTest {
         coEvery { fetchShouldInsertAtTopOnDownloadFlowUseCase() } returns flowOf(true)
         coEvery { fetchPlaylistIdOnDownloadFlowUseCase() } returns flowOf(3)
-        coEvery { audioMediaRepository.downloadAudioMedia(downloadUrl) } returns Result.success(mockDownloadedMedia)
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
         coEvery {
             audioMediaRepository.addAudioMedia(
                 downloadedAudioMedia = mockDownloadedMedia,
@@ -131,7 +181,7 @@ class DownloadAudioMediaUseCaseTest {
         // 대상 유효성 검사·미분류 fallback은 데이터 계층(facade) 책임이다.
         // UseCase는 설정값을 그대로 넘기고, 데이터 계층이 해석해 돌려준 id를 surfacing만 한다.
         coEvery { fetchPlaylistIdOnDownloadFlowUseCase() } returns flowOf(999)
-        coEvery { audioMediaRepository.downloadAudioMedia(downloadUrl) } returns Result.success(mockDownloadedMedia)
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
         coEvery {
             audioMediaRepository.addAudioMedia(
                 downloadedAudioMedia = mockDownloadedMedia,
@@ -149,7 +199,7 @@ class DownloadAudioMediaUseCaseTest {
     @Test
     fun `저장 실패 시 실패 로그 전송 테스트`() = runTest {
         val exception = Exception("test")
-        coEvery { audioMediaRepository.downloadAudioMedia(downloadUrl) } returns Result.success(mockDownloadedMedia)
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
         coEvery {
             audioMediaRepository.addAudioMedia(
                 downloadedAudioMedia = mockDownloadedMedia,

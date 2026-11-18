@@ -1,6 +1,6 @@
 package com.kintmin.data.network
 
-import com.kintmin.data.network.dataSourceImpl.LyricsDataSourceImpl
+import com.kintmin.data.network.data_source_impl.LyricsDataSourceImpl
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertTrue
 import org.junit.Test

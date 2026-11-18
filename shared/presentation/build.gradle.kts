@@ -25,25 +25,21 @@ kotlin {
         withHostTestBuilder { }.configure { }
 
         // 이 플러그인은 buildConfig / res / buildTypes 를 지원하지 않는다.
-        // BuildConfig.DEBUG 는 제거했고(디버그 탭 가시성은 app 이 주입), res 는 원래 없다.
-        // proguard 파일은 소비자에게 전파되지 않는 사문이었으므로 옮기지 않았다.
     }
 
     iosArm64()
     iosSimulatorArm64()
-    // iosX64 는 CMP 가 1.11.0-alpha01 이후 배포하지 않는다. shared:* 3모듈과 동일하게 제외.
-    // Windows 에서는 iOS 태스크가 돌지 않는다. 선언만 유지해 소스셋 구조를 준비한다.
+    // iosX64 는 CMP 가 1.11.0-alpha01 이후 배포하지 않는다.
 
     sourceSets {
         commonMain.dependencies {
-            // app 과 (3단계) iOS 가 Composable 을 작성하므로 CMP 아티팩트는 api 로 노출한다.
+            // 소비하는 쪽이 Composable 을 작성하므로 CMP 아티팩트는 api 로 노출한다.
             api(project(":shared:domain"))
             api(libs.compose.runtime)
             api(libs.compose.foundation)
             api(libs.compose.ui)
             api(libs.compose.material3)
             api(libs.compose.material.icons.extended)
-            // app 의 MainNavHost 가 NavHost / rememberNavController 를 쓴다.
             api(libs.jetbrains.navigation.compose)
 
             implementation(libs.compose.ui.tooling.preview)
@@ -67,13 +63,9 @@ kotlin {
         }
 
         androidMain.dependencies {
-            // 임시 수용소. commonMain 승격이 끝나면 대부분 사라진다.
             implementation(libs.androidx.activity.compose)       // ActivityResult / BackHandler
             implementation(libs.androidx.core.ktx)
-            implementation(libs.androidx.lifecycle.runtime.ktx)  // lifecycleScope
             implementation(libs.androidx.palette.ktx)
-            implementation(libs.koin.android)
-            implementation(libs.koin.androidx.compose)
         }
 
         getByName("androidHostTest").dependencies {

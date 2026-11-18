@@ -37,9 +37,7 @@ kotlin {
             }
         }
     }
-    // 프레임워크와 SKIE 는 iOS Composition Root(`:ios:shared`)가 소유한다.
-    // iOS 프레임워크는 하나여야 하고, 그 하나는 data 와 presentation 을 함께 보는
-    // 모듈이어야 한다. 이 모듈은 klib 만 내놓는다.
+    // 이 모듈은 klib 만 내놓는다. 프레임워크는 하나여야 해서 조립 모듈이 선언한다.
     iosArm64()
     iosSimulatorArm64()
 
@@ -56,6 +54,10 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
+            // 파일 공유 받는 서버(PC 수신·데이터 보내기).
+            implementation(libs.ktor.server.core)
+            implementation(libs.ktor.server.cio)
+            implementation(libs.ktor.server.content.negotiation)
             implementation(libs.koin.core)
             implementation(libs.okio)
         }
@@ -82,6 +84,8 @@ kotlin {
                 implementation(libs.junit)
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.ktor.client.mock)
+                implementation(libs.mockk)
+                implementation(libs.ktor.server.test.host)
                 implementation("com.github.axet:TarsosDSP:2.4-1@jar")
             }
         }

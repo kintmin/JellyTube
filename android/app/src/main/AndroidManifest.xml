@@ -53,7 +53,7 @@
         끄면 legacy onBackPressed 경로를 타서 뒤로가기도 앞으로가기와 같은 슬라이드로 움직인다.
     -->
     <application
-        android:name="com.kintmin.jellytube.JellyTubeApplication"
+        android:name=".JellyTubeApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="false"
@@ -88,7 +88,7 @@
         </provider>
 
         <activity
-            android:name="com.kintmin.jellytube.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/Theme.JellyTube.Splash">
@@ -103,8 +103,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="https" />
-                <data android:host="www.jellytube.com" />
+                <data android:scheme="${deepLinkScheme}" />
+                <data android:host="${deepLinkHost}" />
             </intent-filter>
 
             <!-- Quick Share / 파일 공유 수신: 단일 오디오 파일 -->
@@ -123,7 +123,7 @@
         </activity>
 
         <service
-            android:name="com.kintmin.platform.service.PlaybackService"
+            android:name=".service.PlaybackService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
@@ -138,17 +138,17 @@
             tools:node="merge" />
 
         <service
-            android:name="com.kintmin.platform.service.StepForegroundService"
+            android:name=".service.StepForegroundService"
             android:exported="false"
             android:foregroundServiceType="health" />
 
         <service
-            android:name="com.kintmin.platform.service.FileShareForegroundService"
+            android:name=".service.FileShareForegroundService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
         <receiver
-            android:name="com.kintmin.platform.receiver.PackageChangedReceiver"
+            android:name=".receiver.PackageChangedReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
@@ -156,7 +156,7 @@
         </receiver>
 
         <receiver
-            android:name="com.kintmin.platform.receiver.BootCompleteReceive"
+            android:name=".receiver.BootCompleteReceive"
             android:exported="false"
             android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
             <intent-filter>

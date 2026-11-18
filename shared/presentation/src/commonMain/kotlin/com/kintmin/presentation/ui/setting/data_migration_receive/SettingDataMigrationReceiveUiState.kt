@@ -1,7 +1,7 @@
 package com.kintmin.presentation.ui.setting.data_migration_receive
 
 import com.kintmin.presentation.port.model.MigrationSource
-import com.kintmin.presentation.port.model.RunningWork
+import com.kintmin.presentation.port.model.RunningTask
 
 data class SettingDataMigrationReceiveUiState(
     val phase: DataMigrationReceivePhase = DataMigrationReceivePhase.Idle,
@@ -48,7 +48,7 @@ sealed interface DataMigrationReceivePhase {
     data object Searching : DataMigrationReceivePhase
 
     /** 이전 전에 끝나 있어야 하는 작업이 남아 있다. */
-    data class Blocked(val runningWorks: Map<RunningWork, Int>) : DataMigrationReceivePhase
+    data class Blocked(val runningTasks: Map<RunningTask, Int>) : DataMigrationReceivePhase
     data object NotFound : DataMigrationReceivePhase
 
     /** 여러 대를 찾았거나, 찾은 한 대가 버전이 달라 고를 수 없다. */

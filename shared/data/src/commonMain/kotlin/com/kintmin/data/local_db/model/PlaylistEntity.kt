@@ -5,9 +5,6 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlin.time.Clock
 
-/**
- * 기본값 설정 시 DB에 addCallback 설정 필요
- */
 @Entity(tableName = "PLAYLIST")
 data class PlaylistEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,

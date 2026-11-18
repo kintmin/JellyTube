@@ -1,7 +1,7 @@
 package com.kintmin.presentation.platform
 
 /** 이유는 `ios/app/AGENTS.md` §"iOS 에서 제공하지 않는 것". */
-actual val isFileShareReceiveSupported: Boolean = false
+actual val isFileShareReceiveSupported: Boolean = true
 
 actual val isDeviceSaveSupported: Boolean = false
 

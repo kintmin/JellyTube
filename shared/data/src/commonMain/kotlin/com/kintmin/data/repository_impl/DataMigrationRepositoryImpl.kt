@@ -4,7 +4,7 @@ import com.kintmin.data.data_migration.isPlayableAudioExtension
 import com.kintmin.data.data_migration.toExport
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_file.FileManager
-import com.kintmin.data.network.dataSource.MigrationDataSource
+import com.kintmin.data.network.data_source.MigrationDataSource
 import com.kintmin.domain.data_migration.MigrationFiles
 import com.kintmin.domain.data_migration.model.MigrationApplyResult
 import com.kintmin.domain.data_migration.model.MigrationEndpoint

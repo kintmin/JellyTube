@@ -2,6 +2,7 @@ package com.kintmin.data.python_bridge
 
 import com.kintmin.data.python_bridge.model.PlayableAudioDownloadDto
 import com.kintmin.data.python_bridge.model.YoutubeDownloadDto
+import com.kintmin.data.python_bridge.model.withDefaults
 
 interface IosPythonExecutorBridge {
     suspend fun downloadYoutubeMedia(
@@ -43,7 +44,7 @@ internal class IosPythonExecutorAdapter(
         bridge.downloadYoutubeMedia(
             youtubeUrl = youtubeUrl,
             audioDownloadPath = audioDownloadPath,
-        )
+        ).withDefaults()
     }
 
     override suspend fun downloadPlayableAudio(

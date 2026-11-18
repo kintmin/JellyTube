@@ -7,6 +7,7 @@ import com.chaquo.python.android.AndroidPlatform
 import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.data.python_bridge.model.PlayableAudioDownloadDto
 import com.kintmin.data.python_bridge.model.YoutubeDownloadDto
+import com.kintmin.data.python_bridge.model.withDefaults
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -33,13 +34,13 @@ class PythonExecutorImpl(
                     module.callAttr(METHOD_DOWNLOAD_AUDIO, youtubeUrl, audioDownloadPath).asList()
 
                 YoutubeDownloadDto(
-                    title = pyResult.getOrNull(0)?.toString() ?: "알 수 없음",
-                    thumbnailDownloadUrl = pyResult.getOrNull(1)?.toString() ?: "",
-                    duration = pyResult.getOrNull(2)?.toString() ?: "0",
-                    uploader = pyResult.getOrNull(3)?.toString() ?: "알 수 없음",
-                    description = pyResult.getOrNull(4)?.toString() ?: "",
+                    title = pyResult.getOrNull(0)?.toString().orEmpty(),
+                    thumbnailDownloadUrl = pyResult.getOrNull(1)?.toString().orEmpty(),
+                    duration = pyResult.getOrNull(2)?.toString().orEmpty(),
+                    uploader = pyResult.getOrNull(3)?.toString().orEmpty(),
+                    description = pyResult.getOrNull(4)?.toString().orEmpty(),
                     audioFileNameWithExt = pyResult.getOrNull(5)?.toString().orEmpty(),
-                )
+                ).withDefaults()
             }
         }
     }

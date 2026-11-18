@@ -149,19 +149,18 @@ final class MediaControllerEngine {
         broadcast()
     }
 
+    /// 범위는 Kotlin(`PlaybackRange`)이 맞춰서 넘긴다.
     func setSpeed(_ speed: Float) {
-        let clamped = min(max(speed, 0.25), 4.0)
-        currentSpeed = clamped
-        pitchUnit.rate = clamped
-        mcLog.info("applied speed=\(clamped)")
+        currentSpeed = speed
+        pitchUnit.rate = speed
+        mcLog.info("applied speed=\(speed)")
         broadcast()
     }
 
     func setPitchSemitone(_ semitone: Int) {
-        let clamped = min(max(semitone, -24), 24)
-        currentPitchSemitone = clamped
-        pitchUnit.pitch = Float(clamped * 100)
-        mcLog.info("applied pitchSemitone=\(clamped)")
+        currentPitchSemitone = semitone
+        pitchUnit.pitch = Float(semitone * 100)
+        mcLog.info("applied pitchSemitone=\(semitone)")
         broadcast()
     }
 

@@ -3,6 +3,7 @@ package com.kintmin.presentation.ui.step
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.extension.toBasicIsoString
+import com.kintmin.domain.step.StepSlot
 import com.kintmin.domain.step.model.YearMonth
 import com.kintmin.domain.step.usecase.GetHalfHourlyStepsUseCase
 import com.kintmin.domain.step.usecase.GetMonthlyDailyStepsUseCase
@@ -15,10 +16,10 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlin.time.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class StepViewModel constructor(
@@ -77,7 +78,7 @@ class StepViewModel constructor(
 
     private fun currentHalfHourlySlot(): Int {
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        return now.hour * 2 + now.minute / 30
+        return StepSlot.indexOf(now.hour, now.minute)
     }
 }
 

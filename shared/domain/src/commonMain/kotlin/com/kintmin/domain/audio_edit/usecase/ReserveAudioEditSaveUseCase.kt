@@ -1,8 +1,8 @@
 package com.kintmin.domain.audio_edit.usecase
 
+import com.kintmin.domain.audio_edit.model.AudioEditAlreadySaving
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 
-/** 편집본 저장을 맡기기 전에 저장 중으로 예약한다. 이미 저장 중이면 실패. */
 class ReserveAudioEditSaveUseCase constructor(
     private val audioEditRepository: AudioEditRepository,
 ) {
@@ -12,24 +12,4 @@ class ReserveAudioEditSaveUseCase constructor(
         } else {
             Result.failure(AudioEditAlreadySaving())
         }
-}
-
-/** 저장을 맡기지 못했거나 저장이 시작 전에 끝났을 때 예약을 푼다. */
-class ReleaseAudioEditSaveUseCase constructor(
-    private val audioEditRepository: AudioEditRepository,
-) {
-    operator fun invoke(audioMediaId: Int) = audioEditRepository.releaseSaving(audioMediaId)
-}
-
-/**
- * 화면이 건 예약도 여기서 풀린다. 예약이 있어도 다시 거는 것은 예약 없이 도는 저장
- * (프로세스가 죽은 뒤 작업이 다시 도는 등)도 표시해야 해서다.
- */
-internal inline fun <T> AudioEditRepository.withSavingMark(audioMediaId: Int, block: () -> T): T {
-    reserveSaving(audioMediaId)
-    try {
-        return block()
-    } finally {
-        releaseSaving(audioMediaId)
-    }
 }
