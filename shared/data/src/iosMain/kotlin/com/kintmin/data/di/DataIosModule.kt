@@ -11,8 +11,8 @@ import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.database.createIosJellyTubeDatabase
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.local_file.FileManagerImpl
-import com.kintmin.data.network.dataSource.MigrationDataSource
-import com.kintmin.data.network.dataSourceImpl.MigrationDataSourceImpl
+import com.kintmin.data.network.data_source.MigrationDataSource
+import com.kintmin.data.network.data_source_impl.MigrationDataSourceImpl
 import com.kintmin.data.python_bridge.IosLyricsTransliterator
 import com.kintmin.data.python_bridge.IosPythonExecutorAdapter
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge

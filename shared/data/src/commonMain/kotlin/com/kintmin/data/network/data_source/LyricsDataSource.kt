@@ -1,4 +1,4 @@
-package com.kintmin.data.network.dataSource
+package com.kintmin.data.network.data_source
 
 import com.kintmin.data.network.model.LyricsSearchResultDto
 

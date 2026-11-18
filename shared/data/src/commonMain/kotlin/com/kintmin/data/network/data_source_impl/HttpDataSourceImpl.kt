@@ -1,6 +1,6 @@
-package com.kintmin.data.network.dataSourceImpl
+package com.kintmin.data.network.data_source_impl
 
-import com.kintmin.data.network.dataSource.HttpDataSource
+import com.kintmin.data.network.data_source.HttpDataSource
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get

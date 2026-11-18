@@ -1,6 +1,6 @@
-package com.kintmin.data.network.dataSourceImpl
+package com.kintmin.data.network.data_source_impl
 
-import com.kintmin.data.network.dataSource.MigrationDataSource
+import com.kintmin.data.network.data_source.MigrationDataSource
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.MigrationFinishRequest
 import com.kintmin.fileshare.MigrationManifestDto

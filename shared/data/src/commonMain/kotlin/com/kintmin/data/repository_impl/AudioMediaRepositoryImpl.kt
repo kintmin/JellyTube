@@ -7,7 +7,7 @@ import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.AudioMediaEntity
 import com.kintmin.data.local_file.AudioFileExtensionCorrector
 import com.kintmin.data.local_file.FileManager
-import com.kintmin.data.network.dataSource.HttpDataSource
+import com.kintmin.data.network.data_source.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.domain.audio_media.model.AddedAudioMedia
 import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia

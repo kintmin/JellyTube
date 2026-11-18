@@ -5,7 +5,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_file.DirectoryFileManager
-import com.kintmin.data.network.dataSource.MigrationDataSource
+import com.kintmin.data.network.data_source.MigrationDataSource
 import com.kintmin.domain.data_migration.MigrationPlanner
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
 import com.kintmin.domain.data_migration.model.MigrationEndpoint

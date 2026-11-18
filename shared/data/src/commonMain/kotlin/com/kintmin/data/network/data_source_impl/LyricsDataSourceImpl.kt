@@ -1,6 +1,6 @@
-package com.kintmin.data.network.dataSourceImpl
+package com.kintmin.data.network.data_source_impl
 
-import com.kintmin.data.network.dataSource.LyricsDataSource
+import com.kintmin.data.network.data_source.LyricsDataSource
 import com.kintmin.data.network.model.LyricsSearchResultDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body

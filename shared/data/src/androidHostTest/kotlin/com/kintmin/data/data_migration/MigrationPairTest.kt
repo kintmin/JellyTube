@@ -1,6 +1,6 @@
 package com.kintmin.data.data_migration
 
-import com.kintmin.data.network.dataSourceImpl.MigrationDataSourceImpl
+import com.kintmin.data.network.data_source_impl.MigrationDataSourceImpl
 import com.kintmin.data.repository_impl.asPairFailure
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationSourceBusyException

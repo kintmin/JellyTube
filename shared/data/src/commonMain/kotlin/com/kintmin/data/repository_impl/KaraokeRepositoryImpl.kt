@@ -1,6 +1,6 @@
 package com.kintmin.data.repository_impl
 
-import com.kintmin.data.network.dataSource.KaraokeDataSource
+import com.kintmin.data.network.data_source.KaraokeDataSource
 import com.kintmin.data.network.model.KaraokeSongDto
 import com.kintmin.domain.karaoke.model.KaraokeSong
 import com.kintmin.domain.karaoke.repository.KaraokeRepository

@@ -1,6 +1,6 @@
-package com.kintmin.data.network.dataSourceImpl
+package com.kintmin.data.network.data_source_impl
 
-import com.kintmin.data.network.dataSource.KaraokeDataSource
+import com.kintmin.data.network.data_source.KaraokeDataSource
 import com.kintmin.data.network.model.KaraokeSongDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
