@@ -40,12 +40,17 @@ DTOs"). 그리고 얻는 것이 없다 — 인터페이스는 Kotlin 이 소유�
 Swift 쪽 `protocol` 선언이 없고, `extension` 이 확장하는 타입은 그 타입의 원 선언으로 이미
 잡힌다. 브릿지 방향이 바뀌어 Swift 가 자기 `protocol` 을 갖게 되면 그때 넣는다.
 
+**셸 함수에 위치 인자를 받지 않는다.** 이 파일은 스킬 인자와 함께 주입되므로 위치 인자 표기가
+그 자리에서 인자 문자열로 치환되어 읽힌다 — 그대로 실행하면 아무것도 매칭되지 않고 **게이트가
+조용히 0건으로 통과한다.** 미탐 중에서도 최악이라 한쪽씩 함수를 따로 둔다.
+
 ```bash
 DECL='\b(class|interface|object|enum|fun|func|val|var|typealias|struct) +[A-Za-z_][A-Za-z0-9_]*'
-names() { git diff $BASE -U0 -M | grep "^$1" | grep -oE "$DECL" | awk '{print $NF}' | sort -u; }
+removed() { git diff $BASE -U0 -M | grep '^-' | grep -oE "$DECL" | awk '{print $NF}' | sort -u; }
+added()   { git diff $BASE -U0 -M | grep '^+' | grep -oE "$DECL" | awk '{print $NF}' | sort -u; }
 
 # 선언이 지워진 이름(= 왼쪽에만 있는 이름)
-comm -23 <(names -) <(names +)
+comm -23 <(removed) <(added)
 
 # 옮겨지거나 지워진 파일·디렉터리
 git diff $BASE -M --name-status --diff-filter=RD
