@@ -99,7 +99,29 @@ Delete:
 
 **"Both platforms must do X" is never a comment.** Put X in one shared place so it cannot drift. If it genuinely cannot be shared and cannot be tested, drop the claim rather than writing it down.
 
-## 7. Module Map
+## 7. Documentation
+
+**`AGENTS.md` 는 아키텍처와 바뀌지 않는 제약만 담는다.** §6 이 주석에 적용하는 기준을 문서에
+적용한 것이다 — 코드가 이미 말하는 것은 주석에도, 문서에도 쓰지 않는다.
+
+문서에 쓰지 않는 것:
+- **코드에 있는 것의 목록** — 포트·탈출구·화면·진입점의 나열과 개수
+- **클래스명·파일명·패키지 경로.** 네이밍 패턴은 예외다 — `~Screen.kt` 는 규약이고
+  `FooScreen.kt` 는 현황이다
+- **결정 기록과 과거 이력, 진행률** — 무엇을 걷어냈고 무엇을 더 이상 쓰지 않는지는 PR 몫이다
+- **빌드나 테스트가 이미 보증하는 동기화 지시** — "A 를 바꾸면 B 도 바꿔라" 는 빌드가
+  대조하게 만든다. 문서에는 **그 보증이 있다는 사실**만 적는다(그래야 값을 왜 여기 적지
+  않는지 읽힌다)
+
+가늠자: **일반적인 기능을 더하거나 고칠 때 문서를 손봐야 한다면, 그 문장은 아키텍처가 아니다.**
+
+### 목록 대신 폴더가 목록이다
+
+탈출구나 포트가 필요하면 **먼저 그 폴더를 열어 같은 것이 있는지 본다.** 그래서 **파일 이름은
+그 안의 기능을 말하도록 짓는다** — 폴더를 훑어서 "이미 있나" 를 답할 수 없으면 이름이 잘못된
+것이다. 목록을 문서에 복제하면 그 순간부터 코드와 어긋나기 시작한다.
+
+## 8. Module Map
 
 **Before touching any file, read the AGENTS.md of every module involved.**
 
