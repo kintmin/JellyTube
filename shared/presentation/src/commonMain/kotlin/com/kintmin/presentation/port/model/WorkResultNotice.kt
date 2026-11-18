@@ -3,7 +3,6 @@ package com.kintmin.presentation.port.model
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.presentation.deeplink.DeepLinkConstants
 
-/** 두 플랫폼이 같은 알림을 띄워야 해서 여기 한 벌만 둔다. */
 sealed interface WorkResultNotice {
 
     val title: String

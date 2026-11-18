@@ -17,10 +17,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 /**
- * 최상위 화면 이동 명령과 앱 시작 시 한 번 하는 일.
- *
- * **플랫폼 진입점이 한 벌만 잡아야 한다.** Compose 밖에서 들어오는 딥링크를 화면과 같은
- * 인스턴스로 넘겨야 한다. 플랫폼은 문자열만 넘기고 판정은 전부 여기서 돈다.
+ * Compose 밖에서 들어오는 딥링크를 화면과 같은 인스턴스로 넘겨야 해서 한 벌만 잡는다.
  */
 class AppViewModel(
     private val mediaControllerManager: PlaybackController,

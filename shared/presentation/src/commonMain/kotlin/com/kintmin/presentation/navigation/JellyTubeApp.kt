@@ -16,11 +16,6 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import kotlinx.coroutines.flow.Flow
 import org.koin.compose.koinInject
 
-/**
- * 앱의 루트 컴포저블. 두 플랫폼이 같은 것을 띄운다.
- *
- * 창·시스템바·스플래시처럼 Compose 밖의 일은 플랫폼 진입점이 하고, 그 안쪽은 전부 여기다.
- */
 @Composable
 fun JellyTubeApp(
     navigationIntentFlow: Flow<NavigationIntent>,

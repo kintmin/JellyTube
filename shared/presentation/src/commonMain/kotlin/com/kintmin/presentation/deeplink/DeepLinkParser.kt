@@ -17,7 +17,6 @@ object DeepLinkParser {
         playingPlaylistId: Int? = null,
         playingMediaId: Int? = null,
     ): List<NavigationIntent> {
-        // Android 는 https(App Links), iOS 는 커스텀 스킴. 호스트·경로 문법은 하나다.
         val scheme = UrlParts.scheme(url)
         if (scheme != DeepLinkConstants.SCHEME && scheme != DeepLinkConstants.APP_SCHEME) {
             return emptyList()

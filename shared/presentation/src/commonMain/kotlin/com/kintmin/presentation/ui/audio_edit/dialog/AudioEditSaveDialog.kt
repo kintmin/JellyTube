@@ -33,7 +33,6 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.bloodyRed100
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 
-/** 편집본 저장 방식. */
 private enum class SaveMode { Overwrite, NewMedia }
 
 /** 새 음원으로 저장할 때 이름 길이 상한. */
