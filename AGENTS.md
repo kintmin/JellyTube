@@ -82,9 +82,9 @@ Because mode 2 cannot be prevented by the save step, every file write that conta
 **Write the constraint, not the story.** Default to one line; a KDoc over three lines needs a reason.
 
 Keep a comment only when someone changing this code would otherwise undo something:
-- Platform/API traps (`CMTimeGetSeconds` misreads on Kotlin/Native; an interop view takes touches before the Compose content drawn over it).
-- Non-obvious lifetime or ownership (the document-picker delegate is held weakly).
-- Why an absence exists (an empty override, a stub binding that Koin would otherwise fail on).
+- Platform/API traps — an API that misreads under Kotlin/Native, an interop view that takes touches before the Compose content drawn over it.
+- Non-obvious lifetime or ownership — a delegate held weakly, a lock released on a different thread than it was taken.
+- Why an absence exists — an empty override, a stub binding that Koin would otherwise fail on.
 - Magic numbers whose provenance isn't derivable from the code.
 
 Delete:
@@ -93,7 +93,9 @@ Delete:
 - Restatements of what a test already pins.
 - Cross-references to tests. The test references the type; that is the link.
 
-**A rule that must hold is a test, not a comment.** If the rule lives in platform code, pull the pure part out so it can be tested (`StepSlotSchedule`, `CMTimeMillis`, `RepeatRange`). iOS-only logic has `iosTest` source sets.
+**A rule that must hold is a test, not a comment.** If the rule lives in platform code, pull the pure part out so it can be tested. iOS-only logic has `iosTest` source sets.
+
+**A rule the build can enforce belongs in the build, not in a comment.** A value duplicated into a manifest or plist is injected or cross-checked at build time, so drift fails the build instead of waiting for a reader.
 
 **"Both platforms must do X" is never a comment.** Put X in one shared place so it cannot drift. If it genuinely cannot be shared and cannot be tested, drop the claim rather than writing it down.
 

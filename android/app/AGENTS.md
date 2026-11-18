@@ -1,179 +1,131 @@
 ## Module: android:app
 
-**Role**: App entry point, navigation host, DI assembly, runtime-bound implementations, and **all Android OS-level features**.
+**Role**: Android 앱 진입점과 조립, 런타임에 묶인 구현, 그리고 **모든 Android OS 기능**.
 
-This module owns:
-- `JellyTubeApplication` — Koin init, app-level setup
-- `MainActivity` — edge-to-edge enablement, intent handling, lifecycle
-- `MainActivity.handleIntent` — Intent 어댑터(딥링크 문자열 추출 · 공유 파일 수신). 판정과 `NavigationIntent` 디스패치는 `shared:presentation` 의 `navigation/AppViewModel` 이 한다
-- `di/AppModule` — Koin module that wires runtime implementations to their interfaces
-- `di/WorkerModule` — Worker 바인딩만 따로 (**아래 Rules** 참고)
-- `log_impl/` — concrete `AppLog` implementation (Firebase, Logcat, etc.)
-- `python_bridge_impl/` — concrete `PythonExecutor` implementation via Chaquopy
-- OS-level features (see **OS-level features** below)
-
-> **소스 패키지는 `com.kintmin.jellytube.*` 하나다.** 과거 `:android:platform` 모듈을 합치면서 한동안 `com.kintmin.platform.*` 이 함께 있었지만 지금은 없다. `AndroidManifest.xml` 은 namespace 덕에 `android:name=".service.PlaybackService"` 처럼 상대 표기를 쓴다.
+이 모듈이 소유하는 것:
+- 앱·액티비티 진입점 — Koin 초기화, edge-to-edge, Intent 수신, 수명주기
+- DI 조립 — 런타임 구현을 인터페이스에 거는 자리
+- 로깅과 Python 실행처럼 **Android 런타임·빌드에 묶인 구현**
+- OS 기능 전부(아래 **OS 기능** 참고)
 
 **Rules**:
-- Koin 모듈은 `appModule` 하나로 모은다. 새 구현을 추가하면 거기에 건다.
-- `workerModule` 만 나눠 둔다. `workerOf` 는 `workManagerFactory()` 가 쓰는 별도 해석 경로라 `single` 과 성격이 다르다.
+- Koin 모듈은 하나로 모은다. 새 구현을 더하면 거기에 건다.
+- **Worker 바인딩만 나눠 둔다.** Worker 는 WorkManager 팩토리가 쓰는 별도 해석 경로라 일반
+  싱글턴과 성격이 다르다.
 
 ---
 
-## What belongs here
+## 여기 두는 것
 
-### Runtime implementations
+### 런타임에 묶인 구현
 
-Implementations that are **bound to the Android runtime**:
+**Android 런타임이나 빌드 플러그인에 묶여** 공유 모듈에 둘 수 없는 구현이다. 공유 모듈이
+API 만 선언하고, 구현을 여기 두고 DI 에 등록한다.
 
-- **Log implementation** (`log_impl/AppLogImpl`): The `shared:log` module defines only the API. The concrete implementation (Firebase Analytics, Crashlytics, Logcat) lives here. Register it in `di/AppModule`.
-- **Python bridge implementation** (`python_bridge_impl/PythonExecutorImpl`): Chaquopy is an Android build-time dependency; the implementation belongs here. Register it in `di/AppModule`.
+### OS 기능
 
-### OS-level features
+Android OS API 를 직접 쓰는 코드 — 백그라운드 실행, 프로세스 간 통신, 시스템 이벤트.
 
-Any code that directly uses Android OS APIs for background execution, inter-process communication, or system events:
-
-- `Service` subclasses (foreground or bound) → `service/`
-- `BroadcastReceiver` subclasses → `receiver/`
-- `Worker` / `CoroutineWorker` subclasses → `worker/`, worker DI 는 `di/WorkerModule.kt`
-- `NotificationChannel` creation, `NotificationCompat.Builder` usage → `push_notification/`
-- `MediaSession`, `MediaController`, `MediaBrowser` bindings → `service_controller/`
-- 딥링크 주소를 `Uri` 로 바꾸는 어댑터 → `deeplink/` (**상수·조립은 `shared:presentation` 소유**)
+| 무엇 | 자리 |
+|---|---|
+| `Service` (포그라운드·바인드) | `service/` |
+| `BroadcastReceiver` | `receiver/` |
+| `Worker` / `CoroutineWorker` | `worker/` |
+| 알림 채널·알림 빌드 | `push_notification/` |
+| 미디어 세션·컨트롤러 바인딩 | `service_controller/` |
+| 딥링크 주소를 `Uri` 로 바꾸는 어댑터 | `deeplink/` |
 
 ### Adapter — port 의 Android 구현
 
-`shared:presentation`이 `com.kintmin.presentation.port`에 **인터페이스만** 선언하고, 구현체는 이 모듈에 둔다. `presentation`은 CMP(KMP) 모듈이라 Android API를 직접 쓸 수 없고, `app`은 이미 `presentation`을 의존하므로 순환이 생기지 않는다.
+`shared:presentation` 이 **인터페이스만** 선언하고 구현을 이 모듈에 둔다. `presentation` 은 KMP
+모듈이라 Android API 를 직접 쓸 수 없고, 이 모듈은 이미 `presentation` 을 의존하므로 순환이
+생기지 않는다.
 
-현재 포트와 adapter:
-
-| 포트 (`presentation/port/`) | Android adapter | iOS adapter |
-|---|---|---|
-| `PlaybackController` | `service_controller/PlaybackControllerImpl` | `adapter/IosPlaybackController`(Swift 엔진 브릿지) |
-| `AudioPreviewPlayer` | `audio_preview/AudioPreviewPlayerImpl` | 미지원 스텁(음원 편집 제외) |
-| `StepMeasurementController` | `service_controller/StepMeasurementControllerImpl` | `IosStepMeasurementController`(CMPedometer) |
-| `FileShareServerController` | `service_controller/FileShareServerControllerImpl`(UseCase 로 서버를 켜고 끄고, `FileShareForegroundService` 로 프로세스를 붙잡는다) | `IosFileShareServerController`(UseCase 로 서버를 켜고 끈다. 포그라운드 서비스가 없어 앱이 서스펜드되면 멈춘다) |
-| `StartYoutubeDownload` | `worker/starter/StartYoutubeDownloadImpl` | `IosStartYoutubeDownload`(추출 + background URLSession) |
-| `StartLyricsVariantCreation` | `worker/starter/StartLyricsVariantCreationImpl` | `IosStartLyricsVariantCreation`(앱 수명 스코프 + 로컬 알림) |
-| `StartAnomalyDataCheck` | `worker/starter/StartAnomalyDataCheckImpl` | `IosStartAnomalyDataCheck`(앱 수명 스코프 + 로컬 알림) |
-| `StartAudioEditSave` | `worker/starter/StartAudioEditSaveImpl` | 미지원 스텁(음원 편집 제외) |
-| `DataMigrationSendController` | `service_controller/DataMigrationSendControllerImpl`(UseCase 로 이전 세션을 열고 닫는다. PC 수신과 같은 서버를 쓴다) | 미지원 스텁(보내는 서버가 Android 에만 있다) |
-| `RunningTaskMonitor` | `worker/RunningTaskMonitorImpl`(WorkManager 태그·고유 이름 + 편집 저장 + PC 수신) | `IosRunningTaskMonitor`(실행부가 세는 `task/IosRunningTaskTracker` + 편집 저장 + PC 수신) |
-| `MigrationSourceDiscovery` | `data_migration/UnsupportedMigrationSourceDiscovery`(Android 는 보내는 쪽만) | `adapter/IosMigrationSourceDiscovery`(Swift `NWBrowser` 브릿지. 목록 탐색 → 고른 기기만 주소 풀기) |
-
-iOS adapter 의 자리는 **`ios/shared` 의 `adapter/`** 다(이 모듈의 짝인 iOS 조립 모듈). `adapter/IosAdapterModule.kt` 가 바인딩한다.
+iOS 쪽 짝은 iOS 조립 모듈의 `adapter/` 다. 두 자리가 대응한다.
 
 ### port 와 adapter — 말을 섞지 않는다
 
-- **port 는 인터페이스다.** 코어가 바깥을 향해 뚫은 구멍이고, 선언 자리는 그 구멍이 필요한
-  모듈이다 — `shared:presentation` 의 `port/`(11개), `shared:domain`(`ScheduleDailyStepClosing` ·
-  `ReceiveKeepAlive`), `shared:log`(`AppLog`), `shared:data`(`PythonExecutor` ·
-  `LyricsTransliterator`). **네 모듈에 흩어져 있는 것이 정상이다** — 각 레이어가 자기 구멍을 뚫는다.
-- **adapter 는 그 구멍에 끼우는 플랫폼 구현이다.** 이 모듈과 `ios/shared/adapter/` 에 있는 것이
-  전부 adapter다. "포트 구현" 보다 adapter 가 정확하다.
-- **구멍이 모듈 밖까지 가지 않는 경우도 있다.** `shared:data` 의 `AudioEditor`(media3-transformer ↔
-  미지원 스텁) · `LyricsTranslator`(ML Kit ↔ Swift 브릿지)는 인터페이스와 adapter 가 **같은 모듈의
-  다른 소스셋**에 있고 Koin 바인딩도 그 모듈이 한다. **그런 adapter 를 여기로 가져오지 않는다** —
-  `PythonExecutor` 만 여기 있는 것은 `chaquopy` 가 애플리케이션 모듈 전용이라 어쩔 수 없어서지
-  규칙이 그래서가 아니다. 그래서 그 포트는 Android 구현만 밖에 있고 iOS 는 `shared:data` 안에 있다.
-  고르는 기준은 `shared/data/AGENTS.md` 의 **플랫폼 탈출구** 절이 단일 진원지다.
-- **port 이름에 플랫폼 기구를 넣지 않는다.** `ExecuteYoutubeDownload`(WorkManager enqueue) ·
-  `RunningWorkMonitor`(WorkManager) · `MediaControllerManager`(media3) 가 그래서 `Start~` ·
-  `RunningTaskMonitor` · `PlaybackController` 로 바뀌었다. Android 기구 모양으로 구멍을 뚫으면
-  그 기구가 없는 플랫폼이 흉내를 내야 한다 — iOS 가 WorkManager 를 대신하려고
-  `IosRunningTaskTracker` 를 직접 만든 것이 그 흔적이다.
-  **예외는 로그 수집기 하나다** — `shared:log` 의 `FirebaseEvent` 계열은 이름을 그대로 쓴다.
-  근거는 `shared/log/AGENTS.md` 의 **인정된 예외** 절이다.
-- `worker/starter/` 는 **UseCase 가 아니다.** Worker 를 enqueue 하는 adapter다.
-  `shared:domain` 의 UseCase 와 헷갈리지 않게 이름을 가른다.
-- **port 는 인터페이스지만, `port/` 에 인터페이스만 있는 것은 아니다.** 경계를 오가는 데이터는
-  `presentation/port/model/`, 포트를 쓰는 공통 규칙은 `presentation/port/` 직하다. 둘 다
-  **양쪽 adapter 가 같은 것을 써야 해서** 거기 있다 — adapter 쪽에 같은 모양을 또 정의하지
-  않는다. 두 플랫폼이 다른 알림 문구를 띄우거나 받은 곡을 다른 큐에 넣으면 그 자체가 버그다.
-  상세는 `shared/presentation/AGENTS.md` 의 **`port/model/`** 절과 **포트를 쓰는 공통 규칙** 절이
-  단일 진원지다.
+- **port 는 인터페이스다.** 코어가 바깥을 향해 뚫은 구멍이고, 선언 자리는 **그 구멍이 필요한
+  모듈**이다. 여러 모듈에 흩어져 있는 것이 정상이다 — 각 레이어가 자기 구멍을 뚫는다.
+- **adapter 는 그 구멍에 끼우는 플랫폼 구현이다.** 이 모듈과 iOS 조립 모듈에 있는 것이 전부
+  adapter다. "포트 구현" 보다 adapter 가 정확하다.
+- **구멍이 모듈 밖까지 가지 않는 경우도 있다.** 인터페이스와 adapter 가 같은 모듈의 다른
+  소스셋에 있고 바인딩도 그 모듈이 하는 경우다. **그런 adapter 를 여기로 가져오지 않는다** —
+  이 모듈로 나오는 것은 빌드 플러그인이 애플리케이션 모듈을 요구할 때뿐이다. 고르는 기준은
+  `shared/data/AGENTS.md` 의 **플랫폼 탈출구** 절이 단일 진원지다.
+- **port 이름에 플랫폼 기구를 넣지 않는다.** Android 기구 모양으로 구멍을 뚫으면 그 기구가 없는
+  플랫폼이 흉내를 내야 한다. 작업을 넘기는 포트는 "무엇을 시작한다", 상태를 읽는 포트는 "무엇을
+  관찰한다" 로 이름 짓는다.
+  **예외는 로그 수집기 하나다** — 근거는 `shared/log/AGENTS.md` 의 **인정된 예외** 절이다.
+- **Worker 를 enqueue 하는 코드는 UseCase 가 아니라 adapter 다.** `shared:domain` 의 UseCase 와
+  헷갈리지 않게 이름을 가른다.
+- **`port/` 에 인터페이스만 있는 것은 아니다.** 경계를 오가는 데이터와, 양쪽 adapter 가 같은
+  순서로 포트를 써야 하는 규칙도 거기 있다 — adapter 쪽에 같은 모양을 또 정의하지 않는다.
+  두 플랫폼이 다른 문구를 띄우거나 다른 순서로 포트를 부르면 그 자체가 버그다. 상세는
+  `shared/presentation/AGENTS.md` 가 단일 진원지다.
 
 **Rules**:
-- 새 포트가 필요하면 인터페이스는 `presentation/port/`에, adapter는 여기에 두고 `di/AppModule.kt`에 `single<Port> { PortImpl(androidContext()) }`로 등록한다.
-- **인자 전달로 해결되면 포트를 만들지 않는다.** 값 하나를 넘기면 되는 경우(예: `isDebugTabVisible`)는 Screen/NavGraph 파라미터로 준다. 포트는 ViewModel이 주입받아야 하거나 `Flow`를 노출해야 할 때만 만든다.
-- 도메인 규칙은 포트가 아니다. 순수 판정 로직은 `shared:domain`에 둔다.
+- 새 포트가 필요하면 인터페이스는 `presentation` 에, adapter 는 여기에 두고 DI 에 등록한다.
+- **인자 전달로 해결되면 포트를 만들지 않는다.** 값 하나를 넘기면 되는 경우는 화면·그래프
+  파라미터로 준다. 포트는 ViewModel 이 주입받아야 하거나 `Flow` 를 노출해야 할 때만 만든다.
+- 도메인 규칙은 포트가 아니다. 순수 판정 로직은 `shared:domain` 에 둔다.
 
 ---
 
-## What does NOT belong here
+## 여기 두지 않는 것
 
-- Business logic → `shared:domain`
-- Repository implementations → `shared:data`
-- UI composables / ViewModel → `shared:presentation`
+- 비즈니스 로직 → `shared:domain`
+- Repository 구현 → `shared:data`
+- UI Composable · ViewModel → `shared:presentation`
+- 받는 서버와 그 의존성 → `shared:data`. **이 모듈은 서버 라이브러리를 의존하지 않는다**
 
 ---
 
-## DeepLinkConstants — 어댑터일 뿐이다
+## 딥링크 — 진입 통로만 이 모듈이다
 
-경로·쿼리 키·주소 조립의 단일 진원지는 **`shared:presentation` 의
-`com.kintmin.presentation.deeplink.DeepLinkConstants`** 다. 이 모듈의 동명 객체는
-`PendingIntent` 가 `android.net.Uri` 를 요구해서 존재한다.
+OS 가 주는 Intent 에서 **주소를 문자열로 꺼내** 공통 코드에 넘기는 것까지가 이 모듈의 일이다.
+`PendingIntent` 가 `Uri` 를 요구하는 자리를 메우는 어댑터도 여기 있다.
 
 **Rules**:
-- **주소 문자열을 여기서 조립하지 않는다.** 공통 `UrlBuilder` 의 결과를 `toUri()` 로만 바꾼다.
-- 새 path/query 키는 공통 쪽 `Path`/`QueryKey` 에 더한다. 이 모듈에 복제하지 않는다.
-- `DEEP_LINK_HOST`(= 공통 `HOST`, `www.jellytube.com`) 변경 시 manifest `intent-filter` 도 함께 바꾼다.
+- **파싱 분기를 이 모듈에 두지 않는다.** 두 플랫폼이 같은 주소에 다른 답을 내면 그 자체가 버그다.
+- **주소 문자열을 여기서 조립하지 않는다.** 공통 빌더의 결과를 `Uri` 로만 바꾼다. 새 path·query
+  키는 공통 쪽에 더하고 이 모듈에 복제하지 않는다.
+- 처리한 주소는 소비해 재진입 때 다시 열리지 않게 한다.
+- 스택을 비우는 명령은 파서가 넣는다 — 호출부에서 따로 보내지 않는다.
+- 새 목적지를 더하는 절차는 `add-deep-link` 스킬이 단일 진원지다.
 
 ---
 
 ## Services
 
-### 걸음수
+- **포그라운드 서비스는 OS 가 강제하기 전에 유효한 알림으로 `startForeground()` 를 부른다.**
+- 외부에서 켜고 끌 수 있는 서비스는 `companion object` 에 시작·중지 헬퍼를 노출한다.
+- **`shared:presentation` 에서 서비스를 직접 시작하지 않는다.** Composable 이 컨텍스트로
+  서비스를 켜는 구조는 금지다. 컨트롤러 포트를 ViewModel 에 주입해 거기서 제어한다. 이 모듈
+  소속인 액티비티는 서비스 헬퍼를 직접 불러도 된다.
+- 서버를 살려 두기 위한 포그라운드 서비스는 **프로세스를 붙잡는 일만** 한다(알림, 필요하면
+  CPU·네트워크 잠금). 서버 자체와 그 수명은 `shared:data` 가 가지며, 서비스가 내려갈 때
+  UseCase 로 서버도 내린다.
 
-`StepSensorProcessor` 는 Android 걸음 센서(부팅 뒤 누적값, 재부팅으로 0 부터 다시 셈)에 맞춘 계산이라 이 모듈에 둔다. iOS 는 CMPedometer 가 그날 누적을 바로 주어 같은 계산이 필요 없다. 두 플랫폼이 같이 써야 하는 것은 차트 한 칸(`shared:domain` 의 `StepSlot`)뿐이다.
+### 플랫폼 센서 계산이 이 모듈에 있는 이유
 
-### 파일공유 서버
-
-`FileShareForegroundService` 는 **프로세스를 살려 두는 일만** 한다(포그라운드 알림, 데이터 보내기 중 CPU·Wi-Fi 잠금). 서버·광고·경로·이전 세션은 `shared:data` 의 `file_share/` 가 가지며, 규칙은 `shared/data/AGENTS.md` §파일 공유 서버가 단일 진원지다.
-
-- **이 모듈은 Ktor 에 의존하지 않는다.** 서버를 켜고 끄는 것은 컨트롤러가 UseCase 로 한다. 서비스가 알림의 중지나 OS 에 의해 내려가면 `onDestroy` 에서 UseCase 로 서버도 내린다.
-
-- Every foreground service must call `startForeground()` with a valid notification before Android OS enforces it.
-- Services that can be started/stopped externally expose a `companion object` with `startService(context)` / `stopService(context)` static helpers (see `StepForegroundService` for reference).
-- **`shared:presentation`에서 서비스를 직접 시작하지 않는다.** Composable이 `startService(context)`를 부르는 구조는 금지다. `presentation/port/`의 컨트롤러 포트(예: `StepMeasurementController`)를 ViewModel에 주입해 거기서 제어한다.
-- `MainActivity`는 이 모듈 소속이므로 서비스 companion을 직접 불러도 된다.
+Android 걸음 센서는 **부팅 뒤 누적값**을 주고 재부팅하면 0 부터 다시 센다. 그 특성에 맞춘
+보정 계산은 다른 플랫폼에 대응물이 없어 공유할 것이 없다. 두 플랫폼이 같이 써야 하는 것은
+**집계 단위**뿐이고 그것만 `shared:domain` 에 있다.
 
 ---
 
-## WorkManager Workers
+## Workers
 
-- Workers live under `worker/`. Worker 바인딩은 `di/WorkerModule.kt` 가 가진다.
-- Workers must not hold references to UI components.
-- Worker enqueue 는 `worker/starter/`의 `Start~Impl`이 담당한다(UseCase 가 아니라 adapter다). ViewModel은 `presentation/port/`의 인터페이스만 본다.
-- 읽는 쪽인 `worker/RunningTaskMonitorImpl` 도 같은 WorkManager 태그·고유 이름을 쓴다. 상수는 `Start~Impl` 의 companion 이 단일 진원지다.
+- Worker 는 `worker/`, 그 DI 는 Worker 전용 모듈이 가진다.
+- **Worker 는 UI 를 참조하지 않는다.**
+- enqueue 하는 쪽과 진행 상황을 읽는 쪽이 **같은 태그·고유 이름**을 써야 한다. 그 상수는
+  enqueue 하는 adapter 가 단일 진원지다 — 읽는 쪽에 복제하면 조용히 어긋난다.
 
 ---
 
 ## BroadcastReceivers
 
-- Receivers live under `receiver/`.
-- Receivers must be lightweight: do the minimum work, then delegate to a Service or Worker for anything long-running.
-- Register receivers that need runtime registration via the DI module.
-
----
-
-## Deep Link Handling — 진입 통로만 이 모듈이다
-
-**Flow**:
-1. `MainActivity.onNewIntent()` / `onCreate()` → `MainActivity.handleIntent(intent)`
-2. `intent.data` 를 꺼내 **문자열로** `AppViewModel.handleDeepLink(url)` 에 넘긴다(공유 파일은 `importSharedAudio`)
-3. 판정과 명령 생성은 `shared:presentation` 의 `DeepLinkParser.parse(url, 재생상태)` 가 한다
-4. 결과 `NavigationIntent` 들을 `navigationIntentChannel`(capacity=8)로 보낸다
-5. 공통 `MainNavHost` 가 `navigationIntentFlow` 를 수집해 `NavController` 를 부른다
-
-**Rules**:
-- **파싱 분기를 이 모듈에 두지 않는다.** 두 플랫폼이 같은 답을 내야 한다. 새 목적지 추가
-  절차는 `.claude/skills/add-deep-link` 가 단일 진원지다.
-- 처리 후 URI 를 소비한다: `intent.data = null`
-- `PopAll` 은 파서가 뿌리 경로 확인 직후 넣는다 — 호출부에서 따로 보내지 않는다.
-
----
-
-## NavigationIntent Rules
-
-- `NavigationIntent` 는 **`shared:presentation` 의 `navigation/`** 에 있다. 이 모듈에 두지 않는다.
-- `MainNavHost` 가 `navigationIntentFlow` 의 유일한 소비자다. 다른 곳에서 collect 금지.
+- Receiver 는 `receiver/`.
+- **가볍게 둔다.** 최소한의 일만 하고 오래 걸리는 것은 Service 나 Worker 에 넘긴다.
+- 런타임 등록이 필요한 Receiver 는 DI 를 통해 등록한다.

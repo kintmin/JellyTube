@@ -1,32 +1,29 @@
 ## Module: shared:file-share
 
-**Role**: Shared constants and DTOs for the file-sharing feature between `android:app`, `desktop`, and iOS.
+**Role**: 파일 공유·데이터 이전 프로토콜의 상수와 DTO. 그것만 둔다.
 
 ---
 
-## This module is data-only
+## 이 모듈은 데이터만 담는다
 
-`shared:file-share` contains only:
-- `FileShareConstants.kt` — port numbers, service names, mDNS service types, or any shared string/int constants needed for the file-sharing protocol
-- `FileShareDto.kt` — serializable data transfer objects used when sending or receiving file metadata over the network
-- `MigrationDto.kt` — serializable DTOs of the device-to-device data migration protocol
+양쪽(보내는 쪽·받는 쪽)이 **같은 값으로 말을 맞춰야 하는 것**만 둔다 — 포트 번호, 서비스 이름,
+mDNS 서비스 타입, 엔드포인트 경로, 헤더 이름, 네트워크로 오가는 DTO.
 
----
+## 여기 두지 않는 것
 
-## What does NOT belong here
-
-- Business logic of any kind
-- Network transport code (HTTP client, socket handling) → receiving server in `shared:data` (`file_share/`), sender in `desktop`
-- File I/O → app modules
-- UI → `shared:presentation` or `desktop`
-- Platform-specific types (`android.*`, `java.io.*`) — keep it pure Kotlin so `desktop` can also depend on it
+- 모든 종류의 비즈니스 로직
+- 네트워크 전송 코드(HTTP 클라이언트, 소켓) → 받는 서버는 `shared:data`, 보내는 쪽은 `desktop`
+- 파일 입출력 → 앱 모듈
+- UI → `shared:presentation` 또는 `desktop`
+- 플랫폼 전용 타입 — `desktop` 도 의존할 수 있도록 순수 Kotlin 으로 둔다
 
 ---
 
-## Dependency constraint
+## 의존 제약
 
-`shared:data`(the receiving server and migration client), `desktop` and `ios/shared` depend on this module. Therefore:
-- This module must have **zero platform-specific dependencies**.
-- It is a KMP module with `jvm` + `iosArm64` + `iosSimulatorArm64` targets. Code lives only in `commonMain`.
-  Android consumers get the `jvm` variant — there is no `android` target on purpose.
-- Do not add transitive dependencies here. This module must remain a leaf node in the dependency graph.
+받는 서버와 보내는 쪽, iOS 조립 모듈이 모두 이 모듈을 의존한다. 따라서
+
+- **플랫폼 전용 의존을 하나도 갖지 않는다.**
+- 코드는 `commonMain` 에만 둔다. Android 소비자는 `jvm` 변형을 쓴다 — `android` 타깃은
+  의도적으로 두지 않는다.
+- **의존성 그래프의 잎으로 남는다.** 전이 의존을 더하지 않는다.

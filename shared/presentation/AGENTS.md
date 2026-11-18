@@ -1,52 +1,37 @@
 ## Module: shared:presentation
 
-**Role**: Compose Multiplatform UI and UI state management only. No business logic. No OS-level code.
+**Role**: Compose Multiplatform UI 와 UI 상태 관리만. 비즈니스 로직 없음. OS 코드 없음.
 
 ---
 
-## 소스셋 규약 (CMP)
+## 소스셋 규약
 
 | 소스셋 | 무엇을 두는가 |
 |---|---|
-| `src/commonMain/kotlin` | **기본 자리.** 화면/ViewModel/Intent/UiState/Event/Navigation/theme/extension |
-| `src/androidMain/kotlin` | `expect` 선언의 Android `actual`, 그리고 공통화가 불가능해 의도적으로 Android 전용으로 남긴 코드 |
-| `src/androidHostTest/kotlin` | 단위테스트. **`commonTest`를 만들지 않는다** — mockk 가 JVM 전용이라 iOS 컴파일이 깨진다 |
-| `src/iosTest/kotlin` | iOS 전용 코드의 단위테스트(`kotlin.test`). `./gradlew :shared:presentation:iosSimulatorArm64Test` |
-| `src/iosMain/kotlin` | iOS `actual`(`platform/`)만. 포트의 iOS 구현은 `ios/shared` 다 |
+| `commonMain` | **기본 자리.** 화면·ViewModel·Intent·UiState·Event·Navigation·theme·extension·port |
+| `androidMain` | `expect` 선언의 Android `actual`, 그리고 공통화가 불가능해 의도적으로 남긴 코드 |
+| `androidHostTest` | 단위테스트. **`commonTest` 를 만들지 않는다** — mockk 가 JVM 전용이라 iOS 컴파일이 깨진다 |
+| `iosTest` | iOS 전용 코드의 단위테스트 |
+| `iosMain` | iOS `actual` 만. 포트의 iOS 구현은 iOS 조립 모듈이다 |
 
-**순수성 게이트는 여전히 필요하다.** macOS 에서는 iOS 컴파일이 돌아 위반을 잡아 주지만, Windows 에서 작업하면 돌지 않는다 — 그쪽에서 `commonMain` 에 Android/JVM 전용 API 를 넣어도 **컴파일러가 잡아주지 않는다.** 아래 게이트를 그 자리의 통과 기준으로 쓴다.
+### 순수성 게이트
+
+macOS 에서는 iOS 컴파일이 돌아 위반을 잡아 주지만, **Windows 에서 작업하면 `commonMain` 에
+플랫폼 전용 API 를 넣어도 컴파일러가 잡아주지 않는다.** 아래를 그 자리의 통과 기준으로 쓴다.
 
 ```powershell
 rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
   "^import (android\.|java\.|javax\.|androidx\.(activity|core|palette|work|webkit|compose\.ui\.viewinterop)\.)|^import androidx\.compose\.ui\.platform\.Local(Context|View|Configuration)|^import androidx\.lifecycle\.(lifecycleScope|repeatOnLifecycle)|^import org\.koin\.androidx|\.format\(|[^.\w]Math\.|System\.currentTimeMillis\("
 ```
 
-`^import` 로 묶은 항목은 import 줄만, 나머지는 호출 형태(`.format(` / `System.currentTimeMillis(`)만 집는다. KDoc 에 API 이름을 적는 경우를 오탐하지 않기 위해서다 — 그러니 **주석에도 호출 형태를 적지 않는다.**
+결과가 **0줄**이어야 한다. `androidx.compose.*` · `androidx.navigation.*` ·
+`androidx.lifecycle.compose.*` 는 CMP 포크가 같은 패키지명을 쓰므로 **허용**이다. 위 정규식은
+플랫폼 전용 하위 패키지와 심볼만 집어서 금지한다.
 
-> **구멍 2개를 메운 기록**: iOS 를 처음 실제로 컴파일했을 때 이 게이트가 0줄을 냈는데도 `commonMain` 4파일이 깨졌다. ① `LocalConfiguration` 이 `Local(Context|View)` 에 없었고, ② 확장 호출 형태(`"%,d"` 뒤에 붙는 서식 확장)가 `String.format(` 패턴에 걸리지 않았다. 공통 코드에 `format(` 을 호출할 정당한 자리가 없으므로 뒤쪽을 `\.format\(` 로 넓혔다.
+`^import` 로 묶은 항목은 import 줄만, 나머지는 호출 형태만 집는다. KDoc 에 API 이름을 적는 경우를
+오탐하지 않기 위해서다 — 그러니 **주석에도 호출 형태를 적지 않는다.**
 
-결과가 **0줄**이어야 한다. `androidx.compose.*` / `androidx.navigation.*` / `androidx.lifecycle.compose.*` 는 CMP·JetBrains 포크가 같은 패키지명을 쓰므로 **허용**이다. 위 정규식은 Android 전용 하위 패키지와 심볼만 집어서 금지한다.
-
-### 승격 현황 — 전환 완료
-
-| 소스셋 | 파일 수 | 내용 |
-|---|---|---|
-| `commonMain` | **212** | 화면·ViewModel·Intent·UiState·Event·Navigation·theme·extension·port 전부 |
-| `androidMain` | 12 | `platform/` actual 9 + 공통화 불가 3 |
-| `iosMain` | — | `platform/` actual 전부 |
-
-**화면 코드는 212 / 215(98.6%)가 `commonMain`** 이다. `androidMain` 에 남은 화면 코드 3개는 **의도적 잔류**이며 해소할 생각이 없다.
-
-| 파일 | 왜 공통화하지 않는가 |
-|---|---|
-| `ui/custom_ui/image_drawing/ImageDrawingView.kt` | S펜 측면 버튼(`MotionEvent.BUTTON_STYLUS_PRIMARY`)으로 지우개를 판정한다. CMP common `PointerType` 에는 `Stylus`/`Eraser` 만 있고 버튼 상태에 대응하는 API 가 없다. Apple Pencil 에는 그 버튼이 아예 없다 |
-| `ui/custom_ui/floating_component/FloatingComponentEditor.kt` | `Modifier.pointerInteropFilter` + `MotionEvent` 로 회전 제스처의 각도를 추적한다 |
-| `ui/custom_ui/floating_component/FloatingComponentView.kt` | 위 파일의 `EditableFloatingComponent` 를 쓴다 |
-
-`expect` 를 만들면 iOS actual 이 영구히 죽은 코드가 된다(루트 `AGENTS.md` §2 "단일 사용처에 추상화 금지"). iOS 에서 이 기능을 어떻게 다룰지는 Tier3 화면 분기와 함께 결정한다.
-
-> **`~Navigation.kt` 연쇄에 대한 기록**: 이 파일은 `@Serializable` Route 와 `NavGraphBuilder` 등록을 한 파일에 담는다(프로젝트 규약). 등록부가 Screen 을 참조하므로 **Screen 이 `androidMain` 이면 Route 도, 그 Route 를 `toRoute()` 로 읽는 ViewModel 도 따라 내려간다.** 승격 중에는 이 연쇄가 반복해서 걸림돌이었지만, Screen 이 전부 올라가면서 자연히 해소됐다. 파일을 쪼개 Route 만 올리는 선택지를 쓰지 않은 것이 결과적으로 맞았다.
-
+---
 
 ## 플랫폼 탈출구
 
@@ -54,76 +39,41 @@ rg -n --glob "shared/presentation/src/commonMain/**/*.kt" `
 
 | 구현 위치 | 방식 | 왜 |
 |---|---|---|
-| `presentation` 안의 `androidMain`/`iosMain` | **`expect`/`actual`** (`platform/` 패키지) | 컴파일 타임에 actual 누락을 잡는다. Koin 은 런타임에 터진다 |
-| **다른 모듈**(`android:app`) | **`interface` + Koin** (`port/` 패키지) | `expect`/`actual` 은 한 모듈 안의 소스셋 분기라 다른 모듈의 구현에 닿을 수 없다 |
+| 이 모듈의 플랫폼 소스셋 | **`expect`/`actual`** (`platform/`) | 컴파일 타임에 actual 누락을 잡는다. DI 는 런타임에 터진다 |
+| **다른 모듈**(앱·조립 모듈) | **`interface` + Koin** (`port/`) | `expect`/`actual` 은 한 모듈 안의 소스셋 분기라 다른 모듈의 구현에 닿을 수 없다 |
 
-- Compose 로컬(`LocalContext` 등)이 필요하면 `@Composable expect fun remember~()` 로 생성만 `expect` 한다.
-- **`expect class` 는 쓰지 않는다.** 공통 테스트에서 인스턴스를 만들 수 없어 그 타입을 쓰는 로직이 통째로 테스트 불가가 된다. 계약은 `interface`, 생성만 `expect`.
-- **커스텀 `CompositionLocal` 은 만들지 않는다.** 위 두 가지로 충분하고, 세 번째 경로가 생기면 "이건 어느 쪽이냐"를 매번 따져야 한다.
-- 플랫폼 API 를 타는 자리라도 **순수한 계산을 떼어내면 `iosTest` 에서 돌릴 수 있다**(`StepSlotSchedule`). 주석으로 규칙을 적기 전에 이쪽을 본다 — 루트 `AGENTS.md` §6.
-
-### 현재 탈출구 목록
-
-| 탈출구 | 방식 | 쓰는 곳 |
-|---|---|---|
-| `platform/PlatformFullScreenDialog(onDismissRequest, hideSystemBars, content)` | `expect`/`actual`. Android 는 창 배경·DIM·decor 와 `WindowInsetsControllerCompat` 를 직접 만진다(`DialogProperties.decorFitsSystemWindows` 는 Android 전용). iOS 는 `Dialog(usePlatformDefaultWidth = false)` | `JellyTubeDialog`(호출부 22곳, 공개 시그니처 불변), `FullScreenImageViewer`(`hideSystemBars = true`) |
-| `platform/PlatformBottomSheetSystemBarEffect(lightNavigationBarIcons)` | `expect`/`actual`. Android 만 실동작, iOS no-op(내비게이션바가 없다) | 바텀시트 3종 |
-| `platform/Toaster` + `@Composable expect fun rememberToaster()` | `interface` + `expect`/`actual`. Android actual 이 `LocalContext` 를 집어 만든다. iOS actual 은 모듈 내부 state holder 로 흘려 앱 루트의 `PlatformToastHost()` 가 상단 캡슐로 그린다(iOS 에는 시스템 토스트 API 가 없다) | Composable 문맥 Toast 10곳. MVI `Event.ShowToast` 계층은 순수 Kotlin 이라 무변경 |
-| `platform/rememberAudioFilePicker(startAtAudioRoot, onPicked)` | `expect`/`actual`. Android actual 이 `ActivityResultContracts.OpenMultipleDocuments` 와 "오디오" 루트용 커스텀 contract(`DocumentsContract.EXTRA_INITIAL_URI`)를 품는다. iOS 는 `UIDocumentPickerViewController` 를 `asCopy = true` 로 연다(`startAtAudioRoot` 는 대응물이 없어 무시) | `MainScreen`, `SettingScreen`(`startAtAudioRoot = true`) |
-| `platform/PermissionController` + `rememberPermissionController()` | `interface` + `expect`/`actual`. **원시 권한 문자열을 노출하지 않는다** — `AppPermission` enum(`Notification`/`MediaStorage`/`ActivityRecognition`)만 받고, OS 버전별로 어떤 권한이 실제 필요한지는 actual 이 판단한다(저장: SDK 28 이하 WRITE, 32 이하 READ, 그 위 불필요). iOS 는 `UNUserNotificationCenter`/`CMPedometer.authorizationStatus` 로 답하고, 저장은 샌드박스라 "필요 없음" 이다 | `MainScreen`(시작 시 일괄 요청), `SettingScreen`(신체 활동 인식), `SettingDeviceSaveSelectScreen`(저장) |
-| `platform/isAudioEditSupported` · `isFileShareReceiveSupported` · `isDeviceSaveSupported` · `isDataMigrationSendSupported` · `isDataMigrationReceiveSupported` | **`expect val`**(함수가 아니다 — 컴파일 시점에 정해지는 상수다). 플랫폼이 **제공하지 않기로 한** 기능의 진입점을 숨긴다. 포트를 미지원 스텁으로 막는 것과 **별개 일**이다 — 막아도 진입점이 보이면 사용자는 누른다. 기능 플래그가 아니다(켜고 끄는 설정은 DataStore) | `MainFloatingActionButton`, `SettingScreen`, `AudioMediaDetailScreen`, `PlaylistDetailListItemView` |
-| `platform/keepsReceivingInBackground` | `expect val`. 앱을 나가도 PC 수신이 계속되는가. Android 는 true(포그라운드 서비스), iOS 는 false | `SettingFileShareReceiveScreen`(iOS 에서만 주의 문구) |
-| `platform/continueInBackgroundWhile(block)` | `expect`/`actual` **suspend 함수**. iOS 는 `withBackgroundExecutionWindow` 로 잠깐 내려가도 이어서 돈다(길어야 수십 초). Android 는 그냥 실행한다(받는 쪽이 아니다) | `SettingDataMigrationReceiveViewModel` |
-| `platform/KeepScreenOnEffect(enabled)` | `@Composable expect fun`. Android 는 `LocalView.keepScreenOn`, iOS 는 `idleTimerDisabled` 를 `ScreenAwake` 로 붙잡는다(앱에 하나뿐인 값이라 붙잡은 쪽을 센다). 화면을 떠나면 풀린다 | 데이터 보내기·받기 화면. iOS PC 수신 서버는 화면이 아니라 서버 상태로 `ScreenAwake` 를 직접 붙잡는다 |
-| `platform/rememberAppVersionName()` | `expect`/`actual`. Android 는 `PackageManager`(SDK 33 분기), iOS 는 `NSBundle` 의 `CFBundleShortVersionString` | `SettingScreen` |
-| `platform/extractDominantColor(imageFileFullPath)` | `expect`/`actual` **suspend 함수**(Compose 로컬이 필요 없다). Android 는 `BitmapFactory` 2패스 다운샘플 + `Palette`, iOS 는 CoreGraphics 로 32x32 에 그린 뒤 색을 묶어 최빈 묶음의 평균색을 낸다. `Dispatchers.IO` 가 JVM 전용이라 디스패처 선택도 actual 이 한다. 호출자는 null 이면 기본 그라데이션으로 떨어진다 | `PlayerDetailScreen` |
-| `platform/AppLogSharer` + `rememberAppLogSharer()` | `fun interface` + `expect`/`actual`. 파일 목록은 data(`FetchAppLogFileFullPathsUseCase`)가 주고 이것은 넘기기만 한다. Android 는 FileProvider URI 로 `ACTION_SEND_MULTIPLE` chooser 를 띄운다. iOS 는 `UIActivityViewController` 로 파일만 넘긴다(수신자를 지정하는 공개 수단이 없어 `NoShareTarget` 이 서지 않는다). 결과는 `AppLogShareResult` enum 으로 돌려주고 **안내 문구는 호출자가 정한다** | `AppLogScreen` |
-| `platform/SystemSettingsOpener` + `rememberSystemSettingsOpener()` | `fun interface` + `expect`/`actual`. 목적지를 `SystemSettingsTarget`(`Alarm`/`Sound`) enum 으로 받고 인텐트 폴백 체인은 actual 이 품는다(SHOW_ALARMS 미지원 기기 → SET_ALARM). iOS 는 시스템 설정의 특정 화면으로 보낼 수 없어 항상 false | `SettingDeviceSaveScreen` |
-| `platform/WebViewHandle` + `rememberWebViewHandle()` + `PlatformWebView(...)` | `@Stable interface` + `expect`/`actual`. **플랫폼 뷰 객체를 노출하지 않는다** — 노출하면 그 타입이 시그니처를 타고 호출자까지 전염된다(실제로 `MainScreen` 이 `WebView` 를 들고 있었다). 핸들이 생명주기(`stopLoading`/`removeView`/`destroy`)와 생성 실패 상태까지 소유한다. Android actual 이 `AndroidView` + `WebViewClient` 스킴 라우팅(`intent://` 의 `browser_fallback_url` 폴백 포함) + 쿠키·Referer 설정을 품는다. iOS 는 `WKWebView` + `UIKitView`(**`UIKitInteropInteractionMode.Cooperative`** — 기본값이면 웹뷰 위에 겹친 Compose 가 터치를 못 받는다) + `WKUserScript` 로 SPA 주소를 추적한다 | `MainScreen`, `YoutubeWebView` |
-
-`port/` 의 포트 11개(`PlaybackController`, `AudioPreviewPlayer`, `Start*` 4종, `StepMeasurementController`, `FileShareServerController`, `DataMigrationSendController`, `MigrationSourceDiscovery`, `RunningTaskMonitor`)는 후자이며 `android:app` 의 `di/AppModule.kt` 가 바인딩한다. 배치 규칙은 `android/app/AGENTS.md` 의 **Adapter** 절과 **port 와 adapter** 절이 단일 진원지다.
-
-### 추상화 없이 치환만으로 끝낸 것
-
-- Coil 13파일: `LocalContext.current` → `coil3.compose.LocalPlatformContext.current`, `File(path)` → `path.toPath()`(okio). 경로에 공백·`#` 이 있으면 깨지는 `"file://$path"` 문자열 방식은 쓰지 않았다.
-- 폴링 3파일: `repeatOnLifecycle` + `lifecycleScope.launch` → `LifecycleResumeEffect` + `onPauseOrDispose { job.cancel() }`. **원래 코드는 RESUMED 를 벗어나도 루프가 취소되지 않는 버그였고 이 치환으로 함께 고쳐졌다.** 단 `PlayerBar` 는 `LifecycleStartEffect` 다 — RESUMED 는 화면 전환 애니메이션이 끝나야 와서 돌아온 화면의 재생바가 늦게 뜬다.
-- 뒤로가기 3곳: `androidx.activity.compose.BackHandler` → `androidx.navigationevent.compose.NavigationBackHandler`(`state = rememberNavigationEventState(NavigationEventInfo.None)`, `isBackEnabled = ...`). CMP 1.12 에서 `ui-backhandler` 가 deprecated 되어 이쪽이 공통 경로다. `YoutubeWebView` 의 `BackHandler` 는 그 파일이 `androidMain` 잔류라 손대지 않았다.
-- 유튜브 URL 판정: `androidx.core.net.toUri` → `shared:domain` 의 `YoutubeUrl`(순수 문자열 파싱 + 단위테스트 6개). 플랫폼 URI 파서는 관용적이라 판정 결과가 플랫폼마다 달라질 수 있다.
-
-**비-Composable Android 헬퍼 안의 Toast 5곳은 그대로 뒀다** — `AppLogScreen.sendAppLogByEmail`, `SettingDeviceSaveScreen.startFirstAvailableActivity`. 그 함수 자체가 `androidMain` 잔류라 추상화할 이유가 없다.
-
-
-### iOS framework 구성 — 해소됨
-
-framework 는 **`ios/shared`** 하나가 선언한다(`baseName = "shared"`, SKIE 포함). `data` 와 `presentation` 을 동시에 의존하는 모듈이 필요했고, 그것이 그 모듈의 신설 이유 전부다. 자세한 규칙은 `ios/app/AGENTS.md` 가 단일 진원지다.
-
-**`presentation` 은 export 하지 않는다.** `api` 로 의존만 한다 — export 하면 화면과 ViewModel 전체가 Obj-C 헤더로 쏟아진다. 그래서 **Swift 가 이 모듈의 타입을 볼 수 없고**, Swift 가 구현해야 하는 인터페이스(브릿지)는 `ios/shared` 에 둔다.
+- Compose 로컬이 필요하면 `@Composable expect fun remember~()` 로 **생성만** `expect` 한다.
+- **`expect class` 는 쓰지 않는다.** 공통 테스트에서 인스턴스를 만들 수 없어 그 타입을 쓰는
+  로직이 통째로 테스트 불가가 된다. 계약은 `interface`, 생성만 `expect`.
+- **커스텀 `CompositionLocal` 은 만들지 않는다.** 위 두 가지로 충분하고, 세 번째 경로가 생기면
+  "이건 어느 쪽이냐" 를 매번 따져야 한다.
+- **플랫폼 뷰 객체를 시그니처에 노출하지 않는다.** 노출하면 그 타입이 호출자까지 전염된다.
+  핸들이 생명주기와 생성 실패 상태까지 소유하고, 호출자는 그 핸들만 본다.
+- **기능을 제공하지 않는 플랫폼은 진입점을 숨긴다.** `expect val` 상수로 가린다 — 함수가 아니다.
+  포트를 미지원 스텁으로 막는 것과 **별개 일**이다(막아도 진입점이 보이면 눌린다).
+  **기능 플래그가 아니다** — 켜고 끄는 설정은 저장소에 둔다.
+- 플랫폼 API 를 타는 자리라도 **순수한 계산을 떼어내면 `iosTest` 에서 돌릴 수 있다.** 주석으로
+  규칙을 적기 전에 이쪽을 본다 — 루트 `AGENTS.md` §6.
 
 ---
 
 ## 포트 (`port/`)
 
-Android 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 구현체는 `android:app` 에 둔다. 배치 규칙과 현재 포트 목록은 `android/app/AGENTS.md` 의 **Adapter** 절과 **port 와 adapter** 절이 단일 진원지다.
+OS 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 구현은 앱·조립 모듈에 둔다. 배치 규칙은
+`android/app/AGENTS.md` 의 **port 와 adapter** 절이 단일 진원지다.
 
-**iOS 구현은 이 모듈에 두지 않고 `ios/shared` 의 `adapter/` 에 둔다.** Android 구현이 `android:app` 에 있는 것과 같은 자리다. 이 모듈은 화면이고, adapter는 OS 기능(걸음 측정·백그라운드 작업·로컬 알림)이다. 바인딩은 `ios/shared` 의 `adapter/IosAdapterModule.kt`.
-
-- **인자 전달로 해결되면 포트를 만들지 않는다.** 값 하나를 넘기면 되는 경우(예: `isDebugTabVisible`)는 Screen/NavGraph 파라미터로 받는다.
+- **인자 전달로 해결되면 포트를 만들지 않는다.** 값 하나를 넘기면 되는 경우는 화면·그래프
+  파라미터로 받는다.
 - 순수 판정 로직은 포트가 아니다. `shared:domain` 에 둔다.
 
 ### `port/model/` — 포트 경계를 오가는 데이터
 
-포트 자체는 인터페이스지만, 그 경계를 넘는 데이터와 **양쪽 adapter 가 같은 말을 써야 하는 사용자향 문구**는 여기 한 벌만 둔다.
+포트 자체는 인터페이스지만, 그 경계를 넘는 데이터와 **양쪽 adapter 가 같은 말을 써야 하는
+사용자향 문구**는 여기 한 벌만 둔다.
 
-| 파일 | 무엇 | 등장 자리 |
-|---|---|---|
-| `MediaControlData` · `AudioMediaMediaControlData` | `PlaybackController` 에 실리는 재생 항목과 `AudioMedia` → 그 타입 변환 | 포트 시그니처 |
-| `RunningTask` | `RunningTaskMonitor` 가 돌려주는 작업 종류. 사용자향 `label` 을 들고 있다 | 포트 시그니처 |
-| `WorkResultNotice` · `LyricsVariantLabel` | 작업이 끝났을 때 띄우는 알림의 제목·본문·딥링크 | **adapter 내부** |
-
-- **포트 시그니처에 실리지 않아도 여기다.** `WorkResultNotice` 는 어느 포트 인자·반환에도 나오지
-  않고 `Start*` adapter 와 알림 코드가 내부에서만 쓴다. 그래도 방향이 같다 — **이 모듈이 선언하고
-  플랫폼이 소비한다.** `deepLink` 를 `deeplink/DeepLinkConstants` 로 조립하므로 `shared:domain`
-  으로 내릴 수도 없다(domain 은 아무것도 의존하지 않는다).
+- **포트 시그니처에 실리지 않아도 여기다.** adapter 가 내부에서만 쓰는 것도 방향이 같다 —
+  **이 모듈이 선언하고 플랫폼이 소비한다.** 딥링크를 조립하는 것은 `shared:domain` 으로
+  내릴 수도 없다(domain 은 상위 레이어를 의존하지 않는다).
 - **화면이 쓰는 데이터는 여기가 아니다.** 그쪽은 `~UiState` 다. 판정 기준은 소비처다 — 화면이
   읽으면 `UiState`, adapter 가 읽으면 `port/model/`.
 
@@ -132,204 +82,137 @@ Android 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 �
 포트 **사용법**이 두 플랫폼에서 같아야 하면 확장 함수로 `port/` 직하에 둔다. 인터페이스가 아닌
 파일이 섞이지만, 그 대가로 adapter 두 벌이 같은 로직을 베끼지 않는다.
 
-| 파일 | 무엇 | 쓰는 쪽 |
-|---|---|---|
-| `DownloadedMediaQueue` (`PlaybackController.addDownloadedMedia`) | 받은 곡을 전체·다운로드 대상 플레이리스트 큐 양쪽에 넣고, 맨 위 설정을 따른다 | `android:app` 의 `YoutubeDownloadWorker`, `ios/shared` 의 `IosStartYoutubeDownload` |
-
 - **ViewModel 이 쓰는 포트 호출은 여기가 아니다.** 그건 그냥 ViewModel 안에서 부른다. 이 자리는
   **adapter 두 벌이 같은 순서로 포트를 때려야 할 때**만 쓴다.
-- 포트가 끼지 않는 순수 판정은 `shared:domain` 이다. 위 함수는 `PlaybackController` 를 받으므로
-  domain 으로 내려갈 수 없다(domain 은 아무것도 의존하지 않는다).
-
-> **`work_notice/` 와 `playback/` 을 걷어낸 기록**: 둘 다 이 모듈 최상위 패키지였는데 소비처가
-> 모듈 안에 **0건**이었다 — 전부 `android:app` 의 Worker·알림과 `ios/shared` 의 adapter 였다.
-> 화면 모듈의 최상위에 화면이 안 쓰는 폴더가 둘 서 있어 "여기 왜 있지"가 반복됐다. 데이터인
-> `WorkResultNotice`·`LyricsVariantLabel` 은 `port/model/` 로, 동작인 `DownloadedMediaQueue` 는
-> `port/` 직하로 갈라 옮겼다. **판정은 소비처가 한다** — 화면이 안 쓰고 adapter 가 쓰면 `port` 쪽이다.
 
 ---
 
 ## Architecture: MVI
 
-Every screen follows a strict MVI structure. Each screen feature lives in its own package and contains exactly these files:
+화면 하나는 자기 패키지에 정확히 이 파일들을 갖는다.
 
-| File | Responsibility |
+| 파일 | 책임 |
 |---|---|
-| `~Screen.kt` | Composable screen entry point + stateful wrapper that wires ViewModel |
-| `~ViewModel.kt` | Holds `uiState: StateFlow<~UiState>` and `eventFlow: Flow<~Event>`, processes intents |
-| `~Intent.kt` | Sealed class/interface of all user actions |
-| `~UiState.kt` | Immutable data class representing everything the UI needs to render |
-| `~Event.kt` | Sealed class of one-shot events (navigation, toast, etc.) |
+| `~Screen.kt` | Composable 진입점 + ViewModel 을 배선하는 stateful 래퍼 |
+| `~ViewModel.kt` | `uiState: StateFlow` 와 `eventFlow: Flow` 를 노출하고 intent 를 처리 |
+| `~Intent.kt` | 모든 사용자 액션의 sealed 계층 |
+| `~UiState.kt` | 화면이 그리는 데 필요한 전부를 담은 불변 data class |
+| `~Event.kt` | 일회성 이벤트(네비게이션·토스트 등)의 sealed 계층 |
 
 **ViewModel rules**:
-- Use `viewModelScope` for all coroutines. Never use `GlobalScope`.
-- Expose `uiState` as `StateFlow` (via `MutableStateFlow` internally).
-- Expose `eventFlow` as `Flow` (via `Channel` internally, converted with `receiveAsFlow()`).
-- Accept all user actions through a single `sendIntent(intent: ~Intent)` function.
-- When a `StateFlow`'s initial value differs from the async-loaded value for a first-frame-visible field, seed the initial value from a route argument to avoid a load flash — see **Navigation → Seeding initial UI state from the previous screen**.
+- 코루틴은 `viewModelScope` 로만. `GlobalScope` 금지.
+- `uiState` 는 `StateFlow` 로 노출한다(내부는 `MutableStateFlow`).
+- `eventFlow` 는 `Flow` 로 노출한다(내부는 `Channel`).
+- 모든 사용자 액션은 `sendIntent(intent)` **하나**로 받는다.
+- 플랫폼 컨텍스트·뷰를 참조하지 않는다.
 
 **Screen rules**:
-- The stateful overload (no parameters except navigation lambdas) obtains the ViewModel via `koinViewModel<~ViewModel>()`.
-- It collects `eventFlow` inside `LaunchedEffect(Unit)` and dispatches to navigation lambdas or other side effects.
-- It calls a stateless overload of `~Screen(uiState, sendIntent, ...)` to separate rendering from state management.
+- stateful 오버로드가 DI 로 ViewModel 을 얻는다.
+- `eventFlow` 를 수집해 네비게이션 람다나 다른 부수효과로 보낸다.
+- 렌더링과 상태 관리를 가르기 위해 **stateless 오버로드**를 따로 둔다.
 
 ---
 
-## Scaffold Requirement
+## Scaffold
 
-**Every composable that represents a full page (named `~Screen`) MUST use `Scaffold`.**
+**전체 페이지를 나타내는 Composable(`~Screen`)은 반드시 `Scaffold` 를 쓴다.**
 
-- Apply `innerPadding` to the root content container. Failing to do so breaks edge-to-edge rendering.
-- Correct pattern:
-
-```kotlin
-Scaffold(
-    modifier = Modifier.fillMaxSize(),
-    topBar = { ... },
-) { innerPadding ->
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding),
-    ) {
-        // content
-    }
-}
-```
-
-- Do NOT skip `innerPadding` by using `Modifier.padding(0.dp)` or ignoring it entirely.
-- Views (composables not representing a full page, named `~View`) do NOT need `Scaffold`.
+- `innerPadding` 을 루트 컨테이너에 적용한다. 빠뜨리면 edge-to-edge 렌더링이 깨진다.
+- `Modifier.padding(0.dp)` 로 우회하거나 무시하지 않는다.
+- 전체 페이지가 아닌 Composable(`~View`)은 `Scaffold` 가 필요 없다.
 
 ---
 
 ## Color
 
-**All colors must come from `com.kintmin.presentation.theme.Color.kt`. Hardcoded color values are forbidden.**
+**모든 색은 theme 의 색 정의나 `MaterialTheme.colorScheme.*` 에서 온다. 하드코딩 금지.**
 
-- Allowed: `seaBlue100`, `gray80`, `bloodyRed60`, `MaterialTheme.colorScheme.*`, etc.
-- Forbidden: `Color(0xFFABCDEF)`, `Color.Red`, `Color(255, 0, 0)`
-
-If a required color is missing from `Color.kt`, add it there first, then use it.
+필요한 색이 없으면 **색 정의에 먼저 더하고** 그다음 쓴다.
 
 ---
 
 ## Preview
 
-**Every `@Composable` function must have a corresponding `@Preview`.**
+**모든 `@Composable` 에 대응하는 `@Preview` 를 둔다.**
 
-- Wrap all previews in `JellyTubeTheme { ... }`.
-- Place the preview function in the same file as the composable.
-- **`androidx.compose.ui.tooling.preview.Preview` 를 쓴다.** CMP 가 그 패키지를 멀티플랫폼으로 제공한다(`org.jetbrains.compose.ui:ui-tooling-preview`). `org.jetbrains.compose.ui.tooling.preview.Preview`(components 쪽)는 CMP 1.12 에서 deprecated 됐다.
-- **파라미터를 붙이지 않는다** — 멀티플랫폼 `@Preview` 는 `showBackground`/`backgroundColor` 를 받지 않는다. 배경이 필요하면 `JellyTubeTheme` 안에서 `Surface`/`Box` 로 직접 깐다.
-- Provide realistic mock data. If a `UiState` is needed, add a `getMock()` companion factory.
-
-```kotlin
-@Preview
-@Composable
-fun FooViewPreview() {
-    JellyTubeTheme {
-        FooView(
-            data = FooUiState.getMock(),
-            sendIntent = {},
-        )
-    }
-}
-```
+- 프리뷰는 앱 테마로 감싼다.
+- 프리뷰 함수는 대상 Composable 과 같은 파일에 둔다.
+- **멀티플랫폼 `@Preview` 에 파라미터를 붙이지 않는다** — 배경 관련 인자를 받지 않는다. 배경이
+  필요하면 테마 안에서 직접 깐다.
+- 현실적인 mock 데이터를 준다. `UiState` 가 필요하면 companion 팩토리로 만든다.
 
 ---
 
 ## Animation
 
-- All animation composables and helpers belong in `com.kintmin.presentation.animation/`.
-- Do NOT write complex animation code inline inside a screen or view composable.
-- Extract the animation into a dedicated composable in `animation/` and call it from the view.
-- Simple state-driven animations (e.g., `AnimatedVisibility`, `animateContentSize`) are acceptable inline.
+- 애니메이션 Composable 과 헬퍼는 `animation/` 에 둔다.
+- **복잡한 애니메이션을 화면·뷰 안에 인라인으로 쓰지 않는다.** `animation/` 의 전용 Composable 로
+  빼서 호출한다.
+- 단순한 상태 기반 애니메이션은 인라인으로 둬도 된다.
 
 ---
 
-## View Decomposition
+## View 분해
 
-When a composable grows complex, split it into `~View` composables in a dedicated sub-package.
+Composable 이 복잡해지면 `~View` 로 쪼개 하위 패키지에 둔다.
 
-**Reference**: `com.kintmin.presentation.ui.main.playlist.list_item`
-- `PlaylistItemView.kt` — the list item composable
-- `PlaylistItemAddView.kt` — the add-item variant
-
-**Rules**:
-- Sub-views go in a sub-package named after the logical grouping (e.g., `list_item/`, `header/`, `dialog/`).
-- Each `~View.kt` file contains one primary composable and its preview.
-- A view file should not exceed ~200 lines. If it does, decompose further.
+- 하위 뷰는 **논리적 묶음 이름의 하위 패키지**에 둔다.
+- `~View.kt` 한 파일에 주 Composable 하나와 그 프리뷰.
+- **뷰 파일이 200줄을 넘기면 더 쪼갠다.**
 
 ---
 
 ## Navigation
 
-**Every screen must have a corresponding `~Navigation.kt` file in a `navigation/` sub-package.**
+**모든 화면은 `navigation/` 하위 패키지에 대응하는 `~Navigation.kt` 를 갖는다.**
 
-Follow this exact structure (see existing files for reference):
-
-```kotlin
-// 1. Route — @Serializable data class or object
-@Serializable
-data class FooScreenRoute(val id: Int)
-
-// 2. NavController extension to navigate TO this screen
-fun NavController.navigateToFooScreen(
-    id: Int,
-    navOptions: NavOptions,
-) = navigate(FooScreenRoute(id), navOptions)
-
-// 3. NavGraphBuilder extension to REGISTER this screen
-fun NavGraphBuilder.fooScreen(
-    navigateToBack: () -> Unit,
-    // ...other navigation callbacks
-) {
-    composable<FooScreenRoute> { backStackEntry ->
-        FooScreen(
-            navigateToBack = navigateToBack,
-        )
-    }
-}
-```
+그 파일은 세 가지를 담는다.
+1. `@Serializable` 라우트 — 인자가 있으면 `data class`, 없으면 `object`
+2. 이 화면으로 가는 `NavController` 확장 — `navigateTo~`
+3. 이 화면을 등록하는 `NavGraphBuilder` 확장 — 화면 이름의 camelCase
 
 **Rules**:
-- Routes are `@Serializable`. Use a `data class` when the route carries arguments, an `object` when it does not.
-- The `NavController` extension is named `navigateTo~`.
-- The `NavGraphBuilder` extension is named after the screen in camelCase (e.g., `fooScreen`, `playlistDetail`).
-- Navigation callbacks passed into the Screen composable are plain lambdas (`() -> Unit`, `(Int) -> Unit`). Never pass `NavController` directly into a Screen.
-- If the screen is part of a nested graph, wrap it in a `navigation<GraphRoute>` block with its own `@Serializable` graph route object (see `SettingScreenNavigation.kt` for reference).
+- **화면에 `NavController` 를 넘기지 않는다.** 네비게이션 콜백은 평범한 람다다.
+- 중첩 그래프에 속하면 자기 `@Serializable` 그래프 라우트를 가진 블록으로 감싼다.
+- `enum` 을 라우트 인자로 받으면 **등록부와 라우트 역직렬화 양쪽에** 타입 맵을 넘긴다.
+  Navigation 은 기본 타입이 아닌 인자를 리플렉션으로 추론하는데 **Kotlin/Native 에는
+  리플렉션이 없고**, 기본 제공 enum 타입은 JVM 전용이다. 빠뜨리면 Android 에서는 통과하고
+  iOS 에서만 그래프 생성이 터진다.
 
-### Seeding initial UI state from the previous screen (avoid load flash)
+### 첫 프레임 깜빡임을 막는 시드
 
-When a screen's `~UiState` field is filled from an **async source** (a `Flow`/DB/UseCase whose first emission arrives after the first frame) **and** that field is already known synchronously by the previous screen at the moment of navigation, **pass it as a route argument and use it as the initial value** of the `StateFlow` (`stateIn(..., initialValue)` or the `MutableStateFlow` seed). Otherwise the first frame renders the async default (e.g. `false`) and then "flips" when the real value arrives — a visible flash.
-
-**Reference**: `PlaylistDetailScreenRoute.isBasePlaylist`. The playlist list already holds `PlaylistItemUiState.isBasePlaylist`, so it is passed through the route and used as the header's `stateIn` initial value; the base-playlist edit UI no longer flickers on entry.
+`~UiState` 의 필드가 **비동기 출처**(첫 방출이 첫 프레임 뒤에 오는 것)에서 채워지면서 **그 값을
+직전 화면이 이미 알고 있다면**, 라우트 인자로 넘겨 `StateFlow` 의 초기값으로 쓴다. 그러지 않으면
+첫 프레임이 기본값을 그리고 실제 값이 도착할 때 "튄다".
 
 **Rules**:
-- The route arg is a **seed only**. The async flow stays the source of truth and overrides the seed on its first emission — so a wrong/absent seed is never a correctness bug, only a returned flash. Never gate logic on the seed instead of the loaded value.
-- Add the seed as a **trailing parameter with a default** on both the route `data class` and the `navigateTo~` function, so callers that do not know the value (deep links, cross-feature entry points) keep compiling and simply fall back to the async default.
-- Only seed values the previous screen **already has in hand**. Do NOT fetch extra data upstream, or widen a UseCase, just to produce a seed — that trades a flash for a worse coupling.
-- This applies to any first-frame-visible field gated on async load (base/system flags, tab selection, header titles already shown in the list, etc.), not just `isBasePlaylist`.
+- 라우트 인자는 **시드일 뿐이다.** 비동기 흐름이 진실의 출처로 남아 첫 방출에서 시드를 덮는다 —
+  그래서 시드가 틀리거나 없어도 **정확성 버그가 아니고** 깜빡임만 돌아온다. 시드로 로직을
+  가르지 않는다.
+- 시드는 라우트와 `navigateTo~` 양쪽에 **기본값 있는 마지막 파라미터**로 더한다. 값을 모르는
+  호출자(딥링크, 다른 기능에서의 진입)가 계속 컴파일되고 비동기 기본값으로 떨어지게 한다.
+- **직전 화면이 이미 손에 들고 있는 값만** 시드한다. 시드를 만들려고 상위에서 데이터를 더 읽거나
+  UseCase 를 넓히지 않는다 — 깜빡임을 더 나쁜 결합과 바꾸는 셈이다.
 
-### 딥링크와 최상위 네비게이션 — 이 모듈이 소유한다
+---
 
-딥링크 판정과 최상위 그래프는 `commonMain` 에 있다. 두 플랫폼이 같은 주소에 다른 답을 내면
-그 자체가 버그이므로 **판정에 플랫폼 분기를 두지 않는다.**
+## 딥링크와 최상위 네비게이션 — 이 모듈이 소유한다
+
+딥링크 판정과 최상위 그래프는 `commonMain` 에 있다. **두 플랫폼이 같은 주소에 다른 답을 내면 그
+자체가 버그이므로 판정에 플랫폼 분기를 두지 않는다.**
 
 | 자리 | 무엇 |
 |---|---|
-| `deeplink/DeepLinkConstants` | 경로·쿼리 키·주소 조립의 단일 진원지. 주소를 **문자열**로 다룬다 |
-| `deeplink/UrlParts` | `android.net.Uri`/`NSURL` 을 대신하는 파서. 정규화하지 않고, userinfo 는 마지막 `@` 까지, 역슬래시는 WHATWG 와 같게 authority 의 끝, 쿼리 중복 키는 첫 번째가 이긴다 |
-| `deeplink/DeepLinkParser` | 주소 → `List<NavigationIntent>`. **순수 함수**이고 포트를 주입받지 않는다. 우리 주소가 아니면 빈 목록 |
-| `navigation/NavigationIntent` | 최상위 화면 이동 명령 |
-| `navigation/MainNavHost` | `NavHost` + `navigationIntentFlow` 소비 |
+| 상수 | 경로·쿼리 키·주소 조립의 단일 진원지. 주소를 **문자열**로 다룬다 |
+| 파서 유틸 | 플랫폼 URI 파서를 대신한다 — 같은 주소를 두 플랫폼이 다르게 읽을 수 있어서다 |
+| 주소 파서 | 주소 → 이동 명령 목록. **순수 함수**이고 포트를 주입받지 않는다 |
+| 이동 명령 | 최상위 화면 이동 명령 |
+| 최상위 그래프 | `NavHost` 와 이동 명령 소비 |
 
-플랫폼에 남는 것은 진입 통로와 OS 배선뿐이다 — Android 는 Manifest `intent-filter`,
-`MainActivity.handleIntent()`(Intent → 문자열, `AppViewModel.handleDeepLink` 로 넘긴다), `PendingIntent` 용 `Uri` 어댑터
-(`android:app` 의 `com.kintmin.jellytube.deeplink.DeepLinkConstants`). iOS 는 `onOpenURL`.
-
-새 목적지를 더하는 절차는 `.claude/skills/add-deep-link` 가 단일 진원지다.
+플랫폼에 남는 것은 진입 통로와 OS 배선뿐이다.
 
 > **분기 안에서 포기하면 그때까지 쌓인 명령은 그대로 나간다.** 뿌리 경로가 맞은 뒤에 넣는
-> `PopAll` 이 그래서 남는다. 중간 포기 지점을 옮기면 동작이 바뀌므로 `DeepLinkParserTest` 가
-> 분기별 순서를 고정한다.
+> 스택 비우기가 그래서 남는다. 중간 포기 지점을 옮기면 동작이 바뀌므로 파서 테스트가 분기별
+> 순서를 고정한다.
+
+새 목적지를 더하는 절차는 `add-deep-link` 스킬이 단일 진원지다.

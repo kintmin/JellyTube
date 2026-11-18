@@ -1,28 +1,29 @@
 ## Module: desktop
 
-**Role**: Compose Desktop app entry point, file upload client, mDNS discovery, and runtime implementations.
+**Role**: Compose Desktop 앱. 파일 공유의 **보내는 쪽**과 기기 탐색을 맡는다.
 
 ---
 
-## What does NOT belong here
+## 여기 두지 않는 것
 
-- File-sharing protocol constants and DTOs → `shared:file-share`
-- Business logic → `shared:domain`
-- Data persistence → `shared:data`
-
----
-
-## File-sharing pattern
-
-Desktop acts as the **sender** in the file-share flow.
-
-1. `NsdDiscovery` discovers receiving devices (Android·iOS) via mDNS (`FileShareConstants.NSD_SERVICE_TYPE`). It takes the first device found — PC 수신 기기는 주변에 하나라는 전제다. 데이터 이전 중인 기기는 이 타입을 광고하지 않고, 업로드도 409 로 거절한다.
-2. `FileUploader` sends files to the discovered device's HTTP endpoint. 업로드는 `X-File-Name`(확장자 필수)과 Content-Length 를 싣는다. 받는 쪽이 둘 다 검증한다.
-3. Port numbers, service names, and endpoint paths come from `shared:file-share` (`FileShareConstants`). Do not hardcode them here.
+- 파일 공유 프로토콜 상수·DTO → `shared:file-share`
+- 비즈니스 로직 → `shared:domain`
+- 데이터 영속화 → `shared:data`
 
 ---
 
-## Runtime implementations
+## 파일 공유에서의 자리
 
-- **Log implementation**: Register a desktop-appropriate logger (e.g., `println`, a file logger) at app startup.
-- These implementations are analogous to `android:app`'s `log_impl/` — they are runtime-bound, not OS-level features.
+이 앱은 **보내는 쪽**이다. 받는 쪽은 모바일 앱이고, 받는 서버는 `shared:data` 가 갖는다.
+
+- **포트·서비스 이름·엔드포인트 경로를 여기에 적지 않는다.** 전부 `shared:file-share` 에서
+  가져온다. 한쪽만 바뀌면 탐색이 조용히 0건이 되거나 업로드가 거절된다.
+- 받는 기기가 검증하는 것(파일 이름·길이 등)은 보내는 쪽이 **반드시 실어 보낸다.** 무엇을
+  검증하는지는 받는 쪽 모듈이 정한다.
+
+---
+
+## 런타임 구현
+
+로깅처럼 플랫폼마다 달라지는 구현은 앱 시작 때 등록한다. 이것들은 OS 기능이 아니라
+**런타임에 묶인 구현**이라, 모바일 앱 모듈이 같은 자리에서 하는 일과 성격이 같다.

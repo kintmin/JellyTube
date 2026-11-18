@@ -12,7 +12,7 @@
 ## 프로젝트 개요
 Kotlin Multiplatform(KMP) 멀티플랫폼 앱. 하나의 공유 코어를 Android / iOS / Desktop이 공유한다.
 - **공유 코어 `shared/`**: `domain`(순수 비즈니스 로직 — 모델/Repository 인터페이스/UseCase), `data`(구현 — RepositoryImpl/Room/네트워크/Python 브릿지), `presentation`(Compose Multiplatform UI, MVI), `log`(로깅 API), `file-share`(파일공유 상수/DTO)
-- **Android `android/`**: `app`(진입점/DI/네비/딥링크 + OS 기능 — Service/Worker/Receiver/Notification/DeepLinkConstants + `shared:presentation` 포트 구현)
+- **Android `android/`**: `app`(진입점/DI/네비/딥링크 진입 통로 + OS 기능 — Service/Worker/Receiver/알림 + `shared:presentation` 포트 구현)
 - **iOS `ios/`**: `shared`(Composition Root — framework/SKIE/Koin/Compose 진입점) + `app`(Xcode 앱 — Swift 브릿지/Info.plist). UI는 `shared:presentation`(CMP)을 그대로 쓴다
 - **Desktop `desktop/`**: Compose Desktop, 파일 전송 sender + mDNS
 
@@ -45,11 +45,10 @@ Kotlin Multiplatform(KMP) 멀티플랫폼 앱. 하나의 공유 코어를 Androi
 - 모듈 경로는 콜론: `:shared:data` 등.
 - **Windows / PowerShell**: Gradle은 `./gradlew.bat`(NOT `./gradlew`).
   iOS Kotlin 은 **컴파일까지 검증된다** — `:ios:shared:compileKotlinIosSimulatorArm64` 와
-  `:ios:shared:compileTestKotlinIosSimulatorArm64`(실기기는 `…IosArm64`). Kotlin 2.4.20 의
-  klib 크로스 컴파일이 기본 동작이고 `~/.konan` 의 Windows 네이티브 컴파일러가 `platform.*`
-  인터롭까지 풀어 준다 — gradle.properties 에 따로 켠 플래그는 없다.
-  **프레임워크 링크(`linkDebugFramework…`)·`xcodebuild`·테스트 실행은 macOS 전용**이다
-  (Apple SDK/링커가 필요하고 `~/.konan/dependencies` 는 Windows 에서 채울 수 없다).
+  `:ios:shared:compileTestKotlinIosSimulatorArm64`(실기기는 `…IosArm64`). klib 크로스 컴파일이
+  기본 동작이라 따로 켠 플래그는 없다.
+  **프레임워크 링크(`linkDebugFramework…`)·`xcodebuild`·테스트 실행은 macOS 전용**이다 —
+  Apple SDK 와 링커가 필요하고 그 의존성은 Windows 에서 받을 수 없다.
 - **macOS**: `./gradlew`. iOS 프레임워크는 `./gradlew :ios:shared:linkDebugFrameworkIosSimulatorArm64`, 앱은
   `xcodebuild -project ios/app/JellyTubeIos.xcodeproj -scheme JellyTubeIos -destination 'platform=iOS Simulator,name=iPhone 17' build`.
   **클론 직후에는 `scripts/setup-ios-vendor.sh` 를 한 번 돌려야 한다** — `ios/app/Vendor/`(Python.xcframework · yt-dlp · pykakasi)가 gitignore 대상이라 비어 있다.
