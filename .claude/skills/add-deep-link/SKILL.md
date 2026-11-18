@@ -1,63 +1,48 @@
 ---
 name: add-deep-link
-description: JellyTube에 새 딥링크 목적지를 규약대로 추가한다. 상수/빌더/파싱/NavigationIntent/MainNavHost는 shared:presentation(commonMain), Manifest intent-filter만 android:app. "딥링크 추가", "deep link 연결", "외부 링크로 화면 진입" 요청 시 사용.
+description: JellyTube에 새 딥링크 목적지를 규약대로 추가한다. 상수·명령·파싱·그래프는 공유 presentation 모듈에, 플랫폼에는 진입 통로만 둔다. "딥링크 추가", "deep link 연결", "외부 링크로 화면 진입" 요청 시 사용.
 ---
 
 # Add Deep Link Destination
 
-딥링크는 **`shared:presentation` 의 `commonMain` 에서 끝난다.** 상수·주소 조립은
-`com.kintmin.presentation.deeplink`, 파싱은 같은 패키지의 `DeepLinkParser`, 화면 이동 명령과
-그래프는 `com.kintmin.presentation.navigation` 이다.
-
-플랫폼에 남는 것은 **진입 통로와 OS 배선뿐**이다 — Android 는 Manifest `intent-filter` 와
-`MainActivity.handleIntent(intent)`(Intent → 문자열), `PendingIntent` 가 `Uri` 를 요구하는
-자리를 메우는 `com.kintmin.jellytube.deeplink.DeepLinkConstants` 어댑터. iOS 는 `onOpenURL`.
-
-**판정은 공통이 하고 플랫폼은 실행만 한다.** 두 플랫폼이 같은 주소에 다른 답을 내면 그 자체가
-버그다. 단일 진원지는 `shared/presentation/AGENTS.md` 와 `android/app/AGENTS.md` 이며,
-작성 전 `DeepLinkConstants` 와 `DeepLinkParser.parse()` 의 기존 패턴을 확인한다.
+**이 스킬이 있는 이유는 한 목적지가 다섯 자리에 걸쳐 있어서다.** 한 곳만 빠뜨려도 조용히
+동작하지 않는다 — 규약 자체는 `shared/presentation/AGENTS.md` 와 `android/app/AGENTS.md` 가
+단일 진원지이므로 작성 전에 둘을 읽는다.
 
 ## 입력 확인
-- 진입할 대상 화면(이미 존재하는지 — 없으면 `new-mvi-screen` 먼저)
+- 진입할 대상 화면이 이미 있는지(없으면 화면을 먼저 만든다)
 - path 세그먼트, query 파라미터 키
-- 외부 인터셉트 필요 여부(필요 시 Manifest intent-filter)
+- 외부에서 인터셉트해야 하는지(그래야 플랫폼 진입 통로를 건드린다)
 
-## 5단계 절차 (순서·모듈 고정)
-1. **`presentation/deeplink/DeepLinkConstants`** — `Path` 에 path 상수, `QueryKey` 에 query 키를
-   `const val` 로 추가. 주소 조립이 필요하면 `UrlBuilder` 에 **문자열 반환** 함수를 더한다.
-   값에 임의 문자가 들어가면 `UrlParts.encodeQueryValue` 를 거친다.
-2. **`presentation/navigation/NavigationIntent`** — 새 목적지 엔트리 추가.
-3. **`presentation/deeplink/DeepLinkParser`** — `parse()` 에 분기 추가.
-   **포트를 주입받지 않는다** — 런타임 상태가 필요하면 파라미터로 받는다.
-4. **`presentation/navigation/MainNavHost`** — 해당 `NavigationIntent` 수신 시
-   `NavController.navigateTo~()` 호출하도록 `consumeNavigationIntent` 에 연결.
-5. **플랫폼 진입 통로** — 외부에서 인터셉트해야 하면 `android:app` 의 `AndroidManifest.xml`
-   `intent-filter` 갱신. `PendingIntent` 에서 열어야 하면 `android:app` 의
-   `DeepLinkConstants.UriBuilder` 에 어댑터 한 줄(`UrlBuilder.~().toUri()`)을 더한다.
+## 다섯 자리 — 순서 고정
+
+1. **상수** — path·query 키를 상수로 더한다. 주소를 조립해야 하면 **문자열을 돌려주는**
+   빌더 함수를 같은 자리에 더한다. 값에 임의 문자가 들어가면 쿼리 인코딩을 거친다.
+2. **이동 명령** — 새 목적지 엔트리를 더한다.
+3. **파서** — 주소 → 명령 분기를 더한다. **포트를 주입받지 않는다** — 런타임 상태가 필요하면
+   파라미터로 받는다.
+4. **그래프** — 그 명령을 받으면 해당 화면으로 이동하도록 소비 지점에 연결한다.
+5. **플랫폼 진입 통로** — 외부 인터셉트가 필요할 때만. Android 는 Manifest 의 intent-filter,
+   `PendingIntent` 에서 열어야 하면 앱 모듈의 `Uri` 어댑터에 한 줄.
+
+> **2·3·4 가 가장 많이 빠진다.** 1 만 더하고 끝내면 주소를 만들 수는 있지만 열리지 않는다.
 
 ## 강제 규칙
-- **주소 문자열을 `presentation` 의 `DeepLinkConstants` 밖에서 조립하지 않는다.** 안드로이드
-  어댑터도 조립하지 않고 공통 결과를 `Uri` 로만 바꾼다.
-- **`DeepLinkParser.parse()` 는 순수 함수다.** 우리 주소가 아니면 빈 목록을 돌려주고 호출자는
-  아무것도 하지 않는다. 검증 실패를 사용자에게 알리지 않는다.
-- 새 목적지로 가기 전 `NavigationIntent.PopAll` 이 먼저 나가야 한다(파서가 뿌리 경로 확인
-  직후 넣는다).
-- 분기 안에서 포기하면 **그때까지 쌓인 명령은 그대로 나간다.** 중간 포기 지점을 바꾸면
-  동작이 바뀐다 — `DeepLinkParserTest` 가 분기별 순서를 고정한다.
-- `navigationIntentFlow` 의 유일한 소비자는 `MainNavHost` — 다른 곳에서 collect 금지.
-- 딥링크 처리 후 URI 소비: Android 는 `intent.data = null`.
-- `DeepLinkConstants.HOST` 변경 시 Manifest `intent-filter` 도 함께 변경.
+
+- **주소 문자열을 상수 자리 밖에서 조립하지 않는다.** 플랫폼 어댑터도 조립하지 않고 공통
+  결과를 `Uri` 로만 바꾼다.
+- **파서는 순수 함수다.** 우리 주소가 아니면 빈 목록을 돌려주고 호출자는 아무것도 하지 않는다.
+  검증 실패를 사용자에게 알리지 않는다.
+- 목적지로 가기 전에 스택을 비우는 명령이 먼저 나가야 한다.
+- **분기 안에서 포기하면 그때까지 쌓인 명령은 그대로 나간다.** 중간 포기 지점을 바꾸면 동작이
+  바뀌므로 파서 테스트가 분기별 순서를 고정한다 — 새 분기를 더하면 테스트도 더한다.
+- 이동 명령 흐름의 소비자는 최상위 그래프 **하나**다. 다른 곳에서 수집하지 않는다.
+- 처리한 주소는 소비해 재진입 때 다시 열리지 않게 한다.
 - 모든 파일 UTF-8(BOM 없음).
 
-## 흐름 참고
-- **Android**: `MainActivity.onNewIntent()/onCreate()` → `MainActivity.handleIntent(intent)` →
-  `AppViewModel.handleDeepLink(uri.toString())` → `DeepLinkParser.parse(url, 재생상태)` →
-  `navigationIntentChannel`(capacity=8) → `MainNavHost` 가 `navigationIntentFlow` 수집 →
-  `NavController` 호출.
-- **iOS**: `onOpenURL` → 조립 모듈(`:ios:shared`)의 최상위 `handleDeepLink(url)` → 같은 파서.
-
 ## 완료 확인
-1. `./gradlew :shared:presentation:testAndroidHostTest` — 파서 테스트에 새 분기를 더했는지.
-2. `./gradlew :android:app:assembleDebug` 와 `:ios:shared:linkDebugFrameworkIosSimulatorArm64`.
+
+1. `./gradlew.bat :shared:presentation:testAndroidHostTest` — 파서 테스트에 새 분기를 더했는지.
+2. `./gradlew.bat :android:app:compileDebugKotlin :ios:shared:compileKotlinIosSimulatorArm64`.
 3. `shared/presentation/AGENTS.md` 의 commonMain 순수성 게이트가 0줄인지.
-4. 5단계가 모두 반영됐는지 체크리스트로 확인(특히 2·3·4는 누락되기 쉽다).
+4. 다섯 자리가 모두 반영됐는지 체크리스트로 확인한다.

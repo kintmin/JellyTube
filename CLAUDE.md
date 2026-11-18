@@ -37,7 +37,7 @@ Kotlin Multiplatform(KMP) 멀티플랫폼 앱. 하나의 공유 코어를 Androi
 - **단순성/외과적 변경**: 요청한 것만, 최소 코드로. 무관한 코드 리팩터 금지.
 
 ## 자주 쓰는 스킬 / 에이전트 (`.claude/`)
-- 스킬: `new-mvi-screen`(공통 화면), `add-deep-link`, `new-repository-usecase`, `room-entity-migration`
+- 스킬: `add-deep-link`, `room-entity-migration` — 여러 자리에 걸쳐 있어 빠뜨리기 쉬운 작업만 스킬로 둔다. 한 모듈 안에서 끝나는 작업은 해당 `AGENTS.md` 와 기존 코드를 따른다.
 - 에이전트: `error-handling-reviewer`, `security-reviewer`, `performance-reviewer`, `build-verifier`
 - 일반 리뷰는 내장 `/code-review`·`/review`·`/security-review` 사용.
 
