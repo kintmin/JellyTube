@@ -2,6 +2,7 @@ import com.android.build.api.artifact.ArtifactTransformationRequest
 import com.android.build.api.artifact.SingleArtifact
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 import com.kintmin.buildSrc.AppConfiguration
+import com.kintmin.buildSrc.DeepLinkConstantsSource
 import com.kintmin.buildSrc.ManifestPlaceholdersKey
 import com.kintmin.buildSrc.PropertyName
 import com.kintmin.buildSrc.SigningConfigName
@@ -31,6 +32,12 @@ android {
         versionName = AppConfiguration.VERSION_NAME
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // intent-filter 의 스킴·호스트는 DeepLinkConstants 에서 읽어 넣는다. 복제하면 한쪽만 바뀐다.
+        manifestPlaceholders[ManifestPlaceholdersKey.DEEP_LINK_SCHEME] =
+            DeepLinkConstantsSource.read(rootDir, "SCHEME")
+        manifestPlaceholders[ManifestPlaceholdersKey.DEEP_LINK_HOST] =
+            DeepLinkConstantsSource.read(rootDir, "HOST")
     }
 
     signingConfigs {
@@ -168,16 +175,14 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.kotlinx.datetime)
 
-    // 미디어 재생 (PlaybackService / MediaControllerManagerImpl / AudioPreviewPlayerImpl)
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.exoplayer)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.splashscreen)
-    // Compose 는 :shared:presentation 이 api 로 내보내는 CMP 아티팩트를 쓴다.
-    // androidx compose BOM 을 같이 두면 androidx.compose.ui 버전이 양쪽에서
-    // 고정되어 충돌하므로 선언하지 않는다. navigation 도 CMP 포크 한 벌만 쓴다.
+    // androidx compose BOM 을 같이 두면 androidx.compose.ui 버전이 CMP 포크와 충돌한다.
+    // compose·navigation 은 선언하지 않는다.
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

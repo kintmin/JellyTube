@@ -7,7 +7,6 @@ object DeepLinkConstants {
     /** 커스텀 스킴은 다른 앱도 등록할 수 있다. 외부에서 값을 받는 링크에는 쓸 수 없다. */
     const val APP_SCHEME = "jellytube"
 
-    /** 변경 시 `android:app` manifest 의 intent-filter 와 iOS `CFBundleURLTypes` 도 바꿔야 한다. */
     const val HOST = "www.jellytube.com"
 
     private const val SCHEME_AND_HOST = "$SCHEME://$HOST"

@@ -1,3 +1,5 @@
+import com.kintmin.buildSrc.DeepLinkConstantsSource
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
@@ -15,7 +17,7 @@ kotlin {
         iosSimulatorArm64(),
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            // Swift 의 `import shared` 를 유지한다. 과거 :shared:data 가 쓰던 이름이다.
+            // Swift 의 `import shared` 를 유지한다.
             baseName = "shared"
             // Swift 가 직접 구현·호출하는 타입이 있는 모듈만 export 한다.
             // export 하지 않으면 코드는 프레임워크에 들어가지만 헤더에 나오지 않는다.
@@ -46,3 +48,24 @@ kotlin {
         }
     }
 }
+
+// Info.plist 는 Xcode 소유라 Manifest 처럼 주입할 수 없다. 어긋나면 iOS 딥링크가 조용히 죽는다.
+val expectedAppScheme = DeepLinkConstantsSource.read(rootDir, "APP_SCHEME")
+val infoPlistFile = rootProject.file("ios/app/JellyTubeIos/Info.plist")
+
+val verifyDeepLinkScheme = tasks.register("verifyDeepLinkScheme") {
+    inputs.file(infoPlistFile)
+    inputs.property("appScheme", expectedAppScheme)
+    doLast {
+        val registered = infoPlistFile.readText()
+            .substringAfter("<key>CFBundleURLSchemes</key>", "")
+            .substringAfter("<array>", "")
+            .substringBefore("</array>", "")
+        check("<string>$expectedAppScheme</string>" in registered) {
+            "Info.plist 의 CFBundleURLSchemes 에 '$expectedAppScheme' 가 없다 — " +
+                "DeepLinkConstants.APP_SCHEME 과 맞춘다."
+        }
+    }
+}
+
+tasks.named("check") { dependsOn(verifyDeepLinkScheme) }

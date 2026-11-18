@@ -21,6 +21,8 @@ object AppConfiguration {
 // xml 사용되는 것 확인
 object ManifestPlaceholdersKey {
     const val APP_LABEL = "appLabel"
+    const val DEEP_LINK_SCHEME = "deepLinkScheme"
+    const val DEEP_LINK_HOST = "deepLinkHost"
 }
 
 // gradle에 있는 gradle.properties 나 루트에 있는 local.properties 참고
