@@ -133,6 +133,14 @@
 그 안에 무엇이 있는지 말해야 한다** — 폴더를 훑어서 "이미 있나" 를 답할 수 없으면 이름이 잘못된
 것이다. 목록을 문서에 복제하면 적는 순간부터 어긋나기 시작한다.
 
+### 스킬도 문서다
+
+**여러 자리에 걸쳐 빠뜨리기 쉬운 절차만** 스킬로 둔다. 한 모듈 안에서 끝나는 작업은 그 모듈의
+`AGENTS.md` 와 기존 코드가 더 정확하다 — 모방할 사례가 코드에 여러 개 있으면 스킬은 규약을
+베낀 사본일 뿐이고, 규약이 바뀔 때 같이 썩는다.
+
+무엇이 있는지는 `.claude/` 가 갖는다. 도구가 그 목록을 읽어 주므로 여기 적지 않는다.
+
 ## 8. 모듈 맵
 
 **어떤 파일이든 건드리기 전에, 관련된 모든 모듈의 `AGENTS.md` 를 읽는다.**
@@ -180,10 +188,3 @@ Kotlin Multiplatform 앱. 하나의 공유 코어를 Android / iOS / Desktop 이
 - **macOS**: `./gradlew`. 프레임워크를 링크한 뒤 `xcodebuild` 로 앱을 빌드한다.
   **클론 직후에는 `scripts/setup-ios-vendor.sh` 를 한 번 돌려야 한다** — `ios/app/Vendor/` 가
   gitignore 대상이라 비어 있다.
-
-## 11. 스킬 / 에이전트 (`.claude/`)
-
-- 스킬: `add-deep-link`, `room-entity-migration` — 여러 자리에 걸쳐 빠뜨리기 쉬운 작업만 둔다.
-  한 모듈 안에서 끝나는 작업은 해당 `AGENTS.md` 와 기존 코드를 따른다.
-- 에이전트: `error-handling-reviewer`, `security-reviewer`, `performance-reviewer`,
-  `build-verifier`. 일반 리뷰는 내장 `/code-review`·`/review`·`/security-review` 를 쓴다.
