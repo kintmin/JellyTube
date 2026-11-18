@@ -16,7 +16,8 @@ description: PR 올리기 전 변경분의 주석·문서를 전수검증한다.
 커밋된 것과 아직 커밋 안 된 것을 **모두** 본다. 다음 단계의 모든 명령은 이 `BASE` 를 쓴다.
 
 ```bash
-BASE=$(git merge-base HEAD main)
+BASE_REF=$(git symbolic-ref -q --short refs/remotes/origin/HEAD || echo origin/main)
+BASE=$(git merge-base HEAD "$BASE_REF")
 git diff --stat $BASE
 git status --porcelain
 ```
@@ -31,14 +32,11 @@ git status --porcelain
 먼저 **사라진 이름과 옛 경로**를 뽑는다.
 
 ```bash
+DECL='\b(class|interface|object|enum|fun|val|var|typealias) +[A-Za-z_][A-Za-z0-9_]*'
+names() { git diff $BASE -U0 -M | grep "^$1" | grep -oE "$DECL" | awk '{print $NF}' | sort -u; }
+
 # 선언이 지워진 이름(= 왼쪽에만 있는 이름)
-git diff $BASE -U0 -M | grep '^-' \
-  | grep -oE '\b(class|interface|object|enum|fun|val|var|typealias) +[A-Za-z_][A-Za-z0-9_]*' \
-  | awk '{print $NF}' | sort -u > /tmp/old
-git diff $BASE -U0 -M | grep '^+' \
-  | grep -oE '\b(class|interface|object|enum|fun|val|var|typealias) +[A-Za-z_][A-Za-z0-9_]*' \
-  | awk '{print $NF}' | sort -u > /tmp/new
-comm -23 /tmp/old /tmp/new
+comm -23 <(names -) <(names +)
 
 # 옮겨지거나 지워진 파일·디렉터리
 git diff $BASE -M --name-status --diff-filter=RD
