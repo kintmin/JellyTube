@@ -19,12 +19,7 @@ import com.kintmin.presentation.port.StepMeasurementController
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-/**
- * iOS 포트 바인딩. `android:app` 의 `appModule` 과 같은 자리다.
- *
- * Swift 가 구현한 브릿지를 생성자에 넘겨야 해서 `val` 이 아니라 함수다 —
- * `data` 의 `dataIosModule(...)` 과 같은 모양이다. 바인딩을 호출부에 흘리지 않는다.
- */
+/** Swift 가 구현한 브릿지를 생성자에 넘겨야 해서 `val` 이 아니라 함수다. */
 internal fun iosAdapterModule(
     mediaControllerBridge: IosMediaControllerBridge,
     appLogBridge: IosAppLogBridge,

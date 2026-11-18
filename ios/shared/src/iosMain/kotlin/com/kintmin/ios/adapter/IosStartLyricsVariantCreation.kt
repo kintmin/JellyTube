@@ -15,8 +15,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * 가사 번역·음차 변형 생성. [IosStartAnomalyDataCheck] 와 같은 성격이다 — 계산 작업이라
- * 전송 경로와 무관하고, 앱 수명 스코프에서 돌고 끝나면 로컬 알림으로 알린다.
+ * 계산 작업이라 전송 경로와 무관하다. 앱 수명 스코프에서 돌고 끝나면 로컬 알림으로 알린다.
  */
 internal class IosStartLyricsVariantCreation(
     private val createLyricsVariantUseCase: CreateLyricsVariantUseCase,

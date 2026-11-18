@@ -9,9 +9,7 @@ import com.kintmin.log.model.analyticsUserId
 import com.kintmin.log.model.toAnalyticsEvent
 
 /**
- * `android:app` 의 `AppLogImpl` 에 대응하는 iOS 구현.
- *
- * GA4 제약으로 자르는 쪽이 Swift 가 아니라 여기인 것은 두 플랫폼이 같은 값을 보내야 해서다.
+ * GA4 제약에 맞춰 자르는 것은 Swift 가 아니라 여기다.
  * https://support.google.com/analytics/answer/9267744
  */
 internal class IosAppLog(

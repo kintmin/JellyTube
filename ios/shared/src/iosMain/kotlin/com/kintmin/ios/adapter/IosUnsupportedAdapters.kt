@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 private fun unsupported(feature: String) =
     UnsupportedOperationException("iOS 에서는 $feature 을 지원하지 않습니다.")
 
-/** 음원 편집 미제공. 진입점은 `isAudioEditSupported` 가 숨긴다. */
+/** 음원 편집 미제공. */
 internal class IosAudioPreviewPlayerStub : AudioPreviewPlayer {
 
     override val isPlaying: Boolean = false
@@ -27,7 +27,7 @@ internal class IosAudioPreviewPlayerStub : AudioPreviewPlayer {
     override fun release() = Unit
 }
 
-/** 데이터 보내기 미제공. iOS 는 받는 쪽만 한다 — 보내는 서버가 Android 에만 있다. */
+/** 데이터 보내기 미제공. */
 internal class IosDataMigrationSendControllerStub : DataMigrationSendController {
 
     override val status: StateFlow<DataMigrationSendStatus> = MutableStateFlow(DataMigrationSendStatus.Idle)

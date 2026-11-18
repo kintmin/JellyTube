@@ -6,15 +6,8 @@ plugins {
 }
 
 /**
- * iOS Composition Root. `android:app` / `desktop` 과 같은 자리다.
- *
  * iOS 프레임워크는 **하나여야 한다** — 둘로 쪼개면 Kotlin/Native 런타임과 Koin 이 분리된다.
- * 그 프레임워크는 `data` 와 `presentation` 을 함께 봐야 하는데 두 모듈은 서로를 모른다
- * (레이어 규율). 둘을 동시에 의존하는 모듈이 이 모듈이고, 그것이 신설 이유의 전부다.
- *
- * 여기 두는 것: 프레임워크·SKIE 설정, Koin 조립, Compose 진입점, 그리고 포트의 iOS 구현을
- * `port/` 에 — `presentation/port` 와 `domain` 양쪽이고, `android:app` 이 Android 구현을
- * 가지는 것과 같은 자리다. `presentation` 의 iosMain 에는 `expect`/`actual` 탈출구만 둔다.
+ * 그 프레임워크는 `data` 와 `presentation` 을 함께 봐야 하는데 두 모듈은 서로를 모른다.
  */
 kotlin {
     listOf(

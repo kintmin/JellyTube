@@ -3,8 +3,8 @@ package com.kintmin.ios.bridge
 /**
  * Swift 가 구현하는 오디오 재생 창구. 구현은 `MediaControllerEngine`(AVAudioEngine) 이다.
  *
- * 원시 조작만 받는다. 큐·셔플·반복은 플레이어가 원래 들고 있는 기능이라 Swift 에 맡기고
- * (Android 도 ExoPlayer 에 맡긴다), 구간반복은 포트 구현(`port/IosPlaybackController`)이 쥔다.
+ * 원시 조작만 받는다. 큐·셔플·반복은 플레이어가 원래 들고 있는 기능이라 Swift 에 맡기고,
+ * 구간반복은 `IosPlaybackController` 가 쥔다.
  */
 interface IosMediaControllerBridge {
 

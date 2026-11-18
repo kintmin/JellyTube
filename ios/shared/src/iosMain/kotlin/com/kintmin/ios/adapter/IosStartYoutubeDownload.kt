@@ -19,8 +19,6 @@ import kotlinx.coroutines.launch
 import kotlin.time.DurationUnit
 
 /**
- * 유튜브 음원 다운로드를 건다.
- *
  * 음원 바이트는 `URLSession` 이 받지만 추출·썸네일 받기·DB 기록은 앱이 해야 한다. 그래서
  * 작업 전체를 실행 유예로 감싼다 — 감싸지 않으면 홈으로 내리는 순간 멈춰서, 음원만 들어오고
  * 썸네일이 빠지거나 아예 시작도 못 한다.

@@ -31,8 +31,8 @@ private const val BACKFILL_DAYS = 7
 /**
  * `CMPedometer` 기반 걸음수 측정. 적는 시점과 값은 [StepSlotSchedule] 이 정한다.
  *
- * 모션 코프로세서가 앱과 무관하게 걸음을 기록하고 소급 조회가 되므로, Android 의 포그라운드
- * 서비스에 해당하는 장치가 필요 없다. 켤 때 지나간 구간을 메우고 떠 있는 동안만 실시간으로 잇는다.
+ * 모션 코프로세서가 앱과 무관하게 걸음을 기록하고 소급 조회가 되므로 상시 실행이 필요 없다.
+ * 켤 때 지나간 구간을 메우고 떠 있는 동안만 실시간으로 잇는다.
  */
 internal class IosStepMeasurementController(
     private val backupStepSensorUseCase: BackupStepSensorUseCase,
