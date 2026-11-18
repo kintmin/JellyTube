@@ -66,7 +66,6 @@ class YoutubeDownloadWorker(
         downloadAudioMediaUseCase(url).onSuccess { result ->
             pushNotificationManager.cancelNotification(downloadNotification.id)
             coroutineScope {
-                // 가사 자동 다운로드는 별도 비동기 job으로 병렬 수행한다. (조용한 실패 — 실패해도 무시)
                 // 음원 등록이 이미 성공한 시점에만 시작하므로 orphan 가사/취소 시나리오는 발생하지 않는다.
                 launch {
                     downloadLyricsForAudioMediaUseCase(
@@ -76,7 +75,6 @@ class YoutubeDownloadWorker(
                     )
                 }
 
-                // 곡 먼저: 성공 알림 + 재생목록 반영 (가사 job과 병렬)
                 pushNotificationManager.sendNotification(
                     DownloadResultNotification(
                         WorkResultNotice.Download.Success(

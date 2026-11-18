@@ -1,11 +1,8 @@
 package com.kintmin.fileshare
 
 object FileShareConstants {
-    /** Android NSD로 광고할 mDNS 서비스 타입 */
     const val NSD_SERVICE_TYPE = "_jellytube._tcp."
-    /** NSD 서비스 이름 (discovery 시 검색 기준) */
     const val NSD_SERVICE_NAME = "JellyTubeFileShare"
-    /** Ktor 서버 포트 */
     const val DEFAULT_PORT = 52847
     /** 파일 업로드 HTTP POST endpoint */
     const val HTTP_UPLOAD_PATH = "/upload"

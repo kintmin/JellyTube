@@ -39,8 +39,6 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 
 /**
- * Composition Root. Android 런타임에 묶인 구현을 전부 여기서 인터페이스에 건다.
- *
  * Worker 바인딩만 [workerModule] 로 나눠 둔다. `workerOf` 는 `workManagerFactory()` 가 쓰는
  * 별도 해석 경로라 `single` 과 성격이 다르다.
  */

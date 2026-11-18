@@ -11,7 +11,6 @@ import com.kintmin.presentation.port.FileShareServerController
 import com.kintmin.presentation.port.model.WorkResultNotice
 import kotlinx.coroutines.flow.StateFlow
 
-/** 서버는 data 가 띄우고, 프로세스는 foreground service 가 붙잡아 둔다. */
 class FileShareServerControllerImpl(
     private val appContext: Context,
     private val startPcFileShareServer: StartPcFileShareServerUseCase,

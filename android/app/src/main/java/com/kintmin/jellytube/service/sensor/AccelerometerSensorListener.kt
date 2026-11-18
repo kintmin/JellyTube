@@ -11,7 +11,6 @@ import kotlin.math.abs
  * 참고: https://developer.android.com/develop/sensors-and-location/sensors/sensors_overview?hl=ko#only-gather-sensor-data-in-the-foreground
  *
  * 가속도 알고리즘 참고
- * 공식 레포는 아니지만, fork 및 star 수가 많은 레거시 센서 알고리즘.
  * https://github.com/bagilevi/android-pedometer/blob/master/src/name/bagi/levente/pedometer/StepDetector.java
  */
 class AccelerometerSensorListener(

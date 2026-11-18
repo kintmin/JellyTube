@@ -107,7 +107,6 @@ class StepForegroundService : Service(), KoinComponent {
     private val currentStep = MutableStateFlow(0)
     private val currentStepSensor = MutableStateFlow<Long?>(null)
 
-    // 서비스 꺼진 후 재시작했을 걸음수 복원을 위해 사용
     private var todayLastSavedStepSensorWhenStarted: Long? = null
 
     private val timeZoneFlow = MutableStateFlow(TimeZone.currentSystemDefault())
@@ -124,7 +123,6 @@ class StepForegroundService : Service(), KoinComponent {
     private val dateChangeBroadcastReceiver = DateChangeBroadcastReceiver().apply {
         setOnDateChangedListener(object : DateChangeBroadcastReceiver.OnDateChangedListener {
             override fun onDateChanged() {
-                // 날짜가 변경됐다고 감지되는 경우
                 checkDailyReset()
             }
 
@@ -136,7 +134,6 @@ class StepForegroundService : Service(), KoinComponent {
             }
 
             override fun onTimezoneChanged(timeZone: String) {
-                // 지역 설정이 변경되는 경우
                 val tz = runCatching { TimeZone.of(timeZone) }.getOrDefault(TimeZone.currentSystemDefault())
                 timeZoneFlow.update { tz }
                 currentStepSensor.value?.let {

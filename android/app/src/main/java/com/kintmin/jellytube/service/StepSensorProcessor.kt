@@ -63,11 +63,6 @@ class StepSensorProcessor(
         }
     }
 
-    /**
-     * 버킷 단위와 무관하게 현재 시각으로 기준점을 저장한다.
-     * - 재부팅/첫 시작: 기준 센서값이 달라진 시점이므로 즉시 저장
-     * - 시간/타임존 변경: 기준 시각이 바뀌므로 즉시 저장
-     */
     fun forceBackupWithCurrentTime(stepSensor: Long, currentMillis: Long) {
         onBackupSensor(stepSensor, currentMillis)
 
@@ -76,10 +71,7 @@ class StepSensorProcessor(
         lastBackupUnitMillis = currentUnitMillis
     }
 
-    /**
-     * 30분 버킷 단위로 기준점을 저장한다.
-     * 같은 버킷 내 중복 저장은 방지되어 있고, 버킷이 점프될 수 있다.
-     */
+    /** 버킷이 점프될 수 있다. */
     fun backupStepSensor(stepSensor: Long, currentMillis: Long) {
         val timeZone = getTimeZone()
         val currentUnitMillis = truncateToUnitMillis(currentMillis, timeZone)
