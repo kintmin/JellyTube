@@ -42,7 +42,6 @@ private const val URL_CHANGE_HANDLER_NAME = "jellyTubeUrlChanged"
 /**
  * `WKNavigationDelegate` 는 same-document 이동(`pushState`/`replaceState`/`popstate`/
  * `hashchange`)을 알려주지 않는다. SPA 인 m.youtube.com 은 영상 사이 이동이 전부 여기로 떨어진다.
- * Android `WebViewClient.doUpdateVisitedHistory` 와 짝이다.
  */
 private val URL_CHANGE_SCRIPT = """
 (function() {
@@ -218,7 +217,6 @@ private fun createConfiguration(
     urlChangeHandler: WKScriptMessageHandlerProtocol,
 ): WKWebViewConfiguration = WKWebViewConfiguration().apply {
     allowsInlineMediaPlayback = true
-    // Android 의 mediaPlaybackRequiresUserGesture = false 와 짝이다.
     mediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypeNone
     defaultWebpagePreferences.allowsContentJavaScript = true
 

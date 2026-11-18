@@ -9,7 +9,7 @@ import com.kintmin.log.model.analyticsUserId
 import com.kintmin.log.model.toAnalyticsEvent
 
 /**
- * GA4 제약에 맞춰 자르는 것은 Swift 가 아니라 여기다.
+ * GA4 제약에 맞춰 자른다.
  * https://support.google.com/analytics/answer/9267744
  */
 internal class IosAppLog(

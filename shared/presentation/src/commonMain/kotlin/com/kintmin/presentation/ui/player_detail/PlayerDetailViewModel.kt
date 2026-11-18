@@ -361,7 +361,6 @@ class PlayerDetailViewModel constructor(
         }
     }
 
-    // 현재 재생 위치에 해당하는 싱크 가사 한 줄을 UI 상태에 반영한다.
     // 비싱크(시간정보 없음) 가사면 activeLyricIndex 가 -1 이라 빈 문자열로 둔다.
     private fun refreshLyricLine() {
         val line = if (parsedLyricLines.isEmpty()) {

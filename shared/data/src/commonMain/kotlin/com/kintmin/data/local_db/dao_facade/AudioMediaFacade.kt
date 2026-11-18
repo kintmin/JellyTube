@@ -369,7 +369,6 @@ class AudioMediaFacade constructor(
     }
 
     // 시스템 플레이리스트(전체/미분류/즐겨찾기)가 없으면 만든다. 앱 시작 시 멱등 호출.
-    // id는 지정하지 않고(autoGenerate) type으로 구분한다.
     suspend fun ensureSystemPlaylists() {
         db.useWriterConnection { transactor ->
             transactor.immediateTransaction {

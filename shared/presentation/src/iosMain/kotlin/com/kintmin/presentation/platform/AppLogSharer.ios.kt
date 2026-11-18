@@ -12,8 +12,8 @@ import platform.UIKit.UIViewController
 import platform.UIKit.popoverPresentationController
 
 /**
- * 로그 파일을 공유 시트로 넘긴다. Android 와 달리 수신자를 지정할 공개 수단이 없어
- * 어디로 보낼지는 사용자가 고르고, 시트가 항상 떠서 `NoShareTarget` 이 서지 않는다.
+ * 로그 파일을 공유 시트로 넘긴다. 수신자를 지정할 공개 수단이 없어 어디로 보낼지는
+ * 사용자가 고르고, 시트가 항상 떠서 `NoShareTarget` 이 서지 않는다.
  */
 @OptIn(ExperimentalForeignApi::class)
 private fun shareAppLogs(fileFullPaths: List<String>): AppLogShareResult {

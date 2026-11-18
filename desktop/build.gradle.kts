@@ -30,13 +30,11 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
 
-    // Ktor client (HTTP 업로드)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
 
-    // mDNS NSD discovery
     implementation(libs.jmdns)
 }
 

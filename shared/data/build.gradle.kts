@@ -37,9 +37,7 @@ kotlin {
             }
         }
     }
-    // 프레임워크와 SKIE 는 iOS Composition Root(`:ios:shared`)가 소유한다.
-    // iOS 프레임워크는 하나여야 하고, 그 하나는 data 와 presentation 을 함께 보는
-    // 모듈이어야 한다. 이 모듈은 klib 만 내놓는다.
+    // 이 모듈은 klib 만 내놓는다. 프레임워크는 하나여야 해서 조립 모듈이 선언한다.
     iosArm64()
     iosSimulatorArm64()
 
