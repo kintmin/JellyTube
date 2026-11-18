@@ -3,7 +3,6 @@ package com.kintmin.domain.audio_edit.usecase
 import com.kintmin.domain.audio_edit.model.AudioEditAlreadySaving
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 
-/** 편집본 저장을 맡기기 전에 저장 중으로 예약한다. 이미 저장 중이면 실패. */
 class ReserveAudioEditSaveUseCase constructor(
     private val audioEditRepository: AudioEditRepository,
 ) {

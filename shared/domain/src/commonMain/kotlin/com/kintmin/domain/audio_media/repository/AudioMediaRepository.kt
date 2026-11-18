@@ -44,10 +44,8 @@ interface AudioMediaRepository {
 
     suspend fun saveImage(imageData: ByteArray): Result<String>
 
-    /** 음원에 TJ 노래방 번호를 연동한다. */
     suspend fun updateKaraokeNumber(id: Int, tjKaraokeNumber: String): Result<Unit>
 
-    /** 음원에 연동된 TJ 노래방 번호를 해제한다. */
     suspend fun clearKaraokeNumber(id: Int): Result<Unit>
 
     suspend fun saveLyrics(text: String, synced: Boolean): Result<String>

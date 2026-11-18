@@ -62,7 +62,6 @@ class DownloadAudioMediaUseCase constructor(
         val shouldInsertAtTopOnDownload = fetchShouldInsertAtTopOnDownloadFlowUseCase().first()
         val playlistIdOnDownload = fetchPlaylistIdOnDownloadFlowUseCase().first()
 
-        // 대상 플레이리스트 해석(유효성 검사·미분류 fallback)과 시스템 플레이리스트 보장은 데이터 계층이 담당한다.
         val added = audioMediaRepository.addAudioMedia(
             downloadedAudioMedia = downloadedAudioMedia,
             playlistIdOnDownload = playlistIdOnDownload,

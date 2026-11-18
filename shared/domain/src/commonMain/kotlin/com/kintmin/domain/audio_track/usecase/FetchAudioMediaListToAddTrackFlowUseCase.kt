@@ -27,7 +27,6 @@ class FetchAudioMediaListToAddTrackFlowUseCase constructor(
                     audioTrackRepository.getPlaylistTrackAggregateListFlow(totalId),
                     audioTrackRepository.getPlaylistTrackAggregateListFlow(playlistId),
                 ) { totalList, currentList ->
-                    // 전체 중 현재 playlist에 포함되지 않는 것만 필터
                     totalList.filter { total -> currentList.firstOrNull { it.audioMedia.id == total.audioMedia.id } == null }
                 }
             }

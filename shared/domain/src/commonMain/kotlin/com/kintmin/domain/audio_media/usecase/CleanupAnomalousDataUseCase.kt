@@ -17,7 +17,6 @@ class CleanupAnomalousDataUseCase constructor(
     suspend operator fun invoke(): Result<Int> = runCatching {
         appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "track 연결 없는 음원 정리 시작"))
 
-        // 1) 어떤 track에도 연결되지 않은 AUDIO_MEDIA를 단일 트랜잭션으로 전수 삭제
         val orphanMediaList = audioMediaRepository.deleteOrphanAudioMedia().getOrThrow()
         orphanMediaList.forEach {
             appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "음원 row 삭제 완료: $it"))

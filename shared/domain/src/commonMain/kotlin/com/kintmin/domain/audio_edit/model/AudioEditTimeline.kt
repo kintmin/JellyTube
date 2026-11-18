@@ -87,9 +87,7 @@ data class AudioEditTimeline(
 
     fun canSplit(atMs: Long): Boolean = splittableClipIndex(atMs) != null || seamClipIndex(atMs) != null
 
-    /**
-     * [atMs]에서 조각을 둘로 나눈다. 병합 이음매에서 자르면 조각은 그대로 두고 병합만 푼다.
-     */
+    /** 병합 이음매에서 자르면 조각은 그대로 두고 병합만 푼다. */
     fun split(atMs: Long): AudioEditTimeline {
         seamClipIndex(atMs)?.let { seamIndex ->
             return copy(
