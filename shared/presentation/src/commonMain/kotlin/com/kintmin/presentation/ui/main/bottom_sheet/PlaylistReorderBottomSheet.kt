@@ -76,18 +76,14 @@ fun PlaylistReorderBottomSheet(
             state = listState,
         ) {
             item(key = "header") {
-                Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) {
-                    Text(
-                        text = "플레이리스트 순서 변경",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = "전체·미분류·즐겨찾기는 항상 맨 앞에 있습니다",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = gray60,
-                    )
-                }
+                // 범위는 제목이 말한다. 이 시트는 내 플레이리스트 머리말에서만 열리고
+                // 라이브러리는 목록에 아예 없으므로 따로 설명할 것이 없다.
+                Text(
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                    text = "내 플레이리스트 순서",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             }
             itemsIndexed(
                 items = reorderState.items,
