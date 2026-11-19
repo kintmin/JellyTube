@@ -36,6 +36,7 @@ import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 @Composable
 fun PlaylistItemAddView(
     modifier: Modifier,
+    existingNames: List<String>,
     sendIntent: (PlaylistIntent) -> Unit,
 ) {
     var showDialog by remember { mutableStateOf(false) }
@@ -43,6 +44,7 @@ fun PlaylistItemAddView(
     PlaylistAddDialog(
         showDialog = showDialog,
         onDismiss = { showDialog = false },
+        existingNames = existingNames,
         makePlaylist = { title ->
             sendIntent(PlaylistIntent.MakeNewPlaylist(title))
         },
@@ -96,6 +98,7 @@ fun PlaylistItemAddPreview() {
     JellyTubeTheme {
         PlaylistItemAddView(
             modifier = Modifier.width(180.dp),
+            existingNames = listOf("운동할 때"),
             sendIntent = {}
         )
     }

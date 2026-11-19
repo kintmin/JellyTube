@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -24,17 +26,32 @@ import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 
+private const val TITLE_MAX_LENGTH = 20
+
 @Composable
 fun PlaylistAddDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
+    existingNames: List<String>,
     makePlaylist: (String) -> Unit,
 ) {
     JellyTubeDialog(
         showDialog = showDialog,
         onDismiss = onDismiss,
+        // 제목을 적는 중에 스크림을 잘못 눌러 입력이 날아가지 않게 한다. 취소로만 닫는다.
+        dismissOnClickOutside = false,
     ) {
-        var newPlaylistTitle by remember { mutableStateOf("새로운 플레이리스트") }
+        var newPlaylistTitle by remember { mutableStateOf("") }
+        // 열자마자 빈 칸을 에러로 칠하지 않는다. 손을 댄 뒤부터 말해 준다.
+        var hasEdited by remember { mutableStateOf(false) }
+
+        val trimmedTitle = newPlaylistTitle.trim()
+        val errorMessage = when {
+            trimmedTitle.isBlank() -> "제목을 입력해 주세요"
+            trimmedTitle in existingNames -> "같은 이름의 플레이리스트가 이미 있습니다"
+            else -> null
+        }
+        val visibleErrorMessage = errorMessage.takeIf { hasEdited }
 
         Column(
             modifier = Modifier.padding(16.dp),
@@ -46,31 +63,51 @@ fun PlaylistAddDialog(
                 style = MaterialTheme.typography.titleLarge,
             )
             OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 textStyle = TextStyle(),
                 value = newPlaylistTitle,
                 onValueChange = { newText ->
-                    if (newText.length > 20) return@OutlinedTextField
-                    newPlaylistTitle = newText
+                    hasEdited = true
+                    newPlaylistTitle = newText.take(TITLE_MAX_LENGTH)
                 },
-                isError = newPlaylistTitle.isEmpty(),
+                isError = visibleErrorMessage != null,
                 maxLines = 1,
                 label = {
                     Text(
-                        text = "제목 (${newPlaylistTitle.length}/20)",
+                        text = "제목 (${newPlaylistTitle.length}/$TITLE_MAX_LENGTH)",
                         fontSize = 14.sp,
                         lineHeight = 14.sp,
                     )
-                }
+                },
+                placeholder = {
+                    Text(
+                        text = "예: 새벽에 듣는 것",
+                        fontSize = 14.sp,
+                        lineHeight = 14.sp,
+                    )
+                },
+                supportingText = {
+                    // 자리를 늘 차지하게 둬서 메시지가 뜰 때 버튼이 밀리지 않게 한다.
+                    Text(
+                        text = visibleErrorMessage.orEmpty(),
+                        fontSize = 12.sp,
+                        lineHeight = 14.sp,
+                    )
+                },
             )
             Row(
-                modifier = Modifier.align(Alignment.End)
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(top = 8.dp)
             ) {
                 OutlinedButton(
-                    modifier = Modifier.padding(end = 8.dp),
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .heightIn(min = 48.dp),
                     contentPadding = PaddingValues(horizontal = 24.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
                     onClick = { onDismiss() },
                 ) {
                     Text(
@@ -80,12 +117,13 @@ fun PlaylistAddDialog(
                     )
                 }
                 Button(
+                    modifier = Modifier.heightIn(min = 48.dp),
                     contentPadding = PaddingValues(horizontal = 32.dp),
                     onClick = {
-                        makePlaylist(newPlaylistTitle)
+                        makePlaylist(trimmedTitle)
                         onDismiss()
                     },
-                    enabled = newPlaylistTitle.isNotBlank(),
+                    enabled = errorMessage == null,
                 ) {
                     Text(
                         text = "만들기",
@@ -105,6 +143,7 @@ fun PlaylistAddDialogPreview() {
         PlaylistAddDialog(
             showDialog = true,
             onDismiss = {},
+            existingNames = listOf("운동할 때"),
             makePlaylist = {},
         )
     }

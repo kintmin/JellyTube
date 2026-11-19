@@ -43,6 +43,7 @@ fun PlaylistView(
         item {
             PlaylistItemAddView(
                 modifier = Modifier,
+                existingNames = data.map { it.name },
                 sendIntent = sendIntent,
             )
         }

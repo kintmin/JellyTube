@@ -16,6 +16,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +63,7 @@ fun PlaylistItemView(
         showDialog = isShowDialog,
         onDismiss = { isShowDialog = false },
         playlistName = data.name,
+        audioMediaCount = data.audioMediaCount,
         deletePlaylist = { sendIntent(PlaylistIntent.OnClickDeletePlaylist(data)) },
     )
 
@@ -162,6 +164,9 @@ fun PlaylistItemView(
                             }
                         )
                         if (!isBasePlaylist) {
+                            // 파괴적 동작을 바로 위 항목과 붙여 두지 않는다. 색으로 가르지 않는 것은
+                            // 팔레트의 두 빨강이 이 배경에서 본문 대비 바닥값에 못 미쳐서다.
+                            HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text("삭제하기") },
                                 onClick = {
