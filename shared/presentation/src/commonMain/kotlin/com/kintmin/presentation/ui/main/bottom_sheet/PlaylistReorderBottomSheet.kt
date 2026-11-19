@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
@@ -51,6 +52,8 @@ import com.kintmin.presentation.remember_state.rememberReorderState
 
 private val ITEM_HEIGHT = 56.dp
 private val DRAG_ELEVATION = 8.dp
+private val DRAG_INSET = 12.dp
+private val DRAG_CORNER = 12.dp
 
 @Composable
 fun PlaylistReorderBottomSheet(
@@ -185,6 +188,28 @@ private fun PlaylistReorderItemView(
         targetValue = if (isDragging) DRAG_ELEVATION else 0.dp,
         label = "reorderDragElevation",
     )
+    // 집었다 놓는 느낌은 이동 거리가 아니라 들림이 꺼지는 데서 온다. 스왑이 이웃 높이를
+    // 빼가므로 놓는 순간 항목은 이미 최종 자리 근처라, 거리에 기대면 아무것도 느껴지지 않는다.
+    //
+    // 폭을 꽉 채운 띠에서는 scale 도 그림자도 신호가 못 된다 — 56dp 의 2% 는 1픽셀이고,
+    // 다크 테마에서 검은 그림자는 거의 검은 배경 위에 그려진다. 띠에서 떨어져 나오게 해야
+    // 들린 것으로 읽힌다.
+    val inset = animateDpAsState(
+        targetValue = if (isDragging) DRAG_INSET else 0.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium,
+        ),
+        label = "reorderDragInset",
+    )
+    val corner = animateDpAsState(
+        targetValue = if (isDragging) DRAG_CORNER else 0.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium,
+        ),
+        label = "reorderDragCorner",
+    )
     // 들어 올린 것은 같은 색 계열에서 한 단계 밝게 한다. 색상을 바꾸면 들림이 아니라
     // 다른 종류라는 뜻이 된다. gray20 은 surface 에 onSurface 16% 를 올린 값에 가깝다.
     val background by animateColorAsState(
@@ -197,11 +222,14 @@ private fun PlaylistReorderItemView(
             .fillMaxWidth()
             .height(ITEM_HEIGHT)
             .zIndex(if (isLifted) 1f else 0f)
+            .padding(horizontal = inset.value)
             .graphicsLayer {
                 // 프레임마다 바뀌는 값은 여기서만 읽는다. Composable 범위에서 읽으면 드래그
                 // 한 프레임마다 모든 행이 재구성돼 깜박인다.
                 translationY = if (isDragging) dragOffsetProvider() else settle.value
                 shadowElevation = elevation.value.toPx()
+                shape = RoundedCornerShape(corner.value)
+                clip = true
             }
             .background(background)
             .padding(start = 16.dp, end = 4.dp),

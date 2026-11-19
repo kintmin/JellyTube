@@ -54,17 +54,20 @@ class ReorderState<T>(
     var draggingItemId by mutableStateOf<Int?>(null)
 
     /**
-     * 잡은 아이템이 제 슬롯에서 벗어난 거리(px). 호출부가 translationY 로 써서 손가락을 따라오게 한다.
+     * 잡은 아이템을 **그릴** 거리(px). 호출부가 translationY 로 써서 손가락을 따라오게 한다.
      *
-     * 스왑이 일어나면 이웃 높이만큼 빠지므로 늘 한 칸 범위 안에 머문다. 읽기 전용이다 —
-     * 오토스크롤 보정이 이 값에 얽혀 있어 바깥에서 고치면 계산이 깨진다.
+     * 넘어갈 자리가 없는 방향으로는 여기서 잠근다. [dragOffset] 자체는 손가락을 그대로 따라
+     * 계속 쌓이므로, 끝에 막힌 뒤 되돌리면 넘어간 만큼 돌아와야 항목이 다시 움직인다 —
+     * 누적을 버리면 손가락과 어긋난다.
      */
-    val dragOffsetY: Float get() = dragOffset
+    var dragOffsetY by mutableFloatStateOf(0f)
+        private set
 
     fun onDragStart(offset: Offset, targetId: Int) {
         // 시작점 대비 누적 이동량을 재기 위해 0에서 시작한다.
         // (핸들 내 터치 y를 넣으면 터치 위치에 따라 이동 감도가 달라진다.)
         dragOffset = 0f
+        dragOffsetY = 0f
         dragDirection = 0
         draggingItemId = targetId
     }
@@ -100,11 +103,15 @@ class ReorderState<T>(
         }
         // 이웃이 화면 밖이면 스왑을 건너뛰되, 아래 오토스크롤이 화면을 밀어 이웃을 노출시킨다.
 
-        // 양 끝에서는 상쇄할 스왑이 없어 dragOffset 이 끝없이 쌓인다. 그대로 두면 잡은 항목이
-        // 목록 밖(머리말·버튼 영역)까지 밀려 올라간다. 넘어갈 자리가 없는 방향은 잠근다.
+        // 양 끝에서는 상쇄할 스왑이 없어 dragOffset 이 끝없이 쌓인다. 그대로 그리면 잡은 항목이
+        // 목록 밖(머리말 영역)까지 밀려 올라간다. 누적은 손가락을 그대로 따라가게 두고
+        // **그리는 값만** 잠근다.
         val settledIndex = items.indexOfFirst { idOf(it) == draggingItemId }
-        if (settledIndex == 0 && dragOffset < 0f) dragOffset = 0f
-        if (settledIndex == items.lastIndex && dragOffset > 0f) dragOffset = 0f
+        dragOffsetY = when {
+            settledIndex <= 0 -> dragOffset.coerceAtLeast(0f)
+            settledIndex == items.lastIndex -> dragOffset.coerceAtMost(0f)
+            else -> dragOffset
+        }
 
         // 오토 스크롤: 드래그 아이템이 뷰포트 위/아래 경계(scrollZone) 안에 들어오면 그 방향으로 스크롤한다.
         val currentItem = info.find { it.key == draggingItemId }
