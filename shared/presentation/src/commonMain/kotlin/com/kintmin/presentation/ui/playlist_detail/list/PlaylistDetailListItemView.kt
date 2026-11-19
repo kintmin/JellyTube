@@ -183,6 +183,7 @@ fun PlaylistDetailListItemView(
             DropdownMenu(
                 expanded = readModeDropdownExpanded,
                 onDismissRequest = { readModeDropdownExpanded = false },
+                shape = MaterialTheme.shapes.medium,
                 offset = DpOffset(
                     x = with(density) { longPressOffset.x.toDp() },
                     y = with(density) {

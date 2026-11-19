@@ -134,7 +134,9 @@ fun PlaylistItemView(
 
                 DropdownMenu(
                     expanded = isDropDownExpanded,
-                    onDismissRequest = { isDropDownExpanded = false }
+                    onDismissRequest = { isDropDownExpanded = false },
+                    // M3 기본 메뉴 모서리는 extraSmall(4dp) 이라 각져 보인다.
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     DropdownMenuItem(
                         text = { Text("수정하기") },
