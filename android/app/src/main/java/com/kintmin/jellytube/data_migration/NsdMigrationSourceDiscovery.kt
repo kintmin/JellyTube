@@ -40,7 +40,9 @@ internal class NsdMigrationSourceDiscovery(context: Context) : MigrationSourceDi
             override fun onDiscoveryStopped(serviceType: String) = Unit
             override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) = Unit
         }
-        manager.discoverServices(FileShareConstants.MIGRATION_NSD_SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, listener)
+        runCatching {
+            manager.discoverServices(FileShareConstants.MIGRATION_NSD_SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, listener)
+        }.onFailure { return emptyList() }
         try {
             withTimeoutOrNull(DISCOVERY_TIMEOUT_MILLIS) {
                 if (changes.receiveCatching().isClosed) return@withTimeoutOrNull
