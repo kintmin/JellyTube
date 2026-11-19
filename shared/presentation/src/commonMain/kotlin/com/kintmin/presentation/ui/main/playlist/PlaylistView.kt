@@ -122,7 +122,9 @@ fun PlaylistView(
             )
         }
 
-        if (userItems.isEmpty()) {
+        // 라이브러리가 비어 있다는 것은 아직 안 읽혔다는 뜻이다 — 시스템 플레이리스트 셋은
+        // 앱 시작 때 보장된다. 그것으로 가르지 않으면 첫 프레임마다 빈 상태가 깜박인다.
+        if (userItems.isEmpty() && libraryItems.isNotEmpty()) {
             item(key = "user-empty", span = { GridItemSpan(maxLineSpan) }) {
                 PlaylistEmptyView(
                     modifier = Modifier,
