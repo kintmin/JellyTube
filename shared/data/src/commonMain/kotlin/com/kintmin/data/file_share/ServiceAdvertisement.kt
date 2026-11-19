@@ -2,6 +2,13 @@ package com.kintmin.data.file_share
 
 import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import com.kintmin.fileshare.FileShareConstants
+import kotlinx.coroutines.flow.Flow
+
+/** 서버가 떠 있는 동안 [start] 에 준 서비스 타입들을 mDNS 로 광고한다. 구현은 플랫폼 소스셋이다. */
+internal interface ServiceAdvertiser {
+    fun start(serviceTypes: Flow<Set<String>>)
+    fun stop()
+}
 
 /**
  * 페어링한 뒤에는 이전 타입도 내린다. 다른 기기가 찾아 코드를 넣어 봐야 거절될 뿐이다.

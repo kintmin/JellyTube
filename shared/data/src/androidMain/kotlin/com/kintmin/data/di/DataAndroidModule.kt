@@ -6,7 +6,9 @@ import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.data.data_migration.toMigrationInstanceName
 import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.device_status.DeviceStatusImpl
-import com.kintmin.data.file_share.AndroidFileShareServerRepository
+import com.kintmin.data.file_share.FileShareServerRepository
+import com.kintmin.data.file_share.KeepAliveByForegroundService
+import com.kintmin.data.file_share.NsdAdvertiser
 import com.kintmin.data.local_datastore.createAndroidPreferencesDataStore
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.database.createAndroidJellyTubeDatabase
@@ -22,6 +24,9 @@ import com.kintmin.domain.data_migration.usecase.FetchMigrationSendStatusUseCase
 import com.kintmin.domain.data_migration.usecase.OpenMigrationSendUseCase
 import com.kintmin.domain.file_share.repository.PcFileShareServerRepository
 import com.kintmin.domain.user.repository.UserRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
@@ -44,9 +49,16 @@ val dataAndroidModule: Module = module {
     single {
         val context = androidContext()
         val userRepository = get<UserRepository>()
-        AndroidFileShareServerRepository(context, get()) {
-            toMigrationInstanceName(localDeviceName(context), userRepository.getUserId().getOrNull())
-        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        FileShareServerRepository(
+            scope = scope,
+            appLog = get(),
+            uploadTempDir = context.cacheDir.path,
+            receiveKeepAlive = KeepAliveByForegroundService,
+            advertiser = NsdAdvertiser(context, scope) {
+                toMigrationInstanceName(localDeviceName(context), userRepository.getUserId().getOrNull())
+            },
+        )
     }
         .binds(arrayOf(PcFileShareServerRepository::class, MigrationSendServerRepository::class))
     factoryOf(::OpenMigrationSendUseCase)

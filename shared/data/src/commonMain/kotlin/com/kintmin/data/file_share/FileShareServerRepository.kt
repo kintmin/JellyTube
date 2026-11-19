@@ -1,6 +1,5 @@
 package com.kintmin.data.file_share
 
-import android.content.Context
 import com.kintmin.data.file_share.migration.MigrationSessionHolder
 import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
 import com.kintmin.domain.data_migration.MigrationSendHandler
@@ -9,11 +8,12 @@ import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.repository.MigrationSendServerRepository
 import com.kintmin.domain.file_share.PcUploadHandler
+import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.domain.file_share.repository.PcFileShareServerRepository
 import com.kintmin.log.AppLog
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,13 +22,15 @@ import kotlinx.coroutines.flow.combine
 /**
  * PC 수신과 데이터 보내기가 한 서버(한 포트)를 같이 쓴다. 둘 중 하나라도 켜져 있으면 서버가 떠 있다.
  */
-internal class AndroidFileShareServerRepository(
-    context: Context,
+internal class FileShareServerRepository(
+    scope: CoroutineScope,
     appLog: AppLog,
-    migrationInstanceName: suspend () -> String,
+    uploadTempDir: String,
+    receiveKeepAlive: ReceiveKeepAlive,
+    private val advertiser: ServiceAdvertiser,
 ) : PcFileShareServerRepository, MigrationSendServerRepository {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val lock = SynchronizedObject()
 
     private val owners = MutableStateFlow<Set<FileShareServerOwner>>(emptySet())
 
@@ -43,37 +45,41 @@ internal class AndroidFileShareServerRepository(
     private val server = FileShareServer(scope, appLog) {
         fileShareModule(
             pcUploadHandler = CurrentPcUploadHandler(),
-            uploadCacheDir = context.cacheDir,
+            uploadTempDir = uploadTempDir,
+            receiveKeepAlive = receiveKeepAlive,
             currentMigrationSession = { MigrationSessionHolder.session.value },
             migrationSendHandler = CurrentMigrationSendHandler(),
         )
     }
-    private val nsdAdvertiser = NsdAdvertiser(context, scope, migrationInstanceName)
 
-    @Synchronized
     override fun start(handler: PcUploadHandler) {
-        pcUploadHandler = handler
-        updateOwners(owners.value + FileShareServerOwner.PC_FILE_SHARE)
+        synchronized(lock) {
+            pcUploadHandler = handler
+            updateOwners(owners.value + FileShareServerOwner.PC_FILE_SHARE)
+        }
     }
 
-    @Synchronized
     override fun stop() {
-        updateOwners(owners.value - FileShareServerOwner.PC_FILE_SHARE)
-        pcUploadHandler = null
+        synchronized(lock) {
+            updateOwners(owners.value - FileShareServerOwner.PC_FILE_SHARE)
+            pcUploadHandler = null
+        }
     }
 
-    @Synchronized
     override fun open(handler: MigrationSendHandler) {
-        migrationSendHandler = handler
-        MigrationSessionHolder.open()
-        updateOwners(owners.value + FileShareServerOwner.DATA_MIGRATION)
+        synchronized(lock) {
+            migrationSendHandler = handler
+            MigrationSessionHolder.open()
+            updateOwners(owners.value + FileShareServerOwner.DATA_MIGRATION)
+        }
     }
 
-    @Synchronized
     override fun close() {
-        MigrationSessionHolder.close()
-        updateOwners(owners.value - FileShareServerOwner.DATA_MIGRATION)
-        migrationSendHandler = null
+        synchronized(lock) {
+            MigrationSessionHolder.close()
+            updateOwners(owners.value - FileShareServerOwner.DATA_MIGRATION)
+            migrationSendHandler = null
+        }
     }
 
     private fun updateOwners(next: Set<FileShareServerOwner>) {
@@ -83,10 +89,10 @@ internal class AndroidFileShareServerRepository(
         when {
             previous.isEmpty() && next.isNotEmpty() -> {
                 server.launch()
-                nsdAdvertiser.start(combine(owners, MigrationSessionHolder.state, ::advertisedServiceTypes))
+                advertiser.start(combine(owners, MigrationSessionHolder.state, ::advertisedServiceTypes))
             }
             previous.isNotEmpty() && next.isEmpty() -> {
-                nsdAdvertiser.stop()
+                advertiser.stop()
                 server.stop()
             }
         }

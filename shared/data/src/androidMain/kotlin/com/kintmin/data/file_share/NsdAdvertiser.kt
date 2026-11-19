@@ -11,12 +11,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
-/** 서버가 떠 있는 동안 [start] 에 준 서비스 타입들을 광고한다. */
 internal class NsdAdvertiser(
     private val context: Context,
     private val scope: CoroutineScope,
     private val resolveMigrationInstanceName: suspend () -> String,
-) {
+) : ServiceAdvertiser {
     private val registrations = mutableMapOf<String, NsdManager.RegistrationListener>()
     private var migrationInstanceName = ""
     private var advertiseJob: Job? = null
@@ -25,7 +24,7 @@ internal class NsdAdvertiser(
     private var isClosed = true
 
     @Synchronized
-    fun start(serviceTypes: Flow<Set<String>>) {
+    override fun start(serviceTypes: Flow<Set<String>>) {
         if (advertiseJob?.isActive == true) return
         isClosed = false
         advertiseJob = scope.launch {
@@ -36,7 +35,7 @@ internal class NsdAdvertiser(
     }
 
     @Synchronized
-    fun stop() {
+    override fun stop() {
         advertiseJob?.cancel()
         advertiseJob = null
         isClosed = true

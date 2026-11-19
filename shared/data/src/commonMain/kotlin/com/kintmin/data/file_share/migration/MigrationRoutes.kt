@@ -8,17 +8,24 @@ import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.MigrationFinishRequest
 import com.kintmin.fileshare.MigrationPairRequest
 import com.kintmin.fileshare.MigrationPairResponse
+import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.header
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
-import io.ktor.server.response.respondFile
+import io.ktor.server.response.respondBytesWriter
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
-import java.io.File
+import io.ktor.utils.io.writeFully
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 
 /**
  * 세션이 없으면 모든 경로가 404 다. 이전 화면을 켜 두지 않은 기기에서는 엔드포인트가 있다는 것도
@@ -66,12 +73,24 @@ internal fun Route.migrationRoutes(
         if (!session.isFileAllowed(kind, name)) return@get call.respond(HttpStatusCode.NotFound)
 
         // 세션 없음(404)과 구분해야 받는 쪽이 이 파일만 빼고 이어 간다.
-        val file = handler.resolveFilePath(MigrationFile(MigrationFileKind.valueOf(kind), name))
+        val path = handler.resolveFilePath(MigrationFile(MigrationFileKind.valueOf(kind), name))
             .getOrNull()
-            ?.let(::File)
-            ?.takeIf { it.isFile }
+            ?.let(::Path)
+            ?.takeIf { SystemFileSystem.metadataOrNull(it)?.isRegularFile == true }
             ?: return@get call.respond(HttpStatusCode.Gone)
-        call.respondFile(file)
+        val size = SystemFileSystem.metadataOrNull(path)?.size
+        call.respondBytesWriter(ContentType.Application.OctetStream, HttpStatusCode.OK, size) {
+            withContext(Dispatchers.IO) {
+                SystemFileSystem.source(path).buffered().use { source ->
+                    val buffer = ByteArray(FILE_BUFFER_SIZE)
+                    while (true) {
+                        val read = source.readAtMostTo(buffer)
+                        if (read == -1) break
+                        writeFully(buffer, 0, read)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -84,3 +103,4 @@ private suspend fun ApplicationCall.authorizedSession(currentSession: () -> Migr
 }
 
 private const val BEARER_PREFIX = "Bearer "
+private const val FILE_BUFFER_SIZE = 64 * 1024

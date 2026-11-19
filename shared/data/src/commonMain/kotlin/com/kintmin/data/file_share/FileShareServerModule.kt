@@ -16,11 +16,11 @@ import io.ktor.server.routing.RouteSelector
 import io.ktor.server.routing.RouteSelectorEvaluation
 import io.ktor.server.routing.RoutingResolveContext
 import io.ktor.server.routing.routing
-import java.io.File
 
 internal fun Application.fileShareModule(
     pcUploadHandler: PcUploadHandler,
-    uploadCacheDir: File,
+    uploadTempDir: String,
+    receiveKeepAlive: ReceiveKeepAlive,
     currentMigrationSession: () -> MigrationSession?,
     migrationSendHandler: MigrationSendHandler,
 ) {
@@ -31,8 +31,8 @@ internal fun Application.fileShareModule(
         pcUploadRoutes(currentMigrationSession) {
             pcUploadEndpoints(
                 handler = pcUploadHandler,
-                uploadTempDir = uploadCacheDir.path,
-                receiveKeepAlive = KeepAliveByForegroundService,
+                uploadTempDir = uploadTempDir,
+                receiveKeepAlive = receiveKeepAlive,
             )
         }
     }
@@ -64,9 +64,4 @@ private val RejectWhileMigrating = createRouteScopedPlugin("RejectWhileMigrating
         call.discardBody()
         call.respond(HttpStatusCode.Conflict, FileShareResponse(success = false, message = "다른 기기와 데이터 이전 중입니다."))
     }
-}
-
-/** 포그라운드 서비스가 프로세스를 붙잡아 두므로 따로 유예를 청하지 않는다. */
-private object KeepAliveByForegroundService : ReceiveKeepAlive {
-    override suspend fun <T> keepAlive(block: suspend () -> T): T = block()
 }
