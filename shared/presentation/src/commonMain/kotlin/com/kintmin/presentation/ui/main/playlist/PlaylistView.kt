@@ -1,12 +1,16 @@
 package com.kintmin.presentation.ui.main.playlist
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -14,10 +18,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
@@ -25,7 +29,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray40
 import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistLibraryBlockView
@@ -68,15 +74,34 @@ fun PlaylistView(
                 text = "내 플레이리스트",
                 showDivider = libraryItems.isNotEmpty(),
                 action = {
-                    IconButton(
-                        // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
-                        enabled = userItems.size > 1,
-                        onClick = { sendIntent(PlaylistIntent.OnClickShowReorderBottomSheet) },
+                    // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
+                    val canReorder = userItems.size > 1
+                    // 아이콘만으로는 옆의 강조색 글자에 묻힌다. 문구를 붙이되 색은 한 단계 낮춰
+                    // 만들기가 주, 순서가 보조로 읽히게 한다.
+                    Row(
+                        modifier = Modifier
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                enabled = canReorder,
+                                onClick = { sendIntent(PlaylistIntent.OnClickShowReorderBottomSheet) },
+                            )
+                            .heightIn(min = 48.dp)
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
+                        val reorderColor = if (canReorder) gray80 else gray40
                         Icon(
+                            modifier = Modifier.size(18.dp),
                             imageVector = Icons.Rounded.SwapVert,
-                            contentDescription = "플레이리스트 순서 변경",
-                            tint = gray60,
+                            contentDescription = null,
+                            tint = reorderColor,
+                        )
+                        Text(
+                            modifier = Modifier.padding(start = 4.dp),
+                            text = "순서",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = reorderColor,
                         )
                     }
                     PlaylistAddButtonView(
