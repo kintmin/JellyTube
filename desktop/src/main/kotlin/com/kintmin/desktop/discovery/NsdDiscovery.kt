@@ -16,7 +16,7 @@ data class DiscoveredDevice(
 )
 
 /**
- * mDNS/DNS-SD로 같은 네트워크의 Android 기기를 탐색한다.
+ * mDNS/DNS-SD로 같은 네트워크의 모바일 기기를 탐색한다.
  * @param timeoutMs discovery 최대 대기 시간 (ms)
  */
 suspend fun discoverDevice(timeoutMs: Long = 3_000L): DiscoveredDevice? = withContext(Dispatchers.IO) {

@@ -200,7 +200,7 @@ private fun DiscoveryStatusCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = when (discoveryState) {
-                        DiscoveryState.DISCOVERING -> "Android 기기 검색 중..."
+                        DiscoveryState.DISCOVERING -> "기기 검색 중..."
                         DiscoveryState.FOUND -> "기기 연결됨"
                         DiscoveryState.NOT_FOUND -> "기기를 찾을 수 없습니다"
                     },
