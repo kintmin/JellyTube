@@ -15,10 +15,10 @@ import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +41,7 @@ import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.softRed
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistDeleteDialog
@@ -153,11 +154,9 @@ fun PlaylistItemView(
                             sendIntent(PlaylistIntent.OnClickAddPlaylist(data))
                         }
                     )
-                    // 파괴적 동작을 바로 위 항목과 붙여 두지 않는다. 색으로 가르지 않는 것은
-                    // 팔레트의 두 빨강이 이 배경에서 본문 대비 바닥값에 못 미쳐서다.
-                    HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text("삭제하기") },
+                        colors = MenuDefaults.itemColors(textColor = softRed),
                         onClick = {
                             isDropDownExpanded = false
                             isShowDialog = true
