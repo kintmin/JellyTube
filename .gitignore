@@ -27,6 +27,9 @@ Thumbs.db
 # Logs
 *.log
 
+# iOS 실기기 연결 도구가 작업 폴더에 만드는 호스트 페어링 개인키
+selfIdentity.plist
+
 # IDE
 *.iml
 .idea/*
