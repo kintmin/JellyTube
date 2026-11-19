@@ -4,6 +4,7 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -53,6 +54,12 @@ class ReorderState<T>(
     // 현재 드래그 중인 아이템의 id. null이면 드래그 중이 아니다.
     var draggingItemId by mutableStateOf<Int?>(null)
 
+    // 드래그를 시작한 시점의 순서. 끝났을 때 실제로 바뀌었는지 판정하는 데만 쓴다.
+    private var orderBeforeDrag = emptyList<Int>()
+
+    /** 마지막 드래그가 순서를 실제로 바꿨는가. 1px 만 끌고 놓은 것을 커밋하지 않게 한다. */
+    val isOrderChanged: Boolean get() = items.map(idOf) != orderBeforeDrag
+
     /**
      * 잡은 아이템을 **그릴** 거리(px). 호출부가 translationY 로 써서 손가락을 따라오게 한다.
      *
@@ -69,6 +76,7 @@ class ReorderState<T>(
         dragOffset = 0f
         dragOffsetY = 0f
         dragDirection = 0
+        orderBeforeDrag = items.map(idOf)
         draggingItemId = targetId
     }
 
@@ -174,7 +182,7 @@ fun <T> rememberReorderState(
     val coroutineScope = rememberCoroutineScope()
     val items = remember { mutableStateListOf<T>().also { it.addAll(dataList) } }
 
-    return remember {
+    val state = remember {
         ReorderState(
             listState = listState,
             coroutineScope = coroutineScope,
@@ -184,4 +192,13 @@ fun <T> rememberReorderState(
             scrollSpeedPx = with(density) { scrollSpeed.toPx() },
         )
     }
+
+    LaunchedEffect(dataList) {
+        // 드래그 중에 상위 목록이 바뀌면(다운로드 완료로 곡 수가 바뀌는 등) 손에 쥔 배치가 재설정된다.
+        if (state.draggingItemId != null) return@LaunchedEffect
+        state.items.clear()
+        state.items.addAll(dataList)
+    }
+
+    return state
 }
