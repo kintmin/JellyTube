@@ -129,6 +129,6 @@ private class BonjourRegistration(
 
 private fun String.toNSData(): NSData = NSString.create(string = this).dataUsingEncoding(NSUTF8StringEncoding)!!
 
-private const val BONJOUR_LOG_TAG = "BonjourAdvertisement"
+private const val BONJOUR_LOG_TAG = "BonjourAdvertiser"
 private const val BONJOUR_MAX_RETRIES = 3
 private const val BONJOUR_RETRY_DELAY_MS = 2_000L

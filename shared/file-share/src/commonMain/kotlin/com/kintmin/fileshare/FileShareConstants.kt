@@ -29,8 +29,7 @@ object FileShareConstants {
     const val MIGRATION_FORMAT_VERSION = 2
     /**
      * 데이터 이전 세션이 열려 있는 동안만 광고하는 mDNS 서비스 타입. [NSD_SERVICE_TYPE] 과 나눠야
-     * PC 업로드(Desktop)가 이전 중인 기기를 찾지 못한다. 인스턴스 이름은 보내는 기기 이름에
-     * 기기 식별자 앞부분을 붙인 것이다
+     * PC 업로드(Desktop)가 이전 중인 기기를 찾지 못한다
      */
     const val MIGRATION_NSD_SERVICE_TYPE = "_jellytube-mig._tcp."
     /** 이전 서비스 TXT 레코드에서 [MIGRATION_FORMAT_VERSION] 을 담는 키 */

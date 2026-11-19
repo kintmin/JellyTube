@@ -78,7 +78,6 @@ internal class NsdMigrationSourceDiscovery(context: Context) : MigrationSourceDi
     }
 }
 
-// 같은 기기가 인터페이스마다 따로 올 수 있고, 이름이 주소를 푸는 열쇠라 이름으로 하나만 남긴다.
 internal fun List<String>.toMigrationSources(): List<MigrationSource> =
     distinct().sorted().map { MigrationSource(name = it, isCompatible = true) }
 
