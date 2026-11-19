@@ -34,6 +34,18 @@ class AudioPlaySettingRepositoryImpl constructor(
         }
     }
 
+    override fun getSleepTimerMinutesFlow(): Flow<Int> {
+        return datastoreUtil.getData(PreferencesKey.SleepTimerMinutes).map {
+            it ?: DEFAULT_SLEEP_TIMER_MINUTES
+        }
+    }
+
+    override fun getSleepTimerAnnouncementMediaIdFlow(): Flow<Int?> {
+        return datastoreUtil.getData(PreferencesKey.SleepTimerAnnouncementMediaId).map {
+            it?.takeUnless { mediaId -> mediaId == PreferencesKey.SleepTimerAnnouncementMediaId.NONE }
+        }
+    }
+
     override suspend fun updateIsPlaybackRepeating(isRepeating: Boolean): Result<Unit> {
         return datastoreUtil.updateData(PreferencesKey.IsPlaybackRepeating, isRepeating)
     }
@@ -48,5 +60,21 @@ class AudioPlaySettingRepositoryImpl constructor(
 
     override suspend fun updatePlaybackPitchSemitone(semitone: Int): Result<Unit> {
         return datastoreUtil.updateData(PreferencesKey.PlaybackPitchSemitone, semitone)
+    }
+
+    override suspend fun updateSleepTimerMinutes(minutes: Int): Result<Unit> {
+        return datastoreUtil.updateData(PreferencesKey.SleepTimerMinutes, minutes)
+    }
+
+    override suspend fun updateSleepTimerAnnouncementMediaId(mediaId: Int?): Result<Unit> {
+        return datastoreUtil.updateData(
+            PreferencesKey.SleepTimerAnnouncementMediaId,
+            mediaId ?: PreferencesKey.SleepTimerAnnouncementMediaId.NONE,
+        )
+    }
+
+    private companion object {
+
+        const val DEFAULT_SLEEP_TIMER_MINUTES = 30
     }
 }
