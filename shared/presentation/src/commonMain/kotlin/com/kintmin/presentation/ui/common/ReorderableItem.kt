@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -113,20 +114,21 @@ fun <T> LazyItemScope.ReorderableItem(
         label = "reorderDragBackground",
     )
 
+    // pointerInput 은 키만 비교하고 람다는 비교하지 않는다. 키가 그대로면 처음 구성 때 잡힌
+    // onDragEnd 가 계속 돌아, 호출부가 그 안에서 읽는 값이 첫 구성 시점에 묶인다.
+    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
     val dragHandleModifier = Modifier.pointerInput(id) {
+        fun finish() {
+            // 호출부를 먼저 부른다 — draggingItemId 가 아직 살아 있어야 옮긴 항목을 찾을 수 있다.
+            currentOnDragEnd()
+            state.onDragEnd()
+        }
         detectDragGestures(
             onDragStart = { state.onDragStart(it, id) },
             onDrag = { change, dragAmount -> state.onDrag(change, dragAmount) },
-            // 호출부를 먼저 부른다 — draggingItemId 가 아직 살아 있어야 옮긴 항목을 찾을 수 있다.
-            onDragEnd = {
-                onDragEnd()
-                state.onDragEnd()
-            },
+            onDragEnd = { finish() },
             // 제스처가 취소되면 draggingItemId 가 남아 목록이 끌기에 잠긴 채로 끝난다.
-            onDragCancel = {
-                onDragEnd()
-                state.onDragEnd()
-            },
+            onDragCancel = { finish() },
         )
     }
 

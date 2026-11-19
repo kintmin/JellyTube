@@ -110,14 +110,8 @@ class ReorderState<T>(
         }
         // 이웃이 화면 밖이면 스왑을 건너뛰되, 아래 오토스크롤이 화면을 밀어 이웃을 노출시킨다.
 
-        // 양 끝에서는 상쇄할 스왑이 없어 dragOffset 이 끝없이 쌓인다. 그대로 그리면 잡은 항목이
-        // 목록 밖(머리말 영역)까지 밀려 올라간다.
         val settledIndex = items.indexOfFirst { idOf(it) == draggingItemId }
-        dragOffsetY = when {
-            settledIndex <= 0 -> dragOffset.coerceAtLeast(0f)
-            settledIndex == items.lastIndex -> dragOffset.coerceAtMost(0f)
-            else -> dragOffset
-        }
+        dragOffsetY = clampDragOffsetY(dragOffset, settledIndex, items.lastIndex)
 
         // 오토 스크롤: 드래그 아이템이 뷰포트 위/아래 경계(scrollZone) 안에 들어오면 그 방향으로 스크롤한다.
         val currentItem = info.find { it.key == draggingItemId }
@@ -128,12 +122,16 @@ class ReorderState<T>(
             // 드래그 누적량을 반영한 실제 시각 위치로 경계를 판정한다.
             val itemTop = currentItem.offset + dragOffset
             val itemBottom = itemTop + currentItem.size
+            // 넘어갈 이웃이 없는 방향으로는 스크롤하지 않는다. 스크롤해도 스왑이 생기지 않는데
+            // 보정만 쌓여, 잡은 항목은 잠겨 있고 손가락만 그만큼 빚을 지게 된다.
+            val canMoveUp = settledIndex > 0
+            val canMoveDown = settledIndex in 0 until items.lastIndex
 
             when {
                 // 위쪽 경계 안 + 위로 드래그 중(dragDirection<0) + 더 스크롤할 여지가 있으면 → 위로 스크롤.
                 // 방향 게이트가 없으면, 아이템이 상단 존에 들어간 순간 손가락을 아래로 내려도
                 // 위 오토스크롤이 계속 발동해 아이템이 상단에 갇힌다.
-                itemTop < viewStart + scrollZonePx && dragDirection < 0 && listState.canScrollBackward -> {
+                canMoveUp && itemTop < viewStart + scrollZonePx && dragDirection < 0 && listState.canScrollBackward -> {
                     if (overscrollJob?.isActive == true) return
                     overscrollJob = coroutineScope.launch {
                         // 실제 스크롤된 양(consumed)만큼만 dragOffset 을 보정한다.
@@ -144,7 +142,7 @@ class ReorderState<T>(
                 }
 
                 // 아래쪽 경계 안 + 아래로 드래그 중(dragDirection>0) + 더 스크롤할 여지가 있으면 → 아래로 스크롤.
-                itemBottom > viewEnd - scrollZonePx && dragDirection > 0 && listState.canScrollForward -> {
+                canMoveDown && itemBottom > viewEnd - scrollZonePx && dragDirection > 0 && listState.canScrollForward -> {
                     if (overscrollJob?.isActive == true) return
                     overscrollJob = coroutineScope.launch {
                         val consumed = listState.scrollBy(scrollSpeedPx)
@@ -166,6 +164,31 @@ class ReorderState<T>(
     fun getDraggingItemIndex(): Int? {
         return items.indexOfFirst { idOf(it) == draggingItemId }.takeIf { it != -1 }
     }
+}
+
+/**
+ * 잡은 아이템을 그릴 거리. 넘어갈 이웃이 없는 방향으로는 0 에서 멈춘다.
+ *
+ * 항목이 하나뿐이면 [index] 가 0 이자 [lastIndex] 라 양쪽을 **모두** 잠가야 한다.
+ */
+internal fun clampDragOffsetY(offset: Float, index: Int, lastIndex: Int): Float {
+    var clamped = offset
+    if (index <= 0) clamped = clamped.coerceAtLeast(0f)
+    if (index >= lastIndex) clamped = clamped.coerceAtMost(0f)
+    return clamped
+}
+
+/**
+ * 끄는 중에 도착한 목록을 손에 쥔 배치를 유지한 채 받아들인다.
+ *
+ * 통째로 덮으면 배치가 풀리고, 건너뛰면 그 방출은 다시 오지 않아 목록이 영영 어긋난다 —
+ * 그 뒤의 인덱스 기반 커밋이 길이가 다른 두 목록을 맞대게 된다.
+ */
+internal fun <T> mergeKeepingOrder(current: List<T>, incoming: List<T>, idOf: (T) -> Int): List<T> {
+    val incomingById = incoming.associateBy(idOf)
+    val kept = current.mapNotNull { incomingById[idOf(it)] }
+    val keptIds = kept.mapTo(mutableSetOf(), idOf)
+    return kept + incoming.filterNot { idOf(it) in keptIds }
 }
 
 @Composable
@@ -192,10 +215,13 @@ fun <T> rememberReorderState(
     }
 
     LaunchedEffect(dataList) {
-        // 드래그 중에 상위 목록이 바뀌면(다운로드 완료로 곡 수가 바뀌는 등) 손에 쥔 배치가 재설정된다.
-        if (state.draggingItemId != null) return@LaunchedEffect
+        val next = if (state.draggingItemId == null) {
+            dataList
+        } else {
+            mergeKeepingOrder(state.items, dataList, idOf)
+        }
         state.items.clear()
-        state.items.addAll(dataList)
+        state.items.addAll(next)
     }
 
     return state
