@@ -4,6 +4,7 @@ import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import kotlinx.cinterop.ObjCSignatureOverride
+import kotlin.concurrent.Volatile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -19,16 +20,23 @@ import platform.Foundation.create
 import platform.Foundation.dataUsingEncoding
 import platform.darwin.NSObject
 
+/** NSObject 를 상속한 등록은 Kotlin 인터페이스를 함께 구현할 수 없어 두 동작만 묶는다. */
+internal class AdvertisementRegistration(
+    val publish: () -> Unit,
+    val stop: () -> Unit,
+)
+
 /** NSNetService 는 만든 스레드의 런루프에서 광고한다. [scope] 는 메인 디스패처여야 한다. */
 internal class BonjourAdvertiser(
     private val scope: CoroutineScope,
-    private val appLog: AppLog,
     private val resolveMigrationInstanceName: suspend () -> String,
+    private val register: (serviceType: String, advertised: AdvertisedService) -> AdvertisementRegistration,
 ) : ServiceAdvertiser {
 
-    private val registrations = mutableMapOf<String, BonjourRegistration>()
+    private val registrations = mutableMapOf<String, AdvertisementRegistration>()
     private var advertiseJob: Job? = null
     private var migrationInstanceName = ""
+    @Volatile
     private var isClosed = true
 
     override fun start(serviceTypes: Flow<Set<String>>) {
@@ -43,32 +51,26 @@ internal class BonjourAdvertiser(
     override fun stop() {
         advertiseJob?.cancel()
         advertiseJob = null
-        scope.launch {
-            isClosed = true
-            sync(emptySet())
-        }
+        isClosed = true
+        scope.launch { sync(emptySet()) }
     }
 
     override fun refresh() {
-        scope.launch { registrations.values.forEach(BonjourRegistration::publish) }
+        scope.launch { registrations.values.forEach { it.publish() } }
     }
 
     private fun sync(serviceTypes: Set<String>) {
         val wanted = if (isClosed) emptySet() else serviceTypes
-        (registrations.keys - wanted).forEach { registrations.remove(it)?.stop() }
+        (registrations.keys - wanted).forEach { registrations.remove(it)?.stop?.invoke() }
         (wanted - registrations.keys).forEach { serviceType ->
-            registrations[serviceType] = BonjourRegistration(
-                scope = scope,
-                appLog = appLog,
-                serviceType = serviceType,
-                advertised = advertisedServiceOf(serviceType, migrationInstanceName),
-            ).also(BonjourRegistration::publish)
+            registrations[serviceType] = register(serviceType, advertisedServiceOf(serviceType, migrationInstanceName))
+                .also { it.publish() }
         }
     }
 }
 
 /** 등록이 실패해도 서버는 멀쩡해 보여 상대가 찾지 못한다. 몇 번 다시 등록한다. */
-private class BonjourRegistration(
+internal class BonjourRegistration(
     private val scope: CoroutineScope,
     private val appLog: AppLog,
     private val serviceType: String,

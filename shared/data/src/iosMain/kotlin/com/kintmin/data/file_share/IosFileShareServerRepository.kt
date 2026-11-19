@@ -27,9 +27,15 @@ internal fun createIosFileShareServerRepository(
         appLog = appLog,
         uploadTempDir = NSTemporaryDirectory(),
         receiveKeepAlive = receiveKeepAlive,
-        advertiser = BonjourAdvertiser(scope, appLog) {
-            toMigrationInstanceName(localDeviceName(), userRepository.getUserId().getOrNull())
-        },
+        advertiser = BonjourAdvertiser(
+            scope = scope,
+            resolveMigrationInstanceName = {
+                toMigrationInstanceName(localDeviceName(), userRepository.getUserId().getOrNull())
+            },
+            register = { serviceType, advertised ->
+                BonjourRegistration(scope, appLog, serviceType, advertised).let { AdvertisementRegistration(it::publish, it::stop) }
+            },
+        ),
     )
     NSNotificationCenter.defaultCenter.addObserverForName(
         name = UIApplicationWillEnterForegroundNotification,
