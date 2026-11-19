@@ -2,13 +2,10 @@ package com.kintmin.presentation.ui.main.bottom_sheet
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,15 +15,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Reorder
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -35,7 +33,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray60
@@ -57,6 +54,11 @@ fun PlaylistReorderBottomSheet(
         dataList = playlists,
         idOf = { it.id },
     )
+    // 드래그 시작 시점의 순서. 끝났을 때 실제로 바뀐 경우에만 쓴다 — 1px 만 끌어도 전체
+    // sequence 를 다시 쓰던 것을 막는다.
+    var orderBeforeDrag by remember { mutableStateOf(emptyList<Int>()) }
+
+    fun commitOrder() = onReorder(reorderState.items.map { it.id })
 
     LaunchedEffect(playlists) {
         // 드래그 중에 상위 목록이 바뀌면(다운로드 완료로 곡 수가 바뀌는 등) 손에 쥔 배치가 재설정된다.
@@ -79,9 +81,10 @@ fun PlaylistReorderBottomSheet(
                 // 범위는 제목이 말한다. 이 시트는 내 플레이리스트 머리말에서만 열리고
                 // 라이브러리는 목록에 아예 없으므로 따로 설명할 것이 없다.
                 Text(
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
                     text = "내 플레이리스트 순서",
-                    style = MaterialTheme.typography.titleMedium,
+                    // titleMedium 은 항목의 bodyLarge 와 같은 16sp 라 제목으로 안 읽힌다.
+                    style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -95,43 +98,24 @@ fun PlaylistReorderBottomSheet(
                     draggingItemId = reorderState.draggingItemId,
                     canMoveUp = index > 0,
                     canMoveDown = index < reorderState.items.lastIndex,
-                    onMoveUp = { reorderState.items.add(index - 1, reorderState.items.removeAt(index)) },
-                    onMoveDown = { reorderState.items.add(index + 1, reorderState.items.removeAt(index)) },
-                    onDragStart = reorderState::onDragStart,
+                    onMoveUp = {
+                        reorderState.items.add(index - 1, reorderState.items.removeAt(index))
+                        commitOrder()
+                    },
+                    onMoveDown = {
+                        reorderState.items.add(index + 1, reorderState.items.removeAt(index))
+                        commitOrder()
+                    },
+                    onDragStart = { offset, id ->
+                        orderBeforeDrag = reorderState.items.map { it.id }
+                        reorderState.onDragStart(offset, id)
+                    },
                     onDrag = reorderState::onDrag,
-                    onDragEnd = reorderState::onDragEnd,
+                    onDragEnd = {
+                        reorderState.onDragEnd()
+                        if (reorderState.items.map { it.id } != orderBeforeDrag) commitOrder()
+                    },
                 )
-            }
-            item(key = "actions") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 12.dp),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    OutlinedButton(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .heightIn(min = 48.dp),
-                        contentPadding = PaddingValues(horizontal = 24.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                        ),
-                        onClick = onDismissRequest,
-                    ) {
-                        Text(text = "취소", fontSize = 14.sp, lineHeight = 14.sp)
-                    }
-                    Button(
-                        modifier = Modifier.heightIn(min = 48.dp),
-                        contentPadding = PaddingValues(horizontal = 32.dp),
-                        onClick = {
-                            onReorder(reorderState.items.map { it.id })
-                            onDismissRequest()
-                        },
-                    ) {
-                        Text(text = "완료", fontSize = 14.sp, lineHeight = 14.sp)
-                    }
-                }
             }
         }
     }
