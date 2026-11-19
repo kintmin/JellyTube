@@ -42,8 +42,14 @@ fun PlaylistDeleteDialog(
             Text(
                 modifier = Modifier.padding(bottom = 12.dp),
                 // 이름이 사용자 입력이라 조사를 붙이면 받침에서 비문이 된다.
-                text = "'$playlistName' 플레이리스트를 지웁니다.\n" +
-                    "담긴 ${audioMediaCount}곡은 지워지지 않고 미분류로 돌아갑니다.",
+                text = buildString {
+                    append("'$playlistName' 플레이리스트를 지웁니다.")
+                    if (audioMediaCount > 0) {
+                        // 곡이 다른 USER 플레이리스트에도 들어 있으면 미분류로 가지 않고 거기 남는다.
+                        append("\n담긴 ${audioMediaCount}곡은 지워지지 않습니다.")
+                        append("\n다른 플레이리스트에 없는 곡은 미분류로 갑니다.")
+                    }
+                },
                 style = MaterialTheme.typography.bodyMedium,
             )
             Row(
