@@ -67,6 +67,14 @@ fun NumberWheelPicker(
         values.getOrNull(centerIndex)?.let(onValueChange)
     }
 
+    // 스크롤 중에는 건드리지 않는다 — 휠이 만든 값이 한 프레임 늦게 돌아와 휠과 싸운다.
+    LaunchedEffect(selectedValue) {
+        val index = values.indexOf(selectedValue)
+        if (index >= 0 && index != centerIndex && !listState.isScrollInProgress) {
+            listState.animateScrollToItem(index)
+        }
+    }
+
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
