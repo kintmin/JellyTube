@@ -8,6 +8,8 @@ import com.kintmin.domain.audio_media.model.AudioMediaExportSummary
 import com.kintmin.domain.audio_media.usecase.ExportAudioMediaListToDeviceUseCase
 import com.kintmin.domain.audio_media.usecase.FetchAllAudioMediaListFlowUseCase
 import com.kintmin.presentation.extension.matchKorean
+import com.kintmin.presentation.platform.DeviceSaveFlow
+import com.kintmin.presentation.platform.deviceSaveFlow
 import com.kintmin.presentation.ui.setting.device_save_select.list.toSettingDeviceSaveSelectListItemUiState
 import com.kintmin.presentation.util.Debounce
 import kotlinx.coroutines.channels.Channel
@@ -24,6 +26,8 @@ class SettingDeviceSaveSelectViewModel constructor(
     fetchAllAudioMediaListFlowUseCase: FetchAllAudioMediaListFlowUseCase,
     private val exportAudioMediaListToDeviceUseCase: ExportAudioMediaListToDeviceUseCase,
 ) : ViewModel() {
+
+    private val isRingtoneShareFlow = deviceSaveFlow == DeviceSaveFlow.RingtoneShareSheet
 
     private val eventChannel = Channel<SettingDeviceSaveSelectEvent>(capacity = 8)
     val eventFlow = eventChannel.receiveAsFlow()
@@ -75,7 +79,11 @@ class SettingDeviceSaveSelectViewModel constructor(
 
     private fun checkItem(audioMediaId: Int) {
         checkedItemIdList.update {
-            if (it.contains(audioMediaId)) it - audioMediaId else it + audioMediaId
+            when {
+                it.contains(audioMediaId) -> it - audioMediaId
+                isRingtoneShareFlow -> listOf(audioMediaId)
+                else -> it + audioMediaId
+            }
         }
     }
 
@@ -85,7 +93,25 @@ class SettingDeviceSaveSelectViewModel constructor(
         }
     }
 
+    private fun requestRingtoneShare() {
+        val audioMedia = audioMediaListFlow.value.firstOrNull { it.id in checkedItemIdList.value } ?: return
+        val event = if (audioMedia.fitsRingtoneLength) {
+            SettingDeviceSaveSelectEvent.ConfirmRingtoneShare(
+                fileFullPath = audioMedia.playbackFileFullPath,
+                title = audioMedia.name,
+                artist = audioMedia.artist,
+            )
+        } else {
+            SettingDeviceSaveSelectEvent.ShowRingtoneTooLong(audioMedia.id)
+        }
+        viewModelScope.launch { eventChannel.send(event) }
+    }
+
     private fun saveCheckedItemListToDevice() {
+        if (isRingtoneShareFlow) {
+            requestRingtoneShare()
+            return
+        }
         if (isSaving.value) return
 
         val targetIdList = checkedItemIdList.value
