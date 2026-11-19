@@ -2,7 +2,7 @@ package com.kintmin.presentation.ui.player_detail
 
 import com.kintmin.domain.audio_play_setting.model.RepeatRangeState
 import com.kintmin.presentation.port.PlaybackController
-import com.kintmin.presentation.port.SleepTimerRunner
+import com.kintmin.presentation.sleep_timer.SleepTimerRunner
 import com.kintmin.presentation.port.model.MediaControlData
 import io.mockk.every
 import io.mockk.mockk

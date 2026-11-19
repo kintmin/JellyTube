@@ -43,10 +43,9 @@ data class AudioMedia(
         val RINGTONE_MAX_DURATION: Duration = 30.seconds
 
         /**
-         * 잠들기 타이머의 마무리 음성으로 고를 수 있는 길이의 상한. 이 값 **이하**를 고를 수 있다.
+         * 잠들기 전에 짧게 듣는다는 쓰임에서 온 상한. 이 값 **이하**를 고를 수 있다.
          *
-         * [RINGTONE_MAX_DURATION] 과 값이 같을 뿐 근거가 다르다 — 저쪽은 시스템이 거부하는 선이고
-         * 이쪽은 "잠들기 전에 짧게" 라는 쓰임이다. 한쪽이 바뀌어도 다른 쪽은 그대로다.
+         * [RINGTONE_MAX_DURATION] 과 값이 같을 뿐 근거가 달라 한쪽이 바뀌어도 다른 쪽은 그대로다.
          */
         val SLEEP_TIMER_ANNOUNCEMENT_MAX_DURATION: Duration = 30.seconds
     }

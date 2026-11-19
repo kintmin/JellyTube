@@ -1,7 +1,7 @@
 package com.kintmin.presentation.di
 
 import com.kintmin.presentation.navigation.AppViewModel
-import com.kintmin.presentation.port.SleepTimerRunner
+import com.kintmin.presentation.sleep_timer.SleepTimerRunner
 import com.kintmin.presentation.ui.audio_edit.AudioEditViewModel
 import com.kintmin.presentation.ui.audio_media_detail.AudioMediaDetailViewModel
 import com.kintmin.presentation.ui.audio_media_information_edit.AudioMediaInformationEditViewModel
@@ -32,7 +32,7 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val presentationModule: Module = module {
-    // 화면보다 오래 살아야 해서 ViewModel 이 아니다 — 근거는 SleepTimerRunner 에 있다.
+    // 화면보다 오래 살아야 해서 ViewModel 이 아니다.
     single { SleepTimerRunner(get(), get()) }
 
     viewModelOf(::AppViewModel)

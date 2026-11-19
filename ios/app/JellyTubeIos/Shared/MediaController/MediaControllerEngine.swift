@@ -166,7 +166,6 @@ final class MediaControllerEngine {
 
     /// 범위와 페이드 곡선은 Kotlin(`SleepTimerFadeOut`)이 정해서 넘긴다.
     ///
-    /// 믹서가 아니라 재생 노드를 깎는다 — 믹서를 깎으면 같은 엔진에 나중에 붙는 소리까지 준다.
     /// 스냅샷에 싣지 않으므로 `broadcast()` 하지 않는다.
     func setVolume(_ volume: Float) {
         playerNode.volume = volume

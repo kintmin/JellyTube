@@ -29,7 +29,6 @@ data class PlayerDetailUiState(
     val repeatRangeEndDuration: Duration? = null,
     val isPlaybackSpeedMenuVisible: Boolean = false,
     val isPlaybackPitchMenuVisible: Boolean = false,
-    /** 잠들기 타이머가 꺼져 있으면 null. */
     val sleepTimerRemaining: Duration? = null,
     val sleepTimerMinutes: Int = 30,
     val sleepTimerAnnouncement: SleepTimerAnnouncementOptions = SleepTimerAnnouncementOptions(),
@@ -38,7 +37,7 @@ data class PlayerDetailUiState(
 ) {
     val timeString get() = "${currentDuration.to_hh_colon_mm_colon_ss()} / ${playbackDuration.to_hh_colon_mm_colon_ss()}"
 
-    /** 배지에 띄울 남은 분. 올림해서 1분 미만도 1 로 보인다. 타이머가 꺼져 있으면 null. */
+    /** 올림한다 — 1분 미만도 1 로 보여야 "거의 다 됐다" 가 0 으로 읽히지 않는다. */
     val sleepTimerRemainingMinutes: Int?
         get() = sleepTimerRemaining?.let { ((it.inWholeSeconds + 59) / 60).toInt() }
 

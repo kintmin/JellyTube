@@ -1,9 +1,11 @@
-package com.kintmin.presentation.port
+package com.kintmin.presentation.sleep_timer
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_play_setting.SleepTimerFadeOut
 import com.kintmin.domain.audio_play_setting.SleepTimerSchedule
+import com.kintmin.presentation.port.AudioPreviewPlayer
+import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -16,11 +18,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
 
 /**
- * 정해 둔 시간이 지나면 페이드아웃하고 재생을 멈춘다. 마무리 음성을 골라 두면 멈춘 뒤에 들려준다.
- *
- * **화면이 아니라 앱에 하나만 있어야 한다.** 재생 상태 폴링은 화면이 보일 때만 돌아서 여기 얹으면
- * 화면을 떠나는 순간 타이머가 죽는다. 앱에 하나로 두면 재생이 프로세스를 살려 두는 동안 같이
- * 살아 있고, 프로세스가 죽었다면 재생도 이미 죽어 있다.
+ * **화면이 아니라 앱에 하나만 있어야 한다.** 화면에 매달면 화면을 떠나는 순간 타이머가 죽는다.
+ * 앱에 하나로 두면 재생이 프로세스를 살려 두는 동안 같이 살아 있다.
  *
  * **[scope] 는 메인 디스패처여야 한다.** 재생 포트 구현이 양 플랫폼 모두 메인 스레드 전용이다.
  */
@@ -34,19 +33,13 @@ class SleepTimerRunner(
     private var schedule: SleepTimerSchedule? = null
     private var job: Job? = null
 
-    /** 켜져 있지 않으면 null. 화면이 재생 상태를 긁는 주기에 함께 읽는다. */
+    /** 켜져 있지 않으면 null. */
     val remaining: Duration?
         get() = schedule?.remaining()
 
-    /**
-     * 멈춘 뒤에 들려줄 음성. 없으면 들려주지 않는다.
-     *
-     * 타이머가 도는 중에 바꿔도 **울릴 때 골라져 있는 것**이 난다 — 켤 때 잡아 두면 바꾼 것이
-     * 조용히 무시된다.
-     */
+    /** 멈춘 뒤에 들려줄 음성. 없으면 들려주지 않는다. */
     var announcement: AudioMedia? = null
 
-    /** 곡이 바뀌어도 이 타이머는 그대로다. 끄는 것은 [cancel] 뿐이다. */
     fun start(total: Duration) {
         cancel()
 
@@ -79,7 +72,6 @@ class SleepTimerRunner(
             }
             playbackController.pause()
         } finally {
-            // 깎은 볼륨을 남기면 다음 재생이 영구히 무음이 된다. 도중에 꺼져도 되돌린다.
             playbackController.setPlaybackVolume(1f)
         }
     }

@@ -18,7 +18,6 @@ class SleepTimerSchedule(
 
     fun remaining(): Duration = (total - startMark.elapsedNow()).coerceAtLeast(Duration.ZERO)
 
-    /** 페이드를 시작하기까지 기다릴 시간. 남은 시간이 페이드 길이보다 짧으면 기다리지 않는다. */
     fun delayUntilFadeOut(): Duration =
         (remaining() - SleepTimerFadeOut.DURATION).coerceAtLeast(Duration.ZERO)
 }

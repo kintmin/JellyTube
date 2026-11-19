@@ -22,7 +22,7 @@ import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.presentation.port.PlaybackController
-import com.kintmin.presentation.port.SleepTimerRunner
+import com.kintmin.presentation.sleep_timer.SleepTimerRunner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -386,7 +386,6 @@ class PlayerDetailViewModel constructor(
                 repeatRangeEndDuration = repeatRangeState.endDuration,
                 isPlaybackSpeedMenuVisible = data.value.isPlaybackSpeedMenuVisible,
                 isPlaybackPitchMenuVisible = data.value.isPlaybackPitchMenuVisible,
-                // 잠들기 타이머는 곡과 무관하므로 곡이 바뀌어도 그대로 이어진다.
                 sleepTimerRemaining = sleepTimerRunner.remaining,
                 sleepTimerMinutes = data.value.sleepTimerMinutes,
                 sleepTimerAnnouncement = data.value.sleepTimerAnnouncement,

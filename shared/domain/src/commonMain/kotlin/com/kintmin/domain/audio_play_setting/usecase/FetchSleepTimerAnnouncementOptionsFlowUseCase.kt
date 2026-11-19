@@ -16,7 +16,6 @@ class FetchSleepTimerAnnouncementOptionsFlowUseCase(
         ::resolve,
     )
 
-    /** 고른 음원이 지워졌거나 길이 제한을 넘기면 고르지 않은 것으로 떨어진다. */
     internal fun resolve(savedId: Int?, mediaList: List<AudioMedia>): SleepTimerAnnouncementOptions {
         val selectable = mediaList.filter { it.fitsSleepTimerAnnouncement }
         return SleepTimerAnnouncementOptions(
