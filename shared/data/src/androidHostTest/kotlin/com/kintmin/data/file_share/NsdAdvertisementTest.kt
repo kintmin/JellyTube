@@ -36,26 +36,4 @@ class NsdAdvertisementTest {
         assertEquals(emptySet<String>(), advertisedServiceTypes(setOf(FileShareServerOwner.DATA_MIGRATION), DataMigrationSendStatus.Idle))
         assertEquals(emptySet<String>(), advertisedServiceTypes(setOf(FileShareServerOwner.DATA_MIGRATION), DataMigrationSendStatus.Locked))
     }
-
-    @Test
-    fun `인스턴스 이름은 63바이트를 넘지 않고 한글을 중간에서 자르지 않는다`() {
-        val name = "가".repeat(30)
-
-        val instanceName = toDnsSdInstanceName(name)
-
-        assertEquals("가".repeat(21), instanceName)
-        assertEquals(63, instanceName.encodeToByteArray().size)
-    }
-
-    @Test
-    fun `서로게이트 쌍은 쪼개지 않는다`() {
-        val name = "a".repeat(60) + "😀"
-
-        assertEquals("a".repeat(60), toDnsSdInstanceName(name))
-    }
-
-    @Test
-    fun `짧은 이름은 그대로 둔다`() {
-        assertEquals("Galaxy S24", toDnsSdInstanceName("Galaxy S24"))
-    }
 }

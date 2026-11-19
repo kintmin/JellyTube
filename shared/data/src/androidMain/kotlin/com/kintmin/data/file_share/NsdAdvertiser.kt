@@ -3,7 +3,6 @@ package com.kintmin.data.file_share
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
-import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.fileshare.FileShareConstants
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -16,8 +15,10 @@ import kotlinx.coroutines.launch
 internal class NsdAdvertiser(
     private val context: Context,
     private val scope: CoroutineScope,
+    private val resolveMigrationInstanceName: suspend () -> String,
 ) {
     private val registrations = mutableMapOf<String, NsdManager.RegistrationListener>()
+    private var migrationInstanceName = ""
     private var advertiseJob: Job? = null
     private var targets: Set<String> = emptySet()
     private var retryCount = 0
@@ -28,6 +29,8 @@ internal class NsdAdvertiser(
         if (advertiseJob?.isActive == true) return
         isClosed = false
         advertiseJob = scope.launch {
+            val name = resolveMigrationInstanceName()
+            synchronized(this@NsdAdvertiser) { migrationInstanceName = name }
             serviceTypes.distinctUntilChanged().collect(::sync)
         }
     }
@@ -86,7 +89,7 @@ internal class NsdAdvertiser(
         this.serviceType = serviceType
         port = FileShareConstants.DEFAULT_PORT
         if (serviceType == FileShareConstants.MIGRATION_NSD_SERVICE_TYPE) {
-            serviceName = toDnsSdInstanceName(localDeviceName(context))
+            serviceName = migrationInstanceName
             setAttribute(FileShareConstants.MIGRATION_TXT_FORMAT_VERSION, FileShareConstants.MIGRATION_FORMAT_VERSION.toString())
         } else {
             serviceName = FileShareConstants.NSD_SERVICE_NAME

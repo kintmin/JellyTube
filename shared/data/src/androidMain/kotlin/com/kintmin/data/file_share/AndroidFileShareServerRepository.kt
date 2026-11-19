@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.combine
 internal class AndroidFileShareServerRepository(
     context: Context,
     appLog: AppLog,
+    migrationInstanceName: suspend () -> String,
 ) : PcFileShareServerRepository, MigrationSendServerRepository {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -47,7 +48,7 @@ internal class AndroidFileShareServerRepository(
             migrationSendHandler = CurrentMigrationSendHandler(),
         )
     }
-    private val nsdAdvertiser = NsdAdvertiser(context, scope)
+    private val nsdAdvertiser = NsdAdvertiser(context, scope, migrationInstanceName)
 
     @Synchronized
     override fun start(handler: PcUploadHandler) {

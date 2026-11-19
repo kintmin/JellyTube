@@ -3,6 +3,7 @@ package com.kintmin.data.di
 import com.kintmin.data.audio_edit.AudioEditor
 import com.kintmin.data.audio_edit.AudioEditorImpl
 import com.kintmin.data.data_migration.localDeviceName
+import com.kintmin.data.data_migration.toMigrationInstanceName
 import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.device_status.DeviceStatusImpl
 import com.kintmin.data.file_share.AndroidFileShareServerRepository
@@ -20,6 +21,7 @@ import com.kintmin.domain.data_migration.usecase.CloseMigrationSendUseCase
 import com.kintmin.domain.data_migration.usecase.FetchMigrationSendStatusUseCase
 import com.kintmin.domain.data_migration.usecase.OpenMigrationSendUseCase
 import com.kintmin.domain.file_share.repository.PcFileShareServerRepository
+import com.kintmin.domain.user.repository.UserRepository
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
@@ -39,7 +41,13 @@ val dataAndroidModule: Module = module {
     }
 
     // PC 수신과 한 서버를 같이 쓴다.
-    single { AndroidFileShareServerRepository(androidContext(), get()) }
+    single {
+        val context = androidContext()
+        val userRepository = get<UserRepository>()
+        AndroidFileShareServerRepository(context, get()) {
+            toMigrationInstanceName(localDeviceName(context), userRepository.getUserId().getOrNull())
+        }
+    }
         .binds(arrayOf(PcFileShareServerRepository::class, MigrationSendServerRepository::class))
     factoryOf(::OpenMigrationSendUseCase)
     factoryOf(::CloseMigrationSendUseCase)
