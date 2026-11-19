@@ -56,4 +56,12 @@ interface PlaybackController {
     fun setRepeatMode(isRepeat: Boolean)
     fun setPlaybackSpeed(speed: Float)
     fun setPlaybackPitchSemitone(semitone: Int)
+
+    /**
+     * 재생기 자체의 볼륨(0~1). 기기 볼륨이 아니다.
+     *
+     * 사용자에게 보이는 설정이 아니라 잠들기 타이머가 페이드아웃에 쓰는 수단이다. 깎은 뒤에는
+     * 반드시 1 로 되돌려야 한다 — 남겨 두면 다음 재생이 영구히 무음이 된다.
+     */
+    fun setPlaybackVolume(volume: Float)
 }

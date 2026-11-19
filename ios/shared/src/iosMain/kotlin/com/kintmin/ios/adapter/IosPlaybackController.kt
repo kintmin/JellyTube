@@ -131,6 +131,8 @@ internal class IosPlaybackController(
         playbackPitchSemitoneState = PlaybackRange.clampPitchSemitone(semitone)
         bridge.setPlaybackPitchSemitone(playbackPitchSemitoneState)
     }
+
+    override fun setPlaybackVolume(volume: Float) = bridge.setVolume(volume.coerceIn(0f, 1f))
 }
 
 private fun MediaControlData.toIosMediaItem() = IosMediaItem(

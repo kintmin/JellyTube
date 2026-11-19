@@ -45,6 +45,15 @@ class IosPlaybackControllerTest {
         assertEquals(null, manager.repeatRangeState.mediaId)
     }
 
+    @Test
+    fun `볼륨은 0에서 1 사이로 잡아 브릿지에 넘긴다`() {
+        manager.setPlaybackVolume(0.5f)
+        manager.setPlaybackVolume(-1f)
+        manager.setPlaybackVolume(2f)
+
+        assertEquals(listOf(0.5f, 0f, 1f), bridge.volumeCalls)
+    }
+
     private class FakeMediaControllerBridge : IosMediaControllerBridge {
         var positionMillis = 0L
         var playing: IosMediaItem? = IosMediaItem(
@@ -57,6 +66,7 @@ class IosPlaybackControllerTest {
             artworkFileFullPath = null,
         )
         val seekCalls = mutableListOf<Long>()
+        val volumeCalls = mutableListOf<Float>()
 
         override fun playingItem() = playing
         override fun currentPositionMillis() = positionMillis
@@ -76,6 +86,9 @@ class IosPlaybackControllerTest {
         override fun setRepeatMode(isRepeat: Boolean) = Unit
         override fun setPlaybackSpeed(speed: Float) = Unit
         override fun setPlaybackPitchSemitone(semitone: Int) = Unit
+        override fun setVolume(volume: Float) {
+            volumeCalls += volume
+        }
         override fun addItem(item: IosMediaItem, atStart: Boolean) = Unit
         override fun removeItem(mediaId: String) = Unit
         override fun replaceItem(mediaId: String, item: IosMediaItem) = Unit
