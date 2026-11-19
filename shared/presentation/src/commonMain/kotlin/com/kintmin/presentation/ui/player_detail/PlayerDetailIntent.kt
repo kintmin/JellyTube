@@ -21,4 +21,12 @@ sealed interface PlayerDetailIntent {
     data class OnSelectPlaybackPitchSemitone(val semitone: Int) : PlayerDetailIntent
     data class OnChangeTimeSlider(val duration: Float) : PlayerDetailIntent
     data object OnChangeFinishTimeSlider : PlayerDetailIntent
+    data object OnClickSleepTimerButton : PlayerDetailIntent
+    data object OnDismissSleepTimerMenu : PlayerDetailIntent
+    data class OnSelectSleepTimerMinutes(val minutes: Int) : PlayerDetailIntent
+    data object OnStartSleepTimer : PlayerDetailIntent
+    data object OnCancelSleepTimer : PlayerDetailIntent
+    data object OnClickSleepTimerAnnouncementButton : PlayerDetailIntent
+    data object OnDismissSleepTimerAnnouncementMenu : PlayerDetailIntent
+    data class OnSelectSleepTimerAnnouncement(val mediaId: Int?) : PlayerDetailIntent
 }

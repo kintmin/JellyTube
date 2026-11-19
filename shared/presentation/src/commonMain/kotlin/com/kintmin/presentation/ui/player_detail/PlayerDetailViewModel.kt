@@ -6,10 +6,14 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlo
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
+import com.kintmin.domain.audio_play_setting.usecase.FetchSleepTimerAnnouncementOptionsFlowUseCase
+import com.kintmin.domain.audio_play_setting.usecase.FetchSleepTimerMinutesFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdateIsPlaybackShufflingUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackPitchSemitoneUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackSpeedUseCase
+import com.kintmin.domain.audio_play_setting.usecase.UpdateSleepTimerAnnouncementMediaIdUseCase
+import com.kintmin.domain.audio_play_setting.usecase.UpdateSleepTimerMinutesUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.audio_track.usecase.ToggleFavoriteUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
@@ -18,6 +22,7 @@ import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.presentation.port.PlaybackController
+import com.kintmin.presentation.port.SleepTimerRunner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,12 +36,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 class PlayerDetailViewModel constructor(
     private val mediaControllerManager: PlaybackController,
+    private val sleepTimerRunner: SleepTimerRunner,
     fetchIsPlaybackRepeatingFlowUseCase: FetchIsPlaybackRepeatingFlowUseCase,
     fetchIsPlaybackShufflingFlowUseCase: FetchIsPlaybackShufflingFlowUseCase,
     fetchPlaybackSpeedFlowUseCase: FetchPlaybackSpeedFlowUseCase,
@@ -45,6 +52,10 @@ class PlayerDetailViewModel constructor(
     private val updateIsPlaybackShufflingUseCase: UpdateIsPlaybackShufflingUseCase,
     private val updatePlaybackSpeedUseCase: UpdatePlaybackSpeedUseCase,
     private val updatePlaybackPitchSemitoneUseCase: UpdatePlaybackPitchSemitoneUseCase,
+    private val updateSleepTimerMinutesUseCase: UpdateSleepTimerMinutesUseCase,
+    private val updateSleepTimerAnnouncementMediaIdUseCase: UpdateSleepTimerAnnouncementMediaIdUseCase,
+    fetchSleepTimerMinutesFlowUseCase: FetchSleepTimerMinutesFlowUseCase,
+    fetchSleepTimerAnnouncementOptionsFlowUseCase: FetchSleepTimerAnnouncementOptionsFlowUseCase,
     private val fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
@@ -72,6 +83,7 @@ class PlayerDetailViewModel constructor(
                 playbackPitchSemitone = mediaControllerManager.playbackPitchSemitone,
                 repeatRangeStartDuration = mediaControllerManager.repeatRangeState.startDuration,
                 repeatRangeEndDuration = mediaControllerManager.repeatRangeState.endDuration,
+                sleepTimerRemaining = sleepTimerRunner.remaining,
             )
         )
     }
@@ -106,6 +118,17 @@ class PlayerDetailViewModel constructor(
         viewModelScope.launch {
             fetchPlaybackPitchSemitoneFlowUseCase().collect { semitone ->
                 _data.update { prev -> prev.copy(playbackPitchSemitone = semitone) }
+            }
+        }
+        viewModelScope.launch {
+            fetchSleepTimerMinutesFlowUseCase().collect { minutes ->
+                _data.update { prev -> prev.copy(sleepTimerMinutes = minutes) }
+            }
+        }
+        viewModelScope.launch {
+            fetchSleepTimerAnnouncementOptionsFlowUseCase().collect { options ->
+                sleepTimerRunner.announcement = options.selected
+                _data.update { prev -> prev.copy(sleepTimerAnnouncement = options) }
             }
         }
     }
@@ -263,6 +286,56 @@ class PlayerDetailViewModel constructor(
                 mediaControllerManager.seek(data.value.currentDuration)
             }
 
+            PlayerDetailIntent.OnClickSleepTimerButton -> {
+                _data.update { it.copy(isSleepTimerMenuVisible = true) }
+            }
+
+            PlayerDetailIntent.OnDismissSleepTimerMenu -> {
+                _data.update { it.copy(isSleepTimerMenuVisible = false) }
+            }
+
+            is PlayerDetailIntent.OnSelectSleepTimerMinutes -> {
+                viewModelScope.launch {
+                    updateSleepTimerMinutesUseCase(intent.minutes)
+                    _data.update { it.copy(sleepTimerMinutes = intent.minutes) }
+                }
+            }
+
+            PlayerDetailIntent.OnStartSleepTimer -> {
+                sleepTimerRunner.start(total = data.value.sleepTimerMinutes.minutes)
+                _data.update {
+                    it.copy(
+                        sleepTimerRemaining = sleepTimerRunner.remaining,
+                        isSleepTimerMenuVisible = false,
+                    )
+                }
+            }
+
+            PlayerDetailIntent.OnCancelSleepTimer -> {
+                sleepTimerRunner.cancel()
+                _data.update {
+                    it.copy(
+                        sleepTimerRemaining = sleepTimerRunner.remaining,
+                        isSleepTimerMenuVisible = false,
+                    )
+                }
+            }
+
+            PlayerDetailIntent.OnClickSleepTimerAnnouncementButton -> {
+                _data.update { it.copy(isSleepTimerAnnouncementMenuVisible = true) }
+            }
+
+            PlayerDetailIntent.OnDismissSleepTimerAnnouncementMenu -> {
+                _data.update { it.copy(isSleepTimerAnnouncementMenuVisible = false) }
+            }
+
+            is PlayerDetailIntent.OnSelectSleepTimerAnnouncement -> {
+                viewModelScope.launch {
+                    updateSleepTimerAnnouncementMediaIdUseCase(intent.mediaId)
+                    _data.update { it.copy(isSleepTimerAnnouncementMenuVisible = false) }
+                }
+            }
+
             PlayerDetailIntent.OnRefreshMediaData -> refreshMediaData()
         }
     }
@@ -285,6 +358,7 @@ class PlayerDetailViewModel constructor(
                     isPlaying = mediaControllerManager.isPlaying,
                     repeatRangeStartDuration = repeatRangeState.startDuration,
                     repeatRangeEndDuration = repeatRangeState.endDuration,
+                    sleepTimerRemaining = sleepTimerRunner.remaining,
                 )
             }
             refreshLyricLine()
@@ -312,6 +386,12 @@ class PlayerDetailViewModel constructor(
                 repeatRangeEndDuration = repeatRangeState.endDuration,
                 isPlaybackSpeedMenuVisible = data.value.isPlaybackSpeedMenuVisible,
                 isPlaybackPitchMenuVisible = data.value.isPlaybackPitchMenuVisible,
+                // 잠들기 타이머는 곡과 무관하므로 곡이 바뀌어도 그대로 이어진다.
+                sleepTimerRemaining = sleepTimerRunner.remaining,
+                sleepTimerMinutes = data.value.sleepTimerMinutes,
+                sleepTimerAnnouncement = data.value.sleepTimerAnnouncement,
+                isSleepTimerMenuVisible = data.value.isSleepTimerMenuVisible,
+                isSleepTimerAnnouncementMenuVisible = data.value.isSleepTimerAnnouncementMenuVisible,
             )
         }
 
