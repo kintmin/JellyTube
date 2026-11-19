@@ -151,6 +151,20 @@ class SleepTimerRunnerTest {
     }
 
     @Test
+    fun `멈춘 뒤 마무리 음성이 나는 동안에는 타이머가 켜진 것으로 보지 않는다`() = runTest {
+        val runner = runner()
+        runner.announcement = announcement
+
+        runner.start(total = 30.minutes)
+        advanceTimeBy(30.minutes + 1.seconds)
+        runCurrent()
+        timeSource += 30.minutes
+
+        verify(exactly = 0) { announcementPlayer.release() }
+        assertNull(runner.remaining)
+    }
+
+    @Test
     fun `타이머가 도는 중에 마무리 음성을 바꾸면 바꾼 것이 난다`() = runTest {
         val runner = runner()
         runner.announcement = announcement

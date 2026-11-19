@@ -49,12 +49,17 @@ class SleepTimerRunner(
             try {
                 delay(started.delayUntilFadeOut())
                 fadeOutAndPause()
+                clearSchedule(started)
                 announcement?.let { playAnnouncement(it) }
             } finally {
-                // 앞선 타이머가 늦게 취소되면서 새로 켠 타이머를 지우지 않게 한다.
-                if (schedule === started) schedule = null
+                clearSchedule(started)
             }
         }
+    }
+
+    // 앞선 타이머가 늦게 취소되면서 새로 켠 타이머를 지우지 않게 한다.
+    private fun clearSchedule(started: SleepTimerSchedule) {
+        if (schedule === started) schedule = null
     }
 
     fun cancel() {
