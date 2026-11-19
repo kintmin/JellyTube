@@ -2,7 +2,11 @@ package com.kintmin.presentation.port
 
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 
-/** 음원 편집 화면 전용 미리듣기 플레이어. */
+/**
+ * 메인 재생과 별개로 음원을 들려주는 플레이어. 재생 큐를 건드리지 않는다.
+ *
+ * 앱에 하나뿐이라 [play] 가 앞서 걸린 재생을 끊는다.
+ */
 interface AudioPreviewPlayer {
 
     val isPlaying: Boolean

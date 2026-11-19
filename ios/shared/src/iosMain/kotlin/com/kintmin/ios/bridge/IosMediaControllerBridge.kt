@@ -33,6 +33,9 @@ interface IosMediaControllerBridge {
     fun setPlaybackSpeed(speed: Float)
     fun setPlaybackPitchSemitone(semitone: Int)
 
+    /** 재생 노드의 볼륨(0~1). 믹서가 아니라 노드를 깎아야 나중에 붙는 소리가 같이 줄지 않는다. */
+    fun setVolume(volume: Float)
+
     fun addItem(item: IosMediaItem, atStart: Boolean)
 
     fun removeItem(mediaId: String)

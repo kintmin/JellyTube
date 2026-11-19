@@ -62,6 +62,8 @@ final class MediaControllerBridgeImpl: IosMediaControllerBridge {
         onMain { $0.setPitchSemitone(Int(semitone)) }
     }
 
+    func setVolume(volume: Float) { onMain { $0.setVolume(volume) } }
+
     func addItem(item: IosMediaItem, atStart: Bool) {
         onMain { $0.addItem(item.toEngineItem(), atStart: atStart) }
     }

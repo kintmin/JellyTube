@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.rounded.NavigateBefore
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
 import androidx.compose.material.icons.automirrored.rounded.Subject
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
+import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.LibraryMusic
@@ -32,6 +33,8 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.IconButton
@@ -82,6 +85,8 @@ import com.kintmin.presentation.theme.seaBlue10
 import com.kintmin.presentation.theme.seaBlue40
 import com.kintmin.presentation.ui.player_detail.dialog.PlaybackPitchDialog
 import com.kintmin.presentation.ui.player_detail.dialog.PlaybackSpeedDialog
+import com.kintmin.presentation.ui.player_detail.dialog.SleepTimerAnnouncementDialog
+import com.kintmin.presentation.ui.player_detail.dialog.SleepTimerDialog
 import com.kintmin.presentation.ui.player_detail.dialog.toPitchSemitoneText
 import com.kintmin.presentation.ui.player_detail.dialog.toPlaybackSpeedText
 import kotlinx.coroutines.delay
@@ -236,6 +241,32 @@ fun PlayerDetailScreen(
                                 contentDescription = "세부 화면",
                                 tint = Color.White.copy(alpha = 0.82f),
                             )
+                        }
+                        IconButton(
+                            modifier = Modifier.padding(start = 8.dp),
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickSleepTimerButton) }) {
+                            // 켜짐을 tint 로만 알리지 않는다. 이 테마의 primary 는 어두운 배경에서
+                            // 흰 아이콘보다 오히려 덜 보여, 켜진 쪽이 꺼진 쪽보다 흐려진다.
+                            BadgedBox(
+                                badge = {
+                                    data.sleepTimerRemainingMinutes?.let { minutes ->
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                                        ) {
+                                            Text(text = "$minutes")
+                                        }
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Bedtime,
+                                    contentDescription = data.sleepTimerRemainingMinutes
+                                        ?.let { "잠들기 타이머 켜짐, ${it}분 남음" }
+                                        ?: "잠들기 타이머",
+                                    tint = Color.White.copy(alpha = 0.82f),
+                                )
+                            }
                         }
                     }
                 }
@@ -505,6 +536,24 @@ fun PlayerDetailScreen(
                 selectedSemitone = data.playbackPitchSemitone,
                 onDismiss = { sendIntent(PlayerDetailIntent.OnDismissPlaybackPitchMenu) },
                 onSelectSemitone = { sendIntent(PlayerDetailIntent.OnSelectPlaybackPitchSemitone(it)) },
+            )
+            SleepTimerDialog(
+                showDialog = data.isSleepTimerMenuVisible,
+                minutes = data.sleepTimerMinutes,
+                remaining = data.sleepTimerRemaining,
+                announcementName = data.sleepTimerAnnouncement.selected?.name,
+                onDismiss = { sendIntent(PlayerDetailIntent.OnDismissSleepTimerMenu) },
+                onSelectMinutes = { sendIntent(PlayerDetailIntent.OnSelectSleepTimerMinutes(it)) },
+                onClickAnnouncement = { sendIntent(PlayerDetailIntent.OnClickSleepTimerAnnouncementButton) },
+                onStart = { sendIntent(PlayerDetailIntent.OnStartSleepTimer) },
+                onCancelTimer = { sendIntent(PlayerDetailIntent.OnCancelSleepTimer) },
+            )
+            SleepTimerAnnouncementDialog(
+                showDialog = data.isSleepTimerAnnouncementMenuVisible,
+                selectedMediaId = data.sleepTimerAnnouncement.selected?.id,
+                selectableMediaList = data.sleepTimerAnnouncement.selectable,
+                onDismiss = { sendIntent(PlayerDetailIntent.OnDismissSleepTimerAnnouncementMenu) },
+                onSelect = { sendIntent(PlayerDetailIntent.OnSelectSleepTimerAnnouncement(it)) },
             )
         }
     }

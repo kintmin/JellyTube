@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import androidx.core.content.ContextCompat
 import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.Player.COMMAND_SET_VOLUME
 import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.session.MediaController
@@ -204,6 +205,12 @@ class PlaybackControllerImpl(
     override fun setPlaybackPitchSemitone(semitone: Int) {
         playbackPitchSemitoneState = PlaybackRange.clampPitchSemitone(semitone)
         applyPlaybackParameters(getMediaController())
+    }
+
+    override fun setPlaybackVolume(volume: Float) {
+        val mediaController = getMediaController() ?: return
+        if (!mediaController.isCommandAvailable(COMMAND_SET_VOLUME)) return
+        mediaController.volume = volume.coerceIn(0f, 1f)
     }
 
     private fun applyPlaybackParameters(mediaController: MediaController?) {

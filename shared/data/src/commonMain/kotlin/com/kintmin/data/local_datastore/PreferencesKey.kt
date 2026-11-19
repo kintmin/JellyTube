@@ -26,6 +26,17 @@ sealed interface PreferencesKey<T> {
         override val key = intPreferencesKey("PlaybackPitchSemitone")
     }
 
+    data object SleepTimerMinutes : PreferencesKey<Int> {
+        override val key = intPreferencesKey("SleepTimerMinutes")
+    }
+
+    data object SleepTimerAnnouncementMediaId : PreferencesKey<Int> {
+        override val key = intPreferencesKey("SleepTimerAnnouncementMediaId")
+
+        /** 저장소가 값을 지우지 못해 "고르지 않음" 을 이 값으로 적는다. 음원 id 는 1 부터 받는다. */
+        const val NONE = 0
+    }
+
     data object UserId : PreferencesKey<String> {
         override val key = stringPreferencesKey("UserId")
     }

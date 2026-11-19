@@ -56,4 +56,7 @@ interface PlaybackController {
     fun setRepeatMode(isRepeat: Boolean)
     fun setPlaybackSpeed(speed: Float)
     fun setPlaybackPitchSemitone(semitone: Int)
+
+    /** 재생기 자체의 볼륨(0~1). 기기 볼륨이 아니다. */
+    fun setPlaybackVolume(volume: Float)
 }

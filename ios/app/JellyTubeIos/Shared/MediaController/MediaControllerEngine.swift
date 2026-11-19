@@ -164,6 +164,13 @@ final class MediaControllerEngine {
         broadcast()
     }
 
+    /// 범위와 페이드 곡선은 Kotlin(`SleepTimerFadeOut`)이 정해서 넘긴다.
+    ///
+    /// 스냅샷에 싣지 않으므로 `broadcast()` 하지 않는다.
+    func setVolume(_ volume: Float) {
+        playerNode.volume = volume
+    }
+
     /// 지금 듣고 있는 곡은 자리를 지킨 채 나머지만 섞는다. 끄면 원래 순서로 되돌린다.
     func setShuffle(_ isShuffle: Bool) {
         guard isShuffleEnabled != isShuffle else { return }
