@@ -57,10 +57,10 @@ fun DataMigrationConnectView(
                 }
                 DataMigrationReceivePhase.Searching -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                    StatusText(uiState.source?.let { "${it.name}에 연결하는 중입니다." } ?: "Android 기기를 찾는 중입니다.")
+                    StatusText(uiState.source?.let { "${it.name}에 연결하는 중입니다." } ?: "보내는 기기를 찾는 중입니다.")
                 }
                 is DataMigrationReceivePhase.SelectSource -> {
-                    StatusText("데이터를 보낼 Android 기기를 골라 주세요.")
+                    StatusText("데이터를 보낼 기기를 골라 주세요.")
                     phase.sources.forEach { source ->
                         OutlinedButton(
                             modifier = Modifier.fillMaxWidth(),
@@ -76,7 +76,7 @@ fun DataMigrationConnectView(
                 }
                 DataMigrationReceivePhase.NotFound -> {
                     StatusText(
-                        "기기를 찾지 못했습니다. Android에서 보내기 화면이 열려 있는지, 같은 Wi-Fi인지, " +
+                        "기기를 찾지 못했습니다. 보내는 기기에서 보내기 화면이 열려 있는지, 같은 Wi-Fi인지, " +
                             "설정 → 개인정보 보호 → 로컬 네트워크에서 JellyTube가 켜져 있는지 확인해 주세요.",
                     )
                     Button(onClick = { sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch) }) {
@@ -84,7 +84,7 @@ fun DataMigrationConnectView(
                     }
                 }
                 is DataMigrationReceivePhase.CodeInput -> {
-                    StatusText("${uiState.source?.name ?: "Android"} 화면에 보이는 6자리 코드를 입력해 주세요.")
+                    StatusText("${uiState.source?.name ?: "보내는 기기"} 화면에 보이는 6자리 코드를 입력해 주세요.")
                     OutlinedTextField(
                         value = uiState.code,
                         onValueChange = { sendIntent(SettingDataMigrationReceiveIntent.OnChangeCode(it)) },
@@ -105,7 +105,7 @@ fun DataMigrationConnectView(
                     StatusText("연결하는 중입니다.")
                 }
                 else -> {
-                    StatusText("같은 Wi-Fi의 Android 기기를 찾습니다.")
+                    StatusText("같은 Wi-Fi의 보내는 기기를 찾습니다.")
                     Button(onClick = { sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch) }) {
                         Text("기기 찾기")
                     }

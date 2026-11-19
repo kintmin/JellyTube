@@ -6,7 +6,6 @@ import com.kintmin.jellytube.intent.bringAppToFrontPendingIntent
 import com.kintmin.jellytube.push_notification.PushNotificationIds
 import com.kintmin.jellytube.push_notification.channels.FileShareChannel
 
-/** 받는 동안만 뜬다. 끝나거나 화면을 나가면 서비스가 내려가며 알림도 사라진다. */
 data object DataMigrationReceiveNotification : PushNotification() {
 
     override val id = PushNotificationIds.FILE_SHARE_SERVER

@@ -13,7 +13,3 @@ actual val deviceSaveFlow: DeviceSaveFlow =
     } else {
         DeviceSaveFlow.RingtoneNeedsNewerOs
     }
-
-actual val isDataMigrationSendSupported: Boolean = true
-
-actual val isDataMigrationReceiveSupported: Boolean = true

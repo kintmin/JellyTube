@@ -75,7 +75,7 @@ private fun SettingConfirmDialogPreview() {
         SettingConfirmDialog(
             isShow = true,
             title = "보내기를 중단할까요?",
-            message = "iPhone이 아직 받는 중입니다. 중단하면 iPhone에서 실패로 끝납니다.",
+            message = "받는 기기가 아직 받는 중입니다. 중단하면 받는 기기에서 실패로 끝납니다.",
             dismissText = "계속 보내기",
             confirmText = "중단",
             onDismiss = {},

@@ -39,7 +39,6 @@ internal fun createIosFileShareServerRepository(
     return repository
 }
 
-/** 이 기기가 재생하지 못하는 형식의 PC 업로드는 받기 전에 거절한다. */
 internal class PlayableOnlyPcFileShareServerRepository(
     private val delegate: PcFileShareServerRepository,
 ) : PcFileShareServerRepository by delegate {

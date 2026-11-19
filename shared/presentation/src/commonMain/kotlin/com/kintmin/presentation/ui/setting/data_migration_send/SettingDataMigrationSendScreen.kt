@@ -68,7 +68,7 @@ fun SettingDataMigrationSendScreen(
     SettingConfirmDialog(
         isShow = isStopDialogVisible,
         title = "보내기를 중단할까요?",
-        message = "iPhone이 아직 받고 있습니다. 이 화면을 나가면 iPhone에서 전송이 실패합니다.",
+        message = "받는 기기가 아직 받고 있습니다. 이 화면을 나가면 받는 기기의 전송이 실패합니다.",
         dismissText = "계속 보내기",
         confirmText = "중단",
         onDismiss = { isStopDialogVisible = false },
@@ -101,8 +101,8 @@ fun SettingDataMigrationSendScreen(
         ) {
             if (uiState.keepsScreenOn) {
                 SettingWarningBannerView(
-                    title = "iPhone이 다 받을 때까지 이 화면을 켜 두세요",
-                    message = "이 화면을 나가거나 앱을 종료하면 iPhone의 전송이 실패합니다.",
+                    title = "받는 기기가 다 받을 때까지 이 화면을 켜 두세요",
+                    message = "이 화면을 나가거나 앱을 종료하면 받는 기기의 전송이 실패합니다.",
                 )
             }
 
@@ -117,17 +117,17 @@ fun SettingDataMigrationSendScreen(
             SettingStepCardView(
                 stepNumber = 1,
                 title = "같은 Wi-Fi에 연결",
-                description = "이 기기와 데이터를 받을 iPhone이 같은 Wi-Fi에 연결되어 있어야 합니다.",
+                description = "이 기기와 데이터를 받을 기기가 같은 Wi-Fi에 연결되어 있어야 합니다.",
             )
             SettingStepCardView(
                 stepNumber = 2,
-                title = "iPhone에서 가져오기 시작",
-                description = "iPhone의 JellyTube에서 설정 → Android에서 데이터 가져오기를 엽니다.",
+                title = "받는 기기에서 가져오기 시작",
+                description = "받는 기기의 JellyTube에서 설정 → 다른 기기에서 데이터 가져오기를 엽니다.",
             )
             SettingStepCardView(
                 stepNumber = 3,
                 title = "연결 코드 입력",
-                description = "위의 6자리 코드를 iPhone에 입력합니다. iPhone이 다 받을 때까지 이 화면을 열어 두세요.",
+                description = "위의 6자리 코드를 받는 기기에 입력합니다. 받는 기기가 다 받을 때까지 이 화면을 열어 두세요.",
             )
         }
     }

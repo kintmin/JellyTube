@@ -21,7 +21,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import kotlin.random.Random
 
-/** 실제 소켓으로 보내는 서버에 평문 HTTP 로 붙는다. Android 에서 이전 클라이언트가 CIO 인 이유를 고정한다. */
 class LocalNetworkHttpClientTest {
 
     @get:Rule

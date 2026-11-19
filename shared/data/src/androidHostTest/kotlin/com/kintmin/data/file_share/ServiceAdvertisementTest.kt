@@ -5,7 +5,7 @@ import com.kintmin.fileshare.FileShareConstants
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class NsdAdvertisementTest {
+class ServiceAdvertisementTest {
 
     @Test
     fun `PC 수신만 켜져 있으면 PC 업로드 타입만 광고한다`() {

@@ -4,7 +4,7 @@ import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import com.kintmin.fileshare.FileShareConstants
 import kotlinx.coroutines.flow.Flow
 
-/** 서버가 떠 있는 동안 [start] 에 준 서비스 타입들을 mDNS 로 광고한다. 구현은 플랫폼 소스셋이다. */
+/** 서버가 떠 있는 동안 [start] 에 준 서비스 타입들을 mDNS 로 광고한다. */
 internal interface ServiceAdvertiser {
     fun start(serviceTypes: Flow<Set<String>>)
     fun stop()
@@ -15,7 +15,6 @@ internal interface ServiceAdvertiser {
 
 internal data class AdvertisedService(val name: String, val txtRecord: Map<String, String>)
 
-/** 서비스 타입별로 광고할 인스턴스 이름과 TXT 레코드. 두 플랫폼이 같은 값을 광고해야 받는 쪽이 읽는다. */
 internal fun advertisedServiceOf(serviceType: String, migrationInstanceName: String): AdvertisedService =
     if (serviceType == FileShareConstants.MIGRATION_NSD_SERVICE_TYPE) {
         AdvertisedService(

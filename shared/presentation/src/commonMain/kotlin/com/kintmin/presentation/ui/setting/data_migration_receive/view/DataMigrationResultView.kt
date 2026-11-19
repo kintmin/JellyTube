@@ -53,7 +53,7 @@ fun DataMigrationResultView(
                     )
                     if (phase.redownloadedCount > 0) {
                         Text(
-                            text = "iPhone에서 재생할 수 없는 형식 ${phase.redownloadedCount}곡은 원본에서 다시 받았습니다.",
+                            text = "이 기기에서 재생할 수 없는 형식 ${phase.redownloadedCount}곡은 원본에서 다시 받았습니다.",
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -92,7 +92,7 @@ private fun DataMigrationResultViewFailuresPreview() {
                 newPlaylistCount = 2,
                 redownloadedCount = 1,
                 failures = listOf(
-                    DataMigrationFailureItem("녹음 파일", "iPhone에서 재생할 수 없는 형식"),
+                    DataMigrationFailureItem("녹음 파일", "이 기기에서 재생할 수 없는 형식"),
                     DataMigrationFailureItem("라이브 클립", "원본에서 다시 받을 수 없음"),
                     DataMigrationFailureItem("커버곡", "전송 실패"),
                 ),

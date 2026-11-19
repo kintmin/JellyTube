@@ -42,8 +42,6 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.SystemSettingsTarget
 import com.kintmin.presentation.platform.isDeviceSaveSupported
-import com.kintmin.presentation.platform.isDataMigrationReceiveSupported
-import com.kintmin.presentation.platform.isDataMigrationSendSupported
 import com.kintmin.presentation.platform.isFileShareReceiveSupported
 import com.kintmin.presentation.platform.rememberAppVersionName
 import com.kintmin.presentation.platform.rememberAudioFilePicker
@@ -239,22 +237,18 @@ fun SettingScreen(
                         trailing = { SettingNavigateIcon(contentDescription = "PC에서 공유받기 화면으로 이동") },
                     )
                 }
-                if (isDataMigrationSendSupported) {
-                    SettingItemView(
-                        title = "다른 기기로 데이터 보내기",
-                        icon = Icons.Rounded.SwapHoriz,
-                        onClick = { sendIntent(SettingIntent.OnClickDataMigrationSendTile) },
-                        trailing = { SettingNavigateIcon(contentDescription = "데이터 보내기 화면으로 이동") },
-                    )
-                }
-                if (isDataMigrationReceiveSupported) {
-                    SettingItemView(
-                        title = "Android에서 데이터 가져오기",
-                        icon = Icons.Rounded.SwapHoriz,
-                        onClick = { sendIntent(SettingIntent.OnClickDataMigrationReceiveTile) },
-                        trailing = { SettingNavigateIcon(contentDescription = "데이터 가져오기 화면으로 이동") },
-                    )
-                }
+                SettingItemView(
+                    title = "다른 기기로 데이터 보내기",
+                    icon = Icons.Rounded.SwapHoriz,
+                    onClick = { sendIntent(SettingIntent.OnClickDataMigrationSendTile) },
+                    trailing = { SettingNavigateIcon(contentDescription = "데이터 보내기 화면으로 이동") },
+                )
+                SettingItemView(
+                    title = "다른 기기에서 데이터 가져오기",
+                    icon = Icons.Rounded.SwapHoriz,
+                    onClick = { sendIntent(SettingIntent.OnClickDataMigrationReceiveTile) },
+                    trailing = { SettingNavigateIcon(contentDescription = "데이터 가져오기 화면으로 이동") },
+                )
                 if (isDeviceSaveSupported) {
                     SettingItemView(
                         title = "파일 기기에 저장하기",

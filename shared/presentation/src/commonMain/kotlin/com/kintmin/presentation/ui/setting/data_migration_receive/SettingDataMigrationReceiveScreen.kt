@@ -92,7 +92,7 @@ fun SettingDataMigrationReceiveScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Android에서 데이터 가져오기") },
+                title = { Text("다른 기기에서 데이터 가져오기") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -137,8 +137,8 @@ fun SettingDataMigrationReceiveScreen(
                     DataMigrationConnectView(uiState = uiState, sendIntent = sendIntent)
                     SettingStepCardView(
                         stepNumber = 1,
-                        title = "Android에서 보내기 시작",
-                        description = "Android의 JellyTube에서 설정 → 다른 기기로 데이터 보내기를 엽니다.",
+                        title = "보내는 기기에서 시작",
+                        description = "보내는 기기의 JellyTube에서 설정 → 다른 기기로 데이터 보내기를 엽니다.",
                     )
                     SettingStepCardView(
                         stepNumber = 2,
@@ -164,11 +164,11 @@ private fun DataMigrationExitConfirmation.title(): String = when (this) {
 
 private fun DataMigrationExitConfirmation.message(): String = when (this) {
     DataMigrationExitConfirmation.StopRunning ->
-        "아직 받는 중입니다. 나가면 받던 파일을 지우고, 이번 가져오기는 이 iPhone에 반영되지 않습니다."
+        "아직 받는 중입니다. 나가면 받던 파일을 지우고, 이번 가져오기는 이 기기에 반영되지 않습니다."
     DataMigrationExitConfirmation.StopInterrupted ->
         "나가면 받아 둔 임시 파일을 지웁니다. 나중에 다시 가져오면 처음부터 받습니다."
     is DataMigrationExitConfirmation.LeaveFailures ->
-        "옮기지 못한 ${failedCount}곡은 이 iPhone에 추가되지 않았습니다. 나중에 다시 가져오면 이 곡들만 옮길 수 있습니다."
+        "옮기지 못한 ${failedCount}곡은 이 기기에 추가되지 않았습니다. 나중에 다시 가져오면 이 곡들만 옮길 수 있습니다."
 }
 
 @Preview

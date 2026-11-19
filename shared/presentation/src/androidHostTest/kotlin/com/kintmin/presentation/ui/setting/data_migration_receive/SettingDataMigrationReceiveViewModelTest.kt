@@ -256,7 +256,7 @@ class SettingDataMigrationReceiveViewModelTest {
             import(endpoint, "token", any())
         }
         val phase = viewModel.uiState.value.phase as DataMigrationReceivePhase.Finished
-        assertEquals(listOf(DataMigrationFailureItem("녹음", "iPhone에서 재생할 수 없는 형식")), phase.failures)
+        assertEquals(listOf(DataMigrationFailureItem("녹음", "이 기기에서 재생할 수 없는 형식")), phase.failures)
         assertTrue(viewModel.uiState.value.stages.all { it.status == DataMigrationStageStatus.DONE })
         assertEquals(DataMigrationExitConfirmation.LeaveFailures(1), viewModel.uiState.value.exitConfirmation)
     }

@@ -70,7 +70,7 @@ sealed interface DataMigrationReceivePhase {
 enum class DataMigrationStageKind(val label: String) {
     CLEANUP("이전 시도 잔여물 정리"),
     PLANNING("목록 받기·계획"),
-    REDOWNLOAD("iPhone 호환성 확인·원본에서 다시 받기"),
+    REDOWNLOAD("재생 호환성 확인·원본에서 다시 받기"),
     TRANSFER("파일 받기"),
     APPLY("보관함에 반영"),
 }
