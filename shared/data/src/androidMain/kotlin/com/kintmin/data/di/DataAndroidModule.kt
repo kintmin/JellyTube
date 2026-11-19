@@ -14,6 +14,7 @@ import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.database.createAndroidJellyTubeDatabase
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.local_file.FileManagerImpl
+import com.kintmin.data.network.createLocalNetworkHttpClient
 import com.kintmin.data.network.data_source.MigrationDataSource
 import com.kintmin.data.network.data_source_impl.MigrationDataSourceImpl
 import com.kintmin.data.translation.LyricsTranslator
@@ -38,7 +39,7 @@ val dataAndroidModule: Module = module {
     single<AudioEditor> { AudioEditorImpl(androidContext()) }
     single<MigrationDataSource> {
         val context = androidContext()
-        MigrationDataSourceImpl(get()) { localDeviceName(context) }
+        MigrationDataSourceImpl(createLocalNetworkHttpClient()) { localDeviceName(context) }
     }
 
     // PC 수신과 한 서버를 같이 쓴다.

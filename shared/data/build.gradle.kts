@@ -65,6 +65,7 @@ kotlin {
 
         androidMain.dependencies {
             implementation(libs.ktor.client.android)
+            implementation(libs.ktor.client.cio)
             implementation(libs.androidx.datastore.preferences)
             implementation(libs.koin.android)
             implementation(libs.mlkit.translate)

@@ -16,7 +16,7 @@ import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
 import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
-import com.kintmin.presentation.platform.continueInBackgroundWhile
+import com.kintmin.presentation.port.MigrationReceiveKeepAlive
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.model.MigrationSource
@@ -39,6 +39,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     private val receiveMigrationDataUseCase: ReceiveMigrationDataUseCase,
     private val clearMigrationStagingUseCase: ClearMigrationStagingUseCase,
     private val runningWorkMonitor: RunningTaskMonitor,
+    private val migrationReceiveKeepAlive: MigrationReceiveKeepAlive,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingDataMigrationReceiveUiState())
@@ -139,7 +140,7 @@ class SettingDataMigrationReceiveViewModel constructor(
                 updatePhase(DataMigrationReceivePhase.Blocked(runningTasks))
                 return@launch
             }
-            continueInBackgroundWhile {
+            migrationReceiveKeepAlive.keepAlive {
                 receiveMigrationDataUseCase(endpoint, token) { progress -> updateStage(progress.toStageItem()) }
             }
                 .onSuccess { summary -> finish(summary) }

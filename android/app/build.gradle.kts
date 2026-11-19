@@ -164,6 +164,7 @@ dependencies {
     implementation(project(":shared:log"))
     implementation(project(":shared:domain"))
     implementation(project(":shared:data"))
+    implementation(project(":shared:file-share"))
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)

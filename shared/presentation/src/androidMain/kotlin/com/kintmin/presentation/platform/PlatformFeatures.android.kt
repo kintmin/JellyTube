@@ -8,5 +8,4 @@ actual val deviceSaveFlow: DeviceSaveFlow = DeviceSaveFlow.MediaStore
 
 actual val isDataMigrationSendSupported: Boolean = true
 
-/** 받는 쪽 탐색(`MigrationSourceDiscovery`)이 iOS 에만 있다. */
-actual val isDataMigrationReceiveSupported: Boolean = false
+actual val isDataMigrationReceiveSupported: Boolean = true

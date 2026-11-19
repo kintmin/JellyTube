@@ -15,6 +15,7 @@ import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
 import com.kintmin.domain.data_migration.usecase.ImportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
+import com.kintmin.presentation.port.MigrationReceiveKeepAlive
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.model.MigrationSource
@@ -75,7 +76,7 @@ class SettingDataMigrationReceiveViewModelTest {
     }
 
     private fun viewModel() = SettingDataMigrationReceiveViewModel(
-        discovery, pair, ReceiveMigrationDataUseCase(cleanup, import), clearStaging, monitor,
+        discovery, pair, ReceiveMigrationDataUseCase(cleanup, import), clearStaging, monitor, PassThroughKeepAlive,
     )
 
     private fun SettingDataMigrationReceiveViewModel.connect(code: String = "123456") {
@@ -385,4 +386,8 @@ class SettingDataMigrationReceiveViewModelTest {
         assertEquals(SettingDataMigrationReceiveEvent.NavigateToBack, finished.eventFlow.first())
         coVerify(exactly = 1) { clearStaging() }
     }
+}
+
+private object PassThroughKeepAlive : MigrationReceiveKeepAlive {
+    override suspend fun <T> keepAlive(block: suspend () -> T): T = block()
 }
