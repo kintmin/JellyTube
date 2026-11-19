@@ -250,6 +250,8 @@ fun MainScreen(
                         if (selectedTab == MainTabItem.Playlist) {
                             IconButton(
                                 onClick = { sendPlaylistIntent(PlaylistIntent.OnClickShowReorderBottomSheet) },
+                                // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
+                                enabled = playlist.count { !it.isBasePlaylist } > 1,
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.SwapVert,
