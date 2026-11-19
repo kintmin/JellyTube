@@ -12,18 +12,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.seaBlue60
-import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
-import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 
 /**
  * 섹션 머리말에 붙는 만들기 입구.
@@ -32,26 +27,14 @@ import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
  * 내려가는데, 만드는 일은 보는 일보다 드물어도 자리는 고정돼 있어야 찾을 수 있다.
  */
 @Composable
-fun PlaylistAddButtonView(
-    existingNames: List<String>,
-    sendIntent: (PlaylistIntent) -> Unit,
-) {
-    var showDialog by remember { mutableStateOf(false) }
-
-    PlaylistAddDialog(
-        showDialog = showDialog,
-        onDismiss = { showDialog = false },
-        existingNames = existingNames,
-        makePlaylist = { title -> sendIntent(PlaylistIntent.MakeNewPlaylist(title)) },
-    )
-
+fun PlaylistAddButtonView(onClick: () -> Unit) {
     // ink 를 쓰지 않는다. 이 앱에 강조색 글자 버튼에 ink 를 두는 자리가 없어 혼자 튄다.
     Row(
         modifier = Modifier
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = { showDialog = true },
+                onClick = onClick,
             )
             .heightIn(min = 48.dp)
             .padding(horizontal = 8.dp),
@@ -76,9 +59,6 @@ fun PlaylistAddButtonView(
 @Composable
 fun PlaylistAddButtonPreview() {
     JellyTubeTheme {
-        PlaylistAddButtonView(
-            existingNames = listOf("운동할 때"),
-            sendIntent = {},
-        )
+        PlaylistAddButtonView(onClick = {})
     }
 }

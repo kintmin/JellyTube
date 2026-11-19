@@ -21,7 +21,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
@@ -32,6 +35,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray40
 import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.gray80
+import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistLibraryBlockView
@@ -48,6 +52,15 @@ fun PlaylistView(
 ) {
     val libraryItems = data.filter { it.isBasePlaylist }
     val userItems = data.filterNot { it.isBasePlaylist }
+    // 입구가 둘(머리말·빈 상태)이라 다이얼로그는 여기 한 벌만 둔다.
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    PlaylistAddDialog(
+        showDialog = showAddDialog,
+        onDismiss = { showAddDialog = false },
+        existingNames = data.map { it.name },
+        makePlaylist = { title -> sendIntent(PlaylistIntent.MakeNewPlaylist(title)) },
+    )
 
     LazyVerticalGrid(
         modifier = modifier,
@@ -73,6 +86,8 @@ fun PlaylistView(
                 text = "내 플레이리스트",
                 showDivider = libraryItems.isNotEmpty(),
                 action = {
+                    // 빈 상태가 제 CTA 를 갖는다. 같은 명령으로 가는 버튼을 둘 보이지 않게 한다.
+                    if (userItems.isEmpty()) return@PlaylistSectionLabel
                     // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
                     val canReorder = userItems.size > 1
                     // 아이콘만으로는 옆의 강조색 글자에 묻힌다. 문구를 붙이되 색은 한 단계 낮춰
@@ -103,22 +118,29 @@ fun PlaylistView(
                             color = reorderColor,
                         )
                     }
-                    PlaylistAddButtonView(
-                        existingNames = data.map { it.name },
-                        sendIntent = sendIntent,
-                    )
+                    PlaylistAddButtonView(onClick = { showAddDialog = true })
                 },
             )
         }
-        items(
-            count = userItems.size,
-            key = { index -> userItems[index].id }
-        ) { index ->
-            PlaylistItemView(
-                modifier = Modifier,
-                data = userItems[index],
-                sendIntent = sendIntent,
-            )
+
+        if (userItems.isEmpty()) {
+            item(key = "user-empty", span = { GridItemSpan(maxLineSpan) }) {
+                PlaylistEmptyView(
+                    modifier = Modifier,
+                    onClickAdd = { showAddDialog = true },
+                )
+            }
+        } else {
+            items(
+                count = userItems.size,
+                key = { index -> userItems[index].id }
+            ) { index ->
+                PlaylistItemView(
+                    modifier = Modifier,
+                    data = userItems[index],
+                    sendIntent = sendIntent,
+                )
+            }
         }
     }
 }
