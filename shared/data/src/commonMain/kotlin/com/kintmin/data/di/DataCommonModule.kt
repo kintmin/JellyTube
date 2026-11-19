@@ -104,6 +104,9 @@ val dataCommonModule: Module = module {
     factoryOf(::RevertAudioEditUseCase)
     factoryOf(::SaveEditedAudioAsNewMediaUseCase)
 
+    factoryOf(::OpenMigrationSendUseCase)
+    factoryOf(::CloseMigrationSendUseCase)
+    factoryOf(::FetchMigrationSendStatusUseCase)
     factoryOf(::ExportMigrationDataUseCase)
     factoryOf(::ResolveMigrationFilePathUseCase)
     factoryOf(::PairMigrationSourceUseCase)

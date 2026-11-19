@@ -19,9 +19,6 @@ import com.kintmin.data.network.data_source_impl.MigrationDataSourceImpl
 import com.kintmin.data.translation.LyricsTranslator
 import com.kintmin.data.translation.MlKitLyricsTranslator
 import com.kintmin.domain.data_migration.repository.MigrationSendServerRepository
-import com.kintmin.domain.data_migration.usecase.CloseMigrationSendUseCase
-import com.kintmin.domain.data_migration.usecase.FetchMigrationSendStatusUseCase
-import com.kintmin.domain.data_migration.usecase.OpenMigrationSendUseCase
 import com.kintmin.domain.file_share.repository.PcFileShareServerRepository
 import com.kintmin.domain.user.repository.UserRepository
 import kotlinx.coroutines.CoroutineScope
@@ -29,7 +26,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.binds
 import org.koin.dsl.module
 
@@ -61,7 +57,4 @@ val dataAndroidModule: Module = module {
         )
     }
         .binds(arrayOf(PcFileShareServerRepository::class, MigrationSendServerRepository::class))
-    factoryOf(::OpenMigrationSendUseCase)
-    factoryOf(::CloseMigrationSendUseCase)
-    factoryOf(::FetchMigrationSendStatusUseCase)
 }

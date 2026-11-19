@@ -34,6 +34,9 @@ internal class NsdAdvertiser(
         }
     }
 
+    // 포그라운드 서비스가 서버와 함께 붙잡아 두므로 다시 등록할 일이 없다.
+    override fun refresh() = Unit
+
     @Synchronized
     override fun stop() {
         advertiseJob?.cancel()
@@ -85,14 +88,11 @@ internal class NsdAdvertiser(
     }
 
     private fun serviceInfo(serviceType: String) = NsdServiceInfo().apply {
+        val advertised = advertisedServiceOf(serviceType, migrationInstanceName)
         this.serviceType = serviceType
         port = FileShareConstants.DEFAULT_PORT
-        if (serviceType == FileShareConstants.MIGRATION_NSD_SERVICE_TYPE) {
-            serviceName = migrationInstanceName
-            setAttribute(FileShareConstants.MIGRATION_TXT_FORMAT_VERSION, FileShareConstants.MIGRATION_FORMAT_VERSION.toString())
-        } else {
-            serviceName = FileShareConstants.NSD_SERVICE_NAME
-        }
+        serviceName = advertised.name
+        advertised.txtRecord.forEach { (key, value) -> setAttribute(key, value) }
     }
 
     private companion object {

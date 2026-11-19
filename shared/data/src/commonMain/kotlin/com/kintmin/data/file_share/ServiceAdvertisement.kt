@@ -8,7 +8,23 @@ import kotlinx.coroutines.flow.Flow
 internal interface ServiceAdvertiser {
     fun start(serviceTypes: Flow<Set<String>>)
     fun stop()
+
+    /** OS 가 서스펜드 중에 등록을 조용히 내렸을 수 있을 때 현재 타입들을 다시 등록한다. */
+    fun refresh()
 }
+
+internal data class AdvertisedService(val name: String, val txtRecord: Map<String, String>)
+
+/** 서비스 타입별로 광고할 인스턴스 이름과 TXT 레코드. 두 플랫폼이 같은 값을 광고해야 받는 쪽이 읽는다. */
+internal fun advertisedServiceOf(serviceType: String, migrationInstanceName: String): AdvertisedService =
+    if (serviceType == FileShareConstants.MIGRATION_NSD_SERVICE_TYPE) {
+        AdvertisedService(
+            name = migrationInstanceName,
+            txtRecord = mapOf(FileShareConstants.MIGRATION_TXT_FORMAT_VERSION to FileShareConstants.MIGRATION_FORMAT_VERSION.toString()),
+        )
+    } else {
+        AdvertisedService(name = FileShareConstants.NSD_SERVICE_NAME, txtRecord = emptyMap())
+    }
 
 /**
  * 페어링한 뒤에는 이전 타입도 내린다. 다른 기기가 찾아 코드를 넣어 봐야 거절될 뿐이다.

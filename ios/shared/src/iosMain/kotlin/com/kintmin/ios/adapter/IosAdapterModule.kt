@@ -36,6 +36,6 @@ internal fun iosAdapterModule(
     single<StartAnomalyDataCheck> { IosStartAnomalyDataCheck(get(), get()) }
     single<StartLyricsVariantCreation> { IosStartLyricsVariantCreation(get(), get()) }
     single<StartAudioEditSave> { IosStartAudioEditSave(get(), get(), get(), get()) }
-    single<DataMigrationSendController> { IosDataMigrationSendControllerStub() }
+    single<DataMigrationSendController> { IosDataMigrationSendController(get(), get(), get()) }
     single<RunningTaskMonitor> { IosRunningTaskMonitor(get(), get()) }
 }

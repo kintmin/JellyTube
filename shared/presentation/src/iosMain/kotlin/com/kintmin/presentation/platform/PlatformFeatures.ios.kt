@@ -14,7 +14,6 @@ actual val deviceSaveFlow: DeviceSaveFlow =
         DeviceSaveFlow.RingtoneNeedsNewerOs
     }
 
-/** 보내는 서버가 Android 에만 있다. */
-actual val isDataMigrationSendSupported: Boolean = false
+actual val isDataMigrationSendSupported: Boolean = true
 
 actual val isDataMigrationReceiveSupported: Boolean = true

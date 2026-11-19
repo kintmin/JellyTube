@@ -36,4 +36,23 @@ class NsdAdvertisementTest {
         assertEquals(emptySet<String>(), advertisedServiceTypes(setOf(FileShareServerOwner.DATA_MIGRATION), DataMigrationSendStatus.Idle))
         assertEquals(emptySet<String>(), advertisedServiceTypes(setOf(FileShareServerOwner.DATA_MIGRATION), DataMigrationSendStatus.Locked))
     }
+
+    @Test
+    fun `이전 타입은 보내는 기기 인스턴스 이름과 버전 TXT 를 광고한다`() {
+        val advertised = advertisedServiceOf(FileShareConstants.MIGRATION_NSD_SERVICE_TYPE, "iPhone (a1b2c3)")
+
+        assertEquals("iPhone (a1b2c3)", advertised.name)
+        assertEquals(
+            mapOf(FileShareConstants.MIGRATION_TXT_FORMAT_VERSION to FileShareConstants.MIGRATION_FORMAT_VERSION.toString()),
+            advertised.txtRecord,
+        )
+    }
+
+    @Test
+    fun `PC 업로드 타입은 고정 이름이고 TXT 가 없다`() {
+        val advertised = advertisedServiceOf(FileShareConstants.NSD_SERVICE_TYPE, "iPhone (a1b2c3)")
+
+        assertEquals(FileShareConstants.NSD_SERVICE_NAME, advertised.name)
+        assertEquals(emptyMap<String, String>(), advertised.txtRecord)
+    }
 }

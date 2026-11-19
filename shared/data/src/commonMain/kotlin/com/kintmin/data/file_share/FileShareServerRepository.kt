@@ -10,20 +10,27 @@ import com.kintmin.domain.data_migration.repository.MigrationSendServerRepositor
 import com.kintmin.domain.file_share.PcUploadHandler
 import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.domain.file_share.repository.PcFileShareServerRepository
+import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.log.AppLog
+import io.ktor.network.selector.SelectorManager
+import io.ktor.network.sockets.aSocket
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 /**
  * PC 수신과 데이터 보내기가 한 서버(한 포트)를 같이 쓴다. 둘 중 하나라도 켜져 있으면 서버가 떠 있다.
  */
 internal class FileShareServerRepository(
-    scope: CoroutineScope,
+    private val scope: CoroutineScope,
     appLog: AppLog,
     uploadTempDir: String,
     receiveKeepAlive: ReceiveKeepAlive,
@@ -82,13 +89,33 @@ internal class FileShareServerRepository(
         }
     }
 
+    /**
+     * 서스펜드된 동안 OS 가 리슨 소켓을 회수하거나 광고를 내릴 수 있다. 둘 다 오류 없이 조용히 사라지므로
+     * 복귀할 때 서버가 살아 있는지 보고 광고를 다시 등록한다.
+     */
+    fun resumeAfterSuspension() {
+        scope.launch {
+            if (owners.value.isEmpty()) return@launch
+            if (!isListening()) server.launch(onStartFailed = { _isRunning.value = false })
+            advertiser.refresh()
+        }
+    }
+
+    private suspend fun isListening(): Boolean = runCatching {
+        SelectorManager(Dispatchers.IO).use { selector ->
+            withTimeout(PROBE_TIMEOUT_MS) {
+                aSocket(selector).tcp().connect(LOOPBACK_HOST, FileShareConstants.DEFAULT_PORT).close()
+            }
+        }
+    }.isSuccess
+
     private fun updateOwners(next: Set<FileShareServerOwner>) {
         val previous = owners.value
         owners.value = next
         _isRunning.value = FileShareServerOwner.PC_FILE_SHARE in next
         when {
             previous.isEmpty() && next.isNotEmpty() -> {
-                server.launch()
+                server.launch(onStartFailed = { _isRunning.value = false })
                 advertiser.start(combine(owners, MigrationSessionHolder.state, ::advertisedServiceTypes))
             }
             previous.isNotEmpty() && next.isEmpty() -> {
@@ -124,5 +151,7 @@ internal class FileShareServerRepository(
     private fun <T> stopped(message: String): Result<T> = Result.failure(IllegalStateException(message))
 }
 
+private const val PROBE_TIMEOUT_MS = 1_000L
+private const val LOOPBACK_HOST = "127.0.0.1"
 private const val PC_FILE_SHARE_STOPPED = "PC 수신이 꺼져 있습니다."
 private const val MIGRATION_SEND_STOPPED = "데이터 보내기가 꺼져 있습니다."
