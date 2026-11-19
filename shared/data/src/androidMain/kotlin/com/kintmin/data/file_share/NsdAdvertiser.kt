@@ -3,7 +3,6 @@ package com.kintmin.data.file_share
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
-import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.fileshare.FileShareConstants
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -12,28 +11,34 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
-/** 서버가 떠 있는 동안 [start] 에 준 서비스 타입들을 광고한다. */
 internal class NsdAdvertiser(
     private val context: Context,
     private val scope: CoroutineScope,
-) {
+    private val resolveMigrationInstanceName: suspend () -> String,
+) : ServiceAdvertiser {
     private val registrations = mutableMapOf<String, NsdManager.RegistrationListener>()
+    private var migrationInstanceName = ""
     private var advertiseJob: Job? = null
     private var targets: Set<String> = emptySet()
     private var retryCount = 0
     private var isClosed = true
 
     @Synchronized
-    fun start(serviceTypes: Flow<Set<String>>) {
+    override fun start(serviceTypes: Flow<Set<String>>) {
         if (advertiseJob?.isActive == true) return
         isClosed = false
         advertiseJob = scope.launch {
+            val name = resolveMigrationInstanceName()
+            synchronized(this@NsdAdvertiser) { migrationInstanceName = name }
             serviceTypes.distinctUntilChanged().collect(::sync)
         }
     }
 
+    // 포그라운드 서비스가 서버와 함께 붙잡아 두므로 다시 등록할 일이 없다.
+    override fun refresh() = Unit
+
     @Synchronized
-    fun stop() {
+    override fun stop() {
         advertiseJob?.cancel()
         advertiseJob = null
         isClosed = true
@@ -83,14 +88,11 @@ internal class NsdAdvertiser(
     }
 
     private fun serviceInfo(serviceType: String) = NsdServiceInfo().apply {
+        val advertised = advertisedServiceOf(serviceType, migrationInstanceName)
         this.serviceType = serviceType
         port = FileShareConstants.DEFAULT_PORT
-        if (serviceType == FileShareConstants.MIGRATION_NSD_SERVICE_TYPE) {
-            serviceName = toDnsSdInstanceName(localDeviceName(context))
-            setAttribute(FileShareConstants.MIGRATION_TXT_FORMAT_VERSION, FileShareConstants.MIGRATION_FORMAT_VERSION.toString())
-        } else {
-            serviceName = FileShareConstants.NSD_SERVICE_NAME
-        }
+        serviceName = advertised.name
+        advertised.txtRecord.forEach { (key, value) -> setAttribute(key, value) }
     }
 
     private companion object {

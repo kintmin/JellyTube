@@ -12,4 +12,5 @@ data class SettingUiState(
     val isImportPlaylistBottomSheetVisible: Boolean = false,
     val isImporting: Boolean = false,
     val isStepEnabled: Boolean = true,
+    val deviceId: String? = null,
 )

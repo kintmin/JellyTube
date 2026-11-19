@@ -5,7 +5,7 @@ import com.kintmin.fileshare.FileShareConstants
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class NsdAdvertisementTest {
+class ServiceAdvertisementTest {
 
     @Test
     fun `PC 수신만 켜져 있으면 PC 업로드 타입만 광고한다`() {
@@ -38,24 +38,21 @@ class NsdAdvertisementTest {
     }
 
     @Test
-    fun `인스턴스 이름은 63바이트를 넘지 않고 한글을 중간에서 자르지 않는다`() {
-        val name = "가".repeat(30)
+    fun `이전 타입은 보내는 기기 인스턴스 이름과 버전 TXT 를 광고한다`() {
+        val advertised = advertisedServiceOf(FileShareConstants.MIGRATION_NSD_SERVICE_TYPE, "iPhone (a1b2c3)")
 
-        val instanceName = toDnsSdInstanceName(name)
-
-        assertEquals("가".repeat(21), instanceName)
-        assertEquals(63, instanceName.encodeToByteArray().size)
+        assertEquals("iPhone (a1b2c3)", advertised.name)
+        assertEquals(
+            mapOf(FileShareConstants.MIGRATION_TXT_FORMAT_VERSION to FileShareConstants.MIGRATION_FORMAT_VERSION.toString()),
+            advertised.txtRecord,
+        )
     }
 
     @Test
-    fun `서로게이트 쌍은 쪼개지 않는다`() {
-        val name = "a".repeat(60) + "😀"
+    fun `PC 업로드 타입은 고정 이름이고 TXT 가 없다`() {
+        val advertised = advertisedServiceOf(FileShareConstants.NSD_SERVICE_TYPE, "iPhone (a1b2c3)")
 
-        assertEquals("a".repeat(60), toDnsSdInstanceName(name))
-    }
-
-    @Test
-    fun `짧은 이름은 그대로 둔다`() {
-        assertEquals("Galaxy S24", toDnsSdInstanceName("Galaxy S24"))
+        assertEquals(FileShareConstants.NSD_SERVICE_NAME, advertised.name)
+        assertEquals(emptyMap<String, String>(), advertised.txtRecord)
     }
 }

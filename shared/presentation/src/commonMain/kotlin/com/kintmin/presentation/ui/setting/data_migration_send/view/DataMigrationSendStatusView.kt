@@ -56,19 +56,19 @@ fun DataMigrationSendStatusView(
                         letterSpacing = 8.sp,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
-                    StatusText("iPhone에 이 코드를 입력해 주세요.")
+                    StatusText("받는 기기에 이 코드를 입력해 주세요.")
                 }
                 is DataMigrationSendStep.Sending -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
                     StatusText("연결된 기기: ${step.peerName}")
-                    StatusText("iPhone이 데이터를 받고 있습니다. 처음에는 보내기 전에 데이터를 점검합니다.")
+                    StatusText("받는 기기가 데이터를 받고 있습니다. 처음에는 보내기 전에 데이터를 점검합니다.")
                 }
                 is DataMigrationSendStep.Finished -> {
-                    StatusText("iPhone이 받기를 마쳤습니다.")
+                    StatusText("받는 기기가 받기를 마쳤습니다.")
                     StatusText("새 음원 ${step.newAudioMediaCount}곡을 옮겼습니다.")
                     if (step.failedCount > 0) {
                         StatusText(
-                            "옮기지 못한 곡이 ${step.failedCount}곡 있습니다. iPhone에서 다시 시도하려면 이 화면을 열어 두세요.",
+                            "옮기지 못한 곡이 ${step.failedCount}곡 있습니다. 받는 기기에서 다시 시도하려면 이 화면을 열어 두세요.",
                         )
                     }
                 }
@@ -77,7 +77,7 @@ fun DataMigrationSendStatusView(
                     RenewCodeButton(sendIntent)
                 }
                 DataMigrationSendStep.Disconnected -> {
-                    StatusText("보내기 연결이 끊겼습니다. 새 코드를 받아 iPhone에서 다시 연결해 주세요.")
+                    StatusText("보내기 연결이 끊겼습니다. 새 코드를 받아 받는 기기에서 다시 연결해 주세요.")
                     RenewCodeButton(sendIntent)
                 }
             }

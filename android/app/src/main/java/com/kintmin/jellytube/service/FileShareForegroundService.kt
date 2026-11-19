@@ -16,6 +16,7 @@ import com.kintmin.domain.data_migration.usecase.CloseMigrationSendUseCase
 import com.kintmin.domain.data_migration.usecase.FetchMigrationSendStatusUseCase
 import com.kintmin.domain.file_share.usecase.StopPcFileShareServerUseCase
 import com.kintmin.jellytube.push_notification.PushNotificationIds
+import com.kintmin.jellytube.push_notification.notifications.DataMigrationReceiveNotification
 import com.kintmin.jellytube.push_notification.notifications.DataMigrationSendNotification
 import com.kintmin.jellytube.push_notification.notifications.FileShareServerNotification
 import com.kintmin.jellytube.push_notification.notifications.PushNotification
@@ -27,6 +28,8 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -45,7 +48,7 @@ class FileShareForegroundService : Service(), KoinComponent {
     private var migrationWakeLockRenewJob: Job? = null
     private var generation = NO_GENERATION
 
-    enum class Owner { PC_FILE_SHARE, DATA_MIGRATION }
+    enum class Owner { PC_FILE_SHARE, DATA_MIGRATION, DATA_MIGRATION_RECEIVE }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -61,7 +64,11 @@ class FileShareForegroundService : Service(), KoinComponent {
         intent?.getIntExtra(EXTRA_GENERATION, NO_GENERATION)?.takeIf { it != NO_GENERATION }?.let { generation = it }
         if (isForeground) return START_NOT_STICKY
 
-        val notification = if (Owner.DATA_MIGRATION in owners.value) DataMigrationSendNotification else FileShareServerNotification
+        val notification = when {
+            Owner.DATA_MIGRATION in owners.value -> DataMigrationSendNotification
+            Owner.DATA_MIGRATION_RECEIVE in owners.value -> DataMigrationReceiveNotification
+            else -> FileShareServerNotification
+        }
         runCatching { startForegroundWith(notification) }.onSuccess {
             isForeground = true
             holdLocksWhileMigrating()
@@ -95,15 +102,18 @@ class FileShareForegroundService : Service(), KoinComponent {
 
     /**
      * 포그라운드 서비스는 프로세스를 살려 둘 뿐 CPU 와 Wi-Fi 를 깨워 두지 않는다. 화면이 꺼진 채 받는
-     * 기기가 파일을 받아 가는 동안 멈추지 않도록 둘을 잡는다. 완료 뒤에도 실패한 곡을 다시 받을 수 있어
-     * 세션이 닫힐 때까지 놓지 않는다.
+     * 기기가 파일을 받아 가는 동안(또는 이 기기가 받는 동안) 멈추지 않도록 둘을 잡는다. 완료 뒤에도
+     * 실패한 곡을 다시 받을 수 있어 세션이 닫힐 때까지 놓지 않는다.
      */
     private fun holdLocksWhileMigrating() {
         if (migrationLockJob?.isActive == true) return
         migrationLockJob = serviceScope.launch {
-            fetchMigrationSendStatusUseCase().collect { status ->
-                val isConnected = status is DataMigrationSendStatus.Paired || status is DataMigrationSendStatus.Finished
-                if (isConnected) acquireMigrationLocks() else releaseMigrationLocks()
+            combine(fetchMigrationSendStatusUseCase(), owners) { status, current ->
+                status is DataMigrationSendStatus.Paired ||
+                    status is DataMigrationSendStatus.Finished ||
+                    Owner.DATA_MIGRATION_RECEIVE in current
+            }.distinctUntilChanged().collect { isHeld ->
+                if (isHeld) acquireMigrationLocks() else releaseMigrationLocks()
             }
         }
     }

@@ -5,7 +5,9 @@ import com.kintmin.data.audio_edit.AudioEditorImpl
 import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.device_status.DeviceStatusImpl
-import com.kintmin.data.file_share.PcFileShareServerRepositoryImpl
+import com.kintmin.data.file_share.FileShareServerRepository
+import com.kintmin.data.file_share.PlayableOnlyPcFileShareServerRepository
+import com.kintmin.data.file_share.createIosFileShareServerRepository
 import com.kintmin.data.local_datastore.createIosPreferencesDataStore
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.database.createIosJellyTubeDatabase
@@ -21,6 +23,7 @@ import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.data.translation.IosLyricsTranslator
 import com.kintmin.data.translation.IosLyricsTranslatorBridge
 import com.kintmin.data.translation.LyricsTranslator
+import com.kintmin.domain.data_migration.repository.MigrationSendServerRepository
 import com.kintmin.domain.file_share.repository.PcFileShareServerRepository
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -46,5 +49,8 @@ fun dataIosModule(
     single<LyricsTranslator> { IosLyricsTranslator(lyricsTranslatorBridge) }
     single<LyricsTransliterator> { IosLyricsTransliterator(pythonExecutorBridge) }
 
-    single<PcFileShareServerRepository> { PcFileShareServerRepositoryImpl(get(), get()) }
+    // PC 수신과 데이터 보내기가 한 서버를 같이 쓴다.
+    single { createIosFileShareServerRepository(get(), get(), get()) }
+    single<PcFileShareServerRepository> { PlayableOnlyPcFileShareServerRepository(get<FileShareServerRepository>()) }
+    single<MigrationSendServerRepository> { get<FileShareServerRepository>() }
 }

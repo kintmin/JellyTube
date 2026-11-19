@@ -16,7 +16,7 @@ import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
 import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
-import com.kintmin.presentation.platform.continueInBackgroundWhile
+import com.kintmin.presentation.port.MigrationReceiveKeepAlive
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.model.MigrationSource
@@ -39,6 +39,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     private val receiveMigrationDataUseCase: ReceiveMigrationDataUseCase,
     private val clearMigrationStagingUseCase: ClearMigrationStagingUseCase,
     private val runningWorkMonitor: RunningTaskMonitor,
+    private val migrationReceiveKeepAlive: MigrationReceiveKeepAlive,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingDataMigrationReceiveUiState())
@@ -139,7 +140,7 @@ class SettingDataMigrationReceiveViewModel constructor(
                 updatePhase(DataMigrationReceivePhase.Blocked(runningTasks))
                 return@launch
             }
-            continueInBackgroundWhile {
+            migrationReceiveKeepAlive.keepAlive {
                 receiveMigrationDataUseCase(endpoint, token) { progress -> updateStage(progress.toStageItem()) }
             }
                 .onSuccess { summary -> finish(summary) }
@@ -227,18 +228,18 @@ class SettingDataMigrationReceiveViewModel constructor(
     )
 
     private fun MigrationFailureReason.toText(): String = when (this) {
-        MigrationFailureReason.UNSUPPORTED_FORMAT -> "iPhone에서 재생할 수 없는 형식"
+        MigrationFailureReason.UNSUPPORTED_FORMAT -> "이 기기에서 재생할 수 없는 형식"
         MigrationFailureReason.REDOWNLOAD_FAILED -> "원본에서 다시 받을 수 없음"
         MigrationFailureReason.TRANSFER_FAILED -> "전송 실패"
     }
 
     private fun Throwable.toMessage(): String = when (this) {
-        is MigrationPairRejectedException -> "코드가 맞지 않습니다. Android 화면의 코드를 확인하고, 계속 안 되면 Android에서 새 코드를 받아 주세요."
-        is MigrationSourceBusyException -> "이 Android 기기는 이미 연결된 기기에 데이터를 보내고 있습니다. 이 iPhone이 연결했던 것이라면 Android에서 보내기를 멈추고 새 코드를 받아 입력해 주세요."
-        is MigrationSourceClosedException -> "Android 기기의 보내기 화면이 닫혔거나 코드를 여러 번 틀려 잠겼습니다. Android에서 새 코드를 받아 입력해 주세요."
+        is MigrationPairRejectedException -> "코드가 맞지 않습니다. 보내는 기기 화면의 코드를 확인하고, 계속 안 되면 보내는 기기에서 새 코드를 받아 주세요."
+        is MigrationSourceBusyException -> "이 보내는 기기는 이미 연결된 기기에 데이터를 보내고 있습니다. 이 기기가 연결했던 것이라면 보내는 기기에서 보내기를 멈추고 새 코드를 받아 입력해 주세요."
+        is MigrationSourceClosedException -> "보내는 기기의 보내기 화면이 닫혔거나 코드를 여러 번 틀려 잠겼습니다. 보내는 기기에서 새 코드를 받아 입력해 주세요."
         is MigrationVersionMismatchException -> message.orEmpty()
-        is MigrationSenderCleanupFailedException -> "Android 기기에서 보내기 전 데이터 정리에 실패했습니다. 다시 시도해도 같으면 Android 앱 로그를 확인해 주세요."
-        is MigrationSessionExpiredException -> "Android 기기와의 연결이 끊겼습니다. Android 화면에 보이는 코드를 다시 입력해 주세요. 받은 파일은 이어서 받습니다."
-        else -> "연결이 끊겼습니다. 두 기기가 같은 Wi-Fi에 있고 Android 보내기 화면이 열려 있는지 확인한 뒤 다시 시도해 주세요. 받은 파일은 이어서 받습니다."
+        is MigrationSenderCleanupFailedException -> "보내는 기기에서 보내기 전 데이터 정리에 실패했습니다. 다시 시도해도 같으면 보내는 기기의 앱 로그를 확인해 주세요."
+        is MigrationSessionExpiredException -> "보내는 기기와의 연결이 끊겼습니다. 보내는 기기 화면에 보이는 코드를 다시 입력해 주세요. 받은 파일은 이어서 받습니다."
+        else -> "연결이 끊겼습니다. 두 기기가 같은 Wi-Fi에 있고 보내는 기기의 보내기 화면이 열려 있는지 확인한 뒤 다시 시도해 주세요. 받은 파일은 이어서 받습니다."
     }
 }

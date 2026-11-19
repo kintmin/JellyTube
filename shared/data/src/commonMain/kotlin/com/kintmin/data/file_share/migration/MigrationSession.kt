@@ -1,8 +1,10 @@
 package com.kintmin.data.file_share.migration
 
 import com.kintmin.fileshare.MigrationFinishRequest
-import java.security.MessageDigest
-import java.security.SecureRandom
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /**
  * 데이터 이전 한 번의 인가 상태. 화면에 띄운 [code] 를 맞힌 기기 하나에만 토큰을 준다.
@@ -18,13 +20,13 @@ class MigrationSession(
     private val onPaired: (deviceName: String) -> Unit = {},
     private val onFinished: (MigrationFinishRequest) -> Unit = {},
 ) {
+    private val lock = SynchronizedObject()
     private var token: String? = null
     private var failedAttempts = 0
     private var allowedFiles: Set<Pair<String, String>> = emptySet()
+    private var closed = false
 
-    @get:Synchronized
-    var isClosed = false
-        private set
+    val isClosed: Boolean get() = synchronized(lock) { closed }
 
     /**
      * 코드를 모르면 페어링 여부와 관계없이 [PairResult.Rejected] 다. 코드 없이 이전 중인지 엿볼 수 없다.
@@ -32,14 +34,14 @@ class MigrationSession(
      */
     fun pair(code: String, deviceName: String): PairResult {
         var hasLockedOut = false
-        val result = synchronized(this) {
+        val result = synchronized(lock) {
             val isCodeCorrect = constantTimeEquals(code, this.code)
             when {
-                isClosed -> PairResult.Rejected
+                closed -> PairResult.Rejected
                 token != null -> if (isCodeCorrect) PairResult.Busy else PairResult.Rejected
                 !isCodeCorrect -> {
                     failedAttempts++
-                    if (failedAttempts >= MAX_FAILED_ATTEMPTS) hasLockedOut = markClosed()
+                    if (failedAttempts >= MAX_FAILED_ATTEMPTS) hasLockedOut = closeLocked()
                     PairResult.Rejected
                 }
                 else -> PairResult.Issued(generateToken().also { token = it })
@@ -50,20 +52,17 @@ class MigrationSession(
         return result
     }
 
-    @Synchronized
-    fun isAuthorized(token: String?): Boolean {
+    fun isAuthorized(token: String?): Boolean = synchronized(lock) {
         val issued = this.token
-        return !isClosed && issued != null && token != null && constantTimeEquals(token, issued)
+        !closed && issued != null && token != null && constantTimeEquals(token, issued)
     }
 
     /** manifest 로 내려준 파일만 받아 갈 수 있다. */
-    @Synchronized
     fun allowFiles(files: Set<Pair<String, String>>) {
-        allowedFiles = files
+        synchronized(lock) { allowedFiles = files }
     }
 
-    @Synchronized
-    fun isFileAllowed(kind: String, name: String): Boolean = kind to name in allowedFiles
+    fun isFileAllowed(kind: String, name: String): Boolean = synchronized(lock) { kind to name in allowedFiles }
 
     /** 받는 기기가 끝났다고 알렸다. 실패한 곡을 다시 받을 수 있도록 세션은 닫지 않는다. */
     fun finish(report: MigrationFinishRequest) {
@@ -76,31 +75,38 @@ class MigrationSession(
         if (markClosed()) onClosed()
     }
 
-    @Synchronized
-    private fun markClosed(): Boolean {
-        if (isClosed) return false
-        isClosed = true
+    private fun markClosed(): Boolean = synchronized(lock) { closeLocked() }
+
+    private fun closeLocked(): Boolean {
+        if (closed) return false
+        closed = true
         return true
     }
 
     companion object {
         const val MAX_FAILED_ATTEMPTS = 5
 
-        private val secureRandom = SecureRandom()
+        // Uuid.random() 은 두 플랫폼 모두 암호학적으로 안전한 난수다.
+        @OptIn(ExperimentalUuidApi::class)
+        private fun generateCode(): String =
+            Uuid.random().toLongs { _, low -> (low.toULong() % CODE_SPACE).toString().padStart(CODE_LENGTH, '0') }
 
-        private fun generateCode(): String = secureRandom.nextInt(1_000_000).toString().padStart(6, '0')
+        @OptIn(ExperimentalUuidApi::class)
+        private fun generateToken(): String = Uuid.random().toHexString() + Uuid.random().toHexString()
 
-        @OptIn(ExperimentalStdlibApi::class)
-        private fun generateToken(): String = ByteArray(32).also(secureRandom::nextBytes).toHexString()
+        private const val CODE_LENGTH = 6
+        private val CODE_SPACE = 1_000_000uL
 
         /** 받는 기기가 보낸 이름이라 보내는 화면에 그대로 띄우지 않는다. */
         internal fun toPeerName(deviceName: String): String {
             val cleaned = deviceName.filterNot { it.isISOControl() || it.isWhitespace() && it != ' ' }.trim()
             if (cleaned.isEmpty()) return UNKNOWN_PEER_NAME
-            val end = if (cleaned.codePointCount(0, cleaned.length) > MAX_PEER_NAME_CODE_POINTS) {
-                cleaned.offsetByCodePoints(0, MAX_PEER_NAME_CODE_POINTS)
-            } else {
-                cleaned.length
+            var end = 0
+            var codePoints = 0
+            while (end < cleaned.length && codePoints < MAX_PEER_NAME_CODE_POINTS) {
+                val isPair = cleaned[end].isHighSurrogate() && end + 1 < cleaned.length && cleaned[end + 1].isLowSurrogate()
+                end += if (isPair) 2 else 1
+                codePoints++
             }
             return cleaned.substring(0, end).trimEnd()
         }
@@ -108,8 +114,15 @@ class MigrationSession(
         private const val MAX_PEER_NAME_CODE_POINTS = 40
         private const val UNKNOWN_PEER_NAME = "이름 없는 기기"
 
-        private fun constantTimeEquals(a: String, b: String): Boolean =
-            MessageDigest.isEqual(a.toByteArray(), b.toByteArray())
+        internal fun constantTimeEquals(a: String, b: String): Boolean {
+            val left = a.encodeToByteArray()
+            val right = b.encodeToByteArray()
+            var diff = left.size xor right.size
+            for (i in 0 until maxOf(left.size, right.size)) {
+                diff = diff or ((left.getOrElse(i) { 0 }.toInt()) xor (right.getOrElse(i) { 0 }.toInt()))
+            }
+            return diff == 0
+        }
     }
 }
 

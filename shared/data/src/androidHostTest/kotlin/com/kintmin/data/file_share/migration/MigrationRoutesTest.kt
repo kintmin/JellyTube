@@ -1,5 +1,6 @@
 package com.kintmin.data.file_share.migration
 
+import com.kintmin.data.file_share.KeepAliveByForegroundService
 import com.kintmin.data.file_share.fileShareModule
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
@@ -85,7 +86,8 @@ class MigrationRoutesTest {
                     updateAudioMedia = mockk(),
                     saveAudioMediaImage = mockk(),
                 ).invoke {},
-                uploadCacheDir = tempFolder.root,
+                uploadTempDir = tempFolder.root.path,
+                receiveKeepAlive = KeepAliveByForegroundService,
                 currentMigrationSession = { session },
                 migrationSendHandler = migrationSendHandler(),
             )

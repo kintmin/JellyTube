@@ -4,7 +4,7 @@ import com.kintmin.data.python_bridge.LyricsTransliterator
 import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.domain.step.ScheduleDailyStepClosing
 import com.kintmin.jellytube.audio_preview.AudioPreviewPlayerImpl
-import com.kintmin.jellytube.data_migration.UnsupportedMigrationSourceDiscovery
+import com.kintmin.jellytube.data_migration.NsdMigrationSourceDiscovery
 import com.kintmin.jellytube.log_impl.AppLogImpl
 import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.PushNotificationManagerImpl
@@ -12,6 +12,7 @@ import com.kintmin.jellytube.python_bridge_impl.LyricsTransliteratorImpl
 import com.kintmin.jellytube.python_bridge_impl.PythonExecutorImpl
 import com.kintmin.jellytube.service_controller.DataMigrationSendControllerImpl
 import com.kintmin.jellytube.service_controller.FileShareServerControllerImpl
+import com.kintmin.jellytube.service_controller.MigrationReceiveKeepAliveImpl
 import com.kintmin.jellytube.service_controller.PlaybackControllerImpl
 import com.kintmin.jellytube.service_controller.StepMeasurementControllerImpl
 import com.kintmin.jellytube.worker.RunningTaskMonitorImpl
@@ -29,6 +30,7 @@ import com.kintmin.presentation.port.StartLyricsVariantCreation
 import com.kintmin.presentation.port.StartYoutubeDownload
 import com.kintmin.presentation.port.FileShareServerController
 import com.kintmin.presentation.port.PlaybackController
+import com.kintmin.presentation.port.MigrationReceiveKeepAlive
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.StepMeasurementController
@@ -58,7 +60,8 @@ val appModule: Module = module {
     single<StartAnomalyDataCheck> { StartAnomalyDataCheckImpl(androidContext()) }
     single<StartLyricsVariantCreation> { StartLyricsVariantCreationImpl(androidContext()) }
     single<StartAudioEditSave> { StartAudioEditSaveImpl(androidContext()) }
-    single<MigrationSourceDiscovery> { UnsupportedMigrationSourceDiscovery() }
+    single<MigrationSourceDiscovery> { NsdMigrationSourceDiscovery(androidContext()) }
+    single<MigrationReceiveKeepAlive> { MigrationReceiveKeepAliveImpl(androidContext()) }
     single<DataMigrationSendController> { DataMigrationSendControllerImpl(androidContext(), get(), get(), get()) }
     single<RunningTaskMonitor> { RunningTaskMonitorImpl(androidContext(), get(), get()) }
 }

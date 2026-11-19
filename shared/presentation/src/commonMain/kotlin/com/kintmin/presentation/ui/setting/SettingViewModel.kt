@@ -11,6 +11,7 @@ import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
+import com.kintmin.domain.user.usecase.FetchUserIdUseCase
 import com.kintmin.presentation.port.StartAnomalyDataCheck
 import com.kintmin.presentation.port.StepMeasurementController
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
@@ -27,6 +28,7 @@ class SettingViewModel constructor(
     fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase,
     fetchDownloadTargetPlaylistsFlowUseCase: FetchDownloadTargetPlaylistsFlowUseCase,
     fetchIsStepEnabledFlowUseCase: FetchIsStepEnabledFlowUseCase,
+    fetchUserIdUseCase: FetchUserIdUseCase,
     private val updateShouldInsertAtTopOnDownloadUseCase: UpdateShouldInsertAtTopOnDownloadUseCase,
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
     private val updateIsStepEnabledUseCase: UpdateIsStepEnabledUseCase,
@@ -38,6 +40,7 @@ class SettingViewModel constructor(
     private val isPlaylistIdOnDownloadBottomSheetVisible = MutableStateFlow(false)
     private val isImportPlaylistBottomSheetVisible = MutableStateFlow(false)
     private val isImporting = MutableStateFlow(false)
+    private val deviceId = MutableStateFlow<String?>(null)
     private val _eventFlow = MutableSharedFlow<SettingEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
@@ -71,11 +74,17 @@ class SettingViewModel constructor(
         state.copy(isImportPlaylistBottomSheetVisible = isVisible)
     }.combine(isImporting) { state, isImportingNow ->
         state.copy(isImporting = isImportingNow)
+    }.combine(deviceId) { state, id ->
+        state.copy(deviceId = id)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
         SettingUiState(),
     )
+
+    init {
+        viewModelScope.launch { deviceId.value = fetchUserIdUseCase().getOrNull() }
+    }
 
     fun sendIntent(intent: SettingIntent) {
         when (intent) {

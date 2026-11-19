@@ -62,7 +62,8 @@ class FileShareServerModuleTest {
                     updateAudioMedia = updateUseCase,
                     saveAudioMediaImage = saveImageUseCase,
                 ).invoke { imported += it },
-                uploadCacheDir = tempFolder.root,
+                uploadTempDir = tempFolder.root.path,
+                receiveKeepAlive = KeepAliveByForegroundService,
                 currentMigrationSession = { migrationSession },
                 migrationSendHandler = mockk(),
             )
