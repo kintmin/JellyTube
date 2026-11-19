@@ -114,7 +114,7 @@ class MigrationSession(
         private const val MAX_PEER_NAME_CODE_POINTS = 40
         private const val UNKNOWN_PEER_NAME = "이름 없는 기기"
 
-        private fun constantTimeEquals(a: String, b: String): Boolean {
+        internal fun constantTimeEquals(a: String, b: String): Boolean {
             val left = a.encodeToByteArray()
             val right = b.encodeToByteArray()
             var diff = left.size xor right.size

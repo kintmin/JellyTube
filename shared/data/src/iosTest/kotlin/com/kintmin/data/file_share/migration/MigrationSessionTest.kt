@@ -88,4 +88,28 @@ class MigrationSessionTest {
         assertNull(MigrationSessionHolder.session.value)
         assertTrue(session.isClosed)
     }
+
+    @Test
+    fun `상수시간 비교는 같은 문자열만 같다고 한다`() {
+        assertTrue(MigrationSession.constantTimeEquals("123456", "123456"))
+        assertTrue(MigrationSession.constantTimeEquals("", ""))
+        assertTrue(MigrationSession.constantTimeEquals("한글 코드", "한글 코드"))
+    }
+
+    @Test
+    fun `상수시간 비교는 어느 자리가 달라도 다르다고 한다`() {
+        assertFalse(MigrationSession.constantTimeEquals("123456", "023456"))
+        assertFalse(MigrationSession.constantTimeEquals("123456", "123450"))
+        assertFalse(MigrationSession.constantTimeEquals("한글 코드", "한글 코느"))
+    }
+
+    @Test
+    fun `상수시간 비교는 길이가 다르면 앞부분이 같아도 다르다고 한다`() {
+        assertFalse(MigrationSession.constantTimeEquals("token", "token0"))
+        assertFalse(MigrationSession.constantTimeEquals("token0", "token"))
+        assertFalse(MigrationSession.constantTimeEquals("", "token"))
+        // 짧은 쪽을 0 으로 채워 비교하므로 끝에 NUL 을 붙여도 같아지면 안 된다.
+        assertFalse(MigrationSession.constantTimeEquals("token", "token\u0000"))
+        assertFalse(MigrationSession.constantTimeEquals("token\u0000\u0000", "token\u0000"))
+    }
 }
