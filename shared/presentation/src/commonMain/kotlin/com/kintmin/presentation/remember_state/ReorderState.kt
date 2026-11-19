@@ -54,10 +54,9 @@ class ReorderState<T>(
     // 현재 드래그 중인 아이템의 id. null이면 드래그 중이 아니다.
     var draggingItemId by mutableStateOf<Int?>(null)
 
-    // 드래그를 시작한 시점의 순서. 끝났을 때 실제로 바뀌었는지 판정하는 데만 쓴다.
     private var orderBeforeDrag = emptyList<Int>()
 
-    /** 마지막 드래그가 순서를 실제로 바꿨는가. 1px 만 끌고 놓은 것을 커밋하지 않게 한다. */
+    /** 1px 만 끌고 놓은 것을 커밋하지 않게 한다. */
     val isOrderChanged: Boolean get() = items.map(idOf) != orderBeforeDrag
 
     /**
@@ -112,8 +111,7 @@ class ReorderState<T>(
         // 이웃이 화면 밖이면 스왑을 건너뛰되, 아래 오토스크롤이 화면을 밀어 이웃을 노출시킨다.
 
         // 양 끝에서는 상쇄할 스왑이 없어 dragOffset 이 끝없이 쌓인다. 그대로 그리면 잡은 항목이
-        // 목록 밖(머리말 영역)까지 밀려 올라간다. 누적은 손가락을 그대로 따라가게 두고
-        // **그리는 값만** 잠근다.
+        // 목록 밖(머리말 영역)까지 밀려 올라간다.
         val settledIndex = items.indexOfFirst { idOf(it) == draggingItemId }
         dragOffsetY = when {
             settledIndex <= 0 -> dragOffset.coerceAtLeast(0f)

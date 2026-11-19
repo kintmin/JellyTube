@@ -56,7 +56,6 @@ fun JellyTubeDialog(
                         if (dismissOnClickOutside) onDismiss()
                     },
                 )
-                // 키보드가 올라오면 내용을 그만큼 밀어 올린다. 그러지 않으면 입력칸을 덮는다.
                 .imePadding(),
             contentAlignment = Alignment.Center,
         ) {

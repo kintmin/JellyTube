@@ -90,8 +90,7 @@ fun PlaylistView(
                     if (userItems.isEmpty()) return@PlaylistSectionLabel
                     // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
                     val canReorder = userItems.size > 1
-                    // 아이콘만으로는 옆의 강조색 글자에 묻힌다. 문구를 붙이되 색은 한 단계 낮춰
-                    // 만들기가 주, 순서가 보조로 읽히게 한다.
+                    // 색을 한 단계 낮춰 만들기가 주, 순서가 보조로 읽히게 한다.
                     Row(
                         modifier = Modifier
                             .clickable(

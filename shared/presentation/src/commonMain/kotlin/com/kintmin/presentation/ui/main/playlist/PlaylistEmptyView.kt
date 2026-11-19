@@ -30,7 +30,6 @@ import com.kintmin.presentation.theme.gray80
 // 자리의 가운데쯤에 오도록 잡은 값이다.
 private val EMPTY_HEIGHT = 280.dp
 
-/** 만든 플레이리스트가 하나도 없을 때 격자 자리에 들어간다. */
 @Composable
 fun PlaylistEmptyView(
     modifier: Modifier,

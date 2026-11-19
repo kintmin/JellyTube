@@ -71,7 +71,6 @@ fun <T> LazyItemScope.ReorderableItem(
         if (isDragging) {
             isLifted = true
         } else if (isLifted) {
-            // 놓는 시점의 offset 에서 시작해 0 으로 내려앉는다.
             settle.snapTo(state.dragOffsetY)
             settle.animateTo(
                 targetValue = 0f,
@@ -84,12 +83,9 @@ fun <T> LazyItemScope.ReorderableItem(
         }
     }
 
-    // 집었다 놓는 느낌은 이동 거리가 아니라 들림이 꺼지는 데서 온다. 스왑이 이웃 높이를
-    // 빼가므로 놓는 순간 항목은 이미 최종 자리 근처라, 거리에 기대면 아무것도 느껴지지 않는다.
-    //
-    // 폭을 꽉 채운 띠에서는 scale 도 그림자도 신호가 못 된다 — 한 행의 2% 는 1픽셀이고,
-    // 다크 테마에서 검은 그림자는 거의 검은 배경 위에 그려진다. 띠에서 떨어져 나오게 해야
-    // 들린 것으로 읽힌다.
+    // 스왑이 이웃 높이를 빼가므로 놓는 순간 항목은 이미 최종 자리 근처다 — 이동 거리로는
+    // 들림이 읽히지 않는다. 폭을 꽉 채운 띠라 scale 도 그림자도 신호가 못 된다(다크 테마에서
+    // 검은 그림자는 거의 검은 배경 위에 그려진다). 띠에서 떼어내는 것이 유일하게 보이는 신호다.
     val elevation = animateDpAsState(
         targetValue = if (isDragging) DRAG_ELEVATION else 0.dp,
         label = "reorderDragElevation",
@@ -110,8 +106,7 @@ fun <T> LazyItemScope.ReorderableItem(
         ),
         label = "reorderDragCorner",
     )
-    // 들어 올린 것은 같은 색 계열에서 한 단계 밝게 한다. 색상을 바꾸면 들림이 아니라
-    // 다른 종류라는 뜻이 된다. gray20 은 surface 에 onSurface 16% 를 올린 값에 가깝다.
+    // gray20 은 surface 에 onSurface 16%(M3 의 드래그 상태 레이어)를 올린 값에 가깝다.
     // 놓인 상태를 투명으로 두어 항목이 제 배경을 그대로 쓰게 한다.
     val background by animateColorAsState(
         targetValue = if (isDragging) gray20 else Color.Transparent,

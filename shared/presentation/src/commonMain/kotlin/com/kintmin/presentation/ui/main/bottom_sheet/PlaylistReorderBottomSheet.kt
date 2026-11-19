@@ -52,7 +52,7 @@ fun PlaylistReorderBottomSheet(
         // 드래그 중에는 시트 자체 드래그를 잠가 reorder 제스처와의 충돌을 막는다.
         sheetGesturesEnabled = reorderState.draggingItemId == null,
     ) {
-        // 머리말과 버튼을 Column 으로 감싸면 LazyColumn 이 높이 제약을 잃는다. 같은 리스트에 넣는다.
+        // 머리말을 Column 으로 감싸면 LazyColumn 이 높이 제약을 잃는다. 같은 리스트에 넣는다.
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             state = listState,
