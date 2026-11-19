@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -103,10 +102,8 @@ fun PlaylistAddDialog(
                     .padding(top = 8.dp)
             ) {
                 OutlinedButton(
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                        .heightIn(min = 48.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp),
+                    modifier = Modifier.padding(end = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.onSurface,
                     ),
@@ -119,8 +116,7 @@ fun PlaylistAddDialog(
                     )
                 }
                 Button(
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    contentPadding = PaddingValues(horizontal = 32.dp),
+                    contentPadding = PaddingValues(horizontal = 32.dp, vertical = 0.dp),
                     onClick = {
                         makePlaylist(trimmedTitle)
                         onDismiss()

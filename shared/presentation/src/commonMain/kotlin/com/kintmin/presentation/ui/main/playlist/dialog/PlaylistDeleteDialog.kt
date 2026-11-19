@@ -3,7 +3,6 @@ package com.kintmin.presentation.ui.main.playlist.dialog
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -52,10 +51,8 @@ fun PlaylistDeleteDialog(
             ) {
                 OutlinedButton(
                     // 파괴적 버튼과 간격을 벌려 반사적으로 눌리지 않게 한다.
-                    modifier = Modifier
-                        .padding(end = 24.dp)
-                        .heightIn(min = 48.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp),
+                    modifier = Modifier.padding(end = 24.dp),
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.onSurface,
                     ),
@@ -68,8 +65,7 @@ fun PlaylistDeleteDialog(
                     )
                 }
                 Button(
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    contentPadding = PaddingValues(horizontal = 32.dp),
+                    contentPadding = PaddingValues(horizontal = 32.dp, vertical = 0.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
                         contentColor = MaterialTheme.colorScheme.onError,
