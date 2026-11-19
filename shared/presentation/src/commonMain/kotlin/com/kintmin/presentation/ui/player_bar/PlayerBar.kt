@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,19 +15,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,14 +40,18 @@ import coil3.request.ImageRequest
 import com.kintmin.presentation.animation.PLAYBACK_POLLING_INTERVAL_MILLIS
 import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray20
+import com.kintmin.presentation.theme.gray10
 import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.seaBlue60
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okio.Path.Companion.toPath
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val BAR_HEIGHT = 64.dp
+private val ARTWORK_SIZE = 48.dp
+private val PROGRESS_HEIGHT = 2.dp
+
 @Composable
 fun PlayerBar(
     data: PlayerBarUiState,
@@ -81,30 +78,34 @@ fun PlayerBar(
             .fillMaxWidth()
             .background(Color.Transparent),
     ) {
-        PlayerBarProgress(data = data, sendIntent = sendIntent)
+        PlayerBarProgress(data = data)
         Row(
             modifier = Modifier
-                .height(64.dp)
+                .height(BAR_HEIGHT)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surfaceDim)
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                 .clickable(
                     enabled = data.id.isNotBlank(),
                     onClick = onClickBar,
-                )
+                ),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            val artworkModifier = Modifier
+                .padding(start = 8.dp)
+                .size(ARTWORK_SIZE)
+                .clip(MaterialTheme.shapes.small)
+                .background(MaterialTheme.colorScheme.surface)
+
             if (data.imageFileFullPath == null) {
                 Box(
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.onSurface)
-                        .align(Alignment.CenterVertically),
+                    modifier = artworkModifier,
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.LibraryMusic,
                         contentDescription = null,
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(22.dp),
+                        tint = gray60,
                     )
                 }
             } else {
@@ -116,18 +117,13 @@ fun PlayerBar(
                         .build(),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.onSurface)
-                        .align(Alignment.CenterVertically),
+                    modifier = artworkModifier,
                 )
             }
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .align(Alignment.CenterVertically)
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = 12.dp)
             ) {
                 Text(
                     text = data.title,
@@ -139,84 +135,55 @@ fun PlayerBar(
                 )
                 Text(
                     text = data.timeString,
-                    fontSize = 14.sp,
+                    // 폴링마다 다시 그려지는 숫자라 비례폭이면 초마다 글자가 밀린다.
+                    style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
                     maxLines = 1,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = gray60,
                 )
             }
             IconButton(
                 modifier = Modifier
-                    .align(Alignment.CenterVertically)
-                    .padding(end = 8.dp),
+                    .padding(end = 8.dp)
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface),
                 onClick = {
                     sendIntent(PlayerBarIntent.OnClickPlayOrPauseButton)
-                }) {
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .padding(4.dp),
-                        imageVector = if (data.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
+                },
+            ) {
+                Icon(
+                    modifier = Modifier.size(22.dp),
+                    imageVector = if (data.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
             }
         }
     }
 }
 
 /** 프레임마다 바뀌는 재생 위치를 여기서만 읽는다. 바깥에서 읽으면 재생바 전체가 매 프레임 다시 그려진다. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PlayerBarProgress(
-    data: PlayerBarUiState,
-    sendIntent: (PlayerBarIntent) -> Unit,
-) {
-    var isDragging by remember { mutableStateOf(false) }
+private fun PlayerBarProgress(data: PlayerBarUiState) {
     val playbackSeconds = data.playbackDuration.inWholeMilliseconds / 1000f
     val currentSeconds = animatePlaybackSeconds(
         targetSeconds = data.currentDuration.inWholeMilliseconds / 1000f,
-        snap = isDragging || !data.isPlaying,
+        snap = !data.isPlaying,
     )
+    val playedRatio =
+        if (playbackSeconds > 0f) (currentSeconds / playbackSeconds).coerceIn(0f, 1f) else 0f
 
     Box(
         modifier = Modifier
-            .background(MaterialTheme.colorScheme.surfaceDim)
-            .height(16.dp)
+            .fillMaxWidth()
+            .height(PROGRESS_HEIGHT)
+            .background(gray10),
     ) {
-        Slider(
-            modifier = Modifier.fillMaxWidth(),
-            valueRange = 0f..playbackSeconds,
-            value = currentSeconds,
-            onValueChange = {
-                isDragging = true
-                sendIntent(PlayerBarIntent.OnChangeTimeSlider(it))
-            },
-            onValueChangeFinished = {
-                isDragging = false
-                sendIntent(PlayerBarIntent.OnChangeFinishTimeSlider)
-            },
-            track = { sliderState ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(16.dp)
-                        .background(gray20)
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(if (playbackSeconds > 0f) (currentSeconds / playbackSeconds).coerceIn(0f, 1f) else 0f)
-                        .height(16.dp)
-                        .background(gray60)
-                )
-            },
-            thumb = {},
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(playedRatio)
+                .fillMaxHeight()
+                .background(seaBlue60),
         )
     }
 }
@@ -236,9 +203,6 @@ fun PlayerBarPreview() {
 @Composable
 private fun PlayerBarProgressPreview() {
     JellyTubeTheme {
-        PlayerBarProgress(
-            data = PlayerBarUiState.getMock(),
-            sendIntent = {},
-        )
+        PlayerBarProgress(data = PlayerBarUiState.getMock())
     }
 }
