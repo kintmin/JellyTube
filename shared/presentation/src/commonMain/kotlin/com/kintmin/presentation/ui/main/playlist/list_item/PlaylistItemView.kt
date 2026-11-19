@@ -9,11 +9,11 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -67,6 +67,9 @@ fun PlaylistItemView(
 
     Card(
         modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
     ) {
         Column(
             modifier = Modifier
@@ -78,8 +81,8 @@ fun PlaylistItemView(
                     modifier = Modifier
                         .aspectRatio(1f)
                         .padding(bottom = 8.dp)
-                        .clip(RoundedCornerShape(4))
-                        .background(MaterialTheme.colorScheme.surface),
+                        .clip(MaterialTheme.shapes.small)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -100,8 +103,8 @@ fun PlaylistItemView(
                     modifier = Modifier
                         .aspectRatio(1f)
                         .padding(bottom = 8.dp)
-                        .clip(RoundedCornerShape(4))
-                        .background(MaterialTheme.colorScheme.surface),
+                        .clip(MaterialTheme.shapes.small)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 )
             }
             Text(
@@ -117,32 +120,17 @@ fun PlaylistItemView(
                 modifier = Modifier.padding(0.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
+                Text(
                     modifier = Modifier
                         .weight(1f)
                         .align(Alignment.CenterVertically),
-                ) {
-                    Text(
-                        modifier = Modifier,
-                        text = data.durationString,
-                        fontSize = 12.sp,
-                        lineHeight = 10.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        modifier = Modifier,
-                        text = data.audioMediaCountString,
-                        fontSize = 12.sp,
-                        lineHeight = 10.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+                    text = data.summaryString,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .size(24.dp),
+                    modifier = Modifier.align(Alignment.CenterVertically),
                 ) {
                     IconButton(onClick = { isDropDownExpanded = true }) {
                         Icon(

@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -48,7 +48,12 @@ fun PlaylistItemAddView(
         },
     )
 
-    Card(modifier) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+    ) {
         Column(
             modifier = Modifier
                 .clickable { showDialog = true }
@@ -61,8 +66,8 @@ fun PlaylistItemAddView(
                         .align(Alignment.Center)
                         .aspectRatio(1f)
                         .padding(bottom = 8.dp)
-                        .clip(RoundedCornerShape(4))
-                        .background(MaterialTheme.colorScheme.surface),
+                        .clip(MaterialTheme.shapes.small)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 ) {
                     Icon(
                         modifier = Modifier.size(36.dp),
