@@ -32,13 +32,10 @@ class PlaylistViewModel constructor(
     val isReorderBottomSheetVisible: StateFlow<Boolean> = _isReorderBottomSheetVisible.asStateFlow()
 
     val playlistFlow: StateFlow<List<PlaylistItemUiState>> = fetchAllPlaylistFlowUseCase()
-        .map { playlistList ->
-            // 미분류·즐겨찾기는 비어있으면(음원수 0) 목록에 표시하지 않는다.
-            playlistList.filterNot {
-                (it.type == PlaylistType.UNCATEGORIZED || it.type == PlaylistType.FAVORITE) &&
-                    it.audioMediaCount == 0
-            }.map { it.toUiModel() }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        // 비어 있다고 숨기지 않는다. 숨기면 즐겨찾기로 가는 입구가 화면에서 사라지고,
+        // 2열 격자에서 항목이 생겼다 없어질 때 뒤의 카드 위치가 통째로 밀린다.
+        .map { playlistList -> playlistList.map { it.toUiModel() } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun sendIntent(intent: PlaylistIntent) {
         when (intent) {

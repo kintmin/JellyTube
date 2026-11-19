@@ -392,7 +392,6 @@ fun MainScreen(
                         .padding(innerPadding),
                     data = playlist,
                     sendIntent = sendPlaylistIntent,
-                    sendMainIntent = sendMainIntent,
                 )
 
                 MainTabItem.Debug -> DataTableView(

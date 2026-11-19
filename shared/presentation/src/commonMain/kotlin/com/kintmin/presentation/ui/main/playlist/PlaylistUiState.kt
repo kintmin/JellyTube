@@ -1,6 +1,7 @@
 package com.kintmin.presentation.ui.main.playlist
 
 import com.kintmin.domain.playlist.model.Playlist
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -13,12 +14,14 @@ data class PlaylistItemUiState(
     val playlistDuration: Duration,
     val audioMediaCount: Int,
     val sequence: Int,
-    val isBasePlaylist: Boolean,
+    val type: PlaylistType,
 ) {
+    val isBasePlaylist: Boolean get() = type.isSystem
     val summaryString: String get() = "${audioMediaCount}곡 · ${playlistDuration.to_hh_colon_mm_colon_ss()}"
+    val countString: String get() = if (audioMediaCount == 0) "비어 있음" else "${audioMediaCount}곡"
 
     companion object {
-        fun getMock(id: Int = 0): PlaylistItemUiState {
+        fun getMock(id: Int = 0, type: PlaylistType = PlaylistType.USER): PlaylistItemUiState {
             return PlaylistItemUiState(
                 id = id,
                 imageFileFullPath = null,
@@ -27,7 +30,7 @@ data class PlaylistItemUiState(
                 audioMediaCount = 999,
                 description = "",
                 sequence = id,
-                isBasePlaylist = false,
+                type = type,
             )
         }
 
@@ -43,5 +46,5 @@ fun Playlist.toUiModel() = PlaylistItemUiState(
     audioMediaCount = audioMediaCount,
     playlistDuration = playTimeDuration,
     sequence = sequence,
-    isBasePlaylist = isBasePlaylist,
+    type = type,
 )
