@@ -44,6 +44,7 @@ import com.kintmin.domain.playlist.usecase.*
 import com.kintmin.domain.step.repository.StepRepository
 import com.kintmin.domain.step.usecase.*
 import com.kintmin.domain.user.repository.UserRepository
+import com.kintmin.domain.user.usecase.FetchUserIdUseCase
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
 import io.ktor.client.HttpClient
 import org.koin.core.module.Module
@@ -181,4 +182,5 @@ val dataCommonModule: Module = module {
     factoryOf(::UpdateAccelerateStepUseCase)
     factoryOf(::UpdateLastStepSensorUseCase)
     factoryOf(::RegisterUserUseCase)
+    factoryOf(::FetchUserIdUseCase)
 }

@@ -309,6 +309,12 @@ fun SettingScreen(
                     description = appVersion,
                     onClick = null,
                 )
+                SettingItemView(
+                    title = "기기 식별자",
+                    icon = Icons.Rounded.Info,
+                    description = uiState.deviceId ?: "확인 중",
+                    onClick = null,
+                )
             }
         }
     }
