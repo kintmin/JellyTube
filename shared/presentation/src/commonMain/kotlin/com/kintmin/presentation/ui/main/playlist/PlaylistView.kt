@@ -3,13 +3,18 @@ package com.kintmin.presentation.ui.main.playlist
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -63,6 +68,17 @@ fun PlaylistView(
                 text = "내 플레이리스트",
                 showDivider = libraryItems.isNotEmpty(),
                 action = {
+                    IconButton(
+                        // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
+                        enabled = userItems.size > 1,
+                        onClick = { sendIntent(PlaylistIntent.OnClickShowReorderBottomSheet) },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.SwapVert,
+                            contentDescription = "플레이리스트 순서 변경",
+                            tint = gray60,
+                        )
+                    }
                     PlaylistAddButtonView(
                         existingNames = data.map { it.name },
                         sendIntent = sendIntent,
@@ -88,7 +104,7 @@ fun PlaylistView(
 private fun PlaylistSectionLabel(
     text: String,
     showDivider: Boolean = false,
-    action: (@Composable () -> Unit)? = null,
+    action: (@Composable RowScope.() -> Unit)? = null,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         if (showDivider) {
@@ -116,7 +132,7 @@ private fun PlaylistSectionLabel(
                 style = MaterialTheme.typography.labelLarge,
                 color = gray60,
             )
-            action?.invoke()
+            action?.invoke(this)
         }
     }
 }

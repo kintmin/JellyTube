@@ -248,16 +248,8 @@ fun MainScreen(
                             }
                         }
                         if (selectedTab == MainTabItem.Playlist) {
-                            IconButton(
-                                onClick = { sendPlaylistIntent(PlaylistIntent.OnClickShowReorderBottomSheet) },
-                                // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
-                                enabled = playlist.count { !it.isBasePlaylist } > 1,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.SwapVert,
-                                    contentDescription = "플레이리스트 순서 변경",
-                                )
-                            }
+                            // 순서 변경은 내 플레이리스트에만 걸리므로 그 섹션 머리말이 갖는다.
+                            // 상단바에는 화면 전체에 걸리는 것만 남긴다.
                             IconButton(
                                 onClick = navigateToSetting,
                             ) {
