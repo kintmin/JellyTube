@@ -57,9 +57,8 @@ fun PlaylistView(
         contentPadding = PaddingValues(vertical = 8.dp),
     ) {
         if (libraryItems.isNotEmpty()) {
-            item(key = "library-header", span = { GridItemSpan(maxLineSpan) }) {
-                PlaylistSectionLabel(text = "라이브러리")
-            }
+            // 머리말을 붙이지 않는다. 아래 머리말과 구분선이 이미 둘을 가르고,
+            // 한 줄을 비워야 전체 항목이 처음 화면에 들어온다.
             item(key = "library-block", span = { GridItemSpan(maxLineSpan) }) {
                 PlaylistLibraryBlockView(
                     modifier = Modifier.fillMaxWidth(),
