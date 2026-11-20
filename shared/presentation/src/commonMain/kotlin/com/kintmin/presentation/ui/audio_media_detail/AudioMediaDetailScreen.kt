@@ -1,9 +1,7 @@
 package com.kintmin.presentation.ui.audio_media_detail
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,20 +21,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.ContentCut
-import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -50,6 +49,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -137,6 +138,7 @@ fun AudioMediaDetailScreen(
     sendIntent: (AudioMediaDetailIntent) -> Unit,
 ) {
     var isShowDialog by remember { mutableStateOf(false) }
+    var isMenuExpanded by remember { mutableStateOf(false) }
     var isShowKaraokeUnlinkDialog by remember { mutableStateOf(false) }
     var isShowAudioEditRevertDialog by remember { mutableStateOf(false) }
     var isShowFullScreenImageViewer by remember { mutableStateOf(false) }
@@ -190,71 +192,76 @@ fun AudioMediaDetailScreen(
                         )
                     }
                 },
+                actions = {
+                    if (data.isDeleting) {
+                        Box(
+                            modifier = Modifier.size(48.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        }
+                    } else if (!data.isDeleted) {
+                        Box {
+                            IconButton(onClick = { isMenuExpanded = true }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.MoreVert,
+                                    contentDescription = "더보기",
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = isMenuExpanded,
+                                onDismissRequest = { isMenuExpanded = false },
+                                // M3 기본 메뉴 모서리는 extraSmall(4dp) 이라 각져 보인다.
+                                shape = MaterialTheme.shapes.medium,
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("음원 파일 삭제") },
+                                    colors = MenuDefaults.itemColors(textColor = softRed),
+                                    onClick = {
+                                        isMenuExpanded = false
+                                        isShowDialog = true
+                                    },
+                                )
+                            }
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
             val isActionEnabled = !data.isDeleted && !data.isDeleting
-            Column(Modifier.background(MaterialTheme.colorScheme.background)) {
+            Column(
+                modifier = Modifier
+                    .background(
+                        Brush.verticalGradient(
+                            0f to Color.Transparent,
+                            0.5f to MaterialTheme.colorScheme.background,
+                        )
+                    )
+                    .padding(top = 16.dp),
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    // 파괴적 동작이라 색과 형태를 수정과 다르게 둔다. primary 글자는 이 배경에서
-                    // 본문 대비 바닥값에 못 미치고(3.02:1), 삭제에 긍정 색이 붙는 문제도 있었다.
-                    OutlinedButton(
+                    Button(
                         modifier = Modifier
                             .weight(1f)
                             .height(52.dp),
                         shape = CircleShape,
                         enabled = isActionEnabled,
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = softRed),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = if (isActionEnabled) softRed else MaterialTheme.colorScheme.outlineVariant,
-                        ),
-                        contentPadding = PaddingValues(horizontal = 12.dp),
-                        onClick = { isShowDialog = true }) {
-                        if (data.isDeleting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                // 기본값이 primary 라 버튼 글자색과 어긋난다.
-                                color = softRed,
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Rounded.DeleteOutline,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                        Text(
-                            modifier = Modifier.padding(start = 8.dp),
-                            text = if (data.isDeleting) "삭제 중" else "삭제",
-                            fontSize = 14.sp,
-                            maxLines = 1,
-                        )
-                    }
-                    // 주 동작이라 삭제보다 넓다. 플레이리스트 편집 하단바도 같은 배분이다.
-                    Button(
-                        modifier = Modifier
-                            .weight(2f)
-                            .height(52.dp),
-                        shape = CircleShape,
-                        enabled = isActionEnabled,
                         onClick = { navigationToAudioMediaInformationEditScreen(data.audioMediaId) }) {
                         Text(
-                            text = "수정",
+                            text = "정보 수정",
                             fontSize = 14.sp,
                         )
                     }
                 }
-                Box(
-                    modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)
-                        .background(MaterialTheme.colorScheme.background),
-                )
+                Box(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
             }
         }
     ) { innerPadding ->
@@ -295,10 +302,9 @@ fun AudioMediaDetailScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    top = innerPadding.calculateTopPadding(),
-                    bottom = innerPadding.calculateBottomPadding()
-                )
+                .padding(top = innerPadding.calculateTopPadding()),
+            // 버튼이 떠 있도록 목록이 그 아래까지 그려지게 한다.
+            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
         ) {
             item(key = -2) {
                 Box(
