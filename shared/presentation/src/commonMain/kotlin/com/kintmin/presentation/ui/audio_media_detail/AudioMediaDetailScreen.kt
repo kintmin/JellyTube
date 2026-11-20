@@ -26,6 +26,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -65,6 +66,7 @@ import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.audio_media_detail.dialog.AudioEditRevertDialog
 import com.kintmin.presentation.ui.audio_media_detail.dialog.KaraokeUnlinkDialog
+import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaDetailInfoView
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
 import okio.Path.Companion.toPath
@@ -297,65 +299,16 @@ fun AudioMediaDetailScreen(
                         .background(MaterialTheme.colorScheme.background)
                         .padding(top = 20.dp)
                 ) {
-                    Text(
-                        modifier = Modifier.padding(bottom = 8.dp, start = 16.dp, end = 16.dp),
-                        text = data.audioMediaName,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        lineHeight = 24.sp,
-                    )
-                    Text(
-                        modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
-                        text = "아티스트: ${data.artist}",
-                        fontSize = 16.sp,
-                        lineHeight = 16.sp,
-                    )
-                    Text(
-                        modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
-                        text = "재생 시간: ${data.playTime}",
-                        fontSize = 16.sp,
-                    )
-                    Text(
-                        modifier = Modifier.padding(bottom = 4.dp, start = 16.dp, end = 16.dp),
-                        text = "생성 시각: ${data.audioMediaCreationTime}",
-                        fontSize = 16.sp,
-                    )
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                data.webViewUrl?.let { url -> navigateToMainSearchTab(url) }
-                            }
-                            .padding(horizontal = 16.dp),
-                        text = "출처: ${data.webViewUrl ?: data.source}",
-                        fontSize = 16.sp,
+                    AudioMediaDetailInfoView(
+                        data = data,
+                        onClickSource = { url -> navigateToMainSearchTab(url) },
                     )
 
-                    Spacer(
-                        modifier = Modifier
-                            .padding(vertical = 20.dp, horizontal = 16.dp)
-                            .fillMaxWidth()
-                            .height(0.5.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.outline)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
                     )
 
-                    if (data.audioMediaDescription.isNotBlank()) {
-                        Text(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            text = data.audioMediaDescription,
-                            fontSize = 16.sp,
-                        )
-
-                        Spacer(
-                            modifier = Modifier
-                                .padding(vertical = 20.dp, horizontal = 16.dp)
-                                .fillMaxWidth()
-                                .height(0.5.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.outline)
-                        )
-                    }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
