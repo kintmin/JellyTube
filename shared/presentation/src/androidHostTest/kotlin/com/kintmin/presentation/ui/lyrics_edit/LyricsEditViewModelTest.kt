@@ -116,7 +116,6 @@ class LyricsEditViewModelTest {
         val first = viewModel.data.value.rows[0]
         viewModel.sendIntent(LyricsEditIntent.OnAddRowBelow(first.id))
 
-        // 새 줄(1초)을 둘째 줄과 같은 5초로 옮긴다. 원래 둘째 줄보다 앞에 있었으므로 앞에 남는다.
         viewModel.sendIntent(LyricsEditIntent.OnChangeTime(viewModel.data.value.rows[1].id, 5_000L))
 
         assertEquals(listOf("첫 줄", "", "둘째 줄", "셋째 줄"), viewModel.data.value.rows.map { it.text })

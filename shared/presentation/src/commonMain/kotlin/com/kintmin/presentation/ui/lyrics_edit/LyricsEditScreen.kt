@@ -128,7 +128,6 @@ fun LyricsEditScreen(
 
     var pickerRowId by remember { mutableStateOf<Int?>(null) }
 
-    // 시간을 바꾸면 줄이 시간 순 자리로 옮겨 가므로 그 자리를 보여 준다.
     // 옮겨 가는 줄은 위치 애니메이션을 끈다. 켜 두면 화면 밖 새 자리로 날아가는 동안 스크롤이
     // 따라가 줄이 화면 위를 가로지르며 깜박인다.
     var movedRowId by remember { mutableStateOf<Int?>(null) }
