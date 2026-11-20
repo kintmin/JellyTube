@@ -34,6 +34,13 @@ class AudioMediaDetailUiStateTest {
     }
 
     @Test
+    fun `생성 시각은 초 없이 한국어로 적는다`() {
+        val uiState = listOf(aggregate()).toAudioMediaDetailUiState()
+
+        assertEquals("2026년 11월 20일 14시 30분", uiState.audioMediaCreationTime)
+    }
+
+    @Test
     fun `웹에서 받은 음원은 출처를 열 수 있다`() {
         val uiState = listOf(aggregate(source = "https://youtube.com/watch?v=abc"))
             .toAudioMediaDetailUiState()

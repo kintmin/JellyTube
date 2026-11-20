@@ -69,8 +69,9 @@ fun AudioMediaDetailInfoView(
                 label = "재생 시간",
                 value = data.playTime,
             )
+            // 생성 시각이 "2026년 11월 20일 14시 30분" 이라 길다. 재생 시간은 짧으니 폭을 몰아준다.
             MetaField(
-                modifier = Modifier.weight(2f),
+                modifier = Modifier.weight(3f),
                 label = "생성 시각",
                 value = data.audioMediaCreationTime,
             )
@@ -87,17 +88,18 @@ fun AudioMediaDetailInfoView(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = seaBlue40,
-                )
+                // 아이콘을 라벨 앞에 두면 "출처" 가 다른 라벨보다 안쪽에서 시작해 축이 어긋난다.
                 MetaField(
                     modifier = Modifier.weight(1f),
                     label = "출처",
                     value = data.webViewUrl,
                     valueColor = seaBlue40,
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = seaBlue40,
                 )
             }
         } else if (data.source.isNotBlank()) {
@@ -121,11 +123,12 @@ fun AudioMediaDetailInfoView(
                 lineHeight = 16.sp,
                 color = gray60,
             )
+            // 여러 줄 단락이라 라벨과 줄 간격을 MetaField 의 한 줄 값보다 넉넉하게 둔다.
             Text(
-                modifier = Modifier.padding(top = 2.dp, start = 16.dp, end = 16.dp),
+                modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp),
                 text = data.audioMediaDescription,
                 fontSize = 16.sp,
-                lineHeight = 22.sp,
+                lineHeight = 24.sp,
             )
         }
     }
