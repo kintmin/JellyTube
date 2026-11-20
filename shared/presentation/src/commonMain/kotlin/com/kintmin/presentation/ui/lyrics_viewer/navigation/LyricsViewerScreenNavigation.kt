@@ -19,12 +19,14 @@ fun NavController.navigateToLyricsViewerScreen(
 fun NavGraphBuilder.lyricsViewerScreen(
     navigateToBack: () -> Unit,
     navigateToLyricsEdit: (audioMediaId: Int) -> Unit,
+    navigateToPlayerDetail: () -> Unit,
 ) {
     composable<LyricsViewerScreenRoute> { backStackEntry ->
         val route = backStackEntry.toRoute<LyricsViewerScreenRoute>()
         LyricsViewerScreen(
             navigateToBack = navigateToBack,
             navigateToLyricsEdit = { navigateToLyricsEdit(route.audioMediaId) },
+            navigateToPlayerDetail = navigateToPlayerDetail,
         )
     }
 }

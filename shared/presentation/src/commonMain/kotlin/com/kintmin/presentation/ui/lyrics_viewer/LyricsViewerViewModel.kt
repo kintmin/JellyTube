@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class LyricsViewerViewModel constructor(
     savedStateHandle: SavedStateHandle,
@@ -101,6 +102,11 @@ class LyricsViewerViewModel constructor(
                                 transliterationLines = transliterationLines,
                                 showTranslateMenu = !language.hasKorean,
                                 showTransliterateMenu = language.hasJapanese,
+                                // 결과 파일이 바뀌어 들어왔으면 요청한 작업이 끝난 것이다.
+                                isCreatingTranslation = it.isCreatingTranslation &&
+                                    translationLines == it.translationLines,
+                                isCreatingTransliteration = it.isCreatingTransliteration &&
+                                    transliterationLines == it.transliterationLines,
                             )
                         }
                     }
@@ -111,14 +117,33 @@ class LyricsViewerViewModel constructor(
     fun sendIntent(intent: LyricsViewerIntent) {
         when (intent) {
             LyricsViewerIntent.OnRefreshPosition -> refreshPosition()
+            is LyricsViewerIntent.OnClickLine -> seekToLine(intent.index)
             LyricsViewerIntent.OnClickDeleteLyrics -> deleteLyrics()
             LyricsViewerIntent.OnClickCreateTranslation -> createVariant(LyricsVariant.TRANSLATION)
             LyricsViewerIntent.OnClickCreateTransliteration -> createVariant(LyricsVariant.TRANSLITERATION)
         }
     }
 
+    private fun seekToLine(index: Int) {
+        if (!isThisMediaPlaying()) return
+        val timeMs = parsedLines.getOrNull(index)?.timeMs ?: return
+        mediaControllerManager.seek(timeMs.milliseconds)
+        refreshPosition()
+    }
+
     private fun createVariant(variant: LyricsVariant) {
         val path = lyricFileFullPath ?: return
+        val isCreating = when (variant) {
+            LyricsVariant.TRANSLATION -> _data.value.isCreatingTranslation
+            LyricsVariant.TRANSLITERATION -> _data.value.isCreatingTransliteration
+        }
+        if (isCreating) return
+        _data.update {
+            when (variant) {
+                LyricsVariant.TRANSLATION -> it.copy(isCreatingTranslation = true)
+                LyricsVariant.TRANSLITERATION -> it.copy(isCreatingTransliteration = true)
+            }
+        }
         executeLyricsVariantCreation(
             audioMediaId = audioMediaId,
             lyricFileFullPath = path,
@@ -138,33 +163,35 @@ class LyricsViewerViewModel constructor(
         viewModelScope.launch {
             val result = deleteAudioMediaLyricsUseCase(audioMediaId)
             if (result.isSuccess) {
-                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사를 삭제했습니다."))
+                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사를 삭제했어요."))
                 _eventFlow.emit(LyricsViewerEvent.NavigateToBack)
             } else {
-                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사 삭제에 실패했습니다."))
+                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사를 삭제하지 못했어요."))
             }
         }
     }
 
+    // 컨트롤러가 연결돼 있으면 미재생 상태에서도 currentPosition 이 0 을 반환한다.
+    // 이 곡이 실제로 재생 중인지 먼저 보지 않으면 첫 줄 timeMs=0 이 잘못 하이라이트된다.
+    private fun isThisMediaPlaying(): Boolean =
+        mediaControllerManager.isPlaying &&
+            mediaControllerManager.playingMediaItem?.mediaId == audioMediaId.toString()
+
     private fun refreshPosition() {
         if (parsedLines.isEmpty()) return
 
-        // 이 화면의 음원이 실제로 재생 중일 때만 활성 줄을 계산한다.
-        // (컨트롤러가 연결돼 있으면 미재생 상태에서도 currentPosition 이 0 을 반환해
-        //  첫 줄 timeMs=0 이 잘못 하이라이트되는 것을 막는다.)
-        val isThisMediaPlaying = mediaControllerManager.isPlaying &&
-            mediaControllerManager.playingMediaItem?.mediaId == audioMediaId.toString()
-        if (!isThisMediaPlaying) {
-            if (_data.value.activeIndex != -1) {
-                _data.update { it.copy(activeIndex = -1) }
+        if (!isThisMediaPlaying()) {
+            if (_data.value.activeIndex != -1 || _data.value.canSeek) {
+                _data.update { it.copy(activeIndex = -1, canSeek = false) }
             }
             return
         }
 
         val positionMs = mediaControllerManager.currentPosition ?: return
         val index = activeLyricIndex(parsedLines, positionMs)
-        if (index != _data.value.activeIndex) {
-            _data.update { it.copy(activeIndex = index) }
+        val canSeek = _data.value.isSynced
+        if (index != _data.value.activeIndex || canSeek != _data.value.canSeek) {
+            _data.update { it.copy(activeIndex = index, canSeek = canSeek) }
         }
     }
 }
