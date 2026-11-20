@@ -59,6 +59,7 @@ class PlaylistDetailHeaderViewModel constructor(
                 isRepeating = isRepeating,
                 isShuffling = isShuffling,
                 isBasePlaylist = playlist.isBasePlaylist,
+                canRemoveTrack = !playlist.type.isAutoManaged,
             )
         }.stateIn(
             viewModelScope, SharingStarted.WhileSubscribed(5000), PlaylistDetailHeaderUiState(

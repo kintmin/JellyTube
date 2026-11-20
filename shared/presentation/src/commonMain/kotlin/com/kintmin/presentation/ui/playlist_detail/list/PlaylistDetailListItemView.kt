@@ -31,12 +31,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.input.pointer.pointerInput
@@ -58,15 +61,19 @@ import okio.Path.Companion.toPath
 fun PlaylistDetailListItemView(
     modifier: Modifier,
     data: PlaylistDetailListItemUiState,
-    isBasePlaylist: Boolean,
+    canRemoveTrack: Boolean,
     isNowPlaying: Boolean,
     isPlaying: Boolean,
+    isDragging: Boolean,
     sendIntent: (PlaylistDetailListIntent) -> Unit,
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
     var isShowRemoveDialog by remember { mutableStateOf(false) }
     var isShowDeleteFileDialog by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
+    // pointerInput 은 키만 비교하고 람다는 비교하지 않아, 아래 탭 처리가 첫 구성 시점의 값에
+    // 묶인다.
+    val isDraggingNow by rememberUpdatedState(isDragging)
 
     Card(
         modifier,
@@ -108,7 +115,15 @@ fun PlaylistDetailListItemView(
                             interactionSource.emit(endInteraction)
                         },
                         // 롱프레스는 호출부의 끌어서 순서 변경이 받는다. 여기서 받으면 그쪽이 굶는다.
-                        onTap = { sendIntent(PlaylistDetailListIntent.OnClickAudioItem(data)) },
+                        //
+                        // 들린 뒤 **움직이지 않고** 떼면 여기로 온다 — onLongPress 가 없어 탭
+                        // 감지가 끝나지 않고, 끌기가 좌표를 소비하기 전이라 취소도 되지 않는다.
+                        // 그대로 두면 순서를 바꾸려다 만 손짓이 재생을 시작한다.
+                        onTap = {
+                            if (!isDraggingNow) {
+                                sendIntent(PlaylistDetailListIntent.OnClickAudioItem(data))
+                            }
+                        },
                     )
                 },
         ) {
@@ -148,8 +163,14 @@ fun PlaylistDetailListItemView(
                                 .matchParentSize()
                                 .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)),
                         )
+                        // 기둥은 Canvas 라 스크린리더에 아무것도 남기지 않는다. 색으로만
+                        // 전하지 않겠다는 목표가 TalkBack 에서도 지켜지게 말을 붙인다.
                         NowPlayingBars(
-                            modifier = Modifier.matchParentSize(),
+                            modifier = Modifier
+                                .matchParentSize()
+                                .semantics {
+                                    contentDescription = if (isPlaying) "재생 중" else "일시정지"
+                                },
                             isPlaying = isPlaying,
                         )
                     }
@@ -221,8 +242,8 @@ fun PlaylistDetailListItemView(
                                 sendIntent(PlaylistDetailListIntent.OnClickEditPlaylist(data))
                             },
                         )
-                        // 미분류·전체 같은 기본 플레이리스트는 트랙만 뺄 수 없다.
-                        if (!isBasePlaylist) {
+                        // 전체·미분류는 시스템이 채우고 비우는 자리라 트랙만 뺄 수 없다.
+                        if (canRemoveTrack) {
                             DropdownMenuItem(
                                 text = { Text("플레이리스트에서 빼기") },
                                 colors = MenuDefaults.itemColors(textColor = softRed),
@@ -254,9 +275,10 @@ fun PlaylistDetailListItemPreview() {
         PlaylistDetailListItemView(
             data = PlaylistDetailListItemUiState.getMock(),
             modifier = Modifier.height(80.dp),
-            isBasePlaylist = true,
+            canRemoveTrack = true,
             isNowPlaying = false,
             isPlaying = false,
+            isDragging = false,
             sendIntent = {},
         )
     }
@@ -269,9 +291,10 @@ fun PlaylistDetailListItemNowPlayingPreview() {
         PlaylistDetailListItemView(
             data = PlaylistDetailListItemUiState.getMock(),
             modifier = Modifier.height(80.dp),
-            isBasePlaylist = true,
+            canRemoveTrack = true,
             isNowPlaying = true,
             isPlaying = true,
+            isDragging = false,
             sendIntent = {},
         )
     }

@@ -9,6 +9,9 @@ data class PlaylistDetailHeaderUiState(
     val isRepeating: Boolean,
     val isShuffling: Boolean,
     val isBasePlaylist: Boolean = false,
+    // 즐겨찾기는 `isBasePlaylist` 지만 곡을 뺄 수 있다. 둘을 같은 값으로 묶으면 즐겨찾기에서
+    // 빼는 길이 막히고 파일 삭제만 남는다.
+    val canRemoveTrack: Boolean = false,
 ) {
     companion object {
         fun getMock(id: Int = 0): PlaylistDetailHeaderUiState {
@@ -20,6 +23,7 @@ data class PlaylistDetailHeaderUiState(
                 description = "설명은 최대 100자 설명은 최대 100자 설명은 최대 100자 설명은 최대 100자 ",
                 isRepeating = true,
                 isShuffling = false,
+                canRemoveTrack = true,
             )
         }
     }

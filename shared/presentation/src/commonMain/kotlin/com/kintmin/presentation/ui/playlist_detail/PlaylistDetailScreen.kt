@@ -62,6 +62,7 @@ import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.animation.FocusSpreadOverlay
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.remember_state.rememberReorderState
 import com.kintmin.presentation.ui.common.ReorderableItem
 import com.kintmin.presentation.ui.player_bar.PlayerBar
@@ -110,6 +111,8 @@ fun PlaylistDetailScreen(
         }
     }
 
+    val toaster = rememberToaster()
+
     LaunchedEffect(Unit) {
         listViewModel.eventFlow.collect { event ->
             when (event) {
@@ -119,6 +122,7 @@ fun PlaylistDetailScreen(
                     headerViewModel.playlistId,
                     event.focusAudioMediaId,
                 )
+                is PlaylistDetailListEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }
@@ -331,9 +335,10 @@ fun PlaylistDetailScreen(
                             PlaylistDetailListItemView(
                                 data = item,
                                 modifier = Modifier.matchParentSize(),
-                                isBasePlaylist = isBasePlaylist,
+                                canRemoveTrack = headerData.canRemoveTrack,
                                 isNowPlaying = item.id == nowPlayingAudioMediaId,
                                 isPlaying = isPlaybackPlaying,
+                                isDragging = false,
                                 sendIntent = sendPlaylistDetailListIntent,
                             )
                             if (highlightedAudioMediaId == item.id) {
@@ -369,9 +374,10 @@ fun PlaylistDetailScreen(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .then(dragHandleModifier),
-                                isBasePlaylist = isBasePlaylist,
+                                canRemoveTrack = headerData.canRemoveTrack,
                                 isNowPlaying = item.id == nowPlayingAudioMediaId,
                                 isPlaying = isPlaybackPlaying,
+                                isDragging = reorderState.draggingItemId == item.id,
                                 sendIntent = sendPlaylistDetailListIntent,
                             )
                             if (highlightedAudioMediaId == item.id) {

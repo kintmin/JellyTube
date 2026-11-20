@@ -98,6 +98,11 @@ class PlaylistDetailListViewModel constructor(
 
         viewModelScope.launch {
             updateTrackSequenceUseCase(playlistId, reorderData.id, reorderData.sequence, targetData.sequence)
+                .onFailure {
+                    // 쓰기가 실패하면 DB 가 그대로라 Flow 가 재방출되지 않는다. 말해 주지 않으면
+                    // 목록은 새 순서를, 재생 큐는 옛 순서를 쓴 채로 남는다.
+                    triggerEvent(PlaylistDetailListEvent.ShowToast("순서를 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요."))
+                }
         }
     }
 
@@ -105,6 +110,12 @@ class PlaylistDetailListViewModel constructor(
         viewModelScope.launch {
             changeSearchTextDebounce {
                 _searchText.update { newSearchText }
+            }
+            // 지우는 것은 미루지 않는다. 미루면 빈 검색어와 걸러진 목록이 debounce 만큼
+            // 어긋나, 곡이 있는 플레이리스트가 그 동안 "담긴 음원이 없습니다" 로 보인다.
+            // 위에서 먼저 호출해 밀린 작업을 취소시킨 뒤라 되살아나지 않는다.
+            if (newSearchText.isEmpty()) {
+                _searchText.update { "" }
             }
         }
     }
