@@ -1,10 +1,9 @@
 package com.kintmin.presentation.ui.common.wheel_picker
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -17,26 +16,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-
-private class WheelColumn(
-    val label: String,
-    val values: List<Int>,
-    val selected: Int,
-    val onChange: (Int) -> Unit,
-)
 
 /** audioDurationMs 가 null 일 때 시/분 컬럼의 기본 상한(99분). */
 private const val DEFAULT_MAX_MS = 99 * 60_000L
 
 /**
  * 가사 시작 시간을 시/분/초/밀리초 휠로 조정하는 BottomSheet.
- * 음원 길이가 1시간 이상이면 [시][분][초][1/100초], 아니면 [분][초][1/100초] 컬럼을 노출한다.
+ * 음원 길이가 1시간 이상이면 시:분:초.1/100초, 아니면 분:초.1/100초 휠을 노출한다.
  * 마지막 컬럼은 1/100초(00~95)를 0.05초(50ms) 단위로만 조정한다.
  */
 @Composable
@@ -75,46 +65,29 @@ fun TimePickerBottomSheet(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
                 text = "시작 시간 설정",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 12.dp),
+                style = MaterialTheme.typography.titleLarge,
             )
 
-            val columns = buildList {
-                if (showHours) add(WheelColumn("시", hourValues, hours) { hours = it })
-                add(WheelColumn("분", minuteValues, minutes) { minutes = it })
-                add(WheelColumn("초", secondValues, seconds) { seconds = it })
-                add(WheelColumn("1/100초", centiValues, centiseconds) { centiseconds = it })
-            }
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                columns.forEach { column ->
-                    Text(
-                        modifier = Modifier.weight(1f),
-                        text = column.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = gray60,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-            Spacer(Modifier.height(4.dp))
-
+            // 열 이름 대신 구분자를 둬 편집 화면의 시간 표기(00:05.50)와 같은 모양으로 읽히게 한다.
             Box(contentAlignment = Alignment.Center) {
                 WheelPickerHighlight()
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    columns.forEach { column ->
-                        NumberWheelPicker(
-                            values = column.values,
-                            selectedValue = column.selected,
-                            onValueChange = column.onChange,
-                            showHighlight = false,
-                            modifier = Modifier.weight(1f),
-                        )
+                    if (showHours) {
+                        Wheel(hourValues, hours) { hours = it }
+                        WheelSeparator(":")
                     }
+                    Wheel(minuteValues, minutes) { minutes = it }
+                    WheelSeparator(":")
+                    Wheel(secondValues, seconds) { seconds = it }
+                    WheelSeparator(".")
+                    Wheel(centiValues, centiseconds) { centiseconds = it }
                 }
             }
 
@@ -131,6 +104,44 @@ fun TimePickerBottomSheet(
                 Text("확인")
             }
         }
+    }
+}
+
+@Composable
+private fun RowScope.Wheel(values: List<Int>, selected: Int, onChange: (Int) -> Unit) {
+    NumberWheelPicker(
+        values = values,
+        selectedValue = selected,
+        onValueChange = onChange,
+        showHighlight = false,
+        modifier = Modifier.weight(1f),
+    )
+}
+
+@Composable
+private fun WheelSeparator(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.headlineSmall,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+}
+
+@Preview
+@Composable
+private fun WheelPreview() {
+    JellyTubeTheme {
+        Row {
+            Wheel((0..59).toList(), 5) {}
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun WheelSeparatorPreview() {
+    JellyTubeTheme {
+        WheelSeparator(":")
     }
 }
 
