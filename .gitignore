@@ -40,6 +40,9 @@ selfIdentity.plist
 /android/app/release
 /buildSrc/.kotlin
 
+# 에이전트가 격리 작업용으로 만드는 git worktree. 안이 또 저장소라 add -A 에 gitlink 로 딸려간다
+.claude/worktrees/
+
 # Python
 **/__pycache__/
 *.pyc
