@@ -15,6 +15,7 @@ data class PlaylistItemUiState(
     val audioMediaCount: Int,
     val sequence: Int,
     val type: PlaylistType,
+    val isDownloadTarget: Boolean = false,
 ) {
     val isBasePlaylist: Boolean get() = type.isSystem
     val summaryString: String get() = "${audioMediaCount}곡 · ${playlistDuration.to_hh_colon_mm_colon_ss()}"
@@ -38,7 +39,7 @@ data class PlaylistItemUiState(
     }
 }
 
-fun Playlist.toUiModel() = PlaylistItemUiState(
+fun Playlist.toUiModel(isDownloadTarget: Boolean = false) = PlaylistItemUiState(
     id = id,
     imageFileFullPath = imageFileFullPath,
     name = name,
@@ -47,4 +48,5 @@ fun Playlist.toUiModel() = PlaylistItemUiState(
     playlistDuration = playTimeDuration,
     sequence = sequence,
     type = type,
+    isDownloadTarget = isDownloadTarget,
 )

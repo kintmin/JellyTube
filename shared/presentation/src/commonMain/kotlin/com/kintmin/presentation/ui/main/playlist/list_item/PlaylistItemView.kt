@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -116,13 +117,25 @@ fun PlaylistItemView(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    text = data.summaryString,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = gray60,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (data.isDownloadTarget) {
+                        Icon(
+                            modifier = Modifier
+                                .padding(end = 2.dp)
+                                .size(14.dp),
+                            imageVector = Icons.Rounded.Download,
+                            contentDescription = "기본 다운로드 플레이리스트",
+                            tint = gray60,
+                        )
+                    }
+                    Text(
+                        text = data.summaryString,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = gray60,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
             Box {
                 IconButton(onClick = { isDropDownExpanded = true }) {
@@ -155,6 +168,16 @@ fun PlaylistItemView(
                         }
                     )
                     DropdownMenuItem(
+                        text = {
+                            Text(if (data.isDownloadTarget) "기본 다운로드 플레이리스트" else "기본 다운로드로 지정")
+                        },
+                        enabled = !data.isDownloadTarget,
+                        onClick = {
+                            isDropDownExpanded = false
+                            sendIntent(PlaylistIntent.OnClickSetDownloadTarget(data))
+                        }
+                    )
+                    DropdownMenuItem(
                         text = { Text("삭제하기") },
                         colors = MenuDefaults.itemColors(textColor = softRed),
                         onClick = {
@@ -174,7 +197,7 @@ fun PlaylistItemPreview() {
     JellyTubeTheme {
         PlaylistItemView(
             modifier = Modifier.width(180.dp),
-            PlaylistItemUiState.getMock(),
+            PlaylistItemUiState.getMock().copy(isDownloadTarget = true),
             sendIntent = {},
         )
     }
