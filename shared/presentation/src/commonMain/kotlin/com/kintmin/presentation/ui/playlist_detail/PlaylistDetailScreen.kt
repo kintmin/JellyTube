@@ -1,14 +1,9 @@
 package com.kintmin.presentation.ui.playlist_detail
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -26,13 +21,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -48,8 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -59,6 +49,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.common.CollapsibleSearchField
+import com.kintmin.presentation.ui.common.SearchToggleButton
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
@@ -167,7 +159,14 @@ fun PlaylistDetailScreen(
     )
     var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
     var searchInput by rememberSaveable { mutableStateOf("") }
-    val searchFocusRequester = remember { FocusRequester() }
+    fun changeSearchInput(text: String) {
+        searchInput = text
+        sendPlaylistDetailListIntent(PlaylistDetailListIntent.OnChangeSearchText(text))
+    }
+    fun closeSearchField() {
+        isSearchFieldVisible = false
+        changeSearchInput("")
+    }
     var consumedFocusAudioMediaId by rememberSaveable { mutableStateOf<Int?>(null) }
     var highlightedAudioMediaId by remember { mutableStateOf<Int?>(null) }
     var focusSpreadProgress by remember { mutableStateOf(0f) }
@@ -252,26 +251,13 @@ fun PlaylistDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(
+                    SearchToggleButton(
+                        isSearchFieldVisible = isSearchFieldVisible,
+                        contentDescription = "음원 검색",
                         onClick = {
-                            val showSearchBar = !isSearchFieldVisible
-                            isSearchFieldVisible = showSearchBar
-                            if (!showSearchBar) {
-                                searchInput = ""
-                                sendPlaylistDetailListIntent(
-                                    PlaylistDetailListIntent.OnChangeSearchText(""),
-                                )
-                            }
+                            if (isSearchFieldVisible) closeSearchField() else isSearchFieldVisible = true
                         },
-                    ) {
-                        // 아이콘은 바꾸지 않는다. 바로 아래 텍스트필드에도 X 가 있어 둘이
-                        // 같은 모양이면 어느 쪽이 무엇을 닫는지 읽히지 않는다.
-                        Icon(
-                            imageVector = Icons.Rounded.Search,
-                            modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = if (isSearchFieldVisible) "검색 닫기" else "음원 검색",
-                        )
-                    }
+                    )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = backgroundColor
@@ -396,69 +382,20 @@ fun PlaylistDetailScreen(
                 }
             }
 
-            // 상단 바 안에 두면 innerPadding 이 늘어 목록이 통째로 밀린다.
-            AnimatedVisibility(
+            CollapsibleSearchField(
                 modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
                 visible = isSearchFieldVisible,
-                enter = slideInVertically(
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-                ) { -it } + fadeIn(
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                value = searchInput,
+                label = "음원 제목 검색",
+                // 상단 바는 헤더 위에서 투명하다가 스크롤하면 background 가 된다.
+                containerColor = lerp(
+                    MaterialTheme.colorScheme.surfaceContainerHighest,
+                    MaterialTheme.colorScheme.background,
+                    progress,
                 ),
-                exit = slideOutVertically(
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-                ) { -it } + fadeOut(
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-                ),
-            ) {
-                // AnimatedVisibility 안에서 요청한다. 바깥에서 isSearchFieldVisible 로 걸면
-                // 필드가 아직 붙지 않은 시점에 돌 수 있다.
-                LaunchedEffect(Unit) { searchFocusRequester.requestFocus() }
-                OutlinedTextField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(searchFocusRequester)
-                        // 상단 바는 헤더 위에서 투명하다가 스크롤하면 background 가 된다.
-                        .background(
-                            lerp(
-                                MaterialTheme.colorScheme.surfaceContainerHighest,
-                                MaterialTheme.colorScheme.background,
-                                progress,
-                            ),
-                        )
-                        .padding(start = 12.dp, end = 12.dp, bottom = 8.dp),
-                    value = searchInput,
-                    onValueChange = {
-                        searchInput = it
-                        sendPlaylistDetailListIntent(
-                            PlaylistDetailListIntent.OnChangeSearchText(it),
-                        )
-                    },
-                    label = { Text("음원 제목 검색") },
-                    singleLine = true,
-                    trailingIcon = {
-                        val isSearchInputEmpty = searchInput.isEmpty()
-                        IconButton(
-                            onClick = {
-                                // 비어 있으면 지울 것이 없다. 그때는 닫는 것이 유일하게 뜻이 있다.
-                                if (isSearchInputEmpty) {
-                                    isSearchFieldVisible = false
-                                } else {
-                                    searchInput = ""
-                                    sendPlaylistDetailListIntent(
-                                        PlaylistDetailListIntent.OnChangeSearchText(""),
-                                    )
-                                }
-                            },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Close,
-                                contentDescription = if (isSearchInputEmpty) "검색 닫기" else "검색어 전체 삭제",
-                            )
-                        }
-                    },
-                )
-            }
+                onValueChange = ::changeSearchInput,
+                onClose = ::closeSearchField,
+            )
         }
     }
 }

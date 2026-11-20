@@ -31,7 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -45,7 +45,8 @@ import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
-import com.kintmin.presentation.ui.common.SearchBar
+import com.kintmin.presentation.ui.common.CollapsibleSearchField
+import com.kintmin.presentation.ui.common.SearchToggleButton
 import com.kintmin.presentation.ui.common.dragToSelect
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemUiState
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemView
@@ -85,7 +86,16 @@ fun PlaylistAddScreen(
     checkedItemCount: Int,
     sendIntent: (PlaylistAddIntent) -> Unit,
 ) {
-    var searchText by remember { mutableStateOf("") }
+    var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
+    var searchText by rememberSaveable { mutableStateOf("") }
+    fun changeSearchText(text: String) {
+        searchText = text
+        sendIntent(PlaylistAddIntent.OnChangeSearchText(text))
+    }
+    fun closeSearchField() {
+        isSearchFieldVisible = false
+        changeSearchText("")
+    }
     val listState = rememberLazyListState()
 
     Scaffold(
@@ -107,9 +117,18 @@ fun PlaylistAddScreen(
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "ArrowBackIosNew"
+                            contentDescription = "뒤로"
                         )
                     }
+                },
+                actions = {
+                    SearchToggleButton(
+                        isSearchFieldVisible = isSearchFieldVisible,
+                        contentDescription = "곡 검색",
+                        onClick = {
+                            if (isSearchFieldVisible) closeSearchField() else isSearchFieldVisible = true
+                        },
+                    )
                 },
             )
         },
@@ -134,13 +153,12 @@ fun PlaylistAddScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            SearchBar(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = "곡 이름 검색",
-                onSearchTextChanged = { newText ->
-                    searchText = newText
-                    sendIntent(PlaylistAddIntent.OnChangeSearchText(newText))
-                },
+            CollapsibleSearchField(
+                visible = isSearchFieldVisible,
+                value = searchText,
+                label = "곡 이름 검색",
+                onValueChange = ::changeSearchText,
+                onClose = ::closeSearchField,
             )
             if (dataList?.isEmpty() == true) {
                 Text(
