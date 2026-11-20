@@ -18,10 +18,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -66,6 +67,9 @@ import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.audio_media_detail.dialog.AudioEditRevertDialog
 import com.kintmin.presentation.ui.audio_media_detail.dialog.KaraokeUnlinkDialog
+import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionProgressIndicator
+import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionRowView
+import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionUnlinkButton
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaDetailInfoView
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
@@ -304,145 +308,78 @@ fun AudioMediaDetailScreen(
                         onClickSource = { url -> navigateToMainSearchTab(url) },
                     )
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                    )
+                    if (!data.isDeleted) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                        )
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .clickable {
+                        AudioMediaActionRowView(
+                            icon = Icons.Rounded.Lyrics,
+                            title = if (data.hasLyrics) "가사" else "가사 찾기",
+                            description = if (data.hasLyrics) "저장됨" else null,
+                            onClick = {
                                 if (data.hasLyrics) {
                                     navigateToLyricsViewer(data.audioMediaId)
                                 } else {
                                     navigateToLyricsSearch(data.audioMediaId, data.audioMediaName, data.audioDurationSeconds)
                                 }
-                            }
-                            .padding(horizontal = 16.dp, vertical = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            modifier = Modifier.weight(1f),
-                            text = if (data.hasLyrics) "이 음원의 가사 보기" else "이 음원의 가사 찾기",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
+                            },
                         )
-                        Icon(
-                            imageVector = Icons.Rounded.ChevronRight,
-                            contentDescription = null,
-                        )
-                    }
 
-                    if (data.tjKaraokeNumber == null) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surface)
-                                .clickable {
-                                    navigateToKaraokeSearch(data.audioMediaId, data.audioMediaName)
-                                }
-                                .padding(horizontal = 16.dp, vertical = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                modifier = Modifier.weight(1f),
-                                text = "TJ 노래방 번호 찾기",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
+                        if (data.tjKaraokeNumber == null) {
+                            AudioMediaActionRowView(
+                                icon = Icons.Rounded.Mic,
+                                title = "TJ 노래방 번호 찾기",
+                                onClick = { navigateToKaraokeSearch(data.audioMediaId, data.audioMediaName) },
                             )
-                            Icon(
-                                imageVector = Icons.Rounded.ChevronRight,
-                                contentDescription = null,
-                            )
-                        }
-                    } else {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surface)
-                                .padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                modifier = Modifier.weight(1f),
-                                text = "TJ 노래방 번호: ${data.tjKaraokeNumber}",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                            IconButton(onClick = { isShowKaraokeUnlinkDialog = true }) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = "노래방 번호 연동 해제",
-                                )
-                            }
-                        }
-                    }
-
-                    if (!data.hasEditedAudio) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surface)
-                                .clickable {
-                                    navigateToAudioEdit(data.audioMediaId)
-                                }
-                                .padding(horizontal = 16.dp, vertical = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                modifier = Modifier.weight(1f),
-                                text = if (data.isAudioEditSaving) "편집본 저장 중..." else "음원 편집하기",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                            Icon(
-                                imageVector = Icons.Rounded.ChevronRight,
-                                contentDescription = null,
-                            )
-                        }
-                    } else {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 20.dp, start = 16.dp, end = 16.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surface)
-                                .padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { navigateToAudioEdit(data.audioMediaId) },
-                                text = if (data.isAudioEditSaving) {
-                                    "편집본 저장 중..."
-                                } else {
-                                    "편집본 사용 중 · ${data.playTime}"
+                        } else {
+                            AudioMediaActionRowView(
+                                icon = Icons.Rounded.Mic,
+                                title = "TJ 노래방 번호",
+                                description = data.tjKaraokeNumber,
+                                onClick = null,
+                                trailing = {
+                                    AudioMediaActionUnlinkButton(
+                                        contentDescription = "노래방 번호 연동 해제",
+                                        onClick = { isShowKaraokeUnlinkDialog = true },
+                                    )
                                 },
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
                             )
-                            // 저장이 끝나면 편집본이 다시 연결되므로 저장 중에는 되돌릴 수 없다
-                            IconButton(
-                                enabled = !data.isAudioEditSaving,
-                                onClick = { isShowAudioEditRevertDialog = true },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = "원본으로 되돌리기",
-                                )
-                            }
                         }
+
+                        val audioEditTrailing: (@Composable () -> Unit)? = when {
+                            data.isAudioEditSaving -> {
+                                { AudioMediaActionProgressIndicator() }
+                            }
+                            data.hasEditedAudio -> {
+                                {
+                                    AudioMediaActionUnlinkButton(
+                                        contentDescription = "원본으로 되돌리기",
+                                        onClick = { isShowAudioEditRevertDialog = true },
+                                    )
+                                }
+                            }
+                            else -> null
+                        }
+                        AudioMediaActionRowView(
+                            icon = Icons.Rounded.ContentCut,
+                            title = when {
+                                data.isAudioEditSaving -> "편집본 저장 중"
+                                data.hasEditedAudio -> "편집본 사용 중"
+                                else -> "음원 편집"
+                            },
+                            description = if (data.hasEditedAudio && !data.isAudioEditSaving) data.playTime else null,
+                            // 저장이 끝나면 편집본이 다시 연결되므로 저장 중에는 편집도 되돌리기도 막는다
+                            enabled = !data.isAudioEditSaving,
+                            onClick = { navigateToAudioEdit(data.audioMediaId) },
+                            trailing = audioEditTrailing,
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                        )
                     }
 
                     Text(
