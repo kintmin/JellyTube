@@ -37,6 +37,7 @@ class LyricsEditViewModel constructor(
     private var nextRowId = 0
     private var isLoaded = false
     private var previousLyricFileFullPath: String? = null
+    private var lastDeletedRow: Pair<Int, EditRow>? = null
 
     private val _eventFlow = MutableSharedFlow<LyricsEditEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
@@ -131,6 +132,7 @@ class LyricsEditViewModel constructor(
             is LyricsEditIntent.OnChangeTransliteration -> changeTransliteration(intent.rowId, intent.text)
             is LyricsEditIntent.OnAddRowBelow -> addRowBelow(intent.rowId)
             is LyricsEditIntent.OnDeleteRow -> deleteRow(intent.rowId)
+            LyricsEditIntent.OnUndoDeleteRow -> undoDeleteRow()
             LyricsEditIntent.OnSplitByNewline -> splitByNewline()
             LyricsEditIntent.OnClickSave -> save()
         }
@@ -155,7 +157,10 @@ class LyricsEditViewModel constructor(
     private fun changeTime(rowId: Int, timeMs: Long) {
         _data.update { state ->
             state.copy(
-                rows = state.rows.map { if (it.id == rowId) it.copy(timeMs = timeMs, isModified = true) else it },
+                // LRC 는 시간 순이어야 한다. 같은 시간끼리는 원래 순서를 지킨다(sortedBy 는 안정 정렬).
+                rows = state.rows
+                    .map { if (it.id == rowId) it.copy(timeMs = timeMs, isModified = true) else it }
+                    .sortedBy { it.timeMs },
                 isDirty = true,
             )
         }
@@ -200,7 +205,20 @@ class LyricsEditViewModel constructor(
     }
 
     private fun deleteRow(rowId: Int) {
+        val index = _data.value.rows.indexOfFirst { it.id == rowId }
+        if (index < 0) return
+        lastDeletedRow = index to _data.value.rows[index]
         _data.update { state -> state.copy(rows = state.rows.filterNot { it.id == rowId }, isDirty = true) }
+        viewModelScope.launch { _eventFlow.emit(LyricsEditEvent.ShowUndoDeleteRow) }
+    }
+
+    private fun undoDeleteRow() {
+        val (index, row) = lastDeletedRow ?: return
+        lastDeletedRow = null
+        _data.update { state ->
+            val rows = state.rows.toMutableList().apply { add(index.coerceAtMost(size), row) }
+            state.copy(rows = rows)
+        }
     }
 
     private fun splitByNewline() {
@@ -241,10 +259,10 @@ class LyricsEditViewModel constructor(
             )
             _data.update { it.copy(isSaving = false) }
             if (result.isSuccess) {
-                _eventFlow.emit(LyricsEditEvent.ShowToast("수정사항을 저장했습니다."))
+                _eventFlow.emit(LyricsEditEvent.ShowToast("가사를 저장했습니다."))
                 _eventFlow.emit(LyricsEditEvent.NavigateToBack)
             } else {
-                _eventFlow.emit(LyricsEditEvent.ShowToast("저장에 실패했습니다."))
+                _eventFlow.emit(LyricsEditEvent.ShowToast("가사를 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요."))
             }
         }
     }

@@ -12,6 +12,9 @@ data class LyricsViewerUiState(
     // ⋮ 메뉴 노출 여부
     val showTranslateMenu: Boolean = false,
     val showTransliterateMenu: Boolean = false,
+    val isCreatingTranslation: Boolean = false,
+    val isCreatingTransliteration: Boolean = false,
+    val canSeek: Boolean = false,
 ) {
     companion object {
 
@@ -34,6 +37,7 @@ data class LyricsViewerUiState(
             ),
             showTranslateMenu = true,
             showTransliterateMenu = false,
+            canSeek = true,
         )
     }
 }

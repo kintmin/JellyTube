@@ -1,13 +1,10 @@
 package com.kintmin.presentation.ui.lyrics_edit
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,14 +12,16 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -31,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,11 +45,14 @@ import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.wheel_picker.TimePickerBottomSheet
 import com.kintmin.presentation.ui.lyrics_edit.dialog.LyricsEditExitDialog
 import com.kintmin.presentation.ui.lyrics_edit.list_item.LyricsEditItemView
 import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -59,6 +62,8 @@ fun LyricsEditScreen(
     val viewModel = koinViewModel<LyricsEditViewModel>()
     val data by viewModel.data.collectAsState()
     val toaster = rememberToaster()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
@@ -67,6 +72,19 @@ fun LyricsEditScreen(
                     toaster.show(event.message)
 
                 LyricsEditEvent.NavigateToBack -> navigateToBack()
+
+                // 되돌리기는 마지막 삭제 한 건만 가능하므로 이전 스낵바는 걷어낸다.
+                LyricsEditEvent.ShowUndoDeleteRow -> scope.launch {
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    val result = snackbarHostState.showSnackbar(
+                        message = "줄을 삭제했습니다.",
+                        actionLabel = "되돌리기",
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.sendIntent(LyricsEditIntent.OnUndoDeleteRow)
+                    }
+                }
             }
         }
     }
@@ -74,6 +92,7 @@ fun LyricsEditScreen(
     LyricsEditScreen(
         navigateToBack = navigateToBack,
         data = data,
+        snackbarHostState = snackbarHostState,
         sendIntent = viewModel::sendIntent,
     )
 }
@@ -83,6 +102,7 @@ fun LyricsEditScreen(
 fun LyricsEditScreen(
     navigateToBack: () -> Unit,
     data: LyricsEditUiState,
+    snackbarHostState: SnackbarHostState,
     sendIntent: (LyricsEditIntent) -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -107,6 +127,15 @@ fun LyricsEditScreen(
     )
 
     var pickerRowId by remember { mutableStateOf<Int?>(null) }
+
+    // 옮겨 가는 줄은 위치 애니메이션을 끈다. 켜 두면 화면 밖 새 자리로 날아가는 동안 스크롤이
+    // 따라가 줄이 화면 위를 가로지르며 깜박인다.
+    var movedRowId by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(movedRowId) {
+        val index = data.rows.indexOfFirst { it.id == movedRowId }
+        if (index >= 0) listState.animateScrollToItem(index)
+        movedRowId = null
+    }
     val pickerRow = data.rows.firstOrNull { it.id == pickerRowId }
     if (pickerRow != null) {
         TimePickerBottomSheet(
@@ -114,6 +143,7 @@ fun LyricsEditScreen(
             audioDurationMs = data.durationMs.takeIf { it > 0 },
             onConfirm = { timeMs ->
                 sendIntent(LyricsEditIntent.OnChangeTime(pickerRow.id, timeMs))
+                movedRowId = pickerRow.id
                 pickerRowId = null
             },
             onDismissRequest = { pickerRowId = null },
@@ -127,7 +157,7 @@ fun LyricsEditScreen(
                 expandedHeight = topAppBarHeight,
                 title = {
                     Text(
-                        text = data.title.ifBlank { "가사 수정" },
+                        text = data.title.ifBlank { "가사 편집" },
                         fontSize = topAppBarDetailTitleFontSize,
                         lineHeight = topAppBarDetailTitleLineHeight,
                         maxLines = 1,
@@ -139,28 +169,21 @@ fun LyricsEditScreen(
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "ArrowBackIosNew",
+                            contentDescription = "뒤로",
                         )
                     }
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .navigationBarsPadding()
-                    .padding(16.dp),
-            ) {
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    enabled = !data.isSaving,
-                    onClick = { sendIntent(LyricsEditIntent.OnClickSave) },
-                ) {
-                    Text(text = if (data.isSaving) "저장 중..." else "수정사항 저장")
+            if (data.isDirty || data.isSaving) {
+                BottomActionBar {
+                    BottomActionButton(
+                        text = if (data.isSaving) "저장 중…" else "저장",
+                        enabled = !data.isSaving,
+                        onClick = { sendIntent(LyricsEditIntent.OnClickSave) },
+                    )
                 }
             }
         },
@@ -179,29 +202,35 @@ fun LyricsEditScreen(
 
         Column(
             modifier = Modifier
-                .padding(innerPadding)
+                .padding(top = innerPadding.calculateTopPadding())
                 .fillMaxSize(),
         ) {
-            OutlinedButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                onClick = { sendIntent(LyricsEditIntent.OnSplitByNewline) },
-            ) {
-                Text("줄넘김 기준으로 가사 쪼개기")
+            if (data.canSplit) {
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    onClick = { sendIntent(LyricsEditIntent.OnSplitByNewline) },
+                ) {
+                    Text("줄넘김 기준으로 가사 쪼개기")
+                }
             }
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 state = listState,
-                contentPadding = PaddingValues(vertical = 8.dp),
+                contentPadding = PaddingValues(top = 8.dp, bottom = innerPadding.calculateBottomPadding() + 8.dp),
             ) {
                 itemsIndexed(
                     items = data.rows,
                     key = { _, item -> item.id },
                 ) { _, row ->
                     LyricsEditItemView(
-                        modifier = Modifier.animateItem(),
+                        modifier = if (row.id == movedRowId) {
+                            Modifier.animateItem(placementSpec = null)
+                        } else {
+                            Modifier.animateItem()
+                        },
                         row = row,
                         showTranslation = data.hasTranslation,
                         showTransliteration = data.hasTransliteration,
@@ -225,6 +254,7 @@ private fun LyricsEditScreenPreview() {
         LyricsEditScreen(
             navigateToBack = {},
             data = LyricsEditUiState.getMock(),
+            snackbarHostState = remember { SnackbarHostState() },
             sendIntent = {},
         )
     }

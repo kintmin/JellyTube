@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.ui.common.UnderlineTextField
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListIntent
 
@@ -51,7 +52,7 @@ fun PlaylistEditHeaderView(
                 onClickResetImage = { sendIntent(PlaylistEditListIntent.OnClickResetPlaylistImage) },
             )
             Spacer(modifier = Modifier.height(16.dp))
-            PlaylistEditInfoTextField(
+            UnderlineTextField(
                 label = "제목",
                 value = titleText,
                 onValueChange = { newText ->
@@ -68,7 +69,7 @@ fun PlaylistEditHeaderView(
                 errorMessage = if (isTitleError) "제목을 입력해 주세요. 비워 두면 이전 제목이 남습니다." else null,
             )
             Spacer(modifier = Modifier.height(8.dp))
-            PlaylistEditInfoTextField(
+            UnderlineTextField(
                 label = "설명",
                 value = descriptionText,
                 onValueChange = { newText ->

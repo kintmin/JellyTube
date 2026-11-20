@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.playlist_edit.header
+package com.kintmin.presentation.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,17 +30,19 @@ import com.kintmin.presentation.theme.softRed
 
 /**
  * 테두리가 없으니 고칠 수 있다는 신호로 밑줄을 남긴다.
- * 값이 채워지면 placeholder 가 사라지므로 어느 칸인지는 위의 [label] 이 늘 알린다.
+ * 값이 채워지면 placeholder 가 사라지므로 어느 칸인지는 위의 [label] 이 알린다.
+ * 같은 칸이 줄마다 반복돼 문맥이 이미 말해 주면 [label] 을 비운다.
  */
 @Composable
-fun PlaylistEditInfoTextField(
-    label: String,
+fun UnderlineTextField(
+    label: String?,
     value: String,
     onValueChange: (String) -> Unit,
     textStyle: TextStyle,
     placeholder: String,
-    maxLength: Int,
     singleLine: Boolean,
+    maxLength: Int? = null,
+    underlineOnlyWhenFocused: Boolean = false,
     modifier: Modifier = Modifier,
     errorMessage: String? = null,
 ) {
@@ -49,25 +52,29 @@ fun PlaylistEditInfoTextField(
     val indicatorColor = when {
         errorMessage != null -> softRed
         isFocused -> contentColor
+        // 자리는 남겨 두고 색만 지운다. 포커스가 들어올 때 줄 높이가 흔들리지 않게.
+        underlineOnlyWhenFocused -> Color.Transparent
         else -> gray20
     }
 
     BasicTextField(
         modifier = modifier.fillMaxWidth(),
         value = value,
-        onValueChange = { newText -> if (newText.length <= maxLength) onValueChange(newText) },
+        onValueChange = { newText -> if (maxLength == null || newText.length <= maxLength) onValueChange(newText) },
         textStyle = textStyle.copy(color = contentColor),
         singleLine = singleLine,
         cursorBrush = SolidColor(contentColor),
         interactionSource = interactionSource,
         decorationBox = { innerTextField ->
             Column {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (isFocused) contentColor else gray60,
-                )
-                Box(modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)) {
+                if (label != null) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (isFocused) contentColor else gray60,
+                    )
+                }
+                Box(modifier = Modifier.padding(top = if (label != null) 4.dp else 0.dp, bottom = 8.dp)) {
                     if (value.isEmpty()) {
                         Text(text = placeholder, style = textStyle, color = gray60)
                     }
@@ -77,18 +84,22 @@ fun PlaylistEditInfoTextField(
                     thickness = if (isFocused || errorMessage != null) 2.dp else 1.dp,
                     color = indicatorColor,
                 )
-                Row(modifier = Modifier.padding(top = 4.dp)) {
-                    Text(
-                        modifier = Modifier.weight(1f),
-                        text = errorMessage.orEmpty(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = softRed,
-                    )
-                    Text(
-                        text = "${value.length}/$maxLength",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = gray60,
-                    )
+                if (maxLength != null || errorMessage != null) {
+                    Row(modifier = Modifier.padding(top = 4.dp)) {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = errorMessage.orEmpty(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = softRed,
+                        )
+                        if (maxLength != null) {
+                            Text(
+                                text = "${value.length}/$maxLength",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = gray60,
+                            )
+                        }
+                    }
                 }
             }
         },
@@ -97,14 +108,14 @@ fun PlaylistEditInfoTextField(
 
 @Preview
 @Composable
-fun PlaylistEditInfoTextFieldPreview() {
+fun UnderlineTextFieldPreview() {
     JellyTubeTheme {
         Column(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp),
         ) {
-            PlaylistEditInfoTextField(
+            UnderlineTextField(
                 label = "제목",
                 value = "드라이브",
                 onValueChange = {},
@@ -114,7 +125,7 @@ fun PlaylistEditInfoTextFieldPreview() {
                 singleLine = true,
             )
             Spacer(modifier = Modifier.height(8.dp))
-            PlaylistEditInfoTextField(
+            UnderlineTextField(
                 label = "설명",
                 value = "",
                 onValueChange = {},

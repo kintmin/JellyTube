@@ -1,14 +1,18 @@
 package com.kintmin.presentation.ui.lyrics_viewer
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.MoreVert
@@ -19,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -26,38 +31,45 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.kintmin.presentation.platform.rememberToaster
+import com.kintmin.presentation.animation.FollowActiveLyricLine
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.softRed
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.lyrics_viewer.dialog.LyricsDeleteDialog
+import com.kintmin.presentation.ui.lyrics_viewer.list_item.LyricsViewerLineView
+import com.kintmin.presentation.ui.player_bar.PlayerBar
+import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
+import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
+import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun LyricsViewerScreen(
     navigateToBack: () -> Unit,
     navigateToLyricsEdit: () -> Unit,
+    navigateToPlayerDetail: () -> Unit,
 ) {
     val viewModel = koinViewModel<LyricsViewerViewModel>()
+    val playerBarViewModel = koinViewModel<PlayerBarViewModel>()
     val data by viewModel.data.collectAsState()
+    val playerBar by playerBarViewModel.currentMediaItem.collectAsState()
     val toaster = rememberToaster()
 
     LaunchedEffect(viewModel) {
@@ -74,8 +86,11 @@ fun LyricsViewerScreen(
     LyricsViewerScreen(
         navigateToBack = navigateToBack,
         navigateToLyricsEdit = navigateToLyricsEdit,
+        navigateToPlayerDetail = navigateToPlayerDetail,
         data = data,
+        playerBar = playerBar,
         sendIntent = viewModel::sendIntent,
+        sendPlayerBarIntent = playerBarViewModel::sendIntent,
     )
 }
 
@@ -84,8 +99,11 @@ fun LyricsViewerScreen(
 fun LyricsViewerScreen(
     navigateToBack: () -> Unit,
     navigateToLyricsEdit: () -> Unit,
+    navigateToPlayerDetail: () -> Unit,
     data: LyricsViewerUiState,
+    playerBar: PlayerBarUiState,
     sendIntent: (LyricsViewerIntent) -> Unit,
+    sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -110,6 +128,9 @@ fun LyricsViewerScreen(
         onPauseOrDispose { job.cancel() }
     }
 
+    val listState = rememberLazyListState()
+    FollowActiveLyricLine(listState = listState, activeIndex = data.activeIndex)
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -129,7 +150,7 @@ fun LyricsViewerScreen(
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "ArrowBackIosNew",
+                            contentDescription = "뒤로",
                         )
                     }
                 },
@@ -150,8 +171,15 @@ fun LyricsViewerScreen(
                         if (data.showTranslateMenu) {
                             DropdownMenuItem(
                                 text = {
-                                    Text(if (data.translationLines != null) "다시 번역하기" else "번역파일 만들기")
+                                    Text(
+                                        when {
+                                            data.isCreatingTranslation -> "번역 중…"
+                                            data.translationLines != null -> "번역 다시 만들기"
+                                            else -> "번역 만들기"
+                                        }
+                                    )
                                 },
+                                enabled = !data.isCreatingTranslation,
                                 onClick = {
                                     menuExpanded = false
                                     sendIntent(LyricsViewerIntent.OnClickCreateTranslation)
@@ -161,8 +189,15 @@ fun LyricsViewerScreen(
                         if (data.showTransliterateMenu) {
                             DropdownMenuItem(
                                 text = {
-                                    Text(if (data.transliterationLines != null) "다시 음차 번역하기" else "음차 번역파일 만들기")
+                                    Text(
+                                        when {
+                                            data.isCreatingTransliteration -> "음차 만드는 중…"
+                                            data.transliterationLines != null -> "음차 다시 만들기"
+                                            else -> "음차 만들기"
+                                        }
+                                    )
                                 },
+                                enabled = !data.isCreatingTransliteration,
                                 onClick = {
                                     menuExpanded = false
                                     sendIntent(LyricsViewerIntent.OnClickCreateTransliteration)
@@ -178,6 +213,7 @@ fun LyricsViewerScreen(
                         )
                         DropdownMenuItem(
                             text = { Text("삭제하기") },
+                            colors = MenuDefaults.itemColors(textColor = softRed),
                             onClick = {
                                 menuExpanded = false
                                 showDeleteDialog = true
@@ -186,6 +222,20 @@ fun LyricsViewerScreen(
                     }
                 },
             )
+        },
+        bottomBar = {
+            Column {
+                PlayerBar(
+                    data = playerBar,
+                    sendIntent = sendPlayerBarIntent,
+                    onClickBar = navigateToPlayerDetail,
+                )
+                Box(
+                    modifier = Modifier
+                        .windowInsetsBottomHeight(WindowInsets.navigationBars)
+                        .background(MaterialTheme.colorScheme.surface),
+                )
+            }
         },
     ) { innerPadding ->
         when {
@@ -209,7 +259,7 @@ fun LyricsViewerScreen(
                 ) {
                     Text(
                         text = "표시할 가사가 없습니다.",
-                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -220,47 +270,21 @@ fun LyricsViewerScreen(
                     modifier = Modifier
                         .padding(innerPadding)
                         .fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                    state = listState,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
                 ) {
                     itemsIndexed(data.lines) { index, line ->
-                        val isActiveLine = data.isSynced && index == data.activeIndex
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp),
-                        ) {
-                            Text(
-                                modifier = Modifier.fillMaxWidth(),
-                                text = line.ifBlank { " " },
-                                fontSize = if (isActiveLine) 20.sp else 16.sp,
-                                lineHeight = if (isActiveLine) 28.sp else 24.sp,
-                                fontWeight = if (isActiveLine) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isActiveLine) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                },
-                            )
-                            // 원본 → 음차 → 번역 순서로 작은 글씨로 덧붙인다.
-                            data.transliterationLines?.getOrNull(index)?.takeIf { it.isNotBlank() }?.let { transliteration ->
-                                Text(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    text = transliteration,
-                                    fontSize = 13.sp,
-                                    lineHeight = 18.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            data.translationLines?.getOrNull(index)?.takeIf { it.isNotBlank() }?.let { translation ->
-                                Text(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    text = translation,
-                                    fontSize = 13.sp,
-                                    lineHeight = 18.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
+                        LyricsViewerLineView(
+                            line = line,
+                            transliteration = data.transliterationLines?.getOrNull(index),
+                            translation = data.translationLines?.getOrNull(index),
+                            isActive = data.isSynced && index == data.activeIndex,
+                            onClick = if (data.canSeek) {
+                                { sendIntent(LyricsViewerIntent.OnClickLine(index)) }
+                            } else {
+                                null
+                            },
+                        )
                     }
                 }
             }
@@ -275,8 +299,11 @@ private fun LyricsViewerScreenPreview() {
         LyricsViewerScreen(
             navigateToBack = {},
             navigateToLyricsEdit = {},
+            navigateToPlayerDetail = {},
             data = LyricsViewerUiState.getMock(),
+            playerBar = PlayerBarUiState.getMock(),
             sendIntent = {},
+            sendPlayerBarIntent = {},
         )
     }
 }
