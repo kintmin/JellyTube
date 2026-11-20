@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray60
 
-/** 목록 행 앞의 선택 표시. 행 전체가 탭을 받으므로 표시만 하고 따로 눌리지 않는다. */
+/** 행 전체가 탭을 받으므로 표시만 하고 따로 눌리지 않는다. */
 @Composable
 fun SelectionCheckIndicator(
     isChecked: Boolean,

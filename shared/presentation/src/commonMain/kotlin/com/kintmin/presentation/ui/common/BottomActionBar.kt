@@ -20,10 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
 
-/**
- * 화면 하단에 고정된 넓은 동작 버튼 자리. 배경 띠 없이 버튼만 목록 위에 놓인다.
- * 목록을 이 자리 밑까지 그려야 한다 — innerPadding 은 목록의 contentPadding 으로 준다.
- */
+/** 목록을 이 자리 밑까지 그려야 한다 — innerPadding 은 목록의 contentPadding 으로 준다. */
 @Composable
 fun BottomActionBar(
     modifier: Modifier = Modifier,

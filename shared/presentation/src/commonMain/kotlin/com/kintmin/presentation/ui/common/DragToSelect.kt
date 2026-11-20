@@ -35,7 +35,7 @@ fun dragSelectedIds(
 }
 
 /**
- * 길게 누른 뒤 끌어서 여러 항목을 한 번에 고른다. LazyColumn 에 붙이고, 항목 key 는 [selectableIds] 의 id 여야 한다.
+ * LazyColumn 에 붙이고, 항목 key 는 [selectableIds] 의 id 여야 한다.
  *
  * 자식이 끌기를 먼저 먹으면(순서 변경 핸들) 길게 누르기가 취소되어 이 제스처는 시작되지 않는다.
  */

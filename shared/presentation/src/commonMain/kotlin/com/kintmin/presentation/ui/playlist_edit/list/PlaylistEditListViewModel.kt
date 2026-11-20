@@ -139,8 +139,7 @@ class PlaylistEditListViewModel constructor(
         }
     }
 
-    // 디바운스하면 대기 중에 화면을 나갈 때 viewModelScope 와 함께 마지막 입력이 취소된다.
-    // 대신 매 입력을 저장하되, 쓰기가 IO 에서 앞지르지 않게 입력 순서대로 줄 세운다(Mutex 는 FIFO).
+    // 매 입력을 저장하므로 쓰기가 IO 에서 앞지르지 않게 입력 순서대로 줄 세운다(Mutex 는 FIFO).
     private val playlistInfoWriteMutex = Mutex()
 
     private fun updatePlaylistTitle(newTitle: String) {

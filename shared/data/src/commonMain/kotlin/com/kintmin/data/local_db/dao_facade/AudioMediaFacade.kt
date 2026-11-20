@@ -324,7 +324,7 @@ class AudioMediaFacade constructor(
         }
     }
 
-    /** 사용자가 고른 썸네일을 걷고 첫 곡의 앨범아트로 돌린다. 걷어낸 파일 이름을 돌려준다. */
+    /** 걷어낸 사용자 썸네일의 파일 이름을 돌려준다. 고른 사진이 없었으면 null 이다. */
     suspend fun resetPlaylistImage(playlistId: Int): String? {
         return db.useWriterConnection { transactor ->
             transactor.immediateTransaction {

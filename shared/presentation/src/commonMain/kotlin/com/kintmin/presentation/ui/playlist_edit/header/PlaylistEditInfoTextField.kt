@@ -28,7 +28,7 @@ import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.softRed
 
 /**
- * 테두리 상자 없이 글자가 곧 제목·설명으로 보이는 입력란. 고칠 수 있다는 신호로 밑줄만 남긴다.
+ * 테두리가 없으니 고칠 수 있다는 신호로 밑줄을 남긴다.
  * 값이 채워지면 placeholder 가 사라지므로 어느 칸인지는 위의 [label] 이 늘 알린다.
  */
 @Composable
