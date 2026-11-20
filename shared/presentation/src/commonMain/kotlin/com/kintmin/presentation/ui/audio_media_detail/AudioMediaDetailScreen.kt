@@ -132,6 +132,8 @@ fun AudioMediaDetailScreen(
         onDismiss = { isShowDialog = false },
         selectedMediaCount = 1,
         deleteAudioMediaList = { sendIntent(AudioMediaDetailIntent.OnClickDeleteAudioMedia) },
+        audioMediaName = data.audioMediaName,
+        canRedownload = data.webViewUrl != null,
     )
 
     KaraokeUnlinkDialog(
