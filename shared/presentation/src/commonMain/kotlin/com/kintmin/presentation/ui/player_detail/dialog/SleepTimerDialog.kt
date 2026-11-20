@@ -89,8 +89,8 @@ fun SleepTimerDialog(
                 onValueChange = onSelectMinutes,
                 label = "분",
                 formatter = { it.toString() },
-                // 휠은 끌어서 쓰므로 손가락이 닿을 폭을 넉넉히 둔다.
-                modifier = Modifier.fillMaxWidth(0.6f),
+                // 휠은 끌어서 쓰므로 대화상자 폭을 다 쓴다. 양옆 여백은 바깥 Column 의 20dp 가 준다.
+                modifier = Modifier.fillMaxWidth(),
             )
 
             Spacer(modifier = Modifier.height(8.dp))
