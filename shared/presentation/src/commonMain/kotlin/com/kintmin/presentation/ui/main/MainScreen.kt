@@ -19,11 +19,11 @@ import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.SwapVert
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.ShortNavigationBarItemDefaults
@@ -43,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -55,7 +56,7 @@ import com.kintmin.presentation.platform.rememberAudioFilePicker
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.white
+import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.ui.custom_ui.data_table.AgeColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.DataTableView
 import com.kintmin.presentation.ui.custom_ui.data_table.DepartmentColumn
@@ -137,6 +138,7 @@ fun MainScreen(
                 is PlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistInfo.id, event.playlistInfo.isBasePlaylist)
                 is PlaylistEvent.NavigateToPlaylistEditScreen -> navigateToPlaylistEdit(event.playlistId)
                 is PlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId)
+                is PlaylistEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }
@@ -245,14 +247,8 @@ fun MainScreen(
                             }
                         }
                         if (selectedTab == MainTabItem.Playlist) {
-                            IconButton(
-                                onClick = { sendPlaylistIntent(PlaylistIntent.OnClickShowReorderBottomSheet) },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.SwapVert,
-                                    contentDescription = "플레이리스트 순서 변경",
-                                )
-                            }
+                            // 순서 변경은 내 플레이리스트에만 걸리므로 그 섹션 머리말이 갖는다.
+                            // 상단바에는 화면 전체에 걸리는 것만 남긴다.
                             IconButton(
                                 onClick = navigateToSetting,
                             ) {
@@ -314,19 +310,36 @@ fun MainScreen(
                 // NavigationBar(80dp)는 높이를 줄이면 아이템이 잘린다. 64dp 짜리는 별도 컴포넌트다.
                 // 아이템은 아이콘을 위에서부터 고정 배치해 내용이 줄면 그만큼 아래가 빈다. 그래서 조금만 줄인다.
                 ShortNavigationBar {
+                    // 이 테마는 선택·비선택 아이콘 토큰이 모두 gray100 이라 기본값으로 두면 두 상태가
+                    // 같은 색이 된다. 색을 가르고, 색 하나에만 기대지 않도록 굵기로 한 번 더 가른다.
                     val navigationBarItemColors = ShortNavigationBarItemDefaults.colors().copy(
-                        selectedTextColor = white,
+                        selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                        selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unselectedIconColor = gray60,
+                        unselectedTextColor = gray60,
                     )
                     ShortNavigationBarItem(
                         icon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(NAV_ICON_SIZE)) },
-                        label = { Text("음원추가", fontSize = NAV_LABEL_FONT_SIZE) },
+                        label = {
+                            Text(
+                                text = "음원추가",
+                                fontSize = NAV_LABEL_FONT_SIZE,
+                                fontWeight = if (selectedTab == MainTabItem.Search) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        },
                         selected = selectedTab == MainTabItem.Search,
                         onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) },
                         colors = navigationBarItemColors,
                     )
                     ShortNavigationBarItem(
                         icon = { Icon(Icons.Rounded.VideoLibrary, contentDescription = null, modifier = Modifier.size(NAV_ICON_SIZE)) },
-                        label = { Text("플레이리스트", fontSize = NAV_LABEL_FONT_SIZE) },
+                        label = {
+                            Text(
+                                text = "플레이리스트",
+                                fontSize = NAV_LABEL_FONT_SIZE,
+                                fontWeight = if (selectedTab == MainTabItem.Playlist) FontWeight.Bold else FontWeight.Normal,
+                            )
+                        },
                         selected = selectedTab == MainTabItem.Playlist,
                         onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
                         colors = navigationBarItemColors,
@@ -334,7 +347,13 @@ fun MainScreen(
                     if (isDebugTabVisible) {
                         ShortNavigationBarItem(
                             icon = { Icon(Icons.Rounded.BugReport, contentDescription = null, modifier = Modifier.size(NAV_ICON_SIZE)) },
-                            label = { Text("테스트뷰", fontSize = NAV_LABEL_FONT_SIZE) },
+                            label = {
+                                Text(
+                                    text = "테스트뷰",
+                                    fontSize = NAV_LABEL_FONT_SIZE,
+                                    fontWeight = if (selectedTab == MainTabItem.Debug) FontWeight.Bold else FontWeight.Normal,
+                                )
+                            },
                             selected = selectedTab == MainTabItem.Debug,
                             onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Debug)) },
                             colors = navigationBarItemColors,
@@ -364,7 +383,6 @@ fun MainScreen(
                         .padding(innerPadding),
                     data = playlist,
                     sendIntent = sendPlaylistIntent,
-                    sendMainIntent = sendMainIntent,
                 )
 
                 MainTabItem.Debug -> DataTableView(

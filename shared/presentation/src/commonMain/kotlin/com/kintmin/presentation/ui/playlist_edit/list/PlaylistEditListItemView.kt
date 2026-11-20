@@ -2,7 +2,6 @@ package com.kintmin.presentation.ui.playlist_edit.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Reorder
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,18 +25,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.input.pointer.PointerInputChange
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
@@ -49,148 +40,110 @@ import okio.Path.Companion.toPath
 fun PlaylistEditListItemView(
     modifier: Modifier,
     data: PlaylistEditListItemUiState,
-    draggingItemId: Int?,
-    onDragStart: (Offset, Int) -> Unit,
-    onDrag: (PointerInputChange, Offset) -> Unit,
-    onDragEnd: () -> Unit,
+    dragHandleModifier: Modifier,
     sendIntent: (PlaylistEditListIntent) -> Unit,
 ) {
-    Card(
-        modifier,
-        shape = RectangleShape,
-    ) {
-        Row(modifier = Modifier
+    Row(
+        modifier = modifier
             .fillMaxWidth()
-            .zIndex(1f.takeIf { data.id == draggingItemId } ?: 0f)
-            .drawBehind {
-                if (data.id == draggingItemId) {
-                    drawLine(
-                        color = Color(0xFFDADADA),
-                        strokeWidth = 0.5.dp.toPx(),
-                        start = Offset(0f, 0f),
-                        end = Offset(size.width, 0f)
-                    )
-                    drawLine(
-                        color = Color(0xFFDADADA),
-                        strokeWidth = 0.5.dp.toPx(),
-                        start = Offset(0f, size.height),
-                        end = Offset(size.width, size.height)
-                    )
-                }
-            }
-            .clickable { sendIntent(PlaylistEditListIntent.OnClickEditCheck(data)) }
+            .clickable { sendIntent(PlaylistEditListIntent.OnClickEditCheck(data)) },
+    ) {
+        IconButton(
+            modifier = Modifier
+                .fillMaxHeight()
+                .align(Alignment.CenterVertically),
+            onClick = { sendIntent(PlaylistEditListIntent.OnClickEditCheck(data)) }
         ) {
-            IconButton(
+            Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .align(Alignment.CenterVertically),
-                onClick = { sendIntent(PlaylistEditListIntent.OnClickEditCheck(data)) }
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(
-                            if (data.isChecked) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                            },
-                        ),
-                ) {
-                    Icon(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .padding(4.dp),
-                        imageVector = Icons.Rounded.Check,
-                        contentDescription = "Check",
-                        tint = if (data.isChecked) {
-                            MaterialTheme.colorScheme.onPrimary
+                    .clip(CircleShape)
+                    .background(
+                        if (data.isChecked) {
+                            MaterialTheme.colorScheme.primary
                         } else {
-                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.38f)
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         },
-                    )
-                }
-            }
-
-            if (data.imageFileFullPath == null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .aspectRatio(1f)
-                        .padding(8.dp)
-                        .clip(RoundedCornerShape(16))
-                        .background(MaterialTheme.colorScheme.surface),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
-            } else {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                        .data(data.imageFileFullPath.toPath())
-                        .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
-                        .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .aspectRatio(1f)
-                        .padding(8.dp)
-                        .clip(RoundedCornerShape(16))
-                        .background(MaterialTheme.colorScheme.surface),
-                    )
-            }
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .align(Alignment.CenterVertically)
-            ) {
-                Text(
-                    text = data.mediaName,
-                    fontSize = 14.sp,
-                    lineHeight = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = data.subTitle,
-                    fontSize = 10.sp,
-                    lineHeight = 10.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            IconButton(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .pointerInput(data.id, data.sequence) {
-                        detectDragGestures(
-                            onDragStart = {
-                                onDragStart(it, data.id)
-                            },
-                            onDrag = { change, dragAmount ->
-                                onDrag(change, dragAmount)
-                            },
-                            onDragEnd = {
-                                onDragEnd()
-                            },
-                        )
-                    },
-                onClick = {},
+                    ),
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.Reorder,
-                    contentDescription = "Reorder",
+                    modifier = Modifier
+                        .size(24.dp)
+                        .padding(4.dp),
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = "Check",
+                    tint = if (data.isChecked) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.38f)
+                    },
                 )
             }
         }
+
+        if (data.imageFileFullPath == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .aspectRatio(1f)
+                    .padding(8.dp)
+                    .clip(RoundedCornerShape(16))
+                    .background(MaterialTheme.colorScheme.surface),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.LibraryMusic,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        } else {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalPlatformContext.current)
+                    .data(data.imageFileFullPath.toPath())
+                    .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
+                    .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .aspectRatio(1f)
+                    .padding(8.dp)
+                    .clip(RoundedCornerShape(16))
+                    .background(MaterialTheme.colorScheme.surface),
+                )
+        }
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .align(Alignment.CenterVertically)
+        ) {
+            Text(
+                text = data.mediaName,
+                fontSize = 14.sp,
+                lineHeight = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = data.subTitle,
+                fontSize = 10.sp,
+                lineHeight = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        // 눌러도 아무 일이 없는 IconButton 이 아니라, 끌기만 받는 자리로 둔다.
+        Icon(
+            modifier = dragHandleModifier
+                .align(Alignment.CenterVertically)
+                .size(48.dp)
+                .padding(12.dp),
+            imageVector = Icons.Rounded.Reorder,
+            contentDescription = "끌어서 순서 변경",
+        )
     }
 }
 
@@ -202,10 +155,7 @@ fun PlaylistEditScreenPreview() {
         PlaylistEditListItemView(
             modifier = Modifier.height(56.dp),
             data = PlaylistEditListItemUiState.getMock(),
-            draggingItemId = 1,
-            onDragStart = { _, _ -> },
-            onDrag = { _, _ -> },
-            onDragEnd = {},
+            dragHandleModifier = Modifier,
             sendIntent = {},
         )
     }

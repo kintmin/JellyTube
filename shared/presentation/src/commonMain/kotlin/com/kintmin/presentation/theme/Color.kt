@@ -24,6 +24,10 @@ val deepSea60 = Color(0xFF263373)
 val deepSea40 = Color(0xFF31439B)
 
 // https://www.schemecolor.com/bloody-reds.php
+// 어두운 면 위의 파괴적 글자용. bloodyRed 계열은 밝은 테마용이라 가장 밝은 100 조차
+// 어두운 면에서 본문 대비 바닥값에 못 미친다(3.42:1). 순수 빨강도 4.03:1 로 모자란다.
+val softRed = Color(0xFFFF8A80)
+
 val bloodyRed100 = Color(0xFFE90000)
 val bloodyRed80 = Color(0xFFA40D03)
 val bloodyRed60 = Color(0xFF7D0000)

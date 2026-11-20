@@ -15,8 +15,8 @@ class DeletePlaylistUseCase constructor(
     private val appLog: AppLog,
 ) {
 
-    suspend operator fun invoke(playlistId: Int) {
-        runCatching {
+    suspend operator fun invoke(playlistId: Int): Result<Unit> {
+        return runCatching {
             val playlistToDelete = playlistRepository.getPlaylistFlow(playlistId)
                 .flowOn(Dispatchers.IO)
                 .first()

@@ -4,6 +4,7 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -53,11 +54,28 @@ class ReorderState<T>(
     // 현재 드래그 중인 아이템의 id. null이면 드래그 중이 아니다.
     var draggingItemId by mutableStateOf<Int?>(null)
 
+    private var orderBeforeDrag = emptyList<Int>()
+
+    /** 1px 만 끌고 놓은 것을 커밋하지 않게 한다. */
+    val isOrderChanged: Boolean get() = items.map(idOf) != orderBeforeDrag
+
+    /**
+     * 잡은 아이템을 **그릴** 거리(px). 호출부가 translationY 로 써서 손가락을 따라오게 한다.
+     *
+     * 넘어갈 자리가 없는 방향으로는 여기서 잠근다. [dragOffset] 자체는 손가락을 그대로 따라
+     * 계속 쌓이므로, 끝에 막힌 뒤 되돌리면 넘어간 만큼 돌아와야 항목이 다시 움직인다 —
+     * 누적을 버리면 손가락과 어긋난다.
+     */
+    var dragOffsetY by mutableFloatStateOf(0f)
+        private set
+
     fun onDragStart(offset: Offset, targetId: Int) {
         // 시작점 대비 누적 이동량을 재기 위해 0에서 시작한다.
         // (핸들 내 터치 y를 넣으면 터치 위치에 따라 이동 감도가 달라진다.)
         dragOffset = 0f
+        dragOffsetY = 0f
         dragDirection = 0
+        orderBeforeDrag = items.map(idOf)
         draggingItemId = targetId
     }
 
@@ -92,6 +110,9 @@ class ReorderState<T>(
         }
         // 이웃이 화면 밖이면 스왑을 건너뛰되, 아래 오토스크롤이 화면을 밀어 이웃을 노출시킨다.
 
+        val settledIndex = items.indexOfFirst { idOf(it) == draggingItemId }
+        dragOffsetY = clampDragOffsetY(dragOffset, settledIndex, items.lastIndex)
+
         // 오토 스크롤: 드래그 아이템이 뷰포트 위/아래 경계(scrollZone) 안에 들어오면 그 방향으로 스크롤한다.
         val currentItem = info.find { it.key == draggingItemId }
 
@@ -101,12 +122,16 @@ class ReorderState<T>(
             // 드래그 누적량을 반영한 실제 시각 위치로 경계를 판정한다.
             val itemTop = currentItem.offset + dragOffset
             val itemBottom = itemTop + currentItem.size
+            // 넘어갈 이웃이 없는 방향으로는 스크롤하지 않는다. 스크롤해도 스왑이 생기지 않는데
+            // 보정만 쌓여, 잡은 항목은 잠겨 있고 손가락만 그만큼 빚을 지게 된다.
+            val canMoveUp = settledIndex > 0
+            val canMoveDown = settledIndex in 0 until items.lastIndex
 
             when {
                 // 위쪽 경계 안 + 위로 드래그 중(dragDirection<0) + 더 스크롤할 여지가 있으면 → 위로 스크롤.
                 // 방향 게이트가 없으면, 아이템이 상단 존에 들어간 순간 손가락을 아래로 내려도
                 // 위 오토스크롤이 계속 발동해 아이템이 상단에 갇힌다.
-                itemTop < viewStart + scrollZonePx && dragDirection < 0 && listState.canScrollBackward -> {
+                canMoveUp && itemTop < viewStart + scrollZonePx && dragDirection < 0 && listState.canScrollBackward -> {
                     if (overscrollJob?.isActive == true) return
                     overscrollJob = coroutineScope.launch {
                         // 실제 스크롤된 양(consumed)만큼만 dragOffset 을 보정한다.
@@ -117,7 +142,7 @@ class ReorderState<T>(
                 }
 
                 // 아래쪽 경계 안 + 아래로 드래그 중(dragDirection>0) + 더 스크롤할 여지가 있으면 → 아래로 스크롤.
-                itemBottom > viewEnd - scrollZonePx && dragDirection > 0 && listState.canScrollForward -> {
+                canMoveDown && itemBottom > viewEnd - scrollZonePx && dragDirection > 0 && listState.canScrollForward -> {
                     if (overscrollJob?.isActive == true) return
                     overscrollJob = coroutineScope.launch {
                         val consumed = listState.scrollBy(scrollSpeedPx)
@@ -141,6 +166,20 @@ class ReorderState<T>(
     }
 }
 
+internal fun clampDragOffsetY(offset: Float, index: Int, lastIndex: Int): Float {
+    var clamped = offset
+    if (index <= 0) clamped = clamped.coerceAtLeast(0f)
+    if (index >= lastIndex) clamped = clamped.coerceAtMost(0f)
+    return clamped
+}
+
+internal fun <T> mergeKeepingOrder(current: List<T>, incoming: List<T>, idOf: (T) -> Int): List<T> {
+    val incomingById = incoming.associateBy(idOf)
+    val kept = current.mapNotNull { incomingById[idOf(it)] }
+    val keptIds = kept.mapTo(mutableSetOf(), idOf)
+    return kept + incoming.filterNot { idOf(it) in keptIds }
+}
+
 @Composable
 fun <T> rememberReorderState(
     listState: LazyListState = rememberLazyListState(),
@@ -153,7 +192,7 @@ fun <T> rememberReorderState(
     val coroutineScope = rememberCoroutineScope()
     val items = remember { mutableStateListOf<T>().also { it.addAll(dataList) } }
 
-    return remember {
+    val state = remember {
         ReorderState(
             listState = listState,
             coroutineScope = coroutineScope,
@@ -163,4 +202,17 @@ fun <T> rememberReorderState(
             scrollSpeedPx = with(density) { scrollSpeed.toPx() },
         )
     }
+
+    LaunchedEffect(dataList) {
+        // 끄는 중이라고 건너뛰면 그 방출은 다시 오지 않는다. 키가 되돌아오지 않아서다.
+        val next = if (state.draggingItemId == null) {
+            dataList
+        } else {
+            mergeKeepingOrder(state.items, dataList, idOf)
+        }
+        state.items.clear()
+        state.items.addAll(next)
+    }
+
+    return state
 }

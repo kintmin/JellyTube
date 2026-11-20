@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -22,6 +23,7 @@ fun PlaylistDeleteDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
     playlistName: String,
+    audioMediaCount: Int,
     deletePlaylist: () -> Unit,
 ) {
     JellyTubeDialog(
@@ -39,15 +41,27 @@ fun PlaylistDeleteDialog(
             )
             Text(
                 modifier = Modifier.padding(bottom = 12.dp),
-                text = "[$playlistName]를 삭제하시겠습니까?",
+                // 이름이 사용자 입력이라 조사를 붙이면 받침에서 비문이 된다.
+                text = buildString {
+                    append("'$playlistName' 플레이리스트를 지웁니다.")
+                    if (audioMediaCount > 0) {
+                        // 곡이 다른 USER 플레이리스트에도 들어 있으면 미분류로 가지 않고 거기 남는다.
+                        append("\n담긴 ${audioMediaCount}곡은 지워지지 않습니다.")
+                        append("\n다른 플레이리스트에 없는 곡은 미분류로 갑니다.")
+                    }
+                },
                 style = MaterialTheme.typography.bodyMedium,
             )
             Row(
                 modifier = Modifier.align(Alignment.End)
             ) {
                 OutlinedButton(
-                    modifier = Modifier.padding(end = 8.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp),
+                    // 파괴적 버튼과 간격을 벌려 반사적으로 눌리지 않게 한다.
+                    modifier = Modifier.padding(end = 24.dp),
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
                     onClick = { onDismiss() },
                 ) {
                     Text(
@@ -57,7 +71,11 @@ fun PlaylistDeleteDialog(
                     )
                 }
                 Button(
-                    contentPadding = PaddingValues(horizontal = 32.dp),
+                    contentPadding = PaddingValues(horizontal = 32.dp, vertical = 0.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
                     onClick = {
                         deletePlaylist()
                         onDismiss()
@@ -82,6 +100,7 @@ fun PlaylistDeleteDialogPreview() {
             showDialog = true,
             onDismiss = {},
             playlistName = "플레이리스트 예시",
+            audioMediaCount = 12,
             deletePlaylist = {},
         )
     }

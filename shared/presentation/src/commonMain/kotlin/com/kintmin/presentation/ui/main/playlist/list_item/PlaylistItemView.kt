@@ -6,19 +6,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,8 +40,8 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.ui.main.MainScreenIntent
-import com.kintmin.presentation.ui.main.MainTabItem
+import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.softRed
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistDeleteDialog
@@ -51,9 +51,7 @@ import okio.Path.Companion.toPath
 fun PlaylistItemView(
     modifier: Modifier,
     data: PlaylistItemUiState,
-    isBasePlaylist: Boolean,
     sendIntent: (PlaylistIntent) -> Unit,
-    sendMainIntent: (MainScreenIntent) -> Unit,
 ) {
     var isDropDownExpanded by remember { mutableStateOf(false) }
     var isShowDialog by remember { mutableStateOf(false) }
@@ -62,127 +60,108 @@ fun PlaylistItemView(
         showDialog = isShowDialog,
         onDismiss = { isShowDialog = false },
         playlistName = data.name,
+        audioMediaCount = data.audioMediaCount,
         deletePlaylist = { sendIntent(PlaylistIntent.OnClickDeletePlaylist(data)) },
     )
 
-    Card(
-        modifier = modifier,
+    // 카드 틀을 두르지 않는다. 설정 화면처럼 배경 위에 그대로 올린다.
+    // 안쪽 패딩은 남긴다 — 셀을 꽉 채우면 ink 가 가장자리까지 번져 옆 칸과 붙어 보인다.
+    Column(
+        modifier = modifier
+            // clip 이 없으면 ink 가 각진 사각형으로 번진다. Card 가 하던 일을 여기서 한다.
+            .clip(MaterialTheme.shapes.medium)
+            .clickable { sendIntent(PlaylistIntent.OnClickPlaylistItem(data)) }
+            .padding(12.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .clickable { sendIntent(PlaylistIntent.OnClickPlaylistItem(data)) }
-                .padding(12.dp),
-        ) {
-            if (data.imageFileFullPath == null) {
-                Box(
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .padding(bottom = 8.dp)
-                        .clip(RoundedCornerShape(4))
-                        .background(MaterialTheme.colorScheme.surface),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        modifier = Modifier.size(36.dp),
-                    )
-                }
-            } else {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                        .data(data.imageFileFullPath.toPath())
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCachePolicy(CachePolicy.DISABLED)
-                        .build(),
+        val artworkModifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.surface)
+
+        if (data.imageFileFullPath == null) {
+            Box(
+                modifier = artworkModifier,
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.LibraryMusic,
                     contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .aspectRatio(1f)
-                        .padding(bottom = 8.dp)
-                        .clip(RoundedCornerShape(4))
-                        .background(MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.size(36.dp),
+                    tint = gray60,
                 )
             }
-            Text(
-                modifier = Modifier.padding(bottom = 4.dp),
-                text = data.name,
-                fontSize = 16.sp,
-                lineHeight = 16.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+        } else {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalPlatformContext.current)
+                    .data(data.imageFileFullPath.toPath())
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.DISABLED)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = artworkModifier,
             )
-            Row(
-                modifier = Modifier.padding(0.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .align(Alignment.CenterVertically),
-                ) {
-                    Text(
-                        modifier = Modifier,
-                        text = data.durationString,
-                        fontSize = 12.sp,
-                        lineHeight = 10.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        modifier = Modifier,
-                        text = data.audioMediaCountString,
-                        fontSize = 12.sp,
-                        lineHeight = 10.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+        }
+        Row(
+            modifier = Modifier.padding(top = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = data.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = data.summaryString,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = gray60,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Box {
+                IconButton(onClick = { isDropDownExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = "더보기",
+                        tint = gray60,
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .size(24.dp),
-                ) {
-                    IconButton(onClick = { isDropDownExpanded = true }) {
-                        Icon(
-                            imageVector = Icons.Rounded.MoreVert,
-                            contentDescription = "MoreVert"
-                        )
-                    }
 
-                    DropdownMenu(
-                        expanded = isDropDownExpanded,
-                        onDismissRequest = { isDropDownExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("수정하기") },
-                            onClick = {
-                                isDropDownExpanded = false
-                                sendIntent(PlaylistIntent.OnClickModifyPlaylist(data))
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("추가하기") },
-                            onClick = {
-                                isDropDownExpanded = false
-                                if (isBasePlaylist) {
-                                    sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search))
-                                } else {
-                                    sendIntent(PlaylistIntent.OnClickAddPlaylist(data))
-                                }
-                            }
-                        )
-                        if (!isBasePlaylist) {
-                            DropdownMenuItem(
-                                text = { Text("삭제하기") },
-                                onClick = {
-                                    isDropDownExpanded = false
-                                    isShowDialog = true
-                                }
-                            )
+                DropdownMenu(
+                    expanded = isDropDownExpanded,
+                    onDismissRequest = { isDropDownExpanded = false },
+                    // M3 기본 메뉴 모서리는 extraSmall(4dp) 이라 각져 보인다.
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("수정하기") },
+                        onClick = {
+                            isDropDownExpanded = false
+                            sendIntent(PlaylistIntent.OnClickModifyPlaylist(data))
                         }
-                    }
+                    )
+                    DropdownMenuItem(
+                        // "추가" 가 이 화면에서 세 가지를 뜻했다. 여기는 곡을 넣는 쪽이다.
+                        text = { Text("곡 추가하기") },
+                        onClick = {
+                            isDropDownExpanded = false
+                            sendIntent(PlaylistIntent.OnClickAddPlaylist(data))
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("삭제하기") },
+                        colors = MenuDefaults.itemColors(textColor = softRed),
+                        onClick = {
+                            isDropDownExpanded = false
+                            isShowDialog = true
+                        }
+                    )
                 }
             }
         }
@@ -196,9 +175,7 @@ fun PlaylistItemPreview() {
         PlaylistItemView(
             modifier = Modifier.width(180.dp),
             PlaylistItemUiState.getMock(),
-            isBasePlaylist = false,
             sendIntent = {},
-            sendMainIntent = {},
         )
     }
 }

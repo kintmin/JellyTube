@@ -137,6 +137,7 @@ fun LyricsViewerScreen(
                     DropdownMenu(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
+                        shape = MaterialTheme.shapes.medium,
                     ) {
                         if (data.showTranslateMenu) {
                             DropdownMenuItem(

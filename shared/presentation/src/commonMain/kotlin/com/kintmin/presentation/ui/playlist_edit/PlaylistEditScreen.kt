@@ -67,6 +67,7 @@ import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListItemUiStat
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListItemView
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListViewModel
 import com.kintmin.presentation.remember_state.rememberReorderState
+import com.kintmin.presentation.ui.common.ReorderableItem
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 
@@ -115,10 +116,6 @@ fun PlaylistEditScreen(
 
     var isShowDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(dataList) {
-        reorderState.items.clear()
-        reorderState.items.addAll(dataList)
-    }
     LaunchedEffect(focusAudioMediaId, dataList) {
         if (focusAudioMediaId == null || dataList.isEmpty()) return@LaunchedEffect
         if (consumedFocusAudioMediaId == focusAudioMediaId) return@LaunchedEffect
@@ -258,25 +255,27 @@ fun PlaylistEditScreen(
                 items = reorderState.items,
                 key = { _, item -> item.id },
             ) { _, item ->
-                Box(modifier = Modifier.animateItem()) {
+                ReorderableItem(
+                    state = reorderState,
+                    id = item.id,
+                    modifier = Modifier.height(80.dp),
+                    onDragEnd = {
+                        if (!reorderState.isOrderChanged) return@ReorderableItem
+                        reorderState.getDraggingItemIndex()?.let {
+                            sendIntent(
+                                PlaylistEditListIntent.ReorderAudioItem(
+                                    reorderData = item,
+                                    targetData = dataList[it]
+                                ),
+                            )
+                        }
+                    },
+                ) { dragHandleModifier ->
                     PlaylistEditListItemView(
                         data = item,
-                        modifier = Modifier.height(80.dp),
+                        modifier = Modifier.fillMaxSize(),
                         sendIntent = sendIntent,
-                        draggingItemId = reorderState.draggingItemId,
-                        onDragStart = reorderState::onDragStart,
-                        onDrag = reorderState::onDrag,
-                        onDragEnd = {
-                            reorderState.getDraggingItemIndex()?.let {
-                                sendIntent(
-                                    PlaylistEditListIntent.ReorderAudioItem(
-                                        reorderData = item,
-                                        targetData = dataList[it]
-                                    ),
-                                )
-                            }
-                            reorderState.onDragEnd()
-                        },
+                        dragHandleModifier = dragHandleModifier,
                     )
                     if (highlightedAudioMediaId == item.id) {
                         FocusSpreadOverlay(

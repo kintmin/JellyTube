@@ -6,6 +6,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.platform.PlatformFullScreenDialog
@@ -39,6 +41,7 @@ fun JellyTubeDialog(
 
     PlatformFullScreenDialog(onDismissRequest = onDismiss) {
         val interactionSource = remember { MutableInteractionSource() }
+        val focusManager = LocalFocusManager.current
 
         Box(
             modifier = modifier
@@ -48,9 +51,12 @@ fun JellyTubeDialog(
                     interactionSource = interactionSource,
                     indication = null,
                     onClick = {
+                        // 바깥을 눌러도 키보드가 안 내려가면 갇힌 느낌이 난다. 닫지 않는 경우에도 내린다.
+                        focusManager.clearFocus()
                         if (dismissOnClickOutside) onDismiss()
                     },
-                ),
+                )
+                .imePadding(),
             contentAlignment = Alignment.Center,
         ) {
             Surface(
