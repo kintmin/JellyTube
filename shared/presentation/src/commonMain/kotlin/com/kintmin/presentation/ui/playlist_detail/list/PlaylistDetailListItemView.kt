@@ -17,74 +17,89 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Subject
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
+import com.kintmin.presentation.animation.NowPlayingBars
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.gray80
-import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
+import com.kintmin.presentation.theme.softRed
+import com.kintmin.presentation.ui.playlist_detail.dialog.DeleteAudioMediaFileDialog
+import com.kintmin.presentation.ui.playlist_detail.dialog.RemoveAudioMediaFromPlaylistDialog
 import okio.Path.Companion.toPath
 
 @Composable
 fun PlaylistDetailListItemView(
     modifier: Modifier,
     data: PlaylistDetailListItemUiState,
-    isBasePlaylist: Boolean,
+    canRemoveTrack: Boolean,
+    isNowPlaying: Boolean,
+    isPlaying: Boolean,
+    isDragging: Boolean,
     sendIntent: (PlaylistDetailListIntent) -> Unit,
 ) {
-    var readModeDropdownExpanded by remember { mutableStateOf(false) }
-    var isShowDeleteDialog by remember { mutableStateOf(false) }
-    var longPressOffset by remember { mutableStateOf(Offset.Zero) }
-    var itemSize by remember { mutableStateOf(IntSize.Zero) }
+    var isMenuExpanded by remember { mutableStateOf(false) }
+    var isShowRemoveDialog by remember { mutableStateOf(false) }
+    var isShowDeleteFileDialog by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
-    val density = LocalDensity.current
+    // pointerInput 은 키만 비교하고 람다는 비교하지 않아, 아래 탭 처리가 첫 구성 시점의 값에
+    // 묶인다.
+    val isDraggingNow by rememberUpdatedState(isDragging)
 
     Card(
         modifier,
         shape = RectangleShape,
     ) {
-        DeleteFullAudioMediaListDialog(
-            isShow = isShowDeleteDialog,
-            onDismiss = { isShowDeleteDialog = false },
-            selectedMediaCount = 1,
-            deleteAudioMediaList = {
-                sendIntent(PlaylistDetailListIntent.OnClickDeleteAudioMediaInPlaylist(data))
+        RemoveAudioMediaFromPlaylistDialog(
+            showDialog = isShowRemoveDialog,
+            onDismiss = { isShowRemoveDialog = false },
+            mediaName = data.mediaName,
+            removeFromPlaylist = {
+                sendIntent(PlaylistDetailListIntent.OnClickRemoveFromPlaylist(data))
+            },
+        )
+
+        DeleteAudioMediaFileDialog(
+            showDialog = isShowDeleteFileDialog,
+            onDismiss = { isShowDeleteFileDialog = false },
+            mediaName = data.mediaName,
+            deleteAudioMediaFile = {
+                sendIntent(PlaylistDetailListIntent.OnClickDeleteAudioMediaFile(data))
             },
         )
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .onSizeChanged { itemSize = it }
                 .indication(interactionSource = interactionSource, indication = LocalIndication.current)
                 .pointerInput(data.id) {
                     detectTapGestures(
@@ -99,47 +114,64 @@ fun PlaylistDetailListItemView(
                             }
                             interactionSource.emit(endInteraction)
                         },
-                        onTap = { sendIntent(PlaylistDetailListIntent.OnClickAudioItem(data)) },
-                        onLongPress = { offset ->
-                            longPressOffset = offset
-                            readModeDropdownExpanded = true
+                        // 롱프레스는 호출부의 끌어서 순서 변경이 받는다. 여기서 받으면 그쪽이 굶는다.
+                        //
+                        // 들린 뒤 **움직이지 않고** 떼면 여기로 온다 — onLongPress 가 없어 탭
+                        // 감지가 끝나지 않고, 끌기가 좌표를 소비하기 전이라 취소도 되지 않는다.
+                        onTap = {
+                            if (!isDraggingNow) {
+                                sendIntent(PlaylistDetailListIntent.OnClickAudioItem(data))
+                            }
                         },
                     )
                 },
         ) {
             Row {
-                if (data.imageFileFullPath == null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .aspectRatio(1f)
-                            .padding(8.dp)
-                            .clip(RoundedCornerShape(16))
-                            .background(MaterialTheme.colorScheme.surface),
-                        contentAlignment = Alignment.Center,
-                    ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(16))
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (data.imageFileFullPath == null) {
                         Icon(
                             imageVector = Icons.Rounded.LibraryMusic,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
                         )
+                    } else {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalPlatformContext.current)
+                                .data(data.imageFileFullPath.toPath())
+                                .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
+                                .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.matchParentSize(),
+                        )
                     }
-                } else {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalPlatformContext.current)
-                            .data(data.imageFileFullPath.toPath())
-                            .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
-                            .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
-                            .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .aspectRatio(1f)
-                            .padding(8.dp)
-                            .clip(RoundedCornerShape(16))
-                            .background(MaterialTheme.colorScheme.surface)
-                    )
+
+                    if (isNowPlaying) {
+                        // 임의의 앨범아트 위에서도 기둥이 읽히게 깔고 그린다.
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)),
+                        )
+                        // 기둥은 Canvas 라 스크린리더에 아무것도 남기지 않는다.
+                        NowPlayingBars(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .semantics {
+                                    contentDescription = if (isPlaying) "재생 중" else "일시정지"
+                                },
+                            isPlaying = isPlaying,
+                        )
+                    }
                 }
 
                 Column(
@@ -164,63 +196,68 @@ fun PlaylistDetailListItemView(
                 }
 
                 Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .align(Alignment.CenterVertically),
+                    modifier = Modifier.align(Alignment.CenterVertically),
                 ) {
                     IconButton(
-                        modifier = Modifier.fillMaxHeight(),
-                        onClick = { sendIntent(PlaylistDetailListIntent.OnClickShowDetailAudioMedia(data)) }
+                        modifier = Modifier.size(48.dp),
+                        onClick = { isMenuExpanded = true },
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.Subject,
-                            contentDescription = "세부 화면"
+                            imageVector = Icons.Rounded.MoreVert,
+                            contentDescription = "더보기",
+                            modifier = Modifier.size(20.dp),
+                            tint = gray60,
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = isMenuExpanded,
+                        onDismissRequest = { isMenuExpanded = false },
+                        // M3 기본 메뉴 모서리는 extraSmall(4dp) 이라 각져 보인다.
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("세부 정보") },
+                            onClick = {
+                                isMenuExpanded = false
+                                sendIntent(PlaylistDetailListIntent.OnClickShowDetailAudioMedia(data))
+                            },
+                        )
+                        DropdownMenuItem(
+                            // 헤더의 "수정" 은 플레이리스트를 고친다. 이쪽은 곡이다.
+                            text = { Text("음원 수정") },
+                            onClick = {
+                                isMenuExpanded = false
+                                sendIntent(PlaylistDetailListIntent.OnClickEditAudioMedia(data))
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("플레이리스트 편집") },
+                            onClick = {
+                                isMenuExpanded = false
+                                sendIntent(PlaylistDetailListIntent.OnClickEditPlaylist(data))
+                            },
+                        )
+                        if (canRemoveTrack) {
+                            DropdownMenuItem(
+                                text = { Text("플레이리스트에서 빼기") },
+                                colors = MenuDefaults.itemColors(textColor = softRed),
+                                onClick = {
+                                    isMenuExpanded = false
+                                    isShowRemoveDialog = true
+                                },
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text("음원 파일 삭제") },
+                            colors = MenuDefaults.itemColors(textColor = softRed),
+                            onClick = {
+                                isMenuExpanded = false
+                                isShowDeleteFileDialog = true
+                            },
                         )
                     }
                 }
-            }
-
-            DropdownMenu(
-                expanded = readModeDropdownExpanded,
-                onDismissRequest = { readModeDropdownExpanded = false },
-                shape = MaterialTheme.shapes.medium,
-                offset = DpOffset(
-                    x = with(density) { longPressOffset.x.toDp() },
-                    y = with(density) {
-                        // DropdownMenu y-offset is anchored from the item's bottom.
-                        // Subtract item height so the menu appears near the long-press point.
-                        (longPressOffset.y - itemSize.height).toDp() + 8.dp
-                    },
-                ),
-            ) {
-                DropdownMenuItem(
-                    text = { Text("세부 정보") },
-                    onClick = {
-                        readModeDropdownExpanded = false
-                        sendIntent(PlaylistDetailListIntent.OnClickShowDetailAudioMedia(data))
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text("순서 조정") },
-                    onClick = {
-                        readModeDropdownExpanded = false
-                        sendIntent(PlaylistDetailListIntent.OnClickReorderAudioMedia(data))
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text("수정") },
-                    onClick = {
-                        readModeDropdownExpanded = false
-                        sendIntent(PlaylistDetailListIntent.OnClickEditAudioMedia(data))
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text("삭제") },
-                    onClick = {
-                        readModeDropdownExpanded = false
-                        isShowDeleteDialog = true
-                    },
-                )
             }
         }
     }
@@ -232,8 +269,27 @@ fun PlaylistDetailListItemPreview() {
     JellyTubeTheme {
         PlaylistDetailListItemView(
             data = PlaylistDetailListItemUiState.getMock(),
-            modifier = Modifier.height(56.dp),
-            isBasePlaylist = true,
+            modifier = Modifier.height(80.dp),
+            canRemoveTrack = true,
+            isNowPlaying = false,
+            isPlaying = false,
+            isDragging = false,
+            sendIntent = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+fun PlaylistDetailListItemNowPlayingPreview() {
+    JellyTubeTheme {
+        PlaylistDetailListItemView(
+            data = PlaylistDetailListItemUiState.getMock(),
+            modifier = Modifier.height(80.dp),
+            canRemoveTrack = true,
+            isNowPlaying = true,
+            isPlaying = true,
+            isDragging = false,
             sendIntent = {},
         )
     }

@@ -1,23 +1,23 @@
 package com.kintmin.presentation.ui.playlist_detail.header
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.LibraryMusic
@@ -38,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,6 +49,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
 import okio.Path.Companion.toPath
 
@@ -137,35 +140,26 @@ fun PlaylistDetailHeaderView(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
-                    IconButton(
+                    PlaybackToggleButton(
+                        modifier = Modifier
+                            .wrapContentWidth(Alignment.End)
+                            .weight(1f),
+                        imageVector = Icons.Rounded.Shuffle,
+                        label = "셔플",
+                        isOn = headerData.isShuffling,
                         onClick = {
                             sendIntent(PlaylistDetailHeaderIntent.OnClickShuffle)
                         },
-                        modifier = Modifier
-                            .wrapContentWidth(Alignment.End)
-                            .weight(1f)
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(20.dp),
-                            imageVector = if (headerData.isShuffling) Icons.Filled.Shuffle else Icons.Rounded.Shuffle,
-                            contentDescription = "Shuffle",
-                            tint = if (headerData.isShuffling) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        )
-                    }
-                    IconButton(
+                    )
+                    PlaybackToggleButton(
+                        modifier = Modifier.wrapContentWidth(),
+                        imageVector = Icons.Rounded.Repeat,
+                        label = "반복",
+                        isOn = headerData.isRepeating,
                         onClick = {
                             sendIntent(PlaylistDetailHeaderIntent.OnClickRepeat)
                         },
-                        modifier = Modifier
-                            .wrapContentWidth()
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(20.dp),
-                            imageVector = if (headerData.isRepeating) Icons.Filled.Repeat else Icons.Rounded.Repeat,
-                            contentDescription = "Repeat",
-                            tint = if (headerData.isRepeating) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        )
-                    }
+                    )
                 }
                 if (headerData.description.isNotEmpty()) {
                     Text(
@@ -178,8 +172,10 @@ fun PlaylistDetailHeaderView(
                     )
                 }
             }
+            // 40dp 는 M3 버튼 기본값이다. 고정하지 않는 이유는 글꼴 배율을 키웠을 때 글자
+            // 상하가 깎여서다.
             Row(
-                modifier = Modifier.height(36.dp),
+                modifier = Modifier.heightIn(min = 40.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (!isBasePlaylist) {
@@ -188,16 +184,14 @@ fun PlaylistDetailHeaderView(
                             sendIntent(PlaylistDetailHeaderIntent.OnClickAdd)
                         },
                         contentPadding = PaddingValues(horizontal = 16.dp),
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .wrapContentWidth()
+                        modifier = Modifier.wrapContentWidth()
                     ) {
                         Icon(
                             modifier = Modifier
                                 .size(20.dp)
                                 .padding(0.dp),
                             imageVector = Icons.Rounded.Add,
-                            contentDescription = "Add"
+                            contentDescription = null,
                         )
                         Text(
                             modifier = Modifier.padding(0.dp),
@@ -212,14 +206,12 @@ fun PlaylistDetailHeaderView(
                         sendIntent(PlaylistDetailHeaderIntent.OnClickEdit)
                     },
                     contentPadding = PaddingValues(horizontal = 16.dp),
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .wrapContentWidth()
+                    modifier = Modifier.wrapContentWidth()
                 ) {
                     Icon(
                         modifier = Modifier.size(20.dp),
                         imageVector = Icons.Rounded.Edit,
-                        contentDescription = "Edit"
+                        contentDescription = null,
                     )
                     Text(
                         text = "수정",
@@ -232,21 +224,87 @@ fun PlaylistDetailHeaderView(
                     },
                     modifier = Modifier
                         .padding(start = 8.dp)
-                        .fillMaxHeight()
                         .weight(1f),
                     contentPadding = PaddingValues(0.dp),
                 ) {
+                    Icon(
+                        modifier = Modifier.size(20.dp),
+                        imageVector = Icons.Rounded.PlayArrow,
+                        contentDescription = null,
+                    )
                     Text(
                         text = "모두 재생",
                         fontSize = 12.sp,
                     )
-                    Icon(
-                        modifier = Modifier.size(20.dp),
-                        imageVector = Icons.Rounded.PlayArrow,
-                        contentDescription = "PlayArrow"
-                    )
                 }
             }
+        }
+    }
+}
+
+private val TOGGLE_ICON_SIZE = 20.dp
+private val TOGGLE_DOT_SIZE = 4.dp
+
+/**
+ * `Shuffle` 과 `Repeat` 는 Filled·Rounded 변종이 20dp 에서 구분되지 않는다 — 아래 점을 빼면
+ * 켜짐이 색으로만 전달된다.
+ *
+ * 점은 꺼짐일 때도 투명으로 자리를 지킨다 — 빼면 켤 때마다 아이콘이 위로 밀린다.
+ */
+@Composable
+private fun PlaybackToggleButton(
+    modifier: Modifier,
+    imageVector: ImageVector,
+    label: String,
+    isOn: Boolean,
+    onClick: () -> Unit,
+) {
+    val color by animateColorAsState(
+        targetValue = if (isOn) MaterialTheme.colorScheme.primary else gray60,
+        label = "playbackToggleColor",
+    )
+
+    IconButton(
+        onClick = onClick,
+        modifier = modifier,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                modifier = Modifier.size(TOGGLE_ICON_SIZE),
+                imageVector = imageVector,
+                contentDescription = if (isOn) "$label 켜짐" else "$label 꺼짐",
+                tint = color,
+            )
+            Box(
+                modifier = Modifier
+                    .padding(top = 3.dp)
+                    .size(TOGGLE_DOT_SIZE)
+                    .clip(CircleShape)
+                    .background(if (isOn) color else Color.Transparent),
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun PlaybackToggleButtonPreview() {
+    JellyTubeTheme {
+        Row {
+            PlaybackToggleButton(
+                modifier = Modifier,
+                imageVector = Icons.Rounded.Shuffle,
+                label = "셔플",
+                isOn = true,
+                onClick = {},
+            )
+            PlaybackToggleButton(
+                modifier = Modifier,
+                imageVector = Icons.Rounded.Repeat,
+                label = "반복",
+                isOn = false,
+                onClick = {},
+            )
         }
     }
 }
@@ -259,7 +317,22 @@ fun MusicControlsPreview() {
             innerPaddingValues = PaddingValues(top = 24.dp),
             sendIntent = {},
             isBasePlaylist = false,
-            headerData = PlaylistDetailHeaderUiState.getMock(),
+            headerData = PlaylistDetailHeaderUiState.getMock()
+                .copy(isShuffling = false, isRepeating = false),
+        )
+    }
+}
+
+@Preview
+@Composable
+fun MusicControlsPlaybackTogglesOnPreview() {
+    JellyTubeTheme {
+        PlaylistDetailHeaderView(
+            innerPaddingValues = PaddingValues(top = 24.dp),
+            sendIntent = {},
+            isBasePlaylist = false,
+            headerData = PlaylistDetailHeaderUiState.getMock()
+                .copy(isShuffling = true, isRepeating = true),
         )
     }
 }
