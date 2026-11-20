@@ -58,7 +58,7 @@ fun AudioMediaInformationEditScreen(
 ) {
     val mainViewModel = koinViewModel<AudioMediaInformationEditViewModel>()
 
-    val data by mainViewModel.data.collectAsState()
+    val data by mainViewModel.uiState.collectAsState()
 
     AudioMediaInformationEditScreen(
         navigateToBack = navigateToBack,

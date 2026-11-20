@@ -15,12 +15,14 @@ import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.presentation.port.StartLyricsVariantCreation
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.LyricsViewerScreenRoute
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -42,10 +44,10 @@ class LyricsViewerViewModel constructor(
     private var lyricFileFullPath: String? = null
     private var sourceLanguage: String = "en"
 
-    private val _eventFlow = MutableSharedFlow<LyricsViewerEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val eventChannel = Channel<LyricsViewerEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<LyricsViewerEvent> = eventChannel.receiveAsFlow()
 
-    private val _data = MutableStateFlow(
+    private val _uiState = MutableStateFlow(
         LyricsViewerUiState(
             title = "",
             lines = emptyList(),
@@ -54,7 +56,7 @@ class LyricsViewerViewModel constructor(
             isLoading = true,
         )
     )
-    val data = _data.asStateFlow()
+    val uiState: StateFlow<LyricsViewerUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -67,7 +69,7 @@ class LyricsViewerViewModel constructor(
                     lyricFileFullPath = path
                     if (path == null) {
                         parsedLines = emptyList()
-                        _data.update {
+                        _uiState.update {
                             it.copy(
                                 title = title,
                                 lines = emptyList(),
@@ -91,7 +93,7 @@ class LyricsViewerViewModel constructor(
                         val transliterationLines = getLyricsVariantUseCase(path, LyricsVariant.TRANSLITERATION)
                             .getOrNull()?.map { line -> line.text }
 
-                        _data.update {
+                        _uiState.update {
                             it.copy(
                                 title = title,
                                 lines = parsedLines.map { line -> line.text },
@@ -134,11 +136,11 @@ class LyricsViewerViewModel constructor(
     private fun createVariant(variant: LyricsVariant) {
         val path = lyricFileFullPath ?: return
         val isCreating = when (variant) {
-            LyricsVariant.TRANSLATION -> _data.value.isCreatingTranslation
-            LyricsVariant.TRANSLITERATION -> _data.value.isCreatingTransliteration
+            LyricsVariant.TRANSLATION -> _uiState.value.isCreatingTranslation
+            LyricsVariant.TRANSLITERATION -> _uiState.value.isCreatingTransliteration
         }
         if (isCreating) return
-        _data.update {
+        _uiState.update {
             when (variant) {
                 LyricsVariant.TRANSLATION -> it.copy(isCreatingTranslation = true)
                 LyricsVariant.TRANSLITERATION -> it.copy(isCreatingTransliteration = true)
@@ -155,7 +157,7 @@ class LyricsViewerViewModel constructor(
             LyricsVariant.TRANSLITERATION -> "음차 번역을 시작했어요. 완료되면 알림으로 알려드릴게요."
         }
         viewModelScope.launch {
-            _eventFlow.emit(LyricsViewerEvent.ShowToast(message))
+            eventChannel.send(LyricsViewerEvent.ShowToast(message))
         }
     }
 
@@ -163,10 +165,10 @@ class LyricsViewerViewModel constructor(
         viewModelScope.launch {
             val result = deleteAudioMediaLyricsUseCase(audioMediaId)
             if (result.isSuccess) {
-                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사를 삭제했습니다."))
-                _eventFlow.emit(LyricsViewerEvent.NavigateToBack)
+                eventChannel.send(LyricsViewerEvent.ShowToast("가사를 삭제했습니다."))
+                eventChannel.send(LyricsViewerEvent.NavigateToBack)
             } else {
-                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사를 지우지 못했습니다. 잠시 뒤 다시 시도해 주세요."))
+                eventChannel.send(LyricsViewerEvent.ShowToast("가사를 지우지 못했습니다. 잠시 뒤 다시 시도해 주세요."))
             }
         }
     }
@@ -181,17 +183,17 @@ class LyricsViewerViewModel constructor(
         if (parsedLines.isEmpty()) return
 
         if (!isThisMediaPlaying()) {
-            if (_data.value.activeIndex != -1 || _data.value.canSeek) {
-                _data.update { it.copy(activeIndex = -1, canSeek = false) }
+            if (_uiState.value.activeIndex != -1 || _uiState.value.canSeek) {
+                _uiState.update { it.copy(activeIndex = -1, canSeek = false) }
             }
             return
         }
 
         val positionMs = mediaControllerManager.currentPosition ?: return
         val index = activeLyricIndex(parsedLines, positionMs)
-        val canSeek = _data.value.isSynced
-        if (index != _data.value.activeIndex || canSeek != _data.value.canSeek) {
-            _data.update { it.copy(activeIndex = index, canSeek = canSeek) }
+        val canSeek = _uiState.value.isSynced
+        if (index != _uiState.value.activeIndex || canSeek != _uiState.value.canSeek) {
+            _uiState.update { it.copy(activeIndex = index, canSeek = canSeek) }
         }
     }
 }

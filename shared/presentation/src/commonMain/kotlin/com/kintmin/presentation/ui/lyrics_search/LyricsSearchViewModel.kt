@@ -12,10 +12,12 @@ import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.ui.lyrics_search.navigation.LyricsSearchScreenRoute
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -31,13 +33,13 @@ class LyricsSearchViewModel constructor(
 
     private val initialQuery = buildSongSearchQueryUseCase(route.initialQuery)
 
-    private val _data = MutableStateFlow(
+    private val _uiState = MutableStateFlow(
         LyricsSearchUiState(query = initialQuery, isLoading = false, results = emptyList())
     )
-    val data = _data.asStateFlow()
+    val uiState: StateFlow<LyricsSearchUiState> = _uiState.asStateFlow()
 
-    private val _eventFlow = MutableSharedFlow<LyricsSearchEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val eventChannel = Channel<LyricsSearchEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<LyricsSearchEvent> = eventChannel.receiveAsFlow()
 
     // 진행 중인 검색 코루틴. 새 검색을 시작하기 전에 취소한다.
     private var searchJob: Job? = null
@@ -49,14 +51,14 @@ class LyricsSearchViewModel constructor(
     fun sendIntent(intent: LyricsSearchIntent) {
         when (intent) {
             is LyricsSearchIntent.OnChangeQuery ->
-                _data.update { it.copy(query = intent.query) }
+                _uiState.update { it.copy(query = intent.query) }
 
             LyricsSearchIntent.OnClickSearch ->
-                startSearch(_data.value.query)
+                startSearch(_uiState.value.query)
 
             is LyricsSearchIntent.OnClickResult ->
                 viewModelScope.launch {
-                    _eventFlow.emit(
+                    eventChannel.send(
                         LyricsSearchEvent.NavigateToLyricsDetail(
                             audioMediaId = audioMediaId,
                             trackName = intent.item.trackName,
@@ -69,7 +71,7 @@ class LyricsSearchViewModel constructor(
 
             LyricsSearchIntent.OnClickAddLyricsManually ->
                 viewModelScope.launch {
-                    _eventFlow.emit(LyricsSearchEvent.NavigateToLyricsEdit(audioMediaId))
+                    eventChannel.send(LyricsSearchEvent.NavigateToLyricsEdit(audioMediaId))
                 }
         }
     }
@@ -82,14 +84,14 @@ class LyricsSearchViewModel constructor(
 
     private suspend fun performSearch(query: String) {
         if (query.isBlank()) {
-            _data.update { it.copy(isLoading = false, results = emptyList()) }
+            _uiState.update { it.copy(isLoading = false, results = emptyList()) }
             return
         }
-        _data.update { it.copy(isLoading = true) }
+        _uiState.update { it.copy(isLoading = true) }
         val results = searchLyricsUseCase(query).getOrNull().orEmpty()
             .let { sortLyricsSearchResultsUseCase(it, query, route.durationSeconds) }
             .map { it.toItem() }
-        _data.update { it.copy(isLoading = false, results = results) }
+        _uiState.update { it.copy(isLoading = false, results = results) }
     }
 }
 

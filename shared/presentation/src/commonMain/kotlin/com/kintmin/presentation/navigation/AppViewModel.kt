@@ -29,8 +29,8 @@ class AppViewModel(
     private val fetchPlaybackPitchSemitoneFlowUseCase: FetchPlaybackPitchSemitoneFlowUseCase,
 ) : ViewModel() {
 
-    private val navigationIntentChannel = Channel<NavigationIntent>(capacity = 8)
-    val navigationIntentFlow = navigationIntentChannel.receiveAsFlow()
+    private val eventChannel = Channel<NavigationIntent>(capacity = 8)
+    val eventFlow = eventChannel.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -47,31 +47,39 @@ class AppViewModel(
         fetchPlaybackPitchSemitoneFlowUseCase().onEach(mediaControllerManager::setPlaybackPitchSemitone).launchIn(viewModelScope)
     }
 
-    fun initializeMediaController() {
+    fun sendIntent(intent: AppIntent) {
+        when (intent) {
+            AppIntent.InitializeMediaController -> initializeMediaController()
+            is AppIntent.HandleDeepLink -> handleDeepLink(intent.url)
+            is AppIntent.ImportSharedAudio -> importSharedAudio(intent.fileIdentifiers)
+        }
+    }
+
+    private fun initializeMediaController() {
         mediaControllerManager.initialize()
     }
 
     /** 앱 밖에서 들어온 주소를 받는 유일한 입구. 우리 주소가 아니면 조용히 아무 일도 하지 않는다. */
-    fun handleDeepLink(url: String) {
+    private fun handleDeepLink(url: String) {
         viewModelScope.launch {
             DeepLinkParser.parse(
                 url = url,
                 playingPlaylistId = mediaControllerManager.currentPlaylistId,
                 playingMediaId = mediaControllerManager.playingMediaItem?.mediaId?.toIntOrNull(),
             ).forEach { navigationIntent ->
-                navigationIntentChannel.send(navigationIntent)
+                eventChannel.send(navigationIntent)
             }
         }
     }
 
-    fun importSharedAudio(fileIdentifiers: List<String>) {
+    private fun importSharedAudio(fileIdentifiers: List<String>) {
         if (fileIdentifiers.isEmpty()) return
 
         viewModelScope.launch {
             fileIdentifiers.forEach { fileIdentifier ->
                 importSharedAudioMediaUseCase(fileIdentifier)
             }
-            navigationIntentChannel.send(NavigationIntent.NavigateToMainPlaylistsTab)
+            eventChannel.send(NavigationIntent.NavigateToMainPlaylistsTab)
         }
     }
 }

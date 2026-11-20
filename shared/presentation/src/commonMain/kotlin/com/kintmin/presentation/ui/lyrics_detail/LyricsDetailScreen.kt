@@ -38,7 +38,7 @@ fun LyricsDetailScreen(
     navigateToBack: () -> Unit,
 ) {
     val viewModel = koinViewModel<LyricsDetailViewModel>()
-    val data by viewModel.data.collectAsState()
+    val data by viewModel.uiState.collectAsState()
     val toaster = rememberToaster()
 
     LaunchedEffect(Unit) {

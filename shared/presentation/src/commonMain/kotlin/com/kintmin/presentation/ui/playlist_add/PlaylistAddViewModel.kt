@@ -17,8 +17,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -42,22 +40,20 @@ class PlaylistAddViewModel constructor(
     private val changeSearchTextDebounce = Debounce(200L)
     private val _searchText = MutableStateFlow("")
 
-    // 첫 방출 전에는 null 이라 "추가할 곡이 없다" 가 잠깐 비치지 않는다.
-    val audioListFlow: StateFlow<List<PlaylistAddListItemUiState>?> = combine(
+    val uiState: StateFlow<PlaylistAddUiState> = combine(
         fetchAudioMediaListFlowUseCase(playlistId),
         _checkedItemIdList,
         _searchText,
     ) { mediaList, checkedIds, searchText ->
-        mediaList.filter { it.audioMedia.name.matchKorean(searchText) }.map { data ->
-            data.toPlaylistAddListItemUiState(
-                isChecked = data.audioMedia.id in checkedIds
-            )
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    val checkedItemCountFlow = _checkedItemIdList.map { list -> list.size }
-        .distinctUntilChanged()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+        PlaylistAddUiState(
+            audioList = mediaList.filter { it.audioMedia.name.matchKorean(searchText) }.map { data ->
+                data.toPlaylistAddListItemUiState(
+                    isChecked = data.audioMedia.id in checkedIds
+                )
+            },
+            checkedItemCount = checkedIds.size,
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlaylistAddUiState())
 
     fun sendIntent(intent: PlaylistAddIntent) {
         when (intent) {

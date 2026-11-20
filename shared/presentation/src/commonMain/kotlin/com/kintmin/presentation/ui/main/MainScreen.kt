@@ -80,7 +80,7 @@ import com.kintmin.presentation.ui.main.playlist.PlaylistViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadIntent
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebView
-import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebViewEvent
+import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadEvent
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
 import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
 import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
@@ -104,15 +104,14 @@ fun MainScreen(
     val playlistViewModel = koinViewModel<PlaylistViewModel>()
     val playerBarViewModel = koinViewModel<PlayerBarViewModel>()
 
-    val playlist by playlistViewModel.playlistFlow.collectAsState()
-    val isReorderBottomSheetVisible by playlistViewModel.isReorderBottomSheetVisible.collectAsState()
-    val selectedTab by mainViewModel.tabItem.collectAsState()
-    val currentUrl by downloadViewModel.currentUrl.collectAsState()
-    val currentMediaItem by playerBarViewModel.currentMediaItem.collectAsState()
+    val playlistUiState by playlistViewModel.uiState.collectAsState()
+    val mainUiState by mainViewModel.uiState.collectAsState()
+    val youtubeDownloadUiState by downloadViewModel.uiState.collectAsState()
+    val currentMediaItem by playerBarViewModel.uiState.collectAsState()
 
     val permissionController = rememberPermissionController()
     val audioFilePicker = rememberAudioFilePicker { fileIdentifiers ->
-        mainViewModel.sendIntent(MainScreenIntent.ImportMediaFiles(fileIdentifiers))
+        mainViewModel.sendIntent(MainIntent.ImportMediaFiles(fileIdentifiers))
     }
     LaunchedEffect(Unit) {
         // 어떤 권한이 OS 버전별로 실제 필요한지는 구현이 판단한다.
@@ -124,7 +123,7 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         downloadViewModel.eventFlow.collect { event ->
             when (event) {
-                is YoutubeWebViewEvent.ShowToast -> toaster.show(event.message)
+                is YoutubeDownloadEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }
@@ -132,7 +131,7 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         mainViewModel.eventFlow.collect { event ->
             when (event) {
-                is MainScreenEvent.ShowToast -> toaster.show(event.message)
+                is MainEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }
@@ -150,10 +149,10 @@ fun MainScreen(
 
     MainScreen(
         isDebugTabVisible = isDebugTabVisible,
-        selectedTab = selectedTab,
-        playlist = playlist,
+        selectedTab = mainUiState.tabItem,
+        playlist = playlistUiState.playlists,
         playerBar = currentMediaItem,
-        currentUrl = currentUrl,
+        currentUrl = youtubeDownloadUiState.currentUrl,
         navigateToSetting = navigateToSetting,
         navigateToPlayerDetail = navigateToPlayerDetail,
         navigateToFileShareReceive = navigateToFileShareReceive,
@@ -164,9 +163,9 @@ fun MainScreen(
         sendPlayerBarIntent = playerBarViewModel::sendIntent,
     )
 
-    if (isReorderBottomSheetVisible) {
+    if (playlistUiState.isReorderBottomSheetVisible) {
         PlaylistReorderBottomSheet(
-            playlists = playlist.filterNot { it.isBasePlaylist },
+            playlists = playlistUiState.playlists.filterNot { it.isBasePlaylist },
             onReorder = { orderedIds ->
                 playlistViewModel.sendIntent(PlaylistIntent.OnReorderPlaylist(orderedIds))
             },
@@ -189,7 +188,7 @@ fun MainScreen(
     navigateToPlayerDetail: () -> Unit,
     navigateToFileShareReceive: () -> Unit,
     onClickPickMedia: () -> Unit,
-    sendMainIntent: (MainScreenIntent) -> Unit,
+    sendMainIntent: (MainIntent) -> Unit,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
@@ -340,7 +339,7 @@ fun MainScreen(
                             )
                         },
                         selected = selectedTab == MainTabItem.Search,
-                        onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) },
+                        onClick = { sendMainIntent(MainIntent.ChangeTab(MainTabItem.Search)) },
                         colors = navigationBarItemColors,
                     )
                     ShortNavigationBarItem(
@@ -353,7 +352,7 @@ fun MainScreen(
                             )
                         },
                         selected = selectedTab == MainTabItem.Playlist,
-                        onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
+                        onClick = { sendMainIntent(MainIntent.ChangeTab(MainTabItem.Playlist)) },
                         colors = navigationBarItemColors,
                     )
                     if (isDebugTabVisible) {
@@ -367,7 +366,7 @@ fun MainScreen(
                                 )
                             },
                             selected = selectedTab == MainTabItem.Debug,
-                            onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Debug)) },
+                            onClick = { sendMainIntent(MainIntent.ChangeTab(MainTabItem.Debug)) },
                             colors = navigationBarItemColors,
                         )
                     }
@@ -382,7 +381,7 @@ fun MainScreen(
                     webViewHandle = webViewHandle,
                     sendIntent = sendYoutubeDownloadIntent,
                     onNavigateToPlaylist = {
-                        sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist))
+                        sendMainIntent(MainIntent.ChangeTab(MainTabItem.Playlist))
                     },
                     modifier = Modifier
                         .fillMaxSize()

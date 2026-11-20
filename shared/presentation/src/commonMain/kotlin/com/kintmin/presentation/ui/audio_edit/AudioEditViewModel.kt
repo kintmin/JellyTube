@@ -18,16 +18,18 @@ import com.kintmin.domain.lyrics.LyricsFile
 import com.kintmin.presentation.port.AudioPreviewPlayer
 import com.kintmin.presentation.port.StartAudioEditSave
 import com.kintmin.presentation.ui.audio_edit.navigation.AudioEditScreenRoute
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -60,11 +62,11 @@ class AudioEditViewModel constructor(
 
     private val audioMediaId = savedStateHandle.toRoute<AudioEditScreenRoute>().audioMediaId
 
-    private val _eventFlow = MutableSharedFlow<AudioEditEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val eventChannel = Channel<AudioEditEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<AudioEditEvent> = eventChannel.receiveAsFlow()
 
-    private val _data = MutableStateFlow(AudioEditUiState.getEmpty(audioMediaId))
-    val data = _data.asStateFlow()
+    private val _uiState = MutableStateFlow(AudioEditUiState.getEmpty(audioMediaId))
+    val uiState: StateFlow<AudioEditUiState> = _uiState.asStateFlow()
 
     /** 원본 길이·편집 상태·파형은 처음 한 번만 불러온다. 저장 후 음원 정보가 다시 흘러와도 편집 중인 상태를 덮지 않는다. */
     private var isSourceRequested = false
@@ -75,7 +77,7 @@ class AudioEditViewModel constructor(
 
         // 저장은 화면을 닫은 뒤에도 백그라운드에서 이어지므로, 다시 들어와도 저장 중이면 막는다
         observeAudioEditSavingUseCase(audioMediaId)
-            .onEach { isSaving -> _data.update { it.copy(isSaving = isSaving) } }
+            .onEach { isSaving -> _uiState.update { it.copy(isSaving = isSaving) } }
             .launchIn(viewModelScope)
     }
 
@@ -92,7 +94,7 @@ class AudioEditViewModel constructor(
     }
 
     private fun applyAudioMedia(audioMedia: AudioMedia) {
-        _data.update { state ->
+        _uiState.update { state ->
             state.copy(
                 audioMediaName = audioMedia.name,
                 originAudioFileFullPath = audioMedia.audioFileFullPath,
@@ -126,7 +128,7 @@ class AudioEditViewModel constructor(
                 // 원본 길이가 다르면 다른 원본으로 만든 편집 상태라 조각 위치를 믿을 수 없다
                 ?.takeIf { it.originDurationMs == originDurationMs }
 
-            _data.update { state ->
+            _uiState.update { state ->
                 state.copy(
                     timeline = savedTimeline ?: initialTimeline,
                     savedTimeline = savedTimeline ?: initialTimeline,
@@ -151,11 +153,11 @@ class AudioEditViewModel constructor(
             audioFileFullPath = audioFileFullPath,
             bucketCount = bucketCount,
         ).onEach { waveform ->
-            _data.update { it.copy(waveform = waveform) }
+            _uiState.update { it.copy(waveform = waveform) }
         }.catch {
             // 파형이 없어도 시간으로 편집할 수 있으므로 화면은 계속 쓸 수 있게 둔다
-            _data.update { it.copy(waveform = AudioWaveform.EMPTY) }
-            _eventFlow.emit(AudioEditEvent.ShowToast("파형을 그리지 못했습니다. 시간으로 편집할 수 있습니다."))
+            _uiState.update { it.copy(waveform = AudioWaveform.EMPTY) }
+            eventChannel.send(AudioEditEvent.ShowToast("파형을 그리지 못했습니다. 시간으로 편집할 수 있습니다."))
         }.launchIn(viewModelScope)
     }
 
@@ -167,7 +169,7 @@ class AudioEditViewModel constructor(
         viewModelScope.launch {
             while (true) {
                 val isPlaying = audioPreviewPlayer.isPlaying
-                _data.update { state ->
+                _uiState.update { state ->
                     state.copy(
                         isPreviewPlaying = isPlaying,
                         previewPositionMs = audioPreviewPlayer.currentPositionMs.takeIf { isPlaying },
@@ -182,7 +184,7 @@ class AudioEditViewModel constructor(
         when (intent) {
             is AudioEditIntent.OnBaselineChanged -> updateBaseline(intent.ms)
             is AudioEditIntent.OnTimelineEndChanged -> updateTimeline { it.withEnd(intent.ms) }
-            is AudioEditIntent.OnClipSelected -> _data.update { it.copy(selectedClipIndex = intent.index) }
+            is AudioEditIntent.OnClipSelected -> _uiState.update { it.copy(selectedClipIndex = intent.index) }
             is AudioEditIntent.OnClipEdgeDragged -> updateTimeline {
                 it.resizeEdge(index = intent.index, edge = intent.edge, toMs = intent.ms)
             }
@@ -199,40 +201,40 @@ class AudioEditViewModel constructor(
     }
 
     private fun updateBaseline(ms: Long) {
-        _data.update { state ->
+        _uiState.update { state ->
             state.copy(baselineMs = ms.coerceIn(0L, state.timeline.maxEndMs))
         }
     }
 
     private fun splitAtBaseline() {
-        val state = _data.value
+        val state = _uiState.value
         if (!state.canSplit) return
 
         updateTimeline { it.split(state.baselineMs) }
         // 나누면 조각 index가 밀려 이전 선택이 다른 조각을 가리킬 수 있다
-        _data.update { it.copy(selectedClipIndex = null) }
+        _uiState.update { it.copy(selectedClipIndex = null) }
     }
 
     private fun mergeAtBaseline() {
-        val state = _data.value
+        val state = _uiState.value
         if (!state.canMerge) return
 
         updateTimeline { it.merge(state.baselineMs) }
         // 합치면 조각 index가 당겨져 이전 선택이 다른 조각을 가리킬 수 있다
-        _data.update { it.copy(selectedClipIndex = null) }
+        _uiState.update { it.copy(selectedClipIndex = null) }
     }
 
     private fun deleteSelectedClip() {
-        val index = _data.value.selectedClipIndex ?: return
+        val index = _uiState.value.selectedClipIndex ?: return
 
         updateTimeline { it.delete(index) }
-        _data.update { it.copy(selectedClipIndex = null) }
+        _uiState.update { it.copy(selectedClipIndex = null) }
     }
 
     /** 타임라인이 바뀌면 미리듣기는 옛 조각을 재생하고 있으므로 멈춘다. */
     private fun updateTimeline(transform: (AudioEditTimeline) -> AudioEditTimeline) {
         audioPreviewPlayer.pause()
-        _data.update { state -> state.copy(timeline = transform(state.timeline)) }
+        _uiState.update { state -> state.copy(timeline = transform(state.timeline)) }
     }
 
     private fun togglePreview() {
@@ -241,7 +243,7 @@ class AudioEditViewModel constructor(
             return
         }
 
-        val state = _data.value
+        val state = _uiState.value
         val parts = state.timeline.toParts()
         if (parts.isEmpty()) return
 
@@ -265,12 +267,12 @@ class AudioEditViewModel constructor(
      * 렌더가 수십 초 걸려 백그라운드 작업에 맡기고 화면을 닫는다. 끝나면 알림으로 알려준다.
      */
     private fun enqueueSave(enqueue: (AudioEditUiState) -> Result<Unit>) {
-        val state = _data.value
+        val state = _uiState.value
         if (!state.canSave) return
 
         // 작업이 시작되기 전에도 중복 저장과 되돌리기를 막도록 맡기기 전에 저장 중으로 예약한다
         reserveAudioEditSaveUseCase(audioMediaId).onFailure { throwable ->
-            viewModelScope.launch { _eventFlow.emit(AudioEditEvent.ShowToast(throwable.message.toString())) }
+            viewModelScope.launch { eventChannel.send(AudioEditEvent.ShowToast(throwable.message.toString())) }
             return
         }
 
@@ -278,14 +280,14 @@ class AudioEditViewModel constructor(
         enqueue(state)
             .onSuccess {
                 viewModelScope.launch {
-                    _eventFlow.emit(AudioEditEvent.ShowToast("저장을 시작했어요. 완료되면 알림으로 알려드릴게요."))
-                    _eventFlow.emit(AudioEditEvent.NavigateToBack)
+                    eventChannel.send(AudioEditEvent.ShowToast("저장을 시작했어요. 완료되면 알림으로 알려드릴게요."))
+                    eventChannel.send(AudioEditEvent.NavigateToBack)
                 }
             }
             .onFailure { throwable ->
                 releaseAudioEditSaveUseCase(audioMediaId)
                 viewModelScope.launch {
-                    _eventFlow.emit(AudioEditEvent.ShowToast(throwable.message ?: "저장을 시작하지 못했습니다."))
+                    eventChannel.send(AudioEditEvent.ShowToast(throwable.message ?: "저장을 시작하지 못했습니다."))
                 }
             }
     }

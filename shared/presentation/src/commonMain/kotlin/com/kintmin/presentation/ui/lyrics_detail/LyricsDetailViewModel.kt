@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.lyrics.usecase.ApplyLyricsToAudioMediaUseCase
 import com.kintmin.presentation.ui.lyrics_detail.navigation.LyricsDetailScreenRoute
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -20,7 +22,7 @@ class LyricsDetailViewModel constructor(
 
     private val route = savedStateHandle.toRoute<LyricsDetailScreenRoute>()
 
-    private val _data = MutableStateFlow(
+    private val _uiState = MutableStateFlow(
         LyricsDetailUiState(
             trackName = route.trackName,
             artistName = route.artistName,
@@ -29,10 +31,10 @@ class LyricsDetailViewModel constructor(
             isApplying = false,
         )
     )
-    val data = _data.asStateFlow()
+    val uiState: StateFlow<LyricsDetailUiState> = _uiState.asStateFlow()
 
-    private val _eventFlow = MutableSharedFlow<LyricsDetailEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val eventChannel = Channel<LyricsDetailEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<LyricsDetailEvent> = eventChannel.receiveAsFlow()
 
     fun sendIntent(intent: LyricsDetailIntent) {
         when (intent) {
@@ -41,20 +43,20 @@ class LyricsDetailViewModel constructor(
     }
 
     private fun applyLyrics() {
-        if (_data.value.isApplying) return
+        if (_uiState.value.isApplying) return
         viewModelScope.launch {
-            _data.update { it.copy(isApplying = true) }
+            _uiState.update { it.copy(isApplying = true) }
             val result = applyLyricsToAudioMediaUseCase(
                 audioMediaId = route.audioMediaId,
                 plainLyrics = route.plainLyrics.ifBlank { null },
                 syncedLyrics = route.syncedLyrics.ifBlank { null },
             )
-            _data.update { it.copy(isApplying = false) }
+            _uiState.update { it.copy(isApplying = false) }
             if (result.isSuccess) {
-                _eventFlow.emit(LyricsDetailEvent.ShowToast("가사를 적용했습니다."))
-                _eventFlow.emit(LyricsDetailEvent.NavigateToBack)
+                eventChannel.send(LyricsDetailEvent.ShowToast("가사를 적용했습니다."))
+                eventChannel.send(LyricsDetailEvent.NavigateToBack)
             } else {
-                _eventFlow.emit(LyricsDetailEvent.ShowToast("가사 적용에 실패했습니다."))
+                eventChannel.send(LyricsDetailEvent.ShowToast("가사 적용에 실패했습니다."))
             }
         }
     }

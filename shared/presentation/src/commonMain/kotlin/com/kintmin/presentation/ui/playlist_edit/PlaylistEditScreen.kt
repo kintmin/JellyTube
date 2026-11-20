@@ -84,9 +84,7 @@ fun PlaylistEditScreen(
 ) {
     val mainViewModel = koinViewModel<PlaylistEditListViewModel>()
 
-    val audioMediaList by mainViewModel.audioMediaListFlow.collectAsState()
-    val checkedItemCount by mainViewModel.checkedItemCountFlow.collectAsState()
-    val headerData by mainViewModel.headerDataFlow.collectAsState()
+    val uiState by mainViewModel.uiState.collectAsState()
     val toaster = rememberToaster()
     val imagePicker = rememberImagePicker { imageData ->
         mainViewModel.sendIntent(PlaylistEditListIntent.OnPickPlaylistImage(imageData))
@@ -103,10 +101,10 @@ fun PlaylistEditScreen(
     PlaylistEditScreen(
         navigateToBack = navigateToBack,
         onClickPickImage = { imagePicker.launch() },
-        isBasePlaylist = headerData.isBasePlaylist,
-        headerData = headerData,
-        dataList = audioMediaList,
-        checkedItemCount = checkedItemCount,
+        isBasePlaylist = uiState.headerData.isBasePlaylist,
+        headerData = uiState.headerData,
+        dataList = uiState.audioMediaList,
+        checkedItemCount = uiState.checkedItemCount,
         focusAudioMediaId = focusAudioMediaId,
         sendIntent = mainViewModel::sendIntent,
     )

@@ -24,15 +24,17 @@ import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.sleep_timer.SleepTimerRunner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -62,10 +64,10 @@ class PlayerDetailViewModel constructor(
     private val getParsedLyricsUseCase: GetParsedLyricsUseCase,
 ) : ViewModel() {
 
-    private val _eventFlow = MutableSharedFlow<PlayerDetailEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val eventChannel = Channel<PlayerDetailEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<PlayerDetailEvent> = eventChannel.receiveAsFlow()
 
-    private val _data = mediaControllerManager.playingMediaItem.let {
+    private val _uiState = mediaControllerManager.playingMediaItem.let {
         MutableStateFlow(
             PlayerDetailUiState(
                 id = it?.mediaId ?: "",
@@ -87,7 +89,7 @@ class PlayerDetailViewModel constructor(
             )
         )
     }
-    val data = _data.asStateFlow()
+    val uiState: StateFlow<PlayerDetailUiState> = _uiState.asStateFlow()
 
     private var isHandlingSlider = false
 
@@ -102,33 +104,33 @@ class PlayerDetailViewModel constructor(
         observeAudioMediaDetail()
         viewModelScope.launch {
             fetchIsPlaybackRepeatingFlowUseCase().collect {
-                _data.update { prev -> prev.copy(isRepeating = it) }
+                _uiState.update { prev -> prev.copy(isRepeating = it) }
             }
         }
         viewModelScope.launch {
             fetchIsPlaybackShufflingFlowUseCase().collect {
-                _data.update { prev -> prev.copy(isShuffling = it) }
+                _uiState.update { prev -> prev.copy(isShuffling = it) }
             }
         }
         viewModelScope.launch {
             fetchPlaybackSpeedFlowUseCase().collect { speed ->
-                _data.update { prev -> prev.copy(playbackSpeed = speed) }
+                _uiState.update { prev -> prev.copy(playbackSpeed = speed) }
             }
         }
         viewModelScope.launch {
             fetchPlaybackPitchSemitoneFlowUseCase().collect { semitone ->
-                _data.update { prev -> prev.copy(playbackPitchSemitone = semitone) }
+                _uiState.update { prev -> prev.copy(playbackPitchSemitone = semitone) }
             }
         }
         viewModelScope.launch {
             fetchSleepTimerMinutesFlowUseCase().collect { minutes ->
-                _data.update { prev -> prev.copy(sleepTimerMinutes = minutes) }
+                _uiState.update { prev -> prev.copy(sleepTimerMinutes = minutes) }
             }
         }
         viewModelScope.launch {
             fetchSleepTimerAnnouncementOptionsFlowUseCase().collect { options ->
                 sleepTimerRunner.announcement = options.selected
-                _data.update { prev -> prev.copy(sleepTimerAnnouncement = options) }
+                _uiState.update { prev -> prev.copy(sleepTimerAnnouncement = options) }
             }
         }
     }
@@ -141,7 +143,7 @@ class PlayerDetailViewModel constructor(
                 } else {
                     mediaControllerManager.resume()
                 }
-                _data.update {
+                _uiState.update {
                     it.copy(isPlaying = mediaControllerManager.isPlaying)
                 }
             }
@@ -162,14 +164,14 @@ class PlayerDetailViewModel constructor(
             
             PlayerDetailIntent.OnClickShuffleButton -> {
                 viewModelScope.launch {
-                    val newValue = !data.value.isShuffling
+                    val newValue = !uiState.value.isShuffling
                     updateIsPlaybackShufflingUseCase(newValue)
                 }
             }
 
             PlayerDetailIntent.OnClickRepeatButton -> {
                 viewModelScope.launch {
-                    val newValue = !data.value.isRepeating
+                    val newValue = !uiState.value.isRepeating
                     updatePlaybackRepeatingUseCase(newValue)
                 }
             }
@@ -180,33 +182,33 @@ class PlayerDetailViewModel constructor(
             }
 
             PlayerDetailIntent.OnClickFavoriteButton -> {
-                val mediaId = data.value.id.toIntOrNull()
+                val mediaId = uiState.value.id.toIntOrNull()
                 viewModelScope.launch {
                     if (mediaId == null) {
-                        _eventFlow.emit(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
+                        eventChannel.send(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
                         return@launch
                     }
-                    toggleFavoriteUseCase(mediaId, !data.value.isFavorite)
+                    toggleFavoriteUseCase(mediaId, !uiState.value.isFavorite)
                 }
             }
 
             // 가사 입구는 셋이다 — 아트워크·한 줄 가사·부가 줄 아이콘. 셋 다 같은 일을 한다.
             // 아트워크는 가사 없는 곡에서 clickable 을 붙이지 않아 아래 분기로 오지 않는다.
             PlayerDetailIntent.OnClickLyrics -> {
-                if (data.value.hasLyrics) {
-                    _data.update { it.copy(isLyricsPanelVisible = !it.isLyricsPanelVisible) }
+                if (uiState.value.hasLyrics) {
+                    _uiState.update { it.copy(isLyricsPanelVisible = !it.isLyricsPanelVisible) }
                     return
                 }
-                val mediaId = data.value.id.toIntOrNull()
+                val mediaId = uiState.value.id.toIntOrNull()
                 viewModelScope.launch {
                     if (mediaId == null) {
-                        _eventFlow.emit(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
+                        eventChannel.send(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
                     } else {
-                        _eventFlow.emit(
+                        eventChannel.send(
                             PlayerDetailEvent.NavigateToLyricsSearch(
                                 audioMediaId = mediaId,
-                                query = data.value.title,
-                                durationSeconds = data.value.playbackDuration.inWholeSeconds.toDouble(),
+                                query = uiState.value.title,
+                                durationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
                             )
                         )
                     }
@@ -214,51 +216,51 @@ class PlayerDetailViewModel constructor(
             }
 
             PlayerDetailIntent.OnClickAddButton -> {
-                val mediaId = data.value.id.toIntOrNull()
+                val mediaId = uiState.value.id.toIntOrNull()
                 viewModelScope.launch {
                     if (mediaId == null) {
-                        _eventFlow.emit(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
+                        eventChannel.send(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
                     } else {
-                        _eventFlow.emit(PlayerDetailEvent.NavigateToAudioMediaInformationEditScreen(mediaId))
+                        eventChannel.send(PlayerDetailEvent.NavigateToAudioMediaInformationEditScreen(mediaId))
                     }
                 }
             }
 
             PlayerDetailIntent.OnClickMoreButton -> {
-                val mediaId = data.value.id.toIntOrNull()
+                val mediaId = uiState.value.id.toIntOrNull()
                 viewModelScope.launch {
                     if (mediaId == null) {
-                        _eventFlow.emit(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
+                        eventChannel.send(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
                     } else {
-                        _eventFlow.emit(PlayerDetailEvent.NavigateToAudioMediaDetailScreen(mediaId))
+                        eventChannel.send(PlayerDetailEvent.NavigateToAudioMediaDetailScreen(mediaId))
                     }
                 }
             }
 
             PlayerDetailIntent.OnClickPlayingPlaylistButton -> {
                 viewModelScope.launch {
-                    val playlistId = data.value.playlistId
-                    val audioMediaId = data.value.id.toIntOrNull()
+                    val playlistId = uiState.value.playlistId
+                    val audioMediaId = uiState.value.id.toIntOrNull()
                     if (playlistId == null) {
-                        _eventFlow.emit(PlayerDetailEvent.ShowToast("현재 재생 플레이리스트를 찾을 수 없습니다."))
+                        eventChannel.send(PlayerDetailEvent.ShowToast("현재 재생 플레이리스트를 찾을 수 없습니다."))
                     } else {
-                        _eventFlow.emit(PlayerDetailEvent.NavigateToPlayingPlaylist(playlistId, audioMediaId))
+                        eventChannel.send(PlayerDetailEvent.NavigateToPlayingPlaylist(playlistId, audioMediaId))
                     }
                 }
             }
 
             PlayerDetailIntent.OnClickPlaybackSpeedButton -> {
-                _data.update { it.copy(isPlaybackSpeedMenuVisible = true) }
+                _uiState.update { it.copy(isPlaybackSpeedMenuVisible = true) }
             }
 
             PlayerDetailIntent.OnDismissPlaybackSpeedMenu -> {
-                _data.update { it.copy(isPlaybackSpeedMenuVisible = false) }
+                _uiState.update { it.copy(isPlaybackSpeedMenuVisible = false) }
             }
 
             is PlayerDetailIntent.OnSelectPlaybackSpeed -> {
                 viewModelScope.launch {
                     updatePlaybackSpeedUseCase(intent.speed)
-                    _data.update {
+                    _uiState.update {
                         it.copy(playbackSpeed = intent.speed)
                     }
                     mediaControllerManager.setPlaybackSpeed(intent.speed)
@@ -266,17 +268,17 @@ class PlayerDetailViewModel constructor(
             }
 
             PlayerDetailIntent.OnClickPlaybackPitchButton -> {
-                _data.update { it.copy(isPlaybackPitchMenuVisible = true) }
+                _uiState.update { it.copy(isPlaybackPitchMenuVisible = true) }
             }
 
             PlayerDetailIntent.OnDismissPlaybackPitchMenu -> {
-                _data.update { it.copy(isPlaybackPitchMenuVisible = false) }
+                _uiState.update { it.copy(isPlaybackPitchMenuVisible = false) }
             }
 
             is PlayerDetailIntent.OnSelectPlaybackPitchSemitone -> {
                 viewModelScope.launch {
                     updatePlaybackPitchSemitoneUseCase(intent.semitone)
-                    _data.update {
+                    _uiState.update {
                         it.copy(playbackPitchSemitone = intent.semitone)
                     }
                     mediaControllerManager.setPlaybackPitchSemitone(intent.semitone)
@@ -285,34 +287,34 @@ class PlayerDetailViewModel constructor(
 
             is PlayerDetailIntent.OnChangeTimeSlider -> {
                 isHandlingSlider = true
-                _data.update {
+                _uiState.update {
                     it.copy(currentDuration = intent.duration.toDouble().seconds)
                 }
             }
 
             PlayerDetailIntent.OnChangeFinishTimeSlider -> {
                 isHandlingSlider = false
-                mediaControllerManager.seek(data.value.currentDuration)
+                mediaControllerManager.seek(uiState.value.currentDuration)
             }
 
             PlayerDetailIntent.OnClickSleepTimerButton -> {
-                _data.update { it.copy(isSleepTimerMenuVisible = true) }
+                _uiState.update { it.copy(isSleepTimerMenuVisible = true) }
             }
 
             PlayerDetailIntent.OnDismissSleepTimerMenu -> {
-                _data.update { it.copy(isSleepTimerMenuVisible = false) }
+                _uiState.update { it.copy(isSleepTimerMenuVisible = false) }
             }
 
             is PlayerDetailIntent.OnSelectSleepTimerMinutes -> {
                 viewModelScope.launch {
                     updateSleepTimerMinutesUseCase(intent.minutes)
-                    _data.update { it.copy(sleepTimerMinutes = intent.minutes) }
+                    _uiState.update { it.copy(sleepTimerMinutes = intent.minutes) }
                 }
             }
 
             PlayerDetailIntent.OnStartSleepTimer -> {
-                sleepTimerRunner.start(total = data.value.sleepTimerMinutes.minutes)
-                _data.update {
+                sleepTimerRunner.start(total = uiState.value.sleepTimerMinutes.minutes)
+                _uiState.update {
                     it.copy(
                         sleepTimerRemaining = sleepTimerRunner.remaining,
                         isSleepTimerMenuVisible = false,
@@ -322,7 +324,7 @@ class PlayerDetailViewModel constructor(
 
             PlayerDetailIntent.OnCancelSleepTimer -> {
                 sleepTimerRunner.cancel()
-                _data.update {
+                _uiState.update {
                     it.copy(
                         sleepTimerRemaining = sleepTimerRunner.remaining,
                         isSleepTimerMenuVisible = false,
@@ -331,17 +333,17 @@ class PlayerDetailViewModel constructor(
             }
 
             PlayerDetailIntent.OnClickSleepTimerAnnouncementButton -> {
-                _data.update { it.copy(isSleepTimerAnnouncementMenuVisible = true) }
+                _uiState.update { it.copy(isSleepTimerAnnouncementMenuVisible = true) }
             }
 
             PlayerDetailIntent.OnDismissSleepTimerAnnouncementMenu -> {
-                _data.update { it.copy(isSleepTimerAnnouncementMenuVisible = false) }
+                _uiState.update { it.copy(isSleepTimerAnnouncementMenuVisible = false) }
             }
 
             is PlayerDetailIntent.OnSelectSleepTimerAnnouncement -> {
                 viewModelScope.launch {
                     updateSleepTimerAnnouncementMediaIdUseCase(intent.mediaId)
-                    _data.update { it.copy(isSleepTimerAnnouncementMenuVisible = false) }
+                    _uiState.update { it.copy(isSleepTimerAnnouncementMenuVisible = false) }
                 }
             }
 
@@ -356,12 +358,12 @@ class PlayerDetailViewModel constructor(
         val currentDuration = mediaControllerManager.currentPosition?.toDuration(DurationUnit.MILLISECONDS) ?: return
         val currentPlayingItem = mediaControllerManager.playingMediaItem
         val currentPlaylistId = mediaControllerManager.currentPlaylistId
-        val isSamePlaylist = data.value.playlistId == currentPlaylistId
-        val isSameMedia = data.value.id == currentPlayingItem?.mediaId
+        val isSamePlaylist = uiState.value.playlistId == currentPlaylistId
+        val isSameMedia = uiState.value.id == currentPlayingItem?.mediaId
 
         val repeatRangeState = mediaControllerManager.repeatRangeState
         if (isSameMedia && isSamePlaylist) {
-            _data.update {
+            _uiState.update {
                 it.copy(
                     currentDuration = currentDuration,
                     isPlaying = mediaControllerManager.isPlaying,
@@ -374,37 +376,37 @@ class PlayerDetailViewModel constructor(
             return
         }
 
-        _data.update {
+        _uiState.update {
             PlayerDetailUiState(
                 id = currentPlayingItem?.mediaId ?: "",
                 playlistId = currentPlaylistId,
-                playlistName = if (isSamePlaylist) data.value.playlistName else "",
+                playlistName = if (isSamePlaylist) uiState.value.playlistName else "",
                 title = currentPlayingItem?.mediaTitle ?: "",
                 artist = currentPlayingItem?.mediaArtist ?: "",
                 currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
                 playbackDuration = (currentPlayingItem?.mediaDurationMs ?: 0L).milliseconds,
                 imageFileFullPath = currentPlayingItem?.mediaArtworkFileUri,
                 isPlaying = mediaControllerManager.isPlaying,
-                isShuffling = data.value.isShuffling,
-                isRepeating = data.value.isRepeating,
-                playbackSpeed = data.value.playbackSpeed,
-                playbackPitchSemitone = data.value.playbackPitchSemitone,
+                isShuffling = uiState.value.isShuffling,
+                isRepeating = uiState.value.isRepeating,
+                playbackSpeed = uiState.value.playbackSpeed,
+                playbackPitchSemitone = uiState.value.playbackPitchSemitone,
                 // 같은 곡이면 즐겨찾기 상태 유지, 곡이 바뀌면 observeFavorite의 flow가 새 값으로 갱신
-                isFavorite = if (isSameMedia) data.value.isFavorite else false,
+                isFavorite = if (isSameMedia) uiState.value.isFavorite else false,
                 // 같은 곡인데 플레이리스트만 바뀌면 구독은 id 로 묶여 다시 흐르지 않는다. 그때 가사
                 // 상태를 버리면 아트워크가 눌리지 않게 되므로 이어 받는다.
-                hasLyrics = if (isSameMedia) data.value.hasLyrics else false,
-                lyricLines = if (isSameMedia) data.value.lyricLines else emptyList(),
-                isLyricsPanelVisible = data.value.isLyricsPanelVisible,
+                hasLyrics = if (isSameMedia) uiState.value.hasLyrics else false,
+                lyricLines = if (isSameMedia) uiState.value.lyricLines else emptyList(),
+                isLyricsPanelVisible = uiState.value.isLyricsPanelVisible,
                 repeatRangeStartDuration = repeatRangeState.startDuration,
                 repeatRangeEndDuration = repeatRangeState.endDuration,
-                isPlaybackSpeedMenuVisible = data.value.isPlaybackSpeedMenuVisible,
-                isPlaybackPitchMenuVisible = data.value.isPlaybackPitchMenuVisible,
+                isPlaybackSpeedMenuVisible = uiState.value.isPlaybackSpeedMenuVisible,
+                isPlaybackPitchMenuVisible = uiState.value.isPlaybackPitchMenuVisible,
                 sleepTimerRemaining = sleepTimerRunner.remaining,
-                sleepTimerMinutes = data.value.sleepTimerMinutes,
-                sleepTimerAnnouncement = data.value.sleepTimerAnnouncement,
-                isSleepTimerMenuVisible = data.value.isSleepTimerMenuVisible,
-                isSleepTimerAnnouncementMenuVisible = data.value.isSleepTimerAnnouncementMenuVisible,
+                sleepTimerMinutes = uiState.value.sleepTimerMinutes,
+                sleepTimerAnnouncement = uiState.value.sleepTimerAnnouncement,
+                isSleepTimerMenuVisible = uiState.value.isSleepTimerMenuVisible,
+                isSleepTimerAnnouncementMenuVisible = uiState.value.isSleepTimerAnnouncementMenuVisible,
             )
         }
 
@@ -415,12 +417,12 @@ class PlayerDetailViewModel constructor(
         }
     }
 
-    // 현재 재생 곡(data.id)이 바뀔 때마다 즐겨찾기/가사/표기 상태를 재구독한다.
+    // 현재 재생 곡(uiState.id)이 바뀔 때마다 즐겨찾기/가사/표기 상태를 재구독한다.
     // flatMapLatest가 이전 곡의 구독을 자동 취소하므로 별도 Job 관리가 필요 없다.
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeAudioMediaDetail() {
         viewModelScope.launch {
-            data.map { it.id.toIntOrNull() }
+            uiState.map { it.id.toIntOrNull() }
                 .distinctUntilChanged()
                 .flatMapLatest { mediaId ->
                     if (mediaId == null) {
@@ -433,7 +435,7 @@ class PlayerDetailViewModel constructor(
                     val isFavorite = aggregates?.any { it.playlist.type == PlaylistType.FAVORITE } ?: false
                     val audioMedia = aggregates?.firstOrNull()?.audioMedia
                     val lyricFileFullPath = audioMedia?.lyricFileFullPath
-                    _data.update {
+                    _uiState.update {
                         it.copy(
                             isFavorite = isFavorite,
                             hasLyrics = lyricFileFullPath != null,
@@ -456,12 +458,12 @@ class PlayerDetailViewModel constructor(
 
         if (lyricFileFullPath == null) {
             parsedLyricLines = emptyList()
-            _data.update { it.copy(lyricLines = emptyList(), activeLyricIndex = -1) }
+            _uiState.update { it.copy(lyricLines = emptyList(), activeLyricIndex = -1) }
             return
         }
         viewModelScope.launch {
             parsedLyricLines = getParsedLyricsUseCase(lyricFileFullPath)
-            _data.update {
+            _uiState.update {
                 it.copy(
                     lyricLines = parsedLyricLines.map { line -> line.text },
                     activeLyricIndex = -1,
@@ -479,14 +481,14 @@ class PlayerDetailViewModel constructor(
             val positionMs = mediaControllerManager.currentPosition ?: return
             activeLyricIndex(parsedLyricLines, positionMs)
         }
-        if (index != _data.value.activeLyricIndex) {
-            _data.update { it.copy(activeLyricIndex = index) }
+        if (index != _uiState.value.activeLyricIndex) {
+            _uiState.update { it.copy(activeLyricIndex = index) }
         }
     }
 
     private fun refreshRepeatRangeState() {
         val repeatRangeState = mediaControllerManager.repeatRangeState
-        _data.update {
+        _uiState.update {
             it.copy(
                 repeatRangeStartDuration = repeatRangeState.startDuration,
                 repeatRangeEndDuration = repeatRangeState.endDuration,
@@ -496,14 +498,14 @@ class PlayerDetailViewModel constructor(
 
     private fun refreshPlaylistName(playlistId: Int?) {
         if (playlistId == null) {
-            _data.update { it.copy(playlistName = "") }
+            _uiState.update { it.copy(playlistName = "") }
             return
         }
         viewModelScope.launch {
             val name = runCatching {
                 fetchPlaylistFlowUseCase(playlistId).first().name
             }.getOrDefault("")
-            _data.update { it.copy(playlistName = name) }
+            _uiState.update { it.copy(playlistName = name) }
         }
     }
 }

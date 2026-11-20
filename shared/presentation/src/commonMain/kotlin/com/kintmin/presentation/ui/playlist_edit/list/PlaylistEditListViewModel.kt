@@ -51,7 +51,7 @@ class PlaylistEditListViewModel constructor(
 
     private val _checkedItemIdList = MutableStateFlow(listOf<Int>())
 
-    val audioMediaListFlow: StateFlow<List<PlaylistEditListItemUiState>> =
+    private val audioMediaListFlow: StateFlow<List<PlaylistEditListItemUiState>> =
         combine(
             fetchAudioMediaListFlowUseCase(playlistId),
             _checkedItemIdList
@@ -63,21 +63,30 @@ class PlaylistEditListViewModel constructor(
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val checkedItemCountFlow = audioMediaListFlow.map { list -> list.count { it.isChecked } }
-        .distinctUntilChanged()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    private val initialHeaderData = PlaylistEditHeaderUiState(
+        id = playlistId,
+        imageFileFullPath = null,
+        name = "",
+        description = "",
+        audioMediaCount = 0,
+        playTimeDuration = "",
+    )
 
-    val headerDataFlow = fetchPlaylistFlowUseCase(playlistId).map { it.toPlaylistEditHeaderUiState() }
+    private val headerDataFlow = fetchPlaylistFlowUseCase(playlistId).map { it.toPlaylistEditHeaderUiState() }
         .distinctUntilChanged()
-        .stateIn(
-            viewModelScope, SharingStarted.WhileSubscribed(5000), PlaylistEditHeaderUiState(
-                id = playlistId,
-                imageFileFullPath = null,
-                name = "",
-                description = "",
-                audioMediaCount = 0,
-                playTimeDuration = "",
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialHeaderData)
+
+    val uiState: StateFlow<PlaylistEditListUiState> =
+        combine(audioMediaListFlow, headerDataFlow) { audioMediaList, headerData ->
+            PlaylistEditListUiState(
+                headerData = headerData,
+                audioMediaList = audioMediaList,
+                checkedItemCount = audioMediaList.count { it.isChecked },
             )
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            PlaylistEditListUiState(headerData = initialHeaderData),
         )
 
     fun sendIntent(intent: PlaylistEditListIntent) {

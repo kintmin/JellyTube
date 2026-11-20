@@ -80,6 +80,7 @@ import kotlin.math.min
 
 @Composable
 fun PlaylistDetailScreen(
+    playlistId: Int,
     navigateToBack: () -> Unit,
     navigateToAddAudioMediaScreen: (playlistId: Int) -> Unit,
     navigateToPlaylistEditScreen: (playlistId: Int, focusAudioMediaId: Int?) -> Unit,
@@ -92,15 +93,15 @@ fun PlaylistDetailScreen(
     val listViewModel = koinViewModel<PlaylistDetailListViewModel>()
     val playerBarViewModel = koinViewModel<PlayerBarViewModel>()
 
-    val headerData by headerViewModel.headerDataFlow.collectAsState()
-    val audioList by listViewModel.audioListFlow.collectAsState()
-    val currentMediaItem by playerBarViewModel.currentMediaItem.collectAsState()
+    val headerData by headerViewModel.uiState.collectAsState()
+    val listUiState by listViewModel.uiState.collectAsState()
+    val currentMediaItem by playerBarViewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
         headerViewModel.eventFlow.collect { event ->
             when (event) {
-                PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen -> navigateToAddAudioMediaScreen(headerViewModel.playlistId)
-                PlaylistDetailHeaderEvent.NavigateToEditPlaylistScreen -> navigateToPlaylistEditScreen(headerViewModel.playlistId, null)
+                PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen -> navigateToAddAudioMediaScreen(playlistId)
+                PlaylistDetailHeaderEvent.NavigateToEditPlaylistScreen -> navigateToPlaylistEditScreen(playlistId, null)
             }
         }
     }
@@ -113,7 +114,7 @@ fun PlaylistDetailScreen(
                 is PlaylistDetailListEvent.NavigateToAudioDetailScreen -> navigateToAudioDetailScreen(event.audioMediaId)
                 is PlaylistDetailListEvent.NavigateToAudioEditScreen -> navigateToAudioEditScreen(event.audioMediaId)
                 is PlaylistDetailListEvent.NavigateToPlaylistEditScreen -> navigateToPlaylistEditScreen(
-                    headerViewModel.playlistId,
+                    playlistId,
                     event.focusAudioMediaId,
                 )
                 is PlaylistDetailListEvent.ShowToast -> toaster.show(event.message)
@@ -124,7 +125,7 @@ fun PlaylistDetailScreen(
     PlaylistDetailScreen(
         navigateToBack = navigateToBack,
         headerData = headerData,
-        audioPlayDataList = audioList,
+        audioPlayDataList = listUiState.audioList,
         isBasePlaylist = headerData.isBasePlaylist,
         playerBar = currentMediaItem,
         navigateToPlayerDetail = navigateToPlayerDetail,

@@ -57,7 +57,7 @@ fun LyricsSearchScreen(
     navigateToLyricsEdit: (audioMediaId: Int) -> Unit,
 ) {
     val viewModel = koinViewModel<LyricsSearchViewModel>()
-    val data by viewModel.data.collectAsState()
+    val data by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->

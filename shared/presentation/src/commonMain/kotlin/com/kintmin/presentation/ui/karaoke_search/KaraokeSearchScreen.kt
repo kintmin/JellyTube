@@ -46,7 +46,7 @@ fun KaraokeSearchScreen(
     navigateToBack: () -> Unit,
 ) {
     val viewModel = koinViewModel<KaraokeSearchViewModel>()
-    val data by viewModel.data.collectAsState()
+    val data by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->

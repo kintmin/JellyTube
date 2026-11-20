@@ -12,12 +12,13 @@ import com.kintmin.domain.karaoke.usecase.DeleteAudioMediaKaraokeNumberUseCase
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.toMediaControlData
 import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -33,12 +34,12 @@ class AudioMediaDetailViewModel constructor(
 
     private val audioMediaId = savedStateHandle.toRoute<AudioMediaDetailScreenRoute>().audioMediaId
 
-    private val _eventFlow = MutableSharedFlow<AudioMediaDetailEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val eventChannel = Channel<AudioMediaDetailEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<AudioMediaDetailEvent> = eventChannel.receiveAsFlow()
 
     private val isDeleting = MutableStateFlow(false)
 
-    val data: StateFlow<AudioMediaDetailUiState> = combine(
+    val uiState: StateFlow<AudioMediaDetailUiState> = combine(
         fetchAudioMediaDetailFlowUseCase(audioMediaId),
         observeAudioEditSavingUseCase(audioMediaId),
         isDeleting,
@@ -80,12 +81,12 @@ class AudioMediaDetailViewModel constructor(
 
         isDeleting.value = true
         viewModelScope.launch {
-            deleteAudioMediaUseCase(audioMediaId, data.value.source)
+            deleteAudioMediaUseCase(audioMediaId, uiState.value.source)
                 .onSuccess { triggerEvent(AudioMediaDetailEvent.OnNavigateToBack) }
                 .onFailure { throwable ->
                     // 실패했으면 화면에 남아야 한다. 떠나면 지워졌는지 아닌지 알 수 없다.
                     isDeleting.value = false
-                    _eventFlow.emit(
+                    eventChannel.send(
                         AudioMediaDetailEvent.ShowToast(throwable.message ?: "음원을 삭제하지 못했습니다.")
                     )
                 }
@@ -99,7 +100,7 @@ class AudioMediaDetailViewModel constructor(
     }
 
     private fun revertAudioEdit() {
-        if (data.value.isAudioEditSaving) return
+        if (uiState.value.isAudioEditSaving) return
 
         viewModelScope.launch {
             revertAudioEditUseCase(audioMediaId).onSuccess { audioMedia ->
@@ -109,14 +110,14 @@ class AudioMediaDetailViewModel constructor(
                     mediaItem = audioMedia.toMediaControlData(),
                 )
             }.onFailure { throwable ->
-                _eventFlow.emit(AudioMediaDetailEvent.ShowToast(throwable.message ?: "원본으로 되돌리지 못했습니다."))
+                eventChannel.send(AudioMediaDetailEvent.ShowToast(throwable.message ?: "원본으로 되돌리지 못했습니다."))
             }
         }
     }
 
     private fun triggerEvent(newEvent: AudioMediaDetailEvent) {
         viewModelScope.launch {
-            _eventFlow.emit(newEvent)
+            eventChannel.send(newEvent)
         }
     }
 }

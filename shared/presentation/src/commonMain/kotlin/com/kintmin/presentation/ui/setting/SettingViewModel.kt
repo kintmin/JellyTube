@@ -15,12 +15,13 @@ import com.kintmin.domain.user.usecase.FetchUserIdUseCase
 import com.kintmin.presentation.port.StartAnomalyDataCheck
 import com.kintmin.presentation.port.StepMeasurementController
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -41,8 +42,8 @@ class SettingViewModel constructor(
     private val isImportPlaylistBottomSheetVisible = MutableStateFlow(false)
     private val isImporting = MutableStateFlow(false)
     private val deviceId = MutableStateFlow<String?>(null)
-    private val _eventFlow = MutableSharedFlow<SettingEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val eventChannel = Channel<SettingEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<SettingEvent> = eventChannel.receiveAsFlow()
 
     private val isStepEnabledFlow = fetchIsStepEnabledFlowUseCase()
 
@@ -106,13 +107,13 @@ class SettingViewModel constructor(
             }
             SettingIntent.OnClickStepTile -> {
                 viewModelScope.launch {
-                    _eventFlow.emit(SettingEvent.NavigateToStepScreen)
+                    eventChannel.send(SettingEvent.NavigateToStepScreen)
                 }
             }
             SettingIntent.OnClickAnomalyDataCheckTile -> {
                 viewModelScope.launch {
                     val started = executeAnomalyDataCheck()
-                    _eventFlow.emit(
+                    eventChannel.send(
                         SettingEvent.ShowToast(
                             if (started) "이상 데이터 점검을 시작합니다.\n완료 시 알림이 도착합니다."
                             else "이상 데이터 점검중입니다.",
@@ -122,12 +123,12 @@ class SettingViewModel constructor(
             }
             SettingIntent.OnClickAppLogTile -> {
                 viewModelScope.launch {
-                    _eventFlow.emit(SettingEvent.NavigateToAppLogScreen)
+                    eventChannel.send(SettingEvent.NavigateToAppLogScreen)
                 }
             }
             SettingIntent.OnClickImportAudioTile -> {
                 viewModelScope.launch {
-                    _eventFlow.emit(SettingEvent.LaunchAudioFilePicker)
+                    eventChannel.send(SettingEvent.LaunchAudioFilePicker)
                 }
             }
             is SettingIntent.OnAudioFilesSelected -> {
@@ -144,34 +145,34 @@ class SettingViewModel constructor(
             }
             SettingIntent.OnClickDeviceSaveTile -> {
                 viewModelScope.launch {
-                    _eventFlow.emit(SettingEvent.NavigateToDeviceSaveScreen)
+                    eventChannel.send(SettingEvent.NavigateToDeviceSaveScreen)
                 }
             }
             SettingIntent.OnClickFileShareReceiveTile -> {
                 viewModelScope.launch {
-                    _eventFlow.emit(SettingEvent.NavigateToFileShareReceiveScreen)
+                    eventChannel.send(SettingEvent.NavigateToFileShareReceiveScreen)
                 }
             }
             SettingIntent.OnClickDataMigrationSendTile -> {
                 viewModelScope.launch {
-                    _eventFlow.emit(SettingEvent.NavigateToDataMigrationSendScreen)
+                    eventChannel.send(SettingEvent.NavigateToDataMigrationSendScreen)
                 }
             }
             SettingIntent.OnClickDataMigrationReceiveTile -> {
                 viewModelScope.launch {
-                    _eventFlow.emit(SettingEvent.NavigateToDataMigrationReceiveScreen)
+                    eventChannel.send(SettingEvent.NavigateToDataMigrationReceiveScreen)
                 }
             }
             SettingIntent.OnClickDeviceIdTile -> {
                 val id = deviceId.value ?: return
                 viewModelScope.launch {
-                    _eventFlow.emit(SettingEvent.CopyDeviceId(id))
+                    eventChannel.send(SettingEvent.CopyDeviceId(id))
                 }
             }
             is SettingIntent.OnToggleIsStepEnabled -> {
                 if (intent.value) {
                     viewModelScope.launch {
-                        _eventFlow.emit(SettingEvent.RequestActivityRecognitionPermission)
+                        eventChannel.send(SettingEvent.RequestActivityRecognitionPermission)
                     }
                 } else {
                     viewModelScope.launch {
@@ -214,10 +215,10 @@ class SettingViewModel constructor(
             isImporting.value = false
 
             if (successCount > 0) {
-                _eventFlow.emit(SettingEvent.ShowToast("${successCount}개 파일을 가져왔습니다."))
+                eventChannel.send(SettingEvent.ShowToast("${successCount}개 파일을 가져왔습니다."))
             }
             errorList.distinct().forEach { error ->
-                _eventFlow.emit(SettingEvent.ShowToast(error))
+                eventChannel.send(SettingEvent.ShowToast(error))
             }
         }
     }

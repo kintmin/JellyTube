@@ -105,7 +105,7 @@ fun PlayerDetailScreen(
     navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
 ) {
     val viewModel = koinViewModel<PlayerDetailViewModel>()
-    val data by viewModel.data.collectAsState()
+    val data by viewModel.uiState.collectAsState()
     val toaster = rememberToaster()
 
     PlayerDetailScreen(

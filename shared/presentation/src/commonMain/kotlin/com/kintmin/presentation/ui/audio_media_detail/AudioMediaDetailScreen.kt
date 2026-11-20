@@ -92,7 +92,7 @@ fun AudioMediaDetailScreen(
 ) {
     val mainViewModel = koinViewModel<AudioMediaDetailViewModel>()
 
-    val data by mainViewModel.data.collectAsState()
+    val data by mainViewModel.uiState.collectAsState()
     val toaster = rememberToaster()
 
     LaunchedEffect(Unit) {

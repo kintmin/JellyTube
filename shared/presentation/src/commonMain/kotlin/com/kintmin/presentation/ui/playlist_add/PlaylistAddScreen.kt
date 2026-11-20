@@ -57,8 +57,7 @@ fun PlaylistAddScreen(
 ) {
     val mainViewModel = koinViewModel<PlaylistAddViewModel>()
 
-    val audioList by mainViewModel.audioListFlow.collectAsState()
-    val checkedItemCount by mainViewModel.checkedItemCountFlow.collectAsState()
+    val uiState by mainViewModel.uiState.collectAsState()
     val toaster = rememberToaster()
 
     LaunchedEffect(Unit) {
@@ -72,8 +71,8 @@ fun PlaylistAddScreen(
 
     PlaylistAddScreen(
         navigateToBack = navigateToBack,
-        dataList = audioList,
-        checkedItemCount = checkedItemCount,
+        dataList = uiState.audioList,
+        checkedItemCount = uiState.checkedItemCount,
         sendIntent = mainViewModel::sendIntent,
     )
 }

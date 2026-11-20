@@ -14,12 +14,14 @@ import com.kintmin.domain.lyrics.usecase.SaveEditedLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SplitLyricsByNewlineUseCase
 import com.kintmin.presentation.ui.lyrics_edit.LyricsEditUiState.EditRow
 import com.kintmin.presentation.ui.lyrics_edit.navigation.LyricsEditScreenRoute
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -39,10 +41,10 @@ class LyricsEditViewModel constructor(
     private var previousLyricFileFullPath: String? = null
     private var lastDeletedRow: Pair<Int, EditRow>? = null
 
-    private val _eventFlow = MutableSharedFlow<LyricsEditEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val eventChannel = Channel<LyricsEditEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<LyricsEditEvent> = eventChannel.receiveAsFlow()
 
-    private val _data = MutableStateFlow(
+    private val _uiState = MutableStateFlow(
         LyricsEditUiState(
             title = "",
             durationMs = 0L,
@@ -52,7 +54,7 @@ class LyricsEditViewModel constructor(
             isDirty = false,
         )
     )
-    val data = _data.asStateFlow()
+    val uiState: StateFlow<LyricsEditUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -107,7 +109,7 @@ class LyricsEditViewModel constructor(
                         val rows = loadedRows.ifEmpty {
                             listOf(newRow(timeMs = 0L, text = "", isModified = false))
                         }
-                        _data.update {
+                        _uiState.update {
                             it.copy(
                                 title = title,
                                 durationMs = durationMs,
@@ -118,7 +120,7 @@ class LyricsEditViewModel constructor(
                             )
                         }
                     } else {
-                        _data.update { it.copy(title = title, durationMs = durationMs) }
+                        _uiState.update { it.copy(title = title, durationMs = durationMs) }
                     }
                 }
         }
@@ -155,7 +157,7 @@ class LyricsEditViewModel constructor(
         )
 
     private fun changeTime(rowId: Int, timeMs: Long) {
-        _data.update { state ->
+        _uiState.update { state ->
             state.copy(
                 // LRC 는 시간 순이어야 한다. 같은 시간끼리는 원래 순서를 지킨다(sortedBy 는 안정 정렬).
                 rows = state.rows
@@ -167,7 +169,7 @@ class LyricsEditViewModel constructor(
     }
 
     private fun changeText(rowId: Int, text: String) {
-        _data.update { state ->
+        _uiState.update { state ->
             state.copy(
                 rows = state.rows.map { if (it.id == rowId) it.copy(text = text, isModified = true) else it },
                 isDirty = true,
@@ -176,7 +178,7 @@ class LyricsEditViewModel constructor(
     }
 
     private fun changeTranslation(rowId: Int, text: String) {
-        _data.update { state ->
+        _uiState.update { state ->
             state.copy(
                 rows = state.rows.map { if (it.id == rowId) it.copy(translation = text, isModified = true) else it },
                 isDirty = true,
@@ -185,7 +187,7 @@ class LyricsEditViewModel constructor(
     }
 
     private fun changeTransliteration(rowId: Int, text: String) {
-        _data.update { state ->
+        _uiState.update { state ->
             state.copy(
                 rows = state.rows.map { if (it.id == rowId) it.copy(transliteration = text, isModified = true) else it },
                 isDirty = true,
@@ -194,7 +196,7 @@ class LyricsEditViewModel constructor(
     }
 
     private fun addRowBelow(rowId: Int) {
-        _data.update { state ->
+        _uiState.update { state ->
             val index = state.rows.indexOfFirst { it.id == rowId }
             if (index < 0) return@update state
             val baseTime = state.rows[index].timeMs
@@ -205,24 +207,24 @@ class LyricsEditViewModel constructor(
     }
 
     private fun deleteRow(rowId: Int) {
-        val index = _data.value.rows.indexOfFirst { it.id == rowId }
+        val index = _uiState.value.rows.indexOfFirst { it.id == rowId }
         if (index < 0) return
-        lastDeletedRow = index to _data.value.rows[index]
-        _data.update { state -> state.copy(rows = state.rows.filterNot { it.id == rowId }, isDirty = true) }
-        viewModelScope.launch { _eventFlow.emit(LyricsEditEvent.ShowUndoDeleteRow) }
+        lastDeletedRow = index to _uiState.value.rows[index]
+        _uiState.update { state -> state.copy(rows = state.rows.filterNot { it.id == rowId }, isDirty = true) }
+        viewModelScope.launch { eventChannel.send(LyricsEditEvent.ShowUndoDeleteRow) }
     }
 
     private fun undoDeleteRow() {
         val (index, row) = lastDeletedRow ?: return
         lastDeletedRow = null
-        _data.update { state ->
+        _uiState.update { state ->
             val rows = state.rows.toMutableList().apply { add(index.coerceAtMost(size), row) }
             state.copy(rows = rows)
         }
     }
 
     private fun splitByNewline() {
-        _data.update { state ->
+        _uiState.update { state ->
             val oldRows = state.rows
             val split = splitLyricsByNewlineUseCase(
                 oldRows.map { LyricsLine(timeMs = it.timeMs, text = it.text) },
@@ -243,10 +245,10 @@ class LyricsEditViewModel constructor(
     }
 
     private fun save() {
-        if (_data.value.isSaving) return
+        if (_uiState.value.isSaving) return
         viewModelScope.launch {
-            _data.update { it.copy(isSaving = true) }
-            val state = _data.value
+            _uiState.update { it.copy(isSaving = true) }
+            val state = _uiState.value
             val rows = state.rows
             val result = saveEditedLyricsUseCase(
                 audioMediaId = audioMediaId,
@@ -257,12 +259,12 @@ class LyricsEditViewModel constructor(
                 hasTransliteration = state.hasTransliteration,
                 previousLyricFileFullPath = previousLyricFileFullPath,
             )
-            _data.update { it.copy(isSaving = false) }
+            _uiState.update { it.copy(isSaving = false) }
             if (result.isSuccess) {
-                _eventFlow.emit(LyricsEditEvent.ShowToast("가사를 저장했습니다."))
-                _eventFlow.emit(LyricsEditEvent.NavigateToBack)
+                eventChannel.send(LyricsEditEvent.ShowToast("가사를 저장했습니다."))
+                eventChannel.send(LyricsEditEvent.NavigateToBack)
             } else {
-                _eventFlow.emit(LyricsEditEvent.ShowToast("가사를 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요."))
+                eventChannel.send(LyricsEditEvent.ShowToast("가사를 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요."))
             }
         }
     }

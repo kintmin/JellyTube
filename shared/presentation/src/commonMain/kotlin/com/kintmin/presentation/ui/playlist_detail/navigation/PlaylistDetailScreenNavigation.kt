@@ -33,6 +33,7 @@ fun NavGraphBuilder.playlistDetail(
     composable<PlaylistDetailScreenRoute> { backStackEntry ->
         val route = backStackEntry.toRoute<PlaylistDetailScreenRoute>()
         PlaylistDetailScreen(
+            playlistId = route.playlistId,
             navigateToBack = navigateToBack,
             navigateToAddAudioMediaScreen = navigateToAddAudioMediaScreen,
             navigateToPlaylistEditScreen = navigateToPlaylistEditScreen,

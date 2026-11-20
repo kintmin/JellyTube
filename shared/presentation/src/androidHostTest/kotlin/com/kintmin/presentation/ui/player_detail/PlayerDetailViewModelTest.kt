@@ -96,12 +96,12 @@ class PlayerDetailViewModelTest {
     fun `타이머 창이 떠 있는 동안 곡이 바뀌어도 창이 닫히지 않는다`() {
         val viewModel = viewModel()
         viewModel.sendIntent(PlayerDetailIntent.OnClickSleepTimerButton)
-        assertTrue(viewModel.data.value.isSleepTimerMenuVisible)
+        assertTrue(viewModel.uiState.value.isSleepTimerMenuVisible)
 
         playing = mediaControlData("2")
         viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
 
-        assertTrue(viewModel.data.value.isSleepTimerMenuVisible)
+        assertTrue(viewModel.uiState.value.isSleepTimerMenuVisible)
     }
 
     @Test
@@ -112,7 +112,7 @@ class PlayerDetailViewModelTest {
         playing = mediaControlData("2")
         viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
 
-        assertTrue(viewModel.data.value.isSleepTimerAnnouncementMenuVisible)
+        assertTrue(viewModel.uiState.value.isSleepTimerAnnouncementMenuVisible)
     }
 
     @Test
@@ -122,7 +122,7 @@ class PlayerDetailViewModelTest {
         playing = mediaControlData("2")
         viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
 
-        assertEquals(10.minutes, viewModel.data.value.sleepTimerRemaining)
+        assertEquals(10.minutes, viewModel.uiState.value.sleepTimerRemaining)
     }
 
     @Test
@@ -133,7 +133,7 @@ class PlayerDetailViewModelTest {
         viewModel.sendIntent(PlayerDetailIntent.OnStartSleepTimer)
 
         verify(exactly = 1) { sleepTimerRunner.start(total = 30.minutes) }
-        assertFalse(viewModel.data.value.isSleepTimerMenuVisible)
+        assertFalse(viewModel.uiState.value.isSleepTimerMenuVisible)
     }
 
     @Test
@@ -145,8 +145,8 @@ class PlayerDetailViewModelTest {
         viewModel.sendIntent(PlayerDetailIntent.OnCancelSleepTimer)
 
         verify(exactly = 1) { sleepTimerRunner.cancel() }
-        assertFalse(viewModel.data.value.isSleepTimerMenuVisible)
-        assertEquals(null, viewModel.data.value.sleepTimerRemaining)
+        assertFalse(viewModel.uiState.value.isSleepTimerMenuVisible)
+        assertEquals(null, viewModel.uiState.value.sleepTimerRemaining)
     }
 
     // ---- 가사 세 상태 ----
@@ -157,9 +157,9 @@ class PlayerDetailViewModelTest {
         val viewModel = viewModel()
 
         // currentPosition 은 3초. 2초 줄이 활성이다.
-        assertTrue(viewModel.data.value.hasLyrics)
-        assertEquals(1, viewModel.data.value.activeLyricIndex)
-        assertEquals("두 번째 줄", viewModel.data.value.currentLyricLine)
+        assertTrue(viewModel.uiState.value.hasLyrics)
+        assertEquals(1, viewModel.uiState.value.activeLyricIndex)
+        assertEquals("두 번째 줄", viewModel.uiState.value.currentLyricLine)
     }
 
     @Test
@@ -167,10 +167,10 @@ class PlayerDetailViewModelTest {
         givenUnsyncedLyrics()
         val viewModel = viewModel()
 
-        assertTrue(viewModel.data.value.hasLyrics)
-        assertEquals(-1, viewModel.data.value.activeLyricIndex)
-        assertEquals("", viewModel.data.value.currentLyricLine)
-        assertEquals(2, viewModel.data.value.lyricLines.size)
+        assertTrue(viewModel.uiState.value.hasLyrics)
+        assertEquals(-1, viewModel.uiState.value.activeLyricIndex)
+        assertEquals("", viewModel.uiState.value.currentLyricLine)
+        assertEquals(2, viewModel.uiState.value.lyricLines.size)
     }
 
     @Test
@@ -179,10 +179,10 @@ class PlayerDetailViewModelTest {
         val viewModel = viewModel()
 
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
-        assertTrue(viewModel.data.value.showsLyricsPanel)
+        assertTrue(viewModel.uiState.value.showsLyricsPanel)
 
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
-        assertFalse(viewModel.data.value.showsLyricsPanel)
+        assertFalse(viewModel.uiState.value.showsLyricsPanel)
     }
 
     @Test
@@ -190,17 +190,17 @@ class PlayerDetailViewModelTest {
         givenSyncedLyrics()
         val viewModel = viewModel()
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
-        assertTrue(viewModel.data.value.showsLyricsPanel)
+        assertTrue(viewModel.uiState.value.showsLyricsPanel)
 
         lyricFilePath = null
         parsedLines = emptyList()
         playing = mediaControlData("2")
         viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
 
-        assertFalse(viewModel.data.value.hasLyrics)
-        assertFalse(viewModel.data.value.showsLyricsPanel)
+        assertFalse(viewModel.uiState.value.hasLyrics)
+        assertFalse(viewModel.uiState.value.showsLyricsPanel)
         // 사용자의 뜻은 지우지 않는다 — 가사 있는 곡이 오면 패널이 다시 뜬다.
-        assertTrue(viewModel.data.value.isLyricsPanelVisible)
+        assertTrue(viewModel.uiState.value.isLyricsPanelVisible)
     }
 
     @Test
@@ -210,7 +210,7 @@ class PlayerDetailViewModelTest {
 
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
 
-        assertTrue(viewModel.data.value.showsLyricsPanel)
+        assertTrue(viewModel.uiState.value.showsLyricsPanel)
     }
 
     @Test
@@ -233,7 +233,7 @@ class PlayerDetailViewModelTest {
             ),
             events,
         )
-        assertFalse(viewModel.data.value.showsLyricsPanel)
+        assertFalse(viewModel.uiState.value.showsLyricsPanel)
         collector.cancel()
     }
 
@@ -247,8 +247,8 @@ class PlayerDetailViewModelTest {
 
         val viewModel = viewModel()
 
-        assertEquals("고친 제목", viewModel.data.value.title)
-        assertEquals("고친 아티스트", viewModel.data.value.artist)
+        assertEquals("고친 제목", viewModel.uiState.value.title)
+        assertEquals("고친 아티스트", viewModel.uiState.value.artist)
     }
 
     @Test
@@ -257,7 +257,7 @@ class PlayerDetailViewModelTest {
 
         val viewModel = viewModel()
 
-        assertEquals("제목1", viewModel.data.value.title)
+        assertEquals("제목1", viewModel.uiState.value.title)
     }
 
     private fun givenSyncedLyrics() {

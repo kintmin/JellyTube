@@ -38,7 +38,7 @@ class PlayerBarViewModelTest {
 
         viewModel.sendIntent(PlayerBarIntent.OnRefreshMediaData)
 
-        val state = viewModel.currentMediaItem.value
+        val state = viewModel.uiState.value
         assertEquals("7", state.id)
         assertTrue(state.isPlaying)
         assertEquals(3_000L.milliseconds, state.currentDuration)
@@ -53,6 +53,6 @@ class PlayerBarViewModelTest {
 
         viewModel.sendIntent(PlayerBarIntent.OnRefreshMediaData)
 
-        assertEquals(40_000L.milliseconds, viewModel.currentMediaItem.value.playbackDuration)
+        assertEquals(40_000L.milliseconds, viewModel.uiState.value.playbackDuration)
     }
 }
