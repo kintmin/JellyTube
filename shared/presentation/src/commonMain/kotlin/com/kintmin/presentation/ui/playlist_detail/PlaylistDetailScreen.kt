@@ -74,6 +74,7 @@ import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderUi
 import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderViewModel
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListEvent
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListIntent
+import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListEmptyView
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemView
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewModel
 import kotlinx.coroutines.flow.filter
@@ -295,6 +296,19 @@ fun PlaylistDetailScreen(
                         sendIntent = sendPlaylistDetailHeaderIntent,
                     )
                 }
+                if (audioPlayDataList.isEmpty()) {
+                    item {
+                        PlaylistDetailListEmptyView(
+                            modifier = Modifier,
+                            searchText = searchInput,
+                            isBasePlaylist = isBasePlaylist,
+                            onClickAdd = {
+                                sendPlaylistDetailHeaderIntent(PlaylistDetailHeaderIntent.OnClickAdd)
+                            },
+                        )
+                    }
+                }
+
                 // 끄는 동안의 순서는 reorderState 가 들고 있다. 검색 중에는 목록이 필터
                 // 결과라 끌어 옮기는 뜻이 정의되지 않으므로 원본을 그대로 그린다.
                 val rowList = if (isSearching) audioPlayDataList else reorderState.items
@@ -433,6 +447,24 @@ fun PlaylistDetailScreenPreview() {
             navigateToBack = {},
             headerData = PlaylistDetailHeaderUiState.getMock(),
             audioPlayDataList = PlaylistDetailListItemUiState.getMockList(),
+            isBasePlaylist = false,
+            playerBar = PlayerBarUiState.getMock(),
+            navigateToPlayerDetail = {},
+            sendPlaylistDetailListIntent = {},
+            sendPlaylistDetailHeaderIntent = {},
+            sendPlayerBarIntent = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+fun PlaylistDetailScreenEmptyPreview() {
+    JellyTubeTheme {
+        PlaylistDetailScreen(
+            navigateToBack = {},
+            headerData = PlaylistDetailHeaderUiState.getMock(),
+            audioPlayDataList = emptyList(),
             isBasePlaylist = false,
             playerBar = PlayerBarUiState.getMock(),
             navigateToPlayerDetail = {},
