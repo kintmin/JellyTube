@@ -393,20 +393,21 @@ fun PlayerDetailScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // 재생 기능 — 셔플과 반복이 양 끝을 잡아 좌 1 : 우 1 로 대칭이다.
+                // 재생 기능 — 셔플과 반복이 양옆 빈 자리의 가운데에 서서 좌 1 : 우 1 로 대칭이다.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
-                        Icon(
-                            modifier = Modifier.size(24.dp),
-                            imageVector = Icons.Rounded.Shuffle,
-                            contentDescription = if (data.isShuffling) "셔플 켜짐" else "셔플 꺼짐",
-                            tint = if (data.isShuffling) seaBlue80 else Color.White.copy(alpha = 0.6f),
-                        )
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
+                            Icon(
+                                modifier = Modifier.size(24.dp),
+                                imageVector = Icons.Rounded.Shuffle,
+                                contentDescription = if (data.isShuffling) "셔플 켜짐" else "셔플 꺼짐",
+                                tint = if (data.isShuffling) seaBlue80 else Color.White.copy(alpha = 0.6f),
+                            )
+                        }
                     }
-                    Spacer(modifier = Modifier.weight(1f))
                     IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
                         Icon(
                             modifier = Modifier.size(48.dp),
@@ -442,14 +443,15 @@ fun PlayerDetailScreen(
                             tint = Color.White,
                         )
                     }
-                    Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) }) {
-                        Icon(
-                            modifier = Modifier.size(24.dp),
-                            imageVector = Icons.Rounded.Repeat,
-                            contentDescription = if (data.isRepeating) "반복 켜짐" else "반복 꺼짐",
-                            tint = if (data.isRepeating) seaBlue80 else Color.White.copy(alpha = 0.6f),
-                        )
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) }) {
+                            Icon(
+                                modifier = Modifier.size(24.dp),
+                                imageVector = Icons.Rounded.Repeat,
+                                contentDescription = if (data.isRepeating) "반복 켜짐" else "반복 꺼짐",
+                                tint = if (data.isRepeating) seaBlue80 else Color.White.copy(alpha = 0.6f),
+                            )
+                        }
                     }
                 }
 
