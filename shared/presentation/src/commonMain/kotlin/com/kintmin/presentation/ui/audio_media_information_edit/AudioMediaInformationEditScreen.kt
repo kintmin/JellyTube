@@ -44,6 +44,8 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import okio.Path.Companion.toPath
@@ -100,8 +102,8 @@ fun AudioMediaInformationEditScreen(
                 title = {
                     Text(
                         text = "미디어 수정",
-                        fontSize = 16.sp,
-                        lineHeight = 16.sp,
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
                     )
                 },
                 navigationIcon = {

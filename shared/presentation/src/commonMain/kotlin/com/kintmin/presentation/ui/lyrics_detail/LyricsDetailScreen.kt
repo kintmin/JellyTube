@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -78,8 +80,8 @@ fun LyricsDetailScreen(
                             .filter { it.isNotBlank() }
                             .joinToString(" · ")
                             .ifBlank { "가사" },
-                        fontSize = 16.sp,
-                        lineHeight = 16.sp,
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

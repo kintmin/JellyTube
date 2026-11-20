@@ -44,6 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemUiState
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemView
@@ -83,8 +85,8 @@ fun PlaylistAddScreen(
                 title = {
                     Text(
                         text = "플레이리스트 추가",
-                        fontSize = 16.sp,
-                        lineHeight = 16.sp,
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
                     )
                 },
                 navigationIcon = {

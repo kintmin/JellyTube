@@ -29,6 +29,8 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.kintmin.presentation.platform.KeepScreenOnEffect
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.ui.setting.data_migration_send.view.DataMigrationSendStatusView
 import com.kintmin.presentation.ui.setting.dialog.SettingConfirmDialog
 import com.kintmin.presentation.ui.setting.section.SettingRunningTaskView
@@ -81,7 +83,13 @@ fun SettingDataMigrationSendScreen(
         topBar = {
             TopAppBar(
                 expandedHeight = topAppBarHeight,
-                title = { Text("다른 기기로 데이터 보내기") },
+                title = {
+                    Text(
+                        text = "다른 기기로 데이터 보내기",
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { if (uiState.isSending) isStopDialogVisible = true else navigateToBack() }) {
                         Icon(

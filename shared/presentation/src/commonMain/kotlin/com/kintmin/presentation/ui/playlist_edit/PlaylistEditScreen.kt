@@ -59,6 +59,8 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.animation.FocusSpreadOverlay
 import com.kintmin.presentation.theme.gray10
 import com.kintmin.presentation.theme.gray40
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderUiState
@@ -172,8 +174,8 @@ fun PlaylistEditScreen(
                 title = {
                     Text(
                         text = "플레이리스트 편집",
-                        fontSize = 16.sp,
-                        lineHeight = 16.sp,
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
                     )
                 },
                 navigationIcon = {

@@ -49,6 +49,8 @@ import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.bloodyRed100
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditCompactControlsView
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditControlsView
@@ -146,12 +148,17 @@ fun AudioEditScreen(
                     if (isCompactHeight) {
                         Text(
                             text = data.audioMediaName,
-                            fontSize = 17.sp,
+                            fontSize = topAppBarDetailTitleFontSize,
+                            lineHeight = topAppBarDetailTitleLineHeight,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                     } else {
-                        Text(text = "음원 편집")
+                        Text(
+                            text = "음원 편집",
+                            fontSize = topAppBarDetailTitleFontSize,
+                            lineHeight = topAppBarDetailTitleLineHeight,
+                        )
                     }
                 },
                 // 압축 배치에서는 평소 높이도 파형 자리를 많이 뺏어 더 낮춘다

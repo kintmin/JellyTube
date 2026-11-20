@@ -42,6 +42,8 @@ import com.kintmin.presentation.platform.rememberSystemSettingsOpener
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.ui.setting.device_save.ringtone.SettingDeviceSaveRingtoneScreen
 
 @Composable
@@ -91,7 +93,13 @@ fun SettingDeviceSaveScreen(
         topBar = {
             TopAppBar(
                 expandedHeight = topAppBarHeight,
-                title = { Text("파일 기기에 저장하기") },
+                title = {
+                    Text(
+                        text = "파일 기기에 저장하기",
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = navigateToBack) {
                         Icon(

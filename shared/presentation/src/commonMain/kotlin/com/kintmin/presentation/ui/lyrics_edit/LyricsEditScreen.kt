@@ -41,6 +41,8 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.common.wheel_picker.TimePickerBottomSheet
 import com.kintmin.presentation.ui.lyrics_edit.dialog.LyricsEditExitDialog
@@ -125,8 +127,8 @@ fun LyricsEditScreen(
                 title = {
                     Text(
                         text = data.title.ifBlank { "가사 수정" },
-                        fontSize = 16.sp,
-                        lineHeight = 16.sp,
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

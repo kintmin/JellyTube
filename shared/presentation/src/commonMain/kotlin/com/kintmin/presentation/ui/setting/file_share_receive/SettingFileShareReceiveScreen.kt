@@ -47,6 +47,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.keepsReceivingInBackground
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 
 @Composable
 fun SettingFileShareReceiveScreen(
@@ -75,7 +77,13 @@ fun SettingFileShareReceiveScreen(
         topBar = {
             TopAppBar(
                 expandedHeight = topAppBarHeight,
-                title = { Text("PC에서 공유받기") },
+                title = {
+                    Text(
+                        text = "PC에서 공유받기",
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = navigateToBack) {
                         Icon(

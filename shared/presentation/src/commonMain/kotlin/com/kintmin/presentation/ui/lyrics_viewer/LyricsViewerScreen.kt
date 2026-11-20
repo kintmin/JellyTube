@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.lyrics_viewer.dialog.LyricsDeleteDialog
 import kotlinx.coroutines.delay
@@ -114,8 +116,8 @@ fun LyricsViewerScreen(
                 title = {
                     Text(
                         text = data.title.ifBlank { "가사" },
-                        fontSize = 16.sp,
-                        lineHeight = 16.sp,
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

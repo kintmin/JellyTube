@@ -27,6 +27,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.domain.step.model.YearMonth
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import kotlinx.datetime.LocalDate
 
 @Composable
@@ -76,7 +78,13 @@ fun StepScreen(
         topBar = {
             TopAppBar(
                 expandedHeight = topAppBarHeight,
-                title = { Text("걸음수 현황") },
+                title = {
+                    Text(
+                        text = "걸음수 현황",
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = navigateToBack) {
                         Icon(
