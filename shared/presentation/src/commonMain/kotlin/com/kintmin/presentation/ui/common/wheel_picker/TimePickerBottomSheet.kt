@@ -1,11 +1,13 @@
 package com.kintmin.presentation.ui.common.wheel_picker
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import com.kintmin.presentation.theme.JellyTubeTheme
 
@@ -64,10 +65,9 @@ fun TimePickerBottomSheet(
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // 목록 시트와 달리 내용이 가운데 대칭이라 제목도 가운데 둔다. 왼쪽에 두면 혼자 비껴 보인다.
             Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                modifier = Modifier.padding(bottom = 12.dp),
                 text = "시작 시간 설정",
                 style = MaterialTheme.typography.titleLarge,
             )
@@ -91,16 +91,20 @@ fun TimePickerBottomSheet(
                 }
             }
 
-            // 시트가 내비게이션 바 인셋을 이미 주므로 BottomActionBar 가 아니라 버튼만 쓴다.
-            BottomActionButton(
-                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
-                text = "확인",
+            // 목록 위에 뜨는 BottomActionButton 과 달리 시트 바닥에 붙은 버튼이라 그림자를 주지 않는다.
+            Button(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 16.dp)
+                    .height(48.dp),
                 onClick = {
                     val h = if (showHours) hours else 0
                     val totalMs = ((h * 60L + minutes) * 60L + seconds) * 1_000L + centiseconds * 10L
                     onConfirm(totalMs)
                 },
-            )
+            ) {
+                Text("확인")
+            }
         }
     }
 }

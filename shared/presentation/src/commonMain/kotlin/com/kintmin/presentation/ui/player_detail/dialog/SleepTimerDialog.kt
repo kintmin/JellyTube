@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
 import androidx.compose.material3.Button
@@ -90,7 +89,8 @@ fun SleepTimerDialog(
                 onValueChange = onSelectMinutes,
                 label = "분",
                 formatter = { it.toString() },
-                modifier = Modifier.width(96.dp),
+                // 휠은 끌어서 쓰므로 손가락이 닿을 폭을 넉넉히 둔다.
+                modifier = Modifier.fillMaxWidth(0.6f),
             )
 
             Spacer(modifier = Modifier.height(8.dp))
