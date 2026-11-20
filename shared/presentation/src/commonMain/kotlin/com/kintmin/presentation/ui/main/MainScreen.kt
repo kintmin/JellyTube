@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,6 +58,10 @@ import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.theme.topAppBarRootTitleFontSize
+import com.kintmin.presentation.theme.topAppBarRootTitleLineHeight
 import com.kintmin.presentation.ui.custom_ui.data_table.AgeColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.DataTableView
 import com.kintmin.presentation.ui.custom_ui.data_table.DepartmentColumn
@@ -215,9 +220,14 @@ fun MainScreen(
             }
             Column {
                 TopAppBar(
+                    expandedHeight = topAppBarHeight,
                     title = {
                         Text(
                             text = title,
+                            fontSize = topAppBarRootTitleFontSize,
+                            lineHeight = topAppBarRootTitleLineHeight,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             modifier = if (selectedTab == MainTabItem.Search) {
                                 Modifier.clickable {
                                     sendYoutubeDownloadIntent(
@@ -242,6 +252,7 @@ fun MainScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Link,
+                                    modifier = Modifier.size(topAppBarIconSize),
                                     contentDescription = "검색창 열기",
                                 )
                             }
@@ -254,6 +265,7 @@ fun MainScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Settings,
+                                    modifier = Modifier.size(topAppBarIconSize),
                                     contentDescription = "설정 화면으로 이동",
                                 )
                             }
