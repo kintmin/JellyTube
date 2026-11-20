@@ -295,13 +295,12 @@ fun PlayerDetailScreen(
                                 )
                             }
                             // 지금 가사는 그림 위에 얹는다. 세로를 따로 쓰지 않고, 보여 줄 줄이
-                            // 없는 곡에서는 아예 그리지 않아 그림이 깨끗하다.
-                            if (data.currentLyricLine.isNotBlank()) {
-                                CurrentLyricOverlayView(
-                                    text = data.currentLyricLine,
-                                    modifier = Modifier.align(Alignment.BottomCenter),
-                                )
-                            }
+                            // 없는 곡에서는 막까지 걷혀 그림이 깨끗하다. 뜨고 지는 것은
+                            // 오버레이가 스스로 다룬다.
+                            CurrentLyricOverlayView(
+                                line = data.currentLyricLine,
+                                modifier = Modifier.align(Alignment.BottomCenter),
+                            )
                         }
                     }
                 }
@@ -454,7 +453,9 @@ fun PlayerDetailScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                // 48dp 다. 이 간격이 재생 버튼의 높이를 정한다 — 아래 두 줄의 두께가 고정이라
+                // 여기를 줄이면 버튼이 그만큼 내려앉는다. 손이 기억하는 자리라 바꾸지 않는다.
+                Spacer(modifier = Modifier.height(48.dp))
 
                 // 재생 부가 — 지금 걸려 있는 값과 어디서 재생 중인지.
                 // 양 끝을 같은 폭으로 잡아야 가운데 글자가 화면 중앙에 선다.
