@@ -51,7 +51,8 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.theme.softRed
-import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
+import com.kintmin.presentation.ui.playlist_detail.dialog.DeleteAudioMediaFileDialog
+import com.kintmin.presentation.ui.playlist_detail.dialog.RemoveAudioMediaFromPlaylistDialog
 import okio.Path.Companion.toPath
 
 @Composable
@@ -64,19 +65,29 @@ fun PlaylistDetailListItemView(
     sendIntent: (PlaylistDetailListIntent) -> Unit,
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
-    var isShowDeleteDialog by remember { mutableStateOf(false) }
+    var isShowRemoveDialog by remember { mutableStateOf(false) }
+    var isShowDeleteFileDialog by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
 
     Card(
         modifier,
         shape = RectangleShape,
     ) {
-        DeleteFullAudioMediaListDialog(
-            isShow = isShowDeleteDialog,
-            onDismiss = { isShowDeleteDialog = false },
-            selectedMediaCount = 1,
-            deleteAudioMediaList = {
-                sendIntent(PlaylistDetailListIntent.OnClickDeleteAudioMediaInPlaylist(data))
+        RemoveAudioMediaFromPlaylistDialog(
+            showDialog = isShowRemoveDialog,
+            onDismiss = { isShowRemoveDialog = false },
+            mediaName = data.mediaName,
+            removeFromPlaylist = {
+                sendIntent(PlaylistDetailListIntent.OnClickRemoveFromPlaylist(data))
+            },
+        )
+
+        DeleteAudioMediaFileDialog(
+            showDialog = isShowDeleteFileDialog,
+            onDismiss = { isShowDeleteFileDialog = false },
+            mediaName = data.mediaName,
+            deleteAudioMediaFile = {
+                sendIntent(PlaylistDetailListIntent.OnClickDeleteAudioMediaFile(data))
             },
         )
 
@@ -211,12 +222,23 @@ fun PlaylistDetailListItemView(
                             },
                         )
                         HorizontalDivider()
+                        // 미분류·전체 같은 기본 플레이리스트는 트랙만 뺄 수 없다.
+                        if (!isBasePlaylist) {
+                            DropdownMenuItem(
+                                text = { Text("플레이리스트에서 빼기") },
+                                colors = MenuDefaults.itemColors(textColor = softRed),
+                                onClick = {
+                                    isMenuExpanded = false
+                                    isShowRemoveDialog = true
+                                },
+                            )
+                        }
                         DropdownMenuItem(
-                            text = { Text("삭제") },
+                            text = { Text("음원 파일 삭제") },
                             colors = MenuDefaults.itemColors(textColor = softRed),
                             onClick = {
                                 isMenuExpanded = false
-                                isShowDeleteDialog = true
+                                isShowDeleteFileDialog = true
                             },
                         )
                     }
