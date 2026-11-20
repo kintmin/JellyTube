@@ -60,4 +60,7 @@ WHERE id = :id
 
     @Query("UPDATE PLAYLIST SET imageFileNameWithExt = null WHERE id = :id")
     suspend fun deletePlaylistImage(id: Int)
+
+    @Query("UPDATE PLAYLIST SET imageFileNameWithExt = :imageFileNameWithExt, isCustomImage = :isCustomImage WHERE id = :id")
+    suspend fun updatePlaylistImage(id: Int, imageFileNameWithExt: String?, isCustomImage: Boolean)
 }

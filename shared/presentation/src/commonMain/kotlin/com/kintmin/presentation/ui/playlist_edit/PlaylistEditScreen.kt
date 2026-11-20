@@ -3,18 +3,11 @@ package com.kintmin.presentation.ui.playlist_edit
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,13 +16,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,16 +42,20 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.platform.rememberImagePicker
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.animation.FocusSpreadOverlay
 import com.kintmin.presentation.theme.gray10
+import com.kintmin.presentation.theme.softRed
 import com.kintmin.presentation.theme.gray40
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
@@ -67,12 +64,16 @@ import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderUiState
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderView
+import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListEvent
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListIntent
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListItemUiState
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListItemView
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListViewModel
 import com.kintmin.presentation.remember_state.rememberReorderState
 import com.kintmin.presentation.ui.common.ReorderableItem
+import com.kintmin.presentation.ui.common.dragToSelect
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 
@@ -86,9 +87,22 @@ fun PlaylistEditScreen(
     val audioMediaList by mainViewModel.audioMediaListFlow.collectAsState()
     val checkedItemCount by mainViewModel.checkedItemCountFlow.collectAsState()
     val headerData by mainViewModel.headerDataFlow.collectAsState()
+    val toaster = rememberToaster()
+    val imagePicker = rememberImagePicker { imageData ->
+        mainViewModel.sendIntent(PlaylistEditListIntent.OnPickPlaylistImage(imageData))
+    }
+
+    LaunchedEffect(Unit) {
+        mainViewModel.eventFlow.collect { event ->
+            when (event) {
+                is PlaylistEditListEvent.ShowToast -> toaster.show(event.message)
+            }
+        }
+    }
 
     PlaylistEditScreen(
         navigateToBack = navigateToBack,
+        onClickPickImage = { imagePicker.launch() },
         isBasePlaylist = headerData.isBasePlaylist,
         headerData = headerData,
         dataList = audioMediaList,
@@ -102,6 +116,7 @@ fun PlaylistEditScreen(
 @Composable
 fun PlaylistEditScreen(
     navigateToBack: () -> Unit,
+    onClickPickImage: () -> Unit,
     isBasePlaylist: Boolean,
     headerData: PlaylistEditHeaderUiState,
     dataList: List<PlaylistEditListItemUiState>,
@@ -161,6 +176,14 @@ fun PlaylistEditScreen(
         consumedFocusAudioMediaId = focusAudioMediaId
     }
 
+    // 선택 중에는 상단 ✕ 와 같이, 기기 뒤로가기도 화면을 나가기 전에 선택부터 푼다.
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = checkedItemCount > 0,
+    ) {
+        sendIntent(PlaylistEditListIntent.OnClickClearCheckedItemList)
+    }
+
     DeleteFullAudioMediaListDialog(
         isShow = isShowDialog,
         onDismiss = { isShowDialog = false },
@@ -171,11 +194,12 @@ fun PlaylistEditScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
+            val isSelecting = checkedItemCount > 0
             TopAppBar(
                 expandedHeight = topAppBarHeight,
                 title = {
                     Text(
-                        text = "플레이리스트 편집",
+                        text = if (isSelecting) "${checkedItemCount}곡 선택됨" else "플레이리스트 편집",
                         fontSize = topAppBarDetailTitleFontSize,
                         lineHeight = topAppBarDetailTitleLineHeight,
                         maxLines = 1,
@@ -183,64 +207,53 @@ fun PlaylistEditScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navigateToBack() }) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBackIosNew,
-                            modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "ArrowBackIosNew"
-                        )
+                    if (isSelecting) {
+                        IconButton(onClick = { sendIntent(PlaylistEditListIntent.OnClickClearCheckedItemList) }) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                modifier = Modifier.size(topAppBarIconSize),
+                                contentDescription = "선택 해제",
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = { navigateToBack() }) {
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowBackIosNew,
+                                modifier = Modifier.size(topAppBarIconSize),
+                                contentDescription = "ArrowBackIosNew"
+                            )
+                        }
                     }
                 },
                 actions = {
-                    TextButton(onClick = { sendIntent(PlaylistEditListIntent.OnClickClearCheckedItemList) }) {
-                        Text(
-                            text = "$checkedItemCount 선택 해제",
-                            fontSize = 14.sp,
-                            lineHeight = 14.sp,
-                        )
+                    if (isSelecting) {
+                        // 휴지통만 두면 "플레이리스트에서 빼기" 로 읽힐 수 있어 글자로 못 박는다.
+                        TextButton(
+                            modifier = Modifier.padding(end = 4.dp),
+                            colors = ButtonDefaults.textButtonColors(contentColor = softRed),
+                            onClick = { isShowDialog = true },
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(20.dp),
+                                imageVector = Icons.Rounded.DeleteOutline,
+                                contentDescription = null,
+                            )
+                            Text(
+                                modifier = Modifier.padding(start = 4.dp),
+                                text = "파일 삭제",
+                            )
+                        }
                     }
                 },
             )
         },
         bottomBar = {
-            if (checkedItemCount > 0) {
-                Column(Modifier.background(MaterialTheme.colorScheme.background)) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                    ) {
-                        Button(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxSize(),
-                            shape = RectangleShape,
-                            onClick = {
-                                isShowDialog = true
-                            }) {
-                            Text(
-                                text = "음원 파일 삭제",
-                                fontSize = 14.sp,
-                            )
-                        }
-                        if (!isBasePlaylist) {
-                            TextButton(
-                                modifier = Modifier
-                                    .weight(2f)
-                                    .fillMaxSize(),
-                                shape = RectangleShape,
-                                onClick = { sendIntent(PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist) }) {
-                                Text(
-                                    text = "플레이리스트에서 빼기",
-                                    fontSize = 14.sp,
-                                )
-                            }
-                        }
-                    }
-                    Box(
-                        modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)
-                            .background(MaterialTheme.colorScheme.surface),
-                        )
+            if (checkedItemCount > 0 && !isBasePlaylist) {
+                BottomActionBar {
+                    BottomActionButton(
+                        text = "${checkedItemCount}곡 플레이리스트에서 빼기",
+                        onClick = { sendIntent(PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist) },
+                    )
                 }
             }
         }
@@ -248,7 +261,14 @@ fun PlaylistEditScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(top = innerPadding.calculateTopPadding())
+                .dragToSelect(
+                    listState = scrollState,
+                    selectableIds = reorderState.items.map { it.id },
+                    checkedIds = dataList.filter { it.isChecked }.map { it.id }.toSet(),
+                    onCheckedIdsChange = { sendIntent(PlaylistEditListIntent.OnDragSelectItems(it)) },
+                ),
+            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
             state = scrollState,
         ) {
             item(
@@ -256,6 +276,7 @@ fun PlaylistEditScreen(
             ) {
                 PlaylistEditHeaderView(
                     data = headerData,
+                    onClickPickImage = onClickPickImage,
                     sendIntent = sendIntent,
                 )
             }
@@ -306,6 +327,7 @@ fun PlaylistEditScreenPreview() {
     JellyTubeTheme {
         PlaylistEditScreen(
             navigateToBack = {},
+            onClickPickImage = {},
             isBasePlaylist = false,
             headerData = PlaylistEditHeaderUiState.getMock(),
             dataList = PlaylistEditListItemUiState.getMockList(),

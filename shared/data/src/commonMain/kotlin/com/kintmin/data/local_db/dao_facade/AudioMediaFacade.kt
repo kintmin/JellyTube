@@ -324,6 +324,23 @@ class AudioMediaFacade constructor(
         }
     }
 
+    /** 사용자가 고른 썸네일을 걷고 첫 곡의 앨범아트로 돌린다. 걷어낸 파일 이름을 돌려준다. */
+    suspend fun resetPlaylistImage(playlistId: Int): String? {
+        return db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                val playlist = playlistDao.getPlaylistById(playlistId)
+                if (!playlist.isCustomImage) return@immediateTransaction null
+
+                val firstTrackImage = runCatching {
+                    playlistTrackDao.getFirstAudioMediaWithNoLock(playlistId)
+                }.getOrNull()?.audioMediaEntity?.imageFileNameWithExt
+
+                playlistDao.updatePlaylistImage(playlistId, firstTrackImage, isCustomImage = false)
+                playlist.imageFileNameWithExt
+            }
+        }
+    }
+
     suspend fun addTrack(playlistId: Int, audioMediaIdList: List<Int>): PlaylistEntity {
         if (isAutoManagedPlaylist(playlistId)) {
             error("전체와 미분류는 추가할 수 없다.")

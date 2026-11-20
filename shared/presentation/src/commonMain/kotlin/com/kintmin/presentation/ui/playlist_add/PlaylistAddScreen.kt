@@ -1,26 +1,25 @@
 package com.kintmin.presentation.ui.playlist_add
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,28 +27,26 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.ui.common.SearchBar
+import com.kintmin.presentation.ui.common.dragToSelect
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemUiState
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemView
 
@@ -61,6 +58,16 @@ fun PlaylistAddScreen(
 
     val audioList by mainViewModel.audioListFlow.collectAsState()
     val checkedItemCount by mainViewModel.checkedItemCountFlow.collectAsState()
+    val toaster = rememberToaster()
+
+    LaunchedEffect(Unit) {
+        mainViewModel.eventFlow.collect { event ->
+            when (event) {
+                PlaylistAddEvent.NavigateToBack -> navigateToBack()
+                is PlaylistAddEvent.ShowToast -> toaster.show(event.message)
+            }
+        }
+    }
 
     PlaylistAddScreen(
         navigateToBack = navigateToBack,
@@ -74,11 +81,12 @@ fun PlaylistAddScreen(
 @Composable
 fun PlaylistAddScreen(
     navigateToBack: () -> Unit,
-    dataList: List<PlaylistAddListItemUiState>,
+    dataList: List<PlaylistAddListItemUiState>?,
     checkedItemCount: Int,
     sendIntent: (PlaylistAddIntent) -> Unit,
 ) {
     var searchText by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -105,79 +113,71 @@ fun PlaylistAddScreen(
                 },
             )
         },
-        bottomBar = {
-            Column(
-                Modifier
-                    .imePadding()
-                    .background(MaterialTheme.colorScheme.background)
+        floatingActionButton = {
+            AnimatedVisibility(
+                visible = checkedItemCount > 0,
+                enter = fadeIn() + scaleIn(),
+                exit = fadeOut() + scaleOut(),
             ) {
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RectangleShape,
-                    enabled = checkedItemCount > 0,
-                    onClick = { sendIntent(PlaylistAddIntent.OnClickAdd) }) {
-                    Text(
-                        text = "$checkedItemCount 추가하기",
-                    )
-                }
-                Box(
-                    modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)
-                        .background(MaterialTheme.colorScheme.surface),
+                ExtendedFloatingActionButton(
+                    modifier = Modifier.imePadding(),
+                    onClick = { sendIntent(PlaylistAddIntent.OnClickAdd) },
+                    shape = MaterialTheme.shapes.extraLarge,
+                    icon = { Icon(imageVector = Icons.Rounded.Add, contentDescription = null) },
+                    text = { Text(text = "${checkedItemCount}곡 추가") },
                 )
             }
-        }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clip(RoundedCornerShape(4))
-                    .padding(horizontal = 16.dp)
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .padding(start = 8.dp, end = 4.dp),
-                    imageVector = Icons.Rounded.Search,
-                    contentDescription = "Search"
-                )
-                BasicTextField(
+            SearchBar(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = "곡 이름 검색",
+                onSearchTextChanged = { newText ->
+                    searchText = newText
+                    sendIntent(PlaylistAddIntent.OnChangeSearchText(newText))
+                },
+            )
+            if (dataList?.isEmpty() == true) {
+                Text(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .align(Alignment.CenterVertically)
-                        .padding(vertical = 16.dp),
-                    maxLines = 1,
-                    textStyle = TextStyle(
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Start,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-                    value = searchText,
-                    onValueChange = { newText ->
-                        searchText = newText
-                        sendIntent(PlaylistAddIntent.OnChangeSearchText(newText))
+                        .padding(horizontal = 16.dp, vertical = 48.dp),
+                    text = if (searchText.isEmpty()) {
+                        "추가할 수 있는 곡이 없습니다.\n이미 모든 곡이 이 플레이리스트에 있습니다."
+                    } else {
+                        "검색어와 일치하는 곡이 없습니다."
                     },
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            val items = dataList.orEmpty()
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .dragToSelect(
+                        listState = listState,
+                        selectableIds = items.map { it.id },
+                        checkedIds = items.filter { it.isChecked }.map { it.id }.toSet(),
+                        onCheckedIdsChange = { sendIntent(PlaylistAddIntent.OnDragSelectItems(it)) },
+                    ),
+                state = listState,
+                // 마지막 곡이 추가 버튼에 가려지지 않게 버튼 높이만큼 비운다.
+                contentPadding = PaddingValues(bottom = 88.dp),
             ) {
                 items(
-                    count = dataList.size,
-                    key = { index -> dataList[index].id },
+                    count = items.size,
+                    key = { index -> items[index].id },
                 ) { index ->
                     PlaylistAddListItemView(
                         modifier = Modifier.height(56.dp),
-                        data = dataList[index],
+                        data = items[index],
                         sendIntent = sendIntent,
                     )
                 }

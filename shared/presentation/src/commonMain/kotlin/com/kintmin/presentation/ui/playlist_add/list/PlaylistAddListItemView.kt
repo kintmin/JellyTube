@@ -11,14 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +32,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.common.SelectionCheckIndicator
 import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.ui.playlist_add.PlaylistAddIntent
 import okio.Path.Companion.toPath
@@ -55,35 +53,7 @@ fun PlaylistAddListItemView(
         ) {
 
 
-            IconButton(
-                modifier = Modifier.fillMaxHeight(),
-                onClick = { sendIntent(PlaylistAddIntent.OnClickAudioItem(data)) },
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(
-                            if (data.isChecked) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                            },
-                        ),
-                ) {
-                    Icon(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .padding(4.dp),
-                        imageVector = Icons.Rounded.Check,
-                        contentDescription = "Check",
-                        tint = if (data.isChecked) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.38f)
-                        },
-                    )
-                }
-            }
+            SelectionCheckIndicator(isChecked = data.isChecked)
 
             if (data.imageFileFullPath == null) {
                 Box(

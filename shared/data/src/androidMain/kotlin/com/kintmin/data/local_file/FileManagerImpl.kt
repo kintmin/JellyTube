@@ -32,6 +32,9 @@ internal class FileManagerImpl(
 
         const val EXPORT_DIR_NAME = "JellyTube"
 
+        /** 썸네일은 화면 폭을 넘겨 그리지 않는다. 앨범아트는 대개 이보다 작아 줄지 않는다. */
+        const val MAX_IMAGE_SIDE_PX = 1024
+
         /**
          * 내보낼 파일명 base의 최대 바이트.
          *
@@ -66,7 +69,17 @@ internal class FileManagerImpl(
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String) =
         runCatching {
             withContext(Dispatchers.IO) {
-                val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
+                // 카메라 원본을 그대로 펴면 수십~수백 MB 라 OOM 이 난다. 긴 변이 상한 아래로 올 때까지 2배씩 줄여 편다.
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeByteArray(imageData, 0, imageData.size, bounds)
+                var sampleSize = 1
+                while (maxOf(bounds.outWidth, bounds.outHeight) / (sampleSize * 2) >= MAX_IMAGE_SIDE_PX) {
+                    sampleSize *= 2
+                }
+                val bitmap = BitmapFactory.decodeByteArray(
+                    imageData, 0, imageData.size,
+                    BitmapFactory.Options().apply { inSampleSize = sampleSize },
+                ) ?: error("이미지를 해석할 수 없습니다.")
 
                 val format = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     Bitmap.CompressFormat.WEBP_LOSSY

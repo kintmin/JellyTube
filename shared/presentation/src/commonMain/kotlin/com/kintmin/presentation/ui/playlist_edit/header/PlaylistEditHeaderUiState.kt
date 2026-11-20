@@ -7,6 +7,7 @@ import kotlin.time.Duration.Companion.seconds
 data class PlaylistEditHeaderUiState(
     val id: Int,
     val imageFileFullPath: String?,
+    val isCustomImage: Boolean = false,
     val name: String,
     val description: String,
     val audioMediaCount: Int,
@@ -28,6 +29,7 @@ data class PlaylistEditHeaderUiState(
 internal fun Playlist.toPlaylistEditHeaderUiState() = PlaylistEditHeaderUiState(
     id = id,
     imageFileFullPath = imageFileFullPath,
+    isCustomImage = isCustomImage,
     name = name,
     description = description,
     audioMediaCount = audioMediaCount,
