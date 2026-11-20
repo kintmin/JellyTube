@@ -28,6 +28,11 @@ private val DarkColorScheme = darkColorScheme(
     onSurface = gray100,
     onSurfaceVariant = gray100,
 
+    // 비워 두면 M3 기본 보라 팔레트로 떨어진다. Snackbar 가 이 셋을 쓴다.
+    inverseSurface = gray10,
+    inverseOnSurface = gray100,
+    inversePrimary = seaBlue60,
+
     scrim = dark100,
 
     error = bloodyRed80,
