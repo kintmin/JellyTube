@@ -1,9 +1,12 @@
 package com.kintmin.presentation.ui.audio_media_detail
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,11 +36,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -48,7 +50,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -192,21 +193,28 @@ fun AudioMediaDetailScreen(
             )
         },
         bottomBar = {
+            val isActionEnabled = !data.isDeleted && !data.isDeleting
             Column(Modifier.background(MaterialTheme.colorScheme.background)) {
                 Row(
-                    Modifier
+                    modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     // 파괴적 동작이라 색과 형태를 수정과 다르게 둔다. primary 글자는 이 배경에서
                     // 본문 대비 바닥값에 못 미치고(3.02:1), 삭제에 긍정 색이 붙는 문제도 있었다.
-                    TextButton(
+                    OutlinedButton(
                         modifier = Modifier
                             .weight(1f)
-                            .fillMaxSize(),
-                        shape = RectangleShape,
-                        enabled = !data.isDeleted && !data.isDeleting,
-                        colors = ButtonDefaults.textButtonColors(contentColor = softRed),
+                            .height(52.dp),
+                        shape = CircleShape,
+                        enabled = isActionEnabled,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = softRed),
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = if (isActionEnabled) softRed else MaterialTheme.colorScheme.outlineVariant,
+                        ),
+                        contentPadding = PaddingValues(horizontal = 12.dp),
                         onClick = { isShowDialog = true }) {
                         if (data.isDeleting) {
                             CircularProgressIndicator(
@@ -226,16 +234,16 @@ fun AudioMediaDetailScreen(
                             modifier = Modifier.padding(start = 8.dp),
                             text = if (data.isDeleting) "삭제 중" else "삭제",
                             fontSize = 14.sp,
+                            maxLines = 1,
                         )
                     }
-                    VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     // 주 동작이라 삭제보다 넓다. 플레이리스트 편집 하단바도 같은 배분이다.
                     Button(
                         modifier = Modifier
                             .weight(2f)
-                            .fillMaxSize(),
-                        shape = RectangleShape,
-                        enabled = !data.isDeleted && !data.isDeleting,
+                            .height(52.dp),
+                        shape = CircleShape,
+                        enabled = isActionEnabled,
                         onClick = { navigationToAudioMediaInformationEditScreen(data.audioMediaId) }) {
                         Text(
                             text = "수정",
