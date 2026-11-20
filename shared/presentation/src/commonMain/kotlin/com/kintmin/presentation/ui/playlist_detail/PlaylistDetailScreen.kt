@@ -53,7 +53,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize

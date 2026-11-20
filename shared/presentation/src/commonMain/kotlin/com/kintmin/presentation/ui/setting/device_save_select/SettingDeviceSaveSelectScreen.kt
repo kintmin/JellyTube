@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -158,6 +159,8 @@ fun SettingDeviceSaveSelectScreen(
                         text = if (isRingtoneShareFlow) "벨소리로 쓸 음원 선택" else "기기에 저장할 음원 선택",
                         fontSize = topAppBarDetailTitleFontSize,
                         lineHeight = topAppBarDetailTitleLineHeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 },
                 navigationIcon = {

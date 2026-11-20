@@ -29,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,7 +76,13 @@ fun KaraokeSearchScreen(
             TopAppBar(
                 expandedHeight = topAppBarHeight,
                 title = {
-                    Text(text = "TJ 노래방 번호 찾기", fontSize = topAppBarDetailTitleFontSize, lineHeight = topAppBarDetailTitleLineHeight)
+                    Text(
+                        text = "TJ 노래방 번호 찾기",
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navigateToBack() }) {

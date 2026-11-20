@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -95,7 +96,13 @@ fun LyricsSearchScreen(
             TopAppBar(
                 expandedHeight = topAppBarHeight,
                 title = {
-                    Text(text = "가사 검색", fontSize = topAppBarDetailTitleFontSize, lineHeight = topAppBarDetailTitleLineHeight)
+                    Text(
+                        text = "가사 검색",
+                        fontSize = topAppBarDetailTitleFontSize,
+                        lineHeight = topAppBarDetailTitleLineHeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navigateToBack() }) {

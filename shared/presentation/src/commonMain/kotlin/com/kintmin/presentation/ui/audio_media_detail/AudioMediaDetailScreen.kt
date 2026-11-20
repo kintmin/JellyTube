@@ -156,6 +156,8 @@ fun AudioMediaDetailScreen(
                         text = "미디어 세부정보",
                         fontSize = topAppBarDetailTitleFontSize,
                         lineHeight = topAppBarDetailTitleLineHeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 },
                 navigationIcon = {

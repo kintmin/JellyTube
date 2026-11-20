@@ -50,6 +50,7 @@ import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.bloodyRed100
+import com.kintmin.presentation.theme.topAppBarCompactHeight
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
@@ -160,11 +161,13 @@ fun AudioEditScreen(
                             text = "음원 편집",
                             fontSize = topAppBarDetailTitleFontSize,
                             lineHeight = topAppBarDetailTitleLineHeight,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 },
                 // 압축 배치에서는 평소 높이도 파형 자리를 많이 뺏어 더 낮춘다
-                expandedHeight = if (isCompactHeight) 48.dp else topAppBarHeight,
+                expandedHeight = if (isCompactHeight) topAppBarCompactHeight else topAppBarHeight,
                 actions = {
                     if (isCompactHeight) {
                         // 저장하면 얼마나 길어지는지 저장 버튼 옆에서 바로 보이게 한다
