@@ -21,13 +21,7 @@ class RepeatRange {
         return RepeatRangeState(mediaId = heldMediaId, startDuration = start, endDuration = end)
     }
 
-    /**
-     * 누를 때마다 시작점 → 끝점 → 해제로 돈다.
-     *
-     * 시작점을 잡은 자리에서 곧바로 다시 누르면 구간을 잡는 대신 **푼다** — 잘못 눌러 되돌리려는
-     * 쪽에 가깝고, 그만한 길이는 구간으로 쓸 수도 없다. 시작점보다 앞에서 누른 경우도 같다.
-     * 그러지 않으면 잘못 잡은 시작점을 그 앞에서는 풀 길이 없다.
-     */
+    /** 누를 때마다 시작점 → 끝점 → 해제로 돈다. */
     fun update(playingMediaId: String, currentDuration: Duration) {
         clearIfMediaChanged(playingMediaId)
 
