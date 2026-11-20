@@ -72,11 +72,10 @@ import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.deepSea100
 import com.kintmin.presentation.theme.deepSea60
 import com.kintmin.presentation.theme.deepSea80
 import com.kintmin.presentation.theme.seaBlue40
-import com.kintmin.presentation.theme.seaBlue80
+import com.kintmin.presentation.ui.common.PlaybackToggleButton
 import com.kintmin.presentation.ui.player_detail.control.PLAYBACK_VALUE_WIDTH
 import com.kintmin.presentation.ui.player_detail.control.PlaybackSliderView
 import com.kintmin.presentation.ui.player_detail.control.PlaybackValueView
@@ -334,8 +333,8 @@ fun PlayerDetailScreen(
                                 badge = {
                                     data.sleepTimerRemainingMinutes?.let { minutes ->
                                         Badge(
-                                            containerColor = seaBlue80,
-                                            contentColor = deepSea100,
+                                            containerColor = MaterialTheme.colorScheme.tertiary,
+                                            contentColor = MaterialTheme.colorScheme.onTertiary,
                                         ) {
                                             Text(text = "$minutes")
                                         }
@@ -400,14 +399,14 @@ fun PlayerDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
-                            Icon(
-                                modifier = Modifier.size(24.dp),
-                                imageVector = Icons.Rounded.Shuffle,
-                                contentDescription = if (data.isShuffling) "셔플 켜짐" else "셔플 꺼짐",
-                                tint = if (data.isShuffling) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.6f),
-                            )
-                        }
+                        PlaybackToggleButton(
+                            imageVector = Icons.Rounded.Shuffle,
+                            label = "셔플",
+                            isOn = data.isShuffling,
+                            iconSize = 24.dp,
+                            offColor = Color.White.copy(alpha = 0.6f),
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) },
+                        )
                     }
                     IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
                         Icon(
@@ -445,14 +444,14 @@ fun PlayerDetailScreen(
                         )
                     }
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) }) {
-                            Icon(
-                                modifier = Modifier.size(24.dp),
-                                imageVector = Icons.Rounded.Repeat,
-                                contentDescription = if (data.isRepeating) "반복 켜짐" else "반복 꺼짐",
-                                tint = if (data.isRepeating) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.6f),
-                            )
-                        }
+                        PlaybackToggleButton(
+                            imageVector = Icons.Rounded.Repeat,
+                            label = "반복",
+                            isOn = data.isRepeating,
+                            iconSize = 24.dp,
+                            offColor = Color.White.copy(alpha = 0.6f),
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) },
+                        )
                     }
                 }
 

@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -17,7 +18,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.seaBlue100
 
 private val BAR_WIDTH = 3.dp
 private val BAR_GAP = 2.dp
@@ -37,7 +37,7 @@ fun NowPlayingBars(
     modifier: Modifier = Modifier,
     isPlaying: Boolean,
 ) {
-    val color = seaBlue100
+    val color = MaterialTheme.colorScheme.tertiary
 
     if (!isPlaying) {
         // 애니메이션을 걸지 않는다. 걸면 보이지도 않는 변화로 프레임 클럭이 계속 깨어 있다.
