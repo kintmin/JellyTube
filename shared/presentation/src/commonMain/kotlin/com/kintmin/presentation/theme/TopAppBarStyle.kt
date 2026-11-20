@@ -7,7 +7,6 @@ import androidx.compose.ui.unit.sp
 // 두껍게 보이므로 낮춰 쓴다.
 val topAppBarHeight = 56.dp
 
-// 가로·분할 화면처럼 창 높이가 낮을 때 쓴다.
 val topAppBarCompactHeight = 48.dp
 
 // M3 기본은 24dp 지만 이 앱은 아이콘을 22dp 로 쓴다.
