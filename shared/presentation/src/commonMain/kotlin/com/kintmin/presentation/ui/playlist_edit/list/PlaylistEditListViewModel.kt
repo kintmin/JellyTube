@@ -11,20 +11,25 @@ import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.domain.audio_track.usecase.UpdateTrackSequenceUseCase
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistDescriptionUseCase
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistTitleUseCase
+import com.kintmin.domain.playlist.usecase.UpdatePlaylistImageUseCase
+import com.kintmin.domain.playlist.usecase.ResetPlaylistImageUseCase
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderUiState
 import com.kintmin.presentation.ui.playlist_edit.header.toPlaylistEditHeaderUiState
 import com.kintmin.presentation.ui.playlist_edit.navigation.PlaylistEditScreenRoute
-import com.kintmin.presentation.util.Debounce
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class PlaylistEditListViewModel constructor(
     savedStateHandle: SavedStateHandle,
@@ -35,9 +40,14 @@ class PlaylistEditListViewModel constructor(
     private val updatePlaylistTitleUseCase: UpdatePlaylistTitleUseCase,
     private val deleteAudioMediaListUseCase: DeleteAudioMediaListUseCase,
     private val deleteAudioTrackListUseCase: DeleteAudioTrackListUseCase,
+    private val updatePlaylistImageUseCase: UpdatePlaylistImageUseCase,
+    private val resetPlaylistImageUseCase: ResetPlaylistImageUseCase,
 ) : ViewModel() {
 
     private val playlistId = savedStateHandle.toRoute<PlaylistEditScreenRoute>().playlistId
+
+    private val _eventChannel = Channel<PlaylistEditListEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<PlaylistEditListEvent> = _eventChannel.receiveAsFlow()
 
     private val _checkedItemIdList = MutableStateFlow(listOf<Int>())
 
@@ -58,7 +68,7 @@ class PlaylistEditListViewModel constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val headerDataFlow = fetchPlaylistFlowUseCase(playlistId).map { it.toPlaylistEditHeaderUiState() }
-        .distinctUntilChangedBy { it.id }
+        .distinctUntilChanged()
         .stateIn(
             viewModelScope, SharingStarted.WhileSubscribed(5000), PlaylistEditHeaderUiState(
                 id = playlistId,
@@ -70,18 +80,18 @@ class PlaylistEditListViewModel constructor(
             )
         )
 
-    private val updatePlaylistTitleDebounce = Debounce(500L)
-    private val updatePlaylistDescriptionDebounce = Debounce(500L)
-
     fun sendIntent(intent: PlaylistEditListIntent) {
         when (intent) {
             is PlaylistEditListIntent.OnClickEditCheck -> checkItem(intent.data)
             is PlaylistEditListIntent.ReorderAudioItem -> updatePlaybackSequence(intent.reorderData, intent.targetData)
+            is PlaylistEditListIntent.OnDragSelectItems -> _checkedItemIdList.update { intent.checkedIds.toList() }
             PlaylistEditListIntent.OnClickClearCheckedItemList -> clearCheckedItemList()
             PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist -> deleteAudioMediaListInPlaylist()
             PlaylistEditListIntent.OnClickFullDeleteAudioMediaList -> deleteFullAudioMediaList()
             is PlaylistEditListIntent.OnEditPlaylistTitle -> updatePlaylistTitle(intent.title)
             is PlaylistEditListIntent.OnEditPlaylistDescription -> updatePlaylistDescription(intent.description)
+            is PlaylistEditListIntent.OnPickPlaylistImage -> updatePlaylistImage(intent.imageData)
+            PlaylistEditListIntent.OnClickResetPlaylistImage -> resetPlaylistImage()
         }
     }
 
@@ -129,21 +139,34 @@ class PlaylistEditListViewModel constructor(
         }
     }
 
+    // 매 입력을 저장하므로 쓰기가 IO 에서 앞지르지 않게 입력 순서대로 줄 세운다(Mutex 는 FIFO).
+    private val playlistInfoWriteMutex = Mutex()
+
     private fun updatePlaylistTitle(newTitle: String) {
         viewModelScope.launch {
-            updatePlaylistTitleDebounce {
-                updatePlaylistTitleUseCase(playlistId, newTitle)
-            }
+            playlistInfoWriteMutex.withLock { updatePlaylistTitleUseCase(playlistId, newTitle) }
         }
     }
 
     private fun updatePlaylistDescription(newDescription: String) {
         viewModelScope.launch {
-            updatePlaylistDescriptionDebounce {
-                updatePlaylistDescriptionUseCase(playlistId, newDescription)
+            playlistInfoWriteMutex.withLock { updatePlaylistDescriptionUseCase(playlistId, newDescription) }
+        }
+    }
+
+    private fun updatePlaylistImage(imageData: ByteArray) {
+        viewModelScope.launch {
+            updatePlaylistImageUseCase(playlistId, imageData).onFailure {
+                _eventChannel.send(PlaylistEditListEvent.ShowToast("사진을 불러오지 못했습니다. 다른 사진을 골라 주세요."))
+            }
+        }
+    }
+
+    private fun resetPlaylistImage() {
+        viewModelScope.launch {
+            resetPlaylistImageUseCase(playlistId).onFailure {
+                _eventChannel.send(PlaylistEditListEvent.ShowToast("기본 썸네일로 되돌리지 못했습니다."))
             }
         }
     }
 }
-
-

@@ -1,51 +1,35 @@
 package com.kintmin.presentation.ui.playlist_edit.header
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray40
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListIntent
-import okio.Path.Companion.toPath
 
 @Composable
 fun PlaylistEditHeaderView(
     data: PlaylistEditHeaderUiState,
+    onClickPickImage: () -> Unit,
     sendIntent: (PlaylistEditListIntent) -> Unit,
 ) {
     var titleText by remember { mutableStateOf(data.name) }
+    // 제목은 DB 에서 첫 프레임 뒤에 도착한다. 그 전의 빈 값을 오류로 그리지 않게, 직접 고친 뒤에만 알린다.
+    var hasEditedTitle by remember { mutableStateOf(false) }
+    val isTitleError = hasEditedTitle && titleText.isEmpty()
     var descriptionText by remember { mutableStateOf(data.description) }
 
     LaunchedEffect(data.name.isEmpty()) {
@@ -58,87 +42,43 @@ fun PlaylistEditHeaderView(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(16.dp, 0.dp, 16.dp, 16.dp)
+                .padding(16.dp)
         ) {
-            if (data.imageFileFullPath == null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                        .height(220.dp)
-                        .clip(RoundedCornerShape(8))
-                        .background(MaterialTheme.colorScheme.surface),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        modifier = Modifier.size(36.dp),
-                    )
-                }
-            } else {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                        .data(data.imageFileFullPath.toPath())
-                        .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
-                        .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                        .height(220.dp)
-                        .clip(RoundedCornerShape(8))
-                        .background(MaterialTheme.colorScheme.surface)
-                )
-            }
-            TextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-                    .border(
-                        width = 1.dp,
-                        color = gray40,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .clip(RoundedCornerShape(8.dp)),
-                maxLines = 1,
-                textStyle = TextStyle(),
+            PlaylistEditThumbnailView(
+                imageFileFullPath = data.imageFileFullPath,
+                isCustomImage = data.isCustomImage,
+                onClickPickImage = onClickPickImage,
+                onClickResetImage = { sendIntent(PlaylistEditListIntent.OnClickResetPlaylistImage) },
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            PlaylistEditInfoTextField(
+                label = "제목",
                 value = titleText,
                 onValueChange = { newText ->
-                    if (newText.length > 20) return@TextField
                     titleText = newText
+                    hasEditedTitle = true
                     if (newText.isNotEmpty()) {
                         sendIntent(PlaylistEditListIntent.OnEditPlaylistTitle(newText))
                     }
                 },
-                isError = titleText.isEmpty(),
-                label = {
-                    Text(
-                        text = "제목 (${titleText.length}/20)",
-                        fontSize = 14.sp,
-                        lineHeight = 14.sp,
-                    )
-                }
+                textStyle = MaterialTheme.typography.titleMedium,
+                placeholder = "제목 입력",
+                maxLength = 20,
+                singleLine = true,
+                errorMessage = if (isTitleError) "제목을 입력해 주세요. 비워 두면 이전 제목이 남습니다." else null,
             )
-
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(),
+            Spacer(modifier = Modifier.height(8.dp))
+            PlaylistEditInfoTextField(
+                label = "설명",
                 value = descriptionText,
                 onValueChange = { newText ->
-                    if (newText.length > 100) return@OutlinedTextField
                     descriptionText = newText
                     sendIntent(PlaylistEditListIntent.OnEditPlaylistDescription(newText))
                 },
-                label = {
-                    Text(
-                        text = "설명 (${descriptionText.length}/100)",
-                        fontSize = 14.sp,
-                        lineHeight = 14.sp,
-                    )
-                }
+                textStyle = MaterialTheme.typography.bodyMedium,
+                placeholder = "설명 추가",
+                maxLength = 100,
+                singleLine = false,
             )
         }
     }
@@ -150,6 +90,7 @@ fun PlaylistEditHeaderPreview() {
     JellyTubeTheme {
         PlaylistEditHeaderView(
             data = PlaylistEditHeaderUiState.getMock(),
+            onClickPickImage = {},
             sendIntent = {},
         )
     }

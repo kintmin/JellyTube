@@ -177,6 +177,8 @@ val dataCommonModule: Module = module {
     factoryOf(::FetchPlaylistFlowUseCase)
     factoryOf(::UpdatePlaylistDescriptionUseCase)
     factoryOf(::UpdatePlaylistTitleUseCase)
+    factoryOf(::UpdatePlaylistImageUseCase)
+    factoryOf(::ResetPlaylistImageUseCase)
     factoryOf(::UpdatePlaylistSequenceUseCase)
     factoryOf(::BackupStepSensorUseCase)
     factoryOf(::CalculateStepCountUseCase)

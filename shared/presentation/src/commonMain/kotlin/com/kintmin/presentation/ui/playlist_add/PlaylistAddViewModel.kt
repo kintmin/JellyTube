@@ -11,14 +11,15 @@ import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemUiState
 import com.kintmin.presentation.ui.playlist_add.list.toPlaylistAddListItemUiState
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.util.Debounce
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -31,15 +32,18 @@ class PlaylistAddViewModel constructor(
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
 
-    private val _eventFlow = MutableSharedFlow<PlaylistAddEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val _eventChannel = Channel<PlaylistAddEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<PlaylistAddEvent> = _eventChannel.receiveAsFlow()
+
+    private var isAdding = false
 
     private val _checkedItemIdList = MutableStateFlow(listOf<Int>())
 
     private val changeSearchTextDebounce = Debounce(200L)
     private val _searchText = MutableStateFlow("")
 
-    val audioListFlow: StateFlow<List<PlaylistAddListItemUiState>> = combine(
+    // 첫 방출 전에는 null 이라 "추가할 곡이 없다" 가 잠깐 비치지 않는다.
+    val audioListFlow: StateFlow<List<PlaylistAddListItemUiState>?> = combine(
         fetchAudioMediaListFlowUseCase(playlistId),
         _checkedItemIdList,
         _searchText,
@@ -49,7 +53,7 @@ class PlaylistAddViewModel constructor(
                 isChecked = data.audioMedia.id in checkedIds
             )
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val checkedItemCountFlow = _checkedItemIdList.map { list -> list.size }
         .distinctUntilChanged()
@@ -60,6 +64,7 @@ class PlaylistAddViewModel constructor(
             is PlaylistAddIntent.OnChangeSearchText -> changeSearchText(intent.searchText)
             PlaylistAddIntent.OnClickAdd -> addAudioMediaListToPlaylist()
             is PlaylistAddIntent.OnClickAudioItem -> checkItem(intent.data)
+            is PlaylistAddIntent.OnDragSelectItems -> _checkedItemIdList.update { intent.checkedIds.toList() }
         }
     }
 
@@ -72,9 +77,20 @@ class PlaylistAddViewModel constructor(
     }
 
     private fun addAudioMediaListToPlaylist() {
+        val checkedIdList = _checkedItemIdList.value
+        if (isAdding || checkedIdList.isEmpty()) return
+        isAdding = true
+
         viewModelScope.launch {
-            addAudioMediaListToPlaylistUseCase(playlistId, _checkedItemIdList.value)
-            _checkedItemIdList.update { emptyList() }
+            addAudioMediaListToPlaylistUseCase(playlistId, checkedIdList)
+                .onSuccess {
+                    _eventChannel.send(PlaylistAddEvent.ShowToast("${checkedIdList.size}곡을 추가했습니다."))
+                    _eventChannel.send(PlaylistAddEvent.NavigateToBack)
+                }
+                .onFailure {
+                    isAdding = false
+                    _eventChannel.send(PlaylistAddEvent.ShowToast("곡을 추가하지 못했습니다. 다시 시도해 주세요."))
+                }
         }
     }
 

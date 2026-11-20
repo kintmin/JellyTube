@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlin.time.Clock
 
 class PlaylistRepositoryImpl constructor(
     private val audioMediaFacade: AudioMediaFacade,
@@ -73,12 +74,43 @@ class PlaylistRepositoryImpl constructor(
         }
     }
 
+    override suspend fun setCustomPlaylistImage(id: Int, imageData: ByteArray): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching<Unit> {
+                val previous = playlistDao.getPlaylistById(id)
+                // 같은 이름을 덮어쓰면 이미지 캐시가 경로를 키로 써서 옛 사진이 남는다.
+                val fileName = "playlist_${id}_${Clock.System.now().toEpochMilliseconds()}"
+                val ext = fileManager.saveImageWithCompression(imageData, fileName).getOrThrow()
+                playlistDao.updatePlaylistImage(id, "$fileName.$ext", isCustomImage = true)
+
+                if (previous.isCustomImage) deleteImageFile(previous.imageFileNameWithExt)
+            }
+        }
+    }
+
+    override suspend fun resetPlaylistImage(id: Int): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            runCatching<Unit> {
+                deleteImageFile(audioMediaFacade.resetPlaylistImage(id))
+            }
+        }
+    }
+
     override suspend fun deletePlaylist(id: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
             runCatching<Unit> {
+                val playlist = playlistDao.getPlaylistById(id)
                 audioMediaFacade.deletePlaylist(id)
+                if (playlist.isCustomImage) deleteImageFile(playlist.imageFileNameWithExt)
             }
         }
+    }
+
+    // 파일이 남아도 이상 데이터 정리가 거둬 가므로 지우기 실패로 작업 전체를 실패시키지 않는다.
+    private suspend fun deleteImageFile(imageFileNameWithExt: String?) {
+        imageFileNameWithExt ?: return
+        fileManager.getImageFileFullPath(imageFileNameWithExt)
+            .onSuccess { fileManager.deleteFileAtFullPath(it) }
     }
 
     override suspend fun updatePlaylistSequences(orderedPlaylistIds: List<Int>): Result<Unit> {

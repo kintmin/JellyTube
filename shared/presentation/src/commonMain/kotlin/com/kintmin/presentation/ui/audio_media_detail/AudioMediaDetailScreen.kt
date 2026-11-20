@@ -6,15 +6,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,7 +23,6 @@ import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Mic
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -49,8 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -73,6 +67,8 @@ import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.audio_media_detail.dialog.AudioEditRevertDialog
 import com.kintmin.presentation.ui.audio_media_detail.dialog.KaraokeUnlinkDialog
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionProgressIndicator
@@ -232,36 +228,12 @@ fun AudioMediaDetailScreen(
             )
         },
         bottomBar = {
-            val isActionEnabled = !data.isDeleted && !data.isDeleting
-            Column(
-                modifier = Modifier
-                    .background(
-                        Brush.verticalGradient(
-                            0f to Color.Transparent,
-                            0.5f to MaterialTheme.colorScheme.background,
-                        )
-                    )
-                    .padding(top = 16.dp),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                ) {
-                    Button(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(52.dp),
-                        shape = CircleShape,
-                        enabled = isActionEnabled,
-                        onClick = { navigationToAudioMediaInformationEditScreen(data.audioMediaId) }) {
-                        Text(
-                            text = "정보 수정",
-                            fontSize = 14.sp,
-                        )
-                    }
-                }
-                Box(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
+            BottomActionBar {
+                BottomActionButton(
+                    text = "정보 수정",
+                    enabled = !data.isDeleted && !data.isDeleting,
+                    onClick = { navigationToAudioMediaInformationEditScreen(data.audioMediaId) },
+                )
             }
         }
     ) { innerPadding ->

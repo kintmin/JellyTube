@@ -21,6 +21,10 @@ interface PlaylistRepository {
         rawTotalDuration: Long? = null,
     ): Result<Unit>
 
+    suspend fun setCustomPlaylistImage(id: Int, imageData: ByteArray): Result<Unit>
+
+    suspend fun resetPlaylistImage(id: Int): Result<Unit>
+
     suspend fun deletePlaylist(id: Int): Result<Unit>
 
     suspend fun updatePlaylistSequences(orderedPlaylistIds: List<Int>): Result<Unit>
