@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -13,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 
@@ -33,35 +33,41 @@ fun LyricsDeleteDialog(
         ) {
             Text(
                 modifier = Modifier.padding(bottom = 8.dp),
-                text = "가사 삭제",
+                text = "가사를 삭제할까요?",
                 style = MaterialTheme.typography.titleLarge,
             )
             Text(
                 modifier = Modifier.padding(bottom = 16.dp),
-                text = "$audioMediaName 의 가사를 정말 삭제하시겠습니까?",
+                text = "${audioMediaName}의 가사를 삭제합니다. 되돌릴 수 없어요.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Row(
                 modifier = Modifier.align(Alignment.End)
             ) {
                 OutlinedButton(
-                    modifier = Modifier.padding(end = 8.dp),
+                    // 파괴적 버튼과 간격을 벌려 반사적으로 눌리지 않게 한다.
+                    modifier = Modifier.padding(end = 24.dp),
                     contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
                     onClick = { onDismiss() }) {
                     Text(
                         text = "취소",
-                        fontSize = 14.sp,
                     )
                 }
                 Button(
                     contentPadding = PaddingValues(horizontal = 32.dp, vertical = 0.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
                     onClick = {
                         onConfirmDelete()
                         onDismiss()
                     }) {
                     Text(
-                        text = "삭제",
-                        fontSize = 14.sp,
+                        text = "삭제하기",
                     )
                 }
             }

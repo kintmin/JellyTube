@@ -277,6 +277,9 @@ fun MainNavHost(
             navigateToLyricsEdit = { audioMediaId ->
                 navController.navigateToLyricsEditScreen(audioMediaId, navOptions)
             },
+            navigateToPlayerDetail = {
+                navController.navigateToPlayerDetailScreen(navOptions)
+            },
         )
         lyricsEditScreen(
             navigateToBack = { navController.popBackStack() },
