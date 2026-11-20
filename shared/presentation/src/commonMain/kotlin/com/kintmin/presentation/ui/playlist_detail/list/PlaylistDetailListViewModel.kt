@@ -4,7 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.DeleteAudioTrackListUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.audio_track.usecase.UpdateTrackSequenceUseCase
@@ -27,7 +26,6 @@ import kotlinx.coroutines.launch
 class PlaylistDetailListViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
-    private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
     private val deleteAudioTrackListUseCase: DeleteAudioTrackListUseCase,
     private val updateTrackSequenceUseCase: UpdateTrackSequenceUseCase,
     private val mediaControllerManager: PlaybackController,
@@ -80,9 +78,6 @@ class PlaylistDetailListViewModel constructor(
                     is PlaylistDetailListIntent.OnClickRemoveFromPlaylist -> {
                         removeFromPlaylist(intent.data.id)
                     }
-                    is PlaylistDetailListIntent.OnClickDeleteAudioMediaFile -> {
-                        deleteAudioMedia(intent.data.id, intent.data.source)
-                    }
                     is PlaylistDetailListIntent.OnChangeSearchText,
                     is PlaylistDetailListIntent.OnReorderAudioMedia -> Unit
                 }
@@ -123,12 +118,6 @@ class PlaylistDetailListViewModel constructor(
     private fun removeFromPlaylist(audioMediaId: Int) {
         viewModelScope.launch {
             deleteAudioTrackListUseCase(playlistId, listOf(audioMediaId))
-        }
-    }
-
-    private fun deleteAudioMedia(audioMediaId: Int, source: String) {
-        viewModelScope.launch {
-            deleteAudioMediaUseCase(audioMediaId, source)
         }
     }
 

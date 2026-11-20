@@ -10,6 +10,5 @@ sealed interface PlaylistDetailListIntent {
     ) : PlaylistDetailListIntent
     data class OnClickEditAudioMedia(val data: PlaylistDetailListItemUiState) : PlaylistDetailListIntent
     data class OnClickRemoveFromPlaylist(val data: PlaylistDetailListItemUiState) : PlaylistDetailListIntent
-    data class OnClickDeleteAudioMediaFile(val data: PlaylistDetailListItemUiState) : PlaylistDetailListIntent
     data class OnChangeSearchText(val searchText: String) : PlaylistDetailListIntent
 }

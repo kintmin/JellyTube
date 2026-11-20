@@ -53,7 +53,6 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.theme.softRed
-import com.kintmin.presentation.ui.playlist_detail.dialog.DeleteAudioMediaFileDialog
 import com.kintmin.presentation.ui.playlist_detail.dialog.RemoveAudioMediaFromPlaylistDialog
 import okio.Path.Companion.toPath
 
@@ -69,7 +68,6 @@ fun PlaylistDetailListItemView(
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
     var isShowRemoveDialog by remember { mutableStateOf(false) }
-    var isShowDeleteFileDialog by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
     // pointerInput 은 키만 비교하고 람다는 비교하지 않아, 아래 탭 처리가 첫 구성 시점의 값에
     // 묶인다.
@@ -85,15 +83,6 @@ fun PlaylistDetailListItemView(
             mediaName = data.mediaName,
             removeFromPlaylist = {
                 sendIntent(PlaylistDetailListIntent.OnClickRemoveFromPlaylist(data))
-            },
-        )
-
-        DeleteAudioMediaFileDialog(
-            showDialog = isShowDeleteFileDialog,
-            onDismiss = { isShowDeleteFileDialog = false },
-            mediaName = data.mediaName,
-            deleteAudioMediaFile = {
-                sendIntent(PlaylistDetailListIntent.OnClickDeleteAudioMediaFile(data))
             },
         )
 
@@ -248,14 +237,6 @@ fun PlaylistDetailListItemView(
                                 },
                             )
                         }
-                        DropdownMenuItem(
-                            text = { Text("음원 파일 삭제") },
-                            colors = MenuDefaults.itemColors(textColor = softRed),
-                            onClick = {
-                                isMenuExpanded = false
-                                isShowDeleteFileDialog = true
-                            },
-                        )
                     }
                 }
             }
