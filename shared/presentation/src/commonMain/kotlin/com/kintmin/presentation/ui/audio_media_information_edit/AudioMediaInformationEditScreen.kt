@@ -103,7 +103,7 @@ fun AudioMediaInformationEditScreen(
                 expandedHeight = topAppBarHeight,
                 title = {
                     Text(
-                        text = "미디어 수정",
+                        text = "음원 정보 수정",
                         fontSize = topAppBarDetailTitleFontSize,
                         lineHeight = topAppBarDetailTitleLineHeight,
                         maxLines = 1,

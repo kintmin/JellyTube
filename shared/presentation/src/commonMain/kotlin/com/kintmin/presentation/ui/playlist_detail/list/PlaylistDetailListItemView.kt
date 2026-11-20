@@ -213,7 +213,7 @@ fun PlaylistDetailListItemView(
                             },
                         )
                         DropdownMenuItem(
-                            // 헤더의 "수정" 은 플레이리스트를 고친다. 이쪽은 곡이다.
+                            // 헤더의 "편집" 은 플레이리스트를 고친다. 이쪽은 곡이다.
                             text = { Text("음원 정보 수정") },
                             onClick = {
                                 isMenuExpanded = false

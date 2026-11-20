@@ -140,7 +140,7 @@ fun PlaylistItemView(
                     shape = MaterialTheme.shapes.medium,
                 ) {
                     DropdownMenuItem(
-                        text = { Text("수정하기") },
+                        text = { Text("편집하기") },
                         onClick = {
                             isDropDownExpanded = false
                             sendIntent(PlaylistIntent.OnClickModifyPlaylist(data))

@@ -209,7 +209,7 @@ fun PlaylistDetailHeaderView(
                         contentDescription = null,
                     )
                     Text(
-                        text = "수정",
+                        text = "편집",
                         fontSize = 12.sp,
                     )
                 }
