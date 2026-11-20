@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -224,6 +225,8 @@ fun MainScreen(
                             text = title,
                             fontSize = topAppBarRootTitleFontSize,
                             lineHeight = topAppBarRootTitleLineHeight,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             modifier = if (selectedTab == MainTabItem.Search) {
                                 Modifier.clickable {
                                     sendYoutubeDownloadIntent(

@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -210,6 +211,8 @@ fun PlaylistDetailScreen(
                         headerData.name,
                         fontSize = topAppBarDetailTitleFontSize,
                         lineHeight = topAppBarDetailTitleLineHeight,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = progress)
                     )
                 },
