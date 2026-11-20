@@ -32,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.karaoke_search.list_item.KaraokeSearchItemView
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -68,6 +69,7 @@ fun KaraokeSearchScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = {
                     Text(text = "TJ 노래방 번호 찾기", fontSize = 16.sp, lineHeight = 16.sp)
                 },

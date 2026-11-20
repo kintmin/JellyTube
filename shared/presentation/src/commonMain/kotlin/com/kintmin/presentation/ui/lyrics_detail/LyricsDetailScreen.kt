@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarHeight
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -70,6 +71,7 @@ fun LyricsDetailScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = {
                     Text(
                         text = listOf(data.trackName, data.artistName)

@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.lyrics_search.list_item.LyricsSearchItemView
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -88,6 +89,7 @@ fun LyricsSearchScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = {
                     Text(text = "가사 검색", fontSize = 16.sp, lineHeight = 16.sp)
                 },

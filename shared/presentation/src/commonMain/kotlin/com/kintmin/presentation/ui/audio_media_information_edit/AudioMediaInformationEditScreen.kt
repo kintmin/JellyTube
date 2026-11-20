@@ -44,6 +44,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import okio.Path.Companion.toPath
 
@@ -95,6 +96,7 @@ fun AudioMediaInformationEditScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = {
                     Text(
                         text = "미디어 수정",

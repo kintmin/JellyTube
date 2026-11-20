@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.lyrics_viewer.dialog.LyricsDeleteDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -109,6 +110,7 @@ fun LyricsViewerScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = {
                     Text(
                         text = data.title.ifBlank { "가사" },

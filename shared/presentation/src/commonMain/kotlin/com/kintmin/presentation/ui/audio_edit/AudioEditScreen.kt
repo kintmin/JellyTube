@@ -22,7 +22,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -50,6 +49,7 @@ import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.bloodyRed100
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditCompactControlsView
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditControlsView
 import com.kintmin.presentation.ui.audio_edit.dialog.AudioEditExitDialog
@@ -154,8 +154,8 @@ fun AudioEditScreen(
                         Text(text = "음원 편집")
                     }
                 },
-                // 압축 배치에서는 기본 높이(64dp)도 파형 자리를 많이 뺏어 낮춘다
-                expandedHeight = if (isCompactHeight) 48.dp else TopAppBarDefaults.TopAppBarExpandedHeight,
+                // 압축 배치에서는 평소 높이도 파형 자리를 많이 뺏어 더 낮춘다
+                expandedHeight = if (isCompactHeight) 48.dp else topAppBarHeight,
                 actions = {
                     if (isCompactHeight) {
                         // 저장하면 얼마나 길어지는지 저장 버튼 옆에서 바로 보이게 한다

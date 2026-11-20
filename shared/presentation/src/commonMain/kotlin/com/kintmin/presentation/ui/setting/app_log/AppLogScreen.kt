@@ -36,6 +36,7 @@ import com.kintmin.presentation.platform.AppLogShareResult
 import com.kintmin.presentation.platform.rememberAppLogSharer
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.setting.SettingScreen
 import com.kintmin.presentation.ui.setting.SettingUiState
 
@@ -81,6 +82,7 @@ fun AppLogScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = { Text("앱 로그") },
                 navigationIcon = {
                     IconButton(onClick = navigateToBack) {

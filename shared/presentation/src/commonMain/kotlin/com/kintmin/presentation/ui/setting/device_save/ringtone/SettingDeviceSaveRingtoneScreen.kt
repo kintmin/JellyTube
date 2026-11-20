@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.setting.device_save.ActionGuideCard
 
 private const val GARAGEBAND_RINGTONE_GUIDE_URL = "https://support.apple.com/en-us/120692"
@@ -43,6 +44,7 @@ fun SettingDeviceSaveRingtoneScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = { Text("벨소리·알람음으로 쓰기") },
                 navigationIcon = {
                     IconButton(onClick = navigateToBack) {

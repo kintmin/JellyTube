@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.animation.FocusSpreadOverlay
 import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
@@ -201,6 +202,7 @@ fun PlaylistDetailScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = {
                     Text(
                         headerData.name,

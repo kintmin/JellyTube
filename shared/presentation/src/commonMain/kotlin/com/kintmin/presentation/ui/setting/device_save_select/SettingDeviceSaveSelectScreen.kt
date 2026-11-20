@@ -59,6 +59,7 @@ import com.kintmin.presentation.platform.rememberAudioFileSharer
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneDefaultChangeDialog
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneTooLongDialog
 import com.kintmin.presentation.ui.setting.device_save_select.list.SettingDeviceSaveSelectListItemView
@@ -148,6 +149,7 @@ fun SettingDeviceSaveSelectScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = {
                     Text(
                         text = if (isRingtoneShareFlow) "벨소리로 쓸 음원 선택" else "기기에 저장할 음원 선택",

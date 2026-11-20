@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.keepsReceivingInBackground
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarHeight
 
 @Composable
 fun SettingFileShareReceiveScreen(
@@ -73,6 +74,7 @@ fun SettingFileShareReceiveScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = { Text("PC에서 공유받기") },
                 navigationIcon = {
                     IconButton(onClick = navigateToBack) {

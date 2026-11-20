@@ -57,6 +57,7 @@ import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.custom_ui.data_table.AgeColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.DataTableView
 import com.kintmin.presentation.ui.custom_ui.data_table.DepartmentColumn
@@ -215,6 +216,7 @@ fun MainScreen(
             }
             Column {
                 TopAppBar(
+                    expandedHeight = topAppBarHeight,
                     title = {
                         Text(
                             text = title,

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemUiState
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemView
 
@@ -78,6 +79,7 @@ fun PlaylistAddScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = {
                     Text(
                         text = "플레이리스트 추가",

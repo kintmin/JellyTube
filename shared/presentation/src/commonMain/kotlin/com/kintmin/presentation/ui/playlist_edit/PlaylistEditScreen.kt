@@ -59,6 +59,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.animation.FocusSpreadOverlay
 import com.kintmin.presentation.theme.gray10
 import com.kintmin.presentation.theme.gray40
+import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderUiState
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderView
@@ -167,6 +168,7 @@ fun PlaylistEditScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
+                expandedHeight = topAppBarHeight,
                 title = {
                     Text(
                         text = "플레이리스트 편집",
