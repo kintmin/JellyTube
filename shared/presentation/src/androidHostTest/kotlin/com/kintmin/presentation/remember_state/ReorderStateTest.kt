@@ -71,4 +71,50 @@ class ReorderStateTest {
 
         assertEquals(listOf(1, 2), merged.map { it.id })
     }
+
+    private fun direction(
+        itemTop: Float,
+        dragDirection: Int,
+        viewStart: Float = 0f,
+        canMoveUp: Boolean = true,
+        canMoveDown: Boolean = true,
+    ) = autoScrollDirection(
+        itemTop = itemTop,
+        itemBottom = itemTop + 80f,
+        viewStart = viewStart,
+        viewEnd = 1000f,
+        scrollZone = 100f,
+        dragDirection = dragDirection,
+        canMoveUp = canMoveUp,
+        canMoveDown = canMoveDown,
+        canScrollBackward = true,
+        canScrollForward = true,
+    )
+
+    @Test
+    fun `위쪽 존에서 위로 끌면 손가락이 멈춰도 위로 스크롤한다`() {
+        assertEquals(-1, direction(itemTop = 50f, dragDirection = -1))
+    }
+
+    @Test
+    fun `위쪽 존에서 손가락을 아래로 돌리면 스크롤을 멈춘다`() {
+        assertEquals(0, direction(itemTop = 50f, dragDirection = 1))
+    }
+
+    @Test
+    fun `상단 바에 덮인 만큼 위쪽 존이 내려온다`() {
+        assertEquals(0, direction(itemTop = 150f, dragDirection = -1))
+        assertEquals(-1, direction(itemTop = 150f, dragDirection = -1, viewStart = 100f))
+    }
+
+    @Test
+    fun `넘어갈 이웃이 없는 방향으로는 스크롤하지 않는다`() {
+        assertEquals(0, direction(itemTop = 50f, dragDirection = -1, canMoveUp = false))
+        assertEquals(0, direction(itemTop = 900f, dragDirection = 1, canMoveDown = false))
+    }
+
+    @Test
+    fun `아래쪽 존에서 아래로 끌면 아래로 스크롤한다`() {
+        assertEquals(1, direction(itemTop = 900f, dragDirection = 1))
+    }
 }

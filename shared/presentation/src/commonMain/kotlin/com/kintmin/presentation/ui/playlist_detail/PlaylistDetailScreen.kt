@@ -12,11 +12,13 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
@@ -160,6 +162,8 @@ fun PlaylistDetailScreen(
         listState = scrollState,
         dataList = audioPlayDataList,
         idOf = { it.id },
+        // 목록이 상단 바 밑까지 그려진다.
+        topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + topAppBarHeight,
     )
     var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
     var searchInput by rememberSaveable { mutableStateOf("") }
