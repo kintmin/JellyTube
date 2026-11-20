@@ -86,6 +86,7 @@ import com.kintmin.presentation.ui.player_detail.dialog.SleepTimerAnnouncementDi
 import com.kintmin.presentation.ui.player_detail.dialog.SleepTimerDialog
 import com.kintmin.presentation.ui.player_detail.dialog.toPitchSemitoneText
 import com.kintmin.presentation.ui.player_detail.dialog.toPlaybackSpeedText
+import com.kintmin.presentation.ui.player_detail.lyrics.CurrentLyricOverlayView
 import com.kintmin.presentation.ui.player_detail.lyrics.PlayerLyricsPanelView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -264,57 +265,46 @@ fun PlayerDetailScreen(
                         .background(Color.Black.copy(alpha = 0.25f))
                         .clickable { sendIntent(PlayerDetailIntent.OnClickLyrics) }
 
-                    when {
-                        showsLyrics -> PlayerLyricsPanelView(
+                    if (showsLyrics) {
+                        PlayerLyricsPanelView(
                             lines = data.lyricLines,
                             activeIndex = data.activeLyricIndex,
                             modifier = artworkModifier,
                         )
-
-                        data.imageFileFullPath == null -> Box(
-                            modifier = artworkModifier,
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                modifier = Modifier.size(100.dp),
-                                imageVector = Icons.Rounded.LibraryMusic,
-                                contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.7f),
-                            )
+                    } else {
+                        Box(modifier = artworkModifier) {
+                            if (data.imageFileFullPath == null) {
+                                Icon(
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .align(Alignment.Center),
+                                    imageVector = Icons.Rounded.LibraryMusic,
+                                    contentDescription = null,
+                                    tint = Color.White.copy(alpha = 0.7f),
+                                )
+                            } else {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(LocalPlatformContext.current)
+                                        .data(data.imageFileFullPath.toPath())
+                                        .memoryCachePolicy(CachePolicy.ENABLED)
+                                        .diskCachePolicy(CachePolicy.DISABLED)
+                                        .build(),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+                            // 지금 가사는 그림 위에 얹는다. 세로를 따로 쓰지 않고, 보여 줄 줄이
+                            // 없는 곡에서는 아예 그리지 않아 그림이 깨끗하다.
+                            if (data.currentLyricLine.isNotBlank()) {
+                                CurrentLyricOverlayView(
+                                    text = data.currentLyricLine,
+                                    modifier = Modifier.align(Alignment.BottomCenter),
+                                )
+                            }
                         }
-
-                        else -> AsyncImage(
-                            model = ImageRequest.Builder(LocalPlatformContext.current)
-                                .data(data.imageFileFullPath.toPath())
-                                .memoryCachePolicy(CachePolicy.ENABLED)
-                                .diskCachePolicy(CachePolicy.DISABLED)
-                                .build(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = artworkModifier,
-                        )
                     }
                 }
-
-                // 아래 줄 사이를 넉넉히 벌린다. 아트워크가 남는 세로를 모두 가져가므로,
-                // 여백을 늘리는 것과 아트워크를 줄이는 것이 같은 일이다.
-                Spacer(modifier = Modifier.height(28.dp))
-
-                // 높이를 늘 22dp 로 잡아 둔다. 가사가 없으면 비우고, 접지는 않는다 — 접으면 곡을
-                // 넘길 때 아트워크 크기가 흔들린다. 가사로 가는 입구는 아트워크 하나다.
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(22.dp)
-                        .padding(horizontal = 16.dp),
-                    text = data.currentLyricLine,
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
