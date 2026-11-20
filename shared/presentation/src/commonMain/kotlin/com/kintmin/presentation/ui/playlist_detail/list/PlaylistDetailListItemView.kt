@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
+import com.kintmin.presentation.animation.NowPlayingBars
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.gray80
@@ -58,6 +59,8 @@ fun PlaylistDetailListItemView(
     modifier: Modifier,
     data: PlaylistDetailListItemUiState,
     isBasePlaylist: Boolean,
+    isNowPlaying: Boolean,
+    isPlaying: Boolean,
     sendIntent: (PlaylistDetailListIntent) -> Unit,
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
@@ -100,38 +103,46 @@ fun PlaylistDetailListItemView(
                 },
         ) {
             Row {
-                if (data.imageFileFullPath == null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .aspectRatio(1f)
-                            .padding(8.dp)
-                            .clip(RoundedCornerShape(16))
-                            .background(MaterialTheme.colorScheme.surface),
-                        contentAlignment = Alignment.Center,
-                    ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .aspectRatio(1f)
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(16))
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (data.imageFileFullPath == null) {
                         Icon(
                             imageVector = Icons.Rounded.LibraryMusic,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
                         )
+                    } else {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalPlatformContext.current)
+                                .data(data.imageFileFullPath.toPath())
+                                .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
+                                .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.matchParentSize(),
+                        )
                     }
-                } else {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalPlatformContext.current)
-                            .data(data.imageFileFullPath.toPath())
-                            .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
-                            .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
-                            .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .aspectRatio(1f)
-                            .padding(8.dp)
-                            .clip(RoundedCornerShape(16))
-                            .background(MaterialTheme.colorScheme.surface)
-                    )
+
+                    if (isNowPlaying) {
+                        // 임의의 앨범아트 위에서도 기둥이 읽히게 깔고 그린다.
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)),
+                        )
+                        NowPlayingBars(
+                            modifier = Modifier.matchParentSize(),
+                            isPlaying = isPlaying,
+                        )
+                    }
                 }
 
                 Column(
@@ -221,8 +232,25 @@ fun PlaylistDetailListItemPreview() {
     JellyTubeTheme {
         PlaylistDetailListItemView(
             data = PlaylistDetailListItemUiState.getMock(),
-            modifier = Modifier.height(56.dp),
+            modifier = Modifier.height(80.dp),
             isBasePlaylist = true,
+            isNowPlaying = false,
+            isPlaying = false,
+            sendIntent = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+fun PlaylistDetailListItemNowPlayingPreview() {
+    JellyTubeTheme {
+        PlaylistDetailListItemView(
+            data = PlaylistDetailListItemUiState.getMock(),
+            modifier = Modifier.height(80.dp),
+            isBasePlaylist = true,
+            isNowPlaying = true,
+            isPlaying = true,
             sendIntent = {},
         )
     }

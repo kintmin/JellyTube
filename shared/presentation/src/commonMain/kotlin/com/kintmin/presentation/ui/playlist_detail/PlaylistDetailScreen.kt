@@ -168,6 +168,10 @@ fun PlaylistDetailScreen(
     val progress = EaseIn.transform(min(scrollOffset / maxOffset, 1f))
     val backgroundColor = MaterialTheme.colorScheme.background.copy(alpha = progress)
     val isSearching = searchInput.isNotEmpty()
+    // 재생 위치까지 든 playerBar 를 행 람다에서 읽으면 폴링마다 보이는 행이 전부 다시 그려진다.
+    // 곡이 바뀔 때만 달라지는 값으로 좁혀 내린다.
+    val nowPlayingAudioMediaId = playerBar.id.toIntOrNull()
+    val isPlaybackPlaying = playerBar.isPlaying
 
     LaunchedEffect(focusAudioMediaId, audioPlayDataList) {
         if (focusAudioMediaId == null || audioPlayDataList.isEmpty()) return@LaunchedEffect
@@ -309,6 +313,8 @@ fun PlaylistDetailScreen(
                                 data = item,
                                 modifier = Modifier.matchParentSize(),
                                 isBasePlaylist = isBasePlaylist,
+                                isNowPlaying = item.id == nowPlayingAudioMediaId,
+                                isPlaying = isPlaybackPlaying,
                                 sendIntent = sendPlaylistDetailListIntent,
                             )
                             if (highlightedAudioMediaId == item.id) {
@@ -345,6 +351,8 @@ fun PlaylistDetailScreen(
                                     .fillMaxSize()
                                     .then(dragHandleModifier),
                                 isBasePlaylist = isBasePlaylist,
+                                isNowPlaying = item.id == nowPlayingAudioMediaId,
+                                isPlaying = isPlaybackPlaying,
                                 sendIntent = sendPlaylistDetailListIntent,
                             )
                             if (highlightedAudioMediaId == item.id) {
