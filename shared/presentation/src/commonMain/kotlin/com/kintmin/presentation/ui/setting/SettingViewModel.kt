@@ -162,6 +162,12 @@ class SettingViewModel constructor(
                     _eventFlow.emit(SettingEvent.NavigateToDataMigrationReceiveScreen)
                 }
             }
+            SettingIntent.OnClickDeviceIdTile -> {
+                val id = deviceId.value ?: return
+                viewModelScope.launch {
+                    _eventFlow.emit(SettingEvent.CopyDeviceId(id))
+                }
+            }
             is SettingIntent.OnToggleIsStepEnabled -> {
                 if (intent.value) {
                     viewModelScope.launch {
