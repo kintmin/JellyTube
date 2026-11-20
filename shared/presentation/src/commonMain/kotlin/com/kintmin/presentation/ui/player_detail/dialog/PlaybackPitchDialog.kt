@@ -32,36 +32,29 @@ fun PlaybackPitchDialog(
     onDismiss: () -> Unit,
     onSelectSemitone: (Int) -> Unit,
 ) {
-    JellyTubeDialog(
-        showDialog = showDialog,
-        onDismiss = onDismiss,
-        shape = PlaybackDialogShape,
-        surfaceModifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-    ) {
+    JellyTubeDialog(showDialog = showDialog, onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 26.dp),
+                .padding(horizontal = 20.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "피치",
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = selectedSemitone.toPitchSemitoneText(),
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 36.sp,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 // 끌 때마다 바뀌는 글자다. 비례폭이면 가운데 정렬이 좌우로 흔들린다.
                 style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
             )
-            Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -91,7 +84,7 @@ fun PlaybackPitchDialog(
                     onClick = { selectedSemitone.nextPitchSemitone()?.let(onSelectSemitone) },
                 )
             }
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
