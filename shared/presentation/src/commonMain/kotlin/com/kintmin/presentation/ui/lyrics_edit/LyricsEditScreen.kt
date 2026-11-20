@@ -23,6 +23,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -31,6 +35,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +55,7 @@ import com.kintmin.presentation.ui.lyrics_edit.dialog.LyricsEditExitDialog
 import com.kintmin.presentation.ui.lyrics_edit.list_item.LyricsEditItemView
 import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -59,6 +65,8 @@ fun LyricsEditScreen(
     val viewModel = koinViewModel<LyricsEditViewModel>()
     val data by viewModel.data.collectAsState()
     val toaster = rememberToaster()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
@@ -67,6 +75,19 @@ fun LyricsEditScreen(
                     toaster.show(event.message)
 
                 LyricsEditEvent.NavigateToBack -> navigateToBack()
+
+                // 되돌리기는 마지막 삭제 한 건만 가능하므로 이전 스낵바는 걷어낸다.
+                LyricsEditEvent.ShowUndoDeleteRow -> scope.launch {
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    val result = snackbarHostState.showSnackbar(
+                        message = "줄을 삭제했어요",
+                        actionLabel = "되돌리기",
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.sendIntent(LyricsEditIntent.OnUndoDeleteRow)
+                    }
+                }
             }
         }
     }
@@ -74,6 +95,7 @@ fun LyricsEditScreen(
     LyricsEditScreen(
         navigateToBack = navigateToBack,
         data = data,
+        snackbarHostState = snackbarHostState,
         sendIntent = viewModel::sendIntent,
     )
 }
@@ -83,6 +105,7 @@ fun LyricsEditScreen(
 fun LyricsEditScreen(
     navigateToBack: () -> Unit,
     data: LyricsEditUiState,
+    snackbarHostState: SnackbarHostState,
     sendIntent: (LyricsEditIntent) -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -127,7 +150,7 @@ fun LyricsEditScreen(
                 expandedHeight = topAppBarHeight,
                 title = {
                     Text(
-                        text = data.title.ifBlank { "가사 수정" },
+                        text = data.title.ifBlank { "가사 편집" },
                         fontSize = topAppBarDetailTitleFontSize,
                         lineHeight = topAppBarDetailTitleLineHeight,
                         maxLines = 1,
@@ -139,12 +162,13 @@ fun LyricsEditScreen(
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "ArrowBackIosNew",
+                            contentDescription = "뒤로",
                         )
                     }
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             Column(
                 modifier = Modifier
@@ -157,10 +181,10 @@ fun LyricsEditScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    enabled = !data.isSaving,
+                    enabled = data.isDirty && !data.isSaving,
                     onClick = { sendIntent(LyricsEditIntent.OnClickSave) },
                 ) {
-                    Text(text = if (data.isSaving) "저장 중..." else "수정사항 저장")
+                    Text(text = if (data.isSaving) "저장 중…" else "저장")
                 }
             }
         },
@@ -182,13 +206,15 @@ fun LyricsEditScreen(
                 .padding(innerPadding)
                 .fillMaxSize(),
         ) {
-            OutlinedButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                onClick = { sendIntent(LyricsEditIntent.OnSplitByNewline) },
-            ) {
-                Text("줄넘김 기준으로 가사 쪼개기")
+            if (data.canSplit) {
+                OutlinedButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    onClick = { sendIntent(LyricsEditIntent.OnSplitByNewline) },
+                ) {
+                    Text("줄넘김 기준으로 가사 쪼개기")
+                }
             }
 
             LazyColumn(
@@ -225,6 +251,7 @@ private fun LyricsEditScreenPreview() {
         LyricsEditScreen(
             navigateToBack = {},
             data = LyricsEditUiState.getMock(),
+            snackbarHostState = remember { SnackbarHostState() },
             sendIntent = {},
         )
     }
