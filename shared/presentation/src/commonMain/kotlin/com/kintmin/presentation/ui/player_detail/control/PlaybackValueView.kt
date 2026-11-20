@@ -26,6 +26,12 @@ import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
 
 /**
+ * 양 끝에 서는 값의 폭. **좌우가 같아야 가운데 것이 화면 중앙에 온다.**
+ * 가장 넓은 값(`x1.25`)이 들어가는 크기다.
+ */
+val PLAYBACK_VALUE_WIDTH = 84.dp
+
+/**
  * 피치·속도처럼 지금 값을 보여주고 누르면 창이 열리는 자리.
  *
  * 배경을 두지 않는다 — 대신 앞에 붙은 아이콘이 무엇의 값인지와 **누를 수 있다**를 같이 말한다.
@@ -44,7 +50,7 @@ fun PlaybackValueView(
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
     ) {
         Icon(
             modifier = Modifier.size(16.dp),

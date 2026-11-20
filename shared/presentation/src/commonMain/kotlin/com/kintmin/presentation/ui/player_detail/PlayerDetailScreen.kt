@@ -76,6 +76,7 @@ import com.kintmin.presentation.theme.deepSea60
 import com.kintmin.presentation.theme.deepSea80
 import com.kintmin.presentation.theme.seaBlue40
 import com.kintmin.presentation.theme.seaBlue80
+import com.kintmin.presentation.ui.player_detail.control.PLAYBACK_VALUE_WIDTH
 import com.kintmin.presentation.ui.player_detail.control.PlaybackSliderView
 import com.kintmin.presentation.ui.player_detail.control.PlaybackValueView
 import com.kintmin.presentation.ui.player_detail.control.RepeatRangeMarkView
@@ -255,19 +256,13 @@ fun PlayerDetailScreen(
                         .weight(1f),
                     targetState = data.showsLyricsPanel,
                 ) { showsLyrics ->
-                    // 가사 없는 곡에서는 clickable 을 붙이지 않는다 — 눌러도 할 일이 없으면
-                    // 터치 피드백도 나지 않아야 한다.
+                    // 가사로 가는 유일한 입구다. 가사 없는 곡이면 찾으러 보낸다 — 그 안내를
+                    // 화면에 상시로 띄우지 않고 눌렀을 때만 꺼낸다.
                     val artworkModifier = Modifier
                         .fillMaxSize()
                         .clip(RoundedCornerShape(2.dp))
                         .background(Color.Black.copy(alpha = 0.25f))
-                        .let { base ->
-                            if (data.hasLyrics) {
-                                base.clickable { sendIntent(PlayerDetailIntent.OnClickLyrics) }
-                            } else {
-                                base
-                            }
-                        }
+                        .clickable { sendIntent(PlayerDetailIntent.OnClickLyrics) }
 
                     when {
                         showsLyrics -> PlayerLyricsPanelView(
@@ -305,19 +300,14 @@ fun PlayerDetailScreen(
                 // 여백을 늘리는 것과 아트워크를 줄이는 것이 같은 일이다.
                 Spacer(modifier = Modifier.height(28.dp))
 
-                // 세 상태가 모두 이 22dp 를 채운다. 비우면 가사 없는 곡에서 그만큼이 빈 자리로
-                // 남고, 접으면 곡을 넘길 때 아트워크 크기가 흔들린다.
+                // 높이를 늘 22dp 로 잡아 둔다. 가사가 없으면 비우고, 접지는 않는다 — 접으면 곡을
+                // 넘길 때 아트워크 크기가 흔들린다. 가사로 가는 입구는 아트워크 하나다.
                 Text(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(22.dp)
-                        .clickable { sendIntent(PlayerDetailIntent.OnClickLyrics) }
                         .padding(horizontal = 16.dp),
-                    text = when {
-                        !data.hasLyrics -> "가사 찾기"
-                        data.currentLyricLine.isNotBlank() -> data.currentLyricLine
-                        else -> "가사 보기"
-                    },
+                    text = data.currentLyricLine,
                     color = Color.White.copy(alpha = 0.9f),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -326,7 +316,63 @@ fun PlayerDetailScreen(
                     textAlign = TextAlign.Center,
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // 부가 기능 — 재생을 바꾸지 않고 이 곡·이 세션을 다루는 것들.
+                // 셋에게 폭을 똑같이 나눠 준다. SpaceEvenly 는 간격만 같게 해서, 글자인 A-B 가
+                // 아이콘보다 넓으면 가운데 것이 화면 중앙에서 밀린다.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickFavoriteButton) }) {
+                            // 색으로 켜짐을 알리지 않는다. 밝은 파랑은 재생 모드가 켜졌다는 뜻으로
+                            // 이미 쓰고 있어, 찜까지 같은 색이면 성격이 섞인다.
+                            Icon(
+                                modifier = Modifier.size(24.dp),
+                                imageVector = if (data.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                                contentDescription = if (data.isFavorite) "찜 켜짐" else "찜 꺼짐",
+                                tint = if (data.isFavorite) Color.White else Color.White.copy(alpha = 0.6f),
+                            )
+                        }
+                    }
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickSleepTimerButton) }) {
+                            // 켜짐을 tint 로만 알리지 않는다. 남은 시간은 뱃지가 말한다.
+                            BadgedBox(
+                                badge = {
+                                    data.sleepTimerRemainingMinutes?.let { minutes ->
+                                        Badge(
+                                            containerColor = seaBlue80,
+                                            contentColor = deepSea100,
+                                        ) {
+                                            Text(text = "$minutes")
+                                        }
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    modifier = Modifier.size(24.dp),
+                                    imageVector = Icons.Rounded.Bedtime,
+                                    contentDescription = data.sleepTimerRemainingMinutes
+                                        ?.let { "잠들기 타이머 켜짐, ${it}분 남음" }
+                                        ?: "잠들기 타이머",
+                                    tint = Color.White.copy(alpha = 0.82f),
+                                )
+                            }
+                        }
+                    }
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        RepeatRangeMarkView(
+                            isStartSelected = data.repeatRangeStartDuration != null,
+                            isEndSelected = data.repeatRangeEndDuration != null,
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatRangeButton) },
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -344,6 +390,7 @@ fun PlayerDetailScreen(
                     )
                 }
 
+                // 재생바는 재생 버튼 바로 위에 둔다 — 끌어서 맞추고 바로 누르는 자리다.
                 PlaybackSliderView(
                     playbackSeconds = playbackSeconds,
                     currentPositionSeconds = (data.currentDuration.inWholeMilliseconds / 1000f)
@@ -355,57 +402,7 @@ fun PlayerDetailScreen(
                     onValueChangeFinished = { sendIntent(PlayerDetailIntent.OnChangeFinishTimeSlider) },
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
-
-                // 부가 기능 — 재생을 바꾸지 않고 이 곡·이 세션을 다루는 것들. 셋이라 넓게 벌어진다.
-                // 가사는 아트워크와 한 줄 가사가 이미 입구라 여기 두지 않는다.
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickFavoriteButton) }) {
-                        // 색으로 켜짐을 알리지 않는다. 밝은 파랑은 재생 모드가 켜졌다는 뜻으로
-                        // 이미 쓰고 있어, 찜까지 같은 색이면 성격이 섞인다.
-                        Icon(
-                            modifier = Modifier.size(24.dp),
-                            imageVector = if (data.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                            contentDescription = if (data.isFavorite) "찜 켜짐" else "찜 꺼짐",
-                            tint = if (data.isFavorite) Color.White else Color.White.copy(alpha = 0.6f),
-                        )
-                    }
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickSleepTimerButton) }) {
-                        // 켜짐을 tint 로만 알리지 않는다. 남은 시간은 뱃지가 말한다.
-                        BadgedBox(
-                            badge = {
-                                data.sleepTimerRemainingMinutes?.let { minutes ->
-                                    Badge(
-                                        containerColor = seaBlue80,
-                                        contentColor = deepSea100,
-                                    ) {
-                                        Text(text = "$minutes")
-                                    }
-                                }
-                            },
-                        ) {
-                            Icon(
-                                modifier = Modifier.size(24.dp),
-                                imageVector = Icons.Rounded.Bedtime,
-                                contentDescription = data.sleepTimerRemainingMinutes
-                                    ?.let { "잠들기 타이머 켜짐, ${it}분 남음" }
-                                    ?: "잠들기 타이머",
-                                tint = Color.White.copy(alpha = 0.82f),
-                            )
-                        }
-                    }
-                    RepeatRangeMarkView(
-                        isStartSelected = data.repeatRangeStartDuration != null,
-                        isEndSelected = data.repeatRangeEndDuration != null,
-                        onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatRangeButton) },
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 // 재생 기능 — 셔플과 반복이 양 끝을 잡아 좌 1 : 우 1 로 대칭이다.
                 Row(
@@ -470,6 +467,7 @@ fun PlayerDetailScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // 재생 부가 — 지금 걸려 있는 값과 어디서 재생 중인지.
+                // 양 끝을 같은 폭으로 잡아야 가운데 글자가 화면 중앙에 선다.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -481,6 +479,7 @@ fun PlayerDetailScreen(
                         label = data.playbackPitchSemitone.toPitchSemitoneText(),
                         contentDescription = "피치",
                         onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
+                        modifier = Modifier.width(PLAYBACK_VALUE_WIDTH),
                     )
                     Row(
                         modifier = Modifier
@@ -512,6 +511,7 @@ fun PlayerDetailScreen(
                         label = data.playbackSpeed.toPlaybackSpeedText(),
                         contentDescription = "재생 속도",
                         onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
+                        modifier = Modifier.width(PLAYBACK_VALUE_WIDTH),
                     )
                 }
             }
