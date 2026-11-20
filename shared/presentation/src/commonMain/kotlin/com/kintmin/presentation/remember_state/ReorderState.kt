@@ -166,11 +166,6 @@ class ReorderState<T>(
     }
 }
 
-/**
- * 잡은 아이템을 그릴 거리. 넘어갈 이웃이 없는 방향으로는 0 에서 멈춘다.
- *
- * 항목이 하나뿐이면 [index] 가 0 이자 [lastIndex] 라 양쪽을 **모두** 잠가야 한다.
- */
 internal fun clampDragOffsetY(offset: Float, index: Int, lastIndex: Int): Float {
     var clamped = offset
     if (index <= 0) clamped = clamped.coerceAtLeast(0f)
@@ -178,12 +173,6 @@ internal fun clampDragOffsetY(offset: Float, index: Int, lastIndex: Int): Float 
     return clamped
 }
 
-/**
- * 끄는 중에 도착한 목록을 손에 쥔 배치를 유지한 채 받아들인다.
- *
- * 통째로 덮으면 배치가 풀리고, 건너뛰면 그 방출은 다시 오지 않아 목록이 영영 어긋난다 —
- * 그 뒤의 인덱스 기반 커밋이 길이가 다른 두 목록을 맞대게 된다.
- */
 internal fun <T> mergeKeepingOrder(current: List<T>, incoming: List<T>, idOf: (T) -> Int): List<T> {
     val incomingById = incoming.associateBy(idOf)
     val kept = current.mapNotNull { incomingById[idOf(it)] }
@@ -215,6 +204,7 @@ fun <T> rememberReorderState(
     }
 
     LaunchedEffect(dataList) {
+        // 끄는 중이라고 건너뛰면 그 방출은 다시 오지 않는다. 키가 되돌아오지 않아서다.
         val next = if (state.draggingItemId == null) {
             dataList
         } else {
