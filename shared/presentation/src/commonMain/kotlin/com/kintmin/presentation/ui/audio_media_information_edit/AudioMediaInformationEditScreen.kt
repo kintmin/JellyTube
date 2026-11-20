@@ -47,6 +47,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import okio.Path.Companion.toPath
 
@@ -110,6 +111,7 @@ fun AudioMediaInformationEditScreen(
                     IconButton(onClick = { navigateToBack() }) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
+                            modifier = Modifier.size(topAppBarIconSize),
                             contentDescription = "ArrowBackIosNew"
                         )
                     }

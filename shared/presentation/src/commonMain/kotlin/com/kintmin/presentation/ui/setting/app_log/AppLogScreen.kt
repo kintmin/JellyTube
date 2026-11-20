@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -37,6 +38,7 @@ import com.kintmin.presentation.platform.rememberAppLogSharer
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.ui.setting.SettingScreen
@@ -96,6 +98,7 @@ fun AppLogScreen(
                     IconButton(onClick = navigateToBack) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
+                            modifier = Modifier.size(topAppBarIconSize),
                             contentDescription = "뒤로가기",
                         )
                     }
@@ -106,6 +109,7 @@ fun AppLogScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.Send,
+                            modifier = Modifier.size(topAppBarIconSize),
                             contentDescription = "로그 전송",
                         )
                     }

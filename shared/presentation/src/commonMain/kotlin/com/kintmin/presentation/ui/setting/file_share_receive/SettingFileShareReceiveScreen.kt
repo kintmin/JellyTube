@@ -47,6 +47,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.keepsReceivingInBackground
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 
@@ -88,6 +89,7 @@ fun SettingFileShareReceiveScreen(
                     IconButton(onClick = navigateToBack) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
+                            modifier = Modifier.size(topAppBarIconSize),
                             contentDescription = "뒤로가기",
                         )
                     }

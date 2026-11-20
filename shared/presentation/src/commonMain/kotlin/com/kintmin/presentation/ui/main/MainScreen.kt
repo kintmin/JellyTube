@@ -59,6 +59,7 @@ import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarRootTitleFontSize
 import com.kintmin.presentation.theme.topAppBarRootTitleLineHeight
 import com.kintmin.presentation.ui.custom_ui.data_table.AgeColumn
@@ -251,6 +252,7 @@ fun MainScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Link,
+                                    modifier = Modifier.size(topAppBarIconSize),
                                     contentDescription = "검색창 열기",
                                 )
                             }
@@ -263,6 +265,7 @@ fun MainScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Settings,
+                                    modifier = Modifier.size(topAppBarIconSize),
                                     contentDescription = "설정 화면으로 이동",
                                 )
                             }

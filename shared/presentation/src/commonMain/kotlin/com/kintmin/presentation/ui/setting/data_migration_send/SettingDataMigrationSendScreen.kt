@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -29,6 +30,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.kintmin.presentation.platform.KeepScreenOnEffect
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.ui.setting.data_migration_send.view.DataMigrationSendStatusView
@@ -94,6 +96,7 @@ fun SettingDataMigrationSendScreen(
                     IconButton(onClick = { if (uiState.isSending) isStopDialogVisible = true else navigateToBack() }) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
+                            modifier = Modifier.size(topAppBarIconSize),
                             contentDescription = "뒤로가기",
                         )
                     }
