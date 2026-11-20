@@ -16,27 +16,28 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.NavigateBefore
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
-import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.automirrored.rounded.Subject
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -71,13 +72,14 @@ import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.deepSea100
 import com.kintmin.presentation.theme.deepSea60
 import com.kintmin.presentation.theme.deepSea80
 import com.kintmin.presentation.theme.seaBlue40
 import com.kintmin.presentation.theme.seaBlue80
 import com.kintmin.presentation.ui.player_detail.control.PlaybackSliderView
-import com.kintmin.presentation.ui.player_detail.control.PlaybackValueChipView
-import com.kintmin.presentation.ui.player_detail.control.RepeatRangeChipView
+import com.kintmin.presentation.ui.player_detail.control.PlaybackValueView
+import com.kintmin.presentation.ui.player_detail.control.RepeatRangeMarkView
 import com.kintmin.presentation.ui.player_detail.dialog.PlaybackPitchDialog
 import com.kintmin.presentation.ui.player_detail.dialog.PlaybackSpeedDialog
 import com.kintmin.presentation.ui.player_detail.dialog.SleepTimerAnnouncementDialog
@@ -209,53 +211,26 @@ fun PlayerDetailScreen(
                     }
                     Spacer(modifier = Modifier.weight(1f))
 
+                    // 상단은 재생을 조작하지 않는 것만 둔다 — 이 곡을 찜하고, 이 곡을 들여다본다.
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(
                             onClick = { sendIntent(PlayerDetailIntent.OnClickFavoriteButton) }) {
+                            // 색으로 켜짐을 알리지 않는다. 밝은 파랑은 재생 모드가 켜졌다는 뜻으로
+                            // 이미 쓰고 있어, 찜까지 같은 색이면 성격이 섞인다.
                             Icon(
                                 imageVector = if (data.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                                contentDescription = "즐겨찾기",
-                                tint = if (data.isFavorite) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    Color.White.copy(alpha = 0.82f)
-                                },
+                                contentDescription = if (data.isFavorite) "찜 켜짐" else "찜 꺼짐",
+                                tint = if (data.isFavorite) Color.White else Color.White.copy(alpha = 0.82f),
                             )
                         }
                         IconButton(
                             modifier = Modifier.padding(start = 8.dp),
                             onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
                             Icon(
-                                imageVector = Icons.Outlined.Info,
+                                imageVector = Icons.AutoMirrored.Rounded.Subject,
                                 contentDescription = "음원 정보",
                                 tint = Color.White.copy(alpha = 0.82f),
                             )
-                        }
-                        IconButton(
-                            modifier = Modifier.padding(start = 8.dp),
-                            onClick = { sendIntent(PlayerDetailIntent.OnClickSleepTimerButton) }) {
-                            // 켜짐을 tint 로만 알리지 않는다. 이 테마의 primary 는 어두운 배경에서
-                            // 흰 아이콘보다 오히려 덜 보여, 켜진 쪽이 꺼진 쪽보다 흐려진다.
-                            BadgedBox(
-                                badge = {
-                                    data.sleepTimerRemainingMinutes?.let { minutes ->
-                                        Badge(
-                                            containerColor = MaterialTheme.colorScheme.primary,
-                                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                                        ) {
-                                            Text(text = "$minutes")
-                                        }
-                                    }
-                                },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Bedtime,
-                                    contentDescription = data.sleepTimerRemainingMinutes
-                                        ?.let { "잠들기 타이머 켜짐, ${it}분 남음" }
-                                        ?: "잠들기 타이머",
-                                    tint = Color.White.copy(alpha = 0.82f),
-                                )
-                            }
                         }
                     }
                 }
@@ -278,7 +253,7 @@ fun PlayerDetailScreen(
                         .background(Color.Black.copy(alpha = 0.25f))
                         .let { base ->
                             if (data.hasLyrics) {
-                                base.clickable { sendIntent(PlayerDetailIntent.OnClickArtwork) }
+                                base.clickable { sendIntent(PlayerDetailIntent.OnClickLyrics) }
                             } else {
                                 base
                             }
@@ -318,8 +293,10 @@ fun PlayerDetailScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
+                // 제목은 상단으로 올리지 않는다 — 뒤로·찜·정보 사이에 끼면 긴 제목이 늘 흐른다.
+                // 대신 크기를 낮춰 그만큼을 아트워크에 돌려준다.
                 Row(
-                    modifier = Modifier.fillMaxWidth().height(78.dp),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
@@ -332,7 +309,7 @@ fun PlayerDetailScreen(
                                 .basicMarquee(),
                             text = data.title,
                             color = Color.White,
-                            fontSize = 34.sp,
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -341,11 +318,11 @@ fun PlayerDetailScreen(
                         Text(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 4.dp)
+                                .padding(top = 2.dp)
                                 .basicMarquee(),
                             text = data.artist,
                             color = Color.White.copy(alpha = 0.78f),
-                            fontSize = 18.sp,
+                            fontSize = 14.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
@@ -361,7 +338,7 @@ fun PlayerDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(22.dp)
-                        .clickable { sendIntent(PlayerDetailIntent.OnClickLyricLine) }
+                        .clickable { sendIntent(PlayerDetailIntent.OnClickLyrics) }
                         .padding(horizontal = 16.dp),
                     text = when {
                         !data.hasLyrics -> "가사 찾기"
@@ -405,12 +382,67 @@ fun PlayerDetailScreen(
                     onValueChangeFinished = { sendIntent(PlayerDetailIntent.OnChangeFinishTimeSlider) },
                 )
 
-                // 주 동작만 한 줄에 둔다. 보조 조작과 폭을 다투지 않게 한다.
+                // 부가 기능 — 재생을 바꾸지 않고 이 곡·이 세션을 다루는 것들. 셋이라 넓게 벌어진다.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickSleepTimerButton) }) {
+                        // 켜짐을 tint 로만 알리지 않는다. 남은 시간은 뱃지가 말한다.
+                        BadgedBox(
+                            badge = {
+                                data.sleepTimerRemainingMinutes?.let { minutes ->
+                                    Badge(
+                                        containerColor = seaBlue80,
+                                        contentColor = deepSea100,
+                                    ) {
+                                        Text(text = "$minutes")
+                                    }
+                                }
+                            },
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(24.dp),
+                                imageVector = Icons.Rounded.Bedtime,
+                                contentDescription = data.sleepTimerRemainingMinutes
+                                    ?.let { "잠들기 타이머 켜짐, ${it}분 남음" }
+                                    ?: "잠들기 타이머",
+                                tint = Color.White.copy(alpha = 0.82f),
+                            )
+                        }
+                    }
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickLyrics) }) {
+                        Icon(
+                            modifier = Modifier.size(24.dp),
+                            imageVector = Icons.Rounded.Lyrics,
+                            contentDescription = if (data.hasLyrics) "가사 보기" else "가사 찾기",
+                            tint = Color.White.copy(alpha = 0.82f),
+                        )
+                    }
+                    RepeatRangeMarkView(
+                        isStartSelected = data.repeatRangeStartDuration != null,
+                        isEndSelected = data.repeatRangeEndDuration != null,
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatRangeButton) },
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // 재생 기능 — 셔플과 반복이 양 끝을 잡아 좌 1 : 우 1 로 대칭이다.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
+                        Icon(
+                            modifier = Modifier.size(24.dp),
+                            imageVector = Icons.Rounded.Shuffle,
+                            contentDescription = if (data.isShuffling) "셔플 켜짐" else "셔플 꺼짐",
+                            tint = if (data.isShuffling) seaBlue80 else Color.White.copy(alpha = 0.6f),
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
                     IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
                         Icon(
                             modifier = Modifier.size(48.dp),
@@ -446,25 +478,7 @@ fun PlayerDetailScreen(
                             tint = Color.White,
                         )
                     }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // 보조 조작 다섯을 고르게 나눈다. 켜짐은 모두 밝은 쪽이다 — 이 테마의 primary 는
-                // 어두운 배경에서 흰 아이콘보다 흐려 켜고 끈 방향이 뒤집혀 보인다.
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
-                        Icon(
-                            modifier = Modifier.size(24.dp),
-                            imageVector = Icons.Rounded.Shuffle,
-                            contentDescription = if (data.isShuffling) "셔플 켜짐" else "셔플 꺼짐",
-                            tint = if (data.isShuffling) seaBlue80 else Color.White.copy(alpha = 0.6f),
-                        )
-                    }
+                    Spacer(modifier = Modifier.weight(1f))
                     IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) }) {
                         Icon(
                             modifier = Modifier.size(24.dp),
@@ -473,48 +487,53 @@ fun PlayerDetailScreen(
                             tint = if (data.isRepeating) seaBlue80 else Color.White.copy(alpha = 0.6f),
                         )
                     }
-                    RepeatRangeChipView(
-                        isStartSelected = data.repeatRangeStartDuration != null,
-                        isEndSelected = data.repeatRangeEndDuration != null,
-                        onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatRangeButton) },
-                    )
-                    PlaybackValueChipView(
-                        label = data.playbackSpeed.toPlaybackSpeedText(),
-                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
-                        modifier = Modifier.widthIn(min = 64.dp),
-                    )
-                    PlaybackValueChipView(
-                        label = data.playbackPitchSemitone.toPitchSemitoneText(),
-                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
-                        modifier = Modifier.widthIn(min = 52.dp),
-                    )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
+                // 재생 부가 — 지금 걸려 있는 값과 어디서 재생 중인지.
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 12.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
-                        .padding(vertical = 6.dp),
+                        .padding(bottom = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.82f),
+                    PlaybackValueView(
+                        imageVector = Icons.Rounded.MusicNote,
+                        label = data.playbackPitchSemitone.toPitchSemitoneText(),
+                        contentDescription = "피치",
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
-                        color = Color.White.copy(alpha = 0.88f),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(16.dp),
+                            imageVector = Icons.Rounded.LibraryMusic,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.82f),
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
+                            color = Color.White.copy(alpha = 0.88f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    PlaybackValueView(
+                        imageVector = Icons.Rounded.Speed,
+                        label = data.playbackSpeed.toPlaybackSpeedText(),
+                        contentDescription = "재생 속도",
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
                     )
                 }
             }

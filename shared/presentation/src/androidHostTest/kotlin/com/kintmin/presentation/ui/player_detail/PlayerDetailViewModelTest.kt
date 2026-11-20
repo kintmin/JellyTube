@@ -168,46 +168,54 @@ class PlayerDetailViewModelTest {
     }
 
     @Test
-    fun `가사가 있으면 아트워크를 눌러 패널을 열고 닫는다`() {
+    fun `가사가 있으면 가사 입구를 눌러 패널을 열고 닫는다`() {
         givenSyncedLyrics()
         val viewModel = viewModel()
 
-        viewModel.sendIntent(PlayerDetailIntent.OnClickArtwork)
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
         assertTrue(viewModel.data.value.showsLyricsPanel)
 
-        viewModel.sendIntent(PlayerDetailIntent.OnClickArtwork)
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
         assertFalse(viewModel.data.value.showsLyricsPanel)
     }
 
     @Test
-    fun `가사가 없으면 패널을 열라고 해도 뜨지 않는다`() {
+    fun `패널을 연 채 가사 없는 곡으로 넘어가면 아트워크로 돌아간다`() {
+        givenSyncedLyrics()
         val viewModel = viewModel()
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+        assertTrue(viewModel.data.value.showsLyricsPanel)
 
-        viewModel.sendIntent(PlayerDetailIntent.OnClickArtwork)
+        lyricFilePath = null
+        parsedLines = emptyList()
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
 
         assertFalse(viewModel.data.value.hasLyrics)
         assertFalse(viewModel.data.value.showsLyricsPanel)
+        // 사용자의 뜻은 지우지 않는다 — 가사 있는 곡이 오면 패널이 다시 뜬다.
+        assertTrue(viewModel.data.value.isLyricsPanelVisible)
     }
 
     @Test
-    fun `가사가 있으면 한 줄을 눌러 패널을 연다`() {
+    fun `비싱크 가사도 패널은 열린다`() {
         givenUnsyncedLyrics()
         val viewModel = viewModel()
 
-        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine)
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
 
         assertTrue(viewModel.data.value.showsLyricsPanel)
     }
 
     @Test
-    fun `가사가 없으면 한 줄을 눌러 가사 찾기로 보낸다`() = runTest {
+    fun `가사가 없으면 가사 입구가 가사 찾기로 보낸다`() = runTest {
         val viewModel = viewModel()
         val events = mutableListOf<PlayerDetailEvent>()
         val collector = launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.eventFlow.collect { events += it }
         }
 
-        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine)
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
 
         assertEquals(
             listOf(

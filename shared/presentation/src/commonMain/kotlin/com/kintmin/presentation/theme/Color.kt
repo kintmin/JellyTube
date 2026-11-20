@@ -17,6 +17,12 @@ val dark100 = Color(0xFF040404)
 val dark80 = Color(0xFF141414)
 val dark60 = Color(0xFF212121)
 
+/**
+ * 재생 화면 위에 뜨는 창의 바탕. **뒤가 비쳐야** 아트워크에서 뽑은 그라데이션과 한 몸으로 보인다.
+ * 불투명한 `surface` 를 쓰면 그 위에 납작한 회색 판이 얹힌다.
+ */
+val playerOverlay = Color(0xD10D1126)
+
 // https://www.schemecolor.com/deep-sea-blue.php
 val deepSea100 = Color(0xFF0D1126)
 val deepSea80 = Color(0xFF1A224C)

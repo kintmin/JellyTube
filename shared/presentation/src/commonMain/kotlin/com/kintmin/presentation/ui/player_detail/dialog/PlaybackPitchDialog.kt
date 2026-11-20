@@ -7,28 +7,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_play_setting.PlaybackRange
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.playerOverlay
+import com.kintmin.presentation.theme.white
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 import kotlin.math.roundToInt
 
@@ -42,6 +37,8 @@ fun PlaybackPitchDialog(
     JellyTubeDialog(
         showDialog = showDialog,
         onDismiss = onDismiss,
+        shape = PlaybackDialogShape,
+        containerColor = playerOverlay,
         surfaceModifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
@@ -49,36 +46,32 @@ fun PlaybackPitchDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 18.dp),
+                .padding(horizontal = 22.dp, vertical = 22.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "피치",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
+                color = white.copy(alpha = 0.7f),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
             )
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = selectedSemitone.toPitchSemitoneText(),
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
+                color = white,
+                fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                FilledTonalIconButton(
+                PlaybackStepButton(
+                    imageVector = Icons.Rounded.Remove,
+                    contentDescription = "피치 낮추기",
                     onClick = { selectedSemitone.previousPitchSemitone()?.let(onSelectSemitone) },
-                ) {
-                    Icon(
-                        modifier = Modifier.size(16.dp),
-                        imageVector = Icons.Rounded.Remove,
-                        contentDescription = "피치 낮추기",
-                    )
-                }
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Slider(
                     modifier = Modifier.weight(1f),
@@ -93,21 +86,14 @@ fun PlaybackPitchDialog(
                     valueRange = MinPlaybackPitchSemitone.toFloat()..MaxPlaybackPitchSemitone.toFloat(),
                     steps = MaxPlaybackPitchSemitone - MinPlaybackPitchSemitone - 1,
                     // 반음 단위라 눈금이 21 개다. 그려 두면 트랙이 점선으로 뒤덮인다.
-                    colors = SliderDefaults.colors(
-                        activeTickColor = Color.Transparent,
-                        inactiveTickColor = Color.Transparent,
-                    ),
+                    colors = playbackSliderColors(showTicks = false),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                FilledTonalIconButton(
+                PlaybackStepButton(
+                    imageVector = Icons.Rounded.Add,
+                    contentDescription = "피치 높이기",
                     onClick = { selectedSemitone.nextPitchSemitone()?.let(onSelectSemitone) },
-                ) {
-                    Icon(
-                        modifier = Modifier.size(16.dp),
-                        imageVector = Icons.Rounded.Add,
-                        contentDescription = "피치 높이기",
-                    )
-                }
+                )
             }
             Spacer(modifier = Modifier.height(10.dp))
             Row(
@@ -115,10 +101,10 @@ fun PlaybackPitchDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 PlaybackPitchOptions.forEach { semitone ->
-                    FilterChip(
-                        selected = selectedSemitone == semitone,
+                    PlaybackOptionChip(
+                        label = semitone.toPitchSemitoneText(),
+                        isSelected = selectedSemitone == semitone,
                         onClick = { onSelectSemitone(semitone) },
-                        label = { Text(text = semitone.toPitchSemitoneText(), fontSize = 12.sp) },
                     )
                 }
             }

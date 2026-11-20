@@ -193,14 +193,11 @@ class PlayerDetailViewModel constructor(
                 }
             }
 
-            // 가사 없는 곡에서는 화면에서 clickable 을 붙이지 않아 여기까지 오지 않는다.
-            PlayerDetailIntent.OnClickArtwork -> {
-                _data.update { it.copy(isLyricsPanelVisible = !it.isLyricsPanelVisible) }
-            }
-
-            PlayerDetailIntent.OnClickLyricLine -> {
+            // 가사 입구는 셋이다 — 아트워크·한 줄 가사·부가 줄 아이콘. 셋 다 같은 일을 한다.
+            // 아트워크는 가사 없는 곡에서 clickable 을 붙이지 않아 아래 분기로 오지 않는다.
+            PlayerDetailIntent.OnClickLyrics -> {
                 if (data.value.hasLyrics) {
-                    _data.update { it.copy(isLyricsPanelVisible = true) }
+                    _data.update { it.copy(isLyricsPanelVisible = !it.isLyricsPanelVisible) }
                     return
                 }
                 val mediaId = data.value.id.toIntOrNull()
