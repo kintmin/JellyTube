@@ -7,10 +7,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_play_setting.PlaybackRange
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.playerOverlay
 import com.kintmin.presentation.theme.white
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 import kotlin.math.roundToInt
@@ -38,41 +37,43 @@ fun PlaybackPitchDialog(
         showDialog = showDialog,
         onDismiss = onDismiss,
         shape = PlaybackDialogShape,
-        containerColor = playerOverlay,
+        containerColor = PlaybackDialogContainer,
         surfaceModifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 20.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 22.dp, vertical = 22.dp),
+                .padding(horizontal = 24.dp, vertical = 26.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "피치",
-                color = white.copy(alpha = 0.7f),
+                color = white.copy(alpha = 0.6f),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = selectedSemitone.toPitchSemitoneText(),
                 color = white,
-                fontSize = 30.sp,
+                fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
+                // 끌 때마다 바뀌는 글자다. 비례폭이면 가운데 정렬이 좌우로 흔들린다.
+                style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
             )
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(22.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 PlaybackStepButton(
                     imageVector = Icons.Rounded.Remove,
                     contentDescription = "피치 낮추기",
                     onClick = { selectedSemitone.previousPitchSemitone()?.let(onSelectSemitone) },
                 )
-                Spacer(modifier = Modifier.width(8.dp))
                 Slider(
                     modifier = Modifier.weight(1f),
                     value = selectedSemitone.toFloat(),
@@ -85,23 +86,22 @@ fun PlaybackPitchDialog(
                     },
                     valueRange = MinPlaybackPitchSemitone.toFloat()..MaxPlaybackPitchSemitone.toFloat(),
                     steps = MaxPlaybackPitchSemitone - MinPlaybackPitchSemitone - 1,
-                    // 반음 단위라 눈금이 21 개다. 그려 두면 트랙이 점선으로 뒤덮인다.
-                    colors = playbackSliderColors(showTicks = false),
+                    colors = playbackSliderColors(),
                 )
-                Spacer(modifier = Modifier.width(8.dp))
                 PlaybackStepButton(
                     imageVector = Icons.Rounded.Add,
                     contentDescription = "피치 높이기",
                     onClick = { selectedSemitone.nextPitchSemitone()?.let(onSelectSemitone) },
                 )
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 PlaybackPitchOptions.forEach { semitone ->
                     PlaybackOptionChip(
+                        modifier = Modifier.weight(1f),
                         label = semitone.toPitchSemitoneText(),
                         isSelected = selectedSemitone == semitone,
                         onClick = { onSelectSemitone(semitone) },
