@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
@@ -36,18 +35,14 @@ import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -58,8 +53,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,16 +67,17 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.kintmin.presentation.animation.PLAYBACK_POLLING_INTERVAL_MILLIS
-import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.deepSea100
 import com.kintmin.presentation.theme.deepSea60
 import com.kintmin.presentation.theme.deepSea80
 import com.kintmin.presentation.theme.seaBlue40
 import com.kintmin.presentation.theme.seaBlue80
+import com.kintmin.presentation.ui.player_detail.control.PlaybackSliderView
+import com.kintmin.presentation.ui.player_detail.control.PlaybackValueChipView
+import com.kintmin.presentation.ui.player_detail.control.RepeatRangeChipView
 import com.kintmin.presentation.ui.player_detail.dialog.PlaybackPitchDialog
 import com.kintmin.presentation.ui.player_detail.dialog.PlaybackSpeedDialog
 import com.kintmin.presentation.ui.player_detail.dialog.SleepTimerAnnouncementDialog
@@ -400,7 +394,7 @@ fun PlayerDetailScreen(
                     )
                 }
 
-                PlaybackSlider(
+                PlaybackSliderView(
                     playbackSeconds = playbackSeconds,
                     currentPositionSeconds = (data.currentDuration.inWholeMilliseconds / 1000f)
                         .coerceAtMost(playbackSeconds.toFloat()),
@@ -411,139 +405,116 @@ fun PlayerDetailScreen(
                     onValueChangeFinished = { sendIntent(PlayerDetailIntent.OnChangeFinishTimeSlider) },
                 )
 
+                // 주 동작만 한 줄에 둔다. 보조 조작과 폭을 다투지 않게 한다.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
                 ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconButton(
-                            modifier = Modifier.weight(1f),
-                            onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) },
-                        ) {
-                            Icon(
-                                modifier = Modifier.size(24.dp),
-                                imageVector = Icons.Rounded.Shuffle,
-                                contentDescription = "셔플",
-                                tint = if (data.isShuffling) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
-                            )
-                        }
-                        IconButton(
-                            modifier = Modifier.weight(1f),
-                            onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) },
-                        ) {
-                            Icon(
-                                modifier = Modifier.size(24.dp),
-                                imageVector = Icons.Rounded.Repeat,
-                                contentDescription = "반복",
-                                tint = if (data.isRepeating) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.86f),
-                            )
-                        }
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
+                        Icon(
+                            modifier = Modifier.size(48.dp),
+                            imageVector = Icons.AutoMirrored.Rounded.NavigateBefore,
+                            contentDescription = "이전 음원",
+                            tint = Color.White,
+                        )
                     }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
+                    Spacer(modifier = Modifier.width(12.dp))
+                    IconButton(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .border(
+                                width = 2.dp,
+                                color = Color.White.copy(alpha = 0.85f),
+                                shape = CircleShape,
+                            ),
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlayOrPauseButton) },
                     ) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
-                            Icon(
-                                modifier = Modifier.size(48.dp),
-                                imageVector = Icons.AutoMirrored.Rounded.NavigateBefore,
-                                contentDescription = "이전 음원",
-                                tint = Color.White,
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        IconButton(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .border(
-                                    width = 2.dp,
-                                    color = Color.White.copy(alpha = 0.85f),
-                                    shape = CircleShape,
-                                ),
-                            onClick = { sendIntent(PlayerDetailIntent.OnClickPlayOrPauseButton) },
-                        ) {
-                            Icon(
-                                modifier = Modifier.size(38.dp),
-                                imageVector = if (data.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                                contentDescription = "재생/일시정지",
-                                tint = Color.White,
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) }) {
-                            Icon(
-                                modifier = Modifier.size(48.dp),
-                                imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
-                                contentDescription = "다음 음원",
-                                tint = Color.White,
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            modifier = Modifier.size(38.dp),
+                            imageVector = if (data.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                            contentDescription = if (data.isPlaying) "일시정지" else "재생",
+                            tint = Color.White,
+                        )
                     }
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        RepeatRangeButton(
-                            isStartSelected = data.repeatRangeStartDuration != null,
-                            isEndSelected = data.repeatRangeEndDuration != null,
-                            onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatRangeButton) },
+                    Spacer(modifier = Modifier.width(12.dp))
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) }) {
+                        Icon(
+                            modifier = Modifier.size(48.dp),
+                            imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
+                            contentDescription = "다음 음원",
+                            tint = Color.White,
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // 보조 조작 다섯을 고르게 나눈다. 켜짐은 모두 밝은 쪽이다 — 이 테마의 primary 는
+                // 어두운 배경에서 흰 아이콘보다 흐려 켜고 끈 방향이 뒤집혀 보인다.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                ) {
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
+                        Icon(
+                            modifier = Modifier.size(24.dp),
+                            imageVector = Icons.Rounded.Shuffle,
+                            contentDescription = if (data.isShuffling) "셔플 켜짐" else "셔플 꺼짐",
+                            tint = if (data.isShuffling) seaBlue80 else Color.White.copy(alpha = 0.6f),
+                        )
+                    }
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) }) {
+                        Icon(
+                            modifier = Modifier.size(24.dp),
+                            imageVector = Icons.Rounded.Repeat,
+                            contentDescription = if (data.isRepeating) "반복 켜짐" else "반복 꺼짐",
+                            tint = if (data.isRepeating) seaBlue80 else Color.White.copy(alpha = 0.6f),
+                        )
+                    }
+                    RepeatRangeChipView(
+                        isStartSelected = data.repeatRangeStartDuration != null,
+                        isEndSelected = data.repeatRangeEndDuration != null,
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatRangeButton) },
+                    )
+                    PlaybackValueChipView(
+                        label = data.playbackSpeed.toPlaybackSpeedText(),
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
+                        modifier = Modifier.widthIn(min = 64.dp),
+                    )
+                    PlaybackValueChipView(
+                        label = data.playbackPitchSemitone.toPitchSemitoneText(),
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
+                        modifier = Modifier.widthIn(min = 52.dp),
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 12.dp),
+                        .padding(bottom = 12.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
+                        .padding(vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
                 ) {
-                    PlaybackPitchChip(
-                        Modifier.widthIn(min = 52.dp),
-                        semitone = data.playbackPitchSemitone,
-                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackPitchButton) },
+                    Icon(
+                        imageVector = Icons.Rounded.LibraryMusic,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.82f),
                     )
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 20.dp, end = 8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
-                                .padding(vertical  = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.LibraryMusic,
-                                contentDescription = null,
-                                tint = Color.White.copy(alpha = 0.82f),
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
-                                color = Color.White.copy(alpha = 0.88f),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                    PlaybackSpeedChip(
-                        Modifier.widthIn(min = 64.dp),
-                        speed = data.playbackSpeed,
-                        onClick = { sendIntent(PlayerDetailIntent.OnClickPlaybackSpeedButton) },
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
+                        color = Color.White.copy(alpha = 0.88f),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -579,210 +550,6 @@ fun PlayerDetailScreen(
                 onSelect = { sendIntent(PlayerDetailIntent.OnSelectSleepTimerAnnouncement(it)) },
             )
         }
-    }
-}
-
-@Composable
-private fun PlaybackSlider(
-    playbackSeconds: Long,
-    currentPositionSeconds: Float,
-    isPlaying: Boolean,
-    repeatRangeStartSeconds: Long?,
-    repeatRangeEndSeconds: Long?,
-    onValueChange: (Float) -> Unit,
-    onValueChangeFinished: () -> Unit,
-) {
-    var sliderWidth by remember { mutableIntStateOf(0) }
-    var isDragging by remember { mutableStateOf(false) }
-    val smoothPositionSeconds = animatePlaybackSeconds(
-        targetSeconds = currentPositionSeconds,
-        snap = isDragging || !isPlaying,
-    )
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .onSizeChanged { sliderWidth = it.width },
-    ) {
-        Slider(
-            modifier = Modifier.fillMaxWidth(),
-            valueRange = 0f..playbackSeconds.toFloat(),
-            value = smoothPositionSeconds,
-            onValueChange = {
-                isDragging = true
-                onValueChange(it)
-            },
-            onValueChangeFinished = {
-                isDragging = false
-                onValueChangeFinished()
-            },
-            colors = SliderDefaults.colors(
-                thumbColor = Color.White,
-                activeTrackColor = Color.White,
-                inactiveTrackColor = Color.White.copy(alpha = 0.28f),
-            ),
-        )
-        RepeatRangeMarker(
-            label = "A",
-            seconds = repeatRangeStartSeconds,
-            playbackSeconds = playbackSeconds,
-            sliderWidth = sliderWidth,
-        )
-        RepeatRangeMarker(
-            label = "B",
-            seconds = repeatRangeEndSeconds,
-            playbackSeconds = playbackSeconds,
-            sliderWidth = sliderWidth,
-        )
-    }
-}
-
-@Composable
-private fun RepeatRangeMarker(
-    label: String,
-    seconds: Long?,
-    playbackSeconds: Long,
-    sliderWidth: Int,
-) {
-    if (seconds == null || sliderWidth == 0) return
-
-    val density = LocalDensity.current
-    val markerSize = 18.dp
-    val markerWidth = 42.dp
-    val barWidth = 2.dp
-    val markerOffset = with(density) {
-        (sliderWidth * (seconds.toFloat() / playbackSeconds).coerceIn(0f, 1f)).toDp()
-    }
-    Column(
-        modifier = Modifier
-            .offset(x = markerOffset - markerWidth / 2)
-            .width(markerWidth),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(markerSize)
-                .clip(CircleShape)
-                .background(seaBlue80),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = label,
-                // 마커가 밝아졌으므로 글자는 어두운 쪽으로 뒤집는다.
-                color = deepSea100,
-                fontSize = 11.sp,
-                lineHeight = 11.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
-        }
-        Box(
-            modifier = Modifier
-                .width(barWidth)
-                .height(22.dp)
-                .background(seaBlue80),
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = seconds.seconds.to_hh_colon_mm_colon_ss(),
-            color = Color.White.copy(alpha = 0.88f),
-            fontSize = 10.sp,
-            lineHeight = 10.sp,
-            maxLines = 1,
-        )
-    }
-}
-
-@Composable
-private fun RepeatRangeButton(
-    modifier: Modifier = Modifier,
-    isStartSelected: Boolean,
-    isEndSelected: Boolean,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // 켜진 쪽이 꺼진 쪽보다 밝아야 한다. 이 테마의 어두운 파랑은 아트워크 그라데이션
-        // 위에서 흰 글자보다 어두워, 켜짐을 그 색으로 알리면 방향이 뒤집혀 보인다.
-        Text(
-            text = "A",
-            color = if (isStartSelected) seaBlue80 else Color.White.copy(alpha = 0.6f),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = " | ",
-            color = Color.White.copy(alpha = 0.6f),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = "B",
-            color = if (isEndSelected) seaBlue80 else Color.White.copy(alpha = 0.6f),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
-
-@Composable
-private fun PlaybackPitchChip(
-    modifier: Modifier = Modifier,
-    semitone: Int,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.White.copy(alpha = 0.16f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = semitone.toPitchSemitoneText(),
-            color = Color.White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            softWrap = false,
-            // 숫자 폭을 같게 해 값이 바뀔 때 칩 폭이 흔들리지 않게 한다.
-            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
-        )
-    }
-}
-
-@Composable
-private fun PlaybackSpeedChip(
-    modifier: Modifier = Modifier,
-    speed: Float,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.White.copy(alpha = 0.16f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = speed.toPlaybackSpeedText(),
-            color = Color.White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            softWrap = false,
-            // 숫자 폭을 같게 해 값이 바뀔 때 칩 폭이 흔들리지 않게 한다.
-            style = LocalTextStyle.current.copy(fontFeatureSettings = "tnum"),
-        )
     }
 }
 
@@ -831,52 +598,5 @@ private fun PlayerDetailScreenPreview() {
     }
 }
 
-/** 이 화면은 아트워크에서 뽑은 어두운 그라데이션 위에 그려진다. 프리뷰도 그 조건을 깔아야
- *  켜짐이 꺼짐보다 밝은지 눈으로 볼 수 있다. */
-@Composable
-private fun ArtworkGroundPreview(content: @Composable () -> Unit) {
-    JellyTubeTheme {
-        Box(
-            modifier = Modifier
-                .background(Color(0xFF1D1C1A))
-                .padding(16.dp),
-        ) {
-            content()
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun RepeatRangeButtonPreview() {
-    ArtworkGroundPreview {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            RepeatRangeButton(isStartSelected = false, isEndSelected = false, onClick = {})
-            RepeatRangeButton(isStartSelected = true, isEndSelected = false, onClick = {})
-            RepeatRangeButton(isStartSelected = true, isEndSelected = true, onClick = {})
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun RepeatRangeMarkerPreview() {
-    ArtworkGroundPreview {
-        Box(modifier = Modifier.width(200.dp).height(64.dp)) {
-            RepeatRangeMarker(
-                label = "A",
-                seconds = 60,
-                playbackSeconds = 300,
-                sliderWidth = 540,
-            )
-            RepeatRangeMarker(
-                label = "B",
-                seconds = 240,
-                playbackSeconds = 300,
-                sliderWidth = 540,
-            )
-        }
-    }
-}
 
 
