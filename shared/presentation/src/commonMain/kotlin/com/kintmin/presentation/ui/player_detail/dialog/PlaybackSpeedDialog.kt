@@ -1,9 +1,6 @@
 package com.kintmin.presentation.ui.player_detail.dialog
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,27 +9,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_play_setting.PlaybackRange
 import com.kintmin.presentation.extension.toFixed
+import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 import kotlin.math.roundToInt
 
@@ -46,7 +41,6 @@ fun PlaybackSpeedDialog(
     JellyTubeDialog(
         showDialog = showDialog,
         onDismiss = onDismiss,
-        containerColor = Color.Black.copy(alpha = 0.8f),
         surfaceModifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
@@ -59,14 +53,14 @@ fun PlaybackSpeedDialog(
         ) {
             Text(
                 text = "재생 속도",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = selectedSpeed.toPlaybackSpeedText(),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
             )
@@ -75,13 +69,15 @@ fun PlaybackSpeedDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PlaybackStepButton(
-                    imageVector = Icons.Rounded.Remove,
-                    contentDescription = "재생 속도 낮추기",
-                    onClick = {
-                        selectedSpeed.previousPlaybackSpeed()?.let(onSelectSpeed)
-                    },
-                )
+                FilledTonalIconButton(
+                    onClick = { selectedSpeed.previousPlaybackSpeed()?.let(onSelectSpeed) },
+                ) {
+                    Icon(
+                        modifier = Modifier.size(16.dp),
+                        imageVector = Icons.Rounded.Remove,
+                        contentDescription = "재생 속도 낮추기",
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
                 Slider(
                     modifier = Modifier.weight(1f),
@@ -93,22 +89,17 @@ fun PlaybackSpeedDialog(
                         }
                     },
                     valueRange = MinPlaybackSpeed..MaxPlaybackSpeed,
-                    colors = SliderDefaults.colors(
-                        thumbColor = Color.White,
-                        activeTrackColor = Color.White,
-                        inactiveTrackColor = Color.White.copy(alpha = 0.36f),
-                        activeTickColor = Color.Transparent,
-                        inactiveTickColor = Color.Transparent,
-                    ),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                PlaybackStepButton(
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = "재생 속도 높이기",
-                    onClick = {
-                        selectedSpeed.nextPlaybackSpeed()?.let(onSelectSpeed)
-                    },
-                )
+                FilledTonalIconButton(
+                    onClick = { selectedSpeed.nextPlaybackSpeed()?.let(onSelectSpeed) },
+                ) {
+                    Icon(
+                        modifier = Modifier.size(16.dp),
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = "재생 속도 높이기",
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(10.dp))
             Row(
@@ -116,60 +107,14 @@ fun PlaybackSpeedDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 PlaybackSpeedOptions.forEach { speed ->
-                    PlaybackSpeedOptionChip(
-                        speed = speed,
-                        isSelected = selectedSpeed == speed,
+                    FilterChip(
+                        selected = selectedSpeed == speed,
                         onClick = { onSelectSpeed(speed) },
+                        label = { Text(text = speed.formatPlaybackSpeed(), fontSize = 12.sp) },
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun PlaybackStepButton(
-    imageVector: ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.16f))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = imageVector,
-            contentDescription = contentDescription,
-            tint = Color.White,
-            modifier = Modifier.size(16.dp),
-        )
-    }
-}
-
-@Composable
-private fun PlaybackSpeedOptionChip(
-    speed: Float,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.White.copy(alpha = if (isSelected) 0.26f else 0.14f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 11.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = speed.formatPlaybackSpeed(),
-            color = Color.White,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-        )
     }
 }
 
@@ -204,5 +149,18 @@ private fun Float.formatPlaybackSpeed(): String {
         toFixed(1)
     } else {
         toFixed(2).trimEnd('0')
+    }
+}
+
+@Preview
+@Composable
+private fun PlaybackSpeedDialogPreview() {
+    JellyTubeTheme {
+        PlaybackSpeedDialog(
+            showDialog = true,
+            selectedSpeed = 1.25f,
+            onDismiss = {},
+            onSelectSpeed = {},
+        )
     }
 }
