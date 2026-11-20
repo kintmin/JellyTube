@@ -23,7 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.NavigateBefore
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
-import androidx.compose.material.icons.automirrored.rounded.Subject
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Favorite
@@ -232,8 +232,8 @@ fun PlayerDetailScreen(
                             modifier = Modifier.padding(start = 8.dp),
                             onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Subject,
-                                contentDescription = "세부 화면",
+                                imageVector = Icons.Outlined.Info,
+                                contentDescription = "음원 정보",
                                 tint = Color.White.copy(alpha = 0.82f),
                             )
                         }
