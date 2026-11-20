@@ -62,10 +62,16 @@ class PlayerDetailViewModelTest {
         every { remaining } returns 10.minutes
     }
 
-    // ViewModel 이 읽는 것은 플레이리스트 종류와 가사 파일 경로 둘뿐이라 그 둘만 세운다.
-    private fun aggregate() = mockk<PlaylistTrackAggregate>(relaxed = true) {
+    // ViewModel 이 읽는 것만 세운다. 기본 이름은 재생기가 주는 값과 같게 둬서,
+    // 저장소에서 다시 덮어도 다른 테스트의 기대가 흔들리지 않게 한다.
+    private fun aggregate(
+        name: String = "제목1",
+        artist: String = "",
+    ) = mockk<PlaylistTrackAggregate>(relaxed = true) {
         every { playlist.type } returns PlaylistType.USER
         every { audioMedia.lyricFileFullPath } returns lyricFilePath
+        every { audioMedia.name } returns name
+        every { audioMedia.artist } returns artist
     }
 
     private val fetchAudioMediaDetail = mockk<FetchAudioMediaDetailFlowUseCase> {
@@ -229,6 +235,29 @@ class PlayerDetailViewModelTest {
         )
         assertFalse(viewModel.data.value.showsLyricsPanel)
         collector.cancel()
+    }
+
+    @Test
+    fun `음원 정보를 고치면 재생 화면의 제목과 아티스트가 따라 바뀐다`() {
+        // 재생기는 곡을 걸 때 찍힌 스냅샷을 그대로 들고 있다. 저장소가 다시 흘려보내야 바뀐다.
+        every { fetchAudioMediaDetail.invoke(any()) } returns flowOf(
+            listOf(aggregate(name = "제목1", artist = "옛 아티스트")),
+            listOf(aggregate(name = "고친 제목", artist = "고친 아티스트")),
+        )
+
+        val viewModel = viewModel()
+
+        assertEquals("고친 제목", viewModel.data.value.title)
+        assertEquals("고친 아티스트", viewModel.data.value.artist)
+    }
+
+    @Test
+    fun `어느 플레이리스트에도 없는 곡이면 재생기 표기를 지우지 않는다`() {
+        every { fetchAudioMediaDetail.invoke(any()) } returns flowOf(emptyList())
+
+        val viewModel = viewModel()
+
+        assertEquals("제목1", viewModel.data.value.title)
     }
 
     private fun givenSyncedLyrics() {

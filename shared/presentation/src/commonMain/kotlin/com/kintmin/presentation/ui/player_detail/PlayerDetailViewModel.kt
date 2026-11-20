@@ -418,7 +418,7 @@ class PlayerDetailViewModel constructor(
         }
     }
 
-    // 현재 재생 곡(data.id)이 바뀔 때마다 즐겨찾기/가사 유무 상태를 재구독한다.
+    // 현재 재생 곡(data.id)이 바뀔 때마다 즐겨찾기/가사/표기 상태를 재구독한다.
     // flatMapLatest가 이전 곡의 구독을 자동 취소하므로 별도 Job 관리가 필요 없다.
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeAudioMediaDetail() {
@@ -434,8 +434,19 @@ class PlayerDetailViewModel constructor(
                 }
                 .collect { aggregates ->
                     val isFavorite = aggregates?.any { it.playlist.type == PlaylistType.FAVORITE } ?: false
-                    val lyricFileFullPath = aggregates?.firstOrNull()?.audioMedia?.lyricFileFullPath
-                    _data.update { it.copy(isFavorite = isFavorite, hasLyrics = lyricFileFullPath != null) }
+                    val audioMedia = aggregates?.firstOrNull()?.audioMedia
+                    val lyricFileFullPath = audioMedia?.lyricFileFullPath
+                    _data.update {
+                        it.copy(
+                            isFavorite = isFavorite,
+                            hasLyrics = lyricFileFullPath != null,
+                            // 제목·아티스트는 저장소가 진실이다. 재생기가 들고 있는 값은 곡을 걸 때
+                            // 찍힌 스냅샷이라, 정보를 고쳐도 다시 걸기 전까지 옛 이름이 남았다.
+                            // 어느 플레이리스트에도 없어 목록이 비면 덮지 않고 그대로 둔다.
+                            title = audioMedia?.name ?: it.title,
+                            artist = audioMedia?.artist ?: it.artist,
+                        )
+                    }
                     loadLyricsIfNeeded(lyricFileFullPath)
                 }
         }
