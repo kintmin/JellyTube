@@ -212,6 +212,8 @@ fun AudioMediaDetailScreen(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
                                 strokeWidth = 2.dp,
+                                // 기본값이 primary 라 버튼 글자색과 어긋난다.
+                                color = softRed,
                             )
                         } else {
                             Icon(
@@ -280,7 +282,7 @@ fun AudioMediaDetailScreen(
                 )
             }
         }
-        // 리스트가 사진 위를 덮어 터치를 가져가므로 사진 탭은 투명한 첫 칸이 받는다.
+        // 리스트가 사진 위를 덮어 터치를 가져가므로 사진 탭과 확대 아이콘을 첫 칸이 들고 있다.
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
