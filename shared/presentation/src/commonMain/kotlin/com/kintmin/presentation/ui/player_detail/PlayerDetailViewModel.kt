@@ -193,13 +193,28 @@ class PlayerDetailViewModel constructor(
                 }
             }
 
-            PlayerDetailIntent.OnClickLyricsButton -> {
+            // 가사 없는 곡에서는 화면에서 clickable 을 붙이지 않아 여기까지 오지 않는다.
+            PlayerDetailIntent.OnClickArtwork -> {
+                _data.update { it.copy(isLyricsPanelVisible = !it.isLyricsPanelVisible) }
+            }
+
+            PlayerDetailIntent.OnClickLyricLine -> {
+                if (data.value.hasLyrics) {
+                    _data.update { it.copy(isLyricsPanelVisible = true) }
+                    return
+                }
                 val mediaId = data.value.id.toIntOrNull()
                 viewModelScope.launch {
                     if (mediaId == null) {
                         _eventFlow.emit(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
                     } else {
-                        _eventFlow.emit(PlayerDetailEvent.NavigateToLyricsViewer(mediaId))
+                        _eventFlow.emit(
+                            PlayerDetailEvent.NavigateToLyricsSearch(
+                                audioMediaId = mediaId,
+                                query = data.value.title,
+                                durationSeconds = data.value.playbackDuration.inWholeSeconds.toDouble(),
+                            )
+                        )
                     }
                 }
             }
@@ -361,7 +376,7 @@ class PlayerDetailViewModel constructor(
                     sleepTimerRemaining = sleepTimerRunner.remaining,
                 )
             }
-            refreshLyricLine()
+            refreshActiveLyricIndex()
             return
         }
 
@@ -382,6 +397,11 @@ class PlayerDetailViewModel constructor(
                 playbackPitchSemitone = data.value.playbackPitchSemitone,
                 // 같은 곡이면 즐겨찾기 상태 유지, 곡이 바뀌면 observeFavorite의 flow가 새 값으로 갱신
                 isFavorite = if (isSameMedia) data.value.isFavorite else false,
+                // 같은 곡인데 플레이리스트만 바뀌면 구독은 id 로 묶여 다시 흐르지 않는다. 그때 가사
+                // 상태를 버리면 아트워크가 눌리지 않게 되므로 이어 받는다.
+                hasLyrics = if (isSameMedia) data.value.hasLyrics else false,
+                lyricLines = if (isSameMedia) data.value.lyricLines else emptyList(),
+                isLyricsPanelVisible = data.value.isLyricsPanelVisible,
                 repeatRangeStartDuration = repeatRangeState.startDuration,
                 repeatRangeEndDuration = repeatRangeState.endDuration,
                 isPlaybackSpeedMenuVisible = data.value.isPlaybackSpeedMenuVisible,
@@ -394,7 +414,7 @@ class PlayerDetailViewModel constructor(
             )
         }
 
-        refreshLyricLine()
+        refreshActiveLyricIndex()
 
         if (!isSamePlaylist) {
             refreshPlaylistName(currentPlaylistId)
@@ -431,26 +451,31 @@ class PlayerDetailViewModel constructor(
 
         if (lyricFileFullPath == null) {
             parsedLyricLines = emptyList()
-            _data.update { it.copy(currentLyricLine = "") }
+            _data.update { it.copy(lyricLines = emptyList(), activeLyricIndex = -1) }
             return
         }
         viewModelScope.launch {
             parsedLyricLines = getParsedLyricsUseCase(lyricFileFullPath)
-            refreshLyricLine()
+            _data.update {
+                it.copy(
+                    lyricLines = parsedLyricLines.map { line -> line.text },
+                    activeLyricIndex = -1,
+                )
+            }
+            refreshActiveLyricIndex()
         }
     }
 
-    // 비싱크(시간정보 없음) 가사면 activeLyricIndex 가 -1 이라 빈 문자열로 둔다.
-    private fun refreshLyricLine() {
-        val line = if (parsedLyricLines.isEmpty()) {
-            ""
+    // 비싱크(시간정보 없음) 가사면 activeLyricIndex 가 늘 -1 이라 활성 줄이 없다.
+    private fun refreshActiveLyricIndex() {
+        val index = if (parsedLyricLines.isEmpty()) {
+            -1
         } else {
             val positionMs = mediaControllerManager.currentPosition ?: return
-            val index = activeLyricIndex(parsedLyricLines, positionMs)
-            parsedLyricLines.getOrNull(index)?.text.orEmpty()
+            activeLyricIndex(parsedLyricLines, positionMs)
         }
-        if (line != _data.value.currentLyricLine) {
-            _data.update { it.copy(currentLyricLine = line) }
+        if (index != _data.value.activeLyricIndex) {
+            _data.update { it.copy(activeLyricIndex = index) }
         }
     }
 

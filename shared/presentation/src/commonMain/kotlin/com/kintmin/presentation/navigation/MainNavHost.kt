@@ -268,8 +268,8 @@ fun MainNavHost(
             navigateToPlayingPlaylist = { playlistId, audioMediaId ->
                 onDeepLink(DeepLinkConstants.UrlBuilder.playlistContentScreen(playlistId, audioMediaId))
             },
-            navigateToLyricsViewer = { audioMediaId ->
-                navController.navigateToLyricsViewerScreen(audioMediaId, navOptions)
+            navigateToLyricsSearch = { audioMediaId, query, durationSeconds ->
+                navController.navigateToLyricsSearchScreen(audioMediaId, query, durationSeconds, navOptions)
             },
         )
         lyricsViewerScreen(

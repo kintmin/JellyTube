@@ -1,5 +1,6 @@
 package com.kintmin.presentation.ui.player_detail
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
@@ -28,7 +29,6 @@ import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.LibraryMusic
-import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
@@ -90,6 +90,7 @@ import com.kintmin.presentation.ui.player_detail.dialog.SleepTimerAnnouncementDi
 import com.kintmin.presentation.ui.player_detail.dialog.SleepTimerDialog
 import com.kintmin.presentation.ui.player_detail.dialog.toPitchSemitoneText
 import com.kintmin.presentation.ui.player_detail.dialog.toPlaybackSpeedText
+import com.kintmin.presentation.ui.player_detail.lyrics.PlayerLyricsPanelView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -104,7 +105,7 @@ fun PlayerDetailScreen(
     navigateToAudioMediaDetail: (audioMediaId: Int) -> Unit,
     navigateToAudioMediaInformationEdit: (audioMediaId: Int) -> Unit,
     navigateToPlayingPlaylist: (playlistId: Int, audioMediaId: Int?) -> Unit,
-    navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
+    navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
 ) {
     val viewModel = koinViewModel<PlayerDetailViewModel>()
     val data by viewModel.data.collectAsState()
@@ -121,7 +122,11 @@ fun PlayerDetailScreen(
             when (event) {
                 is PlayerDetailEvent.NavigateToAudioMediaDetailScreen -> navigateToAudioMediaDetail(event.audioMediaId)
                 is PlayerDetailEvent.NavigateToAudioMediaInformationEditScreen -> navigateToAudioMediaInformationEdit(event.audioMediaId)
-                is PlayerDetailEvent.NavigateToLyricsViewer -> navigateToLyricsViewer(event.audioMediaId)
+                is PlayerDetailEvent.NavigateToLyricsSearch -> navigateToLyricsSearch(
+                    event.audioMediaId,
+                    event.query,
+                    event.durationSeconds,
+                )
                 is PlayerDetailEvent.NavigateToPlayingPlaylist -> navigateToPlayingPlaylist(
                     event.playlistId,
                     event.audioMediaId
@@ -223,17 +228,6 @@ fun PlayerDetailScreen(
                                 },
                             )
                         }
-                        if (data.hasLyrics) {
-                            IconButton(
-                                modifier = Modifier.padding(start = 8.dp),
-                                onClick = { sendIntent(PlayerDetailIntent.OnClickLyricsButton) }) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Lyrics,
-                                    contentDescription = "가사 보기",
-                                    tint = Color.White.copy(alpha = 0.82f),
-                                )
-                            }
-                        }
                         IconButton(
                             modifier = Modifier.padding(start = 8.dp),
                             onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
@@ -274,37 +268,58 @@ fun PlayerDetailScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                if (data.imageFileFullPath == null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(Color.Black.copy(alpha = 0.25f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(100.dp),
-                            imageVector = Icons.Rounded.LibraryMusic,
+                // 가사 패널이 아트워크와 같은 자리·같은 크기를 쓴다. weight 를 바깥이 들고 있어야
+                // 전환할 때 아래 요소들이 밀리지 않는다.
+                Crossfade(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    targetState = data.showsLyricsPanel,
+                ) { showsLyrics ->
+                    // 가사 없는 곡에서는 clickable 을 붙이지 않는다 — 눌러도 할 일이 없으면
+                    // 터치 피드백도 나지 않아야 한다.
+                    val artworkModifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color.Black.copy(alpha = 0.25f))
+                        .let { base ->
+                            if (data.hasLyrics) {
+                                base.clickable { sendIntent(PlayerDetailIntent.OnClickArtwork) }
+                            } else {
+                                base
+                            }
+                        }
+
+                    when {
+                        showsLyrics -> PlayerLyricsPanelView(
+                            lines = data.lyricLines,
+                            activeIndex = data.activeLyricIndex,
+                            modifier = artworkModifier,
+                        )
+
+                        data.imageFileFullPath == null -> Box(
+                            modifier = artworkModifier,
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(100.dp),
+                                imageVector = Icons.Rounded.LibraryMusic,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.7f),
+                            )
+                        }
+
+                        else -> AsyncImage(
+                            model = ImageRequest.Builder(LocalPlatformContext.current)
+                                .data(data.imageFileFullPath.toPath())
+                                .memoryCachePolicy(CachePolicy.ENABLED)
+                                .diskCachePolicy(CachePolicy.DISABLED)
+                                .build(),
                             contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.7f),
+                            contentScale = ContentScale.Crop,
+                            modifier = artworkModifier,
                         )
                     }
-                } else {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalPlatformContext.current)
-                            .data(data.imageFileFullPath.toPath())
-                            .memoryCachePolicy(CachePolicy.ENABLED)
-                            .diskCachePolicy(CachePolicy.DISABLED)
-                            .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(Color.Black.copy(alpha = 0.25f)),
-                    )
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -346,12 +361,19 @@ fun PlayerDetailScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
+                // 세 상태가 모두 이 22dp 를 채운다. 비우면 가사 없는 곡에서 그만큼이 빈 자리로
+                // 남고, 접으면 곡을 넘길 때 아트워크 크기가 흔들린다.
                 Text(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(22.dp)
+                        .clickable { sendIntent(PlayerDetailIntent.OnClickLyricLine) }
                         .padding(horizontal = 16.dp),
-                    text = data.currentLyricLine,
+                    text = when {
+                        !data.hasLyrics -> "가사 찾기"
+                        data.currentLyricLine.isNotBlank() -> data.currentLyricLine
+                        else -> "가사 보기"
+                    },
                     color = Color.White.copy(alpha = 0.9f),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,

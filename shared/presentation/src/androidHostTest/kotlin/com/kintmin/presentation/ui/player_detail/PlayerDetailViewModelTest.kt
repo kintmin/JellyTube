@@ -1,16 +1,25 @@
 package com.kintmin.presentation.ui.player_detail
 
 import com.kintmin.domain.audio_play_setting.model.RepeatRangeState
+import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
+import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
+import com.kintmin.domain.lyrics.model.LyricsLine
+import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.sleep_timer.SleepTimerRunner
 import com.kintmin.presentation.port.model.MediaControlData
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -20,7 +29,7 @@ import org.junit.Before
 import org.junit.Test
 import kotlin.time.Duration.Companion.minutes
 
-/** 잠들기 타이머가 곡 교체에 휩쓸리지 않는지 본다 — `refreshMediaData` 가 UiState 를 새로 만든다. */
+/** 잠들기 타이머가 곡 교체에 휩쓸리지 않는지, 그리고 가사 세 상태의 분기를 본다. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerDetailViewModelTest {
 
@@ -36,6 +45,12 @@ class PlayerDetailViewModelTest {
 
     private var playing: MediaControlData? = mediaControlData("1")
 
+    /** 곡에 딸린 가사 파일 경로. null 이면 가사 없는 곡이다. */
+    private var lyricFilePath: String? = null
+
+    /** 그 파일을 파싱한 결과. timeMs 가 없으면 비싱크 가사다. */
+    private var parsedLines: List<LyricsLine> = emptyList()
+
     private val manager = mockk<PlaybackController>(relaxed = true) {
         every { playingMediaItem } answers { playing }
         every { currentPosition } returns 3_000L
@@ -45,6 +60,20 @@ class PlayerDetailViewModelTest {
 
     private val sleepTimerRunner = mockk<SleepTimerRunner>(relaxed = true) {
         every { remaining } returns 10.minutes
+    }
+
+    // ViewModel 이 읽는 것은 플레이리스트 종류와 가사 파일 경로 둘뿐이라 그 둘만 세운다.
+    private fun aggregate() = mockk<PlaylistTrackAggregate>(relaxed = true) {
+        every { playlist.type } returns PlaylistType.USER
+        every { audioMedia.lyricFileFullPath } returns lyricFilePath
+    }
+
+    private val fetchAudioMediaDetail = mockk<FetchAudioMediaDetailFlowUseCase> {
+        every { this@mockk.invoke(any()) } answers { flowOf(listOf(aggregate())) }
+    }
+
+    private val getParsedLyrics = mockk<GetParsedLyricsUseCase> {
+        coEvery { this@mockk.invoke(any()) } answers { parsedLines }
     }
 
     @Before
@@ -114,6 +143,103 @@ class PlayerDetailViewModelTest {
         assertEquals(null, viewModel.data.value.sleepTimerRemaining)
     }
 
+    // ---- 가사 세 상태 ----
+
+    @Test
+    fun `싱크 가사면 재생 위치에 맞는 줄이 활성이다`() {
+        givenSyncedLyrics()
+        val viewModel = viewModel()
+
+        // currentPosition 은 3초. 2초 줄이 활성이다.
+        assertTrue(viewModel.data.value.hasLyrics)
+        assertEquals(1, viewModel.data.value.activeLyricIndex)
+        assertEquals("두 번째 줄", viewModel.data.value.currentLyricLine)
+    }
+
+    @Test
+    fun `비싱크 가사면 활성 줄이 없지만 가사는 있다`() {
+        givenUnsyncedLyrics()
+        val viewModel = viewModel()
+
+        assertTrue(viewModel.data.value.hasLyrics)
+        assertEquals(-1, viewModel.data.value.activeLyricIndex)
+        assertEquals("", viewModel.data.value.currentLyricLine)
+        assertEquals(2, viewModel.data.value.lyricLines.size)
+    }
+
+    @Test
+    fun `가사가 있으면 아트워크를 눌러 패널을 열고 닫는다`() {
+        givenSyncedLyrics()
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickArtwork)
+        assertTrue(viewModel.data.value.showsLyricsPanel)
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickArtwork)
+        assertFalse(viewModel.data.value.showsLyricsPanel)
+    }
+
+    @Test
+    fun `가사가 없으면 패널을 열라고 해도 뜨지 않는다`() {
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickArtwork)
+
+        assertFalse(viewModel.data.value.hasLyrics)
+        assertFalse(viewModel.data.value.showsLyricsPanel)
+    }
+
+    @Test
+    fun `가사가 있으면 한 줄을 눌러 패널을 연다`() {
+        givenUnsyncedLyrics()
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine)
+
+        assertTrue(viewModel.data.value.showsLyricsPanel)
+    }
+
+    @Test
+    fun `가사가 없으면 한 줄을 눌러 가사 찾기로 보낸다`() = runTest {
+        val viewModel = viewModel()
+        val events = mutableListOf<PlayerDetailEvent>()
+        val collector = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.eventFlow.collect { events += it }
+        }
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine)
+
+        assertEquals(
+            listOf(
+                PlayerDetailEvent.NavigateToLyricsSearch(
+                    audioMediaId = 1,
+                    query = "제목1",
+                    durationSeconds = 51.0,
+                )
+            ),
+            events,
+        )
+        assertFalse(viewModel.data.value.showsLyricsPanel)
+        collector.cancel()
+    }
+
+    private fun givenSyncedLyrics() {
+        lyricFilePath = "/lyrics/1.lrc"
+        parsedLines = listOf(
+            LyricsLine(timeMs = 0L, text = "첫 줄"),
+            LyricsLine(timeMs = 2_000L, text = "두 번째 줄"),
+            LyricsLine(timeMs = 5_000L, text = "세 번째 줄"),
+        )
+    }
+
+    private fun givenUnsyncedLyrics() {
+        lyricFilePath = "/lyrics/1.txt"
+        parsedLines = listOf(
+            LyricsLine(timeMs = null, text = "첫 줄"),
+            LyricsLine(timeMs = null, text = "두 번째 줄"),
+        )
+    }
+
     private fun viewModel() = PlayerDetailViewModel(
         mediaControllerManager = manager,
         sleepTimerRunner = sleepTimerRunner,
@@ -130,8 +256,8 @@ class PlayerDetailViewModelTest {
         fetchSleepTimerMinutesFlowUseCase = mockk(relaxed = true),
         fetchSleepTimerAnnouncementOptionsFlowUseCase = mockk(relaxed = true),
         fetchPlaylistFlowUseCase = mockk(relaxed = true),
-        fetchAudioMediaDetailFlowUseCase = mockk(relaxed = true),
+        fetchAudioMediaDetailFlowUseCase = fetchAudioMediaDetail,
         toggleFavoriteUseCase = mockk(relaxed = true),
-        getParsedLyricsUseCase = mockk(relaxed = true),
+        getParsedLyricsUseCase = getParsedLyrics,
     )
 }

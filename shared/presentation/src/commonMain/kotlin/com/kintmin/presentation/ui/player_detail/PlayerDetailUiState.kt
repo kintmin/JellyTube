@@ -24,7 +24,9 @@ data class PlayerDetailUiState(
     val playbackPitchSemitone: Int,
     val isFavorite: Boolean = false,
     val hasLyrics: Boolean = false,
-    val currentLyricLine: String = "",
+    val lyricLines: List<String> = emptyList(),
+    val activeLyricIndex: Int = -1,
+    val isLyricsPanelVisible: Boolean = false,
     val repeatRangeStartDuration: Duration? = null,
     val repeatRangeEndDuration: Duration? = null,
     val isPlaybackSpeedMenuVisible: Boolean = false,
@@ -36,6 +38,15 @@ data class PlayerDetailUiState(
     val isSleepTimerAnnouncementMenuVisible: Boolean = false,
 ) {
     val timeString get() = "${currentDuration.to_hh_colon_mm_colon_ss()} / ${playbackDuration.to_hh_colon_mm_colon_ss()}"
+
+    /** 비싱크 가사면 활성 줄이 없어 빈 문자열이다. 싱크 가사도 첫 타임태그 전까지는 비어 있다. */
+    val currentLyricLine: String get() = lyricLines.getOrNull(activeLyricIndex).orEmpty()
+
+    /**
+     * 패널을 띄울지. `isLyricsPanelVisible` 은 사용자의 뜻만 담고, 그릴 수 있는지는 여기서 가른다 —
+     * 가사 없는 곡으로 넘어가면 뜻을 지우지 않고 아트워크로 돌아가고, 가사 있는 곡이 오면 되돌아온다.
+     */
+    val showsLyricsPanel: Boolean get() = hasLyrics && isLyricsPanelVisible
 
     /** 올림한다 — 1분 미만도 1 로 보여야 "거의 다 됐다" 가 0 으로 읽히지 않는다. */
     val sleepTimerRemainingMinutes: Int?
@@ -58,7 +69,14 @@ data class PlayerDetailUiState(
             playbackPitchSemitone = 10,
             isFavorite = true,
             hasLyrics = true,
-            currentLyricLine = "이 노래의 현재 가사 한 줄이 여기에 표시됩니다",
+            lyricLines = listOf(
+                "첫 줄은 여기에서 시작합니다",
+                "그 다음 줄이 이어집니다",
+                "이 노래의 현재 가사 한 줄이 여기에 표시됩니다",
+                "다음에 올 줄입니다",
+                "그 뒤로도 가사가 이어집니다",
+            ),
+            activeLyricIndex = 2,
             repeatRangeStartDuration = 60.seconds,
             repeatRangeEndDuration = 180.seconds,
             isPlaybackSpeedMenuVisible = false,
