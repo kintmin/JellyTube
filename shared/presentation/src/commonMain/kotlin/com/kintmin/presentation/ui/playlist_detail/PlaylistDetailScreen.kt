@@ -177,7 +177,6 @@ fun PlaylistDetailScreen(
     val backgroundColor = MaterialTheme.colorScheme.background.copy(alpha = progress)
     val isSearching = searchInput.isNotEmpty()
     // 재생 위치까지 든 playerBar 를 행 람다에서 읽으면 폴링마다 보이는 행이 전부 다시 그려진다.
-    // 곡이 바뀔 때만 달라지는 값으로 좁혀 내린다.
     val nowPlayingAudioMediaId = playerBar.id.toIntOrNull()
     val isPlaybackPlaying = playerBar.isPlaying
 
@@ -408,7 +407,8 @@ fun PlaylistDetailScreen(
                     animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
                 ),
             ) {
-                // 검색을 누른 사람은 바로 적으려는 것이다. 필드를 한 번 더 누르게 하지 않는다.
+                // AnimatedVisibility 안에서 요청한다. 바깥에서 isSearchFieldVisible 로 걸면
+                // 필드가 아직 붙지 않은 시점에 돌 수 있다.
                 LaunchedEffect(Unit) { searchFocusRequester.requestFocus() }
                 OutlinedTextField(
                     modifier = Modifier

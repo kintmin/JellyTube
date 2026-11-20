@@ -31,10 +31,7 @@ private const val MIN_LEVEL = 0.3f
 // 멈춘 기둥은 "현재 곡" 만 뜻한다. 높이를 서로 달리 둬야 정지 상태로 읽힌다.
 private val PAUSED_LEVELS = listOf(0.45f, 0.75f, 0.35f)
 
-/**
- * 재생 중인 곡을 가리키는 기둥 세 개. [isPlaying] 이 아니면 멈춘 높이로 고정한다 —
- * 움직임 자체가 재생/일시정지를 가르는 신호이므로 색으로만 전하지 않는다.
- */
+/** [isPlaying] 이 아니면 멈춘 높이로 고정한다 — 움직임이 재생/일시정지를 가르는 신호다. */
 @Composable
 fun NowPlayingBars(
     modifier: Modifier = Modifier,

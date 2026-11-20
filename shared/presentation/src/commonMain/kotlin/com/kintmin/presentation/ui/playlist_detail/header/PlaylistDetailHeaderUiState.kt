@@ -9,8 +9,7 @@ data class PlaylistDetailHeaderUiState(
     val isRepeating: Boolean,
     val isShuffling: Boolean,
     val isBasePlaylist: Boolean = false,
-    // 즐겨찾기는 `isBasePlaylist` 지만 곡을 뺄 수 있다. 둘을 같은 값으로 묶으면 즐겨찾기에서
-    // 빼는 길이 막히고 파일 삭제만 남는다.
+    // `isBasePlaylist` 와 같은 값이 아니다 — `PlaylistType.isAutoManaged` 를 보라.
     val canRemoveTrack: Boolean = false,
 ) {
     companion object {

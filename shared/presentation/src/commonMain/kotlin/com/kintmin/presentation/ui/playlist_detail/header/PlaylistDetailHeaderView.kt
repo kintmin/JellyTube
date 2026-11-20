@@ -172,9 +172,8 @@ fun PlaylistDetailHeaderView(
                     )
                 }
             }
-            // 36dp 로 누르면 터치 타깃이 깎이고 48dp 로 늘리면 12sp 글자에 비해 뚱뚱하다.
-            // 40dp(M3 버튼 기본값)를 바닥으로 적되 고정하지는 않는다 — 고정하면 글꼴 배율을
-            // 키웠을 때 글자 상하가 깎인다.
+            // 40dp 는 M3 버튼 기본값이다. 고정하지 않는 이유는 글꼴 배율을 키웠을 때 글자
+            // 상하가 깎여서다.
             Row(
                 modifier = Modifier.heightIn(min = 40.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -247,8 +246,8 @@ private val TOGGLE_ICON_SIZE = 20.dp
 private val TOGGLE_DOT_SIZE = 4.dp
 
 /**
- * 켜짐을 아이콘 색과 **아래 점**으로 알린다. `Shuffle` 과 `Repeat` 는 Filled·Rounded 변종이
- * 20dp 에서 구분되지 않아, 점이 없으면 켜짐이 색으로만 전달된다.
+ * `Shuffle` 과 `Repeat` 는 Filled·Rounded 변종이 20dp 에서 구분되지 않는다 — 아래 점을 빼면
+ * 켜짐이 색으로만 전달된다.
  *
  * 점은 꺼짐일 때도 투명으로 자리를 지킨다 — 빼면 켤 때마다 아이콘이 위로 밀린다.
  */

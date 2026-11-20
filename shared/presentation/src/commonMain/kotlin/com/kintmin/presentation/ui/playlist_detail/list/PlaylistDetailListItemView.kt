@@ -118,7 +118,6 @@ fun PlaylistDetailListItemView(
                         //
                         // 들린 뒤 **움직이지 않고** 떼면 여기로 온다 — onLongPress 가 없어 탭
                         // 감지가 끝나지 않고, 끌기가 좌표를 소비하기 전이라 취소도 되지 않는다.
-                        // 그대로 두면 순서를 바꾸려다 만 손짓이 재생을 시작한다.
                         onTap = {
                             if (!isDraggingNow) {
                                 sendIntent(PlaylistDetailListIntent.OnClickAudioItem(data))
@@ -163,8 +162,7 @@ fun PlaylistDetailListItemView(
                                 .matchParentSize()
                                 .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)),
                         )
-                        // 기둥은 Canvas 라 스크린리더에 아무것도 남기지 않는다. 색으로만
-                        // 전하지 않겠다는 목표가 TalkBack 에서도 지켜지게 말을 붙인다.
+                        // 기둥은 Canvas 라 스크린리더에 아무것도 남기지 않는다.
                         NowPlayingBars(
                             modifier = Modifier
                                 .matchParentSize()
@@ -234,15 +232,12 @@ fun PlaylistDetailListItemView(
                             },
                         )
                         DropdownMenuItem(
-                            // 목적지는 이 곡으로 포커스된 편집 화면이다. 순서 변경만 하는 곳이
-                            // 아니라 선택 삭제까지 있어 "순서 조정" 으로는 범위가 어긋난다.
                             text = { Text("플레이리스트 편집") },
                             onClick = {
                                 isMenuExpanded = false
                                 sendIntent(PlaylistDetailListIntent.OnClickEditPlaylist(data))
                             },
                         )
-                        // 전체·미분류는 시스템이 채우고 비우는 자리라 트랙만 뺄 수 없다.
                         if (canRemoveTrack) {
                             DropdownMenuItem(
                                 text = { Text("플레이리스트에서 빼기") },

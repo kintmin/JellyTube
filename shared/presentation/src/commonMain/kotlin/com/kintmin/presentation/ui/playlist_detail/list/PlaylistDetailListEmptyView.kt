@@ -29,10 +29,7 @@ import com.kintmin.presentation.theme.gray80
 
 private val EMPTY_HEIGHT = 240.dp
 
-/**
- * 담긴 음원이 없는 것과 검색에 걸린 음원이 없는 것을 가른다 — 둘을 같은 빈 화면으로 두면
- * 검색이 먹지 않은 것인지 결과가 없는 것인지 구분되지 않는다.
- */
+/** 둘을 같은 문구로 두면 검색이 먹지 않은 것과 결과가 없는 것이 구분되지 않는다. */
 @Composable
 fun PlaylistDetailListEmptyView(
     modifier: Modifier,
