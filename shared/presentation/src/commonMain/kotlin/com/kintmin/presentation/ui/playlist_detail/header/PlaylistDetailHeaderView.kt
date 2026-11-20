@@ -183,9 +183,9 @@ fun PlaylistDetailHeaderView(
                     )
                 }
             }
+            // 높이를 고정하지 않고 M3 기본값(40dp)에 맡긴다. 36dp 로 누르면 터치 타깃이
+            // 깎이고, 48dp 로 늘리면 12sp 글자에 비해 버튼이 뚱뚱해진다.
             Row(
-                // Material 최소 터치 타깃이다. 36dp 로 두면 세 버튼이 모두 미달이다.
-                modifier = Modifier.height(48.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (!isBasePlaylist) {
@@ -194,9 +194,7 @@ fun PlaylistDetailHeaderView(
                             sendIntent(PlaylistDetailHeaderIntent.OnClickAdd)
                         },
                         contentPadding = PaddingValues(horizontal = 16.dp),
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .wrapContentWidth()
+                        modifier = Modifier.wrapContentWidth()
                     ) {
                         Icon(
                             modifier = Modifier
@@ -218,9 +216,7 @@ fun PlaylistDetailHeaderView(
                         sendIntent(PlaylistDetailHeaderIntent.OnClickEdit)
                     },
                     contentPadding = PaddingValues(horizontal = 16.dp),
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .wrapContentWidth()
+                    modifier = Modifier.wrapContentWidth()
                 ) {
                     Icon(
                         modifier = Modifier.size(20.dp),
@@ -238,7 +234,6 @@ fun PlaylistDetailHeaderView(
                     },
                     modifier = Modifier
                         .padding(start = 8.dp)
-                        .fillMaxHeight()
                         .weight(1f),
                     contentPadding = PaddingValues(0.dp),
                 ) {

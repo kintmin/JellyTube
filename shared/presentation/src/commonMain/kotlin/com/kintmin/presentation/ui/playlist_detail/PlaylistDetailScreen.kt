@@ -257,9 +257,10 @@ fun PlaylistDetailScreen(
                             }
                         },
                     ) {
-                        // 같은 아이콘을 두 상태에 쓰면 토글인 것이 보이지 않는다.
+                        // 아이콘은 바꾸지 않는다. 바로 아래 텍스트필드에도 X 가 있어 둘이
+                        // 같은 모양이면 어느 쪽이 무엇을 닫는지 읽히지 않는다.
                         Icon(
-                            imageVector = if (isSearchFieldVisible) Icons.Rounded.Close else Icons.Rounded.Search,
+                            imageVector = Icons.Rounded.Search,
                             modifier = Modifier.size(topAppBarIconSize),
                             contentDescription = if (isSearchFieldVisible) "검색 닫기" else "음원 검색",
                         )

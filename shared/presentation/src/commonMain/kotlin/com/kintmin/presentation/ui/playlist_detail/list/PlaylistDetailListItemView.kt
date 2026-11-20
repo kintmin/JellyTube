@@ -22,7 +22,6 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -214,14 +213,14 @@ fun PlaylistDetailListItemView(
                             },
                         )
                         DropdownMenuItem(
-                            // 끌어서 바꾸는 쪽이 지름길이고, 이 항목이 그 보이는 경로다.
-                            text = { Text("순서 조정") },
+                            // 목적지는 이 곡으로 포커스된 편집 화면이다. 순서 변경만 하는 곳이
+                            // 아니라 선택 삭제까지 있어 "순서 조정" 으로는 범위가 어긋난다.
+                            text = { Text("플레이리스트 편집") },
                             onClick = {
                                 isMenuExpanded = false
-                                sendIntent(PlaylistDetailListIntent.OnClickReorderAudioMedia(data))
+                                sendIntent(PlaylistDetailListIntent.OnClickEditPlaylist(data))
                             },
                         )
-                        HorizontalDivider()
                         // 미분류·전체 같은 기본 플레이리스트는 트랙만 뺄 수 없다.
                         if (!isBasePlaylist) {
                             DropdownMenuItem(
