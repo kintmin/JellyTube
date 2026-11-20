@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,7 +33,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
@@ -127,16 +125,18 @@ fun LyricsEditItemView(
                 textStyle = MaterialTheme.typography.bodyLarge,
                 placeholder = "가사 입력",
                 singleLine = false,
+                underlineOnlyWhenFocused = true,
             )
 
             if (showTranslation || showTransliteration) {
-                // TextButton 은 primary 리플이 회색 글자 위에 파란 알약으로 떠서, 무채색 리플의 행으로 둔다.
+                // 눌림 표시를 그리지 않는다. 글자와 화살표가 바뀌는 것으로 충분하고, 리플은 줄 높이만큼 길게 떠 보였다.
                 Row(
                     modifier = Modifier
-                        .heightIn(min = 48.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .clickable { isVariantExpanded = !isVariantExpanded }
-                        .padding(end = 8.dp),
+                        .clickable(
+                            interactionSource = null,
+                            indication = null,
+                        ) { isVariantExpanded = !isVariantExpanded }
+                        .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -167,6 +167,7 @@ fun LyricsEditItemView(
                     textStyle = MaterialTheme.typography.bodyMedium,
                     placeholder = "번역 입력",
                     singleLine = false,
+                    underlineOnlyWhenFocused = true,
                 )
             }
 
@@ -182,6 +183,7 @@ fun LyricsEditItemView(
                     textStyle = MaterialTheme.typography.bodyMedium,
                     placeholder = "음차 입력",
                     singleLine = false,
+                    underlineOnlyWhenFocused = true,
                 )
             }
 

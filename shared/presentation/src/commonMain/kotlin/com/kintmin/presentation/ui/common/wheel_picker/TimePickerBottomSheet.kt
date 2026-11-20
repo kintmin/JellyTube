@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import com.kintmin.presentation.theme.JellyTubeTheme
 
@@ -91,18 +91,16 @@ fun TimePickerBottomSheet(
                 }
             }
 
-            Button(
+            // 시트가 내비게이션 바 인셋을 이미 주므로 BottomActionBar 가 아니라 버튼만 쓴다.
+            BottomActionButton(
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+                text = "확인",
                 onClick = {
                     val h = if (showHours) hours else 0
                     val totalMs = ((h * 60L + minutes) * 60L + seconds) * 1_000L + centiseconds * 10L
                     onConfirm(totalMs)
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-            ) {
-                Text("확인")
-            }
+            )
         }
     }
 }

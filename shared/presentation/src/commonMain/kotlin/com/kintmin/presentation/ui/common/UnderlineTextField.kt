@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,6 +42,7 @@ fun UnderlineTextField(
     placeholder: String,
     singleLine: Boolean,
     maxLength: Int? = null,
+    underlineOnlyWhenFocused: Boolean = false,
     modifier: Modifier = Modifier,
     errorMessage: String? = null,
 ) {
@@ -50,6 +52,8 @@ fun UnderlineTextField(
     val indicatorColor = when {
         errorMessage != null -> softRed
         isFocused -> contentColor
+        // 자리는 남겨 두고 색만 지운다. 포커스가 들어올 때 줄 높이가 흔들리지 않게.
+        underlineOnlyWhenFocused -> Color.Transparent
         else -> gray20
     }
 
