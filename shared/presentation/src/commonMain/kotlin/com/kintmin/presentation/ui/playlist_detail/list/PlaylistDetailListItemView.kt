@@ -95,7 +95,6 @@ fun PlaylistDetailListItemView(
             deleteAudioMediaFile = {
                 sendIntent(PlaylistDetailListIntent.OnClickDeleteAudioMediaFile(data))
             },
-            audioMediaName = data.mediaName,
         )
 
         Box(
