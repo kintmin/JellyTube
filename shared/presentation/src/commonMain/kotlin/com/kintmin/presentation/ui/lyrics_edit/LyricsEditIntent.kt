@@ -7,6 +7,7 @@ sealed interface LyricsEditIntent {
     data class OnChangeTransliteration(val rowId: Int, val text: String) : LyricsEditIntent
     data class OnAddRowBelow(val rowId: Int) : LyricsEditIntent
     data class OnDeleteRow(val rowId: Int) : LyricsEditIntent
+    data object OnUndoDeleteRow : LyricsEditIntent
     data object OnSplitByNewline : LyricsEditIntent
     data object OnClickSave : LyricsEditIntent
 }

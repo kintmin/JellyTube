@@ -11,6 +11,8 @@ data class LyricsEditUiState(
     val hasTranslation: Boolean = false,
     val hasTransliteration: Boolean = false,
 ) {
+    val canSplit: Boolean get() = rows.any { '\n' in it.text }
+
     data class EditRow(
         val id: Int,
         val timeMs: Long,
