@@ -4,7 +4,7 @@ import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.extension.toDotDateTimeString
-import com.kintmin.presentation.extension.toKoreanDateTimeString
+import com.kintmin.presentation.extension.toKoreanDateTimeStringWithoutSecond
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -29,6 +29,10 @@ data class AudioMediaDetailUiState(
     val playlists: List<Playlist>,
     /** 편집본을 백그라운드에서 저장하고 있는지. 저장 중에는 되돌리면 결과가 뒤엉켜 막는다. */
     val isAudioEditSaving: Boolean = false,
+    /** 조회 결과가 비어 이 화면이 가리킬 음원이 없는 상태. [audioMediaId] 가 -1 이라 액션을 막아야 한다. */
+    val isDeleted: Boolean = false,
+    /** 삭제를 실행하는 중. 성공하면 화면을 떠나고, 실패하면 다시 false 가 된다. */
+    val isDeleting: Boolean = false,
 ) {
     data class Playlist(
         val playlistId: Int,
@@ -45,7 +49,7 @@ data class AudioMediaDetailUiState(
             artist = "아티스트",
             playTime = "999:99",
             audioDurationSeconds = 222.0,
-            audioMediaCreationTime = "yyyy년 M월 dd일 HH:mm",
+            audioMediaCreationTime = "2026년 11월 20일 14시 30분",
             source = "https://preview.com",
             webViewUrl = "https://preview.com",
             hasLyrics = false,
@@ -60,6 +64,9 @@ data class AudioMediaDetailUiState(
             },
             audioMediaDescription = "이것은 최대 100자까지 가능한 미디어 설명입니다. 이것은 최대 100자까지 가능한 미디어 설명입니다. 이것은 최대 100자까지 가능한 미디어 설명입니다.",
         )
+
+        /** 삭제된 음원 상태. 변환의 fallback 을 그대로 쓰므로 실제 화면과 어긋나지 않는다. */
+        fun getDeletedMock() = emptyList<PlaylistTrackAggregate>().toAudioMediaDetailUiState()
     }
 }
 
@@ -74,7 +81,8 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
             playTime = (audioMedia.playbackDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
             // 가사 검색은 음원 길이로 후보를 매칭하므로 편집본이 아니라 원본 길이를 넘긴다
             audioDurationSeconds = audioMedia.audioDuration?.toDouble(DurationUnit.SECONDS),
-            audioMediaCreationTime = audioMedia.createdTime.toKoreanDateTimeString(),
+            // 초·밀리초까지 적으면 두 줄이 되고, 그만큼 궁금할 일도 없다
+            audioMediaCreationTime = audioMedia.createdTime.toKoreanDateTimeStringWithoutSecond(),
             source = audioMedia.source,
             webViewUrl = EditedAudioSource.webViewUrlOrNull(audioMedia.source),
             audioMediaDescription = audioMedia.description,
@@ -98,7 +106,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
         audioDurationSeconds = null,
         audioMediaCreationTime = Clock.System.now()
             .toLocalDateTime(TimeZone.currentSystemDefault())
-            .toKoreanDateTimeString(),
+            .toKoreanDateTimeStringWithoutSecond(),
         source = "",
         webViewUrl = null,
         audioMediaDescription = "삭제되었습니다.",
@@ -106,5 +114,6 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
         tjKaraokeNumber = null,
         hasEditedAudio = false,
         playlists = emptyList(),
+        isDeleted = true,
     )
 }
