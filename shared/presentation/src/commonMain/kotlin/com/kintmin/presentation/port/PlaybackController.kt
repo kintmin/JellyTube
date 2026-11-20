@@ -23,7 +23,7 @@ interface PlaybackController {
     val repeatRangeState: RepeatRangeState
 
     fun seek(duration: Duration)
-    fun updateRepeatRange(): Result<Unit>
+    fun updateRepeatRange()
     fun clearRepeatRange()
     fun repeatRangeIfNeeded()
 
