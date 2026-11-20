@@ -113,10 +113,10 @@ class PlaybackControllerImpl(
         getMediaController()?.seekTo(duration.inWholeMilliseconds)
     }
 
-    override fun updateRepeatRange(): Result<Unit> {
-        val mediaController = getMediaController() ?: return Result.success(Unit)
-        val mediaId = mediaController.currentMediaItem?.mediaId ?: return Result.success(Unit)
-        return repeatRange.update(mediaId, mediaController.currentPosition.milliseconds)
+    override fun updateRepeatRange() {
+        val mediaController = getMediaController() ?: return
+        val mediaId = mediaController.currentMediaItem?.mediaId ?: return
+        repeatRange.update(mediaId, mediaController.currentPosition.milliseconds)
     }
 
     override fun clearRepeatRange() = repeatRange.clear()

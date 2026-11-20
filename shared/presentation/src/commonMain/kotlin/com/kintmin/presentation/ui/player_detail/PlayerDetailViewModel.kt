@@ -175,11 +175,8 @@ class PlayerDetailViewModel constructor(
             }
 
             PlayerDetailIntent.OnClickRepeatRangeButton -> {
-                viewModelScope.launch {
-                    mediaControllerManager.updateRepeatRange()
-                        .onSuccess { refreshRepeatRangeState() }
-                        .onFailure { _eventFlow.emit(PlayerDetailEvent.ShowToast("B 지점은 A 지점 이후로 설정해주세요.")) }
-                }
+                mediaControllerManager.updateRepeatRange()
+                refreshRepeatRangeState()
             }
 
             PlayerDetailIntent.OnClickFavoriteButton -> {
