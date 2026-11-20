@@ -37,6 +37,7 @@ import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -316,7 +317,7 @@ fun PlayerDetailScreen(
                 ) {
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickFavoriteButton) }) {
-                            // 색으로 켜짐을 알리지 않는다. 밝은 파랑은 재생 모드가 켜졌다는 뜻으로
+                            // 색으로 켜짐을 알리지 않는다. 파랑은 재생 모드가 켜졌다는 뜻으로
                             // 이미 쓰고 있어, 찜까지 같은 색이면 성격이 섞인다.
                             Icon(
                                 modifier = Modifier.size(24.dp),
@@ -404,7 +405,7 @@ fun PlayerDetailScreen(
                                 modifier = Modifier.size(24.dp),
                                 imageVector = Icons.Rounded.Shuffle,
                                 contentDescription = if (data.isShuffling) "셔플 켜짐" else "셔플 꺼짐",
-                                tint = if (data.isShuffling) seaBlue80 else Color.White.copy(alpha = 0.6f),
+                                tint = if (data.isShuffling) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.6f),
                             )
                         }
                     }
@@ -449,7 +450,7 @@ fun PlayerDetailScreen(
                                 modifier = Modifier.size(24.dp),
                                 imageVector = Icons.Rounded.Repeat,
                                 contentDescription = if (data.isRepeating) "반복 켜짐" else "반복 꺼짐",
-                                tint = if (data.isRepeating) seaBlue80 else Color.White.copy(alpha = 0.6f),
+                                tint = if (data.isRepeating) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.6f),
                             )
                         }
                     }

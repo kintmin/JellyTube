@@ -81,8 +81,8 @@ internal fun PlaybackOptionChip(
         colors = FilterChipDefaults.filterChipColors(
             containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
             labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
-            selectedLabelColor = MaterialTheme.colorScheme.surface,
+            selectedContainerColor = MaterialTheme.colorScheme.primary,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
         ),
     )
 }

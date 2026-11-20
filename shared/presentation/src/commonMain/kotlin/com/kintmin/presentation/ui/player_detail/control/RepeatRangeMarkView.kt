@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,7 +24,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.seaBlue80
 
 private val LINK_WIDTH = 9.dp
 private val LINK_HEIGHT = 2.dp
@@ -64,7 +64,7 @@ fun RepeatRangeMarkView(
                 .width(LINK_WIDTH)
                 .height(LINK_HEIGHT)
                 .clip(RoundedCornerShape(LINK_HEIGHT / 2))
-                .background(if (isLinked) seaBlue80 else Color.White.copy(alpha = 0.3f)),
+                .background(if (isLinked) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.3f)),
         )
         RangeLetter(letter = "B", isOn = isEndSelected)
     }
@@ -72,11 +72,9 @@ fun RepeatRangeMarkView(
 
 @Composable
 private fun RangeLetter(letter: String, isOn: Boolean) {
-    // 켜진 쪽이 밝아야 한다. 이 테마의 어두운 파랑으로 켜짐을 알리면 아트워크 그라데이션 위에서
-    // 꺼진 흰 글자보다 흐려져 방향이 뒤집혀 보인다.
     Text(
         text = letter,
-        color = if (isOn) seaBlue80 else Color.White.copy(alpha = 0.5f),
+        color = if (isOn) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.5f),
         fontSize = 14.sp,
         lineHeight = 14.sp,
         fontWeight = FontWeight.Bold,
