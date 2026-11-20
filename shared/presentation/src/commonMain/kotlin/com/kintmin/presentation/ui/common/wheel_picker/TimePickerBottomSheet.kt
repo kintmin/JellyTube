@@ -1,11 +1,14 @@
 package com.kintmin.presentation.ui.common.wheel_picker
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -14,20 +17,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray60
+
+private class WheelColumn(
+    val label: String,
+    val values: List<Int>,
+    val selected: Int,
+    val onChange: (Int) -> Unit,
+)
 
 /** audioDurationMs 가 null 일 때 시/분 컬럼의 기본 상한(99분). */
 private const val DEFAULT_MAX_MS = 99 * 60_000L
 
 /**
  * 가사 시작 시간을 시/분/초/밀리초 휠로 조정하는 BottomSheet.
- * 음원 길이가 1시간 이상이면 [시][분][초][밀리초], 아니면 [분][초][밀리초] 컬럼을 노출한다.
- * 밀리초 컬럼은 센티초(00~95)를 0.05초(50ms) 단위로만 조정한다.
+ * 음원 길이가 1시간 이상이면 [시][분][초][1/100초], 아니면 [분][초][1/100초] 컬럼을 노출한다.
+ * 마지막 컬럼은 1/100초(00~95)를 0.05초(50ms) 단위로만 조정한다.
  */
 @Composable
 fun TimePickerBottomSheet(
@@ -66,46 +76,46 @@ fun TimePickerBottomSheet(
         ) {
             Text(
                 text = "시작 시간 설정",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(vertical = 12.dp),
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (showHours) {
-                    NumberWheelPicker(
-                        values = hourValues,
-                        selectedValue = hours,
-                        onValueChange = { hours = it },
-                        label = "시",
+            val columns = buildList {
+                if (showHours) add(WheelColumn("시", hourValues, hours) { hours = it })
+                add(WheelColumn("분", minuteValues, minutes) { minutes = it })
+                add(WheelColumn("초", secondValues, seconds) { seconds = it })
+                add(WheelColumn("1/100초", centiValues, centiseconds) { centiseconds = it })
+            }
+
+            Row(modifier = Modifier.fillMaxWidth()) {
+                columns.forEach { column ->
+                    Text(
                         modifier = Modifier.weight(1f),
+                        text = column.label,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = gray60,
+                        textAlign = TextAlign.Center,
                     )
                 }
-                NumberWheelPicker(
-                    values = minuteValues,
-                    selectedValue = minutes,
-                    onValueChange = { minutes = it },
-                    label = "분",
-                    modifier = Modifier.weight(1f),
-                )
-                NumberWheelPicker(
-                    values = secondValues,
-                    selectedValue = seconds,
-                    onValueChange = { seconds = it },
-                    label = "초",
-                    modifier = Modifier.weight(1f),
-                )
-                NumberWheelPicker(
-                    values = centiValues,
-                    selectedValue = centiseconds,
-                    onValueChange = { centiseconds = it },
-                    label = "밀리초",
-                    modifier = Modifier.weight(1f),
-                )
+            }
+            Spacer(Modifier.height(4.dp))
+
+            Box(contentAlignment = Alignment.Center) {
+                WheelPickerHighlight()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    columns.forEach { column ->
+                        NumberWheelPicker(
+                            values = column.values,
+                            selectedValue = column.selected,
+                            onValueChange = column.onChange,
+                            showHighlight = false,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
             }
 
             Button(

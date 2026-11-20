@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -105,7 +104,6 @@ fun LyricsEditItemView(
                     style = MaterialTheme.typography.labelLarge.copy(fontFamily = FontFamily.Monospace),
                 )
             },
-            leadingIcon = { Icon(Icons.Rounded.Schedule, contentDescription = "시간 설정") },
         )
 
         Column(
@@ -114,7 +112,8 @@ fun LyricsEditItemView(
                 .padding(start = 8.dp),
         ) {
             UnderlineTextField(
-                label = "가사",
+                modifier = Modifier.padding(top = 12.dp),
+                label = null,
                 value = text,
                 onValueChange = {
                     text = it
