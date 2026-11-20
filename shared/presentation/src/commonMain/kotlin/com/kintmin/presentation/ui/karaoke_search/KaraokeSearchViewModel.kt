@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.domain.karaoke.model.KaraokeSong
 import com.kintmin.domain.karaoke.usecase.ApplyKaraokeNumberToAudioMediaUseCase
 import com.kintmin.domain.karaoke.usecase.SearchKaraokeUseCase
@@ -19,14 +20,17 @@ import kotlinx.coroutines.launch
 class KaraokeSearchViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val searchKaraokeUseCase: SearchKaraokeUseCase,
+    buildSongSearchQueryUseCase: BuildSongSearchQueryUseCase,
     private val applyKaraokeNumberToAudioMediaUseCase: ApplyKaraokeNumberToAudioMediaUseCase,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<KaraokeSearchScreenRoute>()
     private val audioMediaId = route.audioMediaId
 
+    private val initialQuery = buildSongSearchQueryUseCase(route.initialQuery)
+
     private val _data = MutableStateFlow(
-        KaraokeSearchUiState(query = route.initialQuery, isLoading = false, results = emptyList())
+        KaraokeSearchUiState(query = initialQuery, isLoading = false, results = emptyList())
     )
     val data = _data.asStateFlow()
 
@@ -37,7 +41,7 @@ class KaraokeSearchViewModel constructor(
     private var searchJob: Job? = null
 
     init {
-        startSearch(route.initialQuery)
+        startSearch(initialQuery)
     }
 
     fun sendIntent(intent: KaraokeSearchIntent) {

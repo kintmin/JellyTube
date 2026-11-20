@@ -1,7 +1,7 @@
 package com.kintmin.domain
 
 import com.kintmin.domain.lyrics.model.LyricsSearchResult
-import com.kintmin.domain.lyrics.usecase.BuildLyricsSearchQueryUseCase
+import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.domain.lyrics.usecase.MatchLyricsTrackNameUseCase
 import com.kintmin.domain.lyrics.usecase.SortLyricsSearchResultsUseCase
 import org.junit.Assert.assertEquals
@@ -9,7 +9,7 @@ import org.junit.Test
 
 class SortLyricsSearchResultsUseCaseTest {
 
-    private val useCase = SortLyricsSearchResultsUseCase(MatchLyricsTrackNameUseCase(BuildLyricsSearchQueryUseCase()))
+    private val useCase = SortLyricsSearchResultsUseCase(MatchLyricsTrackNameUseCase(BuildSongSearchQueryUseCase()))
 
     private fun result(id: Int, duration: Double?, synced: Boolean, trackName: String? = null) = LyricsSearchResult(
         id = id,

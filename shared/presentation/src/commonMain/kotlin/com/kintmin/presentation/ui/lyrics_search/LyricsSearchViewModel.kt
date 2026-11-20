@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.lyrics.model.LyricsSearchResult
-import com.kintmin.domain.lyrics.usecase.BuildLyricsSearchQueryUseCase
+import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.domain.lyrics.usecase.SearchLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SortLyricsSearchResultsUseCase
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
@@ -22,14 +22,14 @@ import kotlinx.coroutines.launch
 class LyricsSearchViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val searchLyricsUseCase: SearchLyricsUseCase,
-    private val buildLyricsSearchQueryUseCase: BuildLyricsSearchQueryUseCase,
+    private val buildSongSearchQueryUseCase: BuildSongSearchQueryUseCase,
     private val sortLyricsSearchResultsUseCase: SortLyricsSearchResultsUseCase,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<LyricsSearchScreenRoute>()
     private val audioMediaId = route.audioMediaId
 
-    private val initialQuery = buildLyricsSearchQueryUseCase(route.initialQuery)
+    private val initialQuery = buildSongSearchQueryUseCase(route.initialQuery)
 
     private val _data = MutableStateFlow(
         LyricsSearchUiState(query = initialQuery, isLoading = false, results = emptyList())
