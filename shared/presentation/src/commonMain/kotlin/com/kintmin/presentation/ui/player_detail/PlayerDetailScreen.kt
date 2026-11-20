@@ -79,10 +79,11 @@ import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.deepSea100
 import com.kintmin.presentation.theme.deepSea60
 import com.kintmin.presentation.theme.deepSea80
-import com.kintmin.presentation.theme.seaBlue10
 import com.kintmin.presentation.theme.seaBlue40
+import com.kintmin.presentation.theme.seaBlue80
 import com.kintmin.presentation.ui.player_detail.dialog.PlaybackPitchDialog
 import com.kintmin.presentation.ui.player_detail.dialog.PlaybackSpeedDialog
 import com.kintmin.presentation.ui.player_detail.dialog.SleepTimerAnnouncementDialog
@@ -640,12 +641,13 @@ private fun RepeatRangeMarker(
             modifier = Modifier
                 .size(markerSize)
                 .clip(CircleShape)
-                .background(seaBlue10),
+                .background(seaBlue80),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = label,
-                color = Color.White,
+                // 마커가 밝아졌으므로 글자는 어두운 쪽으로 뒤집는다.
+                color = deepSea100,
                 fontSize = 11.sp,
                 lineHeight = 11.sp,
                 fontWeight = FontWeight.Bold,
@@ -656,7 +658,7 @@ private fun RepeatRangeMarker(
             modifier = Modifier
                 .width(barWidth)
                 .height(22.dp)
-                .background(seaBlue10),
+                .background(seaBlue80),
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
@@ -683,21 +685,23 @@ private fun RepeatRangeButton(
             .padding(horizontal = 8.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // 켜진 쪽이 꺼진 쪽보다 밝아야 한다. 이 테마의 어두운 파랑은 아트워크 그라데이션
+        // 위에서 흰 글자보다 어두워, 켜짐을 그 색으로 알리면 방향이 뒤집혀 보인다.
         Text(
             text = "A",
-            color = if (isStartSelected) seaBlue10 else Color.White,
+            color = if (isStartSelected) seaBlue80 else Color.White.copy(alpha = 0.6f),
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
         )
         Text(
             text = " | ",
-            color = Color.White,
+            color = Color.White.copy(alpha = 0.6f),
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
         )
         Text(
             text = "B",
-            color = if (isEndSelected) seaBlue10 else Color.White,
+            color = if (isEndSelected) seaBlue80 else Color.White.copy(alpha = 0.6f),
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
         )
@@ -802,6 +806,54 @@ private fun PlayerDetailScreenPreview() {
             data = PlayerDetailUiState.getMock(),
             sendIntent = {},
         )
+    }
+}
+
+/** 이 화면은 아트워크에서 뽑은 어두운 그라데이션 위에 그려진다. 프리뷰도 그 조건을 깔아야
+ *  켜짐이 꺼짐보다 밝은지 눈으로 볼 수 있다. */
+@Composable
+private fun ArtworkGroundPreview(content: @Composable () -> Unit) {
+    JellyTubeTheme {
+        Box(
+            modifier = Modifier
+                .background(Color(0xFF1D1C1A))
+                .padding(16.dp),
+        ) {
+            content()
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun RepeatRangeButtonPreview() {
+    ArtworkGroundPreview {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RepeatRangeButton(isStartSelected = false, isEndSelected = false, onClick = {})
+            RepeatRangeButton(isStartSelected = true, isEndSelected = false, onClick = {})
+            RepeatRangeButton(isStartSelected = true, isEndSelected = true, onClick = {})
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun RepeatRangeMarkerPreview() {
+    ArtworkGroundPreview {
+        Box(modifier = Modifier.width(200.dp).height(64.dp)) {
+            RepeatRangeMarker(
+                label = "A",
+                seconds = 60,
+                playbackSeconds = 300,
+                sliderWidth = 540,
+            )
+            RepeatRangeMarker(
+                label = "B",
+                seconds = 240,
+                playbackSeconds = 300,
+                sliderWidth = 540,
+            )
+        }
     }
 }
 
