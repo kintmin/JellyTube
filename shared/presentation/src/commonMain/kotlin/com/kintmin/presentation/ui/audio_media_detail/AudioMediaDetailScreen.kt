@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -50,8 +51,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -63,6 +64,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.softRed
 import com.kintmin.presentation.theme.white
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
@@ -406,12 +408,25 @@ fun AudioMediaDetailScreen(
                         )
                     }
 
-                    Text(
-                        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp, start = 16.dp, end = 16.dp),
-                        text = "추가된 플레이리스트 목록",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    if (!data.isDeleted) {
+                        Text(
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
+                                .semantics { heading() },
+                            text = "플레이리스트",
+                            fontSize = 14.sp,
+                            lineHeight = 18.sp,
+                            color = gray60,
+                        )
+                        if (data.playlists.isEmpty()) {
+                            Text(
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
+                                text = "아직 추가된 플레이리스트가 없습니다.",
+                                fontSize = 16.sp,
+                                color = gray60,
+                            )
+                        }
+                    }
                 }
             }
 
@@ -422,11 +437,12 @@ fun AudioMediaDetailScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(min = 56.dp)
                         .background(MaterialTheme.colorScheme.background)
                         .clickable {
                             navigateToPlaylistDetailScreen(data.playlists[index].playlistId, data.audioMediaId)
                         }
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
