@@ -23,8 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,10 +36,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray20
 import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.seaBlue60
 import com.kintmin.presentation.theme.softRed
+import com.kintmin.presentation.ui.common.UnderlineTextField
 import com.kintmin.presentation.ui.lyrics_edit.LyricsEditUiState.EditRow
 
 /** timeMs 를 화면 표시용 문자열로 만든다. 1시간 이상이면 시를 포함한다. */
@@ -80,19 +78,6 @@ fun LyricsEditItemView(
     var isVariantExpanded by rememberSaveable(row.id) { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
 
-    // 테마의 onSurfaceVariant 가 본문과 같은 색이라 기본값으로는 힌트가 입력처럼 보인다.
-    val transparentFieldColors = TextFieldDefaults.colors(
-        focusedContainerColor = Color.Transparent,
-        unfocusedContainerColor = Color.Transparent,
-        focusedPlaceholderColor = gray60,
-        unfocusedPlaceholderColor = gray60,
-        focusedLabelColor = MaterialTheme.colorScheme.onSurface,
-        unfocusedLabelColor = gray60,
-        focusedIndicatorColor = MaterialTheme.colorScheme.onSurface,
-        unfocusedIndicatorColor = gray20,
-        cursorColor = MaterialTheme.colorScheme.onSurface,
-    )
-
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -128,16 +113,16 @@ fun LyricsEditItemView(
                 .weight(1f)
                 .padding(start = 8.dp),
         ) {
-            TextField(
-                modifier = Modifier.fillMaxWidth(),
+            UnderlineTextField(
+                label = "가사",
                 value = text,
                 onValueChange = {
                     text = it
                     onChangeText(row.id, it)
                 },
                 textStyle = MaterialTheme.typography.bodyLarge,
-                colors = transparentFieldColors,
-                placeholder = { Text("가사") },
+                placeholder = "가사 입력",
+                singleLine = false,
             )
 
             if (showTranslation || showTransliteration) {
@@ -155,36 +140,38 @@ fun LyricsEditItemView(
             }
 
             if (isVariantExpanded && showTranslation) {
-                TextField(
-                    modifier = Modifier.fillMaxWidth(),
+                UnderlineTextField(
+                    modifier = Modifier.padding(top = 8.dp),
+                    label = "번역",
                     value = translation,
                     onValueChange = {
                         translation = it
                         onChangeTranslation(row.id, it)
                     },
                     textStyle = MaterialTheme.typography.bodyMedium,
-                    colors = transparentFieldColors,
-                    label = { Text("번역") },
+                    placeholder = "번역 입력",
+                    singleLine = false,
                 )
             }
 
             if (isVariantExpanded && showTransliteration) {
-                TextField(
-                    modifier = Modifier.fillMaxWidth(),
+                UnderlineTextField(
+                    modifier = Modifier.padding(top = 8.dp),
+                    label = "음차",
                     value = transliteration,
                     onValueChange = {
                         transliteration = it
                         onChangeTransliteration(row.id, it)
                     },
                     textStyle = MaterialTheme.typography.bodyMedium,
-                    colors = transparentFieldColors,
-                    label = { Text("음차") },
+                    placeholder = "음차 입력",
+                    singleLine = false,
                 )
             }
 
             if (row.isModified) {
                 Text(
-                    modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
+                    modifier = Modifier.padding(top = 4.dp),
                     text = "수정됨",
                     style = MaterialTheme.typography.labelSmall,
                     color = seaBlue60,

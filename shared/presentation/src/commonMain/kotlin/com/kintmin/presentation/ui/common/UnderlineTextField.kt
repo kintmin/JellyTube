@@ -1,4 +1,4 @@
-package com.kintmin.presentation.ui.playlist_edit.header
+package com.kintmin.presentation.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -32,14 +32,14 @@ import com.kintmin.presentation.theme.softRed
  * 값이 채워지면 placeholder 가 사라지므로 어느 칸인지는 위의 [label] 이 늘 알린다.
  */
 @Composable
-fun PlaylistEditInfoTextField(
+fun UnderlineTextField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
     textStyle: TextStyle,
     placeholder: String,
-    maxLength: Int,
     singleLine: Boolean,
+    maxLength: Int? = null,
     modifier: Modifier = Modifier,
     errorMessage: String? = null,
 ) {
@@ -55,7 +55,7 @@ fun PlaylistEditInfoTextField(
     BasicTextField(
         modifier = modifier.fillMaxWidth(),
         value = value,
-        onValueChange = { newText -> if (newText.length <= maxLength) onValueChange(newText) },
+        onValueChange = { newText -> if (maxLength == null || newText.length <= maxLength) onValueChange(newText) },
         textStyle = textStyle.copy(color = contentColor),
         singleLine = singleLine,
         cursorBrush = SolidColor(contentColor),
@@ -77,18 +77,22 @@ fun PlaylistEditInfoTextField(
                     thickness = if (isFocused || errorMessage != null) 2.dp else 1.dp,
                     color = indicatorColor,
                 )
-                Row(modifier = Modifier.padding(top = 4.dp)) {
-                    Text(
-                        modifier = Modifier.weight(1f),
-                        text = errorMessage.orEmpty(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = softRed,
-                    )
-                    Text(
-                        text = "${value.length}/$maxLength",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = gray60,
-                    )
+                if (maxLength != null || errorMessage != null) {
+                    Row(modifier = Modifier.padding(top = 4.dp)) {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = errorMessage.orEmpty(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = softRed,
+                        )
+                        if (maxLength != null) {
+                            Text(
+                                text = "${value.length}/$maxLength",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = gray60,
+                            )
+                        }
+                    }
                 }
             }
         },
@@ -97,14 +101,14 @@ fun PlaylistEditInfoTextField(
 
 @Preview
 @Composable
-fun PlaylistEditInfoTextFieldPreview() {
+fun UnderlineTextFieldPreview() {
     JellyTubeTheme {
         Column(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp),
         ) {
-            PlaylistEditInfoTextField(
+            UnderlineTextField(
                 label = "제목",
                 value = "드라이브",
                 onValueChange = {},
@@ -114,7 +118,7 @@ fun PlaylistEditInfoTextFieldPreview() {
                 singleLine = true,
             )
             Spacer(modifier = Modifier.height(8.dp))
-            PlaylistEditInfoTextField(
+            UnderlineTextField(
                 label = "설명",
                 value = "",
                 onValueChange = {},
