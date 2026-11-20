@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.LibraryMusic
@@ -25,8 +23,9 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -38,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,6 +47,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
 import okio.Path.Companion.toPath
 
@@ -137,33 +138,37 @@ fun PlaylistDetailHeaderView(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
-                    IconButton(
-                        onClick = {
+                    // Filled 과 Rounded 변종은 20dp 에서 구분되지 않아 켜짐이 색으로만
+                    // 전달됐다. 켜짐을 채운 배경으로 바꿔 모양으로도 읽히게 한다.
+                    FilledIconToggleButton(
+                        checked = headerData.isShuffling,
+                        onCheckedChange = {
                             sendIntent(PlaylistDetailHeaderIntent.OnClickShuffle)
                         },
                         modifier = Modifier
                             .wrapContentWidth(Alignment.End)
-                            .weight(1f)
+                            .weight(1f),
+                        colors = playbackToggleColors(),
                     ) {
                         Icon(
                             modifier = Modifier.size(20.dp),
-                            imageVector = if (headerData.isShuffling) Icons.Filled.Shuffle else Icons.Rounded.Shuffle,
-                            contentDescription = "Shuffle",
-                            tint = if (headerData.isShuffling) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            imageVector = Icons.Rounded.Shuffle,
+                            contentDescription = "셔플",
                         )
                     }
-                    IconButton(
-                        onClick = {
+                    FilledIconToggleButton(
+                        checked = headerData.isRepeating,
+                        onCheckedChange = {
                             sendIntent(PlaylistDetailHeaderIntent.OnClickRepeat)
                         },
                         modifier = Modifier
-                            .wrapContentWidth()
+                            .wrapContentWidth(),
+                        colors = playbackToggleColors(),
                     ) {
                         Icon(
                             modifier = Modifier.size(20.dp),
-                            imageVector = if (headerData.isRepeating) Icons.Filled.Repeat else Icons.Rounded.Repeat,
-                            contentDescription = "Repeat",
-                            tint = if (headerData.isRepeating) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            imageVector = Icons.Rounded.Repeat,
+                            contentDescription = "반복",
                         )
                     }
                 }
@@ -251,6 +256,15 @@ fun PlaylistDetailHeaderView(
     }
 }
 
+/** 꺼짐은 배경 없는 평범한 아이콘, 켜짐은 채운 원이다. 0.38 알파는 M3 에서 비활성을 뜻한다. */
+@Composable
+private fun playbackToggleColors() = IconButtonDefaults.filledIconToggleButtonColors(
+    containerColor = Color.Transparent,
+    contentColor = gray60,
+    checkedContainerColor = MaterialTheme.colorScheme.primary,
+    checkedContentColor = MaterialTheme.colorScheme.onPrimary,
+)
+
 @Preview
 @Composable
 fun MusicControlsPreview() {
@@ -259,7 +273,22 @@ fun MusicControlsPreview() {
             innerPaddingValues = PaddingValues(top = 24.dp),
             sendIntent = {},
             isBasePlaylist = false,
-            headerData = PlaylistDetailHeaderUiState.getMock(),
+            headerData = PlaylistDetailHeaderUiState.getMock()
+                .copy(isShuffling = false, isRepeating = false),
+        )
+    }
+}
+
+@Preview
+@Composable
+fun MusicControlsPlaybackTogglesOnPreview() {
+    JellyTubeTheme {
+        PlaylistDetailHeaderView(
+            innerPaddingValues = PaddingValues(top = 24.dp),
+            sendIntent = {},
+            isBasePlaylist = false,
+            headerData = PlaylistDetailHeaderUiState.getMock()
+                .copy(isShuffling = true, isRepeating = true),
         )
     }
 }
