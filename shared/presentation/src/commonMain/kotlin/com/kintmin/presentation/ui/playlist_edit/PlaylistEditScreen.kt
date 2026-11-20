@@ -219,7 +219,7 @@ fun PlaylistEditScreen(
                                 isShowDialog = true
                             }) {
                             Text(
-                                text = "음원 삭제",
+                                text = "음원 파일 삭제",
                                 fontSize = 14.sp,
                             )
                         }
@@ -231,7 +231,7 @@ fun PlaylistEditScreen(
                                 shape = RectangleShape,
                                 onClick = { sendIntent(PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist) }) {
                                 Text(
-                                    text = "플레이리스트에서 삭제",
+                                    text = "플레이리스트에서 빼기",
                                     fontSize = 14.sp,
                                 )
                             }

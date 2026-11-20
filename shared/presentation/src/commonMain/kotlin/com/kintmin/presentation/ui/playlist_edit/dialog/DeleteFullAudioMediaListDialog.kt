@@ -36,11 +36,11 @@ fun DeleteFullAudioMediaListDialog(
         onDismiss = onDismiss,
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 24.dp),
+            modifier = Modifier.padding(16.dp),
         ) {
             Text(
-                modifier = Modifier.padding(bottom = 8.dp),
-                text = "음원 삭제",
+                modifier = Modifier.padding(bottom = 16.dp),
+                text = "음원 파일 삭제",
                 style = MaterialTheme.typography.titleLarge,
             )
             Text(
@@ -48,11 +48,11 @@ fun DeleteFullAudioMediaListDialog(
                 text = buildString {
                     if (audioMediaName != null) {
                         // 이름이 사용자 입력이라 조사를 붙이면 받침에서 비문이 된다.
-                        append("'$audioMediaName' 음원을 지웁니다.")
+                        append("'$audioMediaName' 음원 파일을 지웁니다.")
                     } else {
-                        append("${selectedMediaCount}개의 음원을 지웁니다.")
+                        append("음원 파일 ${selectedMediaCount}개를 지웁니다.")
                     }
-                    append("\n모든 플레이리스트에서 제거됩니다.")
+                    append("\n모든 플레이리스트에서 사라집니다.")
                     if (canRedownload) {
                         append("\n다시 다운로드해야 재생할 수 있습니다.")
                     } else {
