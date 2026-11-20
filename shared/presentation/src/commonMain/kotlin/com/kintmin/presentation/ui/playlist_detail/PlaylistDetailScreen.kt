@@ -60,6 +60,8 @@ import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.animation.FocusSpreadOverlay
+import com.kintmin.presentation.remember_state.rememberReorderState
+import com.kintmin.presentation.ui.common.ReorderableItem
 import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
 import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
@@ -147,6 +149,11 @@ fun PlaylistDetailScreen(
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     val scrollState = rememberLazyListState()
+    val reorderState = rememberReorderState(
+        listState = scrollState,
+        dataList = audioPlayDataList,
+        idOf = { it.id },
+    )
     var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
     var searchInput by rememberSaveable { mutableStateOf("") }
     var consumedFocusAudioMediaId by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -160,6 +167,7 @@ fun PlaylistDetailScreen(
     }
     val progress = EaseIn.transform(min(scrollOffset / maxOffset, 1f))
     val backgroundColor = MaterialTheme.colorScheme.background.copy(alpha = progress)
+    val isSearching = searchInput.isNotEmpty()
 
     LaunchedEffect(focusAudioMediaId, audioPlayDataList) {
         if (focusAudioMediaId == null || audioPlayDataList.isEmpty()) return@LaunchedEffect
@@ -283,30 +291,70 @@ fun PlaylistDetailScreen(
                         sendIntent = sendPlaylistDetailHeaderIntent,
                     )
                 }
+                // 끄는 동안의 순서는 reorderState 가 들고 있다. 검색 중에는 목록이 필터
+                // 결과라 끌어 옮기는 뜻이 정의되지 않으므로 원본을 그대로 그린다.
+                val rowList = if (isSearching) audioPlayDataList else reorderState.items
                 itemsIndexed(
-                    items = audioPlayDataList,
+                    items = rowList,
                     key = { _, item -> item.id }
                 ) { _, item ->
-                    val isHighlighted = highlightedAudioMediaId == item.id
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .animateItem()
-                    ) {
-                        PlaylistDetailListItemView(
-                            data = item,
-                            modifier = Modifier.matchParentSize(),
-                            isBasePlaylist = isBasePlaylist,
-                            sendIntent = sendPlaylistDetailListIntent,
-                        )
-                        if (isHighlighted) {
-                            FocusSpreadOverlay(
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .clipToBounds(),
-                                progress = focusSpreadProgress,
+                    if (isSearching) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(80.dp)
+                                .animateItem()
+                        ) {
+                            PlaylistDetailListItemView(
+                                data = item,
+                                modifier = Modifier.matchParentSize(),
+                                isBasePlaylist = isBasePlaylist,
+                                sendIntent = sendPlaylistDetailListIntent,
                             )
+                            if (highlightedAudioMediaId == item.id) {
+                                FocusSpreadOverlay(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .clipToBounds(),
+                                    progress = focusSpreadProgress,
+                                )
+                            }
+                        }
+                    } else {
+                        ReorderableItem(
+                            state = reorderState,
+                            id = item.id,
+                            modifier = Modifier.height(80.dp),
+                            longPressToStart = true,
+                            onDragEnd = {
+                                if (!reorderState.isOrderChanged) return@ReorderableItem
+                                reorderState.getDraggingItemIndex()?.let {
+                                    sendPlaylistDetailListIntent(
+                                        PlaylistDetailListIntent.OnReorderAudioMedia(
+                                            reorderData = item,
+                                            targetData = audioPlayDataList[it],
+                                        ),
+                                    )
+                                }
+                            },
+                        ) { dragHandleModifier ->
+                            PlaylistDetailListItemView(
+                                data = item,
+                                // 끌기를 행 전체가 받는다. 안쪽 탭 제스처는 자식이라 그대로 산다.
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .then(dragHandleModifier),
+                                isBasePlaylist = isBasePlaylist,
+                                sendIntent = sendPlaylistDetailListIntent,
+                            )
+                            if (highlightedAudioMediaId == item.id) {
+                                FocusSpreadOverlay(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .clipToBounds(),
+                                    progress = focusSpreadProgress,
+                                )
+                            }
                         }
                     }
                 }

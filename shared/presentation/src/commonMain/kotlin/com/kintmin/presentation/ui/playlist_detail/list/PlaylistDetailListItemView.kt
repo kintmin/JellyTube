@@ -17,14 +17,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Subject
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,23 +36,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.gray80
+import com.kintmin.presentation.theme.softRed
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
 import okio.Path.Companion.toPath
 
@@ -61,12 +60,9 @@ fun PlaylistDetailListItemView(
     isBasePlaylist: Boolean,
     sendIntent: (PlaylistDetailListIntent) -> Unit,
 ) {
-    var readModeDropdownExpanded by remember { mutableStateOf(false) }
+    var isMenuExpanded by remember { mutableStateOf(false) }
     var isShowDeleteDialog by remember { mutableStateOf(false) }
-    var longPressOffset by remember { mutableStateOf(Offset.Zero) }
-    var itemSize by remember { mutableStateOf(IntSize.Zero) }
     val interactionSource = remember { MutableInteractionSource() }
-    val density = LocalDensity.current
 
     Card(
         modifier,
@@ -84,7 +80,6 @@ fun PlaylistDetailListItemView(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .onSizeChanged { itemSize = it }
                 .indication(interactionSource = interactionSource, indication = LocalIndication.current)
                 .pointerInput(data.id) {
                     detectTapGestures(
@@ -99,11 +94,8 @@ fun PlaylistDetailListItemView(
                             }
                             interactionSource.emit(endInteraction)
                         },
+                        // 롱프레스는 호출부의 끌어서 순서 변경이 받는다. 여기서 받으면 그쪽이 굶는다.
                         onTap = { sendIntent(PlaylistDetailListIntent.OnClickAudioItem(data)) },
-                        onLongPress = { offset ->
-                            longPressOffset = offset
-                            readModeDropdownExpanded = true
-                        },
                     )
                 },
         ) {
@@ -164,63 +156,60 @@ fun PlaylistDetailListItemView(
                 }
 
                 Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .align(Alignment.CenterVertically),
+                    modifier = Modifier.align(Alignment.CenterVertically),
                 ) {
                     IconButton(
-                        modifier = Modifier.fillMaxHeight(),
-                        onClick = { sendIntent(PlaylistDetailListIntent.OnClickShowDetailAudioMedia(data)) }
+                        modifier = Modifier.size(48.dp),
+                        onClick = { isMenuExpanded = true },
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.Subject,
-                            contentDescription = "세부 화면"
+                            imageVector = Icons.Rounded.MoreVert,
+                            contentDescription = "더보기",
+                            modifier = Modifier.size(20.dp),
+                            tint = gray60,
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = isMenuExpanded,
+                        onDismissRequest = { isMenuExpanded = false },
+                        // M3 기본 메뉴 모서리는 extraSmall(4dp) 이라 각져 보인다.
+                        shape = MaterialTheme.shapes.medium,
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("세부 정보") },
+                            onClick = {
+                                isMenuExpanded = false
+                                sendIntent(PlaylistDetailListIntent.OnClickShowDetailAudioMedia(data))
+                            },
+                        )
+                        DropdownMenuItem(
+                            // 헤더의 "수정" 은 플레이리스트를 고친다. 이쪽은 곡이다.
+                            text = { Text("음원 수정") },
+                            onClick = {
+                                isMenuExpanded = false
+                                sendIntent(PlaylistDetailListIntent.OnClickEditAudioMedia(data))
+                            },
+                        )
+                        DropdownMenuItem(
+                            // 끌어서 바꾸는 쪽이 지름길이고, 이 항목이 그 보이는 경로다.
+                            text = { Text("순서 조정") },
+                            onClick = {
+                                isMenuExpanded = false
+                                sendIntent(PlaylistDetailListIntent.OnClickReorderAudioMedia(data))
+                            },
+                        )
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text("삭제") },
+                            colors = MenuDefaults.itemColors(textColor = softRed),
+                            onClick = {
+                                isMenuExpanded = false
+                                isShowDeleteDialog = true
+                            },
                         )
                     }
                 }
-            }
-
-            DropdownMenu(
-                expanded = readModeDropdownExpanded,
-                onDismissRequest = { readModeDropdownExpanded = false },
-                shape = MaterialTheme.shapes.medium,
-                offset = DpOffset(
-                    x = with(density) { longPressOffset.x.toDp() },
-                    y = with(density) {
-                        // DropdownMenu y-offset is anchored from the item's bottom.
-                        // Subtract item height so the menu appears near the long-press point.
-                        (longPressOffset.y - itemSize.height).toDp() + 8.dp
-                    },
-                ),
-            ) {
-                DropdownMenuItem(
-                    text = { Text("세부 정보") },
-                    onClick = {
-                        readModeDropdownExpanded = false
-                        sendIntent(PlaylistDetailListIntent.OnClickShowDetailAudioMedia(data))
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text("순서 조정") },
-                    onClick = {
-                        readModeDropdownExpanded = false
-                        sendIntent(PlaylistDetailListIntent.OnClickReorderAudioMedia(data))
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text("수정") },
-                    onClick = {
-                        readModeDropdownExpanded = false
-                        sendIntent(PlaylistDetailListIntent.OnClickEditAudioMedia(data))
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text("삭제") },
-                    onClick = {
-                        readModeDropdownExpanded = false
-                        isShowDeleteDialog = true
-                    },
-                )
             }
         }
     }

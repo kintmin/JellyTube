@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
+import com.kintmin.domain.audio_track.usecase.UpdateTrackSequenceUseCase
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.MediaControlData
 import com.kintmin.presentation.extension.matchKorean
@@ -26,6 +27,7 @@ class PlaylistDetailListViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
     private val deleteAudioMediaUseCase: DeleteAudioMediaUseCase,
+    private val updateTrackSequenceUseCase: UpdateTrackSequenceUseCase,
     private val mediaControllerManager: PlaybackController,
 ) : ViewModel() {
 
@@ -55,6 +57,11 @@ class PlaylistDetailListViewModel constructor(
             changeSearchText(intent.searchText)
             return
         }
+        // 끌어 놓을 때마다 오므로 클릭 throttle 에 걸리면 연속 재정렬이 먹힌다.
+        if (intent is PlaylistDetailListIntent.OnReorderAudioMedia) {
+            updateTrackSequence(intent.reorderData, intent.targetData)
+            return
+        }
         viewModelScope.launch {
             clickThrottle {
                 when (intent) {
@@ -71,9 +78,21 @@ class PlaylistDetailListViewModel constructor(
                     is PlaylistDetailListIntent.OnClickDeleteAudioMediaInPlaylist -> {
                         deleteAudioMedia(intent.data.id, intent.data.source)
                     }
-                    is PlaylistDetailListIntent.OnChangeSearchText -> Unit
+                    is PlaylistDetailListIntent.OnChangeSearchText,
+                    is PlaylistDetailListIntent.OnReorderAudioMedia -> Unit
                 }
             }
+        }
+    }
+
+    private fun updateTrackSequence(
+        reorderData: PlaylistDetailListItemUiState,
+        targetData: PlaylistDetailListItemUiState,
+    ) {
+        if (reorderData.id == targetData.id) return
+
+        viewModelScope.launch {
+            updateTrackSequenceUseCase(playlistId, reorderData.id, reorderData.sequence, targetData.sequence)
         }
     }
 

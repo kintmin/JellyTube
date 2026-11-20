@@ -8,6 +8,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,9 +30,13 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -52,12 +57,16 @@ private val DRAG_CORNER = 12.dp
  * [content] 는 끌기를 받을 자리에 [dragHandleModifier] 를 붙인다 — 그 자리만 제스처를 먹고
  * 나머지는 평소처럼 눌린다. 순서를 저장하는 것은 호출부 몫이다([onDragEnd]) — 플레이리스트는
  * 정렬된 id 전체를, 트랙은 옮긴 한 건을 보내기 때문이다.
+ *
+ * [longPressToStart] 면 핸들 없이 행 전체에 붙일 수 있다. 세로 드래그를 즉시 가로채면
+ * LazyColumn 스크롤이 죽으므로, 이 경우에만 롱프레스를 기다린 뒤 끌기를 받는다.
  */
 @Composable
 fun <T> LazyItemScope.ReorderableItem(
     state: ReorderState<T>,
     id: Int,
     modifier: Modifier = Modifier,
+    longPressToStart: Boolean = false,
     onDragEnd: () -> Unit,
     content: @Composable BoxScope.(dragHandleModifier: Modifier) -> Unit,
 ) {
@@ -117,19 +126,40 @@ fun <T> LazyItemScope.ReorderableItem(
     // pointerInput 은 키만 비교하고 람다는 비교하지 않는다. 키가 그대로면 처음 구성 때 잡힌
     // onDragEnd 가 계속 돌아, 호출부가 그 안에서 읽는 값이 첫 구성 시점에 묶인다.
     val currentOnDragEnd by rememberUpdatedState(onDragEnd)
-    val dragHandleModifier = Modifier.pointerInput(id) {
+    val haptic = LocalHapticFeedback.current
+    val dragHandleModifier = Modifier.pointerInput(id, longPressToStart) {
         fun finish() {
             // 호출부를 먼저 부른다 — draggingItemId 가 아직 살아 있어야 옮긴 항목을 찾을 수 있다.
             currentOnDragEnd()
             state.onDragEnd()
         }
-        detectDragGestures(
-            onDragStart = { state.onDragStart(it, id) },
-            onDrag = { change, dragAmount -> state.onDrag(change, dragAmount) },
-            onDragEnd = { finish() },
-            // 제스처가 취소되면 draggingItemId 가 남아 목록이 끌기에 잠긴 채로 끝난다.
-            onDragCancel = { finish() },
-        )
+
+        fun start(offset: Offset) {
+            // 핸들이 없으면 잡혔다는 것을 알리는 신호가 햅틱뿐이다.
+            if (longPressToStart) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            state.onDragStart(offset, id)
+        }
+
+        val onDrag: (PointerInputChange, Offset) -> Unit = { change, dragAmount ->
+            state.onDrag(change, dragAmount)
+        }
+
+        if (longPressToStart) {
+            detectDragGesturesAfterLongPress(
+                onDragStart = { start(it) },
+                onDrag = onDrag,
+                onDragEnd = { finish() },
+                // 제스처가 취소되면 draggingItemId 가 남아 목록이 끌기에 잠긴 채로 끝난다.
+                onDragCancel = { finish() },
+            )
+        } else {
+            detectDragGestures(
+                onDragStart = { start(it) },
+                onDrag = onDrag,
+                onDragEnd = { finish() },
+                onDragCancel = { finish() },
+            )
+        }
     }
 
     Box(
