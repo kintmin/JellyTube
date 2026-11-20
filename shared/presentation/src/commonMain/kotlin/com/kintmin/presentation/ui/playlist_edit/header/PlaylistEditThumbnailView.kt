@@ -38,7 +38,6 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.white
 import okio.Path.Companion.toPath
 
-/** 고른 사진이 없으면 바로 선택기를 열고, 있으면 기본 썸네일로 되돌릴지도 묻는다. */
 @Composable
 fun PlaylistEditThumbnailView(
     imageFileFullPath: String?,

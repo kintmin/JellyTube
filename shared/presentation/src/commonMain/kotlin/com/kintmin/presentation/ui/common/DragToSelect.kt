@@ -19,10 +19,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
-/**
- * 끌기를 시작한 항목([anchorId])의 상태를 뒤집는 쪽으로, 시작점부터 [currentId] 까지를 한꺼번에 맞춘다.
- * 범위에서 다시 빠진 항목은 [initialCheckedIds] 대로 돌아간다.
- */
 fun dragSelectedIds(
     orderedIds: List<Int>,
     initialCheckedIds: Set<Int>,
@@ -122,6 +118,5 @@ private class DragSelectSession {
 }
 
 private val AUTO_SCROLL_EDGE = 64.dp
-// 가장자리에 깊이 들어갈수록 빨라진다. 끝에 닿으면 프레임당 약 edge/4 px.
 private const val AUTO_SCROLL_DIVISOR = 4f
 private const val AUTO_SCROLL_FRAME_MILLIS = 16L

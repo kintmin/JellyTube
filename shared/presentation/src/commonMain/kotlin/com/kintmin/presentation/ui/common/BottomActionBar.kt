@@ -52,7 +52,7 @@ fun BottomActionButton(
             .height(BottomActionButtonHeight),
         shape = CircleShape,
         enabled = enabled,
-        // M3 elevation level 3. 배경 띠가 없으니 그림자가 목록에서 떼어 놓는다.
+        // M3 elevation level 3.
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 6.dp),
         onClick = onClick,
     ) {

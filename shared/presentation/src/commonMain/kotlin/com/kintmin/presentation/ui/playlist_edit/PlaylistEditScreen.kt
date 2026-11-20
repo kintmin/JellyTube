@@ -176,7 +176,6 @@ fun PlaylistEditScreen(
         consumedFocusAudioMediaId = focusAudioMediaId
     }
 
-    // 선택 중에는 상단 ✕ 와 같이, 기기 뒤로가기도 화면을 나가기 전에 선택부터 푼다.
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
         isBackEnabled = checkedItemCount > 0,
