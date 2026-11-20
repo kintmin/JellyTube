@@ -27,7 +27,6 @@ import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.LibraryMusic
-import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -195,47 +194,58 @@ fun PlayerDetailScreen(
             ) {
                 Spacer(modifier = Modifier.height(20.dp))
 
+                // 찜이 부가 줄로 내려가 좌우에 하나씩만 남았다. 그래서 제목이 가운데를 쓸 수 있다.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(
-                        modifier = Modifier.padding(end = 8.dp),
-                        onClick = navigateToBack) {
+                    IconButton(onClick = navigateToBack) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             contentDescription = "뒤로 가기",
                             tint = Color.White.copy(alpha = 0.82f),
                         )
                     }
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    // 상단은 재생을 조작하지 않는 것만 둔다 — 이 곡을 찜하고, 이 곡을 들여다본다.
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = { sendIntent(PlayerDetailIntent.OnClickFavoriteButton) }) {
-                            // 색으로 켜짐을 알리지 않는다. 밝은 파랑은 재생 모드가 켜졌다는 뜻으로
-                            // 이미 쓰고 있어, 찜까지 같은 색이면 성격이 섞인다.
-                            Icon(
-                                imageVector = if (data.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                                contentDescription = if (data.isFavorite) "찜 켜짐" else "찜 꺼짐",
-                                tint = if (data.isFavorite) Color.White else Color.White.copy(alpha = 0.82f),
-                            )
-                        }
-                        IconButton(
-                            modifier = Modifier.padding(start = 8.dp),
-                            onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Subject,
-                                contentDescription = "음원 정보",
-                                tint = Color.White.copy(alpha = 0.82f),
-                            )
-                        }
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .basicMarquee(),
+                            text = data.title,
+                            color = Color.White,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .basicMarquee(),
+                            text = data.artist,
+                            color = Color.White.copy(alpha = 0.72f),
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickMoreButton) }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.Subject,
+                            contentDescription = "음원 정보",
+                            tint = Color.White.copy(alpha = 0.82f),
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(28.dp))
 
                 // 가사 패널이 아트워크와 같은 자리·같은 크기를 쓴다. weight 를 바깥이 들고 있어야
                 // 전환할 때 아래 요소들이 밀리지 않는다.
@@ -291,46 +301,9 @@ fun PlayerDetailScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // 제목은 상단으로 올리지 않는다 — 뒤로·찜·정보 사이에 끼면 긴 제목이 늘 흐른다.
-                // 대신 크기를 낮춰 그만큼을 아트워크에 돌려준다.
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .basicMarquee(),
-                            text = data.title,
-                            color = Color.White,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                        )
-                        Text(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 2.dp)
-                                .basicMarquee(),
-                            text = data.artist,
-                            color = Color.White.copy(alpha = 0.78f),
-                            fontSize = 14.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
+                // 아래 줄 사이를 넉넉히 벌린다. 아트워크가 남는 세로를 모두 가져가므로,
+                // 여백을 늘리는 것과 아트워크를 줄이는 것이 같은 일이다.
+                Spacer(modifier = Modifier.height(28.dp))
 
                 // 세 상태가 모두 이 22dp 를 채운다. 비우면 가사 없는 곡에서 그만큼이 빈 자리로
                 // 남고, 접으면 곡을 넘길 때 아트워크 크기가 흔들린다.
@@ -353,7 +326,7 @@ fun PlayerDetailScreen(
                     textAlign = TextAlign.Center,
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -382,12 +355,25 @@ fun PlayerDetailScreen(
                     onValueChangeFinished = { sendIntent(PlayerDetailIntent.OnChangeFinishTimeSlider) },
                 )
 
+                Spacer(modifier = Modifier.height(28.dp))
+
                 // 부가 기능 — 재생을 바꾸지 않고 이 곡·이 세션을 다루는 것들. 셋이라 넓게 벌어진다.
+                // 가사는 아트워크와 한 줄 가사가 이미 입구라 여기 두지 않는다.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
+                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickFavoriteButton) }) {
+                        // 색으로 켜짐을 알리지 않는다. 밝은 파랑은 재생 모드가 켜졌다는 뜻으로
+                        // 이미 쓰고 있어, 찜까지 같은 색이면 성격이 섞인다.
+                        Icon(
+                            modifier = Modifier.size(24.dp),
+                            imageVector = if (data.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                            contentDescription = if (data.isFavorite) "찜 켜짐" else "찜 꺼짐",
+                            tint = if (data.isFavorite) Color.White else Color.White.copy(alpha = 0.6f),
+                        )
+                    }
                     IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickSleepTimerButton) }) {
                         // 켜짐을 tint 로만 알리지 않는다. 남은 시간은 뱃지가 말한다.
                         BadgedBox(
@@ -412,14 +398,6 @@ fun PlayerDetailScreen(
                             )
                         }
                     }
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickLyrics) }) {
-                        Icon(
-                            modifier = Modifier.size(24.dp),
-                            imageVector = Icons.Rounded.Lyrics,
-                            contentDescription = if (data.hasLyrics) "가사 보기" else "가사 찾기",
-                            tint = Color.White.copy(alpha = 0.82f),
-                        )
-                    }
                     RepeatRangeMarkView(
                         isStartSelected = data.repeatRangeStartDuration != null,
                         isEndSelected = data.repeatRangeEndDuration != null,
@@ -427,7 +405,7 @@ fun PlayerDetailScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(28.dp))
 
                 // 재생 기능 — 셔플과 반복이 양 끝을 잡아 좌 1 : 우 1 로 대칭이다.
                 Row(
@@ -489,7 +467,7 @@ fun PlayerDetailScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // 재생 부가 — 지금 걸려 있는 값과 어디서 재생 중인지.
                 Row(
