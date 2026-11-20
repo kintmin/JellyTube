@@ -11,7 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.Slider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_play_setting.PlaybackRange
 import com.kintmin.presentation.extension.toFixed
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.white
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 import kotlin.math.roundToInt
 
@@ -38,7 +37,6 @@ fun PlaybackSpeedDialog(
         showDialog = showDialog,
         onDismiss = onDismiss,
         shape = PlaybackDialogShape,
-        containerColor = PlaybackDialogContainer,
         surfaceModifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
@@ -51,14 +49,14 @@ fun PlaybackSpeedDialog(
         ) {
             Text(
                 text = "재생 속도",
-                color = white.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = selectedSpeed.toPlaybackSpeedText(),
-                color = white,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
                 // 끌 때마다 바뀌는 글자다. 비례폭이면 가운데 정렬이 좌우로 흔들린다.
@@ -75,7 +73,7 @@ fun PlaybackSpeedDialog(
                     contentDescription = "재생 속도 낮추기",
                     onClick = { selectedSpeed.previousPlaybackSpeed()?.let(onSelectSpeed) },
                 )
-                Slider(
+                PlaybackAdjustSlider(
                     modifier = Modifier.weight(1f),
                     value = selectedSpeed.coerceIn(MinPlaybackSpeed, MaxPlaybackSpeed),
                     onValueChange = { value ->
@@ -85,7 +83,6 @@ fun PlaybackSpeedDialog(
                         }
                     },
                     valueRange = MinPlaybackSpeed..MaxPlaybackSpeed,
-                    colors = playbackSliderColors(),
                 )
                 PlaybackStepButton(
                     imageVector = Icons.Rounded.Add,

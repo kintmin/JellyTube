@@ -11,7 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.Slider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_play_setting.PlaybackRange
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.white
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 import kotlin.math.roundToInt
 
@@ -37,7 +36,6 @@ fun PlaybackPitchDialog(
         showDialog = showDialog,
         onDismiss = onDismiss,
         shape = PlaybackDialogShape,
-        containerColor = PlaybackDialogContainer,
         surfaceModifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
@@ -50,14 +48,14 @@ fun PlaybackPitchDialog(
         ) {
             Text(
                 text = "피치",
-                color = white.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = selectedSemitone.toPitchSemitoneText(),
-                color = white,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
                 // 끌 때마다 바뀌는 글자다. 비례폭이면 가운데 정렬이 좌우로 흔들린다.
@@ -74,7 +72,7 @@ fun PlaybackPitchDialog(
                     contentDescription = "피치 낮추기",
                     onClick = { selectedSemitone.previousPitchSemitone()?.let(onSelectSemitone) },
                 )
-                Slider(
+                PlaybackAdjustSlider(
                     modifier = Modifier.weight(1f),
                     value = selectedSemitone.toFloat(),
                     onValueChange = { value ->
@@ -86,7 +84,6 @@ fun PlaybackPitchDialog(
                     },
                     valueRange = MinPlaybackPitchSemitone.toFloat()..MaxPlaybackPitchSemitone.toFloat(),
                     steps = MaxPlaybackPitchSemitone - MinPlaybackPitchSemitone - 1,
-                    colors = playbackSliderColors(),
                 )
                 PlaybackStepButton(
                     imageVector = Icons.Rounded.Add,
