@@ -175,11 +175,8 @@ class PlayerDetailViewModel constructor(
             }
 
             PlayerDetailIntent.OnClickRepeatRangeButton -> {
-                viewModelScope.launch {
-                    mediaControllerManager.updateRepeatRange()
-                        .onSuccess { refreshRepeatRangeState() }
-                        .onFailure { _eventFlow.emit(PlayerDetailEvent.ShowToast("B 지점은 A 지점 이후로 설정해주세요.")) }
-                }
+                mediaControllerManager.updateRepeatRange()
+                refreshRepeatRangeState()
             }
 
             PlayerDetailIntent.OnClickFavoriteButton -> {
@@ -193,13 +190,25 @@ class PlayerDetailViewModel constructor(
                 }
             }
 
-            PlayerDetailIntent.OnClickLyricsButton -> {
+            // 가사 입구는 셋이다 — 아트워크·한 줄 가사·부가 줄 아이콘. 셋 다 같은 일을 한다.
+            // 아트워크는 가사 없는 곡에서 clickable 을 붙이지 않아 아래 분기로 오지 않는다.
+            PlayerDetailIntent.OnClickLyrics -> {
+                if (data.value.hasLyrics) {
+                    _data.update { it.copy(isLyricsPanelVisible = !it.isLyricsPanelVisible) }
+                    return
+                }
                 val mediaId = data.value.id.toIntOrNull()
                 viewModelScope.launch {
                     if (mediaId == null) {
                         _eventFlow.emit(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
                     } else {
-                        _eventFlow.emit(PlayerDetailEvent.NavigateToLyricsViewer(mediaId))
+                        _eventFlow.emit(
+                            PlayerDetailEvent.NavigateToLyricsSearch(
+                                audioMediaId = mediaId,
+                                query = data.value.title,
+                                durationSeconds = data.value.playbackDuration.inWholeSeconds.toDouble(),
+                            )
+                        )
                     }
                 }
             }
@@ -361,7 +370,7 @@ class PlayerDetailViewModel constructor(
                     sleepTimerRemaining = sleepTimerRunner.remaining,
                 )
             }
-            refreshLyricLine()
+            refreshActiveLyricIndex()
             return
         }
 
@@ -382,6 +391,11 @@ class PlayerDetailViewModel constructor(
                 playbackPitchSemitone = data.value.playbackPitchSemitone,
                 // 같은 곡이면 즐겨찾기 상태 유지, 곡이 바뀌면 observeFavorite의 flow가 새 값으로 갱신
                 isFavorite = if (isSameMedia) data.value.isFavorite else false,
+                // 같은 곡인데 플레이리스트만 바뀌면 구독은 id 로 묶여 다시 흐르지 않는다. 그때 가사
+                // 상태를 버리면 아트워크가 눌리지 않게 되므로 이어 받는다.
+                hasLyrics = if (isSameMedia) data.value.hasLyrics else false,
+                lyricLines = if (isSameMedia) data.value.lyricLines else emptyList(),
+                isLyricsPanelVisible = data.value.isLyricsPanelVisible,
                 repeatRangeStartDuration = repeatRangeState.startDuration,
                 repeatRangeEndDuration = repeatRangeState.endDuration,
                 isPlaybackSpeedMenuVisible = data.value.isPlaybackSpeedMenuVisible,
@@ -394,14 +408,14 @@ class PlayerDetailViewModel constructor(
             )
         }
 
-        refreshLyricLine()
+        refreshActiveLyricIndex()
 
         if (!isSamePlaylist) {
             refreshPlaylistName(currentPlaylistId)
         }
     }
 
-    // 현재 재생 곡(data.id)이 바뀔 때마다 즐겨찾기/가사 유무 상태를 재구독한다.
+    // 현재 재생 곡(data.id)이 바뀔 때마다 즐겨찾기/가사/표기 상태를 재구독한다.
     // flatMapLatest가 이전 곡의 구독을 자동 취소하므로 별도 Job 관리가 필요 없다.
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeAudioMediaDetail() {
@@ -417,8 +431,19 @@ class PlayerDetailViewModel constructor(
                 }
                 .collect { aggregates ->
                     val isFavorite = aggregates?.any { it.playlist.type == PlaylistType.FAVORITE } ?: false
-                    val lyricFileFullPath = aggregates?.firstOrNull()?.audioMedia?.lyricFileFullPath
-                    _data.update { it.copy(isFavorite = isFavorite, hasLyrics = lyricFileFullPath != null) }
+                    val audioMedia = aggregates?.firstOrNull()?.audioMedia
+                    val lyricFileFullPath = audioMedia?.lyricFileFullPath
+                    _data.update {
+                        it.copy(
+                            isFavorite = isFavorite,
+                            hasLyrics = lyricFileFullPath != null,
+                            // 제목·아티스트는 저장소가 진실이다. 재생기가 들고 있는 값은 곡을 걸 때
+                            // 찍힌 스냅샷이라, 정보를 고쳐도 다시 걸기 전까지 옛 이름이 남았다.
+                            // 어느 플레이리스트에도 없어 목록이 비면 덮지 않고 그대로 둔다.
+                            title = audioMedia?.name ?: it.title,
+                            artist = audioMedia?.artist ?: it.artist,
+                        )
+                    }
                     loadLyricsIfNeeded(lyricFileFullPath)
                 }
         }
@@ -431,26 +456,31 @@ class PlayerDetailViewModel constructor(
 
         if (lyricFileFullPath == null) {
             parsedLyricLines = emptyList()
-            _data.update { it.copy(currentLyricLine = "") }
+            _data.update { it.copy(lyricLines = emptyList(), activeLyricIndex = -1) }
             return
         }
         viewModelScope.launch {
             parsedLyricLines = getParsedLyricsUseCase(lyricFileFullPath)
-            refreshLyricLine()
+            _data.update {
+                it.copy(
+                    lyricLines = parsedLyricLines.map { line -> line.text },
+                    activeLyricIndex = -1,
+                )
+            }
+            refreshActiveLyricIndex()
         }
     }
 
-    // 비싱크(시간정보 없음) 가사면 activeLyricIndex 가 -1 이라 빈 문자열로 둔다.
-    private fun refreshLyricLine() {
-        val line = if (parsedLyricLines.isEmpty()) {
-            ""
+    // 비싱크(시간정보 없음) 가사면 activeLyricIndex 가 늘 -1 이라 활성 줄이 없다.
+    private fun refreshActiveLyricIndex() {
+        val index = if (parsedLyricLines.isEmpty()) {
+            -1
         } else {
             val positionMs = mediaControllerManager.currentPosition ?: return
-            val index = activeLyricIndex(parsedLyricLines, positionMs)
-            parsedLyricLines.getOrNull(index)?.text.orEmpty()
+            activeLyricIndex(parsedLyricLines, positionMs)
         }
-        if (line != _data.value.currentLyricLine) {
-            _data.update { it.copy(currentLyricLine = line) }
+        if (index != _data.value.activeLyricIndex) {
+            _data.update { it.copy(activeLyricIndex = index) }
         }
     }
 

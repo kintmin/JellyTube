@@ -394,11 +394,10 @@ class AudioMediaFacade constructor(
         )
     }
 
-    // 전체/미분류는 사용자가 직접 트랙을 추가/삭제할 수 없는 자동관리 플레이리스트다.
     private suspend fun isAutoManagedPlaylist(playlistId: Int): Boolean {
         val type = playlistDao.getTypeById(playlistId)
             ?.let { runCatching { PlaylistType.valueOf(it) }.getOrNull() }
-        return type == PlaylistType.TOTAL || type == PlaylistType.UNCATEGORIZED
+        return type?.isAutoManaged == true
     }
 
     private suspend fun requireSystemPlaylistId(type: PlaylistType): Int {

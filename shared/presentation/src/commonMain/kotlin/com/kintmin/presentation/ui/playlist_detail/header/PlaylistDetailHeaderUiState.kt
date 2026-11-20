@@ -9,6 +9,8 @@ data class PlaylistDetailHeaderUiState(
     val isRepeating: Boolean,
     val isShuffling: Boolean,
     val isBasePlaylist: Boolean = false,
+    // `isBasePlaylist` 와 같은 값이 아니다 — `PlaylistType.isAutoManaged` 를 보라.
+    val canRemoveTrack: Boolean = false,
 ) {
     companion object {
         fun getMock(id: Int = 0): PlaylistDetailHeaderUiState {
@@ -20,6 +22,7 @@ data class PlaylistDetailHeaderUiState(
                 description = "설명은 최대 100자 설명은 최대 100자 설명은 최대 100자 설명은 최대 100자 ",
                 isRepeating = true,
                 isShuffling = false,
+                canRemoveTrack = true,
             )
         }
     }

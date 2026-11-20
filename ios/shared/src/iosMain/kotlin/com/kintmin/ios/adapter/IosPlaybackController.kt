@@ -61,9 +61,9 @@ internal class IosPlaybackController(
 
     override fun seek(duration: Duration) = bridge.seek(duration.inWholeMilliseconds)
 
-    override fun updateRepeatRange(): Result<Unit> {
-        val mediaId = bridge.playingItem()?.mediaId ?: return Result.success(Unit)
-        return repeatRange.update(mediaId, bridge.currentPositionMillis().milliseconds)
+    override fun updateRepeatRange() {
+        val mediaId = bridge.playingItem()?.mediaId ?: return
+        repeatRange.update(mediaId, bridge.currentPositionMillis().milliseconds)
     }
 
     override fun clearRepeatRange() = repeatRange.clear()

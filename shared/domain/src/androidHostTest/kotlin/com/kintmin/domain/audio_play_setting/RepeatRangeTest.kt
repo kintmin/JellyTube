@@ -2,7 +2,6 @@ package com.kintmin.domain.audio_play_setting
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -26,18 +25,41 @@ class RepeatRangeTest {
     }
 
     @Test
-    fun `끝점이 시작점보다 앞이면 실패로 돌려준다`() {
+    fun `시작점과 같은 자리에서 다시 누르면 구간이 풀린다`() {
         repeatRange.update("1", 3_000.milliseconds)
 
-        assertTrue(repeatRange.update("1", 1_000.milliseconds).isFailure)
+        repeatRange.update("1", 3_000.milliseconds)
+
+        assertNull(repeatRange.stateFor("1").startDuration)
         assertNull(repeatRange.stateFor("1").endDuration)
     }
 
     @Test
-    fun `끝점이 시작점과 같아도 실패다`() {
+    fun `시작점 1 초 안에서 다시 누르면 구간이 풀린다`() {
         repeatRange.update("1", 3_000.milliseconds)
 
-        assertTrue(repeatRange.update("1", 3_000.milliseconds).isFailure)
+        repeatRange.update("1", 3_999.milliseconds)
+
+        assertNull(repeatRange.stateFor("1").startDuration)
+    }
+
+    @Test
+    fun `시작점보다 앞에서 누르면 구간이 풀린다`() {
+        repeatRange.update("1", 3_000.milliseconds)
+
+        repeatRange.update("1", 1_000.milliseconds)
+
+        assertNull(repeatRange.stateFor("1").startDuration)
+        assertNull(repeatRange.stateFor("1").endDuration)
+    }
+
+    @Test
+    fun `시작점에서 1 초 넘게 떨어지면 끝점으로 잡는다`() {
+        repeatRange.update("1", 3_000.milliseconds)
+
+        repeatRange.update("1", 4_000.milliseconds)
+
+        assertEquals(4_000.milliseconds, repeatRange.stateFor("1").endDuration)
     }
 
     @Test
