@@ -184,7 +184,8 @@ fun PlaylistDetailHeaderView(
                 }
             }
             Row(
-                modifier = Modifier.height(36.dp),
+                // Material 최소 터치 타깃이다. 36dp 로 두면 세 버튼이 모두 미달이다.
+                modifier = Modifier.height(48.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (!isBasePlaylist) {
@@ -202,7 +203,7 @@ fun PlaylistDetailHeaderView(
                                 .size(20.dp)
                                 .padding(0.dp),
                             imageVector = Icons.Rounded.Add,
-                            contentDescription = "Add"
+                            contentDescription = null,
                         )
                         Text(
                             modifier = Modifier.padding(0.dp),
@@ -224,7 +225,7 @@ fun PlaylistDetailHeaderView(
                     Icon(
                         modifier = Modifier.size(20.dp),
                         imageVector = Icons.Rounded.Edit,
-                        contentDescription = "Edit"
+                        contentDescription = null,
                     )
                     Text(
                         text = "수정",
@@ -241,14 +242,14 @@ fun PlaylistDetailHeaderView(
                         .weight(1f),
                     contentPadding = PaddingValues(0.dp),
                 ) {
-                    Text(
-                        text = "모두 재생",
-                        fontSize = 12.sp,
-                    )
                     Icon(
                         modifier = Modifier.size(20.dp),
                         imageVector = Icons.Rounded.PlayArrow,
-                        contentDescription = "PlayArrow"
+                        contentDescription = null,
+                    )
+                    Text(
+                        text = "모두 재생",
+                        fontSize = 12.sp,
                     )
                 }
             }

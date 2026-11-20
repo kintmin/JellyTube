@@ -46,6 +46,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -157,6 +159,7 @@ fun PlaylistDetailScreen(
     )
     var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
     var searchInput by rememberSaveable { mutableStateOf("") }
+    val searchFocusRequester = remember { FocusRequester() }
     var consumedFocusAudioMediaId by rememberSaveable { mutableStateOf<Int?>(null) }
     var highlightedAudioMediaId by remember { mutableStateOf<Int?>(null) }
     var focusSpreadProgress by remember { mutableStateOf(0f) }
@@ -237,7 +240,7 @@ fun PlaylistDetailScreen(
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "ArrowBackIosNew"
+                            contentDescription = "뒤로",
                         )
                     }
                 },
@@ -254,10 +257,11 @@ fun PlaylistDetailScreen(
                             }
                         },
                     ) {
+                        // 같은 아이콘을 두 상태에 쓰면 토글인 것이 보이지 않는다.
                         Icon(
-                            imageVector = Icons.Rounded.Search,
+                            imageVector = if (isSearchFieldVisible) Icons.Rounded.Close else Icons.Rounded.Search,
                             modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "음원 검색",
+                            contentDescription = if (isSearchFieldVisible) "검색 닫기" else "음원 검색",
                         )
                     }
                 },
@@ -397,9 +401,12 @@ fun PlaylistDetailScreen(
                     animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
                 ),
             ) {
+                // 검색을 누른 사람은 바로 적으려는 것이다. 필드를 한 번 더 누르게 하지 않는다.
+                LaunchedEffect(Unit) { searchFocusRequester.requestFocus() }
                 OutlinedTextField(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .focusRequester(searchFocusRequester)
                         // 상단 바는 헤더 위에서 투명하다가 스크롤하면 background 가 된다.
                         .background(
                             lerp(
@@ -419,17 +426,23 @@ fun PlaylistDetailScreen(
                     label = { Text("음원 제목 검색") },
                     singleLine = true,
                     trailingIcon = {
+                        val isSearchInputEmpty = searchInput.isEmpty()
                         IconButton(
                             onClick = {
-                                searchInput = ""
-                                sendPlaylistDetailListIntent(
-                                    PlaylistDetailListIntent.OnChangeSearchText(""),
-                                )
+                                // 비어 있으면 지울 것이 없다. 그때는 닫는 것이 유일하게 뜻이 있다.
+                                if (isSearchInputEmpty) {
+                                    isSearchFieldVisible = false
+                                } else {
+                                    searchInput = ""
+                                    sendPlaylistDetailListIntent(
+                                        PlaylistDetailListIntent.OnChangeSearchText(""),
+                                    )
+                                }
                             },
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
-                                contentDescription = "검색어 전체 삭제",
+                                contentDescription = if (isSearchInputEmpty) "검색 닫기" else "검색어 전체 삭제",
                             )
                         }
                     },

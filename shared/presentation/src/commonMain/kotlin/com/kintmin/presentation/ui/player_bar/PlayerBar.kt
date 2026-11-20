@@ -52,6 +52,10 @@ private val BAR_HEIGHT = 64.dp
 private val ARTWORK_SIZE = 48.dp
 private val PROGRESS_HEIGHT = 2.dp
 
+// 최소 터치 타깃이라 줄이지 않는다. 아이콘을 M3 비율(약 60%)로 키워 영역을 메운다.
+private val PLAY_BUTTON_SIZE = 48.dp
+private val PLAY_ICON_SIZE = 28.dp
+
 @Composable
 fun PlayerBar(
     data: PlayerBarUiState,
@@ -142,20 +146,22 @@ fun PlayerBar(
                 )
             }
             IconButton(
+                // 원이 `surface` 면 바(`surfaceContainerHighest`) 대비 1.14:1 로 보이지
+                // 않아 아이콘만 뜬 넓은 빈 영역으로 읽힌다. 채워서 버튼으로 읽히게 한다.
                 modifier = Modifier
                     .padding(end = 8.dp)
-                    .size(48.dp)
+                    .size(PLAY_BUTTON_SIZE)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface),
+                    .background(MaterialTheme.colorScheme.primary),
                 onClick = {
                     sendIntent(PlayerBarIntent.OnClickPlayOrPauseButton)
                 },
             ) {
                 Icon(
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(PLAY_ICON_SIZE),
                     imageVector = if (data.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    contentDescription = if (data.isPlaying) "일시정지" else "재생",
+                    tint = MaterialTheme.colorScheme.onPrimary,
                 )
             }
         }
