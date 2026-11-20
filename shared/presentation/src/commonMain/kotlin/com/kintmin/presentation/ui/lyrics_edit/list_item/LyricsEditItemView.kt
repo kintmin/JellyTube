@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.AssistChip
@@ -22,6 +20,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -39,6 +38,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray20
+import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.seaBlue60
+import com.kintmin.presentation.theme.softRed
 import com.kintmin.presentation.ui.lyrics_edit.LyricsEditUiState.EditRow
 
 /** timeMs 를 화면 표시용 문자열로 만든다. 1시간 이상이면 시를 포함한다. */
@@ -77,9 +80,17 @@ fun LyricsEditItemView(
     var isVariantExpanded by rememberSaveable(row.id) { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
 
+    // 테마의 onSurfaceVariant 가 본문과 같은 색이라 기본값으로는 힌트가 입력처럼 보인다.
     val transparentFieldColors = TextFieldDefaults.colors(
         focusedContainerColor = Color.Transparent,
         unfocusedContainerColor = Color.Transparent,
+        focusedPlaceholderColor = gray60,
+        unfocusedPlaceholderColor = gray60,
+        focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+        unfocusedLabelColor = gray60,
+        focusedIndicatorColor = MaterialTheme.colorScheme.onSurface,
+        unfocusedIndicatorColor = gray20,
+        cursorColor = MaterialTheme.colorScheme.onSurface,
     )
 
     Row(
@@ -95,7 +106,7 @@ fun LyricsEditItemView(
                 .width(3.dp)
                 .fillMaxHeight()
                 .background(
-                    color = if (row.isModified) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    color = if (row.isModified) seaBlue60 else Color.Transparent,
                     shape = RoundedCornerShape(2.dp),
                 ),
         )
@@ -138,7 +149,7 @@ fun LyricsEditItemView(
                     Text(
                         text = if (isVariantExpanded) "$label ▾" else "$label ▸",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = gray60,
                     )
                 }
             }
@@ -176,7 +187,7 @@ fun LyricsEditItemView(
                     modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
                     text = "수정됨",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = seaBlue60,
                 )
             }
         }
@@ -192,17 +203,14 @@ fun LyricsEditItemView(
             ) {
                 DropdownMenuItem(
                     text = { Text("아래에 줄 추가") },
-                    leadingIcon = { Icon(Icons.Rounded.Add, contentDescription = null) },
                     onClick = {
                         menuExpanded = false
                         onAddRowBelow(row.id)
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text("줄 삭제", color = MaterialTheme.colorScheme.error) },
-                    leadingIcon = {
-                        Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                    },
+                    text = { Text("줄 삭제") },
+                    colors = MenuDefaults.itemColors(textColor = softRed),
                     onClick = {
                         menuExpanded = false
                         onDeleteRow(row.id)

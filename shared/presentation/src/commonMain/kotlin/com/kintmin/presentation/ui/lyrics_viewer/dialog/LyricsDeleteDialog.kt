@@ -33,12 +33,14 @@ fun LyricsDeleteDialog(
         ) {
             Text(
                 modifier = Modifier.padding(bottom = 8.dp),
-                text = "가사를 삭제할까요?",
+                text = "가사 삭제",
                 style = MaterialTheme.typography.titleLarge,
             )
             Text(
                 modifier = Modifier.padding(bottom = 16.dp),
-                text = "${audioMediaName}의 가사를 삭제합니다. 되돌릴 수 없어요.",
+                // 이름이 사용자 입력이라 조사를 붙이면 받침에서 비문이 된다.
+                text = "'$audioMediaName' 가사를 지웁니다." +
+                    "\n다시 보려면 가사를 다시 검색해야 합니다.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Row(

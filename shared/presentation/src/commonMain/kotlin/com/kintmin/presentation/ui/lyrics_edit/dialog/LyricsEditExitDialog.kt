@@ -32,12 +32,12 @@ fun LyricsEditExitDialog(
         ) {
             Text(
                 modifier = Modifier.padding(bottom = 8.dp),
-                text = "저장하지 않고 나갈까요?",
+                text = "편집 나가기",
                 style = MaterialTheme.typography.titleLarge,
             )
             Text(
                 modifier = Modifier.padding(bottom = 16.dp),
-                text = "편집한 내용이 사라져요.",
+                text = "저장하지 않은 편집 내용은 사라집니다.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Row(

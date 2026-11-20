@@ -15,18 +15,15 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -45,7 +42,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.kintmin.presentation.platform.rememberToaster
+import com.kintmin.presentation.animation.FollowActiveLyricLine
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.softRed
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
@@ -60,9 +59,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
-
-/** 활성 줄을 화면 가운데쯤에 두기 위해 두 줄 앞을 맨 위로 올린다. */
-private const val LINES_ABOVE_ACTIVE = 2
 
 @Composable
 fun LyricsViewerScreen(
@@ -133,11 +129,7 @@ fun LyricsViewerScreen(
     }
 
     val listState = rememberLazyListState()
-    LaunchedEffect(data.activeIndex) {
-        if (data.activeIndex >= 0) {
-            listState.animateScrollToItem((data.activeIndex - LINES_ABOVE_ACTIVE).coerceAtLeast(0))
-        }
-    }
+    FollowActiveLyricLine(listState = listState, activeIndex = data.activeIndex)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -187,7 +179,6 @@ fun LyricsViewerScreen(
                                         }
                                     )
                                 },
-                                leadingIcon = { Icon(Icons.Rounded.Translate, contentDescription = null) },
                                 enabled = !data.isCreatingTranslation,
                                 onClick = {
                                     menuExpanded = false
@@ -206,7 +197,6 @@ fun LyricsViewerScreen(
                                         }
                                     )
                                 },
-                                leadingIcon = { Icon(Icons.Rounded.Translate, contentDescription = null) },
                                 enabled = !data.isCreatingTransliteration,
                                 onClick = {
                                     menuExpanded = false
@@ -216,22 +206,14 @@ fun LyricsViewerScreen(
                         }
                         DropdownMenuItem(
                             text = { Text("편집하기") },
-                            leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
                             onClick = {
                                 menuExpanded = false
                                 navigateToLyricsEdit()
                             },
                         )
-                        HorizontalDivider()
                         DropdownMenuItem(
-                            text = { Text("삭제하기", color = MaterialTheme.colorScheme.error) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Rounded.Delete,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error,
-                                )
-                            },
+                            text = { Text("삭제하기") },
+                            colors = MenuDefaults.itemColors(textColor = softRed),
                             onClick = {
                                 menuExpanded = false
                                 showDeleteDialog = true
@@ -276,7 +258,7 @@ fun LyricsViewerScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "표시할 가사가 없어요.",
+                        text = "표시할 가사가 없습니다.",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

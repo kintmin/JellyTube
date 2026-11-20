@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -18,10 +17,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kintmin.presentation.animation.FollowActiveLyricLine
 import com.kintmin.presentation.theme.JellyTubeTheme
-
-/** 활성 줄을 패널 가운데쯤에 두기 위해 두 줄 앞을 맨 위로 올린다. */
-private const val LINES_ABOVE_ACTIVE = 2
 
 @Composable
 fun PlayerLyricsPanelView(
@@ -31,15 +28,7 @@ fun PlayerLyricsPanelView(
 ) {
     val listState = rememberLazyListState()
 
-    // 활성 줄이 바뀔 때만 따라간다. 앞뒤를 읽으려 스크롤해 둔 상태에서 줄이 넘어가면 현재 줄로
-    // 되돌아온다 — 억제 로직은 실제로 거슬릴 때 더한다.
-    LaunchedEffect(activeIndex) {
-        if (activeIndex >= 0) {
-            listState.animateScrollToItem(
-                index = (activeIndex - LINES_ABOVE_ACTIVE).coerceAtLeast(0),
-            )
-        }
-    }
+    FollowActiveLyricLine(listState = listState, activeIndex = activeIndex)
 
     LazyColumn(
         modifier = modifier,

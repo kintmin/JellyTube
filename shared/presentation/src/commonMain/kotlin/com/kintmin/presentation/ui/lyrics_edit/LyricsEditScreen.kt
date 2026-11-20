@@ -1,13 +1,10 @@
 package com.kintmin.presentation.ui.lyrics_edit
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,12 +12,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -50,6 +45,8 @@ import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.wheel_picker.TimePickerBottomSheet
 import com.kintmin.presentation.ui.lyrics_edit.dialog.LyricsEditExitDialog
 import com.kintmin.presentation.ui.lyrics_edit.list_item.LyricsEditItemView
@@ -80,7 +77,7 @@ fun LyricsEditScreen(
                 LyricsEditEvent.ShowUndoDeleteRow -> scope.launch {
                     snackbarHostState.currentSnackbarData?.dismiss()
                     val result = snackbarHostState.showSnackbar(
-                        message = "줄을 삭제했어요",
+                        message = "줄을 삭제했습니다.",
                         actionLabel = "되돌리기",
                         duration = SnackbarDuration.Short,
                     )
@@ -130,6 +127,14 @@ fun LyricsEditScreen(
     )
 
     var pickerRowId by remember { mutableStateOf<Int?>(null) }
+
+    // 시간을 바꾸면 줄이 시간 순 자리로 옮겨 가므로 그 자리를 보여 준다.
+    var movedRowId by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(movedRowId, data.rows) {
+        val index = data.rows.indexOfFirst { it.id == movedRowId }
+        if (index >= 0) listState.animateScrollToItem(index)
+        movedRowId = null
+    }
     val pickerRow = data.rows.firstOrNull { it.id == pickerRowId }
     if (pickerRow != null) {
         TimePickerBottomSheet(
@@ -137,6 +142,7 @@ fun LyricsEditScreen(
             audioDurationMs = data.durationMs.takeIf { it > 0 },
             onConfirm = { timeMs ->
                 sendIntent(LyricsEditIntent.OnChangeTime(pickerRow.id, timeMs))
+                movedRowId = pickerRow.id
                 pickerRowId = null
             },
             onDismissRequest = { pickerRowId = null },
@@ -170,21 +176,13 @@ fun LyricsEditScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .navigationBarsPadding()
-                    .padding(16.dp),
-            ) {
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    enabled = data.isDirty && !data.isSaving,
-                    onClick = { sendIntent(LyricsEditIntent.OnClickSave) },
-                ) {
-                    Text(text = if (data.isSaving) "저장 중…" else "저장")
+            if (data.isDirty || data.isSaving) {
+                BottomActionBar {
+                    BottomActionButton(
+                        text = if (data.isSaving) "저장 중…" else "저장",
+                        enabled = !data.isSaving,
+                        onClick = { sendIntent(LyricsEditIntent.OnClickSave) },
+                    )
                 }
             }
         },
@@ -203,7 +201,7 @@ fun LyricsEditScreen(
 
         Column(
             modifier = Modifier
-                .padding(innerPadding)
+                .padding(top = innerPadding.calculateTopPadding())
                 .fillMaxSize(),
         ) {
             if (data.canSplit) {
@@ -220,7 +218,7 @@ fun LyricsEditScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 state = listState,
-                contentPadding = PaddingValues(vertical = 8.dp),
+                contentPadding = PaddingValues(top = 8.dp, bottom = innerPadding.calculateBottomPadding() + 8.dp),
             ) {
                 itemsIndexed(
                     items = data.rows,

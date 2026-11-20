@@ -163,10 +163,10 @@ class LyricsViewerViewModel constructor(
         viewModelScope.launch {
             val result = deleteAudioMediaLyricsUseCase(audioMediaId)
             if (result.isSuccess) {
-                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사를 삭제했어요."))
+                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사를 삭제했습니다."))
                 _eventFlow.emit(LyricsViewerEvent.NavigateToBack)
             } else {
-                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사를 삭제하지 못했어요."))
+                _eventFlow.emit(LyricsViewerEvent.ShowToast("가사를 지우지 못했습니다. 잠시 뒤 다시 시도해 주세요."))
             }
         }
     }

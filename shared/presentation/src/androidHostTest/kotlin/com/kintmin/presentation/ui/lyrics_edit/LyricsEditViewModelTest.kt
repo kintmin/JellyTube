@@ -98,6 +98,31 @@ class LyricsEditViewModelTest {
     }
 
     @Test
+    fun `시간을 바꾸면 시간 순 자리로 옮겨 간다`() {
+        val viewModel = viewModel()
+        val first = viewModel.data.value.rows[0]
+
+        viewModel.sendIntent(LyricsEditIntent.OnChangeTime(first.id, 7_000L))
+
+        assertEquals(
+            listOf("둘째 줄", "첫 줄", "셋째 줄"),
+            viewModel.data.value.rows.map { it.text },
+        )
+    }
+
+    @Test
+    fun `같은 시간의 줄은 원래 순서를 지킨다`() {
+        val viewModel = viewModel()
+        val first = viewModel.data.value.rows[0]
+        viewModel.sendIntent(LyricsEditIntent.OnAddRowBelow(first.id))
+
+        // 새 줄(1초)을 둘째 줄과 같은 5초로 옮긴다. 원래 둘째 줄보다 앞에 있었으므로 앞에 남는다.
+        viewModel.sendIntent(LyricsEditIntent.OnChangeTime(viewModel.data.value.rows[1].id, 5_000L))
+
+        assertEquals(listOf("첫 줄", "", "둘째 줄", "셋째 줄"), viewModel.data.value.rows.map { it.text })
+    }
+
+    @Test
     fun `줄넘김이 든 줄이 있을 때만 쪼개기를 보인다`() {
         assertFalse(viewModel().data.value.canSplit)
 
