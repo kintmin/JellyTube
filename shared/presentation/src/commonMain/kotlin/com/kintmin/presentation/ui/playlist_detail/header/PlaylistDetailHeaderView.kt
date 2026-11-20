@@ -1,19 +1,21 @@
 package com.kintmin.presentation.ui.playlist_detail.header
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -23,9 +25,8 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -38,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -138,39 +140,26 @@ fun PlaylistDetailHeaderView(
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
-                    // Filled 과 Rounded 변종은 20dp 에서 구분되지 않아 켜짐이 색으로만
-                    // 전달됐다. 켜짐을 채운 배경으로 바꿔 모양으로도 읽히게 한다.
-                    FilledIconToggleButton(
-                        checked = headerData.isShuffling,
-                        onCheckedChange = {
-                            sendIntent(PlaylistDetailHeaderIntent.OnClickShuffle)
-                        },
+                    PlaybackToggleButton(
                         modifier = Modifier
                             .wrapContentWidth(Alignment.End)
                             .weight(1f),
-                        colors = playbackToggleColors(),
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(20.dp),
-                            imageVector = Icons.Rounded.Shuffle,
-                            contentDescription = "셔플",
-                        )
-                    }
-                    FilledIconToggleButton(
-                        checked = headerData.isRepeating,
-                        onCheckedChange = {
+                        imageVector = Icons.Rounded.Shuffle,
+                        label = "셔플",
+                        isOn = headerData.isShuffling,
+                        onClick = {
+                            sendIntent(PlaylistDetailHeaderIntent.OnClickShuffle)
+                        },
+                    )
+                    PlaybackToggleButton(
+                        modifier = Modifier.wrapContentWidth(),
+                        imageVector = Icons.Rounded.Repeat,
+                        label = "반복",
+                        isOn = headerData.isRepeating,
+                        onClick = {
                             sendIntent(PlaylistDetailHeaderIntent.OnClickRepeat)
                         },
-                        modifier = Modifier
-                            .wrapContentWidth(),
-                        colors = playbackToggleColors(),
-                    ) {
-                        Icon(
-                            modifier = Modifier.size(20.dp),
-                            imageVector = Icons.Rounded.Repeat,
-                            contentDescription = "반복",
-                        )
-                    }
+                    )
                 }
                 if (headerData.description.isNotEmpty()) {
                     Text(
@@ -183,9 +172,11 @@ fun PlaylistDetailHeaderView(
                     )
                 }
             }
-            // 높이를 고정하지 않고 M3 기본값(40dp)에 맡긴다. 36dp 로 누르면 터치 타깃이
-            // 깎이고, 48dp 로 늘리면 12sp 글자에 비해 버튼이 뚱뚱해진다.
+            // 36dp 로 누르면 터치 타깃이 깎이고 48dp 로 늘리면 12sp 글자에 비해 뚱뚱하다.
+            // 40dp(M3 버튼 기본값)를 바닥으로 적되 고정하지는 않는다 — 고정하면 글꼴 배율을
+            // 키웠을 때 글자 상하가 깎인다.
             Row(
+                modifier = Modifier.heightIn(min = 40.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (!isBasePlaylist) {
@@ -252,14 +243,72 @@ fun PlaylistDetailHeaderView(
     }
 }
 
-/** 꺼짐은 배경 없는 평범한 아이콘, 켜짐은 채운 원이다. 0.38 알파는 M3 에서 비활성을 뜻한다. */
+private val TOGGLE_ICON_SIZE = 20.dp
+private val TOGGLE_DOT_SIZE = 4.dp
+
+/**
+ * 켜짐을 아이콘 색과 **아래 점**으로 알린다. `Shuffle` 과 `Repeat` 는 Filled·Rounded 변종이
+ * 20dp 에서 구분되지 않아, 점이 없으면 켜짐이 색으로만 전달된다.
+ *
+ * 점은 꺼짐일 때도 투명으로 자리를 지킨다 — 빼면 켤 때마다 아이콘이 위로 밀린다.
+ */
 @Composable
-private fun playbackToggleColors() = IconButtonDefaults.filledIconToggleButtonColors(
-    containerColor = Color.Transparent,
-    contentColor = gray60,
-    checkedContainerColor = MaterialTheme.colorScheme.primary,
-    checkedContentColor = MaterialTheme.colorScheme.onPrimary,
-)
+private fun PlaybackToggleButton(
+    modifier: Modifier,
+    imageVector: ImageVector,
+    label: String,
+    isOn: Boolean,
+    onClick: () -> Unit,
+) {
+    val color by animateColorAsState(
+        targetValue = if (isOn) MaterialTheme.colorScheme.primary else gray60,
+        label = "playbackToggleColor",
+    )
+
+    IconButton(
+        onClick = onClick,
+        modifier = modifier,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                modifier = Modifier.size(TOGGLE_ICON_SIZE),
+                imageVector = imageVector,
+                contentDescription = if (isOn) "$label 켜짐" else "$label 꺼짐",
+                tint = color,
+            )
+            Box(
+                modifier = Modifier
+                    .padding(top = 3.dp)
+                    .size(TOGGLE_DOT_SIZE)
+                    .clip(CircleShape)
+                    .background(if (isOn) color else Color.Transparent),
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun PlaybackToggleButtonPreview() {
+    JellyTubeTheme {
+        Row {
+            PlaybackToggleButton(
+                modifier = Modifier,
+                imageVector = Icons.Rounded.Shuffle,
+                label = "셔플",
+                isOn = true,
+                onClick = {},
+            )
+            PlaybackToggleButton(
+                modifier = Modifier,
+                imageVector = Icons.Rounded.Repeat,
+                label = "반복",
+                isOn = false,
+                onClick = {},
+            )
+        }
+    }
+}
 
 @Preview
 @Composable
