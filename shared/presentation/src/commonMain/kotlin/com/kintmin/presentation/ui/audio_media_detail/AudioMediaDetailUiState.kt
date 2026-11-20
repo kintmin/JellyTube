@@ -31,6 +31,8 @@ data class AudioMediaDetailUiState(
     val isAudioEditSaving: Boolean = false,
     /** 조회 결과가 비어 이 화면이 가리킬 음원이 없는 상태. [audioMediaId] 가 -1 이라 액션을 막아야 한다. */
     val isDeleted: Boolean = false,
+    /** 삭제를 실행하는 중. 성공하면 화면을 떠나고, 실패하면 다시 false 가 된다. */
+    val isDeleting: Boolean = false,
 ) {
     data class Playlist(
         val playlistId: Int,

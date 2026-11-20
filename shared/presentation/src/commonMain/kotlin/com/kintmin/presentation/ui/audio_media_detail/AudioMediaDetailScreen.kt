@@ -20,7 +20,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,6 +33,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -53,6 +58,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.softRed
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
@@ -180,32 +186,51 @@ fun AudioMediaDetailScreen(
                         .fillMaxWidth()
                         .height(56.dp)
                 ) {
+                    // 파괴적 동작이라 색과 형태를 수정과 다르게 둔다. primary 글자는 이 배경에서
+                    // 본문 대비 바닥값에 못 미치고(3.02:1), 삭제에 긍정 색이 붙는 문제도 있었다.
                     TextButton(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize(),
                         shape = RectangleShape,
+                        enabled = !data.isDeleted && !data.isDeleting,
+                        colors = ButtonDefaults.textButtonColors(contentColor = softRed),
                         onClick = { isShowDialog = true }) {
+                        if (data.isDeleting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Rounded.DeleteOutline,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
                         Text(
-                            text = "삭제",
-                            fontSize = 16.sp,
+                            modifier = Modifier.padding(start = 8.dp),
+                            text = if (data.isDeleting) "삭제 중" else "삭제",
+                            fontSize = 14.sp,
                         )
                     }
-                    TextButton(
+                    VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Button(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize(),
                         shape = RectangleShape,
+                        enabled = !data.isDeleted && !data.isDeleting,
                         onClick = { navigationToAudioMediaInformationEditScreen(data.audioMediaId) }) {
                         Text(
                             text = "수정",
-                            fontSize = 16.sp,
+                            fontSize = 14.sp,
                         )
                     }
                 }
                 Box(
                     modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)
-                        .background(MaterialTheme.colorScheme.surface),
+                        .background(MaterialTheme.colorScheme.background),
                 )
             }
         }
@@ -524,6 +549,44 @@ fun AudioMediaDetailScreenPreview() {
             navigateToKaraokeSearch = { _, _ -> },
             navigateToAudioEdit = {},
             data = AudioMediaDetailUiState.getMock(),
+            sendIntent = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+fun AudioMediaDetailScreenDeletingPreview() {
+    JellyTubeTheme {
+        AudioMediaDetailScreen(
+            navigateToBack = {},
+            navigationToAudioMediaInformationEditScreen = {},
+            navigateToMainSearchTab = {},
+            navigateToPlaylistDetailScreen = { _, _ -> },
+            navigateToLyricsSearch = { _, _, _ -> },
+            navigateToLyricsViewer = {},
+            navigateToKaraokeSearch = { _, _ -> },
+            navigateToAudioEdit = {},
+            data = AudioMediaDetailUiState.getMock().copy(isDeleting = true),
+            sendIntent = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+fun AudioMediaDetailScreenDeletedPreview() {
+    JellyTubeTheme {
+        AudioMediaDetailScreen(
+            navigateToBack = {},
+            navigationToAudioMediaInformationEditScreen = {},
+            navigateToMainSearchTab = {},
+            navigateToPlaylistDetailScreen = { _, _ -> },
+            navigateToLyricsSearch = { _, _, _ -> },
+            navigateToLyricsViewer = {},
+            navigateToKaraokeSearch = { _, _ -> },
+            navigateToAudioEdit = {},
+            data = AudioMediaDetailUiState.getDeletedMock(),
             sendIntent = {}
         )
     }

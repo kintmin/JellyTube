@@ -13,6 +13,7 @@ import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.toMediaControlData
 import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -35,11 +36,17 @@ class AudioMediaDetailViewModel constructor(
     private val _eventFlow = MutableSharedFlow<AudioMediaDetailEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
+    private val isDeleting = MutableStateFlow(false)
+
     val data: StateFlow<AudioMediaDetailUiState> = combine(
         fetchAudioMediaDetailFlowUseCase(audioMediaId),
         observeAudioEditSavingUseCase(audioMediaId),
-    ) { detail, isAudioEditSaving ->
-        detail.toAudioMediaDetailUiState().copy(isAudioEditSaving = isAudioEditSaving)
+        isDeleting,
+    ) { detail, isAudioEditSaving, isDeleting ->
+        detail.toAudioMediaDetailUiState().copy(
+            isAudioEditSaving = isAudioEditSaving,
+            isDeleting = isDeleting,
+        )
     }
         .stateIn(
             viewModelScope, SharingStarted.WhileSubscribed(5000), AudioMediaDetailUiState(
@@ -69,9 +76,19 @@ class AudioMediaDetailViewModel constructor(
     }
 
     private fun deleteAudioMedia() {
+        if (isDeleting.value) return
+
+        isDeleting.value = true
         viewModelScope.launch {
             deleteAudioMediaUseCase(audioMediaId, data.value.source)
-            triggerEvent(AudioMediaDetailEvent.OnNavigateToBack)
+                .onSuccess { triggerEvent(AudioMediaDetailEvent.OnNavigateToBack) }
+                .onFailure { throwable ->
+                    // 실패했으면 화면에 남아야 한다. 떠나면 지워졌는지 아닌지 알 수 없다.
+                    isDeleting.value = false
+                    _eventFlow.emit(
+                        AudioMediaDetailEvent.ShowToast(throwable.message ?: "음원을 삭제하지 못했습니다.")
+                    )
+                }
         }
     }
 
