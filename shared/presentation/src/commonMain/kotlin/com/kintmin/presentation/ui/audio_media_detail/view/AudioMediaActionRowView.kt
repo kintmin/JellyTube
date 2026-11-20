@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.audio_media_detail.view
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -55,7 +56,8 @@ fun AudioMediaActionRowView(
             .then(
                 if (onClick != null) Modifier.clickable(enabled = enabled, onClick = onClick) else Modifier
             )
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            // end 가 4dp 인 것은 trailing 칸이 48dp 터치 타깃을 들고 있어서다. 합이 좌측 16dp 와 맞는다.
+            .padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -88,13 +90,19 @@ fun AudioMediaActionRowView(
                 )
             }
         }
-        when {
-            trailing != null -> trailing()
-            onClick != null -> Icon(
-                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = null,
-                tint = gray60,
-            )
+        // 화살표와 해제 버튼이 같은 칸 안에서 가운데 정렬돼야 줄이 바뀌어도 세로로 어긋나지 않는다.
+        Box(
+            modifier = Modifier.size(48.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            when {
+                trailing != null -> trailing()
+                onClick != null -> Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = gray60,
+                )
+            }
         }
     }
 }

@@ -4,7 +4,6 @@ import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.extension.toDotDateTimeString
-import com.kintmin.presentation.extension.toKoreanDateTimeString
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -49,7 +48,7 @@ data class AudioMediaDetailUiState(
             artist = "아티스트",
             playTime = "999:99",
             audioDurationSeconds = 222.0,
-            audioMediaCreationTime = "yyyy년 M월 dd일 HH:mm",
+            audioMediaCreationTime = "2026.11.20 14:30",
             source = "https://preview.com",
             webViewUrl = "https://preview.com",
             hasLyrics = false,
@@ -81,7 +80,8 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
             playTime = (audioMedia.playbackDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
             // 가사 검색은 음원 길이로 후보를 매칭하므로 편집본이 아니라 원본 길이를 넘긴다
             audioDurationSeconds = audioMedia.audioDuration?.toDouble(DurationUnit.SECONDS),
-            audioMediaCreationTime = audioMedia.createdTime.toKoreanDateTimeString(),
+            // 초·밀리초까지는 궁금할 일이 없고, 아래 플레이리스트 목록과 같은 포맷으로 읽힌다
+            audioMediaCreationTime = audioMedia.createdTime.toDotDateTimeString(),
             source = audioMedia.source,
             webViewUrl = EditedAudioSource.webViewUrlOrNull(audioMedia.source),
             audioMediaDescription = audioMedia.description,
@@ -105,7 +105,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
         audioDurationSeconds = null,
         audioMediaCreationTime = Clock.System.now()
             .toLocalDateTime(TimeZone.currentSystemDefault())
-            .toKoreanDateTimeString(),
+            .toDotDateTimeString(),
         source = "",
         webViewUrl = null,
         audioMediaDescription = "삭제되었습니다.",

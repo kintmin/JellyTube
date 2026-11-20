@@ -229,9 +229,10 @@ fun AudioMediaDetailScreen(
                         )
                     }
                     VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    // 주 동작이라 삭제보다 넓다. 플레이리스트 편집 하단바도 같은 배분이다.
                     Button(
                         modifier = Modifier
-                            .weight(1f)
+                            .weight(2f)
                             .fillMaxSize(),
                         shape = RectangleShape,
                         enabled = !data.isDeleted && !data.isDeleting,

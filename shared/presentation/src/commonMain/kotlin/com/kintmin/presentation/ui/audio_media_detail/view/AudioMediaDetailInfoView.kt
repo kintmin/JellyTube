@@ -17,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -80,12 +79,11 @@ fun AudioMediaDetailInfoView(
         if (data.webViewUrl != null) {
             Row(
                 modifier = Modifier
-                    .padding(top = 12.dp, start = 8.dp, end = 8.dp)
+                    .padding(top = 12.dp)
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
-                    .clip(MaterialTheme.shapes.medium)
                     .clickable { onClickSource(data.webViewUrl) }
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -115,8 +113,16 @@ fun AudioMediaDetailInfoView(
                 modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
                 color = MaterialTheme.colorScheme.outlineVariant,
             )
+            // 설명은 길이가 정해지지 않아 MetaField 로 묶지 않는다. 그쪽은 값을 두 줄로 자른다.
             Text(
                 modifier = Modifier.padding(horizontal = 16.dp),
+                text = "설명",
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                color = gray60,
+            )
+            Text(
+                modifier = Modifier.padding(top = 2.dp, start = 16.dp, end = 16.dp),
                 text = data.audioMediaDescription,
                 fontSize = 16.sp,
                 lineHeight = 22.sp,
