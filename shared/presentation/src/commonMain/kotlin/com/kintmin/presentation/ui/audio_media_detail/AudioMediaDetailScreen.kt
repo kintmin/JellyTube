@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,11 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Mic
@@ -48,6 +49,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -61,6 +64,7 @@ import coil3.request.ImageRequest
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.softRed
+import com.kintmin.presentation.theme.white
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
@@ -179,7 +183,7 @@ fun AudioMediaDetailScreen(
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "ArrowBackIosNew"
+                            contentDescription = "뒤로가기"
                         )
                     }
                 },
@@ -284,16 +288,36 @@ fun AudioMediaDetailScreen(
                 )
         ) {
             item(key = -2) {
-                Spacer(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(210.dp)
-                        .clickable(
-                            enabled = data.imageFileFullPath != null,
-                            interactionSource = null,
-                            indication = null,
-                        ) { isShowFullScreenImageViewer = true }
-                )
+                        .clickable(enabled = data.imageFileFullPath != null) {
+                            isShowFullScreenImageViewer = true
+                        }
+                        .semantics {
+                            if (data.imageFileFullPath != null) {
+                                contentDescription = "앨범 이미지 크게 보기"
+                            }
+                        },
+                    contentAlignment = Alignment.BottomEnd,
+                ) {
+                    if (data.imageFileFullPath != null) {
+                        Icon(
+                            imageVector = Icons.Rounded.Fullscreen,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(end = 16.dp, bottom = 16.dp)
+                                .size(32.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f),
+                                    shape = CircleShape,
+                                )
+                                .padding(6.dp),
+                            tint = white,
+                        )
+                    }
+                }
             }
             item(key = -1) {
                 Column(
