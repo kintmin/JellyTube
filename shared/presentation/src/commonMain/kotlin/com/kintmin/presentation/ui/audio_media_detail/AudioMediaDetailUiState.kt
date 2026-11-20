@@ -29,6 +29,8 @@ data class AudioMediaDetailUiState(
     val playlists: List<Playlist>,
     /** 편집본을 백그라운드에서 저장하고 있는지. 저장 중에는 되돌리면 결과가 뒤엉켜 막는다. */
     val isAudioEditSaving: Boolean = false,
+    /** 조회 결과가 비어 이 화면이 가리킬 음원이 없는 상태. [audioMediaId] 가 -1 이라 액션을 막아야 한다. */
+    val isDeleted: Boolean = false,
 ) {
     data class Playlist(
         val playlistId: Int,
@@ -60,6 +62,9 @@ data class AudioMediaDetailUiState(
             },
             audioMediaDescription = "이것은 최대 100자까지 가능한 미디어 설명입니다. 이것은 최대 100자까지 가능한 미디어 설명입니다. 이것은 최대 100자까지 가능한 미디어 설명입니다.",
         )
+
+        /** 삭제된 음원 상태. 변환의 fallback 을 그대로 쓰므로 실제 화면과 어긋나지 않는다. */
+        fun getDeletedMock() = emptyList<PlaylistTrackAggregate>().toAudioMediaDetailUiState()
     }
 }
 
@@ -106,5 +111,6 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
         tjKaraokeNumber = null,
         hasEditedAudio = false,
         playlists = emptyList(),
+        isDeleted = true,
     )
 }
