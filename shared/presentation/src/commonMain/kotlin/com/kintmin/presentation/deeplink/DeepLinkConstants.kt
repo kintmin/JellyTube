@@ -34,7 +34,11 @@ object DeepLinkConstants {
         const val ENTRY = "entry"
         const val ENCODED_URL = "encodedUrl"
         const val FOCUS_AUDIO_MEDIA_ID = "focusAudioMediaId"
+        const val HINT = "hint"
     }
+
+    /** [QueryKey.HINT] 에 싣는 값. 플레이리스트 탭에서 비밀 플레이리스트 입구를 보여 준다. */
+    const val HINT_SECRET_PLAYLIST_ENTRY = "secretPlaylistEntry"
 
     /** 플레이어 화면에 어디서 들어왔는지. 재생 목록에서 들어오면 목록을 먼저 쌓는다. */
     enum class PlayerScreenEntry(val path: String) {
@@ -59,6 +63,9 @@ object DeepLinkConstants {
                 "?${QueryKey.ENCODED_URL}=${UrlParts.encodeQueryValue(downloadLink)}"
 
         fun mainScreenPlaylists(): String = "$SCHEME_AND_HOST/${Path.MAIN}/${Path.PLAYLISTS}"
+
+        fun secretPlaylistEntryHint(): String =
+            "${mainScreenPlaylists()}?${QueryKey.HINT}=$HINT_SECRET_PLAYLIST_ENTRY"
 
         fun playlistContentScreen(playlistId: Int, audioMediaId: Int? = null): String {
             val base = "${mainScreenPlaylists()}/$playlistId/${Path.AUDIO_MEDIAS}"

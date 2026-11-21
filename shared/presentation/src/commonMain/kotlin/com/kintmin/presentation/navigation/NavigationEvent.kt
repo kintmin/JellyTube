@@ -6,6 +6,9 @@ sealed interface NavigationEvent {
 
     data object NavigateToMainPlaylistsTab : NavigationEvent
 
+    /** 플레이리스트 탭으로 가서 비밀 플레이리스트 입구(제목 길게 누르기)를 보여 준다. */
+    data object HintSecretPlaylistEntry : NavigationEvent
+
     data class NavigateToMainDownloadTab(
         val targetUrl: String?,
     ) : NavigationEvent

@@ -29,12 +29,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.setting.section.SettingNoticeCardView
 
 @Composable
 fun SettingSecretPlaylistGuideScreen(
     navigateToBack: () -> Unit,
+    navigateToTryEntry: () -> Unit,
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -43,6 +46,14 @@ fun SettingSecretPlaylistGuideScreen(
                 title = "비밀 플레이리스트",
                 onClickBack = navigateToBack,
             )
+        },
+        bottomBar = {
+            BottomActionBar {
+                BottomActionButton(
+                    text = "플레이리스트 화면에서 해 보기",
+                    onClick = navigateToTryEntry,
+                )
+            }
         },
     ) { innerPadding ->
         Column(
@@ -113,6 +124,6 @@ fun SettingSecretPlaylistGuideScreen(
 @Composable
 fun SettingSecretPlaylistGuideScreenPreview() {
     JellyTubeTheme {
-        SettingSecretPlaylistGuideScreen(navigateToBack = {})
+        SettingSecretPlaylistGuideScreen(navigateToBack = {}, navigateToTryEntry = {})
     }
 }

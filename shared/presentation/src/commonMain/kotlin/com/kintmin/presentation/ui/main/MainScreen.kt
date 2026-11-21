@@ -84,6 +84,7 @@ private val NAV_LABEL_FONT_SIZE = 11.sp
 @Composable
 fun MainScreen(
     isDebugTabVisible: Boolean,
+    hintSecretPlaylistEntry: Boolean,
     navigateToPlaylistDetail: (id: Int, isBasePlaylist: Boolean) -> Unit,
     navigateToPlaylistEdit: (id: Int) -> Unit,
     navigateToPlaylistAdd: (id: Int, playlistName: String) -> Unit,
@@ -131,6 +132,7 @@ fun MainScreen(
 
     MainScreen(
         isDebugTabVisible = isDebugTabVisible,
+        hintSecretPlaylistEntry = hintSecretPlaylistEntry,
         selectedTab = mainUiState.tabItem,
         playlist = playlistUiState.playlists,
         playerBar = currentMediaItem,
@@ -162,6 +164,7 @@ fun MainScreen(
 fun MainScreen(
     isDebugTabVisible: Boolean,
     selectedTab: MainTabItem,
+    hintSecretPlaylistEntry: Boolean = false,
     playlist: List<PlaylistItemUiState>,
     playerBar: PlayerBarUiState,
     currentUrl: String,
@@ -201,25 +204,29 @@ fun MainScreen(
                 TopAppBar(
                     expandedHeight = topAppBarHeight,
                     title = {
-                        Text(
-                            text = title,
-                            fontSize = topAppBarRootTitleFontSize,
-                            lineHeight = topAppBarRootTitleLineHeight,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = when (selectedTab) {
-                                MainTabItem.Search -> Modifier.clickable(onClickLabel = "유튜브 홈으로 이동", role = Role.Button) {
-                                    sendYoutubeDownloadIntent(
-                                        YoutubeDownloadIntent.OnChangeUrl("https://m.youtube.com/")
-                                    )
+                        LongPressHintBox(
+                            isHintRequested = hintSecretPlaylistEntry && selectedTab == MainTabItem.Playlist,
+                        ) {
+                            Text(
+                                text = title,
+                                fontSize = topAppBarRootTitleFontSize,
+                                lineHeight = topAppBarRootTitleLineHeight,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = when (selectedTab) {
+                                    MainTabItem.Search -> Modifier.clickable(onClickLabel = "유튜브 홈으로 이동", role = Role.Button) {
+                                        sendYoutubeDownloadIntent(
+                                            YoutubeDownloadIntent.OnChangeUrl("https://m.youtube.com/")
+                                        )
+                                    }
+                                    // 숨은 입구다. 눌림 표시도 접근성 동작도 두지 않아 있는지 드러나지 않게 한다.
+                                    MainTabItem.Playlist -> Modifier.pointerInput(Unit) {
+                                        detectTapGestures(onLongPress = { navigateToSecretPlaylist() })
+                                    }
+                                    MainTabItem.Debug -> Modifier
                                 }
-                                // 숨은 입구다. 눌림 표시도 접근성 동작도 두지 않아 있는지 드러나지 않게 한다.
-                                MainTabItem.Playlist -> Modifier.pointerInput(Unit) {
-                                    detectTapGestures(onLongPress = { navigateToSecretPlaylist() })
-                                }
-                                MainTabItem.Debug -> Modifier
-                            }
-                        )
+                            )
+                        }
                     },
                     actions = {
                         if (selectedTab == MainTabItem.Search) {

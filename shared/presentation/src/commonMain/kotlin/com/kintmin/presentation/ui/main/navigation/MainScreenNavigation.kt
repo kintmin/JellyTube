@@ -5,6 +5,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.kintmin.presentation.navigation.EnumNavType
 import com.kintmin.presentation.ui.main.MainScreen
 import com.kintmin.presentation.ui.main.MainTabItem
@@ -16,6 +17,7 @@ import kotlinx.serialization.Serializable
 data class MainScreenRoute(
     val tabItem: MainTabItem,
     val searchUrl: String? = null,
+    val hintSecretPlaylistEntry: Boolean = false,
 )
 
 internal val mainScreenTypeMap: Map<KType, NavType<*>> =
@@ -39,6 +41,7 @@ fun NavGraphBuilder.mainScreen(
     composable<MainScreenRoute>(typeMap = mainScreenTypeMap) { backStackEntry ->
         MainScreen(
             isDebugTabVisible = isDebugTabVisible,
+            hintSecretPlaylistEntry = backStackEntry.toRoute<MainScreenRoute>().hintSecretPlaylistEntry,
             navigateToPlaylistDetail = navigateToPlaylistDetail,
             navigateToPlaylistEdit = navigateToPlaylistEdit,
             navigateToPlaylistAdd = navigateToPlaylistAdd,

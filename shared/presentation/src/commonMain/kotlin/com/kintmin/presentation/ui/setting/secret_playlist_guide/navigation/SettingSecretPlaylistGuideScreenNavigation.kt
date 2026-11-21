@@ -16,8 +16,12 @@ fun NavController.navigateToSettingSecretPlaylistGuideScreen(
 
 fun NavGraphBuilder.settingSecretPlaylistGuideScreen(
     navigateToBack: () -> Unit,
+    navigateToTryEntry: () -> Unit,
 ) {
     composable<SettingSecretPlaylistGuideScreenRoute> {
-        SettingSecretPlaylistGuideScreen(navigateToBack = navigateToBack)
+        SettingSecretPlaylistGuideScreen(
+            navigateToBack = navigateToBack,
+            navigateToTryEntry = navigateToTryEntry,
+        )
     }
 }

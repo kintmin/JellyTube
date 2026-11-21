@@ -284,6 +284,9 @@ fun MainNavHost(
 
             settingSecretPlaylistGuideScreen(
                 navigateToBack = { navController.popBackStack() },
+                navigateToTryEntry = {
+                    onDeepLink(DeepLinkConstants.UrlBuilder.secretPlaylistEntryHint())
+                },
             )
 
             settingDeviceSaveSelectScreen(
@@ -361,6 +364,14 @@ private fun consumeNavigationEvent(
                 navOptions,
                 navigationEvent.targetUrl,
             )
+        }
+        NavigationEvent.HintSecretPlaylistEntry -> {
+            // 새 항목이라야 인자를 읽는다. 같은 자리를 다시 쓰면 이전 인자가 남는다.
+            navController.navigate(MainScreenRoute(MainTabItem.Playlist, hintSecretPlaylistEntry = true)) {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+            }
         }
         NavigationEvent.NavigateToMainPlaylistsTab -> {
             navController.navigateToMainScreen(
