@@ -44,14 +44,18 @@ class PlaylistDetailListViewModel constructor(
     private val _searchText = MutableStateFlow("")
 
     // 재생 큐 소스 — 필터링과 무관하게 항상 플레이리스트 전체 데이터
-    private val fullAudioListFlow =
+    // null 은 아직 DB 에서 읽지 않았다는 뜻이다.
+    private val fullAudioListFlow: StateFlow<List<PlaylistDetailListItemUiState>?> =
         fetchAudioMediaListFlowUseCase(playlistId).map { list -> list.map { it.toPlaylistDetailListItemUiState() } }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     // 화면 표시용 — 검색어로 실시간 필터링
     val uiState: StateFlow<PlaylistDetailListUiState> =
         combine(fullAudioListFlow, _searchText) { list, searchText ->
-            PlaylistDetailListUiState(audioList = list.filter { it.mediaName.matchKorean(searchText) })
+            PlaylistDetailListUiState(
+                audioList = list.orEmpty().filter { it.mediaName.matchKorean(searchText) },
+                isLoaded = list != null,
+            )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlaylistDetailListUiState())
 
     fun sendIntent(intent: PlaylistDetailListIntent) {
@@ -125,7 +129,7 @@ class PlaylistDetailListViewModel constructor(
 
     private fun playAudioMediaById(id: Int) {
         viewModelScope.launch {
-            val mediaControlDataList = fullAudioListFlow.value.map {
+            val mediaControlDataList = fullAudioListFlow.value.orEmpty().map {
                 MediaControlData(
                     mediaId = it.id.toString(),
                     mediaFileUri = it.audioFileFullPath,

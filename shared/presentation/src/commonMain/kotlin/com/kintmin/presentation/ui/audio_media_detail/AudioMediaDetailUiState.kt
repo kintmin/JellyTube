@@ -33,6 +33,8 @@ data class AudioMediaDetailUiState(
     val isDeleted: Boolean = false,
     /** 삭제를 실행하는 중. 성공하면 화면을 떠나고, 실패하면 다시 false 가 된다. */
     val isDeleting: Boolean = false,
+    /** DB 의 첫 방출 전에는 false. 그 사이의 빈 [playlists] 를 "추가된 플레이리스트 없음" 으로 그리지 않는다. */
+    val isLoaded: Boolean = true,
 ) {
     data class Playlist(
         val playlistId: Int,

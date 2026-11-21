@@ -65,6 +65,7 @@ class AudioMediaDetailViewModel constructor(
                 tjKaraokeNumber = null,
                 hasEditedAudio = false,
                 playlists = listOf(),
+                isLoaded = false,
             )
         )
 
