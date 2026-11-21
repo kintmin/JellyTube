@@ -40,7 +40,4 @@ sealed interface AudioEditIntent {
 
     /** 편집본을 원본과 별개인 새 음원으로 저장한다. */
     data class OnConfirmSaveAsNew(val name: String) : AudioEditIntent
-
-    /** 처음 들어왔을 때 띄운 사용법 안내를 닫았다. 다시 띄우지 않는다. */
-    data object OnDismissGuide : AudioEditIntent
 }

@@ -87,8 +87,6 @@ val dataCommonModule: Module = module {
     factoryOf(::FetchAppLogLineListUseCase)
     factoryOf(::FetchAppLogFileFullPathsUseCase)
     factoryOf(::FetchIsStepEnabledFlowUseCase)
-    factoryOf(::FetchIsAudioEditGuideShownFlowUseCase)
-    factoryOf(::MarkAudioEditGuideShownUseCase)
     factoryOf(::FetchPlaylistIdOnDownloadFlowUseCase)
     factoryOf(::FetchShouldInsertAtTopOnDownloadFlowUseCase)
     factoryOf(::UpdateIsStepEnabledUseCase)

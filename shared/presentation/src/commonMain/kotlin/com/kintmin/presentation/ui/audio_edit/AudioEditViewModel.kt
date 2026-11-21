@@ -4,8 +4,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.kintmin.domain.app_setting.usecase.FetchIsAudioEditGuideShownFlowUseCase
-import com.kintmin.domain.app_setting.usecase.MarkAudioEditGuideShownUseCase
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_edit.usecase.ExtractAudioWaveformUseCase
@@ -46,8 +44,6 @@ class AudioEditViewModel constructor(
     private val releaseAudioEditSaveUseCase: ReleaseAudioEditSaveUseCase,
     private val executeAudioEditSave: StartAudioEditSave,
     private val audioPreviewPlayer: AudioPreviewPlayer,
-    fetchIsAudioEditGuideShownFlowUseCase: FetchIsAudioEditGuideShownFlowUseCase,
-    private val markAudioEditGuideShownUseCase: MarkAudioEditGuideShownUseCase,
 ) : ViewModel() {
 
     private companion object {
@@ -82,10 +78,6 @@ class AudioEditViewModel constructor(
         // 저장은 화면을 닫은 뒤에도 백그라운드에서 이어지므로, 다시 들어와도 저장 중이면 막는다
         observeAudioEditSavingUseCase(audioMediaId)
             .onEach { isSaving -> _uiState.update { it.copy(isSaving = isSaving) } }
-            .launchIn(viewModelScope)
-
-        fetchIsAudioEditGuideShownFlowUseCase()
-            .onEach { isShown -> _uiState.update { it.copy(isGuideVisible = !isShown) } }
             .launchIn(viewModelScope)
     }
 
@@ -175,11 +167,6 @@ class AudioEditViewModel constructor(
      * 미리듣기선 갱신. 플레이어는 위치를 흘려보내지 않아 주기적으로 읽는다.
      * 재생이 끝나면 isPlaying이 false가 되어 미리듣기선도 사라진다. 기준선은 건드리지 않는다.
      */
-    private fun dismissGuide() {
-        _uiState.update { it.copy(isGuideVisible = false) }
-        viewModelScope.launch { markAudioEditGuideShownUseCase() }
-    }
-
     private fun pollPreviewPosition() {
         viewModelScope.launch {
             while (true) {
@@ -210,7 +197,6 @@ class AudioEditViewModel constructor(
             AudioEditIntent.OnClickMerge -> mergeAtBaseline()
             AudioEditIntent.OnClickDeleteClip -> deleteSelectedClip()
             AudioEditIntent.OnClickTogglePreview -> togglePreview()
-            AudioEditIntent.OnDismissGuide -> dismissGuide()
             AudioEditIntent.OnConfirmOverwrite -> overwrite()
             is AudioEditIntent.OnConfirmSaveAsNew -> saveAsNewMedia(intent.name)
         }

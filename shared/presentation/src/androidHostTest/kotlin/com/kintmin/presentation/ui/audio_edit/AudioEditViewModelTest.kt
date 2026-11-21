@@ -2,8 +2,6 @@ package com.kintmin.presentation.ui.audio_edit
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.toRoute
-import com.kintmin.domain.app_setting.usecase.FetchIsAudioEditGuideShownFlowUseCase
-import com.kintmin.domain.app_setting.usecase.MarkAudioEditGuideShownUseCase
 import com.kintmin.domain.audio_edit.model.AudioEditClip
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.usecase.FetchAudioEditTimelineUseCase
@@ -13,22 +11,18 @@ import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.presentation.ui.audio_edit.navigation.AudioEditScreenRoute
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -43,16 +37,7 @@ class AudioEditViewModelTest {
         every { audioMedia.lyricFileFullPath } returns null
     }
 
-    private val isGuideShown = MutableStateFlow(false)
-
-    private val markGuideShown = mockk<MarkAudioEditGuideShownUseCase> {
-        coEvery { this@mockk.invoke() } coAnswers {
-            isGuideShown.value = true
-            Result.success(Unit)
-        }
-    }
-
-    private fun viewModel(savedTimeline: AudioEditTimeline? = null) = AudioEditViewModel(
+    private fun viewModel(savedTimeline: AudioEditTimeline?) = AudioEditViewModel(
         savedStateHandle = SavedStateHandle(),
         fetchAudioMediaDetailFlowUseCase = mockk<FetchAudioMediaDetailFlowUseCase> {
             every { this@mockk.invoke(any()) } returns flowOf(listOf(aggregate))
@@ -71,10 +56,6 @@ class AudioEditViewModelTest {
         releaseAudioEditSaveUseCase = mockk(relaxed = true),
         executeAudioEditSave = mockk(relaxed = true),
         audioPreviewPlayer = mockk(relaxed = true),
-        fetchIsAudioEditGuideShownFlowUseCase = mockk<FetchIsAudioEditGuideShownFlowUseCase> {
-            every { this@mockk.invoke() } returns isGuideShown
-        },
-        markAudioEditGuideShownUseCase = markGuideShown,
     )
 
     @Before
@@ -111,28 +92,6 @@ class AudioEditViewModelTest {
         val state = viewModel(savedTimeline = saved).uiState.value
 
         assertEquals(30_000L, state.baselineMs)
-    }
-
-    @Test
-    fun `안내를 본 적이 없으면 띄우고, 닫으면 기록해 다시 띄우지 않는다`() {
-        val viewModel = viewModel()
-        assertTrue(viewModel.uiState.value.isGuideVisible)
-
-        viewModel.sendIntent(AudioEditIntent.OnDismissGuide)
-
-        assertFalse(viewModel.uiState.value.isGuideVisible)
-        coVerify(exactly = 1) { markGuideShown() }
-        assertFalse(viewModel().uiState.value.isGuideVisible)
-    }
-
-    @Test
-    fun `안내 기록에 실패해도 지금은 닫는다`() {
-        coEvery { markGuideShown() } returns Result.failure(IllegalStateException())
-        val viewModel = viewModel()
-
-        viewModel.sendIntent(AudioEditIntent.OnDismissGuide)
-
-        assertFalse(viewModel.uiState.value.isGuideVisible)
     }
 
     private companion object {

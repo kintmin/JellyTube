@@ -58,7 +58,6 @@ import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditCompactControlsView
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditControlsView
 import com.kintmin.presentation.ui.audio_edit.dialog.AudioEditExitDialog
-import com.kintmin.presentation.ui.audio_edit.dialog.AudioEditGuideDialog
 import com.kintmin.presentation.ui.audio_edit.dialog.AudioEditSaveDialog
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineGrab
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineRulerView
@@ -72,8 +71,8 @@ import org.koin.compose.viewmodel.koinViewModel
 /** 이 높이(dp)보다 낮으면 가로 화면용 압축 배치를 쓴다. */
 private const val COMPACT_HEIGHT_DP = 480
 
-/** 파형 최대 높이. 높이가 넉넉해도 이보다 커지면 보기 좋지 않다. */
-private val MAX_WAVEFORM_HEIGHT = 200.dp
+/** 세로 화면의 파형 최대 높이. 높이가 넉넉해도 이보다 커지면 보기 좋지 않다. */
+private val MAX_WAVEFORM_HEIGHT = 280.dp
 
 @Composable
 fun AudioEditScreen(
@@ -130,10 +129,6 @@ fun AudioEditScreen(
         onDismiss = { isShowSaveDialog = false },
         onConfirmOverwrite = { sendIntent(AudioEditIntent.OnConfirmOverwrite) },
         onConfirmSaveAsNew = { name -> sendIntent(AudioEditIntent.OnConfirmSaveAsNew(name)) },
-    )
-    AudioEditGuideDialog(
-        isShow = data.isGuideVisible && !data.isLoading,
-        onDismiss = { sendIntent(AudioEditIntent.OnDismissGuide) },
     )
     AudioEditExitDialog(
         isShow = isShowExitDialog,
@@ -290,13 +285,17 @@ fun AudioEditScreen(
                 onBaselineChanged = { ms -> sendIntent(AudioEditIntent.OnBaselineChanged(ms)) },
                 onEndChanged = { ms -> sendIntent(AudioEditIntent.OnTimelineEndChanged(ms)) },
             )
-            // 파형은 남는 높이를 쓰되 최대 높이까지만 커진다. 가로 화면에서는 조작부를 밀어내지 않고,
-            // 세로 화면에서는 지나치게 커지지 않는다. 남는 공간은 조작부 아래 빈칸이 된다.
+            // 가로 화면은 조작부를 뺀 높이를 다 쓴다. 세로 화면은 최대 높이까지만 커지고, 남는 공간은
+            // 조작부 아래 빈칸이 된다.
             TimelineWaveformView(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .heightIn(max = MAX_WAVEFORM_HEIGHT)
-                    .fillMaxHeight(),
+                modifier = if (isCompactHeight) {
+                    Modifier.weight(1f)
+                } else {
+                    Modifier
+                        .weight(1f, fill = false)
+                        .heightIn(max = MAX_WAVEFORM_HEIGHT)
+                        .fillMaxHeight()
+                },
                 viewport = viewport,
                 waveform = data.waveform,
                 timeline = data.timeline,

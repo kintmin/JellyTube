@@ -26,7 +26,6 @@ data class AudioEditUiState(
     val isPreviewPlaying: Boolean,
     val isLoading: Boolean,
     val isSaving: Boolean,
-    val isGuideVisible: Boolean,
 ) {
 
     val originDurationMs: Long get() = timeline.originDurationMs
@@ -88,7 +87,6 @@ data class AudioEditUiState(
             isPreviewPlaying = true,
             isLoading = false,
             isSaving = false,
-            isGuideVisible = false,
         )
 
         fun getEmpty(audioMediaId: Int) = AudioEditUiState(
@@ -106,7 +104,6 @@ data class AudioEditUiState(
             isPreviewPlaying = false,
             isLoading = true,
             isSaving = false,
-            isGuideVisible = false,
         )
     }
 }

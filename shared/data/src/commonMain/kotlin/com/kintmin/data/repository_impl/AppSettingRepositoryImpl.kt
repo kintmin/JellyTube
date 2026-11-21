@@ -37,14 +37,4 @@ class AppSettingRepositoryImpl constructor(
     override suspend fun updateIsStepEnabled(value: Boolean): Result<Unit> {
         return datastoreUtil.updateData(PreferencesKey.IsStepEnabled, value)
     }
-
-    override fun getIsAudioEditGuideShownFlow(): Flow<Boolean> {
-        return datastoreUtil.getData(PreferencesKey.IsAudioEditGuideShown).map {
-            it ?: false
-        }
-    }
-
-    override suspend fun updateIsAudioEditGuideShown(value: Boolean): Result<Unit> {
-        return datastoreUtil.updateData(PreferencesKey.IsAudioEditGuideShown, value)
-    }
 }
