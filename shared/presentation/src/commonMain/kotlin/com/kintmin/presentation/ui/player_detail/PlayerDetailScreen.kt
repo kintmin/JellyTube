@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -327,20 +328,23 @@ fun PlayerDetailScreen(
                         }
                     }
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickSleepTimerButton) }) {
-                            // 켜짐을 tint 로만 알리지 않는다. 남은 시간은 뱃지가 말한다.
-                            BadgedBox(
-                                badge = {
-                                    data.sleepTimerRemainingMinutes?.let { minutes ->
-                                        Badge(
-                                            containerColor = MaterialTheme.colorScheme.tertiary,
-                                            contentColor = MaterialTheme.colorScheme.onTertiary,
-                                        ) {
-                                            Text(text = "$minutes")
-                                        }
+                        // 켜짐을 tint 로만 알리지 않는다. 남은 시간은 뱃지가 말한다.
+                        // IconButton 은 자기 영역을 원으로 잘라, 안에 두면 모서리로 나간 뱃지가 잘린다.
+                        BadgedBox(
+                            badge = {
+                                data.sleepTimerRemainingMinutes?.let { minutes ->
+                                    Badge(
+                                        // 48dp 버튼이 아니라 가운데 24dp 아이콘의 모서리에 붙인다.
+                                        modifier = Modifier.offset(x = (-12).dp, y = 12.dp),
+                                        containerColor = MaterialTheme.colorScheme.tertiary,
+                                        contentColor = MaterialTheme.colorScheme.onTertiary,
+                                    ) {
+                                        Text(text = "$minutes")
                                     }
-                                },
-                            ) {
+                                }
+                            },
+                        ) {
+                            IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickSleepTimerButton) }) {
                                 Icon(
                                     modifier = Modifier.size(24.dp),
                                     imageVector = Icons.Rounded.Bedtime,
