@@ -7,12 +7,15 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlo
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.EnsureSystemPlaylistsUseCase
+import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.deeplink.DeepLinkParser
 import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -31,6 +34,7 @@ class AppViewModel(
     private val fetchPlaybackPitchSemitoneFlowUseCase: FetchPlaybackPitchSemitoneFlowUseCase,
     private val fetchSecretModeEnabledFlowUseCase: FetchSecretModeEnabledFlowUseCase,
     private val endSecretModeUseCase: EndSecretModeUseCase,
+    private val fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase,
 ) : ViewModel() {
 
     private val eventChannel = Channel<NavigationEvent>(capacity = 8)
@@ -44,7 +48,21 @@ class AppViewModel(
             if (!fetchSecretModeEnabledFlowUseCase().value) endSecretModeUseCase()
         }
         applyPlaybackSettings()
+        leaveSecretScreensWhenSecretModeEnds()
     }
+
+    private fun leaveSecretScreensWhenSecretModeEnds() {
+        var wasEnabled = fetchSecretModeEnabledFlowUseCase().value
+        fetchSecretModeEnabledFlowUseCase().onEach { isEnabled ->
+            if (wasEnabled && !isEnabled) {
+                eventChannel.send(NavigationEvent.LeaveSecretScreens(secretPlaylistIds()))
+            }
+            wasEnabled = isEnabled
+        }.launchIn(viewModelScope)
+    }
+
+    private suspend fun secretPlaylistIds(): Set<Int> =
+        fetchPlaylistsByTypeUseCase(PlaylistType.SECRET).first().mapTo(HashSet()) { it.id }
 
     private fun applyPlaybackSettings() {
         fetchIsPlaybackRepeatingFlowUseCase().onEach(mediaControllerManager::setRepeatMode).launchIn(viewModelScope)
@@ -73,10 +91,16 @@ class AppViewModel(
                 playingPlaylistId = mediaControllerManager.currentPlaylistId,
                 playingMediaId = mediaControllerManager.playingMediaItem?.mediaId?.toIntOrNull(),
             ).forEach { navigationEvent ->
+                if (navigationEvent.isHiddenSecretPlaylist()) return@forEach
                 eventChannel.send(navigationEvent)
             }
         }
     }
+
+    private suspend fun NavigationEvent.isHiddenSecretPlaylist(): Boolean =
+        this is NavigationEvent.NavigateToPlaylistContent &&
+            !fetchSecretModeEnabledFlowUseCase().value &&
+            playlistId in secretPlaylistIds()
 
     private fun importSharedAudio(fileIdentifiers: List<String>) {
         if (fileIdentifiers.isEmpty()) return

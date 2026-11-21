@@ -5,9 +5,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.IntOffset
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
+import androidx.navigation.toRoute
 import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.ui.audio_edit.navigation.audioEditScreen
 import com.kintmin.presentation.ui.audio_edit.navigation.navigateToAudioEditScreen
@@ -31,12 +34,18 @@ import com.kintmin.presentation.ui.main.navigation.mainScreen
 import com.kintmin.presentation.ui.main.navigation.navigateToMainScreen
 import com.kintmin.presentation.ui.player_detail.navigation.navigateToPlayerDetailScreen
 import com.kintmin.presentation.ui.player_detail.navigation.playerDetailScreen
+import com.kintmin.presentation.ui.playlist_add.navigation.PlaylistAddScreenRoute
 import com.kintmin.presentation.ui.playlist_add.navigation.navigateToPlaylistAddScreen
 import com.kintmin.presentation.ui.playlist_add.navigation.playlistAdd
+import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylistDetailScreen
 import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
+import com.kintmin.presentation.ui.playlist_edit.navigation.PlaylistEditScreenRoute
 import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEditScreen
 import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
+import com.kintmin.presentation.ui.secret_playlist.navigation.SecretPlaylistScreenRoute
+import com.kintmin.presentation.ui.secret_playlist.navigation.navigateToSecretPlaylistScreen
+import com.kintmin.presentation.ui.secret_playlist.navigation.secretPlaylistScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.navigateToAppLogScreen
 import com.kintmin.presentation.ui.setting.data_migration_receive.navigation.navigateToSettingDataMigrationReceiveScreen
@@ -116,8 +125,27 @@ fun MainNavHost(
             navigateToSetting = {
                 navController.navigateToSettingScreen(navOptions)
             },
+            navigateToSecretPlaylist = {
+                navController.navigateToSecretPlaylistScreen(navOptions)
+            },
             navigateToPlayerDetail = {
                 navController.navigateToPlayerDetailScreen(navOptions)
+            },
+        )
+        secretPlaylistScreen(
+            navigateToBack = { navController.popBackStack() },
+            navigateToPlaylistDetail = { playlistId ->
+                navController.navigateToPlaylistDetailScreen(
+                    playlistId = playlistId,
+                    navOptions = navOptions,
+                    isBasePlaylist = false,
+                )
+            },
+            navigateToPlaylistEdit = { playlistId ->
+                navController.navigateToPlaylistEditScreen(playlistId, null, navOptions)
+            },
+            navigateToPlaylistAdd = { playlistId, playlistName ->
+                navController.navigateToPlaylistAddScreen(playlistId, navOptions, playlistName)
             },
         )
         playlistDetail(
@@ -353,5 +381,22 @@ private fun consumeNavigationEvent(
         NavigationEvent.NavigateToPlayer -> {
             navController.navigateToPlayerDetailScreen(navOptions)
         }
+        is NavigationEvent.LeaveSecretScreens -> {
+            navController.popBackStack<SecretPlaylistScreenRoute>(inclusive = true)
+            // 재생 화면에서 바로 연 비밀 플레이리스트는 비밀 화면 위에 쌓이지 않는다.
+            while (navController.currentBackStackEntry?.isPlaylistScreenOf(navigationEvent.secretPlaylistIds) == true) {
+                navController.popBackStack()
+            }
+        }
     }
+}
+
+private fun NavBackStackEntry.isPlaylistScreenOf(playlistIds: Set<Int>): Boolean {
+    val playlistId = when {
+        destination.hasRoute<PlaylistDetailScreenRoute>() -> toRoute<PlaylistDetailScreenRoute>().playlistId
+        destination.hasRoute<PlaylistEditScreenRoute>() -> toRoute<PlaylistEditScreenRoute>().playlistId
+        destination.hasRoute<PlaylistAddScreenRoute>() -> toRoute<PlaylistAddScreenRoute>().playlistId
+        else -> return false
+    }
+    return playlistId in playlistIds
 }

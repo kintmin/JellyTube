@@ -33,6 +33,7 @@ fun NavGraphBuilder.mainScreen(
     navigateToPlaylistEdit: (playlistId: Int) -> Unit,
     navigateToPlaylistAdd: (playlistId: Int, playlistName: String) -> Unit,
     navigateToSetting: () -> Unit,
+    navigateToSecretPlaylist: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
 ) {
     composable<MainScreenRoute>(typeMap = mainScreenTypeMap) { backStackEntry ->
@@ -42,6 +43,7 @@ fun NavGraphBuilder.mainScreen(
             navigateToPlaylistEdit = navigateToPlaylistEdit,
             navigateToPlaylistAdd = navigateToPlaylistAdd,
             navigateToSetting = navigateToSetting,
+            navigateToSecretPlaylist = navigateToSecretPlaylist,
             navigateToPlayerDetail = navigateToPlayerDetail,
         )
     }

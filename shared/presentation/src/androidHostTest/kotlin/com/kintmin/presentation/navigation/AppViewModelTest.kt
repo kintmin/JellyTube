@@ -5,8 +5,12 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlo
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
+import com.kintmin.domain.playlist.model.Playlist
+import com.kintmin.domain.playlist.model.PlaylistType
+import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
+import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.port.PlaybackController
 import io.mockk.coVerify
 import io.mockk.every
@@ -15,6 +19,7 @@ import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -23,6 +28,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import kotlinx.datetime.LocalDateTime
+import kotlin.time.Duration
 import org.junit.Before
 import org.junit.Test
 
@@ -36,6 +44,9 @@ class AppViewModelTest {
         every { this@mockk() } returns isSecretModeEnabled
     }
     private val endSecretModeUseCase = mockk<EndSecretModeUseCase>(relaxed = true)
+    private val fetchPlaylistsByTypeUseCase = mockk<FetchPlaylistsByTypeUseCase> {
+        every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(secretPlaylist(SECRET_PLAYLIST_ID)))
+    }
 
     @Before
     fun setUp() {
@@ -59,6 +70,7 @@ class AppViewModelTest {
             fetchPlaybackPitchSemitoneFlowUseCase = mockk { every { this@mockk() } returns flowOf(2) },
             fetchSecretModeEnabledFlowUseCase = fetchSecretModeEnabledFlowUseCase,
             endSecretModeUseCase = endSecretModeUseCase,
+            fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
         )
 
         verify { manager.setRepeatMode(true) }
@@ -103,6 +115,31 @@ class AppViewModelTest {
         coVerify(exactly = 0) { endSecretModeUseCase() }
     }
 
+    @Test
+    fun `비밀모드가 끝나면 비밀 화면을 닫게 한다`() = runTest {
+        isSecretModeEnabled.value = true
+        val viewModel = createViewModel()
+
+        isSecretModeEnabled.value = false
+
+        assertEquals(NavigationEvent.LeaveSecretScreens(setOf(SECRET_PLAYLIST_ID)), viewModel.eventFlow.first())
+    }
+
+    @Test
+    fun `비밀모드가 꺼져 있으면 비밀 플레이리스트로 가는 딥링크를 따르지 않는다`() = runTest {
+        val viewModel = createViewModel()
+        val events = mutableListOf<NavigationEvent>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.eventFlow.collect { events += it } }
+
+        viewModel.sendIntent(AppIntent.HandleDeepLink(playlistUrl(SECRET_PLAYLIST_ID)))
+        viewModel.sendIntent(AppIntent.HandleDeepLink(playlistUrl(4)))
+
+        assertFalse(events.any { it is NavigationEvent.NavigateToPlaylistContent && it.playlistId == SECRET_PLAYLIST_ID })
+        assertEquals(true, events.any { it is NavigationEvent.NavigateToPlaylistContent && it.playlistId == 4 })
+    }
+
+    private fun playlistUrl(playlistId: Int) = DeepLinkConstants.UrlBuilder.playlistContentScreen(playlistId)
+
     private fun createViewModel() = AppViewModel(
         mediaControllerManager = manager,
         importSharedAudioMediaUseCase = importSharedAudioMediaUseCase,
@@ -113,5 +150,23 @@ class AppViewModelTest {
         fetchPlaybackPitchSemitoneFlowUseCase = mockk { every { this@mockk() } returns flowOf(0) },
         fetchSecretModeEnabledFlowUseCase = fetchSecretModeEnabledFlowUseCase,
         endSecretModeUseCase = endSecretModeUseCase,
+        fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
     )
+
+    private fun secretPlaylist(id: Int) = Playlist(
+        id = id,
+        name = "p$id",
+        description = "",
+        audioMediaCount = 0,
+        playTimeDuration = Duration.ZERO,
+        createdTime = LocalDateTime(2026, 1, 1, 0, 0),
+        imageFileFullPath = null,
+        isCustomImage = false,
+        sequence = 0,
+        type = PlaylistType.SECRET,
+    )
+
+    private companion object {
+        const val SECRET_PLAYLIST_ID = 5
+    }
 }

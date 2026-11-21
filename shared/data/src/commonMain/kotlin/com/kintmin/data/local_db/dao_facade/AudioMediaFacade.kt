@@ -287,7 +287,7 @@ class AudioMediaFacade constructor(
         }
     }
 
-    suspend fun addPlaylist(title: String): Int {
+    suspend fun addPlaylist(title: String, type: PlaylistType): Int {
         return db.useWriterConnection { transactor ->
             transactor.immediateTransaction {
                 // 목록 맨 뒤에 오도록 현재 최대 sequence + 1을 부여한다.
@@ -301,6 +301,7 @@ class AudioMediaFacade constructor(
                         rawPlayTimeDuration = 0,
                         isCustomImage = false,
                         sequence = nextSequence,
+                        type = type.name,
                     )
                 ).toInt()
             }

@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.model.AudioMediaEntity
+import com.kintmin.domain.playlist.model.PlaylistType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -151,7 +152,7 @@ class AudioMediaFacadeEditedAudioTest {
     @Test
     fun 편집본이_있는_음원을_플레이리스트에서_빼면_편집본_길이만큼_빠진다() = runTest {
         val (audioMediaId, linkedPlaylistIds) = addAudioMedia()
-        val userPlaylistId = facade.addPlaylist(title = "사용자 플레이리스트")
+        val userPlaylistId = facade.addPlaylist(title = "사용자 플레이리스트", type = PlaylistType.USER)
 
         facade.applyEditedAudio(
             audioMediaId = audioMediaId,

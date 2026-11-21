@@ -2,6 +2,7 @@ package com.kintmin.presentation.di
 
 import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.secret_mode.SecretModeRunner
+import com.kintmin.presentation.ui.secret_playlist.SecretPlaylistViewModel
 import com.kintmin.presentation.sleep_timer.SleepTimerRunner
 import com.kintmin.presentation.ui.audio_edit.AudioEditViewModel
 import com.kintmin.presentation.ui.audio_media_detail.AudioMediaDetailViewModel
@@ -48,6 +49,7 @@ val presentationModule: Module = module {
     viewModelOf(::PlayerDetailViewModel)
     viewModelOf(::MainFloatingActionViewModel)
     viewModelOf(::PlaylistViewModel)
+    viewModelOf(::SecretPlaylistViewModel)
     viewModelOf(::MainViewModel)
     viewModelOf(::AudioEditViewModel)
     viewModelOf(::AudioMediaDetailViewModel)
