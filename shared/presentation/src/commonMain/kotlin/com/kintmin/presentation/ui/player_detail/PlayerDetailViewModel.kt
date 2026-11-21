@@ -17,6 +17,8 @@ import com.kintmin.domain.audio_play_setting.usecase.UpdateSleepTimerMinutesUseC
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.audio_track.usecase.ToggleFavoriteUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
+import com.kintmin.domain.lyrics.model.LyricsVariant
+import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
 import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.domain.playlist.model.PlaylistType
@@ -62,6 +64,7 @@ class PlayerDetailViewModel constructor(
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private val getParsedLyricsUseCase: GetParsedLyricsUseCase,
+    private val getLyricsVariantUseCase: GetLyricsVariantUseCase,
 ) : ViewModel() {
 
     private val eventChannel = Channel<PlayerDetailEvent>(Channel.BUFFERED)
@@ -463,9 +466,18 @@ class PlayerDetailViewModel constructor(
         }
         viewModelScope.launch {
             parsedLyricLines = getParsedLyricsUseCase(lyricFileFullPath)
+            // 음차·번역 파일은 원본과 같은 타임코드로 만들어져 줄 번호가 맞는다
+            val translationLines = getLyricsVariantUseCase(lyricFileFullPath, LyricsVariant.TRANSLATION).getOrNull()
+            val transliterationLines = getLyricsVariantUseCase(lyricFileFullPath, LyricsVariant.TRANSLITERATION).getOrNull()
             _uiState.update {
                 it.copy(
-                    lyricLines = parsedLyricLines.map { line -> line.text },
+                    lyricLines = parsedLyricLines.mapIndexed { index, line ->
+                        PlayerLyricLineUiState(
+                            text = line.text,
+                            transliteration = transliterationLines?.getOrNull(index)?.text?.takeIf(String::isNotBlank),
+                            translation = translationLines?.getOrNull(index)?.text?.takeIf(String::isNotBlank),
+                        )
+                    },
                     activeLyricIndex = -1,
                 )
             }

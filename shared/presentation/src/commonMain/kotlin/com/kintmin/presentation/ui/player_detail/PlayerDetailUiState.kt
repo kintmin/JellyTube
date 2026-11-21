@@ -24,7 +24,7 @@ data class PlayerDetailUiState(
     val playbackPitchSemitone: Int,
     val isFavorite: Boolean = false,
     val hasLyrics: Boolean = false,
-    val lyricLines: List<String> = emptyList(),
+    val lyricLines: List<PlayerLyricLineUiState> = emptyList(),
     val activeLyricIndex: Int = -1,
     val isLyricsPanelVisible: Boolean = false,
     val repeatRangeStartDuration: Duration? = null,
@@ -40,7 +40,9 @@ data class PlayerDetailUiState(
     val timeString get() = "${currentDuration.to_hh_colon_mm_colon_ss()} / ${playbackDuration.to_hh_colon_mm_colon_ss()}"
 
     /** 비싱크 가사면 활성 줄이 없어 빈 문자열이다. 싱크 가사도 첫 타임태그 전까지는 비어 있다. */
-    val currentLyricLine: String get() = lyricLines.getOrNull(activeLyricIndex).orEmpty()
+    val currentLyricLine: String get() = lyricLines.getOrNull(activeLyricIndex)?.text.orEmpty()
+
+    val currentLyricTranslation: String? get() = lyricLines.getOrNull(activeLyricIndex)?.translation
 
     /**
      * 패널을 띄울지. `isLyricsPanelVisible` 은 사용자의 뜻만 담고, 그릴 수 있는지는 여기서 가른다 —
@@ -70,11 +72,15 @@ data class PlayerDetailUiState(
             isFavorite = true,
             hasLyrics = true,
             lyricLines = listOf(
-                "첫 줄은 여기에서 시작합니다",
-                "그 다음 줄이 이어집니다",
-                "이 노래의 현재 가사 한 줄이 여기에 표시됩니다",
-                "다음에 올 줄입니다",
-                "그 뒤로도 가사가 이어집니다",
+                PlayerLyricLineUiState(text = "첫 줄은 여기에서 시작합니다"),
+                PlayerLyricLineUiState(text = "그 다음 줄이 이어집니다"),
+                PlayerLyricLineUiState(
+                    text = "今の歌詞の一行がここに表示されます",
+                    transliteration = "ima no kashi no ichigyou ga koko ni hyouji saremasu",
+                    translation = "이 노래의 현재 가사 한 줄이 여기에 표시됩니다",
+                ),
+                PlayerLyricLineUiState(text = "다음에 올 줄입니다"),
+                PlayerLyricLineUiState(text = "그 뒤로도 가사가 이어집니다"),
             ),
             activeLyricIndex = 2,
             repeatRangeStartDuration = 60.seconds,

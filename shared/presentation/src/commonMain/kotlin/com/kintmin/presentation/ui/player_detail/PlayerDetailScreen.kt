@@ -300,6 +300,7 @@ fun PlayerDetailScreen(
                             // 오버레이가 스스로 다룬다.
                             CurrentLyricOverlayView(
                                 line = data.currentLyricLine,
+                                translation = data.currentLyricTranslation,
                                 modifier = Modifier.align(Alignment.BottomCenter),
                             )
                         }

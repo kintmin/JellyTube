@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -50,16 +51,19 @@ private val HIDE_DELAY = 1.seconds
 @Composable
 fun CurrentLyricOverlayView(
     line: String,
+    translation: String?,
     modifier: Modifier = Modifier,
 ) {
     // 사라지는 것만 늦춘다. 나타나는 것은 늦추면 가사가 뒤늦게 뜬다.
     var isVisible by remember { mutableStateOf(line.isNotBlank()) }
     // 막이 내려가는 동안 글자가 먼저 비면 빈 막만 남는다. 마지막 줄을 들고 있는다.
     var shownLine by remember { mutableStateOf(line) }
+    var shownTranslation by remember { mutableStateOf(translation) }
 
-    LaunchedEffect(line) {
+    LaunchedEffect(line, translation) {
         if (line.isNotBlank()) {
             shownLine = line
+            shownTranslation = translation
             isVisible = true
         } else {
             delay(HIDE_DELAY)
@@ -88,16 +92,30 @@ fun CurrentLyricOverlayView(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = shownLine,
-                color = Color.White,
-                fontSize = 16.sp,
-                lineHeight = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-            )
+            // 번역이 있으면 원문과 한 줄씩 나눠 높이를 지킨다
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = shownLine,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    lineHeight = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = if (shownTranslation == null) 2 else 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+                shownTranslation?.let { translationText ->
+                    Text(
+                        text = translationText,
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 13.sp,
+                        lineHeight = 16.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
         }
     }
 }
@@ -113,7 +131,8 @@ private fun CurrentLyricOverlayViewPreview() {
                 .background(Color(0xFF8A7F6A)),
         ) {
             CurrentLyricOverlayView(
-                line = "이 노래의 현재 가사 한 줄이 여기에 표시됩니다",
+                line = "今の歌詞の一行がここに表示されます",
+                translation = "이 노래의 현재 가사 한 줄이 여기에 표시됩니다",
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
