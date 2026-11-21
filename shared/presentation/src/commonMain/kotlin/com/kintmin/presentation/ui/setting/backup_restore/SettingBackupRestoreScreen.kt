@@ -105,6 +105,16 @@ fun SettingBackupRestoreScreen(
             onConfirm = { sendIntent(SettingBackupRestoreIntent.OnConfirmExit) },
         )
     }
+    var isOverwriteDialogVisible by remember { mutableStateOf(false) }
+    JellyTubeConfirmDialog(
+        showDialog = isOverwriteDialogVisible,
+        title = "남은 백업을 덮어쓸까요?",
+        message = "아직 복원하지 않은 백업이 있습니다. 지금 백업하면 이 기기의 현재 상태로 바뀌어, 그 백업으로는 더 복원할 수 없습니다.",
+        confirmText = "덮어쓰기",
+        confirmStyle = ConfirmStyle.Destructive,
+        onDismiss = { isOverwriteDialogVisible = false },
+        onConfirm = { sendIntent(SettingBackupRestoreIntent.OnClickBackupNow) },
+    )
     (uiState.restore as? RestorePhase.Preview)?.let { preview ->
         JellyTubeConfirmDialog(
             showDialog = preview.askCellular,
@@ -138,7 +148,10 @@ fun SettingBackupRestoreScreen(
             }
             BackupSectionView(
                 uiState = uiState,
-                onClickBackupNow = { sendIntent(SettingBackupRestoreIntent.OnClickBackupNow) },
+                onClickBackupNow = {
+                    if (uiState.isAutoBackupPaused) isOverwriteDialogVisible = true
+                    else sendIntent(SettingBackupRestoreIntent.OnClickBackupNow)
+                },
                 onClickPickFolder = { sendIntent(SettingBackupRestoreIntent.OnClickPickFolder) },
             )
             RestoreSectionView(

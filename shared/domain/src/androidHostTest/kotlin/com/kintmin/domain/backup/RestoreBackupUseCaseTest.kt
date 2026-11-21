@@ -7,6 +7,7 @@ import com.kintmin.domain.backup.model.BackupContent
 import com.kintmin.domain.backup.usecase.RestoreBackupUseCase
 import com.kintmin.domain.data_migration.model.MigrationApplyResult
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
+import com.kintmin.domain.data_migration.model.MigrationDownloadSettings
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationFailure
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
@@ -30,6 +31,8 @@ import com.kintmin.log.AppLog
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -86,6 +89,8 @@ class RestoreBackupUseCaseTest {
         private val target: MigrationSnapshot,
         private val alreadyStaged: Set<MigrationFile> = emptySet(),
         private val failApply: Boolean = false,
+        /** 반영이 커밋된 직후, 돌아오기 전에 부른다. */
+        private val afterApplyCommitted: () -> Unit = {},
     ) : DataMigrationRepository {
         val calls = mutableListOf<String>()
         val staged = mutableSetOf<MigrationFile>()
@@ -122,6 +127,7 @@ class RestoreBackupUseCaseTest {
             calls += "apply"
             if (failApply) return Result.failure(IllegalStateException("디스크 가득"))
             appliedPlan = plan
+            afterApplyCommitted()
             return Result.success(MigrationApplyResult(plan.newPlaylists.associate { it.id to it.id + 1000 }))
         }
 
@@ -266,6 +272,21 @@ class RestoreBackupUseCaseTest {
         useCase(repository)(backup(audios = emptyList(), steps = steps), {}).getOrThrow()
 
         assertEquals(steps, repository.appliedPlan!!.steps)
+    }
+
+    @Test
+    fun `반영이 커밋된 직후 멈춰도 임시 공간 정리와 다운로드 설정 반영까지 마친다`() = runTest {
+        lateinit var job: Job
+        val repository = FakeRepository(emptyTarget, afterApplyCommitted = { job.cancel() })
+        val withSettings = backup(listOf(audio(101, "https://youtu.be/a", "a.m4a")))
+            .copy(downloadSettings = MigrationDownloadSettings(shouldInsertAtTop = true, playlistId = null))
+
+        job = launch { useCase(repository)(withSettings) {} }
+        job.join()
+
+        assertTrue(job.isCancelled)
+        assertEquals(listOf("apply", "clear"), repository.calls)
+        coVerify { appSettingRepository.updateShouldInsertAtTopOnDownload(true) }
     }
 
     @Test

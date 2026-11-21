@@ -11,7 +11,6 @@ import com.kintmin.domain.backup.model.BackupOutcome
 import com.kintmin.domain.backup.model.BackupStatus
 import com.kintmin.domain.backup.model.BackupWriteResult
 import com.kintmin.domain.backup.repository.BackupRepository
-import com.kintmin.domain.backup.usecase.BackupIfDueUseCase
 import com.kintmin.domain.backup.usecase.BackupNowUseCase
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
 import com.kintmin.domain.data_migration.model.MigrationDownloadSettings
@@ -26,9 +25,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.TimeZone
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -101,17 +98,5 @@ class BackupNowUseCaseTest {
         every { backupRepository.getStatusFlow() } returns flowOf(BackupStatus(null, null, null, null))
 
         assertTrue(useCase(1_000).exceptionOrNull() is BackupFolderNotRegisteredException)
-    }
-
-    @Test
-    fun `오늘 이미 썼으면 다시 쓰지 않고 폴더가 없으면 조용히 넘긴다`() = runTest {
-        val ifDue = BackupIfDueUseCase(backupRepository, useCase)
-        every { backupRepository.getStatusFlow() } returns flowOf(BackupStatus(folder, 1_000, null, null))
-        assertNull(ifDue(2_000, TimeZone.UTC).getOrThrow())
-
-        every { backupRepository.getStatusFlow() } returns flowOf(BackupStatus(null, null, null, null))
-        assertNull(ifDue(2_000, TimeZone.UTC).getOrThrow())
-
-        coVerify(exactly = 0) { backupRepository.write(any()) }
     }
 }

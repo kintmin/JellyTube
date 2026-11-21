@@ -60,6 +60,13 @@ class BackupCodecTest {
     }
 
     @Test
+    fun `더 새 버전이 나머지 모양을 바꿨어도 손상이 아니라 버전이 높다고 알린다`() {
+        val reshaped = gzip("""{"backupVersion":${BackupCodec.FORMAT_VERSION + 1},"library":{"songs":[]}}""")
+
+        assertThrows(BackupVersionUnsupportedException::class.java) { BackupCodec.decode(reshaped) }
+    }
+
+    @Test
     fun `백업 파일이 아니면 읽을 수 없다고 알린다`() {
         assertThrows(BackupFileInvalidException::class.java) { BackupCodec.decode("hello".encodeToByteArray()) }
         assertThrows(BackupFileInvalidException::class.java) { BackupCodec.decode(gzip("{}")) }

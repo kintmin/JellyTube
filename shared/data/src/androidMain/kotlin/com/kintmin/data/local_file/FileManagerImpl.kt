@@ -550,7 +550,7 @@ private class AndroidAppDirectories(private val context: Context) : AppDirectori
     override fun image() = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES).required()
     override fun lyric() = context.filesDir.resolve(AppDirectories.LYRIC_DIR_NAME).toOkioPath()
     override fun log() = context.filesDir.resolve(AppDirectories.LOG_DIR_NAME).toOkioPath()
-    override fun migrationStaging() = context.filesDir.resolve(AppDirectories.MIGRATION_STAGING_DIR_NAME).toOkioPath()
+    override fun migrationStaging() = context.getExternalFilesDir(null).required() / AppDirectories.MIGRATION_STAGING_DIR_NAME
     override fun backup() = context.filesDir.resolve(BackupFiles.LOCAL_DIR_NAME).toOkioPath()
 
     // 외부 저장소를 쓸 수 없으면 null 이다.

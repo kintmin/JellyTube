@@ -16,12 +16,14 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path.Companion.toPath
+import platform.Foundation.NSCocoaErrorDomain
 import platform.Foundation.NSData
 import platform.Foundation.NSDataWritingAtomic
 import platform.Foundation.NSError
 import platform.Foundation.NSFileCoordinator
 import platform.Foundation.NSFileCoordinatorWritingForReplacing
-import platform.Foundation.NSFileManager
+import platform.Foundation.NSFileNoSuchFileError
+import platform.Foundation.NSFileReadNoSuchFileError
 import platform.Foundation.NSURL
 import platform.Foundation.base64EncodedStringWithOptions
 import platform.Foundation.create
@@ -53,7 +55,7 @@ internal class BookmarkBackupFolderAccess : BackupFolderAccess {
     override suspend fun read(folderId: String, fileName: String): ByteArray? = withContext(Dispatchers.IO) {
         withFolder(folderId) { folder, _ ->
             val target = folder.URLByAppendingPathComponent(fileName) ?: return@withFolder null
-            if (!NSFileManager.defaultManager.fileExistsAtPath(target.path.orEmpty())) return@withFolder null
+            // 내려받지 않은 iCloud 파일은 경로에 없는 것으로 보인다. 존재를 먼저 묻지 않고 조율 읽기에 내려받기를 맡긴다.
             readCoordinated(target)
         }
     }
@@ -102,8 +104,8 @@ internal class BookmarkBackupFolderAccess : BackupFolderAccess {
         }
     }
 
-    /** iCloud Drive 에만 있는 파일이면 조율하는 동안 내려받는다. */
-    private fun readCoordinated(target: NSURL): ByteArray = memScoped {
+    /** iCloud Drive 에만 있는 파일이면 조율하는 동안 내려받는다. 파일이 정말 없으면 null. */
+    private fun readCoordinated(target: NSURL): ByteArray? = memScoped {
         val coordinatorError = alloc<ObjCObjectVar<NSError?>>()
         var data: NSData? = null
         NSFileCoordinator(filePresenter = null).coordinateReadingItemAtURL(
@@ -111,7 +113,12 @@ internal class BookmarkBackupFolderAccess : BackupFolderAccess {
             options = 0u,
             error = coordinatorError.ptr,
         ) { url -> data = url?.let { NSData.dataWithContentsOfURL(it) } }
-        data?.toByteArray()
-            ?: throw IllegalStateException(coordinatorError.value?.localizedDescription ?: "백업 파일을 읽지 못했습니다.")
+        data?.toByteArray() ?: run {
+            val error = coordinatorError.value
+            if (error == null || error.isNoSuchFile()) return@memScoped null
+            throw IllegalStateException(error.localizedDescription)
+        }
     }
+
+    private fun NSError.isNoSuchFile() = domain == NSCocoaErrorDomain && (code == NSFileNoSuchFileError || code == NSFileReadNoSuchFileError)
 }

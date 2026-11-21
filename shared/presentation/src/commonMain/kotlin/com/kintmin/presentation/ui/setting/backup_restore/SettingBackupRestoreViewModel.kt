@@ -61,16 +61,20 @@ class SettingBackupRestoreViewModel(
     /** 미리보기부터 복원이 끝날 때까지 들고 있다. 다시 시도는 같은 백업으로 한다. */
     private var pendingBackup: BackupContent? = null
     private var runJob: Job? = null
+    private var hasBackedUp = false
+    private var hasFoundBackup = false
 
     init {
         viewModelScope.launch {
             fetchBackupStatusFlowUseCase().collect { status ->
+                hasBackedUp = status.lastSuccessMillis != null
                 _uiState.update {
                     it.copy(
                         folderLabel = status.folder?.label,
                         isFolderFixed = status.isFolderFixed,
                         backupDescription = status.toDescription(),
                         isBackupFailing = status.isFailing,
+                        isAutoBackupPaused = !hasBackedUp && hasFoundBackup,
                     )
                 }
             }
@@ -106,6 +110,8 @@ class SettingBackupRestoreViewModel(
         updateRestore(RestorePhase.Finding)
         viewModelScope.launch {
             val found = findBackupToRestoreUseCase().getOrNull()
+            hasFoundBackup = found != null
+            _uiState.update { it.copy(isAutoBackupPaused = !hasBackedUp && hasFoundBackup) }
             if (found == null) {
                 pendingBackup = null
                 updateRestore(RestorePhase.NotFound)
@@ -122,8 +128,15 @@ class SettingBackupRestoreViewModel(
             val result = backupNowUseCase(nowMillis())
             _uiState.update { it.copy(isBackingUp = false) }
             send(SettingBackupRestoreEvent.ShowToast(result.toBackupMessage()))
-            if (!_uiState.value.isRestoring) findBackup()
+            if (isRestoreIdle()) findBackup()
         }
+    }
+
+    /** 복원이 진행 중이거나 결과·직접 고른 파일을 보여 주는 동안은 복원 구역을 바꾸지 않는다. */
+    private fun isRestoreIdle(): Boolean = when (val restore = _uiState.value.restore) {
+        RestorePhase.Finding, RestorePhase.NotFound, is RestorePhase.ReadFailed -> true
+        is RestorePhase.Preview -> !restore.isPickedFile
+        else -> false
     }
 
     private fun registerFolder(folder: BackupFolder) {
@@ -187,6 +200,7 @@ class SettingBackupRestoreViewModel(
     }
 
     private fun stop() {
+        if (!_uiState.value.canStop) return
         viewModelScope.launch {
             runJob?.cancelAndJoin()
             interrupt(cause = null)
@@ -212,6 +226,8 @@ class SettingBackupRestoreViewModel(
                 stages = state.stages.map { it.copy(status = DataMigrationStageStatus.DONE) },
             )
         }
+        // 복원으로 이 기기가 백업을 따라잡았다. 쉬던 자동 백업을 다시 시작하도록 바로 한 번 쓴다.
+        viewModelScope.launch { backupNowUseCase(nowMillis()) }
     }
 
     private fun interrupt(cause: String?) {
@@ -292,6 +308,7 @@ class SettingBackupRestoreViewModel(
             when (outcome) {
                 BackupOutcome.WRITTEN -> "백업했습니다."
                 BackupOutcome.SKIPPED_EMPTY -> "음원이 없어 백업하지 않았습니다. 남아 있던 백업은 그대로 둡니다."
+                BackupOutcome.KEPT_EXISTING -> "이 폴더에서 백업을 찾았습니다. 복원할 수 있게 덮어쓰지 않았습니다."
             }
         },
         onFailure = {

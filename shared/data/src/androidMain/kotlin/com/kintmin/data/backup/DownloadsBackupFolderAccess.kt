@@ -37,7 +37,7 @@ internal class DownloadsBackupFolderAccess(private val context: Context) : Backu
 
     override suspend fun read(folderId: String, fileName: String): ByteArray? = withContext(Dispatchers.IO) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            findOwn(fileName)?.let { uri -> resolver.openInputStream(uri)?.use { it.readBytes() } }
+            findOwnCopies(fileName).firstOrNull()?.let { uri -> resolver.openInputStream(uri)?.use { it.readBytes() } }
         } else {
             legacyFile(fileName).takeIf { it.exists() && hasLegacyPermission() }?.readBytes()
         }
@@ -47,15 +47,14 @@ internal class DownloadsBackupFolderAccess(private val context: Context) : Backu
         resolver.openInputStream(Uri.parse(fileId))?.use { it.readBytes() } ?: throw FileNotFoundException(fileId)
     }
 
-    /** 다 쓴 뒤에 이름을 바꿔 끼운다. 쓰다 끊기면 대기 중인 임시 항목만 남고 전 파일은 그대로다. */
+    /** 새 항목을 다 쓴 뒤에야 이 설치의 이전 사본을 지운다. 쓰다 끊기면 대기 중인 새 항목만 버려지고 이전 사본은 남는다. */
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun writeToMediaStore(fileName: String, bytes: ByteArray) {
-        val tempName = "$fileName.tmp"
-        findOwn(tempName)?.let { resolver.delete(it, null, null) }
-        val temp = resolver.insert(
+        val previous = findOwnCopies(fileName)
+        val created = resolver.insert(
             MediaStore.Downloads.EXTERNAL_CONTENT_URI,
             ContentValues().apply {
-                put(MediaStore.Downloads.DISPLAY_NAME, tempName)
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
                 put(MediaStore.Downloads.RELATIVE_PATH, RELATIVE_PATH)
                 // gzip 으로 주면 제공자가 이름 뒤에 확장자를 또 붙인다.
                 put(MediaStore.Downloads.MIME_TYPE, OCTET_STREAM)
@@ -63,34 +62,31 @@ internal class DownloadsBackupFolderAccess(private val context: Context) : Backu
             },
         ) ?: throw BackupFolderUnavailableException()
         try {
-            resolver.openOutputStream(temp, "w")?.use { it.write(bytes) } ?: throw BackupFolderUnavailableException()
-            findOwn(fileName)?.let { resolver.delete(it, null, null) }
-            resolver.update(
-                temp,
-                ContentValues().apply {
-                    put(MediaStore.Downloads.DISPLAY_NAME, fileName)
-                    put(MediaStore.Downloads.IS_PENDING, 0)
-                },
-                null,
-                null,
-            )
+            resolver.openOutputStream(created, "w")?.use { it.write(bytes) } ?: throw BackupFolderUnavailableException()
+            resolver.update(created, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
         } catch (e: Throwable) {
-            runCatching { resolver.delete(temp, null, null) }
+            runCatching { resolver.delete(created, null, null) }
             throw e
         }
+        previous.forEach { runCatching { resolver.delete(it, null, null) } }
     }
 
+    /** 이 설치가 만든 백업 사본, 최근 것부터. 이름에 번호가 붙었을 수 있어 이름 하나로 찾지 않는다. */
     @RequiresApi(Build.VERSION_CODES.Q)
-    private fun findOwn(displayName: String): Uri? {
-        val columns = arrayOf(MediaStore.Downloads._ID)
-        val selection = "${MediaStore.Downloads.DISPLAY_NAME} = ? AND ${MediaStore.Downloads.RELATIVE_PATH} = ?"
-        resolver.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI, columns, selection, arrayOf(displayName, RELATIVE_PATH), null)
+    private fun findOwnCopies(fileName: String): List<Uri> {
+        val columns = arrayOf(MediaStore.Downloads._ID, MediaStore.Downloads.DISPLAY_NAME)
+        val selection = "${MediaStore.Downloads.RELATIVE_PATH} = ?"
+        val order = "${MediaStore.Downloads._ID} DESC"
+        val copies = mutableListOf<Uri>()
+        resolver.query(MediaStore.Downloads.EXTERNAL_CONTENT_URI, columns, selection, arrayOf(RELATIVE_PATH), order)
             ?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    return Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cursor.getLong(0).toString())
+                while (cursor.moveToNext()) {
+                    if (isBackupCopyName(cursor.getString(1), fileName)) {
+                        copies += Uri.withAppendedPath(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cursor.getLong(0).toString())
+                    }
                 }
             }
-        return null
+        return copies
     }
 
     @Suppress("DEPRECATION")
@@ -118,4 +114,13 @@ internal class DownloadsBackupFolderAccess(private val context: Context) : Backu
         val RELATIVE_PATH = "${Environment.DIRECTORY_DOWNLOADS}/$DIR_NAME/"
         const val OCTET_STREAM = "application/octet-stream"
     }
+}
+
+/** 같은 이름이 이미 있으면 MediaStore 가 확장자 앞에 ` (번호)` 를 붙인다. 그렇게 밀린 이름도 백업 사본이다. */
+internal fun isBackupCopyName(displayName: String, fileName: String): Boolean {
+    val stem = fileName.substringBefore('.')
+    val extension = fileName.substring(stem.length)
+    if (displayName == fileName) return true
+    if (!displayName.startsWith("$stem (") || !displayName.endsWith(")$extension")) return false
+    return displayName.removePrefix("$stem (").removeSuffix(")$extension").let { it.isNotEmpty() && it.all(Char::isDigit) }
 }

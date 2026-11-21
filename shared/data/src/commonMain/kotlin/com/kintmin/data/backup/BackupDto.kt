@@ -13,3 +13,8 @@ internal data class BackupDto(
     val downloadSettings: MigrationDownloadSettingsDto? = null,
     val lyrics: Map<String, String> = emptyMap(),
 )
+
+@Serializable
+internal data class BackupVersionDto(
+    val backupVersion: Int,
+)

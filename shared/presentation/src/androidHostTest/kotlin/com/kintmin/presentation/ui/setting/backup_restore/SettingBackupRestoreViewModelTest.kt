@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.setting.backup_restore
 
 import com.kintmin.domain.backup.model.BackupContent
 import com.kintmin.domain.backup.model.BackupFileInvalidException
+import com.kintmin.domain.backup.model.BackupOutcome
 import com.kintmin.domain.backup.model.BackupStatus
 import com.kintmin.domain.backup.model.RestorePreview
 import com.kintmin.domain.backup.usecase.BackupNowUseCase
@@ -68,6 +69,10 @@ class SettingBackupRestoreViewModelTest {
     private val connection = mockk<FetchConnectionStatusUseCase> {
         every { this@mockk() } returns Result.success(ConnectionStatus(true, isWifi = true, isCellular = false, 0, 0))
     }
+    private var status = BackupStatus(null, null, null, null)
+    private val backupNow = mockk<BackupNowUseCase> {
+        coEvery { this@mockk(any()) } returns Result.success(BackupOutcome.WRITTEN)
+    }
     private val monitor = mockk<RunningTaskMonitor> {
         coEvery { runningTasks() } returns emptyMap()
     }
@@ -84,9 +89,9 @@ class SettingBackupRestoreViewModelTest {
 
     private fun viewModel() = SettingBackupRestoreViewModel(
         fetchBackupStatusFlowUseCase = mockk<FetchBackupStatusFlowUseCase> {
-            every { this@mockk() } returns flowOf(BackupStatus(null, null, null, null))
+            every { this@mockk() } returns flowOf(status)
         },
-        backupNowUseCase = mockk<BackupNowUseCase>(),
+        backupNowUseCase = backupNow,
         registerBackupFolderUseCase = mockk<RegisterBackupFolderUseCase>(),
         findBackupToRestoreUseCase = find,
         readBackupFileUseCase = readFile,
@@ -232,6 +237,54 @@ class SettingBackupRestoreViewModelTest {
         assertNull(viewModel.uiState.value.exitConfirmation)
         viewModel.sendIntent(SettingBackupRestoreIntent.OnClickRetry)
         coVerify(exactly = 2) { restore(backup, any()) }
+    }
+
+    @Test
+    fun `멈춘 뒤 지금 백업을 눌러도 복원 구역은 그대로이고 다시 시도는 같은 백업으로 한다`() {
+        coEvery { restore(backup, any()) } returns Result.failure(IllegalStateException("끊김"))
+        val viewModel = viewModel()
+        viewModel.sendIntent(SettingBackupRestoreIntent.OnClickStartRestore)
+
+        viewModel.sendIntent(SettingBackupRestoreIntent.OnClickBackupNow)
+
+        assertTrue(viewModel.uiState.value.restore is RestorePhase.Interrupted)
+        coVerify(exactly = 1) { find() }
+        viewModel.sendIntent(SettingBackupRestoreIntent.OnClickRetry)
+        coVerify(exactly = 2) { restore(backup, any()) }
+    }
+
+    @Test
+    fun `보관함에 반영하기 시작하면 멈출 수 없다`() = runTest {
+        val never = CompletableDeferred<Result<MigrationSummary>>()
+        coEvery { restore(backup, any()) } coAnswers {
+            secondArg<(MigrationProgress) -> Unit>()(MigrationProgress(MigrationStage.APPLY))
+            never.await()
+        }
+        val viewModel = viewModel()
+        viewModel.sendIntent(SettingBackupRestoreIntent.OnClickStartRestore)
+
+        assertFalse(viewModel.uiState.value.canStop)
+        viewModel.sendIntent(SettingBackupRestoreIntent.OnClickStop)
+
+        assertEquals(RestorePhase.Running, viewModel.uiState.value.restore)
+    }
+
+    @Test
+    fun `복원이 끝나면 쉬던 자동 백업을 다시 시작하도록 한 번 쓴다`() {
+        coEvery { restore(backup, any()) } returns Result.success(MigrationSummary(8, 0, 8, emptyList()))
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(SettingBackupRestoreIntent.OnClickStartRestore)
+
+        coVerify(exactly = 1) { backupNow(any()) }
+    }
+
+    @Test
+    fun `이 설치가 백업한 적 없이 남은 백업을 찾으면 자동 백업을 쉰다고 알린다`() {
+        assertTrue(viewModel().uiState.value.isAutoBackupPaused)
+
+        status = BackupStatus(null, lastSuccessMillis = 1_000, lastFailureMillis = null, lastFailureReason = null)
+        assertFalse(viewModel().uiState.value.isAutoBackupPaused)
     }
 
     @Test

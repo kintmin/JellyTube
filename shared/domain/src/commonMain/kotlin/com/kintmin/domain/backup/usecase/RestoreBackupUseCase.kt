@@ -77,14 +77,15 @@ class RestoreBackupUseCase(
             ),
             target,
         )
-        // 커밋 직후 취소돼도 돌아오는 자리에서 CancellationException 이 난다. 반영이 끝나기 전에 끊지 않는다.
-        val applied = withContext(NonCancellable) { dataMigrationRepository.applyPlan(plan) }.getOrThrow()
-
-        // 반영이 끝났다. 여기부터는 실패해도 기록만 한다.
-        dataMigrationRepository.clearStaging().onFailure { log("임시 공간 정리 실패: $it") }
-        backup.downloadSettings?.let { settings ->
-            runCatching { appSettingRepository.applyMigratedDownloadSettings(settings, plan, applied, target) }
-                .onFailure { log("다운로드 설정 반영 실패: $it") }
+        // 반영과 그 뒤 정리는 한 덩어리로 끝낸다. 커밋 뒤에 끊기면 DB 는 바뀌었는데 설정과 임시 공간이 그대로 남는다.
+        withContext(NonCancellable) {
+            val applied = dataMigrationRepository.applyPlan(plan).getOrThrow()
+            // 반영이 끝났다. 여기부터는 실패해도 기록만 한다.
+            dataMigrationRepository.clearStaging().onFailure { log("임시 공간 정리 실패: $it") }
+            backup.downloadSettings?.let { settings ->
+                runCatching { appSettingRepository.applyMigratedDownloadSettings(settings, plan, applied, target) }
+                    .onFailure { log("다운로드 설정 반영 실패: $it") }
+            }
         }
         MigrationSummary(
             newAudioMediaCount = plan.newAudioMedias.size,

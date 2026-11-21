@@ -64,11 +64,17 @@ fun RestoreSectionView(
                 RestorePhase.Running -> {
                     DataMigrationStageRows(stages = uiState.stages, label = SettingBackupRestoreUiState::restoreStageLabel)
                     Text(
-                        text = "멈춰도 받아 둔 곡은 남아, 다시 복원하면 이어 받습니다.",
+                        text = if (uiState.canStop) {
+                            "멈춰도 받아 둔 곡은 남아, 다시 복원하면 이어 받습니다."
+                        } else {
+                            "보관함에 반영하는 중입니다. 곧 끝납니다."
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    OutlinedButton(onClick = onClickStop, colors = JellyTubeButtonColors.secondary()) { Text("멈추기") }
+                    if (uiState.canStop) {
+                        OutlinedButton(onClick = onClickStop, colors = JellyTubeButtonColors.secondary()) { Text("멈추기") }
+                    }
                 }
                 is RestorePhase.Interrupted, is RestorePhase.Finished -> {
                     DataMigrationStageRows(stages = uiState.stages, label = SettingBackupRestoreUiState::restoreStageLabel)

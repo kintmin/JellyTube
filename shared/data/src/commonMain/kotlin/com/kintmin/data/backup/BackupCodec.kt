@@ -36,13 +36,20 @@ internal object BackupCodec {
 
     /** 옛 버전은 읽는다. 더 새 버전은 모르는 뜻이 담겼을 수 있어 읽지 않는다. */
     fun decode(bytes: ByteArray): BackupContent {
+        val text = try {
+            (Buffer().write(bytes) as Source).gzip().buffer().use { it.readUtf8() }
+        } catch (e: Exception) {
+            throw BackupFileInvalidException(e)
+        }
+        // 새 버전은 나머지 모양이 바뀌었을 수 있어 버전부터 본다. 다 읽고 나서 보면 손상으로 보인다.
+        val version = runCatching { json.decodeFromString(BackupVersionDto.serializer(), text).backupVersion }
+            .getOrElse { throw BackupFileInvalidException(it) }
+        if (version > FORMAT_VERSION) throw BackupVersionUnsupportedException()
         val dto = try {
-            val text = (Buffer().write(bytes) as Source).gzip().buffer().use { it.readUtf8() }
             json.decodeFromString(BackupDto.serializer(), text)
         } catch (e: Exception) {
             throw BackupFileInvalidException(e)
         }
-        if (dto.backupVersion > FORMAT_VERSION) throw BackupVersionUnsupportedException()
         return BackupContent(
             snapshot = dto.snapshot.toDomain(),
             downloadSettings = dto.downloadSettings?.let { MigrationDownloadSettings(it.shouldInsertAtTop, it.playlistId) },

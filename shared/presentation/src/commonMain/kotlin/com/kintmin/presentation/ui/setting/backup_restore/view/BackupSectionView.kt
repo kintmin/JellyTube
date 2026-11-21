@@ -43,7 +43,11 @@ fun BackupSectionView(
                 color = if (uiState.isBackupFailing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "하루 한 번 곡 목록·재생목록·가사·걸음수를 저장합니다. 음원 파일은 싣지 않습니다.",
+                text = if (uiState.isAutoBackupPaused) {
+                    "복원할 백업이 있어 자동 백업을 쉬고 있습니다. 복원하면 다시 시작합니다."
+                } else {
+                    "하루 한 번 곡 목록·재생목록·가사·걸음수를 저장합니다. 음원 파일은 싣지 않습니다."
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

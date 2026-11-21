@@ -12,10 +12,17 @@ data class SettingBackupRestoreUiState(
     val backupDescription: String = "",
     val isBackupFailing: Boolean = false,
     val isBackingUp: Boolean = false,
+    /** 이 설치가 백업한 적 없이 복원할 백업이 남아 있어, 그 백업을 덮지 않으려고 자동 백업을 쉬고 있다. */
+    val isAutoBackupPaused: Boolean = false,
     val restore: RestorePhase = RestorePhase.Finding,
     val stages: List<DataMigrationStageItem> = emptyList(),
 ) {
     val isRestoring: Boolean get() = restore == RestorePhase.Running
+
+    /** 보관함에 반영하기 시작하면 끝까지 간다. 멈추면 반영된 것을 멈췄다고 안내하게 된다. */
+    val canStop: Boolean
+        get() = isRestoring &&
+            stages.none { it.kind == DataMigrationStageKind.APPLY && it.status == DataMigrationStageStatus.IN_PROGRESS }
 
     /** 나가기 전에 물어볼 내용. null 이면 그냥 나간다. */
     val exitConfirmation: RestoreExitConfirmation?
