@@ -4,6 +4,7 @@ package com.kintmin.domain.playlist.model
  * 플레이리스트 종류.
  * - TOTAL(전체), UNCATEGORIZED(미분류), FAVORITE(즐겨찾기): 시스템이 관리하는 플레이리스트.
  * - USER: 사용자가 만든 일반 플레이리스트.
+ * - SECRET: 비밀모드에서 사용자가 만든 플레이리스트. 비밀 화면 밖에는 보이지 않는다.
  *
  * 시스템 플레이리스트 판별은 id 매직넘버가 아니라 이 type으로 한다.
  */
@@ -12,9 +13,10 @@ enum class PlaylistType(val defaultName: String) {
     UNCATEGORIZED("미분류"),
     FAVORITE("즐겨찾기"),
     USER(""),
+    SECRET(""),
     ;
 
-    val isSystem: Boolean get() = this != USER
+    val isSystem: Boolean get() = this == TOTAL || this == UNCATEGORIZED || this == FAVORITE
 
     /**
      * 시스템이 채우고 비우는가. 즐겨찾기는 시스템 플레이리스트지만 사용자가 직접 넣고 빼므로
@@ -23,5 +25,5 @@ enum class PlaylistType(val defaultName: String) {
     val isAutoManaged: Boolean get() = this == TOTAL || this == UNCATEGORIZED
 
     /** 다운로드·가져오기한 곡을 넣을 수 있는가. 전체·즐겨찾기는 곡을 직접 넣는 곳이 아니다. */
-    val canBeDownloadTarget: Boolean get() = this == USER || this == UNCATEGORIZED
+    val canBeDownloadTarget: Boolean get() = this == USER || this == UNCATEGORIZED || this == SECRET
 }
