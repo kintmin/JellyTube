@@ -6,7 +6,7 @@ import androidx.work.WorkerParameters
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.CreateLyricsVariantUseCase
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.notifications.LyricsVariantResultNotification
 import com.kintmin.presentation.port.model.WorkResultNotice
@@ -44,7 +44,7 @@ class LyricsVariantWorker(
                 Result.success()
             },
             onFailure = { error ->
-                appLog.sendDebugLog(DebugLog("LyricsVariantWorker", error.message.toString()))
+                appLog.sendErrorLog(ErrorLog("LyricsVariantWorker", "가사 변형 만들기 실패", error))
                 pushNotificationManager.sendNotification(
                     LyricsVariantResultNotification(WorkResultNotice.LyricsVariantCreation.Failure(variant)),
                 )

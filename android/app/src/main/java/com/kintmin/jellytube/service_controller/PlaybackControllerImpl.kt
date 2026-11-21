@@ -17,7 +17,7 @@ import com.kintmin.jellytube.service.PlaybackService
 import com.kintmin.jellytube.service_controller.mapper.toMediaControlData
 import com.kintmin.jellytube.service_controller.mapper.toMediaItem
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlin.math.pow
@@ -58,7 +58,7 @@ class PlaybackControllerImpl(
                         it.shuffleModeEnabled = isShuffleState
                     }
                 }.onFailure {
-                    appLog.sendDebugLog(DebugLog("PlaybackController", "MediaController 연결 실패: $it"))
+                    appLog.sendErrorLog(ErrorLog("PlaybackController", "MediaController 연결 실패", it))
                     controllerFuture = null
                 }
             }, ContextCompat.getMainExecutor(appContext))

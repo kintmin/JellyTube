@@ -2,6 +2,7 @@ package com.kintmin.ios.bridge
 
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.log.model.SentryEvent
 import org.koin.mp.KoinPlatform
 
@@ -17,6 +18,13 @@ fun swiftDebugLog(tag: String, message: String) {
     runCatching { KoinPlatform.getKoin().get<AppLog>() }
         .getOrNull()
         ?.sendDebugLog(DebugLog(tag, message))
+}
+
+/** Swift 의 오류는 Kotlin 예외가 아니라 메시지로만 Issue 에 올라간다. */
+fun swiftErrorLog(tag: String, message: String) {
+    runCatching { KoinPlatform.getKoin().get<AppLog>() }
+        .getOrNull()
+        ?.sendErrorLog(ErrorLog(tag, message))
 }
 
 /** HLS fallback 건수를 세는 이벤트와 같은 내용의 디버그 로그를 함께 남긴다. */

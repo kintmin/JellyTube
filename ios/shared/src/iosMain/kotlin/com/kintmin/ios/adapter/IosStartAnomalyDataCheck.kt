@@ -4,7 +4,7 @@ import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.ios.notification.IosLocalNotification
 import com.kintmin.ios.task.IosRunningTaskTracker
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.presentation.port.StartAnomalyDataCheck
 import com.kintmin.presentation.port.model.RunningTask
 import com.kintmin.presentation.port.model.WorkResultNotice
@@ -41,9 +41,7 @@ internal class IosStartAnomalyDataCheck(
                         IosLocalNotification.show(WorkResultNotice.AnomalyCheck.Success(anomalyCount))
                     }
                     .onFailure { throwable ->
-                        appLog.sendDebugLog(
-                            DebugLog("IosStartAnomalyDataCheck", throwable.message ?: "알 수 없는 오류"),
-                        )
+                        appLog.sendErrorLog(ErrorLog("IosStartAnomalyDataCheck", "이상 데이터 점검 실패", throwable))
                         IosLocalNotification.show(WorkResultNotice.AnomalyCheck.Failure)
                     }
             } finally {

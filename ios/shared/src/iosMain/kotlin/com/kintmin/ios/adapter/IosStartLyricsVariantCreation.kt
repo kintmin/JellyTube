@@ -5,7 +5,7 @@ import com.kintmin.domain.lyrics.usecase.CreateLyricsVariantUseCase
 import com.kintmin.ios.notification.IosLocalNotification
 import com.kintmin.ios.task.IosRunningTaskTracker
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.presentation.port.StartLyricsVariantCreation
 import com.kintmin.presentation.port.model.RunningTask
 import com.kintmin.presentation.port.model.WorkResultNotice
@@ -38,9 +38,7 @@ internal class IosStartLyricsVariantCreation(
                     IosLocalNotification.show(WorkResultNotice.LyricsVariantCreation.Success(variant, audioMediaId))
                 }
                 .onFailure { throwable ->
-                    appLog.sendDebugLog(
-                        DebugLog("IosStartLyricsVariantCreation", throwable.message.toString()),
-                    )
+                    appLog.sendErrorLog(ErrorLog("IosStartLyricsVariantCreation", "가사 변형 만들기 실패", throwable))
                     IosLocalNotification.show(WorkResultNotice.LyricsVariantCreation.Failure(variant))
                 }
         }

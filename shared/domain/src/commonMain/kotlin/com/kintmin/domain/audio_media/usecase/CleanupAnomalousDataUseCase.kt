@@ -5,6 +5,7 @@ import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.flow.first
 
 class CleanupAnomalousDataUseCase constructor(
@@ -71,7 +72,7 @@ class CleanupAnomalousDataUseCase constructor(
         audioMediaRepository.deleteFileAtFullPath(fileFullPath).onSuccess {
             appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "파일 삭제 완료: $fileFullPath"))
         }.onFailure {
-            appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "파일 삭제 실패: $fileFullPath / $it"))
+            appLog.sendErrorLog(ErrorLog("CleanupAnomalousDataUseCase", "파일 삭제 실패: $fileFullPath", it))
         }
     }
 }

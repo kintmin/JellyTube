@@ -41,6 +41,6 @@ class ImportSharedAudioMediaUseCaseTest {
 
         useCase("content://a")
 
-        verify { appLog.sendDebugLog(match { it.message == "들여오기 실패: content://a / java.lang.Exception: boom" }) }
+        verify { appLog.sendErrorLog(match { it.message == "들여오기 실패: content://a" && it.throwable?.message == "boom" }) }
     }
 }

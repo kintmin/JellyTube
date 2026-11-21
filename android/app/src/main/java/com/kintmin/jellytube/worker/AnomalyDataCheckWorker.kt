@@ -5,7 +5,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.notifications.AnomalyCheckResultNotification
 import com.kintmin.presentation.port.model.WorkResultNotice
@@ -30,7 +30,7 @@ class AnomalyDataCheckWorker(
                 return Result.success()
             }
             .onFailure {
-                appLog.sendDebugLog(DebugLog("AnomalyDataCheckWorker", it.message ?: "알 수 없는 오류"))
+                appLog.sendErrorLog(ErrorLog("AnomalyDataCheckWorker", "이상 데이터 점검 실패", it))
                 pushNotificationManager.sendNotification(
                     AnomalyCheckResultNotification(WorkResultNotice.AnomalyCheck.Failure),
                 )
