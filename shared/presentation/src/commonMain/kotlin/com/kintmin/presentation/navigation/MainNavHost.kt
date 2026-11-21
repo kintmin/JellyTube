@@ -59,6 +59,8 @@ import com.kintmin.presentation.ui.setting.device_save_select.navigation.setting
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.navigateToSettingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.settingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
+import com.kintmin.presentation.ui.setting.secret_playlist_guide.navigation.navigateToSettingSecretPlaylistGuideScreen
+import com.kintmin.presentation.ui.setting.secret_playlist_guide.navigation.settingSecretPlaylistGuideScreen
 import com.kintmin.presentation.ui.setting.navigation.settingGraph
 import com.kintmin.presentation.ui.step.navigation.navigateToStepScreen
 import com.kintmin.presentation.ui.step.navigation.stepScreen
@@ -249,6 +251,9 @@ fun MainNavHost(
             navigateToDeviceSave = {
                 navController.navigateToSettingDeviceSaveScreen(navOptions)
             },
+            navigateToSecretPlaylistGuide = {
+                navController.navigateToSettingSecretPlaylistGuideScreen(navOptions)
+            },
         ) {
             appLogScreen(
                 navigateToBack = { navController.popBackStack() },
@@ -275,6 +280,10 @@ fun MainNavHost(
                 navigateToDeviceSaveSelect = {
                     navController.navigateToSettingDeviceSaveSelectScreen(navOptions)
                 },
+            )
+
+            settingSecretPlaylistGuideScreen(
+                navigateToBack = { navController.popBackStack() },
             )
 
             settingDeviceSaveSelectScreen(

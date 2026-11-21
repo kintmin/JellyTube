@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.DirectionsWalk
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MobileScreenShare
 import androidx.compose.material.icons.rounded.SaveAlt
 import androidx.compose.material.icons.rounded.SystemUpdate
@@ -64,6 +65,7 @@ fun SettingScreen(
     navigateToDataMigrationSend: () -> Unit,
     navigateToDataMigrationReceive: () -> Unit,
     navigateToDeviceSave: () -> Unit,
+    navigateToSecretPlaylistGuide: () -> Unit,
 ) {
     val viewModel = koinViewModel<SettingViewModel>()
     val uiState by viewModel.uiState.collectAsState()
@@ -90,6 +92,7 @@ fun SettingScreen(
                 SettingEvent.NavigateToDataMigrationSendScreen -> navigateToDataMigrationSend()
                 SettingEvent.NavigateToDataMigrationReceiveScreen -> navigateToDataMigrationReceive()
                 SettingEvent.NavigateToDeviceSaveScreen -> navigateToDeviceSave()
+                SettingEvent.NavigateToSecretPlaylistGuideScreen -> navigateToSecretPlaylistGuide()
                 SettingEvent.LaunchAudioFilePicker -> audioFilePicker.launch()
                 is SettingEvent.ShowToast ->
                     toaster.show(event.message)
@@ -249,6 +252,15 @@ fun SettingScreen(
                     icon = Icons.Rounded.SaveAlt,
                     onClick = { sendIntent(SettingIntent.OnClickDeviceSaveTile) },
                     trailing = { SettingNavigateIcon(contentDescription = "기기에 저장하기 화면으로 이동") },
+                )
+            }
+
+            SettingSectionView(title = "플레이리스트") {
+                SettingItemView(
+                    title = "비밀 플레이리스트",
+                    icon = Icons.Rounded.Lock,
+                    onClick = { sendIntent(SettingIntent.OnClickSecretPlaylistGuideTile) },
+                    trailing = { SettingNavigateIcon(contentDescription = "비밀 플레이리스트 설명 화면으로 이동") },
                 )
             }
 

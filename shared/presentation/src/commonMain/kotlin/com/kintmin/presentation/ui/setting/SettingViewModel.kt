@@ -148,6 +148,11 @@ class SettingViewModel constructor(
                     eventChannel.send(SettingEvent.NavigateToDeviceSaveScreen)
                 }
             }
+            SettingIntent.OnClickSecretPlaylistGuideTile -> {
+                viewModelScope.launch {
+                    eventChannel.send(SettingEvent.NavigateToSecretPlaylistGuideScreen)
+                }
+            }
             SettingIntent.OnClickFileShareReceiveTile -> {
                 viewModelScope.launch {
                     eventChannel.send(SettingEvent.NavigateToFileShareReceiveScreen)

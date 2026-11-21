@@ -1,0 +1,86 @@
+package com.kintmin.presentation.ui.setting.secret_playlist_guide
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.TouchApp
+import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.common.DetailTopAppBar
+import com.kintmin.presentation.ui.setting.section.SettingNoticeCardView
+
+@Composable
+fun SettingSecretPlaylistGuideScreen(
+    navigateToBack: () -> Unit,
+) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            DetailTopAppBar(
+                title = "비밀 플레이리스트",
+                onClickBack = navigateToBack,
+            )
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = "평소에는 보이지 않고,\n비밀모드를 켠 동안에만 보이는 플레이리스트입니다",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            SettingNoticeCardView(
+                icon = Icons.Rounded.TouchApp,
+                title = "여는 방법",
+                text = "플레이리스트 화면 맨 위의 '플레이리스트' 제목을 길게 누르면 비밀 플레이리스트 화면이 열립니다.",
+            )
+            SettingNoticeCardView(
+                icon = Icons.Rounded.Timer,
+                title = "켜 두는 시간",
+                text = "비밀모드를 켤 때 정한 시간이 지나면 저절로 꺼집니다. 꺼지면 비밀 플레이리스트의 재생이 멈추고 " +
+                    "비밀 플레이리스트 화면도 닫힙니다.",
+            )
+            SettingNoticeCardView(
+                icon = Icons.Rounded.VisibilityOff,
+                title = "숨겨지는 곳",
+                text = "비밀 플레이리스트는 홈 목록에 나오지 않고, 그 안의 곡은 '전체'에서도 보이지 않습니다. " +
+                    "다운로드 시 재생목록으로는 비밀모드가 켜져 있을 때만 고를 수 있고, 꺼지면 미분류로 돌아갑니다.",
+            )
+            SettingNoticeCardView(
+                icon = Icons.Rounded.Info,
+                title = "알아 두세요",
+                text = "화면에서 숨길 뿐 파일을 암호화하지는 않습니다. 같은 곡이 즐겨찾기나 다른 플레이리스트에도 " +
+                    "들어 있으면 그곳에서는 보입니다.",
+            )
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Preview
+@Composable
+fun SettingSecretPlaylistGuideScreenPreview() {
+    JellyTubeTheme {
+        SettingSecretPlaylistGuideScreen(navigateToBack = {})
+    }
+}
