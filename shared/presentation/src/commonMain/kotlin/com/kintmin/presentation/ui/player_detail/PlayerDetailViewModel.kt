@@ -195,8 +195,7 @@ class PlayerDetailViewModel constructor(
                 }
             }
 
-            // 가사 입구는 셋이다 — 아트워크·한 줄 가사·부가 줄 아이콘. 셋 다 같은 일을 한다.
-            // 아트워크는 가사 없는 곡에서 clickable 을 붙이지 않아 아래 분기로 오지 않는다.
+            // 아트워크(한 줄 가사 포함)와 부가 줄의 가사 버튼이 같은 일을 한다. 가사 없는 곡이면 찾으러 보낸다.
             PlayerDetailIntent.OnClickLyrics -> {
                 if (uiState.value.hasLyrics) {
                     _uiState.update { it.copy(isLyricsPanelVisible = !it.isLyricsPanelVisible) }
@@ -214,6 +213,22 @@ class PlayerDetailViewModel constructor(
                                 durationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
                             )
                         )
+                    }
+                }
+            }
+
+            is PlayerDetailIntent.OnClickLyricLine -> {
+                val timeMs = parsedLyricLines.getOrNull(intent.index)?.timeMs ?: return
+                mediaControllerManager.seek(timeMs.milliseconds)
+            }
+
+            PlayerDetailIntent.OnClickLyricsViewerButton -> {
+                val mediaId = uiState.value.id.toIntOrNull()
+                viewModelScope.launch {
+                    if (mediaId == null) {
+                        eventChannel.send(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
+                    } else {
+                        eventChannel.send(PlayerDetailEvent.NavigateToLyricsViewer(mediaId))
                     }
                 }
             }
@@ -400,6 +415,7 @@ class PlayerDetailViewModel constructor(
                 // 상태를 버리면 아트워크가 눌리지 않게 되므로 이어 받는다.
                 hasLyrics = if (isSameMedia) uiState.value.hasLyrics else false,
                 lyricLines = if (isSameMedia) uiState.value.lyricLines else emptyList(),
+                isLyricsSynced = isSameMedia && uiState.value.isLyricsSynced,
                 isLyricsPanelVisible = uiState.value.isLyricsPanelVisible,
                 repeatRangeStartDuration = repeatRangeState.startDuration,
                 repeatRangeEndDuration = repeatRangeState.endDuration,
@@ -461,7 +477,7 @@ class PlayerDetailViewModel constructor(
 
         if (lyricFileFullPath == null) {
             parsedLyricLines = emptyList()
-            _uiState.update { it.copy(lyricLines = emptyList(), activeLyricIndex = -1) }
+            _uiState.update { it.copy(lyricLines = emptyList(), isLyricsSynced = false, activeLyricIndex = -1) }
             return
         }
         viewModelScope.launch {
@@ -478,6 +494,7 @@ class PlayerDetailViewModel constructor(
                             translation = translationLines?.getOrNull(index)?.text?.takeIf(String::isNotBlank),
                         )
                     },
+                    isLyricsSynced = parsedLyricLines.any { line -> line.timeMs != null },
                     activeLyricIndex = -1,
                 )
             }

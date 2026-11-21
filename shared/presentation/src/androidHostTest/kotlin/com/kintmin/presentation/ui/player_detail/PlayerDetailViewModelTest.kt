@@ -29,6 +29,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
 /** 잠들기 타이머가 곡 교체에 휩쓸리지 않는지, 그리고 가사 세 상태의 분기를 본다. */
@@ -208,6 +209,28 @@ class PlayerDetailViewModelTest {
         val lines = viewModel.uiState.value.lyricLines
         assertTrue(lines.all { it.translation == null && it.transliteration == null })
         assertEquals(null, viewModel.uiState.value.currentLyricTranslation)
+    }
+
+    @Test
+    fun `싱크 가사의 줄을 누르면 그 줄의 시각으로 옮긴다`() {
+        givenSyncedLyrics()
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine(2))
+
+        assertTrue(viewModel.uiState.value.isLyricsSynced)
+        verify(exactly = 1) { manager.seek(5_000.milliseconds) }
+    }
+
+    @Test
+    fun `비싱크 가사의 줄을 눌러도 옮기지 않는다`() {
+        givenUnsyncedLyrics()
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine(1))
+
+        assertFalse(viewModel.uiState.value.isLyricsSynced)
+        verify(exactly = 0) { manager.seek(any()) }
     }
 
     @Test

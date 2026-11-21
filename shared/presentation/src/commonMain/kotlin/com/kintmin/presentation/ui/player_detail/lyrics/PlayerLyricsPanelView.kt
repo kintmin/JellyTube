@@ -1,6 +1,7 @@
 package com.kintmin.presentation.ui.player_detail.lyrics
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,6 +31,8 @@ import com.kintmin.presentation.ui.player_detail.PlayerLyricLineUiState
 fun PlayerLyricsPanelView(
     lines: List<PlayerLyricLineUiState>,
     activeIndex: Int,
+    /** 싱크 가사일 때만 준다. 그 줄의 시각으로 옮긴다. */
+    onClickLine: ((index: Int) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -48,6 +52,8 @@ fun PlayerLyricsPanelView(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium)
+                    .then(if (onClickLine != null) Modifier.clickable { onClickLine(index) } else Modifier)
                     .padding(vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -101,6 +107,7 @@ private fun PlayerLyricsPanelViewSyncedPreview() {
         PlayerLyricsPanelView(
             lines = previewLines,
             activeIndex = 2,
+            onClickLine = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp)
@@ -116,6 +123,7 @@ private fun PlayerLyricsPanelViewUnsyncedPreview() {
         PlayerLyricsPanelView(
             lines = previewLines,
             activeIndex = -1,
+            onClickLine = null,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp)

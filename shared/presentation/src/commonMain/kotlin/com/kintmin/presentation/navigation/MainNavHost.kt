@@ -268,6 +268,9 @@ fun MainNavHost(
             navigateToLyricsSearch = { audioMediaId, query, durationSeconds ->
                 navController.navigateToLyricsSearchScreen(audioMediaId, query, durationSeconds, navOptions)
             },
+            navigateToLyricsViewer = { audioMediaId ->
+                navController.navigateToLyricsViewerScreen(audioMediaId, navOptions)
+            },
         )
         lyricsViewerScreen(
             navigateToBack = { navController.popBackStack() },

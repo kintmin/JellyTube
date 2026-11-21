@@ -20,6 +20,7 @@ fun NavGraphBuilder.playerDetailScreen(
     navigateToAudioMediaInformationEdit: (audioMediaId: Int) -> Unit,
     navigateToPlayingPlaylist: (playlistId: Int, audioMediaId: Int?) -> Unit,
     navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
+    navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
 ) {
     composable<PlayerDetailScreenRoute> {
         PlayerDetailScreen(
@@ -28,6 +29,7 @@ fun NavGraphBuilder.playerDetailScreen(
             navigateToAudioMediaInformationEdit = navigateToAudioMediaInformationEdit,
             navigateToPlayingPlaylist = navigateToPlayingPlaylist,
             navigateToLyricsSearch = navigateToLyricsSearch,
+            navigateToLyricsViewer = navigateToLyricsViewer,
         )
     }
 }
