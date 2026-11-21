@@ -164,6 +164,7 @@ fun SettingDeviceSaveSelectScreen(
             )
         },
         bottomBar = {
+            if (uiState.checkedItemCount == 0) return@Scaffold
             Column(modifier = Modifier.imePadding()) {
                 if (!isRingtoneShareFlow) {
                     ExportTargetSelector(
