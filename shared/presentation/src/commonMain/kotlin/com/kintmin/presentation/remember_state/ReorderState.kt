@@ -2,6 +2,7 @@ package com.kintmin.presentation.remember_state
 
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyListItemInfo
+import androidx.compose.foundation.lazy.LazyListLayoutInfo
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -24,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.math.sign
 
 /**
@@ -55,6 +57,9 @@ class ReorderState<T>(
     // 자동 스크롤 루프. 방향이 바뀔 때만 다시 띄우고, 속도는 루프가 프레임마다 읽는다.
     private var autoScrollJob: Job? = null
     private var autoScrollVelocity = 0f
+
+    // 위치 고정을 요청한 시점의 측정 결과. 다음 측정이 끝나 바뀔 때까지 자동 스크롤을 쉰다.
+    private var heldLayoutInfo: LazyListLayoutInfo? = null
 
     // 뷰포트 위쪽을 덮는 상단 바 높이(px). 덮인 자리에서는 스크롤 존에 닿을 수 없다.
     internal var topInsetPx = 0f
@@ -98,43 +103,21 @@ class ReorderState<T>(
     // 스왑·그릴 거리·자동 스크롤 방향을 지금 배치에 맞춘다. 스크롤 루프도 매 프레임 부른다 —
     // 손가락이 가장자리에 멈춰 있으면 onDrag 가 오지 않는다.
     private fun settle() {
-        // 고정 높이 가정 없이, 실제 이웃 아이템의 렌더 높이(visibleItemsInfo.size)를 기준으로
-        // 한 번에 최대 한 칸씩만 스왑한다. 동적(가변) 높이 아이템에서도 정확하다.
         val info = listState.layoutInfo.visibleItemsInfo
-        val fromIndex = items.indexOfFirst { idOf(it) == draggingItemId }
-        if (fromIndex != -1) {
-            val currentInfo = info.find { it.key == draggingItemId }
-            if (dragOffset > 0f) {
-                // 아래로: 바로 아래 이웃의 절반을 넘으면 그 이웃과 자리를 바꾸고, 이웃 높이만큼 소비한다.
-                val next = items.getOrNull(fromIndex + 1)
-                val nextInfo = next?.let { n -> info.find { it.key == idOf(n) } }
-                if (nextInfo != null && dragOffset > nextInfo.size / 2f) {
-                    holdScrollPositionIfFirstVisible(currentInfo, nextInfo)
-                    items.add(fromIndex + 1, items.removeAt(fromIndex))
-                    dragOffset -= nextInfo.size
-                }
-            } else if (dragOffset < 0f) {
-                // 위로: 바로 위 이웃의 절반을 넘으면 스왑.
-                val prev = items.getOrNull(fromIndex - 1)
-                val prevInfo = prev?.let { p -> info.find { it.key == idOf(p) } }
-                if (prevInfo != null && -dragOffset > prevInfo.size / 2f) {
-                    holdScrollPositionIfFirstVisible(currentInfo, prevInfo)
-                    items.add(fromIndex - 1, items.removeAt(fromIndex))
-                    dragOffset += prevInfo.size
-                }
-            }
-        }
-        // 이웃이 화면 밖이면 스왑을 건너뛰되, 아래 오토스크롤이 화면을 밀어 이웃을 노출시킨다.
+        val currentInfo = info.find { it.key == draggingItemId }
+        // 스왑은 배치를 옮긴 만큼 dragOffset 을 되돌려 그려진 위치를 그대로 둔다. 그래서 스왑 전에
+        // 잰다 — 스왑 뒤에 옛 배치와 더하면 한 칸 아래로 읽혀 스크롤 존을 벗어난 것으로 판정된다.
+        val itemTop = currentInfo?.let { it.offset + dragOffset }
+        swapPastNeighbors(info, currentInfo)
 
         val settledIndex = items.indexOfFirst { idOf(it) == draggingItemId }
         dragOffsetY = clampDragOffsetY(dragOffset, settledIndex, items.lastIndex)
 
-        val currentItem = info.find { it.key == draggingItemId } ?: return updateAutoScroll(0f)
-        val itemTop = currentItem.offset + dragOffset
+        if (currentInfo == null || itemTop == null) return updateAutoScroll(0f)
         updateAutoScroll(
             autoScrollVelocity(
                 itemTop = itemTop,
-                itemBottom = itemTop + currentItem.size,
+                itemBottom = itemTop + currentInfo.size,
                 viewStart = listState.layoutInfo.viewportStartOffset + topInsetPx,
                 viewEnd = listState.layoutInfo.viewportEndOffset.toFloat(),
                 scrollZone = scrollZonePx,
@@ -147,13 +130,35 @@ class ReorderState<T>(
         )
     }
 
+    // 실제 이웃의 렌더 높이를 기준으로 절반을 넘긴 이웃과 자리를 바꾼다. 빠르게 끌면 한 이벤트에
+    // 여러 칸을 지나므로 넘긴 만큼 다 바꾼다 — 한 칸씩이면 놓았을 때 몇 칸 못 간 자리로 돌아간다.
+    // 스왑마다 |dragOffset| 이 줄어 반드시 끝난다.
+    private fun swapPastNeighbors(info: List<LazyListItemInfo>, currentInfo: LazyListItemInfo?) {
+        var index = items.indexOfFirst { idOf(it) == draggingItemId }
+        if (index == -1) return
+        val firstVisible = listState.firstVisibleItemIndex
+        var touchesFirstVisible = currentInfo?.index == firstVisible
+        var swapped = false
+        while (dragOffset != 0f) {
+            val step = if (dragOffset > 0f) 1 else -1
+            val neighbor = items.getOrNull(index + step) ?: break
+            // 이웃이 화면 밖이면 멈춘다. 자동 스크롤이 화면을 밀어 이웃을 드러낸다.
+            val neighborInfo = info.find { it.key == idOf(neighbor) } ?: break
+            if (abs(dragOffset) <= neighborInfo.size / 2f) break
+            if (neighborInfo.index == firstVisible) touchesFirstVisible = true
+            items.add(index + step, items.removeAt(index))
+            dragOffset -= step * neighborInfo.size
+            index += step
+            swapped = true
+        }
+        if (swapped && touchesFirstVisible) holdScrollPosition()
+    }
+
     // LazyList 는 첫 보이는 항목의 key 를 따라 스크롤 위치를 옮긴다. 그 항목이 스왑에 끼면
     // 목록이 한 칸 튀어 잡은 항목이 화면 밖으로 밀려나고, 컴포지션에서 빠지며 끌기가 취소된다.
-    private fun holdScrollPositionIfFirstVisible(a: LazyListItemInfo?, b: LazyListItemInfo) {
-        val first = listState.firstVisibleItemIndex
-        if (a?.index == first || b.index == first) {
-            listState.requestScrollToItem(first, listState.firstVisibleItemScrollOffset)
-        }
+    private fun holdScrollPosition() {
+        listState.requestScrollToItem(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+        heldLayoutInfo = listState.layoutInfo
     }
 
     private fun updateAutoScroll(velocity: Float) {
@@ -166,6 +171,10 @@ class ReorderState<T>(
             while (isActive) {
                 // 고정 지연으로 돌면 화면 갱신과 어긋나 한 프레임에 두 번 또는 0 번 스크롤된다.
                 withFrameNanos { }
+                // 위치 고정은 다음 측정에서 적용된다. 그 전에 스크롤하면 측정이 요청 위치로 덮어써
+                // 이번 스크롤이 사라지고, 이미 보정한 dragOffset 만큼 항목이 덜컥 튄다.
+                if (heldLayoutInfo === listState.layoutInfo) continue
+                heldLayoutInfo = null
                 // 실제 스크롤된 양(consumed)만큼만 dragOffset 을 보정한다.
                 // 끝에 닿아 스크롤이 0이면 보정도 0 → 헛누적으로 인한 폭주를 막는다.
                 dragOffset += listState.scrollBy(autoScrollVelocity * scrollSpeedPx)
