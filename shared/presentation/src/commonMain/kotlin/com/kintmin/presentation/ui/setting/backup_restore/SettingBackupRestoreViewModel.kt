@@ -216,7 +216,9 @@ class SettingBackupRestoreViewModel(
             "곡을 받다가 문제가 생겼습니다. 계속되면 설정 › 앱 로그 보기에서 원인을 확인할 수 있습니다."
         }
 
+    /** 다시 받기 단계는 실패한 곡도 끝난 곡으로 세며 진행했으므로, 끝나면 실제로 받은 곡 수로 바꾼다. */
     private fun finish(summary: MigrationSummary) {
+        val redownloadFailedCount = summary.failures.count { it.reason != MigrationFailureReason.NOT_RESTORABLE }
         _uiState.update { state ->
             state.copy(
                 restore = RestorePhase.Finished(
@@ -224,7 +226,13 @@ class SettingBackupRestoreViewModel(
                     newPlaylistCount = summary.newPlaylistCount,
                     failures = summary.failures.map { DataMigrationFailureItem(it.audioMediaName, it.reason.toText()) },
                 ),
-                stages = state.stages.map { it.copy(status = DataMigrationStageStatus.DONE) },
+                stages = state.stages.map {
+                    if (it.kind == DataMigrationStageKind.REDOWNLOAD && redownloadFailedCount > 0) {
+                        it.copy(status = DataMigrationStageStatus.FAILED, doneCount = it.totalCount - redownloadFailedCount)
+                    } else {
+                        it.copy(status = DataMigrationStageStatus.DONE)
+                    }
+                },
             )
         }
         // 복원으로 이 기기가 백업을 따라잡았다. 쉬던 자동 백업을 다시 시작하도록 바로 한 번 쓴다.
