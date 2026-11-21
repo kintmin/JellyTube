@@ -29,7 +29,7 @@ class AudioMediaSleepTimerAnnouncementLengthTest {
     )
 
     @Test
-    fun `30초 이하면 마무리 음성으로 고를 수 있다`() {
+    fun `30초 이하면 마무리 음원으로 고를 수 있다`() {
         assertTrue(audioMedia(30.seconds).fitsSleepTimerAnnouncement)
     }
 

@@ -104,7 +104,7 @@ class SleepTimerRunnerTest {
     }
 
     @Test
-    fun `마무리 음성은 일시정지한 뒤에 재생한다`() = runTest {
+    fun `마무리 음원은 일시정지한 뒤에 재생한다`() = runTest {
         val runner = runner()
         runner.announcement = announcement
 
@@ -119,7 +119,7 @@ class SleepTimerRunnerTest {
     }
 
     @Test
-    fun `마무리 음성은 길이만큼 재생하고 끝낸다`() = runTest {
+    fun `마무리 음원은 길이만큼 재생하고 끝낸다`() = runTest {
         val runner = runner()
         runner.announcement = announcement
 
@@ -135,7 +135,7 @@ class SleepTimerRunnerTest {
     }
 
     @Test
-    fun `마무리 음성 중에 다른 음원이 재생되면 즉시 끊는다`() = runTest {
+    fun `마무리 음원 중에 다른 음원이 재생되면 즉시 끊는다`() = runTest {
         val runner = runner()
         runner.announcement = announcement
 
@@ -151,7 +151,7 @@ class SleepTimerRunnerTest {
     }
 
     @Test
-    fun `멈춘 뒤 마무리 음성이 나는 동안에는 타이머가 켜진 것으로 보지 않는다`() = runTest {
+    fun `멈춘 뒤 마무리 음원이 나는 동안에는 타이머가 켜진 것으로 보지 않는다`() = runTest {
         val runner = runner()
         runner.announcement = announcement
 
@@ -165,7 +165,7 @@ class SleepTimerRunnerTest {
     }
 
     @Test
-    fun `타이머가 도는 중에 마무리 음성을 바꾸면 바꾼 것이 난다`() = runTest {
+    fun `타이머가 도는 중에 마무리 음원을 바꾸면 바꾼 것이 난다`() = runTest {
         val runner = runner()
         runner.announcement = announcement
         runner.start(total = 30.minutes)
@@ -180,7 +180,7 @@ class SleepTimerRunnerTest {
     }
 
     @Test
-    fun `마무리 음성을 고르지 않았으면 일시정지로 끝낸다`() = runTest {
+    fun `마무리 음원을 고르지 않았으면 일시정지로 끝낸다`() = runTest {
         val runner = runner()
 
         runner.start(total = 30.minutes)

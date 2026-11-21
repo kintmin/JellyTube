@@ -103,7 +103,7 @@ fun SleepTimerDialog(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "마무리 음성",
+                    text = "마무리 음원",
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 14.sp,
                     modifier = Modifier.weight(1f),
@@ -118,7 +118,7 @@ fun SleepTimerDialog(
                         .padding(start = 4.dp)
                         .size(18.dp),
                     imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
-                    contentDescription = "마무리 음성 고르기",
+                    contentDescription = "마무리 음원 고르기",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

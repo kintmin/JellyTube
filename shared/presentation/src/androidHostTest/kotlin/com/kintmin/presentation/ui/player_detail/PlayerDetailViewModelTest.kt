@@ -105,7 +105,7 @@ class PlayerDetailViewModelTest {
     }
 
     @Test
-    fun `마무리 음성 창이 떠 있는 동안 곡이 바뀌어도 창이 닫히지 않는다`() {
+    fun `마무리 음원 창이 떠 있는 동안 곡이 바뀌어도 창이 닫히지 않는다`() {
         val viewModel = viewModel()
         viewModel.sendIntent(PlayerDetailIntent.OnClickSleepTimerAnnouncementButton)
 

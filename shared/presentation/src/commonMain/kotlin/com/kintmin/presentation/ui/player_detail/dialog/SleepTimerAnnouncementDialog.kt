@@ -47,7 +47,7 @@ fun SleepTimerAnnouncementDialog(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "마무리 음성",
+                text = "마무리 음원",
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
@@ -64,7 +64,7 @@ fun SleepTimerAnnouncementDialog(
                 item {
                     SleepTimerAnnouncementRow(
                         name = "없음",
-                        description = "마무리 음성 없이 멈춥니다",
+                        description = "마무리 음원 없이 멈춥니다",
                         isSelected = selectedMediaId == null,
                         onClick = { onSelect(null) },
                     )
