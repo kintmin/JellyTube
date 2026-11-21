@@ -857,6 +857,9 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         lock.unlock()
         refreshExecutionWindow()
 
+        if waiter == nil, let error {
+            SwiftAppLogKt.swiftErrorLog(tag: "YoutubeDownload", message: "기다리는 쪽 없이 실패: \(sourceUrl) \(error.localizedDescription)")
+        }
         waiter?(error)
     }
 

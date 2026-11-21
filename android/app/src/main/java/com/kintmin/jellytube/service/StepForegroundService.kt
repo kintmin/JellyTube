@@ -28,6 +28,8 @@ import com.kintmin.domain.step.usecase.GetLastStepSensorForTodayUseCase
 import com.kintmin.domain.step.usecase.GetStepCountUseCase
 import com.kintmin.domain.step.usecase.ResetDataOncePerDayUseCase
 import com.kintmin.domain.step.usecase.UpdateLastStepSensorUseCase
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.jellytube.push_notification.PushNotificationIds
 import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.notifications.SensorStepNotification
@@ -99,6 +101,7 @@ class StepForegroundService : Service(), KoinComponent {
     private val getStepCountUseCase: GetStepCountUseCase by inject()
     private val getLastStepSensorForTodayUseCase: GetLastStepSensorForTodayUseCase by inject()
     private val updateLastStepSensorUseCase: UpdateLastStepSensorUseCase by inject()
+    private val appLog: AppLog by inject()
 
     private val foregroundServiceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
 
@@ -163,6 +166,7 @@ class StepForegroundService : Service(), KoinComponent {
                 @SuppressLint("InlinedApi") ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH,
             )
         }.onFailure {
+            appLog.sendErrorLog(ErrorLog("StepForegroundService", "포그라운드 시작 실패", it))
             stopSelf()
             return START_NOT_STICKY
         }
@@ -194,6 +198,7 @@ class StepForegroundService : Service(), KoinComponent {
                 syncPushNotification()
                 syncLastStepSensor()
             }.onFailure {
+                appLog.sendErrorLog(ErrorLog("StepForegroundService", "걸음 센서 등록 실패", it))
                 stopSelf()
             }
         }

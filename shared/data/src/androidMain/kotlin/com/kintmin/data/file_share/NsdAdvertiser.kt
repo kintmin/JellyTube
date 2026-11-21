@@ -4,6 +4,9 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -14,6 +17,7 @@ import kotlinx.coroutines.launch
 internal class NsdAdvertiser(
     private val context: Context,
     private val scope: CoroutineScope,
+    private val appLog: AppLog,
     private val resolveMigrationInstanceName: suspend () -> String,
 ) : ServiceAdvertiser {
     private val registrations = mutableMapOf<String, NsdManager.RegistrationListener>()
@@ -57,29 +61,36 @@ internal class NsdAdvertiser(
         }
         (wanted - registrations.keys).forEach { serviceType ->
             val listener = object : NsdManager.RegistrationListener {
-                override fun onRegistrationFailed(info: NsdServiceInfo, errorCode: Int) = onRegistrationFailed(serviceType, this)
+                override fun onRegistrationFailed(info: NsdServiceInfo, errorCode: Int) = onRegistrationFailed(serviceType, errorCode, this)
                 override fun onUnregistrationFailed(info: NsdServiceInfo, errorCode: Int) {}
                 override fun onServiceRegistered(info: NsdServiceInfo) {}
                 override fun onServiceUnregistered(info: NsdServiceInfo) {}
             }
             runCatching { manager.registerService(serviceInfo(serviceType), NsdManager.PROTOCOL_DNS_SD, listener) }
                 .onSuccess { registrations[serviceType] = listener }
-                .onFailure { retry() }
+                .onFailure {
+                    appLog.sendDebugLog(DebugLog(NSD_LOG_TAG, "NSD 광고 등록 실패($serviceType, $retryCount): $it"))
+                    retry(serviceType)
+                }
         }
     }
 
     // 실패한 등록을 남겨 두면 등록된 줄 알고 다시 시도하지 않아 받는 기기가 찾지 못한다.
     @Synchronized
-    private fun onRegistrationFailed(serviceType: String, listener: NsdManager.RegistrationListener) {
+    private fun onRegistrationFailed(serviceType: String, errorCode: Int, listener: NsdManager.RegistrationListener) {
         if (registrations[serviceType] !== listener) return
         registrations.remove(serviceType)
-        retry()
+        appLog.sendDebugLog(DebugLog(NSD_LOG_TAG, "NSD 광고 등록 실패($serviceType, $retryCount): errorCode=$errorCode"))
+        retry(serviceType)
     }
 
     // 광고 대상이 그대로면 다시 맞출 계기가 없다. 직접 다시 맞춘다.
     @Synchronized
-    private fun retry() {
-        if (retryCount >= MAX_RETRIES) return
+    private fun retry(serviceType: String) {
+        if (retryCount >= MAX_RETRIES) {
+            appLog.sendErrorLog(ErrorLog(NSD_LOG_TAG, "NSD 광고 등록을 $MAX_RETRIES 번 다시 시도했지만 실패: $serviceType"))
+            return
+        }
         retryCount++
         scope.launch {
             delay(RETRY_DELAY_MS)
@@ -97,6 +108,7 @@ internal class NsdAdvertiser(
 
     private companion object {
         const val MAX_RETRIES = 3
+        const val NSD_LOG_TAG = "NsdAdvertiser"
         const val RETRY_DELAY_MS = 2_000L
     }
 }
