@@ -1,8 +1,13 @@
 package com.kintmin.presentation.ui.secret_playlist
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -32,10 +37,13 @@ import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
+import com.kintmin.presentation.ui.player_detail.dialog.PlaybackOptionChip
 import com.kintmin.presentation.ui.setting.section.SettingItemView
 import com.kintmin.presentation.ui.setting.section.SettingSwitchView
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Duration.Companion.minutes
+
+private val SecretModeMinuteOptions = listOf(5, 10, 15, 30, 60)
 
 private val SecretModeMinuteRange = (1..120).toList()
 
@@ -119,16 +127,30 @@ fun SecretPlaylistScreen(
 
             if (!uiState.isEnabled) {
                 item(key = "minutes", span = { GridItemSpan(maxLineSpan) }) {
-                    NumberWheelPicker(
-                        values = SecretModeMinuteRange,
-                        selectedValue = uiState.minutes,
-                        onValueChange = { sendIntent(SecretPlaylistIntent.OnSelectMinutes(it)) },
-                        label = "분",
-                        formatter = { it.toString() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
-                    )
+                    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            SecretModeMinuteOptions.forEach { option ->
+                                PlaybackOptionChip(
+                                    modifier = Modifier.weight(1f),
+                                    label = "${option}분",
+                                    isSelected = uiState.minutes == option,
+                                    onClick = { sendIntent(SecretPlaylistIntent.OnSelectMinutes(option)) },
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        NumberWheelPicker(
+                            values = SecretModeMinuteRange,
+                            selectedValue = uiState.minutes,
+                            onValueChange = { sendIntent(SecretPlaylistIntent.OnSelectMinutes(it)) },
+                            label = "분",
+                            formatter = { it.toString() },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
                 return@LazyVerticalGrid
             }
