@@ -72,7 +72,6 @@ fun SearchField(
     )
 }
 
-/** 앞 아이콘·placeholder·뒤 버튼을 가진 둥근 한 줄 입력칸. */
 @Composable
 fun PillTextField(
     value: String,
@@ -188,6 +187,18 @@ private fun PillTextFieldPreview() {
                     onClick = {},
                 )
             },
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun PillTextFieldTrailingButtonPreview() {
+    JellyTubeTheme {
+        PillTextFieldTrailingButton(
+            imageVector = Icons.Rounded.Close,
+            contentDescription = "검색어 전체 삭제",
+            onClick = {},
         )
     }
 }

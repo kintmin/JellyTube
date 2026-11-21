@@ -21,7 +21,6 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 
 private const val FLOATING_FIELD_ANIMATION_MILLIS = 300
 
-/** 상단바 아래로 떠오르는 입력칸이 열리고 닫히는 움직임. */
 @Composable
 fun FloatingFieldVisibility(
     visible: Boolean,

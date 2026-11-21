@@ -168,3 +168,20 @@ private fun JellyTubeConfirmDialogRemovalPreview() {
         )
     }
 }
+
+@Preview
+@Composable
+private fun DialogColumnPreview() {
+    JellyTubeTheme {
+        DialogColumn(title = "새 플레이리스트") {
+            Text(text = "본문을 직접 그리는 다이얼로그", style = MaterialTheme.typography.bodyMedium)
+            DialogButtonRow(
+                dismissText = "취소",
+                onDismiss = {},
+                confirmText = "만들기",
+                onConfirm = {},
+                confirmEnabled = false,
+            )
+        }
+    }
+}

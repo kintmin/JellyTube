@@ -7,10 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 
-/**
- * 버튼 색은 역할로 고른다. 기본 Button 은 주 동작이고, 나머지는 여기서 고른다.
- * 테두리·글자 버튼의 기본 글자색 primary 는 surface 위에서 대비가 2.6:1 이라 쓰지 않는다.
- */
+/** 테두리·글자 버튼의 기본 글자색 primary 는 surface 위에서 대비가 2.6:1 이라 덮어 쓴다. */
 object JellyTubeButtonColors {
     /** 취소·계속 편집처럼 주 동작 옆의 보조 동작. OutlinedButton 과 쓴다. */
     @Composable

@@ -89,7 +89,6 @@ val contentDisabled = gray40
 
 val outlineSubtle = gray20
 
-/** 배경보다 한 단계 밝은 바닥 — 진행 막대·토글·파형의 빈 트랙. */
 val emptyTrack = gray10
 
 // ── 강조색 단계. 밝은 쪽부터.
@@ -120,5 +119,4 @@ val overlayScrimSoft = dark100.copy(alpha = 0.3f)
 val overlayScrim = dark100.copy(alpha = 0.5f)
 val overlayScrimStrong = dark100.copy(alpha = 0.72f)
 
-/** 그림에서 색을 뽑지 못했을 때의 재생 화면 배경. */
 val artworkBackdropFallback = listOf(Color(0xFF4B453B), Color(0xFF1D1C1A), Color(0xFF0D0D0D))

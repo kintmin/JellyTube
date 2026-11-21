@@ -49,7 +49,6 @@ fun PlaybackPollingEffect(
 ) {
     val scope = rememberCoroutineScope()
     val tick by rememberUpdatedState(onTick)
-    // repeatOnLifecycle 안에서 lifecycleScope.launch 로 빠져나가면 화면을 벗어나도 루프가 취소되지 않는다.
     fun start() = scope.launch {
         while (isActive) {
             tick()

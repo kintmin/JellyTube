@@ -178,3 +178,11 @@ private fun DetailTopAppBarTitlePreview() {
         DetailTopAppBarTitle(text = "설정")
     }
 }
+
+@Preview
+@Composable
+private fun BackNavigationIconButtonPreview() {
+    JellyTubeTheme {
+        BackNavigationIconButton(onClick = {})
+    }
+}
