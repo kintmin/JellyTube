@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import os
+import shared
 
 private enum MediaControllerEngineError: Error {
     case emptyFile
@@ -15,6 +16,12 @@ private enum ScheduleResult {
 }
 
 private let mcLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "MediaController")
+
+/// `os_log` 만으로는 `app_logs` 에 가지 않아 공유받은 로그에서 재생 실패가 보이지 않는다.
+private func playbackErrorLog(_ message: String) {
+    mcLog.error("\(message, privacy: .public)")
+    SwiftAppLogKt.swiftDebugLog(tag: "PlaybackEngine", message: message)
+}
 
 @MainActor
 final class MediaControllerEngine {
@@ -294,6 +301,7 @@ final class MediaControllerEngine {
     private func schedulePlayable(from index: Int, startingSeconds: TimeInterval) -> Bool {
         var candidate = index
         var seconds = startingSeconds
+        var unreadableCount = 0
         for _ in 0..<queue.count {
             if candidate >= queue.count {
                 guard isRepeatAllEnabled else { break }
@@ -302,10 +310,17 @@ final class MediaControllerEngine {
             switch scheduleItem(at: candidate, startingSeconds: seconds) {
             case .scheduled:
                 return true
-            case .unreadable, .pastEnd:
+            case .unreadable:
+                unreadableCount += 1
+                candidate += 1
+                seconds = 0
+            case .pastEnd:
                 candidate += 1
                 seconds = 0
             }
+        }
+        if unreadableCount > 0 {
+            playbackErrorLog("stopped: \(unreadableCount) unreadable from index=\(index) queue=\(queue.count)")
         }
         isPlayingIntent = false
         stopPlayer()
@@ -337,7 +352,7 @@ final class MediaControllerEngine {
             file = try AVAudioFile(forReading: item.fileURL)
             guard file.length > 0 else { throw MediaControllerEngineError.emptyFile }
         } catch {
-            mcLog.error("failed to open file: \(error.localizedDescription, privacy: .public)")
+            playbackErrorLog("failed to open file: \(item.fileURL.lastPathComponent) \(error.localizedDescription)")
             currentFile = nil
             currentIndex = index
             currentItemBaseOffset = 0
@@ -389,7 +404,7 @@ final class MediaControllerEngine {
                 try engine.start()
                 didStartEngine = true
             } catch {
-                mcLog.error("engine.start failed: \(error.localizedDescription, privacy: .public)")
+                playbackErrorLog("engine.start failed: \(error.localizedDescription)")
             }
         }
         return engine.isRunning
@@ -409,7 +424,7 @@ final class MediaControllerEngine {
             didConfigureAudioSession = true
             mcLog.info("audioSession activated category=\(session.category.rawValue, privacy: .public)")
         } catch {
-            mcLog.error("audioSession setup failed: \(error.localizedDescription, privacy: .public)")
+            playbackErrorLog("audioSession setup failed: \(error.localizedDescription)")
         }
         nowPlaying.configureCommandsIfNeeded()
     }

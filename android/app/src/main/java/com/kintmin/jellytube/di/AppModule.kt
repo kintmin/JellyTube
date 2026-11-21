@@ -53,7 +53,7 @@ val appModule: Module = module {
     single<LyricsTransliterator> { LyricsTransliteratorImpl(androidContext()) }
 
     single<PushNotificationManager> { PushNotificationManagerImpl(androidContext()) }
-    single<PlaybackController> { PlaybackControllerImpl(androidContext()) }
+    single<PlaybackController> { PlaybackControllerImpl(androidContext(), get()) }
     single<AudioPreviewPlayer> { AudioPreviewPlayerImpl(androidContext()) }
     single<StepMeasurementController> { StepMeasurementControllerImpl(androidContext()) }
     single<FileShareServerController> { FileShareServerControllerImpl(androidContext(), get(), get(), get(), get()) }
