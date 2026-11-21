@@ -93,7 +93,7 @@ class PlaylistViewModel constructor(
 
     private fun navigateToAddPlaylistScreen(data: PlaylistItemUiState) {
         viewModelScope.launch {
-            eventChannel.send(PlaylistEvent.NavigateToPlaylistAddScreen(data.id))
+            eventChannel.send(PlaylistEvent.NavigateToPlaylistAddScreen(data.id, data.name))
         }
     }
 

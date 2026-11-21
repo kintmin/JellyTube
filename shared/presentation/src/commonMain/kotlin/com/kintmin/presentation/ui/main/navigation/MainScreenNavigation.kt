@@ -32,7 +32,7 @@ fun NavGraphBuilder.mainScreen(
     isDebugTabVisible: Boolean,
     navigateToPlaylistDetail: (playlistId: Int, isBasePlaylist: Boolean) -> Unit,
     navigateToPlaylistEdit: (playlistId: Int) -> Unit,
-    navigateToPlaylistAdd: (playlistId: Int) -> Unit,
+    navigateToPlaylistAdd: (playlistId: Int, playlistName: String) -> Unit,
     navigateToSetting: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
     navigateToFileShareReceive: () -> Unit,

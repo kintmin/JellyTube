@@ -107,8 +107,8 @@ fun MainNavHost(
             navigateToPlaylistEdit = { playlistId ->
                 navController.navigateToPlaylistEditScreen(playlistId, null, navOptions)
             },
-            navigateToPlaylistAdd = { playlistId ->
-                navController.navigateToPlaylistAddScreen(playlistId, navOptions)
+            navigateToPlaylistAdd = { playlistId, playlistName ->
+                navController.navigateToPlaylistAddScreen(playlistId, navOptions, playlistName)
             },
             navigateToSetting = {
                 navController.navigateToSettingScreen(navOptions)
@@ -122,8 +122,8 @@ fun MainNavHost(
         )
         playlistDetail(
             navigateToBack = { navController.popBackStack() },
-            navigateToAddAudioMediaScreen = { playlistId ->
-                navController.navigateToPlaylistAddScreen(playlistId, navOptions)
+            navigateToAddAudioMediaScreen = { playlistId, playlistName ->
+                navController.navigateToPlaylistAddScreen(playlistId, navOptions, playlistName)
             },
             navigateToPlaylistEditScreen = { playlistId, focusAudioMediaId ->
                 navController.navigateToPlaylistEditScreen(playlistId, focusAudioMediaId, navOptions)

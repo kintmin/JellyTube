@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_track.usecase.AddAudioMediaListToPlaylistUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListToAddTrackFlowUseCase
+import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.presentation.extension.matchKorean
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemUiState
 import com.kintmin.presentation.ui.playlist_add.list.toPlaylistAddListItemUiState
@@ -17,6 +18,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -25,10 +28,12 @@ import kotlinx.coroutines.launch
 class PlaylistAddViewModel constructor(
     savedStateHandle: SavedStateHandle,
     fetchAudioMediaListFlowUseCase: FetchAudioMediaListToAddTrackFlowUseCase,
+    fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
     private val addAudioMediaListToPlaylistUseCase: AddAudioMediaListToPlaylistUseCase,
 ) : ViewModel() {
 
-    private val playlistId = savedStateHandle.toRoute<PlaylistAddScreenRoute>().playlistId
+    private val route = savedStateHandle.toRoute<PlaylistAddScreenRoute>()
+    private val playlistId = route.playlistId
 
     private val _eventChannel = Channel<PlaylistAddEvent>(Channel.BUFFERED)
     val eventFlow: Flow<PlaylistAddEvent> = _eventChannel.receiveAsFlow()
@@ -44,7 +49,8 @@ class PlaylistAddViewModel constructor(
         fetchAudioMediaListFlowUseCase(playlistId),
         _checkedItemIdList,
         _searchText,
-    ) { mediaList, checkedIds, searchText ->
+        fetchPlaylistFlowUseCase(playlistId).map { it.name }.onStart { emit(route.playlistNameSeed) },
+    ) { mediaList, checkedIds, searchText, playlistName ->
         PlaylistAddUiState(
             audioList = mediaList.filter { it.audioMedia.name.matchKorean(searchText) }.map { data ->
                 data.toPlaylistAddListItemUiState(
@@ -52,8 +58,13 @@ class PlaylistAddViewModel constructor(
                 )
             },
             checkedItemCount = checkedIds.size,
+            playlistName = playlistName,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlaylistAddUiState())
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        PlaylistAddUiState(playlistName = route.playlistNameSeed),
+    )
 
     fun sendIntent(intent: PlaylistAddIntent) {
         when (intent) {

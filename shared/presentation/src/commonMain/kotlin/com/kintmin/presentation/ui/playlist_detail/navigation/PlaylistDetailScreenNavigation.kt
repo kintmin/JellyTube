@@ -24,7 +24,7 @@ fun NavController.navigateToPlaylistDetailScreen(
 
 fun NavGraphBuilder.playlistDetail(
     navigateToBack: () -> Unit,
-    navigateToAddAudioMediaScreen: (playlistId: Int) -> Unit,
+    navigateToAddAudioMediaScreen: (playlistId: Int, playlistName: String) -> Unit,
     navigateToPlaylistEditScreen: (playlistId: Int, focusAudioMediaId: Int?) -> Unit,
     navigateToAudioDetailScreen: (audioMediaId: Int) -> Unit,
     navigateToAudioEditScreen: (audioMediaId: Int) -> Unit,

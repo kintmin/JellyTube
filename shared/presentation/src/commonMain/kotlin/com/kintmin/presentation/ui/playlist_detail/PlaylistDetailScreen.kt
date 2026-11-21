@@ -81,7 +81,7 @@ import kotlin.math.min
 fun PlaylistDetailScreen(
     playlistId: Int,
     navigateToBack: () -> Unit,
-    navigateToAddAudioMediaScreen: (playlistId: Int) -> Unit,
+    navigateToAddAudioMediaScreen: (playlistId: Int, playlistName: String) -> Unit,
     navigateToPlaylistEditScreen: (playlistId: Int, focusAudioMediaId: Int?) -> Unit,
     navigateToAudioDetailScreen: (audioMediaId: Int) -> Unit,
     navigateToAudioEditScreen: (audioMediaId: Int) -> Unit,
@@ -99,7 +99,7 @@ fun PlaylistDetailScreen(
     LaunchedEffect(Unit) {
         headerViewModel.eventFlow.collect { event ->
             when (event) {
-                PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen -> navigateToAddAudioMediaScreen(playlistId)
+                PlaylistDetailHeaderEvent.NavigateToAddAudioMediaScreen -> navigateToAddAudioMediaScreen(playlistId, headerData.name)
                 PlaylistDetailHeaderEvent.NavigateToEditPlaylistScreen -> navigateToPlaylistEditScreen(playlistId, null)
             }
         }
