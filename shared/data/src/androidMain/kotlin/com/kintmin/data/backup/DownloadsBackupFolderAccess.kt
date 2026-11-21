@@ -116,11 +116,19 @@ internal class DownloadsBackupFolderAccess(private val context: Context) : Backu
     }
 }
 
-/** 같은 이름이 이미 있으면 MediaStore 가 확장자 앞에 ` (번호)` 를 붙인다. 그렇게 밀린 이름도 백업 사본이다. */
+/**
+ * 같은 이름이 이미 있으면 MediaStore 가 ` (번호)` 를 붙인다. MIME 이 octet-stream 이면 확장자를 몰라 이름 맨 뒤에
+ * 붙는다(`jellytube-backup.json.gz (1)`). 확장자 앞에 붙는 제공자도 있어 둘 다 백업 사본으로 본다.
+ */
 internal fun isBackupCopyName(displayName: String, fileName: String): Boolean {
+    if (displayName == fileName) return true
     val stem = fileName.substringBefore('.')
     val extension = fileName.substring(stem.length)
-    if (displayName == fileName) return true
-    if (!displayName.startsWith("$stem (") || !displayName.endsWith(")$extension")) return false
-    return displayName.removePrefix("$stem (").removeSuffix(")$extension").let { it.isNotEmpty() && it.all(Char::isDigit) }
+    return numberedSuffix(displayName, "$fileName (", ")") || numberedSuffix(displayName, "$stem (", ")$extension")
+}
+
+private fun numberedSuffix(displayName: String, prefix: String, suffix: String): Boolean {
+    if (!displayName.startsWith(prefix) || !displayName.endsWith(suffix) || displayName.length < prefix.length + suffix.length) return false
+    val number = displayName.substring(prefix.length, displayName.length - suffix.length)
+    return number.isNotEmpty() && number.all(Char::isDigit)
 }
