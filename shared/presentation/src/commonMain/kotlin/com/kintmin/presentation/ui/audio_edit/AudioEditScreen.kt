@@ -7,13 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -52,7 +47,6 @@ import com.kintmin.presentation.theme.topAppBarCompactHeight
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
-import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditCompactControlsView
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditControlsView
 import com.kintmin.presentation.ui.audio_edit.dialog.AudioEditExitDialog
@@ -61,6 +55,7 @@ import com.kintmin.presentation.ui.audio_edit.waveform.TimelineGrab
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineRulerView
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineWaveformView
 import com.kintmin.presentation.ui.audio_edit.waveform.rememberTimelineViewportState
+import com.kintmin.presentation.ui.common.BackNavigationIconButton
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import kotlin.time.Duration.Companion.milliseconds
@@ -181,13 +176,7 @@ fun AudioEditScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackPressed) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBackIosNew,
-                            modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "뒤로 가기",
-                        )
-                    }
+                    BackNavigationIconButton(onClick = onBackPressed)
                 },
             )
         },

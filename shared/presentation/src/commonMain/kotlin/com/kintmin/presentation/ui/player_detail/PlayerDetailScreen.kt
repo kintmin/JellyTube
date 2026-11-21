@@ -74,10 +74,10 @@ import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.artworkBackdropFallback
-import com.kintmin.presentation.theme.overlayScrimSoft
 import com.kintmin.presentation.theme.overlayContent
 import com.kintmin.presentation.theme.overlayContentMuted
 import com.kintmin.presentation.theme.overlayContentSecondary
+import com.kintmin.presentation.theme.overlayScrimSoft
 import com.kintmin.presentation.ui.common.PlaybackToggleButton
 import com.kintmin.presentation.ui.player_detail.control.PLAYBACK_VALUE_WIDTH
 import com.kintmin.presentation.ui.player_detail.control.PlaybackSliderView
@@ -98,7 +98,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okio.Path.Companion.toPath
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -198,7 +197,7 @@ fun PlayerDetailScreen(
                     IconButton(onClick = navigateToBack) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
-                            contentDescription = "뒤로 가기",
+                            contentDescription = "뒤로가기",
                             tint = overlayContentSecondary,
                         )
                     }

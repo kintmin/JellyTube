@@ -5,6 +5,8 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -13,17 +15,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -40,42 +38,40 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.koin.compose.viewmodel.koinViewModel
-import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.ui.common.CollapsibleSearchField
-import com.kintmin.presentation.ui.common.SearchToggleButton
-import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
-import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
-import com.kintmin.presentation.theme.topAppBarHeight
-import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.animation.FocusSpreadOverlay
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.remember_state.rememberReorderState
+import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
+import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.ui.common.BackNavigationIconButton
+import com.kintmin.presentation.ui.common.CollapsibleSearchField
 import com.kintmin.presentation.ui.common.ReorderableItem
+import com.kintmin.presentation.ui.common.SearchToggleButton
 import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
 import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
 import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
 import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderEvent
 import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderIntent
-import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderView
-import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemUiState
 import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderUiState
+import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderView
 import com.kintmin.presentation.ui.playlist_detail.header.PlaylistDetailHeaderViewModel
+import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListEmptyView
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListEvent
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListIntent
-import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListEmptyView
+import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemUiState
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListItemView
 import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewModel
+import kotlin.math.min
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlin.math.min
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun PlaylistDetailScreen(
@@ -240,15 +236,7 @@ fun PlaylistDetailScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(
-                        onClick = { navigateToBack() },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBackIosNew,
-                            modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "뒤로",
-                        )
-                    }
+                    BackNavigationIconButton(onClick = { navigateToBack() })
                 },
                 actions = {
                     SearchToggleButton(
