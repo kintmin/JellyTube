@@ -5,6 +5,8 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlo
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
+import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.port.PlaybackController
 import io.mockk.coVerify
 import io.mockk.every
@@ -12,6 +14,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -28,6 +31,11 @@ class AppViewModelTest {
 
     private val manager = mockk<PlaybackController>(relaxed = true)
     private val importSharedAudioMediaUseCase = mockk<ImportSharedAudioMediaUseCase>(relaxed = true)
+    private val isSecretModeEnabled = MutableStateFlow(false)
+    private val fetchSecretModeEnabledFlowUseCase = mockk<FetchSecretModeEnabledFlowUseCase> {
+        every { this@mockk() } returns isSecretModeEnabled
+    }
+    private val endSecretModeUseCase = mockk<EndSecretModeUseCase>(relaxed = true)
 
     @Before
     fun setUp() {
@@ -49,6 +57,8 @@ class AppViewModelTest {
             fetchIsPlaybackShufflingFlowUseCase = mockk { every { this@mockk() } returns flowOf(true) },
             fetchPlaybackSpeedFlowUseCase = mockk { every { this@mockk() } returns flowOf(1.5f) },
             fetchPlaybackPitchSemitoneFlowUseCase = mockk { every { this@mockk() } returns flowOf(2) },
+            fetchSecretModeEnabledFlowUseCase = fetchSecretModeEnabledFlowUseCase,
+            endSecretModeUseCase = endSecretModeUseCase,
         )
 
         verify { manager.setRepeatMode(true) }
@@ -77,6 +87,22 @@ class AppViewModelTest {
         assertEquals(NavigationEvent.NavigateToMainPlaylistsTab, viewModel.eventFlow.first())
     }
 
+    @Test
+    fun `앱이 뜰 때 비밀모드가 꺼져 있으면 남은 비밀 다운로드 대상을 정리한다`() {
+        createViewModel()
+
+        coVerify { endSecretModeUseCase() }
+    }
+
+    @Test
+    fun `비밀모드가 켜진 채 화면만 다시 뜨면 끄지 않는다`() {
+        isSecretModeEnabled.value = true
+
+        createViewModel()
+
+        coVerify(exactly = 0) { endSecretModeUseCase() }
+    }
+
     private fun createViewModel() = AppViewModel(
         mediaControllerManager = manager,
         importSharedAudioMediaUseCase = importSharedAudioMediaUseCase,
@@ -85,5 +111,7 @@ class AppViewModelTest {
         fetchIsPlaybackShufflingFlowUseCase = mockk { every { this@mockk() } returns flowOf(false) },
         fetchPlaybackSpeedFlowUseCase = mockk { every { this@mockk() } returns flowOf(1f) },
         fetchPlaybackPitchSemitoneFlowUseCase = mockk { every { this@mockk() } returns flowOf(0) },
+        fetchSecretModeEnabledFlowUseCase = fetchSecretModeEnabledFlowUseCase,
+        endSecretModeUseCase = endSecretModeUseCase,
     )
 }

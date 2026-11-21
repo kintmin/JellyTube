@@ -134,7 +134,8 @@ class PlaybackControllerImpl(
         startMediaId: Int?,
         mediaControlDataList: List<MediaControlData>,
     ): Result<Unit> = runCatching {
-        if (currentPlaylistIdState != playlistId) {
+        // 비밀모드가 끝나며 큐를 다 지웠으면 같은 플레이리스트여도 다시 채워야 한다.
+        if (currentPlaylistIdState != playlistId || getMediaController()?.mediaItemCount == 0) {
             currentPlaylistIdState = playlistId
             resetMediaItemList(mediaControlDataList).getOrThrow()
         }

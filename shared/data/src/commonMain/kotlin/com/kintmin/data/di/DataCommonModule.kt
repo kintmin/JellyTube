@@ -45,6 +45,7 @@ import com.kintmin.domain.secret_mode.repository.SecretModeRepository
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeMinutesFlowUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretTrackListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.StartSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.UpdateSecretModeMinutesUseCase
 import com.kintmin.domain.playlist.usecase.*
@@ -182,6 +183,7 @@ val dataCommonModule: Module = module {
     factoryOf(::StartSecretModeUseCase)
     factoryOf(::EndSecretModeUseCase)
     factoryOf(::FetchSecretModeMinutesFlowUseCase)
+    factoryOf(::FetchSecretTrackListFlowUseCase)
     factoryOf(::UpdateSecretModeMinutesUseCase)
     factoryOf(::FetchPlaylistsByTypeUseCase)
     factoryOf(::AddNewPlaylistUseCase)

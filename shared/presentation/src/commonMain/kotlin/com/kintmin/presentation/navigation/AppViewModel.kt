@@ -8,6 +8,8 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlo
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
 import com.kintmin.domain.playlist.usecase.EnsureSystemPlaylistsUseCase
+import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.deeplink.DeepLinkParser
 import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.channels.Channel
@@ -27,6 +29,8 @@ class AppViewModel(
     private val fetchIsPlaybackShufflingFlowUseCase: FetchIsPlaybackShufflingFlowUseCase,
     private val fetchPlaybackSpeedFlowUseCase: FetchPlaybackSpeedFlowUseCase,
     private val fetchPlaybackPitchSemitoneFlowUseCase: FetchPlaybackPitchSemitoneFlowUseCase,
+    private val fetchSecretModeEnabledFlowUseCase: FetchSecretModeEnabledFlowUseCase,
+    private val endSecretModeUseCase: EndSecretModeUseCase,
 ) : ViewModel() {
 
     private val eventChannel = Channel<NavigationEvent>(capacity = 8)
@@ -35,6 +39,9 @@ class AppViewModel(
     init {
         viewModelScope.launch {
             ensureSystemPlaylistsUseCase()
+            // 비밀모드 중에 앱이 죽으면 다운로드 대상이 비밀 플레이리스트로 남는다. 켜져 있으면
+            // 재생이 프로세스를 살려 둔 채 화면만 다시 뜬 것이라 끄지 않는다.
+            if (!fetchSecretModeEnabledFlowUseCase().value) endSecretModeUseCase()
         }
         applyPlaybackSettings()
     }
