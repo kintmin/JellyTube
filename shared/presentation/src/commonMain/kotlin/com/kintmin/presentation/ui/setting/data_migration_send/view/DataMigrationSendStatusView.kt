@@ -16,13 +16,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.data_migration_send.DataMigrationSendStep
 import com.kintmin.presentation.ui.setting.data_migration_send.SettingDataMigrationSendIntent
+import com.kintmin.presentation.ui.setting.section.SettingStatusTextView
 
 @Composable
 fun DataMigrationSendStatusView(
@@ -48,7 +48,7 @@ fun DataMigrationSendStatusView(
                 // 화면이 따로 그린다.
                 is DataMigrationSendStep.Blocked -> Unit
                 is DataMigrationSendStep.WaitingForPair -> {
-                    StatusText("연결 코드")
+                    SettingStatusTextView("연결 코드")
                     Text(
                         text = step.code,
                         fontSize = 40.sp,
@@ -56,28 +56,28 @@ fun DataMigrationSendStatusView(
                         letterSpacing = 8.sp,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
-                    StatusText("받는 기기에 이 코드를 입력해 주세요.")
+                    SettingStatusTextView("받는 기기에 이 코드를 입력해 주세요.")
                 }
                 is DataMigrationSendStep.Sending -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                    StatusText("연결된 기기: ${step.peerName}")
-                    StatusText("받는 기기가 데이터를 받고 있습니다. 처음에는 보내기 전에 데이터를 점검합니다.")
+                    SettingStatusTextView("연결된 기기: ${step.peerName}")
+                    SettingStatusTextView("받는 기기가 데이터를 받고 있습니다. 처음에는 보내기 전에 데이터를 점검합니다.")
                 }
                 is DataMigrationSendStep.Finished -> {
-                    StatusText("받는 기기가 받기를 마쳤습니다.")
-                    StatusText("새 음원 ${step.newAudioMediaCount}곡을 옮겼습니다.")
+                    SettingStatusTextView("받는 기기가 받기를 마쳤습니다.")
+                    SettingStatusTextView("새 음원 ${step.newAudioMediaCount}곡을 옮겼습니다.")
                     if (step.failedCount > 0) {
-                        StatusText(
+                        SettingStatusTextView(
                             "옮기지 못한 곡이 ${step.failedCount}곡 있습니다. 받는 기기에서 다시 시도하려면 이 화면을 열어 두세요.",
                         )
                     }
                 }
                 DataMigrationSendStep.Locked -> {
-                    StatusText("코드를 여러 번 잘못 입력해 연결을 막았습니다.")
+                    SettingStatusTextView("코드를 여러 번 잘못 입력해 연결을 막았습니다.")
                     RenewCodeButton(sendIntent)
                 }
                 DataMigrationSendStep.Disconnected -> {
-                    StatusText("보내기 연결이 끊겼습니다. 새 코드를 받아 받는 기기에서 다시 연결해 주세요.")
+                    SettingStatusTextView("보내기 연결이 끊겼습니다. 새 코드를 받아 받는 기기에서 다시 연결해 주세요.")
                     RenewCodeButton(sendIntent)
                 }
             }
@@ -90,16 +90,6 @@ private fun RenewCodeButton(sendIntent: (SettingDataMigrationSendIntent) -> Unit
     Button(onClick = { sendIntent(SettingDataMigrationSendIntent.OnClickRenewCode) }) {
         Text("새 코드 받기")
     }
-}
-
-@Composable
-private fun StatusText(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onPrimaryContainer,
-        textAlign = TextAlign.Center,
-    )
 }
 
 @Preview

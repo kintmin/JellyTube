@@ -37,18 +37,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.platform.AppLogShareResult
 import com.kintmin.presentation.platform.rememberAppLogSharer
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.contentDisabled
 import com.kintmin.presentation.theme.contentMuted
-import com.kintmin.presentation.theme.contentSubtle
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.common.DetailTopAppBar
+import com.kintmin.presentation.ui.common.EmptyStateView
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -241,34 +239,12 @@ private fun AppLogLineView(line: AppLogLineUiState) {
 
 @Composable
 private fun AppLogEmptyView(hasLogDate: Boolean) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            modifier = Modifier.size(48.dp),
-            imageVector = Icons.Rounded.Description,
-            contentDescription = null,
-            tint = contentDisabled,
-        )
-        Text(
-            modifier = Modifier.padding(top = 16.dp),
-            text = if (hasLogDate) "이 날의 로그가 없습니다" else "남은 로그가 없습니다",
-            style = MaterialTheme.typography.bodyLarge,
-            color = contentSubtle,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            modifier = Modifier.padding(top = 6.dp),
-            text = "앱을 쓰는 동안 남은 기록이 날짜별로 여기에 모입니다",
-            style = MaterialTheme.typography.bodySmall,
-            color = contentMuted,
-            textAlign = TextAlign.Center,
-        )
-    }
+    EmptyStateView(
+        modifier = Modifier.fillMaxSize(),
+        icon = Icons.Rounded.Description,
+        title = if (hasLogDate) "이 날의 로그가 없습니다" else "남은 로그가 없습니다",
+        description = "앱을 쓰는 동안 남은 기록이 날짜별로 여기에 모입니다",
+    )
 }
 
 @Preview

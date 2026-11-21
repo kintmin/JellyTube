@@ -18,7 +18,6 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.destructiveContent
+import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
 import com.kintmin.presentation.ui.common.UnderlineTextField
 import com.kintmin.presentation.ui.lyrics_edit.LyricsEditUiState.EditRow
 
@@ -204,10 +204,9 @@ fun LyricsEditItemView(
             IconButton(onClick = { menuExpanded = true }) {
                 Icon(Icons.Rounded.MoreVert, contentDescription = "줄 메뉴", tint = contentMuted)
             }
-            DropdownMenu(
+            JellyTubeDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false },
-                shape = MaterialTheme.shapes.medium,
             ) {
                 DropdownMenuItem(
                     text = { Text("아래에 줄 추가") },

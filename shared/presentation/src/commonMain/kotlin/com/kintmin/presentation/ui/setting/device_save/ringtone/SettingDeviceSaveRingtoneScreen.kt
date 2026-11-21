@@ -7,12 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.NotificationsActive
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -26,7 +23,8 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DetailTopAppBar
-import com.kintmin.presentation.ui.setting.device_save.ActionGuideCard
+import com.kintmin.presentation.ui.setting.section.SettingActionGuideCardView
+import com.kintmin.presentation.ui.setting.section.SettingNoticeCardView
 
 private const val GARAGEBAND_RINGTONE_GUIDE_URL = "https://support.apple.com/en-us/120692"
 
@@ -71,7 +69,7 @@ private fun RingtoneGuideView(onClickGoToSelect: () -> Unit) {
         style = MaterialTheme.typography.titleMedium,
     )
 
-    ActionGuideCard(
+    SettingActionGuideCardView(
         icon = Icons.Rounded.NotificationsActive,
         title = "벨소리로 등록할 음원 고르러 가기",
         descriptionList = listOf(
@@ -82,11 +80,11 @@ private fun RingtoneGuideView(onClickGoToSelect: () -> Unit) {
         onClick = onClickGoToSelect,
     )
 
-    InfoCard(
+    SettingNoticeCardView(
         text = "등록하면 기기의 기본 벨소리가 바뀝니다. 알람에만 쓰려면 " +
             "등록 직후 나오는 화면에서 원래 벨소리를 다시 선택해주세요.",
     )
-    InfoCard(
+    SettingNoticeCardView(
         text = "알람음으로 쓰려면 시계 앱 → 알람 → 사운드의 '벨소리' 목록에서 " +
             "등록한 음원을 선택해주세요. 시계 앱은 직접 열어야 합니다.",
     )
@@ -96,7 +94,7 @@ private fun RingtoneGuideView(onClickGoToSelect: () -> Unit) {
 private fun RingtoneNeedsNewerOsView() {
     val uriHandler = LocalUriHandler.current
 
-    InfoCard(
+    SettingNoticeCardView(
         text = "이 기능은 iOS 26 이상에서 쓸 수 있습니다. " +
             "설정 > 일반 > 소프트웨어 업데이트에서 업데이트해주세요.",
     )
@@ -105,23 +103,6 @@ private fun RingtoneNeedsNewerOsView() {
         onClick = { uriHandler.openUri(GARAGEBAND_RINGTONE_GUIDE_URL) },
     ) {
         Text("GarageBand 로 벨소리 만드는 방법 (Apple 지원)")
-    }
-}
-
-@Composable
-private fun InfoCard(text: String) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-        ),
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        Text(
-            modifier = Modifier.padding(16.dp),
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-        )
     }
 }
 

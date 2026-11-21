@@ -1,7 +1,7 @@
 package com.kintmin.presentation.ui.player_detail.dialog
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -46,18 +47,7 @@ fun SleepTimerAnnouncementDialog(
     onSelect: (Int?) -> Unit,
 ) {
     JellyTubeDialog(showDialog = showDialog, onDismiss = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = "마무리 음원",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-            )
+        PlaybackDialogColumn(title = "마무리 음원") {
             Text(
                 text = "30초 이내이고 길이를 아는 음원만 고를 수 있습니다",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -112,12 +102,12 @@ private fun SleepTimerAnnouncementRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            // clickable 보다 먼저 잘라야 눌림 표시도 둥글게 번진다.
+            // selectable 보다 먼저 잘라야 눌림 표시도 둥글게 번진다.
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (isSelected) selectedFill else Color.Transparent,
             )
-            .clickable(onClick = onClick)
+            .selectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

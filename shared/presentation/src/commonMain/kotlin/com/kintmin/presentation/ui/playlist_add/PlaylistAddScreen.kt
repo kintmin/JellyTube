@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -25,7 +28,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,6 +41,7 @@ import com.kintmin.presentation.ui.common.BackNavigationIconButton
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.CollapsibleSearchField
+import com.kintmin.presentation.ui.common.EmptyStateView
 import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
 import com.kintmin.presentation.ui.common.SearchToggleButton
 import com.kintmin.presentation.ui.common.dragToSelect
@@ -155,19 +158,13 @@ fun PlaylistAddScreen(
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 if (dataList?.isEmpty() == true) {
-                    Text(
+                    EmptyStateView(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 48.dp)
-                            .padding(top = searchFieldInset),
-                        text = if (searchText.isEmpty()) {
-                            "추가할 수 있는 곡이 없습니다.\n이미 모든 곡이 이 플레이리스트에 있습니다."
-                        } else {
-                            "검색어와 일치하는 곡이 없습니다."
-                        },
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            .padding(top = searchFieldInset + 48.dp),
+                        icon = if (searchText.isEmpty()) Icons.Rounded.LibraryMusic else Icons.Rounded.SearchOff,
+                        title = if (searchText.isEmpty()) "추가할 수 있는 곡이 없습니다" else "검색어와 일치하는 곡이 없습니다",
+                        description = if (searchText.isEmpty()) "이미 모든 곡이 이 플레이리스트에 있습니다" else null,
                     )
                 }
                 val items = dataList.orEmpty()

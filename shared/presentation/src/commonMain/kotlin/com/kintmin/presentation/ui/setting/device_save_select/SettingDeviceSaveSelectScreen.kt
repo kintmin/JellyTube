@@ -12,11 +12,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -32,15 +29,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_media.model.AudioExportTarget
 import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.DeviceSaveFlow
@@ -53,6 +44,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.DetailTopAppBar
+import com.kintmin.presentation.ui.common.SearchField
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneDefaultChangeDialog
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneTooLongDialog
 import com.kintmin.presentation.ui.setting.device_save_select.list.SettingDeviceSaveSelectListItemView
@@ -188,39 +180,17 @@ fun SettingDeviceSaveSelectScreen(
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            Row(
+            SearchField(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .clip(RoundedCornerShape(4))
-                    .padding(horizontal = 16.dp),
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .padding(start = 8.dp, end = 4.dp),
-                    imageVector = Icons.Rounded.Search,
-                    contentDescription = "Search",
-                )
-                BasicTextField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.CenterVertically)
-                        .padding(vertical = 16.dp),
-                    maxLines = 1,
-                    textStyle = TextStyle(
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Start,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-                    value = searchText,
-                    onValueChange = { newText ->
-                        searchText = newText
-                        sendIntent(SettingDeviceSaveSelectIntent.OnChangeSearchText(newText))
-                    },
-                )
-            }
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                value = searchText,
+                placeholder = "음원 제목으로 검색",
+                onValueChange = { newText ->
+                    searchText = newText
+                    sendIntent(SettingDeviceSaveSelectIntent.OnChangeSearchText(newText))
+                },
+            )
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
             ) {

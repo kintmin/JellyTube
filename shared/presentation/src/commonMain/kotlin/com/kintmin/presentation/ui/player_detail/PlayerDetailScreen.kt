@@ -56,7 +56,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,10 +63,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.CachePolicy
-import coil3.request.ImageRequest
 import com.kintmin.presentation.animation.PLAYBACK_POLLING_INTERVAL_MILLIS
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.extractDominantColor
@@ -78,6 +73,7 @@ import com.kintmin.presentation.theme.overlayContent
 import com.kintmin.presentation.theme.overlayContentMuted
 import com.kintmin.presentation.theme.overlayContentSecondary
 import com.kintmin.presentation.theme.overlayScrimSoft
+import com.kintmin.presentation.ui.common.AudioArtwork
 import com.kintmin.presentation.ui.common.PlaybackToggleButton
 import com.kintmin.presentation.ui.player_detail.control.PLAYBACK_VALUE_WIDTH
 import com.kintmin.presentation.ui.player_detail.control.PlaybackSliderView
@@ -97,7 +93,6 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import okio.Path.Companion.toPath
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -283,28 +278,12 @@ fun PlayerDetailScreen(
                             }
                         }
                     } else {
-                        Box(modifier = artworkModifier) {
-                            if (data.imageFileFullPath == null) {
-                                Icon(
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .align(Alignment.Center),
-                                    imageVector = Icons.Rounded.LibraryMusic,
-                                    contentDescription = null,
-                                    tint = overlayContentMuted,
-                                )
-                            } else {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                                        .data(data.imageFileFullPath.toPath())
-                                        .memoryCachePolicy(CachePolicy.ENABLED)
-                                        .diskCachePolicy(CachePolicy.DISABLED)
-                                        .build(),
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize(),
-                                )
-                            }
+                        AudioArtwork(
+                            imageFileFullPath = data.imageFileFullPath,
+                            modifier = artworkModifier,
+                            placeholderIconSize = 100.dp,
+                            placeholderTint = overlayContentMuted,
+                        ) {
                             // 지금 가사는 그림 위에 얹는다. 세로를 따로 쓰지 않고, 보여 줄 줄이
                             // 없는 곡에서는 막까지 걷혀 그림이 깨끗하다. 뜨고 지는 것은
                             // 오버레이가 스스로 다룬다.

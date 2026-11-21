@@ -14,13 +14,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,23 +35,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
 import com.kintmin.presentation.animation.NowPlayingBars
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.theme.overlayScrim
+import com.kintmin.presentation.ui.common.AudioArtwork
+import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
 import com.kintmin.presentation.ui.playlist_detail.dialog.RemoveAudioMediaFromPlaylistDialog
-import okio.Path.Companion.toPath
 
 @Composable
 fun PlaylistDetailListItemView(
@@ -116,33 +110,16 @@ fun PlaylistDetailListItemView(
                 },
         ) {
             Row {
-                Box(
+                AudioArtwork(
+                    imageFileFullPath = data.imageFileFullPath,
                     modifier = Modifier
                         .fillMaxHeight()
                         .aspectRatio(1f)
                         .padding(8.dp)
                         .clip(RoundedCornerShape(16))
                         .background(MaterialTheme.colorScheme.surface),
-                    contentAlignment = Alignment.Center,
+                    placeholderIconSize = 16.dp,
                 ) {
-                    if (data.imageFileFullPath == null) {
-                        Icon(
-                            imageVector = Icons.Rounded.LibraryMusic,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    } else {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalPlatformContext.current)
-                                .data(data.imageFileFullPath.toPath())
-                                .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
-                                .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
-                                .build(),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.matchParentSize(),
-                        )
-                    }
 
                     if (isNowPlaying) {
                         // 임의의 앨범아트 위에서도 기둥이 읽히게 깔고 그린다.
@@ -195,11 +172,9 @@ fun PlaylistDetailListItemView(
                         )
                     }
 
-                    DropdownMenu(
+                    JellyTubeDropdownMenu(
                         expanded = isMenuExpanded,
                         onDismissRequest = { isMenuExpanded = false },
-                        // M3 기본 메뉴 모서리는 extraSmall(4dp) 이라 각져 보인다.
-                        shape = MaterialTheme.shapes.medium,
                     ) {
                         DropdownMenuItem(
                             text = { Text("세부 정보") },

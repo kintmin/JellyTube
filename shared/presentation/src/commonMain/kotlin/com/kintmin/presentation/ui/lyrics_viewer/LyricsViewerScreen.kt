@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,6 +43,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.common.DetailTopAppBar
+import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
 import com.kintmin.presentation.ui.lyrics_viewer.dialog.LyricsDeleteDialog
 import com.kintmin.presentation.ui.lyrics_viewer.list_item.LyricsViewerLineView
 import com.kintmin.presentation.ui.player_bar.PlayerBar
@@ -141,10 +141,9 @@ fun LyricsViewerScreen(
                             contentDescription = "더보기",
                         )
                     }
-                    DropdownMenu(
+                    JellyTubeDropdownMenu(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
-                        shape = MaterialTheme.shapes.medium,
                     ) {
                         if (data.showTranslateMenu) {
                             DropdownMenuItem(

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
@@ -21,31 +20,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleStartEffect
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.CachePolicy
-import coil3.request.ImageRequest
 import com.kintmin.presentation.animation.PLAYBACK_POLLING_INTERVAL_MILLIS
 import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.emptyTrack
 import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.emptyTrack
+import com.kintmin.presentation.ui.common.AudioArtwork
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import okio.Path.Companion.toPath
 
 private val BAR_HEIGHT = 64.dp
 private val ARTWORK_SIZE = 48.dp
@@ -99,30 +92,11 @@ fun PlayerBar(
                 .clip(MaterialTheme.shapes.small)
                 .background(MaterialTheme.colorScheme.surface)
 
-            if (data.imageFileFullPath == null) {
-                Box(
-                    modifier = artworkModifier,
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        modifier = Modifier.size(22.dp),
-                        tint = contentMuted,
-                    )
-                }
-            } else {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                        .data(data.imageFileFullPath.toPath())
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .diskCachePolicy(CachePolicy.DISABLED)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = artworkModifier,
-                )
-            }
+            AudioArtwork(
+                imageFileFullPath = data.imageFileFullPath,
+                modifier = artworkModifier,
+                placeholderIconSize = 22.dp,
+            )
             Column(
                 modifier = Modifier
                     .weight(1f)

@@ -3,7 +3,6 @@ package com.kintmin.presentation.ui.player_detail.dialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,18 +49,7 @@ fun SleepTimerDialog(
     onCancelTimer: () -> Unit,
 ) {
     JellyTubeDialog(showDialog = showDialog, onDismiss = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = "잠들기 타이머",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-            )
+        PlaybackDialogColumn(title = "잠들기 타이머") {
             // 켜짐을 색으로 가르지 않는다 — 이 테마의 primary 는 surface 와 대비가 2.6:1 뿐이다.
             Text(
                 text = remaining?.let { "${it.to_hh_colon_mm_colon_ss()} 뒤에 멈춥니다" }

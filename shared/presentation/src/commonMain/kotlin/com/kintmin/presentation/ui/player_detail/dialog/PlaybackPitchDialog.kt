@@ -1,12 +1,10 @@
 package com.kintmin.presentation.ui.player_detail.dialog
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
@@ -33,18 +31,7 @@ fun PlaybackPitchDialog(
     onSelectSemitone: (Int) -> Unit,
 ) {
     JellyTubeDialog(showDialog = showDialog, onDismiss = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = "피치",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-            )
+        PlaybackDialogColumn(title = "피치") {
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = selectedSemitone.toPitchSemitoneText(),

@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.lyrics_search
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +27,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.DetailTopAppBar
+import com.kintmin.presentation.ui.common.EmptyStateView
 import com.kintmin.presentation.ui.common.SearchField
 import com.kintmin.presentation.ui.lyrics_search.list_item.LyricsSearchItemView
 import org.koin.compose.viewmodel.koinViewModel
@@ -132,18 +134,13 @@ fun LyricsSearchScreen(
 
                 data.isEmptyResult -> {
                     item(key = "empty") {
-                        Box(
+                        EmptyStateView(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 48.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = "검색 결과가 없습니다.",
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                            icon = Icons.Rounded.SearchOff,
+                            title = "검색 결과가 없습니다",
+                        )
                     }
                 }
 

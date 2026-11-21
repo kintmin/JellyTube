@@ -18,12 +18,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.Fullscreen
-import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -43,17 +41,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
@@ -67,12 +60,14 @@ import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionProgr
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionRowView
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionUnlinkButton
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaDetailInfoView
+import com.kintmin.presentation.ui.common.AudioArtwork
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
+import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
+import com.kintmin.presentation.ui.common.SectionHeader
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
-import okio.Path.Companion.toPath
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -187,11 +182,9 @@ fun AudioMediaDetailScreen(
                                     contentDescription = "더보기",
                                 )
                             }
-                            DropdownMenu(
+                            JellyTubeDropdownMenu(
                                 expanded = isMenuExpanded,
                                 onDismissRequest = { isMenuExpanded = false },
-                                // M3 기본 메뉴 모서리는 extraSmall(4dp) 이라 각져 보인다.
-                                shape = MaterialTheme.shapes.medium,
                             ) {
                                 DropdownMenuItem(
                                     text = { Text("음원 파일 삭제") },
@@ -218,37 +211,15 @@ fun AudioMediaDetailScreen(
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
-            if (data.imageFileFullPath == null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                        .height(220.dp)
-                        .background(MaterialTheme.colorScheme.surface),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        modifier = Modifier.size(36.dp),
-                    )
-                }
-            } else {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                        .data(data.imageFileFullPath.toPath())
-                        .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
-                        .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                        .height(220.dp)
-                        .background(MaterialTheme.colorScheme.surface)
-                )
-            }
+            AudioArtwork(
+                imageFileFullPath = data.imageFileFullPath,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .height(220.dp)
+                    .background(MaterialTheme.colorScheme.surface),
+                placeholderIconSize = 36.dp,
+            )
         }
         // 리스트가 사진 위를 덮어 터치를 가져가므로 사진 탭과 확대 아이콘을 첫 칸이 들고 있다.
         LazyColumn(
@@ -378,15 +349,7 @@ fun AudioMediaDetailScreen(
                     }
 
                     if (!data.isDeleted) {
-                        Text(
-                            modifier = Modifier
-                                .padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
-                                .semantics { heading() },
-                            text = "플레이리스트",
-                            fontSize = 14.sp,
-                            lineHeight = 18.sp,
-                            color = contentMuted,
-                        )
+                        SectionHeader(text = "플레이리스트")
                         if (data.playlists.isEmpty()) {
                             Text(
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),

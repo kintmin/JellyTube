@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
@@ -38,19 +37,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.common.AudioArtwork
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
 import com.kintmin.presentation.ui.common.PlaybackToggleButton
-import okio.Path.Companion.toPath
 
 @Composable
 fun PlaylistDetailHeaderView(
@@ -77,40 +72,17 @@ fun PlaylistDetailHeaderView(
                 .padding(top = innerPaddingValues.calculateTopPadding())
                 .padding(16.dp)
         ) {
-            if (headerData.imageFileFullPath == null) {
-                Box(
-                    modifier = Modifier
-                        .height(220.dp)
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                        .clip(RoundedCornerShape(4))
-                        .background(MaterialTheme.colorScheme.surface),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        modifier = Modifier.size(36.dp),
-                    )
-                }
-            } else {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                        .data(headerData.imageFileFullPath.toPath())
-                        .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
-                        .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp)
-                        .padding(bottom = 16.dp)
-                        .clip(RoundedCornerShape(4))
-                        .background(MaterialTheme.colorScheme.surface)
-                        .clickable { isShowFullScreenImageViewer = true }
-                )
-            }
+            AudioArtwork(
+                imageFileFullPath = headerData.imageFileFullPath,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+                    .padding(bottom = 16.dp)
+                    .clip(RoundedCornerShape(4))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable(enabled = headerData.imageFileFullPath != null) { isShowFullScreenImageViewer = true },
+                placeholderIconSize = 36.dp,
+            )
 
             Column {
                 Row(
