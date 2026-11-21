@@ -12,7 +12,7 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 
-	<!-- 비워 두면 기동 중에 흰 화면이 뜬다. 색은 Assets 의 LaunchBackground 로, Compose 배경(dark80)과 같아야 첫 프레임에 색이 튀지 않는다. -->
+	<!-- 비워 두면 기동 중에 흰 화면이 뜬다. 색은 Assets 의 LaunchBackground 이고, Compose 배경과 같은지는 호스트 테스트가 대조한다. -->
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
