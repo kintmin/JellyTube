@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.seaBlue60
 
 /**
  * 섹션 머리말에 붙는 만들기·추가 입구.
@@ -47,13 +46,13 @@ fun PlaylistAddButtonView(
             modifier = Modifier.size(18.dp),
             imageVector = Icons.Rounded.Add,
             contentDescription = null,
-            tint = seaBlue60,
+            tint = MaterialTheme.colorScheme.tertiary,
         )
         Text(
             modifier = Modifier.padding(start = 4.dp),
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            color = seaBlue60,
+            color = MaterialTheme.colorScheme.tertiary,
         )
     }
 }

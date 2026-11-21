@@ -2,10 +2,6 @@ package com.kintmin.presentation.ui.setting.section
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -16,8 +12,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray10
 import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.white
 
-/** 켜짐을 색으로만 알리지 않는다. */
 @Composable
 fun SettingSwitchView(
     checked: Boolean,
@@ -26,21 +22,9 @@ fun SettingSwitchView(
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
-        thumbContent = if (checked) {
-            {
-                Icon(
-                    modifier = Modifier.size(SwitchDefaults.IconSize),
-                    imageVector = Icons.Rounded.Check,
-                    contentDescription = null,
-                )
-            }
-        } else {
-            null
-        },
         colors = SwitchDefaults.colors(
-            checkedThumbColor = MaterialTheme.colorScheme.onTertiary,
+            checkedThumbColor = white,
             checkedTrackColor = MaterialTheme.colorScheme.tertiary,
-            checkedIconColor = MaterialTheme.colorScheme.tertiary,
             checkedBorderColor = Color.Transparent,
             uncheckedThumbColor = gray60,
             // 기본값은 배경과 같은 색이라 꺼진 토글이 구멍처럼 보인다
