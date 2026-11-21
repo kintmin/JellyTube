@@ -35,8 +35,6 @@ import com.kintmin.presentation.theme.gray20
 import com.kintmin.presentation.theme.gray60
 
 /**
- * 48dp pill 검색 필드. [onSearch] 가 있으면 키보드의 검색 키로 부른다.
- *
  * X 는 입력이 있으면 지우고, 비어 있으면 [onCloseWhenEmpty] 가 있을 때만 닫기로 남는다 — 비어
  * 있을 때 지울 것이 없으니 닫는 것이 유일하게 뜻이 있다.
  */

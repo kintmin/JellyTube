@@ -130,8 +130,7 @@ class ReorderState<T>(
         )
     }
 
-    // 실제 이웃의 렌더 높이를 기준으로 절반을 넘긴 이웃과 자리를 바꾼다. 빠르게 끌면 한 이벤트에
-    // 여러 칸을 지나므로 넘긴 만큼 다 바꾼다 — 한 칸씩이면 놓았을 때 몇 칸 못 간 자리로 돌아간다.
+    // 빠르게 끌면 한 이벤트에 여러 칸을 지나므로 절반을 넘긴 이웃은 모두 바꾼다.
     // 스왑마다 |dragOffset| 이 줄어 반드시 끝난다.
     private fun swapPastNeighbors(info: List<LazyListItemInfo>, currentInfo: LazyListItemInfo?) {
         var index = items.indexOfFirst { idOf(it) == draggingItemId }
@@ -194,15 +193,7 @@ class ReorderState<T>(
     }
 }
 
-/**
- * 자동 스크롤 속도. 부호가 방향(- 위, + 아래)이고 크기는 존에 들어간 깊이다. 존 경계에서 최고
- * 속도로 튀어 나가지 않게 깊이에 비례시키되, 너무 느리게 기지 않도록 [MIN_AUTO_SCROLL_FRACTION]
- * 에서 시작한다.
- *
- * 손가락 방향 게이트가 없으면, 항목이 상단 존에 들어간 순간 손가락을 아래로 내려도 위 스크롤이
- * 계속 돌아 항목이 상단에 갇힌다. 넘어갈 이웃이 없는 방향으로 스크롤하면 스왑 없이 보정만 쌓여
- * 손가락이 그만큼 빚을 진다.
- */
+/** 자동 스크롤 속도. 부호가 방향(- 위, + 아래)이고 크기는 존에 들어간 깊이다. */
 internal fun autoScrollVelocity(
     itemTop: Float,
     itemBottom: Float,
