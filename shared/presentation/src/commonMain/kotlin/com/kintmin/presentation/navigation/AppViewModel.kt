@@ -15,6 +15,8 @@ import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.deeplink.DeepLinkParser
 import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -52,12 +54,9 @@ class AppViewModel(
     }
 
     private fun leaveSecretScreensWhenSecretModeEnds() {
-        var wasEnabled = fetchSecretModeEnabledFlowUseCase().value
-        fetchSecretModeEnabledFlowUseCase().onEach { isEnabled ->
-            if (wasEnabled && !isEnabled) {
-                eventChannel.send(NavigationEvent.LeaveSecretScreens(secretPlaylistIds()))
-            }
-            wasEnabled = isEnabled
+        // 첫 값은 지금 상태라 버린다. 그 뒤의 false 는 켜져 있다가 꺼진 것이다.
+        fetchSecretModeEnabledFlowUseCase().drop(1).filter { !it }.onEach {
+            eventChannel.send(NavigationEvent.LeaveSecretScreens(secretPlaylistIds()))
         }.launchIn(viewModelScope)
     }
 

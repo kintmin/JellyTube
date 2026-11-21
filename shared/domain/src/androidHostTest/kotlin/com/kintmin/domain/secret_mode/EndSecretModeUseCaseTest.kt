@@ -1,11 +1,11 @@
 package com.kintmin.domain.secret_mode
 
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
-import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.domain.secret_mode.repository.SecretModeRepository
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
+import com.kintmin.domain.testPlaylist
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -15,9 +15,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.LocalDateTime
 import org.junit.Test
-import kotlin.time.Duration
 
 class EndSecretModeUseCaseTest {
 
@@ -29,7 +27,7 @@ class EndSecretModeUseCaseTest {
     }
     private val playlistRepository: PlaylistRepository = mockk {
         every { getAllPlaylistFlow() } returns flowOf(
-            listOf(playlist(2, PlaylistType.UNCATEGORIZED), playlist(4, PlaylistType.USER), playlist(5, PlaylistType.SECRET)),
+            listOf(testPlaylist(2, PlaylistType.UNCATEGORIZED), testPlaylist(4, PlaylistType.USER), testPlaylist(5, PlaylistType.SECRET)),
         )
     }
     private val useCase = EndSecretModeUseCase(secretModeRepository, appSettingRepository, playlistRepository)
@@ -56,16 +54,4 @@ class EndSecretModeUseCaseTest {
         coVerify(exactly = 0) { appSettingRepository.updatePlaylistIdOnDownload(any()) }
     }
 
-    private fun playlist(id: Int, type: PlaylistType) = Playlist(
-        id = id,
-        name = "p$id",
-        description = "",
-        audioMediaCount = 0,
-        playTimeDuration = Duration.ZERO,
-        createdTime = LocalDateTime(2026, 1, 1, 0, 0),
-        imageFileFullPath = null,
-        isCustomImage = false,
-        sequence = 0,
-        type = type,
-    )
 }

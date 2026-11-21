@@ -8,9 +8,7 @@ import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.AddAudioMediaListToPlaylistUseCase
 import com.kintmin.domain.audio_track.usecase.DeleteAudioTrackListUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
-import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
-import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
 import com.kintmin.presentation.util.Debounce
 import com.kintmin.presentation.util.Throttle
@@ -26,7 +24,6 @@ class AudioMediaInformationEditViewModel constructor(
     savedStateHandle: SavedStateHandle,
     fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
-    fetchSecretModeEnabledFlowUseCase: FetchSecretModeEnabledFlowUseCase,
     private val updateAudioMediaUseCase: UpdateAudioMediaUseCase,
     private val deleteAudioTrackListUseCase: DeleteAudioTrackListUseCase,
     private val addAudioMediaListToPlaylistUseCase: AddAudioMediaListToPlaylistUseCase,
@@ -46,13 +43,11 @@ class AudioMediaInformationEditViewModel constructor(
         fetchAudioMediaDetailFlowUseCase(audioMediaId).map { it.toAudioMediaInformationEditUiState() },
         fetchAllPlaylistFlowUseCase(),
         isAddPlaylistBottomSheetVisible,
-        fetchSecretModeEnabledFlowUseCase(),
-    ) { audioMedia, allPlaylists, isBottomSheetVisible, isSecretModeEnabled ->
+    ) { audioMedia, allPlaylists, isBottomSheetVisible ->
         val linkedPlaylistIds = audioMedia.playlists.map { it.playlistId }.toSet()
         audioMedia.copy(
             selectablePlaylists = allPlaylists
                 .filterNot { playlist -> playlist.isBasePlaylist || playlist.id in linkedPlaylistIds }
-                .filter { playlist -> isSecretModeEnabled || playlist.type != PlaylistType.SECRET }
                 .map { playlist ->
                     AudioMediaInformationEditUiState.Playlist(
                         playlistId = playlist.id,

@@ -32,6 +32,7 @@ import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.SectionHeader
 import com.kintmin.presentation.ui.common.wheel_picker.NumberWheelPicker
 import com.kintmin.presentation.ui.main.playlist.PlaylistEmptyView
+import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
@@ -61,10 +62,10 @@ fun SecretPlaylistScreen(
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
-                is SecretPlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistId)
-                is SecretPlaylistEvent.NavigateToPlaylistEditScreen -> navigateToPlaylistEdit(event.playlistId)
-                is SecretPlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId, event.playlistName)
-                is SecretPlaylistEvent.ShowToast -> toaster.show(event.message)
+                is PlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistInfo.id)
+                is PlaylistEvent.NavigateToPlaylistEditScreen -> navigateToPlaylistEdit(event.playlistId)
+                is PlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId, event.playlistName)
+                is PlaylistEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }

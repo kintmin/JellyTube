@@ -1,13 +1,13 @@
 package com.kintmin.presentation.secret_mode
 
 import com.kintmin.domain.audio_track.model.SecretTrack
-import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.model.PlaylistType
-import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
+import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretTrackListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.StartSecretModeUseCase
 import com.kintmin.presentation.port.PlaybackController
+import com.kintmin.presentation.testPlaylist
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -18,10 +18,8 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.LocalDateTime
 import org.junit.Assert.assertNull
 import org.junit.Test
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -31,10 +29,9 @@ class SecretModeRunnerTest {
     private val playbackController: PlaybackController = mockk(relaxed = true)
     private val startSecretModeUseCase: StartSecretModeUseCase = mockk(relaxed = true)
     private val endSecretModeUseCase: EndSecretModeUseCase = mockk(relaxed = true)
-    private val fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase = mockk {
-        every { this@mockk() } returns flowOf(
-            listOf(playlist(1, PlaylistType.TOTAL), playlist(4, PlaylistType.USER), playlist(5, PlaylistType.SECRET)),
-        )
+    private val fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase = mockk {
+        every { this@mockk(PlaylistType.TOTAL) } returns flowOf(listOf(testPlaylist(1, PlaylistType.TOTAL)))
+        every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(testPlaylist(5, PlaylistType.SECRET)))
     }
     private val fetchSecretTrackListFlowUseCase: FetchSecretTrackListFlowUseCase = mockk {
         every { this@mockk() } returns flowOf(listOf(SecretTrack(10, 1.seconds), SecretTrack(11, 1.seconds)))
@@ -82,21 +79,9 @@ class SecretModeRunnerTest {
         playbackController = playbackController,
         startSecretModeUseCase = startSecretModeUseCase,
         endSecretModeUseCase = endSecretModeUseCase,
-        fetchAllPlaylistFlowUseCase = fetchAllPlaylistFlowUseCase,
+        fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
         fetchSecretTrackListFlowUseCase = fetchSecretTrackListFlowUseCase,
         scope = backgroundScope,
     )
 
-    private fun playlist(id: Int, type: PlaylistType) = Playlist(
-        id = id,
-        name = "p$id",
-        description = "",
-        audioMediaCount = 0,
-        playTimeDuration = Duration.ZERO,
-        createdTime = LocalDateTime(2026, 1, 1, 0, 0),
-        imageFileFullPath = null,
-        isCustomImage = false,
-        sequence = 0,
-        type = type,
-    )
 }

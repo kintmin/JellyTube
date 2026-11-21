@@ -134,8 +134,8 @@ class PlaybackControllerImpl(
         startMediaId: Int?,
         mediaControlDataList: List<MediaControlData>,
     ): Result<Unit> = runCatching {
-        // 비밀모드가 끝나며 큐를 다 지웠으면 같은 플레이리스트여도 다시 채워야 한다.
-        if (currentPlaylistIdState != playlistId || getMediaController()?.mediaItemCount == 0) {
+        // 큐가 바깥에서 줄었을 수 있다(비밀모드 종료). iOS 엔진처럼 곡 목록까지 같아야 큐를 다시 쓴다.
+        if (currentPlaylistIdState != playlistId || queuedMediaIds() != mediaControlDataList.map { it.mediaId }) {
             currentPlaylistIdState = playlistId
             resetMediaItemList(mediaControlDataList).getOrThrow()
         }
@@ -237,6 +237,12 @@ class PlaybackControllerImpl(
             mediaController.prepare()
             mediaController.play()
         }
+    }
+
+    // 셔플은 재생 순서만 바꾸고 항목 순서는 그대로라 원래 순서와 비교할 수 있다.
+    private fun queuedMediaIds(): List<String> {
+        val mediaController = getMediaController() ?: return emptyList()
+        return List(mediaController.mediaItemCount) { mediaController.getMediaItemAt(it).mediaId }
     }
 
     private fun resetMediaItemList(audioMediaList: List<MediaControlData>) = runCatching {

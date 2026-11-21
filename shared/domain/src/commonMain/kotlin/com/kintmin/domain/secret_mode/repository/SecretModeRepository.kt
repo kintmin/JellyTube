@@ -10,4 +10,8 @@ interface SecretModeRepository {
 
     fun getMinutesFlow(): Flow<Int>
     suspend fun updateMinutes(minutes: Int): Result<Unit>
+
+    companion object {
+        const val DEFAULT_MINUTES = 30
+    }
 }

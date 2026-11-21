@@ -12,6 +12,7 @@ import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeMinutesFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.UpdateSecretModeMinutesUseCase
 import com.kintmin.presentation.secret_mode.SecretModeRunner
+import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.toUiModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,7 +44,7 @@ class SecretPlaylistViewModel(
     private val deletePlaylistUseCase: DeletePlaylistUseCase,
 ) : ViewModel() {
 
-    private val eventChannel = Channel<SecretPlaylistEvent>(Channel.BUFFERED)
+    private val eventChannel = Channel<PlaylistEvent>(Channel.BUFFERED)
     val eventFlow = eventChannel.receiveAsFlow()
 
     private val isEnabledFlow = fetchSecretModeEnabledFlowUseCase()
@@ -58,20 +59,22 @@ class SecretPlaylistViewModel(
         }
     }
 
-    val uiState: StateFlow<SecretPlaylistUiState> = combine(
+    // 남은 시간만 매초 바뀐다. 목록 매핑과 따로 묶어 매초 다시 하지 않는다.
+    private val baseUiStateFlow = combine(
         isEnabledFlow,
         fetchSecretModeMinutesFlowUseCase(),
-        remainingFlow,
         fetchPlaylistsByTypeUseCase(PlaylistType.SECRET),
         fetchDownloadTargetPlaylistsFlowUseCase(),
-    ) { isEnabled, minutes, remaining, playlists, downloadTarget ->
+    ) { isEnabled, minutes, playlists, downloadTarget ->
         SecretPlaylistUiState(
             isEnabled = isEnabled,
             minutes = minutes,
-            remaining = remaining,
-            // 꺼져 있으면 이 화면에서도 보이지 않는다.
-            playlists = if (isEnabled) playlists.map { it.toUiModel(isDownloadTarget = it.id == downloadTarget.targetId) } else emptyList(),
+            playlists = playlists.map { it.toUiModel(isDownloadTarget = it.id == downloadTarget.targetId) },
         )
+    }
+
+    val uiState: StateFlow<SecretPlaylistUiState> = combine(baseUiStateFlow, remainingFlow) { base, remaining ->
+        base.copy(remaining = remaining)
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SecretPlaylistUiState())
 
@@ -91,23 +94,23 @@ class SecretPlaylistViewModel(
         viewModelScope.launch {
             when (intent) {
                 is PlaylistIntent.OnClickPlaylistItem ->
-                    eventChannel.send(SecretPlaylistEvent.NavigateToPlaylistDetailScreen(intent.playlistInfo.id))
+                    eventChannel.send(PlaylistEvent.NavigateToPlaylistDetailScreen(intent.playlistInfo))
                 is PlaylistIntent.OnClickModifyPlaylist ->
-                    eventChannel.send(SecretPlaylistEvent.NavigateToPlaylistEditScreen(intent.data.id))
+                    eventChannel.send(PlaylistEvent.NavigateToPlaylistEditScreen(intent.data.id))
                 is PlaylistIntent.OnClickAddPlaylist ->
-                    eventChannel.send(SecretPlaylistEvent.NavigateToPlaylistAddScreen(intent.data.id, intent.data.name))
+                    eventChannel.send(PlaylistEvent.NavigateToPlaylistAddScreen(intent.data.id, intent.data.name))
                 is PlaylistIntent.MakeNewPlaylist -> addNewPlaylistUseCase(intent.title, PlaylistType.SECRET).onFailure {
-                    eventChannel.send(SecretPlaylistEvent.ShowToast("플레이리스트를 만들지 못했습니다. 저장 공간을 확인하고 다시 시도해 주세요."))
+                    eventChannel.send(PlaylistEvent.ShowToast(PlaylistEvent.MAKE_FAILED_MESSAGE))
                 }
                 is PlaylistIntent.OnClickDeletePlaylist -> deletePlaylistUseCase(intent.data.id).onFailure {
-                    eventChannel.send(SecretPlaylistEvent.ShowToast("플레이리스트를 지우지 못했습니다. 잠시 뒤 다시 시도해 주세요."))
+                    eventChannel.send(PlaylistEvent.ShowToast(PlaylistEvent.DELETE_FAILED_MESSAGE))
                 }
                 is PlaylistIntent.OnClickSetDownloadTarget -> {
                     val message = updatePlaylistIdOnDownloadUseCase(intent.data.id).fold(
                         onSuccess = { "비밀모드가 끝날 때까지 다운로드한 곡은 '${intent.data.name}'에 담깁니다." },
-                        onFailure = { "기본 다운로드 플레이리스트를 바꾸지 못했습니다. 잠시 뒤 다시 시도해 주세요." },
+                        onFailure = { PlaylistEvent.SET_DOWNLOAD_TARGET_FAILED_MESSAGE },
                     )
-                    eventChannel.send(SecretPlaylistEvent.ShowToast(message))
+                    eventChannel.send(PlaylistEvent.ShowToast(message))
                 }
                 // 이 화면에는 순서 바꾸기가 없다.
                 PlaylistIntent.OnClickShowReorderBottomSheet,

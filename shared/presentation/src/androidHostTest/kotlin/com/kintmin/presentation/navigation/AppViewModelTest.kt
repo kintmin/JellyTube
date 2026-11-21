@@ -5,13 +5,13 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlo
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
-import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.port.PlaybackController
+import com.kintmin.presentation.testPlaylist
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -29,8 +29,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import kotlinx.datetime.LocalDateTime
-import kotlin.time.Duration
 import org.junit.Before
 import org.junit.Test
 
@@ -45,7 +43,7 @@ class AppViewModelTest {
     }
     private val endSecretModeUseCase = mockk<EndSecretModeUseCase>(relaxed = true)
     private val fetchPlaylistsByTypeUseCase = mockk<FetchPlaylistsByTypeUseCase> {
-        every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(secretPlaylist(SECRET_PLAYLIST_ID)))
+        every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(testPlaylist(SECRET_PLAYLIST_ID, PlaylistType.SECRET)))
     }
 
     @Before
@@ -153,18 +151,6 @@ class AppViewModelTest {
         fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
     )
 
-    private fun secretPlaylist(id: Int) = Playlist(
-        id = id,
-        name = "p$id",
-        description = "",
-        audioMediaCount = 0,
-        playTimeDuration = Duration.ZERO,
-        createdTime = LocalDateTime(2026, 1, 1, 0, 0),
-        imageFileFullPath = null,
-        isCustomImage = false,
-        sequence = 0,
-        type = PlaylistType.SECRET,
-    )
 
     private companion object {
         const val SECRET_PLAYLIST_ID = 5

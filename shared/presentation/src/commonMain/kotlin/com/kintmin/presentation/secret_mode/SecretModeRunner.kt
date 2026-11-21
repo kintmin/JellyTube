@@ -1,7 +1,7 @@
 package com.kintmin.presentation.secret_mode
 
 import com.kintmin.domain.playlist.model.PlaylistType
-import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
+import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretTrackListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.StartSecretModeUseCase
@@ -26,9 +26,8 @@ class SecretModeRunner(
     private val playbackController: PlaybackController,
     private val startSecretModeUseCase: StartSecretModeUseCase,
     private val endSecretModeUseCase: EndSecretModeUseCase,
-    private val fetchAllPlaylistFlowUseCase: FetchAllPlaylistFlowUseCase,
+    private val fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase,
     private val fetchSecretTrackListFlowUseCase: FetchSecretTrackListFlowUseCase,
-    private val timeSource: TimeSource = TimeSource.Monotonic,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
 
@@ -42,7 +41,7 @@ class SecretModeRunner(
     fun start(total: Duration) {
         job?.cancel()
         startSecretModeUseCase()
-        endMark = timeSource.markNow() + total
+        endMark = TimeSource.Monotonic.markNow() + total
         job = scope.launch {
             delay(total)
             finish()
@@ -64,8 +63,11 @@ class SecretModeRunner(
     // 남아 있을 수 있다. 다른 플레이리스트에 같이 든 곡은 거기서 보이는 곡이라 건드리지 않는다.
     private suspend fun removeSecretTracksFromQueue() {
         val playlistId = playbackController.currentPlaylistId ?: return
-        val type = fetchAllPlaylistFlowUseCase().first().firstOrNull { it.id == playlistId }?.type
-        if (type != PlaylistType.SECRET && type != PlaylistType.TOTAL) return
+        // 목록에서 찾는다. 재생 중인 플레이리스트가 지워졌으면 단건 조회는 값을 내지 않는다.
+        val isAffected = listOf(PlaylistType.SECRET, PlaylistType.TOTAL).any { type ->
+            fetchPlaylistsByTypeUseCase(type).first().any { it.id == playlistId }
+        }
+        if (!isAffected) return
 
         fetchSecretTrackListFlowUseCase().first().forEach {
             playbackController.tryDeleteMediaItem(playlistId, it.audioMediaId)

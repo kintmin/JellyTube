@@ -22,15 +22,11 @@ class SecretModeRepositoryImpl constructor(
 
     override fun getMinutesFlow(): Flow<Int> {
         return datastoreUtil.getData(PreferencesKey.SecretModeMinutes).map {
-            it ?: DEFAULT_SECRET_MODE_MINUTES
+            it ?: SecretModeRepository.DEFAULT_MINUTES
         }
     }
 
     override suspend fun updateMinutes(minutes: Int): Result<Unit> {
         return datastoreUtil.updateData(PreferencesKey.SecretModeMinutes, minutes)
-    }
-
-    companion object {
-        const val DEFAULT_SECRET_MODE_MINUTES = 30
     }
 }
