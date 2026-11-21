@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
+import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
 import com.kintmin.domain.youtube.YoutubeUrl
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
@@ -19,9 +20,11 @@ import kotlinx.coroutines.launch
 class MainFloatingActionViewModel constructor(
     fetchDownloadTargetPlaylistsFlowUseCase: FetchDownloadTargetPlaylistsFlowUseCase,
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
+    private val addNewPlaylistUseCase: AddNewPlaylistUseCase,
 ) : ViewModel() {
 
     private val isPlaylistBottomSheetVisible = MutableStateFlow(false)
+    private val isCreatePlaylistDialogVisible = MutableStateFlow(false)
 
     private val eventChannel = Channel<MainFloatingActionEvent>(Channel.BUFFERED)
     val eventFlow = eventChannel.receiveAsFlow()
@@ -29,7 +32,8 @@ class MainFloatingActionViewModel constructor(
     val uiState: StateFlow<MainFloatingActionUiState> = combine(
         fetchDownloadTargetPlaylistsFlowUseCase(),
         isPlaylistBottomSheetVisible,
-    ) { downloadTarget, isBottomSheetVisible ->
+        isCreatePlaylistDialogVisible,
+    ) { downloadTarget, isBottomSheetVisible, isCreateDialogVisible ->
         val selectablePlaylistList = downloadTarget.selectable.map { playlist ->
             DownloadPlaylistUiState(
                 id = playlist.id,
@@ -43,6 +47,7 @@ class MainFloatingActionViewModel constructor(
             playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.isSelected }?.name ?: PlaylistType.UNCATEGORIZED.defaultName,
             selectablePlaylistList = selectablePlaylistList,
             isPlaylistBottomSheetVisible = isBottomSheetVisible,
+            isCreatePlaylistDialogVisible = isCreateDialogVisible,
         )
     }.stateIn(
         viewModelScope,
@@ -64,6 +69,15 @@ class MainFloatingActionViewModel constructor(
             is MainFloatingActionIntent.OnSelectPlaylist -> {
                 updatePlaylistIdOnDownload(intent.playlistId)
             }
+            MainFloatingActionIntent.OnClickCreatePlaylist -> {
+                isCreatePlaylistDialogVisible.value = true
+            }
+            MainFloatingActionIntent.OnDismissCreatePlaylistDialog -> {
+                isCreatePlaylistDialogVisible.value = false
+            }
+            is MainFloatingActionIntent.OnCreatePlaylist -> {
+                createPlaylistAsDownloadTarget(intent.title)
+            }
         }
     }
 
@@ -71,6 +85,19 @@ class MainFloatingActionViewModel constructor(
         viewModelScope.launch {
             updatePlaylistIdOnDownloadUseCase(playlistId)
             isPlaylistBottomSheetVisible.value = false
+        }
+    }
+
+    /** 받을 재생목록을 고르다 만든 것이므로 곧바로 받을 곳으로 삼는다. */
+    private fun createPlaylistAsDownloadTarget(title: String) {
+        viewModelScope.launch {
+            addNewPlaylistUseCase(title)
+                .onSuccess { playlistId -> updatePlaylistIdOnDownload(playlistId) }
+                .onFailure {
+                    eventChannel.send(
+                        MainFloatingActionEvent.ShowToast("플레이리스트를 만들지 못했습니다. 저장 공간을 확인하고 다시 시도해 주세요."),
+                    )
+                }
         }
     }
 

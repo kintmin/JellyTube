@@ -31,6 +31,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
+import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 
 @Composable
 fun MainFloatingActionButton(
@@ -73,8 +74,17 @@ fun MainFloatingActionButton(
             onDismissRequest = {
                 sendIntent(MainFloatingActionIntent.OnDismissPlaylistBottomSheet)
             },
+            onClickCreatePlaylist = {
+                sendIntent(MainFloatingActionIntent.OnClickCreatePlaylist)
+            },
         )
     }
+    PlaylistAddDialog(
+        showDialog = uiState.isCreatePlaylistDialogVisible,
+        onDismiss = { sendIntent(MainFloatingActionIntent.OnDismissCreatePlaylistDialog) },
+        existingNames = uiState.selectablePlaylistList.map { it.name },
+        makePlaylist = { title -> sendIntent(MainFloatingActionIntent.OnCreatePlaylist(title)) },
+    )
 
     Surface(
         modifier = Modifier.padding(bottom = 48.dp),

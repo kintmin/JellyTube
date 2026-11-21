@@ -5,4 +5,7 @@ sealed interface MainFloatingActionIntent {
     data object OnClickPlaylistButton : MainFloatingActionIntent
     data object OnDismissPlaylistBottomSheet : MainFloatingActionIntent
     data class OnSelectPlaylist(val playlistId: Int) : MainFloatingActionIntent
+    data object OnClickCreatePlaylist : MainFloatingActionIntent
+    data object OnDismissCreatePlaylistDialog : MainFloatingActionIntent
+    data class OnCreatePlaylist(val title: String) : MainFloatingActionIntent
 }

@@ -13,19 +13,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 
 @Composable
 fun DownloadPlaylistSelectorBottomSheet(
     playlistList: List<DownloadPlaylistUiState>,
     onSelectPlaylist: (playlistId: Int) -> Unit,
     onDismissRequest: () -> Unit,
+    onClickCreatePlaylist: (() -> Unit)? = null,
 ) {
     JellyTubeBottomSheet(onDismissRequest = onDismissRequest) {
         // 머리말을 Column 으로 감싸면 LazyColumn 이 높이 제약을 잃는다. 같은 리스트에 넣는다.
@@ -33,12 +34,22 @@ fun DownloadPlaylistSelectorBottomSheet(
             modifier = Modifier.fillMaxWidth(),
         ) {
             item(key = "header") {
-                Text(
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
-                    text = "받을 재생목록",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 8.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = "받을 재생목록",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    onClickCreatePlaylist?.let { onClick ->
+                        PlaylistAddButtonView(text = "새로 만들기", onClick = onClick)
+                    }
+                }
             }
             items(
                 items = playlistList,
@@ -47,9 +58,7 @@ fun DownloadPlaylistSelectorBottomSheet(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp)
                         .height(56.dp)
-                        .clip(MaterialTheme.shapes.medium)
                         .background(
                             if (item.isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
                         )
@@ -58,7 +67,7 @@ fun DownloadPlaylistSelectorBottomSheet(
                             role = Role.RadioButton,
                             onClick = { onSelectPlaylist(item.id) },
                         )
-                        .padding(start = 8.dp),
+                        .padding(start = 16.dp, end = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -99,6 +108,7 @@ private fun DownloadPlaylistSelectorBottomSheetPreview() {
             ),
             onSelectPlaylist = {},
             onDismissRequest = {},
+            onClickCreatePlaylist = {},
         )
     }
 }
