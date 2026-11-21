@@ -88,6 +88,11 @@ internal class IosPlaybackController(
         )
     }
 
+    override fun clearQueue() {
+        currentPlaylistIdState = null
+        bridge.clearQueue()
+    }
+
     override fun tryDeleteMediaItem(playlistId: Int, mediaId: Int): Result<Unit> = runCatching {
         if (currentPlaylistIdState != playlistId) return@runCatching
         bridge.removeItem(mediaId.toString())

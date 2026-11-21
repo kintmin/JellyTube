@@ -143,6 +143,13 @@ class PlaybackControllerImpl(
         playbackPlaylist(startMediaId).getOrThrow()
     }
 
+    override fun clearQueue() {
+        currentPlaylistIdState = null
+        val mediaController = getMediaController() ?: return
+        mediaController.stop()
+        mediaController.clearMediaItems()
+    }
+
     override fun tryDeleteMediaItem(
         playlistId: Int,
         mediaId: Int,

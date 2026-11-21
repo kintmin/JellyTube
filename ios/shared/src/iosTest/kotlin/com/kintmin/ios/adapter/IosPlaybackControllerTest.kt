@@ -91,6 +91,7 @@ class IosPlaybackControllerTest {
         }
         override fun addItem(item: IosMediaItem, atStart: Boolean) = Unit
         override fun removeItem(mediaId: String) = Unit
+        override fun clearQueue() = Unit
         override fun replaceItem(mediaId: String, item: IosMediaItem) = Unit
     }
 }

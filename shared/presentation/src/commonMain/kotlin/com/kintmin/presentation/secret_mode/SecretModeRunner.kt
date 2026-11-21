@@ -59,18 +59,20 @@ class SecretModeRunner(
         removeSecretTracksFromQueue()
     }
 
-    // 비밀 플레이리스트 큐는 통째로 비고, "전체" 큐에는 비밀모드 중에 비밀 플레이리스트로 옮긴 곡이
-    // 남아 있을 수 있다. 다른 플레이리스트에 같이 든 곡은 거기서 보이는 곡이라 건드리지 않는다.
+    // "전체" 큐에는 비밀모드 중에 비밀 플레이리스트로 옮긴 곡이 남아 있을 수 있다. 다른 플레이리스트에
+    // 같이 든 곡은 거기서 보이는 곡이라 건드리지 않는다.
     private suspend fun removeSecretTracksFromQueue() {
         val playlistId = playbackController.currentPlaylistId ?: return
-        // 목록에서 찾는다. 재생 중인 플레이리스트가 지워졌으면 단건 조회는 값을 내지 않는다.
-        val isAffected = listOf(PlaylistType.SECRET, PlaylistType.TOTAL).any { type ->
-            fetchPlaylistsByTypeUseCase(type).first().any { it.id == playlistId }
-        }
-        if (!isAffected) return
-
-        fetchSecretTrackListFlowUseCase().first().forEach {
-            playbackController.tryDeleteMediaItem(playlistId, it.audioMediaId)
+        if (isPlaylistOf(PlaylistType.SECRET, playlistId)) {
+            playbackController.clearQueue()
+        } else if (isPlaylistOf(PlaylistType.TOTAL, playlistId)) {
+            fetchSecretTrackListFlowUseCase().first().forEach {
+                playbackController.tryDeleteMediaItem(playlistId, it.audioMediaId)
+            }
         }
     }
+
+    // 목록에서 찾는다. 재생 중인 플레이리스트가 지워졌으면 단건 조회는 값을 내지 않는다.
+    private suspend fun isPlaylistOf(type: PlaylistType, playlistId: Int): Boolean =
+        fetchPlaylistsByTypeUseCase(type).first().any { it.id == playlistId }
 }

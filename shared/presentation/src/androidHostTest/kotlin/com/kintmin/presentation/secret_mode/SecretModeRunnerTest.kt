@@ -52,16 +52,26 @@ class SecretModeRunnerTest {
     }
 
     @Test
-    fun `비밀 플레이리스트나 전체를 재생 중이면 비밀 곡을 큐에서 지운다`() = runTest {
-        listOf(5, 1).forEach { playingId ->
-            every { playbackController.currentPlaylistId } returns playingId
+    fun `비밀 플레이리스트를 재생 중이면 큐를 통째로 비운다`() = runTest {
+        every { playbackController.currentPlaylistId } returns 5
 
-            runner().end()
-            runCurrent()
+        runner().end()
+        runCurrent()
 
-            verify { playbackController.tryDeleteMediaItem(playingId, 10) }
-            verify { playbackController.tryDeleteMediaItem(playingId, 11) }
-        }
+        verify { playbackController.clearQueue() }
+        verify(exactly = 0) { playbackController.tryDeleteMediaItem(any(), any()) }
+    }
+
+    @Test
+    fun `전체를 재생 중이면 비밀 곡만 큐에서 지운다`() = runTest {
+        every { playbackController.currentPlaylistId } returns 1
+
+        runner().end()
+        runCurrent()
+
+        verify { playbackController.tryDeleteMediaItem(1, 10) }
+        verify { playbackController.tryDeleteMediaItem(1, 11) }
+        verify(exactly = 0) { playbackController.clearQueue() }
     }
 
     @Test
