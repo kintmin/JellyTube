@@ -1,6 +1,6 @@
 ## Module: shared:data
 
-**Role**: KMP 데이터 계층 — Repository 구현, 로컬 DB, 네트워크, 파일 접근, 받는 서버.
+**Role**: KMP 데이터 계층 — Repository 구현, 로컬 DB, 네트워크, 파일 접근, 받는 서버, 로그 수집기.
 
 ---
 

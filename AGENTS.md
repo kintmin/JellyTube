@@ -168,7 +168,7 @@ Kotlin Multiplatform 앱. 하나의 공유 코어를 Android / iOS / Desktop 이
 | `shared/domain` | 순수 비즈니스 로직 — 모델·Repository 인터페이스·UseCase |
 | `shared/data` | 그 구현 — 로컬 DB·네트워크·파일·받는 서버 |
 | `shared/presentation` | Compose Multiplatform UI 와 UI 상태(MVI). 두 플랫폼이 이것을 그대로 쓴다 |
-| `shared/log` | 로깅 API 만. 구현은 앱 모듈 |
+| `shared/log` | 로깅 API 만. 구현은 `shared:data` |
 | `shared/file-share` | 파일 공유 프로토콜 상수·DTO. 의존성 그래프의 잎 |
 | `android/app` | Android 진입점·조립과 **모든 OS 기능** |
 | `ios/shared` + `ios/app` | iOS 진입점·조립(Kotlin)과 Xcode 앱·Swift 브릿지 |
