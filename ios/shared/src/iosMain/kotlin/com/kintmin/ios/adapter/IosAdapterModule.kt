@@ -1,10 +1,8 @@
 package com.kintmin.ios.adapter
 
 import com.kintmin.domain.file_share.ReceiveKeepAlive
-import com.kintmin.ios.bridge.IosAppLogBridge
 import com.kintmin.ios.bridge.IosMediaControllerBridge
 import com.kintmin.ios.bridge.IosMigrationSourceBrowserBridge
-import com.kintmin.log.AppLog
 import com.kintmin.presentation.port.AudioPreviewPlayer
 import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.StartAnomalyDataCheck
@@ -24,10 +22,8 @@ import org.koin.dsl.module
 /** Swift 가 구현한 브릿지를 생성자에 넘겨야 해서 `val` 이 아니라 함수다. */
 internal fun iosAdapterModule(
     mediaControllerBridge: IosMediaControllerBridge,
-    appLogBridge: IosAppLogBridge,
     migrationSourceBrowserBridge: IosMigrationSourceBrowserBridge,
 ): Module = module {
-    single<AppLog> { IosAppLog(appLogBridge, get()) }
     single<PlaybackController> { IosPlaybackController(mediaControllerBridge) }
     single<MigrationSourceDiscovery> { IosMigrationSourceDiscovery(migrationSourceBrowserBridge) }
     single<AudioPreviewPlayer> { IosAudioPreviewPlayer() }

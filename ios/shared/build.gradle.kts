@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.skie)
+    alias(libs.plugins.sentry.kmp)
 }
 
 /**

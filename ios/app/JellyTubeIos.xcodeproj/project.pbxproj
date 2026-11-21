@@ -20,7 +20,6 @@
 		4A0000000000000000000088 /* MediaControllerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000087 /* MediaControllerItem.swift */; };
 		4A000000000000000000008A /* MediaControllerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000089 /* MediaControllerEngine.swift */; };
 		4A0000000000000000000092 /* MediaControllerBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */; };
-		4A00000000000000000000A2 /* AppLogBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000A1 /* AppLogBridgeImpl.swift */; };
 		4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008D /* NowPlayingCoordinator.swift */; };
 		4A00000000000000000000C1 /* LyricsTranslatorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000C0 /* LyricsTranslatorBridgeImpl.swift */; };
 		4A00000000000000000000E1 /* PythonExecutorBridgeImplTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000E2 /* PythonExecutorBridgeImplTests.swift */; };
@@ -42,7 +41,6 @@
 		4A0000000000000000000087 /* MediaControllerItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerItem.swift; sourceTree = "<group>"; };
 		4A0000000000000000000089 /* MediaControllerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerEngine.swift; sourceTree = "<group>"; };
 		4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerBridgeImpl.swift; sourceTree = "<group>"; };
-		4A00000000000000000000A1 /* AppLogBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogBridgeImpl.swift; sourceTree = "<group>"; };
 		4A000000000000000000008D /* NowPlayingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingCoordinator.swift; sourceTree = "<group>"; };
 		4A00000000000000000000E2 /* PythonExecutorBridgeImplTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonExecutorBridgeImplTests.swift; sourceTree = "<group>"; };
 		4A00000000000000000000E3 /* JellyTubeIosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = JellyTubeIosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -155,7 +153,6 @@
 			isa = PBXGroup;
 			children = (
 				4A0000000000000000000086 /* MediaController */,
-				4A00000000000000000000A3 /* Log */,
 				4A00000000000000000000B2 /* Migration */,
 				4A00000000000000000000C2 /* Translation */,
 			);
@@ -171,14 +168,6 @@
 				4A000000000000000000008D /* NowPlayingCoordinator.swift */,
 			);
 			path = MediaController;
-			sourceTree = "<group>";
-		};
-		4A00000000000000000000A3 /* Log */ = {
-			isa = PBXGroup;
-			children = (
-				4A00000000000000000000A1 /* AppLogBridgeImpl.swift */,
-			);
-			path = Log;
 			sourceTree = "<group>";
 		};
 		4A00000000000000000000B2 /* Migration */ = {
@@ -367,7 +356,6 @@
 				4A0000000000000000000088 /* MediaControllerItem.swift in Sources */,
 				4A000000000000000000008A /* MediaControllerEngine.swift in Sources */,
 				4A0000000000000000000092 /* MediaControllerBridgeImpl.swift in Sources */,
-				4A00000000000000000000A2 /* AppLogBridgeImpl.swift in Sources */,
 				4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
