@@ -1,6 +1,7 @@
 package com.kintmin.domain.audio_media.usecase
 
 import com.kintmin.domain.audio_media.model.InvalidUploadedFileNameException
+import com.kintmin.domain.extension.clampLength
 
 /**
  * PC 업로드 헤더의 파일 이름을 저장할 형태로 바꾼다. 확장자는 저장 파일명(`<UUID>.<ext>`)에 그대로 들어가므로
@@ -28,13 +29,6 @@ class ValidateUploadedAudioFileNameUseCase {
     }
 
     private fun invalid(message: String) = Result.failure<String>(InvalidUploadedFileNameException(message))
-
-    // 서로게이트 쌍을 쪼개면 인코딩할 때 U+FFFD 가 생긴다.
-    private fun String.clampLength(maxLength: Int): String {
-        if (length <= maxLength) return this
-        val end = if (this[maxLength - 1].isHighSurrogate()) maxLength - 1 else maxLength
-        return substring(0, end)
-    }
 
     private companion object {
         const val MAX_EXTENSION_LENGTH = 16

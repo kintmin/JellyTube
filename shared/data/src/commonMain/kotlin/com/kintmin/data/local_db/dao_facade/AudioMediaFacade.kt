@@ -13,6 +13,7 @@ import com.kintmin.data.local_db.mapper.toMigration
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.model.AudioEditProjectEntity
 import com.kintmin.data.local_db.model.AudioMediaEntity
+import com.kintmin.data.local_db.model.clampText
 import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_db.model.PlaylistTrackEntity
 import com.kintmin.data.local_db.model.StepEntity
@@ -67,7 +68,7 @@ class AudioMediaFacade constructor(
                             editedAudioFileNameWithExt = audio.editedAudioFileName,
                             editedAudioDurationSeconds = audio.editedAudioDurationSeconds,
                             rawCreatedTime = audio.createdTimeMillis,
-                        )
+                        ).clampText()
                     ).toInt()
                 }
 

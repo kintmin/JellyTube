@@ -30,18 +30,17 @@ data class AudioMediaInformationEditUiState(
         fun getMock() = AudioMediaInformationEditUiState(
             audioMediaId = 1,
             imageFileFullPath = null,
-            audioMediaName = "",
-            artist = "",
-            playTime = "",
-            audioMediaCreationTime = "",
-            source = "",
+            audioMediaName = "밤양갱",
+            artist = "비비 (BIBI)",
+            playTime = "00:02:26",
+            audioMediaCreationTime = "2026년 11월 20일 14시 30분",
+            source = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
             audioMediaDescription = "",
-            playlists = List(3) {
-                Playlist(
-                    playlistId = it,
-                    playlistName = "플레이리스트 $it",
-                )
-            },
+            playlists = listOf(
+                Playlist(playlistId = 1, playlistName = "미분류", isBasePlaylist = true),
+                Playlist(playlistId = 2, playlistName = "운동할 때 듣는 음악"),
+                Playlist(playlistId = 3, playlistName = "출퇴근 플레이리스트"),
+            ),
         )
     }
 }
