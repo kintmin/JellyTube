@@ -12,34 +12,45 @@ import kotlin.time.Duration
 
 class FetchDownloadTargetPlaylistsFlowUseCaseTest {
 
-    private val useCase = FetchDownloadTargetPlaylistsFlowUseCase(mockk(), mockk())
+    private val useCase = FetchDownloadTargetPlaylistsFlowUseCase(mockk(), mockk(), mockk())
 
     private val total = playlist(1, PlaylistType.TOTAL)
     private val uncategorized = playlist(2, PlaylistType.UNCATEGORIZED)
     private val favorite = playlist(3, PlaylistType.FAVORITE)
     private val user = playlist(4, PlaylistType.USER)
-    private val all = listOf(total, uncategorized, favorite, user)
+    private val secret = playlist(5, PlaylistType.SECRET)
+    private val all = listOf(total, uncategorized, favorite, user, secret)
 
     @Test
-    fun `사용자 플레이리스트와 미분류만 고를 수 있다`() {
-        assertEquals(listOf(uncategorized, user), useCase.resolve(savedId = null, playlists = all).selectable)
+    fun `비밀모드가 아니면 사용자 플레이리스트와 미분류만 고를 수 있다`() {
+        assertEquals(listOf(uncategorized, user), useCase.resolve(savedId = null, playlists = all, isSecretModeEnabled = false).selectable)
+    }
+
+    @Test
+    fun `비밀모드면 비밀 플레이리스트도 고를 수 있다`() {
+        assertEquals(listOf(uncategorized, user, secret), useCase.resolve(savedId = null, playlists = all, isSecretModeEnabled = true).selectable)
+    }
+
+    @Test
+    fun `비밀모드가 아닐 때 저장된 대상이 비밀 플레이리스트면 미분류로 보인다`() {
+        assertEquals(uncategorized.id, useCase.resolve(savedId = secret.id, playlists = all, isSecretModeEnabled = false).targetId)
     }
 
     @Test
     fun `저장된 대상이 사용자 플레이리스트면 그대로 쓴다`() {
-        assertEquals(user.id, useCase.resolve(savedId = user.id, playlists = all).targetId)
+        assertEquals(user.id, useCase.resolve(savedId = user.id, playlists = all, isSecretModeEnabled = false).targetId)
     }
 
     @Test
     fun `저장된 대상이 전체·즐겨찾기·없는 id·없음이면 미분류로 간다`() {
         listOf(total.id, favorite.id, 999, null).forEach { savedId ->
-            assertEquals(uncategorized.id, useCase.resolve(savedId = savedId, playlists = all).targetId)
+            assertEquals(uncategorized.id, useCase.resolve(savedId = savedId, playlists = all, isSecretModeEnabled = false).targetId)
         }
     }
 
     @Test
     fun `미분류도 아직 없으면 대상이 없다`() {
-        assertNull(useCase.resolve(savedId = total.id, playlists = listOf(total)).targetId)
+        assertNull(useCase.resolve(savedId = total.id, playlists = listOf(total), isSecretModeEnabled = false).targetId)
     }
 
     private fun playlist(id: Int, type: PlaylistType) = Playlist(
