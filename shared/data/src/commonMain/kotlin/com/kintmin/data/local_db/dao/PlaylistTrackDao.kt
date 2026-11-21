@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import com.kintmin.data.local_db.model.PlaylistTrackEntity
 import com.kintmin.data.local_db.model.PlaylistTrackFullDto
+import com.kintmin.data.local_db.model.SecretTrackDto
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -34,6 +35,20 @@ interface PlaylistTrackDao {
 
     @Query("SELECT playlistId FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
     suspend fun getLinkedPlaylistIdList(audioMediaId: Int): List<Int>
+
+    // 'SECRET' 은 PlaylistType.SECRET.name 이다. 편집본이 있으면 편집본 길이가 재생 길이다.
+    @Query(
+        """
+SELECT id AS audioMediaId, COALESCE(editedAudioDurationSeconds, rawAudioDurationSeconds, 0) AS durationSeconds
+FROM AUDIO_MEDIA
+WHERE id IN (
+    SELECT PT.audioMediaId FROM PLAYLIST_TRACK PT
+    JOIN PLAYLIST P ON P.id = PT.playlistId
+    WHERE P.type = 'SECRET'
+)
+"""
+    )
+    fun getSecretTrackListFlow(): Flow<List<SecretTrackDto>>
 
     @Query("SELECT * FROM PLAYLIST_TRACK")
     suspend fun getAll(): List<PlaylistTrackEntity>

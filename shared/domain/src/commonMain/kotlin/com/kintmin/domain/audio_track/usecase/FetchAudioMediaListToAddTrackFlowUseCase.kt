@@ -26,8 +26,15 @@ class FetchAudioMediaListToAddTrackFlowUseCase constructor(
                 combine(
                     audioTrackRepository.getPlaylistTrackAggregateListFlow(totalId),
                     audioTrackRepository.getPlaylistTrackAggregateListFlow(playlistId),
-                ) { totalList, currentList ->
-                    totalList.filter { total -> currentList.firstOrNull { it.audioMedia.id == total.audioMedia.id } == null }
+                    audioTrackRepository.getSecretTrackListFlow(),
+                    fetchPlaylistsByTypeUseCase(PlaylistType.SECRET),
+                ) { totalList, currentList, secretTracks, secretPlaylists ->
+                    val hiddenIds = if (secretPlaylists.any { it.id == playlistId }) emptySet()
+                    else secretTracks.mapTo(HashSet()) { it.audioMediaId }
+                    totalList.filter { total ->
+                        total.audioMedia.id !in hiddenIds &&
+                            currentList.firstOrNull { it.audioMedia.id == total.audioMedia.id } == null
+                    }
                 }
             }
             .flowOn(Dispatchers.IO)

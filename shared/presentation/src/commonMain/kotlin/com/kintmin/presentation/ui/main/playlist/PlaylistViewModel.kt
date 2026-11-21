@@ -3,6 +3,7 @@ package com.kintmin.presentation.ui.main.playlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist.usecase.DeletePlaylistUseCase
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
@@ -39,7 +40,9 @@ class PlaylistViewModel constructor(
         isReorderBottomSheetVisible,
     ) { playlistList, downloadTarget, isReorderVisible ->
         PlaylistUiState(
-            playlists = playlistList.map { it.toUiModel(isDownloadTarget = it.id == downloadTarget.targetId) },
+            playlists = playlistList
+                .filterNot { it.type == PlaylistType.SECRET }
+                .map { it.toUiModel(isDownloadTarget = it.id == downloadTarget.targetId) },
             isReorderBottomSheetVisible = isReorderVisible,
         )
     }

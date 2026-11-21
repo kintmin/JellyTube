@@ -1,6 +1,7 @@
 package com.kintmin.domain.audio_track.repository
 
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
+import com.kintmin.domain.audio_track.model.SecretTrack
 import kotlinx.coroutines.flow.Flow
 
 interface AudioTrackRepository {
@@ -13,6 +14,8 @@ interface AudioTrackRepository {
     fun getPlaylistTrackAggregateListFlow(playlistId: Int): Flow<List<PlaylistTrackAggregate>>
 
     fun getPlaylistIdListFlow(audioMediaId: Int): Flow<List<Int>>
+
+    fun getSecretTrackListFlow(): Flow<List<SecretTrack>>
 
     // 즐겨찾기 on/off. 미분류 동기화에 영향을 주지 않는 전용 경로.
     suspend fun setFavorite(audioMediaId: Int, isFavorite: Boolean): Result<Unit>
