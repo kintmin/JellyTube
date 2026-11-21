@@ -16,7 +16,8 @@ class RegisterBackupFolderUseCase(
     suspend operator fun invoke(folder: BackupFolder, nowMillis: Long): Result<BackupOutcome> {
         backupRepository.registerFolder(folder).onFailure { return Result.failure(it) }
         val hasNeverBackedUp = backupRepository.getStatusFlow().first().lastSuccessMillis == null
-        if (hasNeverBackedUp && backupRepository.readFolderCopy().getOrNull() != null) {
+        // 읽지 못하면 있는 것으로 본다 — 없다고 보면 남은 백업을 덮는다.
+        if (hasNeverBackedUp && backupRepository.readFolderCopy().let { it.isFailure || it.getOrNull() != null }) {
             return Result.success(BackupOutcome.KEPT_EXISTING)
         }
         return backupNowUseCase(nowMillis)

@@ -136,6 +136,17 @@ class BackupIfDueUseCaseTest {
     }
 
     @Test
+    fun `재설치 뒤 고른 폴더의 백업을 읽지 못하면 덮지 않는다`() = runTest {
+        status()
+        coEvery { backupRepository.readFolderCopy() } returns Result.failure(Exception("provider unavailable"))
+
+        val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow)(folder, now).getOrThrow()
+
+        assertEquals(BackupOutcome.KEPT_EXISTING, outcome)
+        coVerify(exactly = 0) { backupNow(any()) }
+    }
+
+    @Test
     fun `재설치 뒤 백업이 든 폴더를 다시 고르면 그 백업을 덮지 않는다`() = runTest {
         status()
         coEvery { backupRepository.readFolderCopy() } returns Result.success(backup)
