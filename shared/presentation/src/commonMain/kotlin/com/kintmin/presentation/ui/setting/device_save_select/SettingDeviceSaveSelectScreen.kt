@@ -5,8 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,6 +50,7 @@ import com.kintmin.presentation.ui.common.CollapsibleSearchField
 import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
 import com.kintmin.presentation.ui.common.SearchToggleButton
 import com.kintmin.presentation.ui.common.SelectionTopAppBar
+import com.kintmin.presentation.ui.common.floatingField
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneDefaultChangeDialog
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneTooLongDialog
 import com.kintmin.presentation.ui.setting.device_save_select.list.SettingDeviceSaveSelectListItemView
@@ -162,11 +164,7 @@ fun SettingDeviceSaveSelectScreen(
             )
         },
         bottomBar = {
-            Column(
-                Modifier
-                    .imePadding()
-                    .background(MaterialTheme.colorScheme.background),
-            ) {
+            Column(modifier = Modifier.imePadding()) {
                 if (!isRingtoneShareFlow) {
                     ExportTargetSelector(
                         selectedTargetList = uiState.selectedTargetList,
@@ -195,11 +193,14 @@ fun SettingDeviceSaveSelectScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(top = innerPadding.calculateTopPadding()),
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = searchFieldInset),
+                contentPadding = PaddingValues(
+                    top = searchFieldInset,
+                    bottom = innerPadding.calculateBottomPadding(),
+                ),
             ) {
                 items(
                     count = uiState.audioMediaList.size,
@@ -223,7 +224,7 @@ fun SettingDeviceSaveSelectScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun ExportTargetSelector(
     selectedTargetList: List<AudioExportTarget>,
@@ -231,8 +232,11 @@ private fun ExportTargetSelector(
 ) {
     Column(
         modifier = Modifier
+            .padding(horizontal = 16.dp)
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .floatingField(MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.large)
+            .padding(16.dp),
     ) {
         Text(
             text = "어떤 용도로 쓸지 고르세요",
@@ -245,7 +249,7 @@ private fun ExportTargetSelector(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(8.dp))
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
