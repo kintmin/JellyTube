@@ -86,7 +86,7 @@ fun DownloadPlaylistSelectorBottomSheet(
                             modifier = Modifier.padding(horizontal = 12.dp),
                             imageVector = Icons.Rounded.Check,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
