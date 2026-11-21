@@ -12,6 +12,7 @@ import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.EnsureSystemPlaylistsUseCase
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.deeplink.DeepLinkParser
 import com.kintmin.presentation.platform.continueInBackgroundWhile
@@ -39,6 +40,7 @@ class AppViewModel(
     private val fetchSecretModeEnabledFlowUseCase: FetchSecretModeEnabledFlowUseCase,
     private val endSecretModeUseCase: EndSecretModeUseCase,
     private val fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase,
+    private val fetchSecretAudioMediaIdListFlowUseCase: FetchSecretAudioMediaIdListFlowUseCase,
     private val backupIfDueUseCase: BackupIfDueUseCase,
 ) : ViewModel() {
 
@@ -59,7 +61,7 @@ class AppViewModel(
     private fun leaveSecretScreensWhenSecretModeEnds() {
         // 첫 값도 받는다. 프로세스가 죽은 뒤 복원된 화면 스택에 비밀 화면이 남아 있을 수 있다.
         fetchSecretModeEnabledFlowUseCase().filter { !it }.onEach {
-            eventChannel.send(NavigationEvent.LeaveSecretScreens(secretPlaylistIds()))
+            eventChannel.send(NavigationEvent.LeaveSecretScreens)
         }.launchIn(viewModelScope)
     }
 
@@ -101,7 +103,7 @@ class AppViewModel(
                 playingMediaId = mediaControllerManager.playingMediaItem?.mediaId?.toIntOrNull(),
             ).let { events ->
                 // 비밀 플레이리스트 뒤에 쌓이는 곡 상세도 그 플레이리스트의 것이다. 거기서부터 버린다.
-                val hiddenIndex = events.indexOfFirst { it.isHiddenSecretPlaylist() }
+                val hiddenIndex = events.indexOfFirst { it.isHiddenSecret() }
                 if (hiddenIndex < 0) events else events.take(hiddenIndex)
             }.forEach { navigationEvent ->
                 eventChannel.send(navigationEvent)
@@ -109,10 +111,17 @@ class AppViewModel(
         }
     }
 
-    private suspend fun NavigationEvent.isHiddenSecretPlaylist(): Boolean =
-        this is NavigationEvent.NavigateToPlaylistContent &&
-            !fetchSecretModeEnabledFlowUseCase().value &&
-            playlistId in secretPlaylistIds()
+    private suspend fun NavigationEvent.isHiddenSecret(): Boolean {
+        if (fetchSecretModeEnabledFlowUseCase().value) return false
+        return when (this) {
+            is NavigationEvent.NavigateToPlaylistContent -> playlistId in secretPlaylistIds()
+            is NavigationEvent.NavigateToAudioMedia -> audioMediaId in secretAudioMediaIds()
+            is NavigationEvent.NavigateToLyricsViewer -> audioMediaId in secretAudioMediaIds()
+            else -> false
+        }
+    }
+
+    private suspend fun secretAudioMediaIds(): List<Int> = fetchSecretAudioMediaIdListFlowUseCase().first()
 
     private fun importSharedAudio(fileIdentifiers: List<String>) {
         if (fileIdentifiers.isEmpty()) return

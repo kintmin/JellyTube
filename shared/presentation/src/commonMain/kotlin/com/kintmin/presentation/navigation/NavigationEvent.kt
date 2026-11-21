@@ -19,10 +19,8 @@ sealed interface NavigationEvent {
 
     data object NavigateToPlayer : NavigationEvent
 
-    /** 비밀모드가 끝나 비밀 화면과 비밀 플레이리스트 화면을 닫는다. */
-    data class LeaveSecretScreens(
-        val secretPlaylistIds: Set<Int>,
-    ) : NavigationEvent
+    /** 비밀모드가 끝나 메인까지 걷어 낸다. 비밀 플레이리스트·비밀 곡 화면이 스택 어디에 있든 남지 않는다. */
+    data object LeaveSecretScreens : NavigationEvent
 
     data class NavigateToPlaylistContent(
         val playlistId: Int,

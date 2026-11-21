@@ -9,6 +9,7 @@ import com.kintmin.domain.backup.usecase.BackupIfDueUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.port.PlaybackController
@@ -47,6 +48,9 @@ class AppViewModelTest {
     private val fetchPlaylistsByTypeUseCase = mockk<FetchPlaylistsByTypeUseCase> {
         every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(testPlaylist(SECRET_PLAYLIST_ID, PlaylistType.SECRET)))
     }
+    private val fetchSecretAudioMediaIdListFlowUseCase = mockk<FetchSecretAudioMediaIdListFlowUseCase> {
+        every { this@mockk() } returns flowOf(listOf(SECRET_AUDIO_MEDIA_ID))
+    }
     private val backupIfDueUseCase = mockk<BackupIfDueUseCase> {
         coEvery { this@mockk(any(), any()) } returns Result.success(null)
     }
@@ -74,6 +78,7 @@ class AppViewModelTest {
             fetchSecretModeEnabledFlowUseCase = fetchSecretModeEnabledFlowUseCase,
             endSecretModeUseCase = endSecretModeUseCase,
             fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
+            fetchSecretAudioMediaIdListFlowUseCase = fetchSecretAudioMediaIdListFlowUseCase,
             backupIfDueUseCase = mockk(),
         )
 
@@ -126,14 +131,14 @@ class AppViewModelTest {
 
         isSecretModeEnabled.value = false
 
-        assertEquals(NavigationEvent.LeaveSecretScreens(setOf(SECRET_PLAYLIST_ID)), viewModel.eventFlow.first())
+        assertEquals(NavigationEvent.LeaveSecretScreens, viewModel.eventFlow.first())
     }
 
     @Test
     fun `앱이 뜰 때 비밀모드가 꺼져 있으면 복원된 비밀 화면을 닫게 한다`() = runTest {
         val viewModel = createViewModel()
 
-        assertEquals(NavigationEvent.LeaveSecretScreens(setOf(SECRET_PLAYLIST_ID)), viewModel.eventFlow.first())
+        assertEquals(NavigationEvent.LeaveSecretScreens, viewModel.eventFlow.first())
     }
 
     @Test
@@ -147,6 +152,21 @@ class AppViewModelTest {
         )
 
         assertFalse(events.any { it is NavigationEvent.NavigateToAudioMedia })
+    }
+
+    @Test
+    fun `비밀모드가 꺼져 있으면 비밀 곡의 곡 상세·가사 딥링크를 따르지 않는다`() = runTest {
+        val viewModel = createViewModel()
+        val events = mutableListOf<NavigationEvent>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.eventFlow.collect { events += it } }
+
+        viewModel.sendIntent(AppIntent.HandleDeepLink(DeepLinkConstants.UrlBuilder.audioMediaDetailScreen(SECRET_AUDIO_MEDIA_ID)))
+        viewModel.sendIntent(AppIntent.HandleDeepLink(DeepLinkConstants.UrlBuilder.lyricsViewerScreen(SECRET_AUDIO_MEDIA_ID)))
+        viewModel.sendIntent(AppIntent.HandleDeepLink(DeepLinkConstants.UrlBuilder.audioMediaDetailScreen(3)))
+
+        assertFalse(events.any { it is NavigationEvent.NavigateToAudioMedia && it.audioMediaId == SECRET_AUDIO_MEDIA_ID })
+        assertFalse(events.any { it is NavigationEvent.NavigateToLyricsViewer })
+        assertEquals(true, events.any { it is NavigationEvent.NavigateToAudioMedia && it.audioMediaId == 3 })
     }
 
     @Test
@@ -184,11 +204,13 @@ class AppViewModelTest {
         fetchSecretModeEnabledFlowUseCase = fetchSecretModeEnabledFlowUseCase,
         endSecretModeUseCase = endSecretModeUseCase,
         fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
+        fetchSecretAudioMediaIdListFlowUseCase = fetchSecretAudioMediaIdListFlowUseCase,
         backupIfDueUseCase = backupIfDueUseCase,
     )
 
 
     private companion object {
         const val SECRET_PLAYLIST_ID = 5
+        const val SECRET_AUDIO_MEDIA_ID = 9
     }
 }

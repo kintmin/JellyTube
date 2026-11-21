@@ -5,11 +5,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.IntOffset
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
-import androidx.navigation.toRoute
 import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.ui.audio_edit.navigation.audioEditScreen
 import com.kintmin.presentation.ui.audio_edit.navigation.navigateToAudioEditScreen
@@ -33,18 +31,14 @@ import com.kintmin.presentation.ui.main.navigation.mainScreen
 import com.kintmin.presentation.ui.main.navigation.navigateToMainScreen
 import com.kintmin.presentation.ui.player_detail.navigation.navigateToPlayerDetailScreen
 import com.kintmin.presentation.ui.player_detail.navigation.playerDetailScreen
-import com.kintmin.presentation.ui.playlist_add.navigation.PlaylistAddScreenRoute
 import com.kintmin.presentation.ui.playlist_add.navigation.navigateToPlaylistAddScreen
 import com.kintmin.presentation.ui.playlist_add.navigation.playlistAdd
-import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylistDetailScreen
 import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
-import com.kintmin.presentation.ui.playlist_edit.navigation.PlaylistEditScreenRoute
 import com.kintmin.presentation.ui.playlist_download.navigation.navigateToPlaylistDownloadScreen
 import com.kintmin.presentation.ui.playlist_download.navigation.playlistDownloadScreen
 import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEditScreen
 import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
-import com.kintmin.presentation.ui.secret_playlist.navigation.SecretPlaylistScreenRoute
 import com.kintmin.presentation.ui.secret_playlist.navigation.navigateToSecretPlaylistScreen
 import com.kintmin.presentation.ui.secret_playlist.navigation.secretPlaylistScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
@@ -421,23 +415,17 @@ private fun consumeNavigationEvent(
         NavigationEvent.NavigateToPlayer -> {
             navController.navigateToPlayerDetailScreen(navOptions)
         }
-        is NavigationEvent.LeaveSecretScreens -> {
-            navController.popBackStack<SecretPlaylistScreenRoute>(inclusive = true)
-            // 재생 화면에서 바로 연 비밀 플레이리스트는 비밀 화면 위에 쌓이지 않고, 그 위에 다른 화면이 올 수 있다.
-            while (true) {
-                val entry = navController.topmostPlaylistScreenOf(navigationEvent.secretPlaylistIds) ?: break
-                navController.popBackStack(entry.destination.id, inclusive = true)
+        NavigationEvent.LeaveSecretScreens -> {
+            // 스택 전체를 보는 API 가 공개돼 있지 않아 가려진 비밀 화면을 골라낼 수 없다. 통째로 비운다.
+            // 메인 하나뿐이면 걷어 낼 것이 없다 — 앱이 뜰 때마다 메인을 다시 만들지 않게 한다.
+            if (navController.previousBackStackEntry == null) return
+            navController.navigate(MainScreenRoute(MainTabItem.Playlist)) {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+                launchSingleTop = true
             }
         }
     }
 }
 
-/** 스택 전체를 보는 API 는 공개돼 있지 않다. 종류마다 가장 위의 항목을 꺼내 본다. */
-private fun NavHostController.topmostPlaylistScreenOf(playlistIds: Set<Int>): NavBackStackEntry? = listOfNotNull(
-    runCatching { getBackStackEntry<PlaylistDetailScreenRoute>() }.getOrNull()
-        ?.takeIf { it.toRoute<PlaylistDetailScreenRoute>().playlistId in playlistIds },
-    runCatching { getBackStackEntry<PlaylistEditScreenRoute>() }.getOrNull()
-        ?.takeIf { it.toRoute<PlaylistEditScreenRoute>().playlistId in playlistIds },
-    runCatching { getBackStackEntry<PlaylistAddScreenRoute>() }.getOrNull()
-        ?.takeIf { it.toRoute<PlaylistAddScreenRoute>().playlistId in playlistIds },
-).firstOrNull()
