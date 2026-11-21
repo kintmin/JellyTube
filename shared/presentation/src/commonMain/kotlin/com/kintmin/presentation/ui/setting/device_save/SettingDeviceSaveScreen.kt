@@ -1,38 +1,23 @@
 package com.kintmin.presentation.ui.setting.device_save
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AccessAlarm
-import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.SaveAlt
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.platform.DeviceSaveFlow
@@ -41,12 +26,10 @@ import com.kintmin.presentation.platform.deviceSaveFlow
 import com.kintmin.presentation.platform.rememberSystemSettingsOpener
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.topAppBarHeight
-import com.kintmin.presentation.theme.topAppBarIconSize
-import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
-import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.setting.device_save.ringtone.SettingDeviceSaveRingtoneScreen
+import com.kintmin.presentation.ui.setting.section.SettingActionGuideCardView
 
 @Composable
 fun SettingDeviceSaveScreen(
@@ -81,7 +64,6 @@ fun SettingDeviceSaveScreen(
     )
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingDeviceSaveScreen(
@@ -93,26 +75,9 @@ fun SettingDeviceSaveScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                expandedHeight = topAppBarHeight,
-                title = {
-                    Text(
-                        text = "파일 기기에 저장하기",
-                        fontSize = topAppBarDetailTitleFontSize,
-                        lineHeight = topAppBarDetailTitleLineHeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = navigateToBack) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBackIosNew,
-                            modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "뒤로가기",
-                        )
-                    }
-                },
+            DetailTopAppBar(
+                title = "파일 기기에 저장하기",
+                onClickBack = navigateToBack,
             )
         },
     ) { innerPadding ->
@@ -126,7 +91,7 @@ fun SettingDeviceSaveScreen(
         ) {
             // 저장하기 전에는 알람음·벨소리 목록에 나타나지 않는다. 그 순서를 단계 머리말이 말한다.
             StepGroup(title = "1단계 · 기기에 저장") {
-                ActionGuideCard(
+                SettingActionGuideCardView(
                     icon = Icons.Rounded.SaveAlt,
                     title = "기기에 파일 저장하러 가기",
                     descriptionList = listOf(
@@ -139,7 +104,7 @@ fun SettingDeviceSaveScreen(
             }
 
             StepGroup(title = "2단계 · 저장한 음원으로 설정") {
-                ActionGuideCard(
+                SettingActionGuideCardView(
                     icon = Icons.Rounded.AccessAlarm,
                     title = "알람음으로 설정하러 가기",
                     descriptionList = listOf(
@@ -150,7 +115,7 @@ fun SettingDeviceSaveScreen(
                     onClick = onClickGoToAlarm,
                 )
 
-                ActionGuideCard(
+                SettingActionGuideCardView(
                     icon = Icons.Rounded.NotificationsActive,
                     title = "알림음·벨소리 설정하러 가기",
                     descriptionList = listOf(
@@ -175,63 +140,9 @@ private fun StepGroup(
         Text(
             text = title,
             style = MaterialTheme.typography.labelLarge,
-            color = gray60,
+            color = contentMuted,
         )
         content()
-    }
-}
-
-@Composable
-internal fun ActionGuideCard(
-    icon: ImageVector,
-    title: String,
-    descriptionList: List<String>,
-    onClick: () -> Unit,
-) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(16.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp),
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-            descriptionList.forEach { description ->
-                Row(modifier = Modifier.padding(top = 2.dp)) {
-                    Text(
-                        text = "· ",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -240,29 +151,13 @@ internal fun ActionGuideCard(
 private fun StepGroupPreview() {
     JellyTubeTheme {
         StepGroup(title = "1단계 · 기기에 저장") {
-            ActionGuideCard(
+            SettingActionGuideCardView(
                 icon = Icons.Rounded.SaveAlt,
                 title = "기기에 파일 저장하러 가기",
                 descriptionList = listOf("음악 앱과 파일 관리자에서 바로 볼 수 있습니다"),
                 onClick = {},
             )
         }
-    }
-}
-
-@Preview
-@Composable
-private fun ActionGuideCardPreview() {
-    JellyTubeTheme {
-        ActionGuideCard(
-            icon = Icons.Rounded.SaveAlt,
-            title = "기기에 파일 저장하러 가기",
-            descriptionList = listOf(
-                "음악 앱과 파일 관리자에서 바로 볼 수 있습니다",
-                "다른 앱에서도 저장한 음원을 쓸 수 있습니다",
-            ),
-            onClick = {},
-        )
     }
 }
 

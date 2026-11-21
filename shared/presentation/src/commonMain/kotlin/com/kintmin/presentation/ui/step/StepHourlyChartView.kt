@@ -37,15 +37,12 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.deepSea40
-import com.kintmin.presentation.theme.deepSea80
-import com.kintmin.presentation.theme.seaBlue10
-import com.kintmin.presentation.theme.seaBlue40
+import com.kintmin.presentation.theme.accentContent
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
@@ -165,7 +162,7 @@ fun StepHourlyChartView(
                                 .height(barHeight)
                                 .clip(RoundedCornerShape(topStart = 999.dp, topEnd = 999.dp))
                                 .background(
-                                    if (selected) seaBlue40 else seaBlue40.copy(alpha = 0.78f),
+                                    if (selected) accentContent else accentContent.copy(alpha = 0.78f),
                                 ),
                         )
                     }
@@ -266,7 +263,7 @@ private fun SelectedSlotTooltip(
     connectorHeight: Dp,
     maxBubbleWidth: Dp,
 ) {
-    val bubbleColor = seaBlue10
+    val bubbleColor = MaterialTheme.colorScheme.primary
     val startHour = slot / 2
     val startMinute = if (slot % 2 == 0) 0 else 30
     val endTotalMinutes = (slot + 1) * 30

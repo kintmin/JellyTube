@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -19,14 +18,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.port.model.MigrationSource
+import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationReceivePhase
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveIntent
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveUiState
+import com.kintmin.presentation.ui.setting.section.SettingStatusTextView
 
 /** 연결 전 단계(탐색 → 기기 선택 → 코드 입력 → 연결)를 그린다. */
 @Composable
@@ -37,7 +37,7 @@ fun DataMigrationConnectView(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
     ) {
         Column(
             modifier = Modifier
@@ -48,8 +48,8 @@ fun DataMigrationConnectView(
         ) {
             when (val phase = uiState.phase) {
                 is DataMigrationReceivePhase.Blocked -> {
-                    StatusText("아직 끝나지 않은 작업이 있습니다. 모두 끝난 뒤에 데이터를 옮길 수 있습니다.")
-                    phase.runningTasks.forEach { (task, count) -> StatusText("· ${task.label} ${count}건") }
+                    SettingStatusTextView("아직 끝나지 않은 작업이 있습니다. 모두 끝난 뒤에 데이터를 옮길 수 있습니다.")
+                    phase.runningTasks.forEach { (task, count) -> SettingStatusTextView("· ${task.label} ${count}건") }
                     // 페어링 뒤 막혔으면 보내는 기기가 광고를 내린 뒤라 다시 찾으면 못 찾는다.
                     Button(onClick = { sendIntent(SettingDataMigrationReceiveIntent.OnClickRetry) }) {
                         Text("다시 확인")
@@ -57,12 +57,13 @@ fun DataMigrationConnectView(
                 }
                 DataMigrationReceivePhase.Searching -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                    StatusText(uiState.source?.let { "${it.name}에 연결하는 중입니다." } ?: "보내는 기기를 찾는 중입니다.")
+                    SettingStatusTextView(uiState.source?.let { "${it.name}에 연결하는 중입니다." } ?: "보내는 기기를 찾는 중입니다.")
                 }
                 is DataMigrationReceivePhase.SelectSource -> {
-                    StatusText("데이터를 보낼 기기를 골라 주세요.")
+                    SettingStatusTextView("데이터를 보낼 기기를 골라 주세요.")
                     phase.sources.forEach { source ->
                         OutlinedButton(
+                            colors = JellyTubeButtonColors.secondary(),
                             modifier = Modifier.fillMaxWidth(),
                             enabled = source.isCompatible,
                             onClick = { sendIntent(SettingDataMigrationReceiveIntent.OnSelectSource(source)) },
@@ -75,7 +76,7 @@ fun DataMigrationConnectView(
                     }
                 }
                 DataMigrationReceivePhase.NotFound -> {
-                    StatusText(
+                    SettingStatusTextView(
                         "기기를 찾지 못했습니다. 보내는 기기에서 보내기 화면이 열려 있는지, 같은 Wi-Fi인지, " +
                             "설정 → 개인정보 보호 → 로컬 네트워크에서 JellyTube가 켜져 있는지 확인해 주세요.",
                     )
@@ -84,7 +85,7 @@ fun DataMigrationConnectView(
                     }
                 }
                 is DataMigrationReceivePhase.CodeInput -> {
-                    StatusText("${uiState.source?.name ?: "보내는 기기"} 화면에 보이는 6자리 코드를 입력해 주세요.")
+                    SettingStatusTextView("${uiState.source?.name ?: "보내는 기기"} 화면에 보이는 6자리 코드를 입력해 주세요.")
                     OutlinedTextField(
                         value = uiState.code,
                         onValueChange = { sendIntent(SettingDataMigrationReceiveIntent.OnChangeCode(it)) },
@@ -102,10 +103,10 @@ fun DataMigrationConnectView(
                 }
                 DataMigrationReceivePhase.Pairing -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
-                    StatusText("연결하는 중입니다.")
+                    SettingStatusTextView("연결하는 중입니다.")
                 }
                 else -> {
-                    StatusText("같은 Wi-Fi의 보내는 기기를 찾습니다.")
+                    SettingStatusTextView("같은 Wi-Fi의 보내는 기기를 찾습니다.")
                     Button(onClick = { sendIntent(SettingDataMigrationReceiveIntent.OnClickSearch) }) {
                         Text("기기 찾기")
                     }
@@ -113,16 +114,6 @@ fun DataMigrationConnectView(
             }
         }
     }
-}
-
-@Composable
-private fun StatusText(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onPrimaryContainer,
-        textAlign = TextAlign.Center,
-    )
 }
 
 @Preview

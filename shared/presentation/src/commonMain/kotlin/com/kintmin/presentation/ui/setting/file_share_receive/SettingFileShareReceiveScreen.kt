@@ -1,40 +1,29 @@
 package com.kintmin.presentation.ui.setting.file_share_receive
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Computer
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material.icons.rounded.Wifi
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -42,16 +31,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.keepsReceivingInBackground
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.topAppBarHeight
-import com.kintmin.presentation.theme.topAppBarIconSize
-import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
-import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
+import com.kintmin.presentation.ui.common.DetailTopAppBar
+import com.kintmin.presentation.ui.setting.section.SettingNoticeCardView
+import com.kintmin.presentation.ui.setting.section.SettingStepCardView
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SettingFileShareReceiveScreen(
@@ -78,56 +67,22 @@ fun SettingFileShareReceiveScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                expandedHeight = topAppBarHeight,
-                title = {
-                    Text(
-                        text = "PC에서 공유받기",
-                        fontSize = topAppBarDetailTitleFontSize,
-                        lineHeight = topAppBarDetailTitleLineHeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = navigateToBack) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBackIosNew,
-                            modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "뒤로가기",
-                        )
-                    }
-                },
+            DetailTopAppBar(
+                title = "PC에서 공유받기",
+                onClickBack = navigateToBack,
             )
         },
         bottomBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            ) {
+            BottomActionBar {
                 when (uiState.serverStatus) {
-                    ServerStatus.STOPPED -> Button(
-                        onClick = {
-                            sendIntent(SettingFileShareReceiveIntent.OnClickStartServer)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("파일 공유 받기 시작")
-                    }
-                    ServerStatus.RUNNING -> Button(
-                        onClick = {
-                            sendIntent(SettingFileShareReceiveIntent.OnClickStopServer)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                        ),
-                    ) {
-                        Text("파일 공유 받기 중지")
-                    }
+                    ServerStatus.STOPPED -> BottomActionButton(
+                        text = "파일 공유 받기 시작",
+                        onClick = { sendIntent(SettingFileShareReceiveIntent.OnClickStartServer) },
+                    )
+                    ServerStatus.RUNNING -> BottomActionButton(
+                        text = "파일 공유 받기 중지",
+                        onClick = { sendIntent(SettingFileShareReceiveIntent.OnClickStopServer) },
+                    )
                 }
             }
         },
@@ -145,7 +100,7 @@ fun SettingFileShareReceiveScreen(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.medium,
             ) {
                 Column(
                     modifier = Modifier
@@ -185,74 +140,37 @@ fun SettingFileShareReceiveScreen(
                 }
             }
 
-            NoticeCard(
+            SettingNoticeCardView(
                 icon = Icons.Rounded.Wifi,
                 title = "같은 Wi-Fi 네트워크 필요",
-                description = "PC와 이 기기가 같은 Wi-Fi에 연결되어 있어야 합니다.",
+                text = "PC와 이 기기가 같은 Wi-Fi에 연결되어 있어야 합니다.",
             )
 
             if (!keepsReceivingInBackground) {
-                NoticeCard(
+                SettingNoticeCardView(
                     icon = Icons.Rounded.Warning,
                     title = "앱을 나가면 연결이 끊길 수 있음",
-                    description = "다른 앱으로 전환하거나 기기를 잠그면 파일을 받지 못합니다. 받는 동안에는 JellyTube를 켜 두세요. 공유를 받는 동안에는 화면이 저절로 꺼지지 않습니다.",
+                    text = "다른 앱으로 전환하거나 기기를 잠그면 파일을 받지 못합니다. 받는 동안에는 JellyTube를 켜 두세요. 공유를 받는 동안에는 화면이 저절로 꺼지지 않습니다.",
                 )
             }
 
-            // 단계별 안내
-            StepCard(
+            SettingStepCardView(
                 stepNumber = 1,
                 title = "파일 공유 받기 시작",
                 description = "아래 버튼을 눌러 파일 수신 서버를 시작합니다. 서버가 켜져 있는 동안 PC에서 파일을 전송할 수 있습니다.",
             )
-            StepCard(
+            SettingStepCardView(
                 stepNumber = 2,
                 title = "PC에서 JellyTube 앱 실행",
                 description = "PC에서 JellyTube 파일 공유 앱을 실행합니다. 이 기기를 자동으로 검색합니다.",
             )
-            StepCard(
+            SettingStepCardView(
                 stepNumber = 3,
                 title = "파일 드래그 앤 드롭",
                 description = "PC 앱에 음원 파일을 끌어다 놓으면 자동으로 이 기기의 라이브러리에 추가됩니다.",
             )
 
             Spacer(Modifier.height(8.dp))
-        }
-    }
-}
-
-@Composable
-private fun NoticeCard(icon: ImageVector, title: String, description: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-        ),
-        shape = RoundedCornerShape(12.dp),
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(24.dp),
-            )
-            Spacer(Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-            }
         }
     }
 }
@@ -274,45 +192,6 @@ private fun FlowNode(icon: ImageVector, label: String) {
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
-    }
-}
-
-@Composable
-private fun StepCard(stepNumber: Int, title: String, description: String) {
-    Card(shape = RoundedCornerShape(12.dp)) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = CircleShape,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "$stepNumber",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
     }
 }
 

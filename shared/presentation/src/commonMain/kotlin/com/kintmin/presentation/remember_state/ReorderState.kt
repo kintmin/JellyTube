@@ -14,40 +14,29 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.math.abs
+import kotlin.math.sign
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlin.math.abs
-import kotlin.math.sign
 
-/**
- * LazyColumn 드래그 재정렬 상태. 아이템 타입에 독립적이며 [idOf]로 아이템을 식별한다.
- *
- * 드래그 핸들의 `detectDragGestures`가 넘겨주는 세로 이동량으로 순서를 계산
- *  1) 드래그로 쌓인 세로 이동량([dragOffset])을 아이템 한 칸 높이([itemHeightPx])로 나눠
- *     "몇 칸 이동했는지"를 구하고, 그만큼 [items]를 실제로 재배치한다.
- *  2) 리스트 가장자리에 닿으면 자동 스크롤로 화면을 따라 밀어준다.
- *
- * 부드러운 재배치 애니메이션(`Modifier.animateItem`), 외부 데이터와의 동기화(`LaunchedEffect`),
- * 드래그 종료 시점의 DB 커밋은 [ReorderState]가 관여하지 않고 호출부에서 배선한다.
- */
+/** 재배치 애니메이션·외부 데이터 동기화·DB 커밋은 호출부가 배선한다. */
 class ReorderState<T>(
     private val coroutineScope: CoroutineScope,
     private val idOf: (T) -> Int,
     val listState: LazyListState,
     val items: SnapshotStateList<T>,    // 화면에 표시되는 실제 순서. onDrag가 in-place로 재배치하고 LazyColumn이 이 리스트를 그린다.
-    private val scrollZonePx: Float,    // 위/아래 가장자리에서 자동 스크롤이 시작되는 경계 두께(px).
-    private val scrollSpeedPx: Float,   // 자동 스크롤 한 프레임 이동량(px).
+    private val scrollZonePx: Float,
+    private val scrollSpeedPx: Float,
 ) {
-    // 드래그 시작점 기준 누적된 세로 이동량(px).
     private var dragOffset by mutableFloatStateOf(0f)
 
     // 최근 손가락 이동 방향. -1 위, +1 아래, 0 미정.
@@ -64,7 +53,6 @@ class ReorderState<T>(
     // 뷰포트 위쪽을 덮는 상단 바 높이(px). 덮인 자리에서는 스크롤 존에 닿을 수 없다.
     internal var topInsetPx = 0f
 
-    // 현재 드래그 중인 아이템의 id. null이면 드래그 중이 아니다.
     var draggingItemId by mutableStateOf<Int?>(null)
 
     private var orderBeforeDrag = emptyList<Int>()
@@ -72,13 +60,7 @@ class ReorderState<T>(
     /** 1px 만 끌고 놓은 것을 커밋하지 않게 한다. */
     val isOrderChanged: Boolean get() = items.map(idOf) != orderBeforeDrag
 
-    /**
-     * 잡은 아이템을 **그릴** 거리(px). 호출부가 translationY 로 써서 손가락을 따라오게 한다.
-     *
-     * 넘어갈 자리가 없는 방향으로는 여기서 잠근다. [dragOffset] 자체는 손가락을 그대로 따라
-     * 계속 쌓이므로, 끝에 막힌 뒤 되돌리면 넘어간 만큼 돌아와야 항목이 다시 움직인다 —
-     * 누적을 버리면 손가락과 어긋난다.
-     */
+    /** 잡은 아이템을 그릴 거리. [dragOffset] 은 잠그지 않고 계속 쌓는다 — 버리면 되돌릴 때 손가락과 어긋난다. */
     var dragOffsetY by mutableFloatStateOf(0f)
         private set
 

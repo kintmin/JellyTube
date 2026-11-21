@@ -10,10 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray10
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.seaBlue20
-import com.kintmin.presentation.theme.white
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.accentDark
+import com.kintmin.presentation.theme.emptyTrack
 
 @Composable
 fun SettingSwitchView(
@@ -24,13 +23,11 @@ fun SettingSwitchView(
         checked = checked,
         onCheckedChange = onCheckedChange,
         colors = SwitchDefaults.colors(
-            checkedThumbColor = white,
-            // tertiary 는 재생 모드가 켜졌다는 뜻이라 일반 설정에 쓰지 않는다. primary 는 배경 대비가 3:1 에 못 미친다.
-            checkedTrackColor = seaBlue20,
+            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+            checkedTrackColor = accentDark,
             checkedBorderColor = Color.Transparent,
-            uncheckedThumbColor = gray60,
-            // 기본값은 배경과 같은 색이라 꺼진 토글이 구멍처럼 보인다
-            uncheckedTrackColor = gray10,
+            uncheckedThumbColor = contentMuted,
+            uncheckedTrackColor = emptyTrack,
             uncheckedBorderColor = Color.Transparent,
         ),
     )

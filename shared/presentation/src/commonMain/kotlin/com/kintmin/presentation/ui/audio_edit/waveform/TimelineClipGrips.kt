@@ -5,14 +5,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.seaBlue100
-import com.kintmin.presentation.theme.white
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.accentLight
+import com.kintmin.presentation.theme.overlayContent
 
 /**
  * 선택한 조각 양 끝의 손잡이와 가운데 이동 표시.
@@ -56,7 +56,7 @@ internal fun DrawScope.drawClipGrips(
         val width = if (isGrabbed) grabbedGripWidth else gripWidth
         val height = if (isGrabbed) grabbedGripHeight else gripHeight
         drawRoundRect(
-            color = if (isGrabbed) white else seaBlue100,
+            color = if (isGrabbed) overlayContent else accentLight,
             topLeft = Offset(
                 x = if (edge == AudioEditTimeline.Edge.Start) edgeX else edgeX - width,
                 y = (size.height - height) / 2f,
@@ -76,7 +76,7 @@ internal fun DrawScope.drawClipGrips(
         with(moveHandlePainter) {
             draw(
                 size = Size(moveHandleSize, moveHandleSize),
-                colorFilter = ColorFilter.tint(if (isMoving) white else seaBlue100),
+                colorFilter = ColorFilter.tint(if (isMoving) overlayContent else accentLight),
             )
         }
     }
@@ -97,7 +97,7 @@ internal fun DrawScope.drawMergeSeams(
         val x = viewport.xOf(seamMs)
         if (x < 0f || x > size.width) return@forEach
         drawLine(
-            color = gray60.copy(alpha = 0.7f),
+            color = contentMuted.copy(alpha = 0.7f),
             start = Offset(x = x, y = 0f),
             end = Offset(x = x, y = size.height),
             strokeWidth = 1.dp.toPx(),

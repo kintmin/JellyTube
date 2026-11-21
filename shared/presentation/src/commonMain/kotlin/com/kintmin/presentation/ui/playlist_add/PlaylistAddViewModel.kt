@@ -72,6 +72,7 @@ class PlaylistAddViewModel constructor(
             PlaylistAddIntent.OnClickAdd -> addAudioMediaListToPlaylist()
             is PlaylistAddIntent.OnClickAudioItem -> checkItem(intent.data)
             is PlaylistAddIntent.OnDragSelectItems -> _checkedItemIdList.update { intent.checkedIds.toList() }
+            PlaylistAddIntent.OnClickClearCheckedItemList -> _checkedItemIdList.value = emptyList()
         }
     }
 

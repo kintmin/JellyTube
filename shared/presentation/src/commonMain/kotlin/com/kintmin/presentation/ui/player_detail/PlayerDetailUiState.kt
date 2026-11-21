@@ -3,10 +3,10 @@ package com.kintmin.presentation.ui.player_detail
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_play_setting.model.SleepTimerAnnouncementOptions
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
-import kotlinx.datetime.LocalDateTime
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.datetime.LocalDateTime
 
 data class PlayerDetailUiState(
     val id: String,
@@ -40,7 +40,7 @@ data class PlayerDetailUiState(
 ) {
     val timeString get() = "${currentDuration.to_hh_colon_mm_colon_ss()} / ${playbackDuration.to_hh_colon_mm_colon_ss()}"
 
-    /** 비싱크 가사면 활성 줄이 없어 빈 문자열이다. 싱크 가사도 첫 타임태그 전까지는 비어 있다. */
+    /** 첫 타임태그 전과 비싱크 가사에서는 비어 있다. */
     val currentLyricLine: String get() = lyricLines.getOrNull(activeLyricIndex)?.text.orEmpty()
 
     val currentLyricTranslation: String? get() = lyricLines.getOrNull(activeLyricIndex)?.translation

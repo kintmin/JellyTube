@@ -113,13 +113,8 @@ actual fun PlatformWebView(
                     onExternalSchemeFailed = onExternalSchemeFailed,
                 )
             }.getOrElse {
-                // 시스템 WebView(Android System WebView / Chrome) APK 가 앱 실행 중
-                // 백그라운드 업데이트되거나 손상·비활성화되면, WebView(context) 생성 시 그 APK
-                // 리소스를 앱 프로세스에 병합하는 과정에서
-                // Resources$NotFoundException("failed to redirect ResourcesImpl")로 크래시한다.
-                // (WebView.<init> -> ResourcesManager.redirectAllResourcesToNewImplLocked 경로)
-                // 앱 코드로는 예방할 수 없는 시스템 측 문제라 여기서 잡고 재시도 UI 로 넘긴다.
-                // 업데이트가 끝나면 재시도로 정상 생성되는 경우가 많다.
+                // 시스템 WebView APK 가 실행 중 업데이트·비활성화되면 생성이
+                // Resources$NotFoundException 으로 실패한다. 앱이 막을 수 없어 재시도 UI 로 넘긴다.
                 androidHandle.markCreationFailed()
                 FrameLayout(context)
             }

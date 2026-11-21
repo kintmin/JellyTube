@@ -12,9 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,24 +27,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.CachePolicy
-import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.softRed
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.destructiveContent
+import com.kintmin.presentation.ui.common.AudioArtwork
+import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistDeleteDialog
-import okio.Path.Companion.toPath
 
 @Composable
 fun PlaylistItemView(
@@ -80,30 +72,11 @@ fun PlaylistItemView(
             .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.surface)
 
-        if (data.imageFileFullPath == null) {
-            Box(
-                modifier = artworkModifier,
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.LibraryMusic,
-                    contentDescription = null,
-                    modifier = Modifier.size(36.dp),
-                    tint = gray60,
-                )
-            }
-        } else {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalPlatformContext.current)
-                    .data(data.imageFileFullPath.toPath())
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .diskCachePolicy(CachePolicy.DISABLED)
-                    .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = artworkModifier,
-            )
-        }
+        AudioArtwork(
+            imageFileFullPath = data.imageFileFullPath,
+            modifier = artworkModifier,
+            placeholderIconSize = 36.dp,
+        )
         Row(
             modifier = Modifier.padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -125,13 +98,13 @@ fun PlaylistItemView(
                                 .size(14.dp),
                             imageVector = Icons.Rounded.Download,
                             contentDescription = "기본 다운로드 플레이리스트",
-                            tint = gray60,
+                            tint = contentMuted,
                         )
                     }
                     Text(
                         text = data.summaryString,
                         style = MaterialTheme.typography.bodySmall,
-                        color = gray60,
+                        color = contentMuted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -142,15 +115,13 @@ fun PlaylistItemView(
                     Icon(
                         imageVector = Icons.Rounded.MoreVert,
                         contentDescription = "더보기",
-                        tint = gray60,
+                        tint = contentMuted,
                     )
                 }
 
-                DropdownMenu(
+                JellyTubeDropdownMenu(
                     expanded = isDropDownExpanded,
                     onDismissRequest = { isDropDownExpanded = false },
-                    // M3 기본 메뉴 모서리는 extraSmall(4dp) 이라 각져 보인다.
-                    shape = MaterialTheme.shapes.medium,
                 ) {
                     DropdownMenuItem(
                         text = { Text("편집하기") },
@@ -160,7 +131,6 @@ fun PlaylistItemView(
                         }
                     )
                     DropdownMenuItem(
-                        // "추가" 가 이 화면에서 세 가지를 뜻했다. 여기는 곡을 넣는 쪽이다.
                         text = { Text("곡 추가하기") },
                         onClick = {
                             isDropDownExpanded = false
@@ -179,7 +149,7 @@ fun PlaylistItemView(
                     )
                     DropdownMenuItem(
                         text = { Text("삭제하기") },
-                        colors = MenuDefaults.itemColors(textColor = softRed),
+                        colors = MenuDefaults.itemColors(textColor = destructiveContent),
                         onClick = {
                             isDropDownExpanded = false
                             isShowDialog = true

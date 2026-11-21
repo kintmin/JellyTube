@@ -22,14 +22,14 @@ import com.kintmin.domain.audio_edit.model.AudioEditClip
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.black
-import com.kintmin.presentation.theme.deepSea40
-import com.kintmin.presentation.theme.deepSea80
-import com.kintmin.presentation.theme.gray10
-import com.kintmin.presentation.theme.seaBlue100
-import com.kintmin.presentation.theme.seaBlue40
-import com.kintmin.presentation.theme.seaBlue60
-import com.kintmin.presentation.theme.white
+import com.kintmin.presentation.theme.accentContainer
+import com.kintmin.presentation.theme.accentContent
+import com.kintmin.presentation.theme.accentDeep
+import com.kintmin.presentation.theme.accentLight
+import com.kintmin.presentation.theme.accentMid
+import com.kintmin.presentation.theme.emptyTrack
+import com.kintmin.presentation.theme.overlayContent
+import com.kintmin.presentation.theme.overlayScrim
 
 /**
  * 편집 타임라인의 파형 영역. 조각을 고르고, 화면을 옮기고, 경계를 끌고, 조각을 옮기는 곳이다.
@@ -93,7 +93,7 @@ fun TimelineWaveformView(
         val trackRight = endX.coerceAtMost(size.width)
         if (trackRight > trackLeft) {
             drawRect(
-                color = gray10,
+                color = emptyTrack,
                 topLeft = Offset(x = trackLeft, y = 0f),
                 size = Size(width = trackRight - trackLeft, height = size.height),
             )
@@ -110,13 +110,13 @@ fun TimelineWaveformView(
             val isSelected = selectedClipIndex in group
             val clipSize = Size(width = (right - left).coerceAtLeast(1f), height = size.height)
             drawRoundRect(
-                color = if (isSelected) deepSea40 else deepSea80,
+                color = if (isSelected) accentDeep else accentContainer,
                 topLeft = Offset(x = left, y = 0f),
                 size = clipSize,
                 cornerRadius = clipCorner,
             )
             drawRoundRect(
-                color = if (isSelected) seaBlue100 else seaBlue40.copy(alpha = 0.5f),
+                color = if (isSelected) accentLight else accentContent.copy(alpha = 0.5f),
                 topLeft = Offset(x = left, y = 0f),
                 size = clipSize,
                 cornerRadius = clipCorner,
@@ -139,7 +139,7 @@ fun TimelineWaveformView(
         if (endX < size.width) {
             val dimLeft = endX.coerceAtLeast(0f)
             drawRect(
-                color = black.copy(alpha = 0.55f),
+                color = overlayScrim,
                 topLeft = Offset(x = dimLeft, y = 0f),
                 size = Size(width = size.width - dimLeft, height = size.height),
             )
@@ -147,7 +147,7 @@ fun TimelineWaveformView(
 
         // 기준선
         drawRect(
-            color = white,
+            color = overlayContent,
             topLeft = Offset(x = viewport.xOf(baselineMs) - 1.dp.toPx(), y = 0f),
             size = Size(width = 2.dp.toPx(), height = size.height),
         )
@@ -155,7 +155,7 @@ fun TimelineWaveformView(
         // 미리듣기선
         previewPositionMs?.let { positionMs ->
             drawRect(
-                color = seaBlue60,
+                color = accentMid,
                 topLeft = Offset(x = viewport.xOf(positionMs) - 1.dp.toPx(), y = 0f),
                 size = Size(width = 2.dp.toPx(), height = size.height),
             )

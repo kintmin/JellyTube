@@ -1,57 +1,41 @@
 package com.kintmin.presentation.ui.setting.device_save_select
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_media.model.AudioExportTarget
 import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.DeviceSaveFlow
@@ -60,14 +44,16 @@ import com.kintmin.presentation.platform.rememberAudioFileSharer
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
-import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
-import com.kintmin.presentation.theme.topAppBarHeight
-import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
+import com.kintmin.presentation.ui.common.CollapsibleSearchField
+import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
+import com.kintmin.presentation.ui.common.SearchToggleButton
+import com.kintmin.presentation.ui.common.SelectionTopAppBar
+import com.kintmin.presentation.ui.common.floatingField
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneDefaultChangeDialog
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneTooLongDialog
 import com.kintmin.presentation.ui.setting.device_save_select.list.SettingDeviceSaveSelectListItemView
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -146,127 +132,76 @@ fun SettingDeviceSaveSelectScreen(
     onClickSave: () -> Unit,
     sendIntent: (SettingDeviceSaveSelectIntent) -> Unit,
 ) {
-    var searchText by remember { mutableStateOf("") }
+    var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
+    var searchText by rememberSaveable { mutableStateOf("") }
+    fun changeSearchText(text: String) {
+        searchText = text
+        sendIntent(SettingDeviceSaveSelectIntent.OnChangeSearchText(text))
+    }
+    fun closeSearchField() {
+        isSearchFieldVisible = false
+        changeSearchText("")
+    }
     val isRingtoneShareFlow = deviceSaveFlow == DeviceSaveFlow.RingtoneShareSheet
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                expandedHeight = topAppBarHeight,
-                title = {
-                    Text(
-                        text = if (isRingtoneShareFlow) "벨소리로 쓸 음원 선택" else "기기에 저장할 음원 선택",
-                        fontSize = topAppBarDetailTitleFontSize,
-                        lineHeight = topAppBarDetailTitleLineHeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = navigateToBack) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBackIosNew,
-                            modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "뒤로가기",
-                        )
-                    }
-                },
+            SelectionTopAppBar(
+                title = if (isRingtoneShareFlow) "벨소리로 쓸 음원 선택" else "기기에 저장할 음원 선택",
+                selectedCount = uiState.checkedItemCount,
+                onClickBack = navigateToBack,
+                onClearSelection = { sendIntent(SettingDeviceSaveSelectIntent.OnClickClearCheckedItemList) },
                 actions = {
-                    if (uiState.checkedItemCount > 0) {
-                        TextButton(
-                            onClick = {
-                                sendIntent(SettingDeviceSaveSelectIntent.OnClickClearCheckedItemList)
-                            },
-                        ) {
-                            Text(
-                                text = "${uiState.checkedItemCount} 선택 해제",
-                                fontSize = 14.sp,
-                                lineHeight = 14.sp,
-                            )
-                        }
-                    }
+                    SearchToggleButton(
+                        isSearchFieldVisible = isSearchFieldVisible,
+                        contentDescription = "음원 검색",
+                        onClick = {
+                            if (isSearchFieldVisible) closeSearchField() else isSearchFieldVisible = true
+                        },
+                    )
                 },
             )
         },
         bottomBar = {
-            Column(
-                Modifier
-                    .imePadding()
-                    .background(MaterialTheme.colorScheme.background),
-            ) {
+            if (uiState.checkedItemCount == 0) return@Scaffold
+            Column(modifier = Modifier.imePadding()) {
                 if (!isRingtoneShareFlow) {
                     ExportTargetSelector(
                         selectedTargetList = uiState.selectedTargetList,
                         sendIntent = sendIntent,
                     )
                 }
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RectangleShape,
-                    enabled = uiState.isSaveEnabled,
-                    onClick = onClickSave,
-                ) {
-                    if (uiState.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                    }
-                    Text(text = if (isRingtoneShareFlow) "벨소리로 사용" else "${uiState.checkedItemCount}개 기기에 저장")
+                BottomActionBar {
+                    BottomActionButton(
+                        text = when {
+                            uiState.isSaving -> "저장 중…"
+                            isRingtoneShareFlow -> "벨소리로 사용"
+                            else -> "${uiState.checkedItemCount}개 기기에 저장"
+                        },
+                        enabled = uiState.isSaveEnabled,
+                        onClick = onClickSave,
+                    )
                 }
-                Box(
-                    modifier = Modifier
-                        .windowInsetsBottomHeight(WindowInsets.navigationBars)
-                        .background(MaterialTheme.colorScheme.surface),
-                )
             }
         },
     ) { innerPadding ->
-        Column(
+        // 필드가 목록 위에 뜨므로 그만큼 목록 머리를 비워 첫 곡이 가려지지 않게 한다.
+        val searchFieldInset by animateDpAsState(
+            targetValue = if (isSearchFieldVisible) FloatingSearchFieldHeight else 0.dp,
+            label = "searchFieldInset",
+        )
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(top = innerPadding.calculateTopPadding()),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clip(RoundedCornerShape(4))
-                    .padding(horizontal = 16.dp),
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .padding(start = 8.dp, end = 4.dp),
-                    imageVector = Icons.Rounded.Search,
-                    contentDescription = "Search",
-                )
-                BasicTextField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.CenterVertically)
-                        .padding(vertical = 16.dp),
-                    maxLines = 1,
-                    textStyle = TextStyle(
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.Start,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-                    value = searchText,
-                    onValueChange = { newText ->
-                        searchText = newText
-                        sendIntent(SettingDeviceSaveSelectIntent.OnChangeSearchText(newText))
-                    },
-                )
-            }
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    top = searchFieldInset,
+                    bottom = innerPadding.calculateBottomPadding(),
+                ),
             ) {
                 items(
                     count = uiState.audioMediaList.size,
@@ -279,11 +214,18 @@ fun SettingDeviceSaveSelectScreen(
                     )
                 }
             }
+            CollapsibleSearchField(
+                visible = isSearchFieldVisible,
+                value = searchText,
+                placeholder = "음원 제목 검색",
+                onValueChange = ::changeSearchText,
+                onClose = ::closeSearchField,
+            )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun ExportTargetSelector(
     selectedTargetList: List<AudioExportTarget>,
@@ -291,8 +233,11 @@ private fun ExportTargetSelector(
 ) {
     Column(
         modifier = Modifier
+            .padding(horizontal = 16.dp)
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .floatingField(MaterialTheme.shapes.large)
+            .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.large)
+            .padding(16.dp),
     ) {
         Text(
             text = "어떤 용도로 쓸지 고르세요",
@@ -305,7 +250,7 @@ private fun ExportTargetSelector(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(8.dp))
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -317,17 +262,14 @@ private fun ExportTargetSelector(
                         sendIntent(SettingDeviceSaveSelectIntent.OnToggleExportTarget(target))
                     },
                     label = {
-                        Text(
-                            text = target.displayName,
-                            fontSize = 12.sp,
-                        )
+                        Text(text = target.displayName)
                     },
                     leadingIcon = if (isSelected) {
                         {
                             Icon(
                                 imageVector = Icons.Rounded.Check,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(FilterChipDefaults.IconSize),
                             )
                         }
                     } else {

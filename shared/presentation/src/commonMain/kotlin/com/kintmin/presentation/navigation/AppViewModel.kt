@@ -39,7 +39,6 @@ class AppViewModel(
         applyPlaybackSettings()
     }
 
-    // 저장한 재생 설정은 화면이 아니라 여기서 플레이어에 건다. 화면에 두면 그 화면을 열기 전까지 적용되지 않는다.
     private fun applyPlaybackSettings() {
         fetchIsPlaybackRepeatingFlowUseCase().onEach(mediaControllerManager::setRepeatMode).launchIn(viewModelScope)
         fetchIsPlaybackShufflingFlowUseCase().onEach(mediaControllerManager::setShuffleMode).launchIn(viewModelScope)

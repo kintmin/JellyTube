@@ -6,8 +6,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
-import com.kintmin.presentation.theme.gray20
-import com.kintmin.presentation.theme.seaBlue40
+import com.kintmin.presentation.theme.accentContent
+import com.kintmin.presentation.theme.outlineSubtle
 
 /** 조각이 있는 곳에만 파형 막대를 그린다. 옮긴 조각은 원본 시각으로 환산해 그 자리 파형을 쓴다. */
 internal fun DrawScope.drawWaveformBars(
@@ -32,7 +32,7 @@ internal fun DrawScope.drawWaveformBars(
                 clip.sourceMsAt(toMs) * peaks.size / originDurationMs <= waveform.loadedBucketCount
             if (clip != null && !isLoaded) {
                 drawRect(
-                    color = gray20,
+                    color = outlineSubtle,
                     topLeft = Offset(x = x, y = centerY - 1.dp.toPx() / 2f),
                     size = Size(width = barWidth, height = 1.dp.toPx()),
                 )
@@ -46,7 +46,7 @@ internal fun DrawScope.drawWaveformBars(
                 val barHeight = (peak.toFloat() / AudioWaveform.FULL_SCALE_PEAK).coerceAtMost(1f) *
                     size.height * 0.9f
                 drawRect(
-                    color = seaBlue40,
+                    color = accentContent,
                     topLeft = Offset(x = x, y = centerY - barHeight / 2f),
                     size = Size(width = barWidth * 0.7f, height = barHeight.coerceAtLeast(1f)),
                 )

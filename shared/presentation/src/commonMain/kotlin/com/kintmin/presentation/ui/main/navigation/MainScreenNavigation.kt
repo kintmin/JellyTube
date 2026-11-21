@@ -1,16 +1,16 @@
 package com.kintmin.presentation.ui.main.navigation
 
 import androidx.navigation.NavController
-import androidx.navigation.NavType
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import com.kintmin.presentation.ui.main.MainScreen
 import com.kintmin.presentation.navigation.EnumNavType
+import com.kintmin.presentation.ui.main.MainScreen
 import com.kintmin.presentation.ui.main.MainTabItem
-import kotlinx.serialization.Serializable
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class MainScreenRoute(
@@ -18,7 +18,6 @@ data class MainScreenRoute(
     val searchUrl: String? = null,
 )
 
-/** 등록부와 `toRoute()` 가 같은 것을 써야 한다. 이유는 [EnumNavType]. */
 internal val mainScreenTypeMap: Map<KType, NavType<*>> =
     mapOf(typeOf<MainTabItem>() to EnumNavType(MainTabItem.entries))
 

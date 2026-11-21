@@ -4,8 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.kintmin.domain.lyrics.model.LyricsSearchResult
 import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
+import com.kintmin.domain.lyrics.model.LyricsSearchResult
 import com.kintmin.domain.lyrics.usecase.SearchLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SortLyricsSearchResultsUseCase
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
@@ -41,7 +41,6 @@ class LyricsSearchViewModel constructor(
     private val eventChannel = Channel<LyricsSearchEvent>(Channel.BUFFERED)
     val eventFlow: Flow<LyricsSearchEvent> = eventChannel.receiveAsFlow()
 
-    // 진행 중인 검색 코루틴. 새 검색을 시작하기 전에 취소한다.
     private var searchJob: Job? = null
 
     init {
@@ -76,7 +75,6 @@ class LyricsSearchViewModel constructor(
         }
     }
 
-    // 이미 로딩 중인 검색이 있으면 취소하고, 현재 상태로 새 검색을 시작한다.
     private fun startSearch(query: String) {
         searchJob?.cancel()
         searchJob = viewModelScope.launch { performSearch(query) }

@@ -24,9 +24,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray20
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.softRed
+import com.kintmin.presentation.theme.outlineSubtle
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.destructiveContent
 
 /**
  * 테두리가 없으니 고칠 수 있다는 신호로 밑줄을 남긴다.
@@ -50,11 +50,11 @@ fun UnderlineTextField(
     val isFocused by interactionSource.collectIsFocusedAsState()
     val contentColor = MaterialTheme.colorScheme.onSurface
     val indicatorColor = when {
-        errorMessage != null -> softRed
+        errorMessage != null -> destructiveContent
         isFocused -> contentColor
         // 자리는 남겨 두고 색만 지운다. 포커스가 들어올 때 줄 높이가 흔들리지 않게.
         underlineOnlyWhenFocused -> Color.Transparent
-        else -> gray20
+        else -> outlineSubtle
     }
 
     BasicTextField(
@@ -74,12 +74,12 @@ fun UnderlineTextField(
                     Text(
                         text = label,
                         style = MaterialTheme.typography.labelMedium,
-                        color = if (isFocused) contentColor else gray60,
+                        color = if (isFocused) contentColor else contentMuted,
                     )
                 }
                 Box(modifier = Modifier.padding(top = if (label != null) 4.dp else 0.dp, bottom = 8.dp)) {
                     if (value.isEmpty()) {
-                        Text(text = placeholder, style = textStyle, color = gray60)
+                        Text(text = placeholder, style = textStyle, color = contentMuted)
                     }
                     innerTextField()
                 }
@@ -93,13 +93,13 @@ fun UnderlineTextField(
                             modifier = Modifier.weight(1f),
                             text = errorMessage.orEmpty(),
                             style = MaterialTheme.typography.labelSmall,
-                            color = softRed,
+                            color = destructiveContent,
                         )
                         if (maxLength != null) {
                             Text(
                                 text = "${value.length}/$maxLength",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = gray60,
+                                color = contentMuted,
                             )
                         }
                     }

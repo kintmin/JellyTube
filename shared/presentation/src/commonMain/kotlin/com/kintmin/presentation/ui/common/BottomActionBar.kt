@@ -11,14 +11,16 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.contentDisabled
+import com.kintmin.presentation.theme.floatingElevation
 
 /** 목록을 이 자리 밑까지 그려야 한다 — innerPadding 은 목록의 contentPadding 으로 준다. */
 @Composable
@@ -49,20 +51,26 @@ fun BottomActionButton(
             .height(BottomActionButtonHeight),
         shape = CircleShape,
         enabled = enabled,
-        // M3 elevation level 3.
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp, pressedElevation = 6.dp),
+        // 기본 비활성 바탕은 반투명이라 목록 위에 뜨면 아래 행이 비친다.
+        colors = ButtonDefaults.buttonColors(
+            disabledContainerColor = MaterialTheme.colorScheme.surface,
+            disabledContentColor = contentDisabled,
+        ),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = floatingElevation,
+            pressedElevation = floatingElevation,
+            disabledElevation = floatingElevation,
+        ),
         onClick = onClick,
     ) {
         Text(
             text = text,
-            fontSize = 14.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
-// M3 FloatingToolbarTokens.ContainerExternalPadding.
 private val FloatingExternalPadding = 16.dp
 private val BottomActionButtonHeight = 48.dp
 

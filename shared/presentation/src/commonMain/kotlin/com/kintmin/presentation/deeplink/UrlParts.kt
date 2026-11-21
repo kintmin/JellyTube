@@ -59,7 +59,6 @@ internal object UrlParts {
         return null
     }
 
-    /** 한 글자가 여러 바이트일 수 있어 연속된 `%XX` 를 모아 UTF-8 로 해석한다. */
     fun percentDecode(value: String, plusAsSpace: Boolean = false): String {
         val hasPlusToConvert = plusAsSpace && value.contains('+')
         if (!value.contains('%') && !hasPlusToConvert) return value

@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -18,14 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.material3.Text
-import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.unit.IntSize
 import com.kintmin.presentation.theme.JellyTubeTheme
 import kotlin.math.max
 
@@ -200,7 +200,7 @@ fun ZoomableViewPreview() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFE8F2FF)),
+                    .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(text = "Pinch / Drag / Double Tap")

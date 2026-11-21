@@ -1,21 +1,10 @@
 package com.kintmin.presentation.ui.lyrics_viewer.dialog
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.ui.common.JellyTubeDialog
+import com.kintmin.presentation.ui.common.ConfirmStyle
+import com.kintmin.presentation.ui.common.JellyTubeConfirmDialog
 
 @Composable
 fun LyricsDeleteDialog(
@@ -24,57 +13,17 @@ fun LyricsDeleteDialog(
     onDismiss: () -> Unit,
     onConfirmDelete: () -> Unit,
 ) {
-    JellyTubeDialog(
+    JellyTubeConfirmDialog(
         showDialog = isShow,
+        title = "가사 삭제",
+        // 이름이 사용자 입력이라 조사를 붙이면 받침에서 비문이 된다.
+        message = "'$audioMediaName' 가사를 지웁니다." +
+            "\n다시 보려면 가사를 다시 검색해야 합니다.",
+        confirmText = "삭제",
+        confirmStyle = ConfirmStyle.Destructive,
+        onConfirm = onConfirmDelete,
         onDismiss = onDismiss,
-    ) {
-        Column(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 24.dp),
-        ) {
-            Text(
-                modifier = Modifier.padding(bottom = 8.dp),
-                text = "가사 삭제",
-                style = MaterialTheme.typography.titleLarge,
-            )
-            Text(
-                modifier = Modifier.padding(bottom = 16.dp),
-                // 이름이 사용자 입력이라 조사를 붙이면 받침에서 비문이 된다.
-                text = "'$audioMediaName' 가사를 지웁니다." +
-                    "\n다시 보려면 가사를 다시 검색해야 합니다.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Row(
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                OutlinedButton(
-                    // 파괴적 버튼과 간격을 벌려 반사적으로 눌리지 않게 한다.
-                    modifier = Modifier.padding(end = 24.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    onClick = { onDismiss() }) {
-                    Text(
-                        text = "취소",
-                    )
-                }
-                Button(
-                    contentPadding = PaddingValues(horizontal = 32.dp, vertical = 0.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError,
-                    ),
-                    onClick = {
-                        onConfirmDelete()
-                        onDismiss()
-                    }) {
-                    Text(
-                        text = "삭제하기",
-                    )
-                }
-            }
-        }
-    }
+    )
 }
 
 @Preview

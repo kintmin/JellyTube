@@ -18,7 +18,6 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,9 +37,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.seaBlue60
-import com.kintmin.presentation.theme.softRed
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.destructiveContent
+import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
 import com.kintmin.presentation.ui.common.UnderlineTextField
 import com.kintmin.presentation.ui.lyrics_edit.LyricsEditUiState.EditRow
 
@@ -93,7 +92,7 @@ fun LyricsEditItemView(
                 .width(3.dp)
                 .fillMaxHeight()
                 .background(
-                    color = if (row.isModified) seaBlue60 else Color.Transparent,
+                    color = if (row.isModified) MaterialTheme.colorScheme.tertiary else Color.Transparent,
                     shape = RoundedCornerShape(2.dp),
                 ),
         )
@@ -129,7 +128,7 @@ fun LyricsEditItemView(
             )
 
             if (showTranslation || showTransliteration) {
-                // 눌림 표시를 그리지 않는다. 글자와 화살표가 바뀌는 것으로 충분하고, 리플은 줄 높이만큼 길게 떠 보였다.
+                // 눌림 표시를 그리지 않는다 — 리플이 줄 높이만큼 길게 뜬다.
                 Row(
                     modifier = Modifier
                         .clickable(
@@ -145,12 +144,12 @@ fun LyricsEditItemView(
                             "음차".takeIf { showTransliteration },
                         ).joinToString(" · "),
                         style = MaterialTheme.typography.labelLarge,
-                        color = gray60,
+                        color = contentMuted,
                     )
                     Icon(
                         imageVector = if (isVariantExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                         contentDescription = if (isVariantExpanded) "접기" else "펼치기",
-                        tint = gray60,
+                        tint = contentMuted,
                     )
                 }
             }
@@ -196,19 +195,18 @@ fun LyricsEditItemView(
                     modifier = Modifier.padding(top = 4.dp),
                     text = "수정됨",
                     style = MaterialTheme.typography.labelSmall,
-                    color = seaBlue60,
+                    color = MaterialTheme.colorScheme.tertiary,
                 )
             }
         }
 
         Box(modifier = Modifier.align(Alignment.Top)) {
             IconButton(onClick = { menuExpanded = true }) {
-                Icon(Icons.Rounded.MoreVert, contentDescription = "줄 메뉴")
+                Icon(Icons.Rounded.MoreVert, contentDescription = "줄 메뉴", tint = contentMuted)
             }
-            DropdownMenu(
+            JellyTubeDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false },
-                shape = MaterialTheme.shapes.medium,
             ) {
                 DropdownMenuItem(
                     text = { Text("아래에 줄 추가") },
@@ -219,7 +217,7 @@ fun LyricsEditItemView(
                 )
                 DropdownMenuItem(
                     text = { Text("줄 삭제") },
-                    colors = MenuDefaults.itemColors(textColor = softRed),
+                    colors = MenuDefaults.itemColors(textColor = destructiveContent),
                     onClick = {
                         menuExpanded = false
                         onDeleteRow(row.id)

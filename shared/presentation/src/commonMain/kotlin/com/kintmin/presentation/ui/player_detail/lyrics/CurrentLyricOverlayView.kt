@@ -28,8 +28,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import kotlinx.coroutines.delay
+import com.kintmin.presentation.theme.artworkBackdropFallback
+import com.kintmin.presentation.theme.overlayContent
+import com.kintmin.presentation.theme.overlayContentSecondary
+import com.kintmin.presentation.theme.overlayScrimSoft
+import com.kintmin.presentation.theme.overlayScrimStrong
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 
 /** 줄마다 높이가 변하면 그라데이션이 커졌다 작아진다. 두 줄이 들어가는 높이로 고정한다. */
 private val OVERLAY_HEIGHT = 56.dp
@@ -42,12 +47,7 @@ private const val FADE_MILLIS = 500
  */
 private val HIDE_DELAY = 1.seconds
 
-/**
- * 지금 가사 한 줄을 아트워크 위에 얹는다.
- *
- * 세로를 따로 쓰지 않으려고 그림 위로 올렸다. 보여 줄 줄이 없으면 막까지 함께 걷어
- * 대부분의 곡에서 그림이 깨끗하다.
- */
+/** 지금 가사 한 줄을 아트워크 위에 얹는다. 보여 줄 줄이 없으면 막까지 걷는다. */
 @Composable
 fun CurrentLyricOverlayView(
     line: String,
@@ -85,8 +85,8 @@ fun CurrentLyricOverlayView(
                 .background(
                     Brush.verticalGradient(
                         0f to Color.Transparent,
-                        0.35f to Color.Black.copy(alpha = 0.35f),
-                        1f to Color.Black.copy(alpha = 0.72f),
+                        0.35f to overlayScrimSoft,
+                        1f to overlayScrimStrong,
                     ),
                 )
                 .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -96,7 +96,7 @@ fun CurrentLyricOverlayView(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = shownLine,
-                    color = Color.White,
+                    color = overlayContent,
                     fontSize = 16.sp,
                     lineHeight = 20.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -107,7 +107,7 @@ fun CurrentLyricOverlayView(
                 shownTranslation?.let { translationText ->
                     Text(
                         text = translationText,
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = overlayContentSecondary,
                         fontSize = 13.sp,
                         lineHeight = 16.sp,
                         maxLines = 1,
@@ -128,7 +128,7 @@ private fun CurrentLyricOverlayViewPreview() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(160.dp)
-                .background(Color(0xFF8A7F6A)),
+                .background(artworkBackdropFallback[0]),
         ) {
             CurrentLyricOverlayView(
                 line = "今の歌詞の一行がここに表示されます",

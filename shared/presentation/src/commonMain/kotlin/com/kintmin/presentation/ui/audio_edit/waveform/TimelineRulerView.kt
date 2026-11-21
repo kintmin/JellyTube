@@ -20,20 +20,20 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss_dot_sss
-import com.kintmin.presentation.theme.black
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.bloodyRed100
-import com.kintmin.presentation.theme.gray40
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.white
+import com.kintmin.presentation.theme.attention
+import com.kintmin.presentation.theme.contentDisabled
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.onAttention
+import com.kintmin.presentation.theme.overlayContent
 import kotlin.time.Duration.Companion.milliseconds
 
 /** 눈금 간격 후보. 라벨이 겹치지 않을 만큼 넓은 것 중 가장 촘촘한 것을 고른다. */
@@ -42,7 +42,6 @@ private val TICK_INTERVAL_MS_LIST = listOf(
     60_000L, 120_000L, 300_000L, 600_000L, 1_800_000L,
 )
 
-/** 눈금 라벨 사이 최소 간격. */
 private val MIN_TICK_SPACING = 72.dp
 
 @Composable
@@ -53,9 +52,7 @@ fun TimelineRulerView(
     endMs: Long,
     canSplit: Boolean,
     canMerge: Boolean,
-    /** 기준선이 달라붙는 위치들. */
     baselineSnapTargetsMs: List<Long>,
-    /** 끝 표시가 달라붙는 위치들. */
     endSnapTargetsMs: List<Long>,
     onBaselineChanged: (Long) -> Unit,
     onEndChanged: (Long) -> Unit,
@@ -98,7 +95,7 @@ fun TimelineRulerView(
         while (tickMs <= viewport.visibleEndMs) {
             val x = viewport.xOf(tickMs)
             drawRect(
-                color = gray60,
+                color = contentMuted,
                 topLeft = Offset(x = x, y = size.height * 0.6f),
                 size = Size(width = 1.dp.toPx(), height = size.height * 0.4f),
             )
@@ -106,7 +103,7 @@ fun TimelineRulerView(
                 textMeasurer = textMeasurer,
                 text = formatTickLabel(tickMs, intervalMs),
                 topLeft = Offset(x = x + 3.dp.toPx(), y = 2.dp.toPx()),
-                style = TextStyle(color = gray40, fontSize = 10.sp),
+                style = TextStyle(color = contentDisabled, fontSize = 10.sp),
             )
             tickMs += intervalMs
         }
@@ -116,13 +113,13 @@ fun TimelineRulerView(
         val barWidth = 3.dp.toPx()
         val armLength = 8.dp.toPx()
         drawRect(
-            color = bloodyRed100,
+            color = attention,
             topLeft = Offset(x = endX - barWidth, y = 0f),
             size = Size(width = barWidth, height = size.height),
         )
         listOf(0f, size.height - barWidth).forEach { armY ->
             drawRect(
-                color = bloodyRed100,
+                color = attention,
                 topLeft = Offset(x = endX - armLength, y = armY),
                 size = Size(width = armLength, height = barWidth),
             )
@@ -132,7 +129,7 @@ fun TimelineRulerView(
         // 손잡이 왼쪽에 두되, 화면 왼쪽 밖으로 나가면 오른쪽에 붙인다.
         val endLabel = textMeasurer.measure(
             text = "끝 ${endMs.milliseconds.to_hh_colon_mm_colon_ss()}",
-            style = TextStyle(color = bloodyRed100, fontSize = 11.sp, fontWeight = FontWeight.Bold),
+            style = TextStyle(color = attention, fontSize = 11.sp, fontWeight = FontWeight.Bold),
         )
         val labelGap = 4.dp.toPx()
         val labelLeftX = endX - armLength - labelGap - endLabel.size.width
@@ -149,7 +146,7 @@ fun TimelineRulerView(
         val baselineX = viewport.xOf(baselineMs)
         val baselineLabel = textMeasurer.measure(
             text = baselineMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss(),
-            style = TextStyle(color = black, fontSize = 11.sp, fontWeight = FontWeight.Bold),
+            style = TextStyle(color = onAttention, fontSize = 11.sp, fontWeight = FontWeight.Bold),
         )
         val actionPainter = when {
             canMerge -> mergePainter
@@ -164,12 +161,12 @@ fun TimelineRulerView(
         // 기준선이 화면 밖에 있어도 시각은 읽히도록 가장자리에 붙인다
         val bubbleLeft = (baselineX - bubbleWidth / 2f).coerceIn(0f, (size.width - bubbleWidth).coerceAtLeast(0f))
         drawRect(
-            color = white,
+            color = overlayContent,
             topLeft = Offset(x = baselineX - 1.dp.toPx(), y = bubbleHeight),
             size = Size(width = 2.dp.toPx(), height = size.height - bubbleHeight),
         )
         drawRoundRect(
-            color = white,
+            color = overlayContent,
             topLeft = Offset(x = bubbleLeft, y = 0f),
             size = Size(width = bubbleWidth, height = bubbleHeight),
             cornerRadius = CornerRadius(bubbleHeight / 2f),
@@ -177,7 +174,7 @@ fun TimelineRulerView(
         var contentX = bubbleLeft + bubblePadding
         actionPainter?.let { painter ->
             translate(left = contentX, top = (bubbleHeight - iconSize) / 2f) {
-                with(painter) { draw(size = Size(iconSize, iconSize), colorFilter = ColorFilter.tint(black)) }
+                with(painter) { draw(size = Size(iconSize, iconSize), colorFilter = ColorFilter.tint(onAttention)) }
             }
             contentX += iconSize + iconGap
         }

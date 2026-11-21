@@ -1,10 +1,5 @@
 package com.kintmin.presentation.ui.main
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,41 +17,40 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.ShortNavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.animation.FloatingFieldVisibility
 import com.kintmin.presentation.platform.AppPermission
-import com.kintmin.presentation.platform.rememberWebViewHandle
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
+import com.kintmin.presentation.platform.rememberWebViewHandle
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarRootTitleFontSize
 import com.kintmin.presentation.theme.topAppBarRootTitleLineHeight
+import com.kintmin.presentation.ui.common.floatingField
 import com.kintmin.presentation.ui.custom_ui.data_table.AgeColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.DataTableView
 import com.kintmin.presentation.ui.custom_ui.data_table.DepartmentColumn
@@ -64,7 +58,6 @@ import com.kintmin.presentation.ui.custom_ui.data_table.LineColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.NameColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.PaymentColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.TempData
-import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.main.bottom_sheet.PlaylistReorderBottomSheet
 import com.kintmin.presentation.ui.main.floating_action.MainFloatingActionButton
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
@@ -72,15 +65,16 @@ import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.PlaylistView
 import com.kintmin.presentation.ui.main.playlist.PlaylistViewModel
+import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadEvent
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadIntent
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeUrlField
-import com.kintmin.presentation.ui.common.floatingField
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebView
-import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadEvent
+import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
 import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
 import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 private val NAV_ICON_SIZE = 22.dp
 private val NAV_LABEL_FONT_SIZE = 11.sp
@@ -209,7 +203,7 @@ fun MainScreen(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = if (selectedTab == MainTabItem.Search) {
-                                Modifier.clickable {
+                                Modifier.clickable(onClickLabel = "유튜브 홈으로 이동", role = Role.Button) {
                                     sendYoutubeDownloadIntent(
                                         YoutubeDownloadIntent.OnChangeUrl("https://m.youtube.com/")
                                     )
@@ -233,7 +227,7 @@ fun MainScreen(
                                 Icon(
                                     imageVector = Icons.Rounded.Link,
                                     modifier = Modifier.size(topAppBarIconSize),
-                                    contentDescription = "검색창 열기",
+                                    contentDescription = if (isSearchFieldVisible) "URL 입력창 닫기" else "URL 입력창 열기",
                                 )
                             }
                         }
@@ -279,8 +273,8 @@ fun MainScreen(
                     val navigationBarItemColors = ShortNavigationBarItemDefaults.colors().copy(
                         selectedIconColor = MaterialTheme.colorScheme.onSurface,
                         selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unselectedIconColor = gray60,
-                        unselectedTextColor = gray60,
+                        unselectedIconColor = contentMuted,
+                        unselectedTextColor = contentMuted,
                     )
                     ShortNavigationBarItem(
                         icon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(NAV_ICON_SIZE)) },
@@ -343,11 +337,7 @@ fun MainScreen(
                         },
                         modifier = Modifier.fillMaxSize(),
                     )
-                    AnimatedVisibility(
-                        visible = isSearchFieldVisible,
-                        enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight }) + fadeIn(),
-                        exit = slideOutVertically(targetOffsetY = { fullHeight -> -fullHeight }) + fadeOut(),
-                    ) {
+                    FloatingFieldVisibility(visible = isSearchFieldVisible) {
                         YoutubeUrlField(
                             modifier = Modifier
                                 .fillMaxWidth()

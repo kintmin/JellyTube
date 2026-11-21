@@ -2,10 +2,8 @@ package com.kintmin.presentation.ui.main.playlist
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -16,7 +14,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.SwapVert
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,23 +24,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray40
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.gray80
+import com.kintmin.presentation.theme.contentDisabled
+import com.kintmin.presentation.theme.contentSubtle
+import com.kintmin.presentation.ui.common.SectionHeader
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistLibraryBlockView
 
-/**
- * 성격이 다른 둘을 다른 컴포넌트로 그린다. 위는 시스템이 관리하는 라이브러리(1열 리스트 행),
- * 아래는 사용자가 만든 플레이리스트(2열 카드)다. 한 격자 안에서 span 으로 나눈다.
- */
 @Composable
 fun PlaylistView(
     modifier: Modifier,
@@ -82,12 +73,12 @@ fun PlaylistView(
         }
 
         item(key = "user-header", span = { GridItemSpan(maxLineSpan) }) {
-            PlaylistSectionLabel(
+            SectionHeader(
                 text = "내 플레이리스트",
                 showDivider = libraryItems.isNotEmpty(),
                 action = {
                     // 빈 상태가 제 CTA 를 갖는다. 같은 명령으로 가는 버튼을 둘 보이지 않게 한다.
-                    if (userItems.isEmpty()) return@PlaylistSectionLabel
+                    if (userItems.isEmpty()) return@SectionHeader
                     // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
                     val canReorder = userItems.size > 1
                     // 색을 한 단계 낮춰 만들기가 주, 순서가 보조로 읽히게 한다.
@@ -103,7 +94,7 @@ fun PlaylistView(
                             .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        val reorderColor = if (canReorder) gray80 else gray40
+                        val reorderColor = if (canReorder) contentSubtle else contentDisabled
                         Icon(
                             modifier = Modifier.size(18.dp),
                             imageVector = Icons.Rounded.SwapVert,
@@ -142,44 +133,6 @@ fun PlaylistView(
                     sendIntent = sendIntent,
                 )
             }
-        }
-    }
-}
-
-/** 설정 화면의 섹션 머리말과 같은 모양. 구분선과 여백으로만 구역을 가른다. */
-@Composable
-private fun PlaylistSectionLabel(
-    text: String,
-    showDivider: Boolean = false,
-    action: (@Composable RowScope.() -> Unit)? = null,
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        if (showDivider) {
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(
-                        top = if (showDivider) 12.dp else 8.dp,
-                        bottom = 8.dp,
-                    )
-                    .semantics { heading() },
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                color = gray60,
-            )
-            action?.invoke(this)
         }
     }
 }

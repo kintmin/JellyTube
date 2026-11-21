@@ -25,7 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 
 private val TOGGLE_DOT_SIZE = 4.dp
 
@@ -42,7 +42,7 @@ fun PlaybackToggleButton(
     label: String,
     isOn: Boolean,
     iconSize: Dp = 20.dp,
-    offColor: Color = gray60,
+    offColor: Color = contentMuted,
     onClick: () -> Unit,
 ) {
     val color by animateColorAsState(

@@ -159,7 +159,7 @@ class LyricsEditViewModel constructor(
     private fun changeTime(rowId: Int, timeMs: Long) {
         _uiState.update { state ->
             state.copy(
-                // LRC 는 시간 순이어야 한다. 같은 시간끼리는 원래 순서를 지킨다(sortedBy 는 안정 정렬).
+                // LRC 는 시간 순이어야 한다.
                 rows = state.rows
                     .map { if (it.id == rowId) it.copy(timeMs = timeMs, isModified = true) else it }
                     .sortedBy { it.timeMs },

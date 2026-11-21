@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
@@ -18,15 +19,13 @@ import com.kintmin.presentation.ui.karaoke_search.navigation.karaokeSearchScreen
 import com.kintmin.presentation.ui.karaoke_search.navigation.navigateToKaraokeSearchScreen
 import com.kintmin.presentation.ui.lyrics_detail.navigation.lyricsDetailScreen
 import com.kintmin.presentation.ui.lyrics_detail.navigation.navigateToLyricsDetailScreen
-import com.kintmin.presentation.ui.lyrics_search.navigation.lyricsSearchScreen
-import com.kintmin.presentation.ui.lyrics_search.navigation.navigateToLyricsSearchScreen
 import com.kintmin.presentation.ui.lyrics_edit.navigation.lyricsEditScreen
 import com.kintmin.presentation.ui.lyrics_edit.navigation.navigateToLyricsEditScreen
+import com.kintmin.presentation.ui.lyrics_search.navigation.lyricsSearchScreen
+import com.kintmin.presentation.ui.lyrics_search.navigation.navigateToLyricsSearchScreen
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.lyricsViewerScreen
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.navigateToLyricsViewerScreen
 import com.kintmin.presentation.ui.main.MainTabItem
-import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylistDetailScreen
-import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
 import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
 import com.kintmin.presentation.ui.main.navigation.mainScreen
 import com.kintmin.presentation.ui.main.navigation.navigateToMainScreen
@@ -34,22 +33,24 @@ import com.kintmin.presentation.ui.player_detail.navigation.navigateToPlayerDeta
 import com.kintmin.presentation.ui.player_detail.navigation.playerDetailScreen
 import com.kintmin.presentation.ui.playlist_add.navigation.navigateToPlaylistAddScreen
 import com.kintmin.presentation.ui.playlist_add.navigation.playlistAdd
+import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylistDetailScreen
+import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
 import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEditScreen
 import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
 import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.navigateToAppLogScreen
-import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
-import com.kintmin.presentation.ui.setting.navigation.settingGraph
-import com.kintmin.presentation.ui.setting.device_save.navigation.navigateToSettingDeviceSaveScreen
-import com.kintmin.presentation.ui.setting.device_save.navigation.settingDeviceSaveScreen
-import com.kintmin.presentation.ui.setting.device_save_select.navigation.navigateToSettingDeviceSaveSelectScreen
-import com.kintmin.presentation.ui.setting.device_save_select.navigation.settingDeviceSaveSelectScreen
 import com.kintmin.presentation.ui.setting.data_migration_receive.navigation.navigateToSettingDataMigrationReceiveScreen
 import com.kintmin.presentation.ui.setting.data_migration_receive.navigation.settingDataMigrationReceiveScreen
 import com.kintmin.presentation.ui.setting.data_migration_send.navigation.navigateToSettingDataMigrationSendScreen
 import com.kintmin.presentation.ui.setting.data_migration_send.navigation.settingDataMigrationSendScreen
+import com.kintmin.presentation.ui.setting.device_save.navigation.navigateToSettingDeviceSaveScreen
+import com.kintmin.presentation.ui.setting.device_save.navigation.settingDeviceSaveScreen
+import com.kintmin.presentation.ui.setting.device_save_select.navigation.navigateToSettingDeviceSaveSelectScreen
+import com.kintmin.presentation.ui.setting.device_save_select.navigation.settingDeviceSaveSelectScreen
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.navigateToSettingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.settingFileShareReceiveScreen
+import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
+import com.kintmin.presentation.ui.setting.navigation.settingGraph
 import com.kintmin.presentation.ui.step.navigation.navigateToStepScreen
 import com.kintmin.presentation.ui.step.navigation.stepScreen
 import kotlinx.coroutines.flow.Flow
@@ -59,6 +60,8 @@ val navOptions = navOptions {
     launchSingleTop = true
     restoreState = true
 }
+
+private val ScreenSlideSpec = tween<IntOffset>(300)
 
 @Composable
 fun MainNavHost(
@@ -73,25 +76,25 @@ fun MainNavHost(
         enterTransition = {
             slideIntoContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                animationSpec = tween(300),
+                animationSpec = ScreenSlideSpec,
             )
         },
         exitTransition = {
             slideOutOfContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                animationSpec = tween(300),
+                animationSpec = ScreenSlideSpec,
             )
         },
         popEnterTransition = {
             slideIntoContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.End,
-                animationSpec = tween(300),
+                animationSpec = ScreenSlideSpec,
             )
         },
         popExitTransition = {
             slideOutOfContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.End,
-                animationSpec = tween(300),
+                animationSpec = ScreenSlideSpec,
             )
         },
     ) {

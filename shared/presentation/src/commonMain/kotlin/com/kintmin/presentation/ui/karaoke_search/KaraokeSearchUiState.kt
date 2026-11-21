@@ -5,7 +5,6 @@ data class KaraokeSearchUiState(
     val isLoading: Boolean,
     val results: List<KaraokeSearchItem>,
 ) {
-    // 로딩이 끝났는데 결과가 없는 상태 (검색 결과 없음 문구 노출 조건)
     val isEmptyResult: Boolean get() = !isLoading && results.isEmpty()
 
     data class KaraokeSearchItem(

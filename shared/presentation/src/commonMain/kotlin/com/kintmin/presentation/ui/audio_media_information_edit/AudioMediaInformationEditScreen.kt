@@ -2,7 +2,6 @@ package com.kintmin.presentation.ui.audio_media_information_edit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,16 +13,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,31 +28,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.koin.compose.viewmodel.koinViewModel
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
 import com.kintmin.domain.audio_media.AudioMediaTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
-import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
-import com.kintmin.presentation.theme.topAppBarHeight
-import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionRowView
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionUnlinkButton
 import com.kintmin.presentation.ui.audio_media_information_edit.dialog.RemoveLinkedPlaylistDialog
+import com.kintmin.presentation.ui.common.AudioArtwork
+import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
+import com.kintmin.presentation.ui.common.SectionHeader
 import com.kintmin.presentation.ui.common.UnderlineTextField
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
-import okio.Path.Companion.toPath
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun AudioMediaInformationEditScreen(
@@ -121,26 +106,9 @@ fun AudioMediaInformationEditScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                expandedHeight = topAppBarHeight,
-                title = {
-                    Text(
-                        text = "음원 정보 수정",
-                        fontSize = topAppBarDetailTitleFontSize,
-                        lineHeight = topAppBarDetailTitleLineHeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navigateToBack() }) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBackIosNew,
-                            modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "ArrowBackIosNew"
-                        )
-                    }
-                },
+            DetailTopAppBar(
+                title = "음원 정보 수정",
+                onClickBack = { navigateToBack() },
             )
         },
     ) { innerPadding ->
@@ -150,37 +118,15 @@ fun AudioMediaInformationEditScreen(
                 .fillMaxSize(),
         ) {
             item {
-                if (data.imageFileFullPath == null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
-                            .height(220.dp)
-                            .background(MaterialTheme.colorScheme.surface),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.LibraryMusic,
-                            contentDescription = null,
-                            modifier = Modifier.size(36.dp),
-                        )
-                    }
-                } else {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalPlatformContext.current)
-                            .data(data.imageFileFullPath.toPath())
-                            .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
-                            .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
-                            .build(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp)
-                            .height(220.dp)
-                            .background(MaterialTheme.colorScheme.surface)
-                    )
-                }
+                AudioArtwork(
+                    imageFileFullPath = data.imageFileFullPath,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                        .height(220.dp)
+                        .background(MaterialTheme.colorScheme.surface),
+                    placeholderIconSize = 36.dp,
+                )
             }
             item {
                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -230,25 +176,15 @@ fun AudioMediaInformationEditScreen(
             }
             item {
                 Spacer(modifier = Modifier.height(24.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        modifier = Modifier
-                            .weight(1f)
-                            .semantics { heading() },
-                        text = "연결된 플레이리스트",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = gray60,
-                    )
-                    PlaylistAddButtonView(
-                        text = "추가",
-                        onClick = { sendIntent(AudioMediaInformationEditIntent.OnClickShowAddPlaylistBottomSheet) },
-                    )
-                }
+                SectionHeader(
+                    text = "연결된 플레이리스트",
+                    action = {
+                        PlaylistAddButtonView(
+                            text = "추가",
+                            onClick = { sendIntent(AudioMediaInformationEditIntent.OnClickShowAddPlaylistBottomSheet) },
+                        )
+                    },
+                )
             }
             items(
                 count = data.playlists.size,

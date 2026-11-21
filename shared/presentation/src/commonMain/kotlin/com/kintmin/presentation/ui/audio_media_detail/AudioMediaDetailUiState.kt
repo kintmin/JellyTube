@@ -2,14 +2,14 @@ package com.kintmin.presentation.ui.audio_media_detail
 
 import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
-import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.extension.toDotDateTimeString
 import com.kintmin.presentation.extension.toKoreanDateTimeStringWithoutSecond
+import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import kotlin.time.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 data class AudioMediaDetailUiState(
     val audioMediaId: Int,
@@ -20,7 +20,7 @@ data class AudioMediaDetailUiState(
     val audioDurationSeconds: Double?,
     val audioMediaCreationTime: String,
     val source: String,
-    /** 출처를 눌렀을 때 열 수 있는 웹 주소. 편집본은 원본 주소를 꺼내 쓰고, 기기에서 가져온 음원은 null. */
+    /** 출처를 눌렀을 때 열 웹 주소. */
     val webViewUrl: String?,
     val audioMediaDescription: String,
     val hasLyrics: Boolean,
@@ -81,7 +81,6 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
             playTime = (audioMedia.playbackDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
             // 가사 검색은 음원 길이로 후보를 매칭하므로 편집본이 아니라 원본 길이를 넘긴다
             audioDurationSeconds = audioMedia.audioDuration?.toDouble(DurationUnit.SECONDS),
-            // 초·밀리초까지 적으면 두 줄이 되고, 그만큼 궁금할 일도 없다
             audioMediaCreationTime = audioMedia.createdTime.toKoreanDateTimeStringWithoutSecond(),
             source = audioMedia.source,
             webViewUrl = EditedAudioSource.webViewUrlOrNull(audioMedia.source),

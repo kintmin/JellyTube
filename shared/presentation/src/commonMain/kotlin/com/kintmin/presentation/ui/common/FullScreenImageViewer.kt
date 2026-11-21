@@ -12,10 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.LibraryMusic
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,17 +26,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
 import coil3.compose.AsyncImagePainter
+import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.kintmin.presentation.platform.PlatformFullScreenDialog
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkBackdropFallback
+import com.kintmin.presentation.theme.overlayContent
 import com.kintmin.presentation.ui.custom_ui.zoomable.ZoomContentAlignment
 import com.kintmin.presentation.ui.custom_ui.zoomable.ZoomLimitMode
 import com.kintmin.presentation.ui.custom_ui.zoomable.ZoomableView
@@ -105,7 +107,7 @@ private fun FullScreenImageViewerContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(MaterialTheme.colorScheme.scrim),
     ) {
         BoxWithConstraints(
             modifier = Modifier.fillMaxSize(),
@@ -144,9 +146,9 @@ private fun FullScreenImageViewerContent(
                     .size(48.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Close,
-                    contentDescription = "Close",
-                    tint = Color.White,
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = "닫기",
+                    tint = overlayContent,
                 )
             }
         }
@@ -164,18 +166,18 @@ private fun FullScreenImageViewerPreview() {
             onTapImage = {},
         ) { imageModifier ->
             Box(
-                modifier = imageModifier.background(Color(0xFF0F172A)),
+                modifier = imageModifier.background(artworkBackdropFallback[1]),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.LibraryMusic,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = overlayContent,
                     modifier = Modifier.size(72.dp),
                 )
                 Text(
                     text = "Full Screen Image Viewer",
-                    color = Color.White,
+                    color = overlayContent,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp),
                 )
             }

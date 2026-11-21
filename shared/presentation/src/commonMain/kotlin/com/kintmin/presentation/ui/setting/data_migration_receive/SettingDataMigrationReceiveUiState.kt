@@ -51,7 +51,6 @@ sealed interface DataMigrationReceivePhase {
     data class Blocked(val runningTasks: Map<RunningTask, Int>) : DataMigrationReceivePhase
     data object NotFound : DataMigrationReceivePhase
 
-    /** 여러 대를 찾았거나, 찾은 한 대가 버전이 달라 고를 수 없다. */
     data class SelectSource(val sources: List<MigrationSource>) : DataMigrationReceivePhase
     data class CodeInput(val errorMessage: String? = null) : DataMigrationReceivePhase
     data object Pairing : DataMigrationReceivePhase

@@ -24,15 +24,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray20
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.floatingElevation
+import com.kintmin.presentation.theme.outlineSubtle
 
 /**
  * X 는 입력이 있으면 지우고, 비어 있으면 [onCloseWhenEmpty] 가 있을 때만 닫기로 남는다 — 비어
@@ -47,14 +50,44 @@ fun SearchField(
     onSearch: (() -> Unit)? = null,
     onCloseWhenEmpty: (() -> Unit)? = null,
 ) {
+    val isEmpty = value.isEmpty()
+    PillTextField(
+        modifier = modifier,
+        value = value,
+        placeholder = placeholder,
+        onValueChange = onValueChange,
+        leadingIcon = Icons.Rounded.Search,
+        onImeSearch = onSearch,
+        trailingIcon = if (!isEmpty || onCloseWhenEmpty != null) {
+            {
+                PillTextFieldTrailingButton(
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = if (isEmpty) "검색 닫기" else "검색어 전체 삭제",
+                    onClick = { if (isEmpty) onCloseWhenEmpty?.invoke() else onValueChange("") },
+                )
+            }
+        } else {
+            null
+        },
+    )
+}
+
+@Composable
+fun PillTextField(
+    value: String,
+    placeholder: String,
+    onValueChange: (String) -> Unit,
+    leadingIcon: ImageVector,
+    modifier: Modifier = Modifier,
+    onImeSearch: (() -> Unit)? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
+) {
     // 입력과 placeholder 의 줄 높이가 다르면 빈 칸일 때 커서가 placeholder 높이에 맞춰 위로 뜬다.
     val textStyle = TextStyle(
         fontSize = 14.sp,
         lineHeight = 20.sp,
         color = MaterialTheme.colorScheme.onSurface,
     )
-    val isEmpty = value.isEmpty()
-    val isTrailingVisible = !isEmpty || onCloseWhenEmpty != null
 
     Row(
         modifier = modifier
@@ -67,28 +100,28 @@ fun SearchField(
             modifier = Modifier
                 .padding(start = 16.dp, end = 8.dp)
                 .size(20.dp),
-            tint = gray60,
-            imageVector = Icons.Rounded.Search,
+            tint = contentMuted,
+            imageVector = leadingIcon,
             contentDescription = null,
         )
         BasicTextField(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = if (isTrailingVisible) 0.dp else 16.dp),
+                .padding(end = if (trailingIcon != null) 0.dp else 16.dp),
             value = value,
             onValueChange = onValueChange,
             singleLine = true,
             textStyle = textStyle,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-            keyboardOptions = if (onSearch != null) KeyboardOptions(imeAction = ImeAction.Search) else KeyboardOptions.Default,
-            keyboardActions = KeyboardActions(onSearch = onSearch?.let { { it() } }),
+            keyboardOptions = if (onImeSearch != null) KeyboardOptions(imeAction = ImeAction.Search) else KeyboardOptions.Default,
+            keyboardActions = KeyboardActions(onSearch = onImeSearch?.let { { it() } }),
             decorationBox = { innerTextField ->
                 Box(contentAlignment = Alignment.CenterStart) {
-                    if (isEmpty) {
+                    if (value.isEmpty()) {
                         Text(
                             text = placeholder,
                             style = textStyle,
-                            color = gray60,
+                            color = contentMuted,
                             maxLines = 1,
                         )
                     }
@@ -96,27 +129,33 @@ fun SearchField(
                 }
             },
         )
-        if (isTrailingVisible) {
-            IconButton(
-                modifier = Modifier.padding(end = 4.dp),
-                onClick = { if (isEmpty) onCloseWhenEmpty?.invoke() else onValueChange("") },
-            ) {
-                Icon(
-                    modifier = Modifier.size(20.dp),
-                    imageVector = Icons.Rounded.Close,
-                    contentDescription = if (isEmpty) "검색 닫기" else "검색어 전체 삭제",
-                    tint = gray60,
-                )
-            }
-        }
+        trailingIcon?.invoke()
+    }
+}
+
+@Composable
+fun PillTextFieldTrailingButton(
+    imageVector: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+) {
+    IconButton(
+        modifier = Modifier.padding(end = 4.dp),
+        onClick = onClick,
+    ) {
+        Icon(
+            modifier = Modifier.size(20.dp),
+            imageVector = imageVector,
+            contentDescription = contentDescription,
+            tint = contentMuted,
+        )
     }
 }
 
 /** 목록·웹뷰 위에 뜬 필드. 다크 테마에서는 그림자가 배경에 묻혀 테두리를 함께 두른다. */
-fun Modifier.floatingField(): Modifier = this
-    // M3 elevation level 3. BottomActionButton 과 같은 높이다.
-    .shadow(elevation = 6.dp, shape = CircleShape)
-    .border(width = 1.dp, color = gray20, shape = CircleShape)
+fun Modifier.floatingField(shape: Shape = CircleShape): Modifier = this
+    .shadow(elevation = floatingElevation, shape = shape)
+    .border(width = 1.dp, color = outlineSubtle, shape = shape)
 
 /** [floatingField] 를 감싼 바깥 여백(위아래 8dp)까지 더한 높이. 아래 목록이 이만큼 비켜 준다. */
 val FloatingSearchFieldHeight = 64.dp
@@ -129,5 +168,37 @@ private fun SearchFieldPreview() {
             SearchField(value = "", placeholder = "노래 제목으로 검색", onValueChange = {}, onSearch = {})
             SearchField(value = "밤편지", placeholder = "노래 제목으로 검색", onValueChange = {}, onSearch = {})
         }
+    }
+}
+
+@Preview
+@Composable
+private fun PillTextFieldPreview() {
+    JellyTubeTheme {
+        PillTextField(
+            value = "",
+            placeholder = "이동할 URL 붙여넣기",
+            onValueChange = {},
+            leadingIcon = Icons.Rounded.Search,
+            trailingIcon = {
+                PillTextFieldTrailingButton(
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = "검색 닫기",
+                    onClick = {},
+                )
+            },
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun PillTextFieldTrailingButtonPreview() {
+    JellyTubeTheme {
+        PillTextFieldTrailingButton(
+            imageVector = Icons.Rounded.Close,
+            contentDescription = "검색어 전체 삭제",
+            onClick = {},
+        )
     }
 }

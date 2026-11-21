@@ -22,8 +22,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.gray80
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.contentSubtle
 
 /**
  * 설정 화면의 한 항목. [onClick]이 null이면 정보 표시용으로 클릭되지 않는다.
@@ -56,7 +56,7 @@ fun SettingItemView(
                 modifier = Modifier.size(22.dp),
                 imageVector = icon,
                 contentDescription = null,
-                tint = gray80,
+                tint = contentSubtle,
             )
         }
         Column(
@@ -72,7 +72,7 @@ fun SettingItemView(
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = gray60,
+                    color = contentMuted,
                 )
             }
         }
@@ -86,7 +86,7 @@ fun SettingNavigateIcon(contentDescription: String?) {
     Icon(
         imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
         contentDescription = contentDescription,
-        tint = gray60,
+        tint = contentMuted,
     )
 }
 

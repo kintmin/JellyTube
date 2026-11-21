@@ -46,7 +46,7 @@ import androidx.compose.ui.zIndex
 import com.kintmin.presentation.remember_state.ReorderState
 import com.kintmin.presentation.remember_state.rememberReorderState
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 
 private val DRAG_ELEVATION = 8.dp
 private val DRAG_INSET = 12.dp
@@ -118,7 +118,7 @@ fun <T> LazyItemScope.ReorderableItem(
         ),
         label = "reorderDragCorner",
     )
-    // M3 의 드래그 상태 레이어. 내용 **위에** 그린다 — 뒤에 깔면 호출부의 행이 불투명한
+    // 드래그 상태 레이어는 내용 **위에** 그린다 — 뒤에 깔면 호출부의 행이 불투명한
     // 배경을 가질 때(Card) 통째로 가려져 끄는 동안 아무 색도 변하지 않는다.
     val stateLayerColor = MaterialTheme.colorScheme.onSurface
     // 행이 바탕을 칠하지 않으면 들린 동안 아래 행이 비치고 그림자가 선처럼 드러난다.
@@ -237,7 +237,7 @@ private fun ReorderableItemPreview() {
                             modifier = dragHandleModifier.align(Alignment.CenterEnd),
                             imageVector = Icons.Rounded.Reorder,
                             contentDescription = "끌어서 순서 변경",
-                            tint = gray60,
+                            tint = contentMuted,
                         )
                     }
                 }

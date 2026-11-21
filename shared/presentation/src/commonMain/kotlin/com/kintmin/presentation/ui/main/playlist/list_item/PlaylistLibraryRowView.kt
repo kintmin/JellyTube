@@ -26,8 +26,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.gray80
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.contentSubtle
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 
@@ -78,7 +78,7 @@ private fun PlaylistLibraryRowView(
             imageVector = data.type.libraryIcon(),
             contentDescription = null,
             modifier = Modifier.size(22.dp),
-            tint = gray80,
+            tint = contentSubtle,
         )
         Text(
             modifier = Modifier
@@ -94,7 +94,7 @@ private fun PlaylistLibraryRowView(
         Text(
             text = data.countString,
             style = MaterialTheme.typography.bodySmall,
-            color = gray60,
+            color = contentMuted,
             maxLines = 1,
         )
         Icon(
@@ -103,7 +103,7 @@ private fun PlaylistLibraryRowView(
                 .size(20.dp),
             imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
             contentDescription = null,
-            tint = gray60,
+            tint = contentMuted,
         )
     }
 }

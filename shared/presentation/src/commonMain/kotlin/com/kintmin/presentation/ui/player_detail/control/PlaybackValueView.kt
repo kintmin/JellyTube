@@ -6,24 +6,25 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkBackdropFallback
+import com.kintmin.presentation.theme.overlayContentSecondary
 
 /**
  * 양 끝에 서는 값의 폭. **좌우가 같아야 가운데 것이 화면 중앙에 온다.**
@@ -46,7 +47,7 @@ fun PlaybackValueView(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(MaterialTheme.shapes.medium)
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -56,11 +57,11 @@ fun PlaybackValueView(
             modifier = Modifier.size(16.dp),
             imageVector = imageVector,
             contentDescription = contentDescription,
-            tint = Color.White.copy(alpha = 0.82f),
+            tint = overlayContentSecondary,
         )
         Text(
             text = label,
-            color = Color.White.copy(alpha = 0.88f),
+            color = overlayContentSecondary,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
@@ -77,7 +78,7 @@ private fun PlaybackValueViewPreview() {
     JellyTubeTheme {
         Row(
             modifier = Modifier
-                .background(Color(0xFF1D1C1A))
+                .background(artworkBackdropFallback[1])
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {

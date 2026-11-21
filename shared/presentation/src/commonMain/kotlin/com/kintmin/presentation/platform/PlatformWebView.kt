@@ -28,8 +28,6 @@ interface WebViewHandle {
 expect fun rememberWebViewHandle(): WebViewHandle
 
 /**
- * 플랫폼 웹뷰를 그린다.
- *
  * @param onUrlChanged 방문 이력이 바뀔 때마다 현재 URL. 다운로드 대상 영상을 추적한다.
  * @param onExternalSchemeFailed `intent://` 등 외부 앱 스킴을 열지 못했을 때의 안내 문구.
  */

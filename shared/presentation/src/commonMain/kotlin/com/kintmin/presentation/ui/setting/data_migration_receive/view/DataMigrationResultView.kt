@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -18,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationFailureItem
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationReceivePhase
@@ -36,7 +36,7 @@ fun DataMigrationResultView(
         colors = CardDefaults.cardColors(
             containerColor = if (isFailure) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
         ),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             when (phase) {
@@ -66,7 +66,7 @@ fun DataMigrationResultView(
             }
             if (isFailure) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onClickExit) { Text("나가기") }
+                    OutlinedButton(onClick = onClickExit, colors = JellyTubeButtonColors.secondary()) { Text("나가기") }
                     Button(onClick = onClickRetry) { Text("다시 시도") }
                 }
             }

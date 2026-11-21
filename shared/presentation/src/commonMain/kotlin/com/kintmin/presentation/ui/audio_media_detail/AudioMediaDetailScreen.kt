@@ -16,15 +16,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.Fullscreen
-import androidx.compose.material.icons.rounded.LibraryMusic
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -34,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,39 +41,34 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.softRed
-import com.kintmin.presentation.theme.white
-import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
-import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
-import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.destructiveContent
+import com.kintmin.presentation.theme.overlayContent
+import com.kintmin.presentation.theme.overlayScrim
 import com.kintmin.presentation.theme.topAppBarIconSize
-import com.kintmin.presentation.ui.common.BottomActionBar
-import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.audio_media_detail.dialog.AudioEditRevertDialog
 import com.kintmin.presentation.ui.audio_media_detail.dialog.KaraokeUnlinkDialog
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionProgressIndicator
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionRowView
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionUnlinkButton
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaDetailInfoView
+import com.kintmin.presentation.ui.common.AudioArtwork
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
+import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
+import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
+import com.kintmin.presentation.ui.common.SectionHeader
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
-import okio.Path.Companion.toPath
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun AudioMediaDetailScreen(
@@ -168,26 +159,9 @@ fun AudioMediaDetailScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                expandedHeight = topAppBarHeight,
-                title = {
-                    Text(
-                        text = "미디어 세부정보",
-                        fontSize = topAppBarDetailTitleFontSize,
-                        lineHeight = topAppBarDetailTitleLineHeight,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { navigateToBack() }) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBackIosNew,
-                            modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "뒤로가기"
-                        )
-                    }
-                },
+            DetailTopAppBar(
+                title = "미디어 세부정보",
+                onClickBack = { navigateToBack() },
                 actions = {
                     if (data.isDeleting) {
                         Box(
@@ -204,18 +178,17 @@ fun AudioMediaDetailScreen(
                             IconButton(onClick = { isMenuExpanded = true }) {
                                 Icon(
                                     imageVector = Icons.Rounded.MoreVert,
+                                    modifier = Modifier.size(topAppBarIconSize),
                                     contentDescription = "더보기",
                                 )
                             }
-                            DropdownMenu(
+                            JellyTubeDropdownMenu(
                                 expanded = isMenuExpanded,
                                 onDismissRequest = { isMenuExpanded = false },
-                                // M3 기본 메뉴 모서리는 extraSmall(4dp) 이라 각져 보인다.
-                                shape = MaterialTheme.shapes.medium,
                             ) {
                                 DropdownMenuItem(
                                     text = { Text("음원 파일 삭제") },
-                                    colors = MenuDefaults.itemColors(textColor = softRed),
+                                    colors = MenuDefaults.itemColors(textColor = destructiveContent),
                                     onClick = {
                                         isMenuExpanded = false
                                         isShowDialog = true
@@ -238,37 +211,15 @@ fun AudioMediaDetailScreen(
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
-            if (data.imageFileFullPath == null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                        .height(220.dp)
-                        .background(MaterialTheme.colorScheme.surface),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LibraryMusic,
-                        contentDescription = null,
-                        modifier = Modifier.size(36.dp),
-                    )
-                }
-            } else {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                        .data(data.imageFileFullPath.toPath())
-                        .memoryCachePolicy(coil3.request.CachePolicy.ENABLED)
-                        .diskCachePolicy(coil3.request.CachePolicy.DISABLED)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                        .height(220.dp)
-                        .background(MaterialTheme.colorScheme.surface)
-                )
-            }
+            AudioArtwork(
+                imageFileFullPath = data.imageFileFullPath,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .height(220.dp)
+                    .background(MaterialTheme.colorScheme.surface),
+                placeholderIconSize = 36.dp,
+            )
         }
         // 리스트가 사진 위를 덮어 터치를 가져가므로 사진 탭과 확대 아이콘을 첫 칸이 들고 있다.
         LazyColumn(
@@ -301,11 +252,11 @@ fun AudioMediaDetailScreen(
                                 .padding(end = 16.dp, bottom = 16.dp)
                                 .size(32.dp)
                                 .background(
-                                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f),
+                                    color = overlayScrim,
                                     shape = CircleShape,
                                 )
                                 .padding(6.dp),
-                            tint = white,
+                            tint = overlayContent,
                         )
                     }
                 }
@@ -398,21 +349,13 @@ fun AudioMediaDetailScreen(
                     }
 
                     if (!data.isDeleted) {
-                        Text(
-                            modifier = Modifier
-                                .padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
-                                .semantics { heading() },
-                            text = "플레이리스트",
-                            fontSize = 14.sp,
-                            lineHeight = 18.sp,
-                            color = gray60,
-                        )
+                        SectionHeader(text = "플레이리스트")
                         if (data.playlists.isEmpty()) {
                             Text(
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
                                 text = "아직 추가된 플레이리스트가 없습니다.",
                                 fontSize = 16.sp,
-                                color = gray60,
+                                color = contentMuted,
                             )
                         }
                     }

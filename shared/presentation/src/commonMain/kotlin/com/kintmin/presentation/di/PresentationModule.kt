@@ -5,15 +5,15 @@ import com.kintmin.presentation.sleep_timer.SleepTimerRunner
 import com.kintmin.presentation.ui.audio_edit.AudioEditViewModel
 import com.kintmin.presentation.ui.audio_media_detail.AudioMediaDetailViewModel
 import com.kintmin.presentation.ui.audio_media_information_edit.AudioMediaInformationEditViewModel
-import com.kintmin.presentation.ui.main.MainViewModel
-import com.kintmin.presentation.ui.main.floating_action.MainFloatingActionViewModel
-import com.kintmin.presentation.ui.main.playlist.PlaylistViewModel
-import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.karaoke_search.KaraokeSearchViewModel
 import com.kintmin.presentation.ui.lyrics_detail.LyricsDetailViewModel
 import com.kintmin.presentation.ui.lyrics_edit.LyricsEditViewModel
 import com.kintmin.presentation.ui.lyrics_search.LyricsSearchViewModel
 import com.kintmin.presentation.ui.lyrics_viewer.LyricsViewerViewModel
+import com.kintmin.presentation.ui.main.MainViewModel
+import com.kintmin.presentation.ui.main.floating_action.MainFloatingActionViewModel
+import com.kintmin.presentation.ui.main.playlist.PlaylistViewModel
+import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
 import com.kintmin.presentation.ui.player_detail.PlayerDetailViewModel
 import com.kintmin.presentation.ui.playlist_add.PlaylistAddViewModel
@@ -24,15 +24,14 @@ import com.kintmin.presentation.ui.setting.SettingViewModel
 import com.kintmin.presentation.ui.setting.app_log.AppLogViewModel
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveViewModel
 import com.kintmin.presentation.ui.setting.data_migration_send.SettingDataMigrationSendViewModel
-import com.kintmin.presentation.ui.setting.file_share_receive.SettingFileShareReceiveViewModel
 import com.kintmin.presentation.ui.setting.device_save_select.SettingDeviceSaveSelectViewModel
+import com.kintmin.presentation.ui.setting.file_share_receive.SettingFileShareReceiveViewModel
 import com.kintmin.presentation.ui.step.StepViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val presentationModule: Module = module {
-    // 화면보다 오래 살아야 해서 ViewModel 이 아니다.
     single { SleepTimerRunner(get(), get()) }
 
     viewModelOf(::AppViewModel)

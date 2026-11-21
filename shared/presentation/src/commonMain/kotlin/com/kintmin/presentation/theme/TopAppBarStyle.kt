@@ -3,13 +3,10 @@ package com.kintmin.presentation.theme
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// M3 기본값은 64dp 다. 하단 네비게이션과 같은 높이인데 상단에만 상태바 inset 이 더해져 더
-// 두껍게 보이므로 낮춰 쓴다.
 val topAppBarHeight = 56.dp
 
 val topAppBarCompactHeight = 48.dp
 
-// M3 기본은 24dp 지만 이 앱은 아이콘을 22dp 로 쓴다.
 // IconButton 이 48dp 터치 타깃을 따로 유지하므로 아이콘만 줄어도 누르는 영역은 그대로다.
 val topAppBarIconSize = 22.dp
 

@@ -1,8 +1,11 @@
 package com.kintmin.presentation.ui.player_detail.dialog
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -17,13 +20,39 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.selectedFill
+import com.kintmin.presentation.theme.subtleFill
+
+@Composable
+internal fun PlaybackDialogColumn(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = title,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        content()
+    }
+}
 
 @Composable
 internal fun PlaybackStepButton(
@@ -35,7 +64,7 @@ internal fun PlaybackStepButton(
         modifier = Modifier.size(36.dp),
         onClick = onClick,
         colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+            containerColor = selectedFill,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
     ) {
@@ -75,7 +104,7 @@ internal fun PlaybackOptionChip(
         // 테두리를 두면 고른 칸과 안 고른 칸의 차이가 테두리에 묻힌다. 채움으로만 가른다.
         border = null,
         colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
+            containerColor = subtleFill,
             labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             selectedContainerColor = MaterialTheme.colorScheme.primary,
             selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
@@ -128,4 +157,14 @@ internal fun PlaybackAdjustSlider(
             )
         },
     )
+}
+
+@Preview
+@Composable
+private fun PlaybackDialogColumnPreview() {
+    JellyTubeTheme {
+        PlaybackDialogColumn(title = "재생 속도") {
+            Text(text = "1.0x", color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
 }

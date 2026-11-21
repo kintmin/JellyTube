@@ -50,7 +50,6 @@ class SettingDataMigrationReceiveViewModel constructor(
 
     private var endpoint: MigrationEndpoint? = null
 
-    /** 페어링에 성공한 뒤에는 실패해도 코드를 다시 받지 않고 이어 받는다. */
     private var token: String? = null
 
     private var runJob: Job? = null
