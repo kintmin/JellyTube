@@ -14,6 +14,7 @@ import com.kintmin.presentation.platform.KeepScreenOnEffect
 import com.kintmin.presentation.platform.PlatformToastHost
 import com.kintmin.presentation.platform.keepsReceivingInBackground
 import com.kintmin.presentation.port.FileShareServerController
+import com.kintmin.presentation.secret_mode.SecretModeRunner
 import com.kintmin.presentation.theme.JellyTubeTheme
 import kotlinx.coroutines.flow.Flow
 import org.koin.compose.koinInject
@@ -28,6 +29,8 @@ fun JellyTubeApp(
     val navController = rememberNavController()
 
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { onAppBackground() }
+    val secretModeRunner = koinInject<SecretModeRunner>()
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { secretModeRunner.endIfExpired() }
 
     // 앱을 나가면 받기가 멈추는 플랫폼은, 서버가 켜진 동안 어느 화면에서든 자동 잠금으로 서스펜드되지 않게 한다.
     if (!keepsReceivingInBackground) {

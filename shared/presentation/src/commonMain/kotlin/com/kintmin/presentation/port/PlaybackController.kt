@@ -33,6 +33,9 @@ interface PlaybackController {
         mediaControlDataList: List<MediaControlData>,
     ): Result<Unit>
 
+    /** 재생을 멈추고 큐를 통째로 비운다. 알림·잠금 화면의 곡 정보도 함께 사라진다. */
+    fun clearQueue()
+
     fun tryDeleteMediaItem(
         playlistId: Int,
         mediaId: Int,

@@ -39,6 +39,8 @@ import com.kintmin.presentation.ui.playlist_download.navigation.navigateToPlayli
 import com.kintmin.presentation.ui.playlist_download.navigation.playlistDownloadScreen
 import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEditScreen
 import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
+import com.kintmin.presentation.ui.secret_playlist.navigation.navigateToSecretPlaylistScreen
+import com.kintmin.presentation.ui.secret_playlist.navigation.secretPlaylistScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.navigateToAppLogScreen
 import com.kintmin.presentation.ui.setting.backup_restore.navigation.navigateToSettingBackupRestoreScreen
@@ -54,6 +56,8 @@ import com.kintmin.presentation.ui.setting.device_save_select.navigation.setting
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.navigateToSettingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.file_share_receive.navigation.settingFileShareReceiveScreen
 import com.kintmin.presentation.ui.setting.navigation.navigateToSettingScreen
+import com.kintmin.presentation.ui.setting.secret_playlist_guide.navigation.navigateToSettingSecretPlaylistGuideScreen
+import com.kintmin.presentation.ui.setting.secret_playlist_guide.navigation.settingSecretPlaylistGuideScreen
 import com.kintmin.presentation.ui.setting.navigation.settingGraph
 import com.kintmin.presentation.ui.step.navigation.navigateToStepScreen
 import com.kintmin.presentation.ui.step.navigation.stepScreen
@@ -120,6 +124,9 @@ fun MainNavHost(
             navigateToSetting = {
                 navController.navigateToSettingScreen(navOptions)
             },
+            navigateToSecretPlaylist = {
+                navController.navigateToSecretPlaylistScreen(navOptions)
+            },
             navigateToPlayerDetail = {
                 navController.navigateToPlayerDetailScreen(navOptions)
             },
@@ -132,6 +139,22 @@ fun MainNavHost(
             navigateToPlaylist = { playlistId ->
                 navController.popBackStack()
                 navController.navigateToPlaylistDetailScreen(playlistId = playlistId, navOptions = navOptions)
+            },
+        )
+        secretPlaylistScreen(
+            navigateToBack = { navController.popBackStack() },
+            navigateToPlaylistDetail = { playlistId ->
+                navController.navigateToPlaylistDetailScreen(
+                    playlistId = playlistId,
+                    navOptions = navOptions,
+                    isBasePlaylist = false,
+                )
+            },
+            navigateToPlaylistEdit = { playlistId ->
+                navController.navigateToPlaylistEditScreen(playlistId, null, navOptions)
+            },
+            navigateToPlaylistAdd = { playlistId, playlistName ->
+                navController.navigateToPlaylistAddScreen(playlistId, navOptions, playlistName)
             },
         )
         playlistDetail(
@@ -235,6 +258,9 @@ fun MainNavHost(
             navigateToDeviceSave = {
                 navController.navigateToSettingDeviceSaveScreen(navOptions)
             },
+            navigateToSecretPlaylistGuide = {
+                navController.navigateToSettingSecretPlaylistGuideScreen(navOptions)
+            },
             navigateToBackupRestore = {
                 navController.navigateToSettingBackupRestoreScreen(navOptions)
             },
@@ -267,6 +293,13 @@ fun MainNavHost(
                 navigateToBack = { navController.popBackStack() },
                 navigateToDeviceSaveSelect = {
                     navController.navigateToSettingDeviceSaveSelectScreen(navOptions)
+                },
+            )
+
+            settingSecretPlaylistGuideScreen(
+                navigateToBack = { navController.popBackStack() },
+                navigateToTryEntry = {
+                    onDeepLink(DeepLinkConstants.UrlBuilder.secretPlaylistEntryHint())
                 },
             )
 
@@ -346,6 +379,14 @@ private fun consumeNavigationEvent(
                 navigationEvent.targetUrl,
             )
         }
+        NavigationEvent.HintSecretPlaylistEntry -> {
+            // 새 항목이라야 인자를 읽는다. 같은 자리를 다시 쓰면 이전 인자가 남는다.
+            navController.navigate(MainScreenRoute(MainTabItem.Playlist, hintSecretPlaylistEntry = true)) {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+            }
+        }
         NavigationEvent.NavigateToMainPlaylistsTab -> {
             navController.navigateToMainScreen(
                 MainTabItem.Playlist,
@@ -374,5 +415,17 @@ private fun consumeNavigationEvent(
         NavigationEvent.NavigateToPlayer -> {
             navController.navigateToPlayerDetailScreen(navOptions)
         }
+        NavigationEvent.LeaveSecretScreens -> {
+            // 스택 전체를 보는 API 가 공개돼 있지 않아 가려진 비밀 화면을 골라낼 수 없다. 통째로 비운다.
+            // 메인 하나뿐이면 걷어 낼 것이 없다 — 앱이 뜰 때마다 메인을 다시 만들지 않게 한다.
+            if (navController.previousBackStackEntry == null) return
+            navController.navigate(MainScreenRoute(MainTabItem.Playlist)) {
+                popUpTo(navController.graph.startDestinationId) {
+                    inclusive = true
+                }
+                launchSingleTop = true
+            }
+        }
     }
 }
+

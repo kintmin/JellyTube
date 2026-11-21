@@ -73,6 +73,8 @@ final class MediaControllerBridgeImpl: IosMediaControllerBridge {
         onMain { $0.removeItem(mediaId: id) }
     }
 
+    func clearQueue() { onMain { $0.clearQueue() } }
+
     func replaceItem(mediaId: String, item: IosMediaItem) {
         guard let id = Int(mediaId) else { return }
         onMain { $0.replaceItem(mediaId: id, with: item.toEngineItem()) }

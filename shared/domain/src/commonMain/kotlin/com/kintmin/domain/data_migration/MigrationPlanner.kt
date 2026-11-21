@@ -46,20 +46,23 @@ object MigrationPlanner {
         fun systemId(type: PlaylistType) =
             targetSystemIdByType[type] ?: error("받는 기기에 ${type.name} 플레이리스트가 없습니다.")
 
-        val targetUserPlaylists = target.playlists.filter { it.type == PlaylistType.USER }
-        val targetUserIdByName = targetUserPlaylists.sortedWith(playlistOrder)
-            .distinctBy { it.name.trim() }
-            .associate { it.name.trim() to it.id }
-        val sourceUserPlaylists = source.playlists.filter { it.type == PlaylistType.USER }.sortedWith(playlistOrder)
+        // 사용자가 만든 플레이리스트는 종류와 이름이 같을 때만 합친다. 비밀과 일반이 섞이면 안 된다.
+        fun MigrationPlaylist.mergeKey() = type to name.trim()
+        val targetUserPlaylists = target.playlists.filterNot { it.type.isSystem }
+        val targetUserIdByKey = targetUserPlaylists.sortedWith(playlistOrder)
+            .distinctBy { it.mergeKey() }
+            .associate { it.mergeKey() to it.id }
+        val sourceUserPlaylists = source.playlists.filterNot { it.type.isSystem }.sortedWith(playlistOrder)
         val newPlaylists = sourceUserPlaylists
-            .filter { it.name.trim() !in targetUserIdByName }
-            .distinctBy { it.name.trim() }
-        val newPlaylistIdByName = newPlaylists.associate { it.name.trim() to it.id }
+            .filter { it.mergeKey() !in targetUserIdByKey }
+            .distinctBy { it.mergeKey() }
+        val newPlaylistIdByKey = newPlaylists.associate { it.mergeKey() to it.id }
         val playlistRefBySourceId = source.playlists.associate { playlist ->
-            playlist.id to when (playlist.type) {
-                PlaylistType.USER -> targetUserIdByName[playlist.name.trim()]?.let { MigrationRef.Existing(it) }
-                    ?: MigrationRef.Incoming(newPlaylistIdByName.getValue(playlist.name.trim()))
-                else -> MigrationRef.Existing(systemId(playlist.type))
+            playlist.id to if (playlist.type.isSystem) {
+                MigrationRef.Existing(systemId(playlist.type))
+            } else {
+                targetUserIdByKey[playlist.mergeKey()]?.let { MigrationRef.Existing(it) }
+                    ?: MigrationRef.Incoming(newPlaylistIdByKey.getValue(playlist.mergeKey()))
             }
         }
 

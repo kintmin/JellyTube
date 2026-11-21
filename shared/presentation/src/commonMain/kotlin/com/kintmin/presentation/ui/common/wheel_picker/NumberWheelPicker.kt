@@ -79,13 +79,20 @@ fun NumberWheelPicker(
         }
     }
 
+    // 처음 받은 값을 되돌려 보내지 않는다. 저장값을 읽기 전의 기본값으로 처음 그려지면 그 기본값이 저장값을 덮는다.
+    // 받은 값이 아니라 보낸 값과 비교한다 — 저장이 비동기라 받은 값은 늦게 따라오고, 그 사이 원래 값으로
+    // 되돌린 선택이 버려진다.
+    var lastSentValue by remember { mutableStateOf(selectedValue) }
     LaunchedEffect(centerIndex) {
         val target = programmaticTarget
         if (target != null) {
             if (centerIndex != target) return@LaunchedEffect
             programmaticTarget = null
         }
-        values.getOrNull(centerIndex)?.let(onValueChange)
+        val value = values.getOrNull(centerIndex) ?: return@LaunchedEffect
+        if (value == lastSentValue) return@LaunchedEffect
+        lastSentValue = value
+        onValueChange(value)
     }
 
     // 손으로 돌리는 중에는 건드리지 않는다 — 휠이 만든 값이 한 프레임 늦게 돌아와 휠과 싸운다.

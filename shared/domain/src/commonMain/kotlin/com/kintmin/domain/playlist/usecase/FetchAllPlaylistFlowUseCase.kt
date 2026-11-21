@@ -2,16 +2,21 @@ package com.kintmin.domain.playlist.usecase
 
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 
+/** 비밀모드가 꺼져 있으면 비밀 플레이리스트를 빼고 돌려준다. */
 class FetchAllPlaylistFlowUseCase constructor(
     private val playlistRepository: PlaylistRepository,
+    private val fetchSecretModeEnabledFlowUseCase: FetchSecretModeEnabledFlowUseCase,
 ) {
     operator fun invoke(): Flow<List<Playlist>> {
-        return playlistRepository.getAllPlaylistFlow().flowOn(Dispatchers.IO)
+        return combine(playlistRepository.getAllPlaylistFlow(), fetchSecretModeEnabledFlowUseCase()) { playlists, isSecretModeEnabled ->
+            playlists.filter { it.type.isVisible(isSecretModeEnabled) }
+        }.flowOn(Dispatchers.IO)
     }
 }

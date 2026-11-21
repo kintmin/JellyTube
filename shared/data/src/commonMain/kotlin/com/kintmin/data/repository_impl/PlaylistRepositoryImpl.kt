@@ -5,6 +5,7 @@ import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.playlist.model.Playlist
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -26,9 +27,9 @@ class PlaylistRepositoryImpl constructor(
         }
     }
 
-    override suspend fun addPlaylist(title: String): Result<Int> = withContext(Dispatchers.IO) {
+    override suspend fun addPlaylist(title: String, type: PlaylistType): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
-            audioMediaFacade.addPlaylist(title)
+            audioMediaFacade.addPlaylist(title, type)
         }
     }
 

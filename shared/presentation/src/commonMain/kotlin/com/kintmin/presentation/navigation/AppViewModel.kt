@@ -8,11 +8,18 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlo
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
 import com.kintmin.domain.backup.usecase.BackupIfDueUseCase
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.EnsureSystemPlaylistsUseCase
+import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
+import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.deeplink.DeepLinkParser
 import com.kintmin.presentation.platform.continueInBackgroundWhile
 import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -30,6 +37,10 @@ class AppViewModel(
     private val fetchIsPlaybackShufflingFlowUseCase: FetchIsPlaybackShufflingFlowUseCase,
     private val fetchPlaybackSpeedFlowUseCase: FetchPlaybackSpeedFlowUseCase,
     private val fetchPlaybackPitchSemitoneFlowUseCase: FetchPlaybackPitchSemitoneFlowUseCase,
+    private val fetchSecretModeEnabledFlowUseCase: FetchSecretModeEnabledFlowUseCase,
+    private val endSecretModeUseCase: EndSecretModeUseCase,
+    private val fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase,
+    private val fetchSecretAudioMediaIdListFlowUseCase: FetchSecretAudioMediaIdListFlowUseCase,
     private val backupIfDueUseCase: BackupIfDueUseCase,
 ) : ViewModel() {
 
@@ -39,9 +50,23 @@ class AppViewModel(
     init {
         viewModelScope.launch {
             ensureSystemPlaylistsUseCase()
+            // 비밀모드 중에 앱이 죽으면 다운로드 대상이 비밀 플레이리스트로 남는다. 켜져 있으면
+            // 재생이 프로세스를 살려 둔 채 화면만 다시 뜬 것이라 끄지 않는다.
+            if (!fetchSecretModeEnabledFlowUseCase().value) endSecretModeUseCase()
         }
         applyPlaybackSettings()
+        leaveSecretScreensWhenSecretModeEnds()
     }
+
+    private fun leaveSecretScreensWhenSecretModeEnds() {
+        // 첫 값도 받는다. 프로세스가 죽은 뒤 복원된 화면 스택에 비밀 화면이 남아 있을 수 있다.
+        fetchSecretModeEnabledFlowUseCase().filter { !it }.onEach {
+            eventChannel.send(NavigationEvent.LeaveSecretScreens)
+        }.launchIn(viewModelScope)
+    }
+
+    private suspend fun secretPlaylistIds(): Set<Int> =
+        fetchPlaylistsByTypeUseCase(PlaylistType.SECRET).first().mapTo(HashSet()) { it.id }
 
     private fun applyPlaybackSettings() {
         fetchIsPlaybackRepeatingFlowUseCase().onEach(mediaControllerManager::setRepeatMode).launchIn(viewModelScope)
@@ -76,11 +101,27 @@ class AppViewModel(
                 url = url,
                 playingPlaylistId = mediaControllerManager.currentPlaylistId,
                 playingMediaId = mediaControllerManager.playingMediaItem?.mediaId?.toIntOrNull(),
-            ).forEach { navigationEvent ->
+            ).let { events ->
+                // 비밀 플레이리스트 뒤에 쌓이는 곡 상세도 그 플레이리스트의 것이다. 거기서부터 버린다.
+                val hiddenIndex = events.indexOfFirst { it.isHiddenSecret() }
+                if (hiddenIndex < 0) events else events.take(hiddenIndex)
+            }.forEach { navigationEvent ->
                 eventChannel.send(navigationEvent)
             }
         }
     }
+
+    private suspend fun NavigationEvent.isHiddenSecret(): Boolean {
+        if (fetchSecretModeEnabledFlowUseCase().value) return false
+        return when (this) {
+            is NavigationEvent.NavigateToPlaylistContent -> playlistId in secretPlaylistIds()
+            is NavigationEvent.NavigateToAudioMedia -> audioMediaId in secretAudioMediaIds()
+            is NavigationEvent.NavigateToLyricsViewer -> audioMediaId in secretAudioMediaIds()
+            else -> false
+        }
+    }
+
+    private suspend fun secretAudioMediaIds(): List<Int> = fetchSecretAudioMediaIdListFlowUseCase().first()
 
     private fun importSharedAudio(fileIdentifiers: List<String>) {
         if (fileIdentifiers.isEmpty()) return

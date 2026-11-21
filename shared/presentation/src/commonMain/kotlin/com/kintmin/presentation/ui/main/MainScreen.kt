@@ -1,6 +1,7 @@
 package com.kintmin.presentation.ui.main
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -82,10 +84,12 @@ private val NAV_LABEL_FONT_SIZE = 11.sp
 @Composable
 fun MainScreen(
     isDebugTabVisible: Boolean,
+    hintSecretPlaylistEntry: Boolean,
     navigateToPlaylistDetail: (id: Int, isBasePlaylist: Boolean) -> Unit,
     navigateToPlaylistEdit: (id: Int) -> Unit,
     navigateToPlaylistAdd: (id: Int, playlistName: String) -> Unit,
     navigateToSetting: () -> Unit,
+    navigateToSecretPlaylist: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
     navigateToPlaylistDownload: (url: String) -> Unit,
 ) {
@@ -129,11 +133,13 @@ fun MainScreen(
 
     MainScreen(
         isDebugTabVisible = isDebugTabVisible,
+        hintSecretPlaylistEntry = hintSecretPlaylistEntry,
         selectedTab = mainUiState.tabItem,
         playlist = playlistUiState.playlists,
         playerBar = currentMediaItem,
         currentUrl = youtubeDownloadUiState.currentUrl,
         navigateToSetting = navigateToSetting,
+        navigateToSecretPlaylist = navigateToSecretPlaylist,
         navigateToPlayerDetail = navigateToPlayerDetail,
         navigateToPlaylistDownload = navigateToPlaylistDownload,
         sendMainIntent = mainViewModel::sendIntent,
@@ -160,10 +166,12 @@ fun MainScreen(
 fun MainScreen(
     isDebugTabVisible: Boolean,
     selectedTab: MainTabItem,
+    hintSecretPlaylistEntry: Boolean = false,
     playlist: List<PlaylistItemUiState>,
     playerBar: PlayerBarUiState,
     currentUrl: String,
     navigateToSetting: () -> Unit,
+    navigateToSecretPlaylist: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
     navigateToPlaylistDownload: (url: String) -> Unit,
     sendMainIntent: (MainIntent) -> Unit,
@@ -199,22 +207,29 @@ fun MainScreen(
                 TopAppBar(
                     expandedHeight = topAppBarHeight,
                     title = {
-                        Text(
-                            text = title,
-                            fontSize = topAppBarRootTitleFontSize,
-                            lineHeight = topAppBarRootTitleLineHeight,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = if (selectedTab == MainTabItem.Search) {
-                                Modifier.clickable(onClickLabel = "유튜브 홈으로 이동", role = Role.Button) {
-                                    sendYoutubeDownloadIntent(
-                                        YoutubeDownloadIntent.OnChangeUrl("https://m.youtube.com/")
-                                    )
+                        LongPressHintBox(
+                            isHintRequested = hintSecretPlaylistEntry && selectedTab == MainTabItem.Playlist,
+                        ) {
+                            Text(
+                                text = title,
+                                fontSize = topAppBarRootTitleFontSize,
+                                lineHeight = topAppBarRootTitleLineHeight,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = when (selectedTab) {
+                                    MainTabItem.Search -> Modifier.clickable(onClickLabel = "유튜브 홈으로 이동", role = Role.Button) {
+                                        sendYoutubeDownloadIntent(
+                                            YoutubeDownloadIntent.OnChangeUrl("https://m.youtube.com/")
+                                        )
+                                    }
+                                    // 숨은 입구다. 눌림 표시도 접근성 동작도 두지 않아 있는지 드러나지 않게 한다.
+                                    MainTabItem.Playlist -> Modifier.pointerInput(Unit) {
+                                        detectTapGestures(onLongPress = { navigateToSecretPlaylist() })
+                                    }
+                                    MainTabItem.Debug -> Modifier
                                 }
-                            } else {
-                                Modifier
-                            }
-                        )
+                            )
+                        }
                     },
                     actions = {
                         if (selectedTab == MainTabItem.Search) {
@@ -387,6 +402,7 @@ fun MainScreenSearchTabPreview() {
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
             navigateToSetting = {},
+            navigateToSecretPlaylist = {},
             navigateToPlayerDetail = {},
             navigateToPlaylistDownload = {},
             sendMainIntent = {},
@@ -408,6 +424,7 @@ fun MainScreenPlayTabPreview() {
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
             navigateToSetting = {},
+            navigateToSecretPlaylist = {},
             navigateToPlayerDetail = {},
             navigateToPlaylistDownload = {},
             sendMainIntent = {},

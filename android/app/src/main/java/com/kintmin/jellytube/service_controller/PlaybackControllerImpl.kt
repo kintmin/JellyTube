@@ -134,12 +134,21 @@ class PlaybackControllerImpl(
         startMediaId: Int?,
         mediaControlDataList: List<MediaControlData>,
     ): Result<Unit> = runCatching {
-        if (currentPlaylistIdState != playlistId) {
+        // 큐가 바깥에서 줄었을 수 있다(비밀모드 종료). 순서만 바뀐 큐는 그대로 이어 듣는다.
+        val isStartMissing = startMediaId != null && findMediaItem(startMediaId).isFailure
+        if (currentPlaylistIdState != playlistId || isStartMissing) {
             currentPlaylistIdState = playlistId
             resetMediaItemList(mediaControlDataList).getOrThrow()
         }
 
         playbackPlaylist(startMediaId).getOrThrow()
+    }
+
+    override fun clearQueue() {
+        currentPlaylistIdState = null
+        val mediaController = getMediaController() ?: return
+        mediaController.stop()
+        mediaController.clearMediaItems()
     }
 
     override fun tryDeleteMediaItem(

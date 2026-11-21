@@ -3,6 +3,7 @@ package com.kintmin.presentation.ui.main.playlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist.usecase.DeletePlaylistUseCase
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
@@ -39,7 +40,9 @@ class PlaylistViewModel constructor(
         isReorderBottomSheetVisible,
     ) { playlistList, downloadTarget, isReorderVisible ->
         PlaylistUiState(
-            playlists = playlistList.map { it.toUiModel(isDownloadTarget = it.id == downloadTarget.targetId) },
+            playlists = playlistList
+                .filterNot { it.type == PlaylistType.SECRET }
+                .map { it.toUiModel(isDownloadTarget = it.id == downloadTarget.targetId) },
             isReorderBottomSheetVisible = isReorderVisible,
         )
     }
@@ -63,7 +66,7 @@ class PlaylistViewModel constructor(
         viewModelScope.launch {
             val message = updatePlaylistIdOnDownloadUseCase(data.id).fold(
                 onSuccess = { "이제 다운로드한 곡은 '${data.name}'에 담깁니다." },
-                onFailure = { "기본 다운로드 플레이리스트를 바꾸지 못했습니다. 잠시 뒤 다시 시도해 주세요." },
+                onFailure = { PlaylistEvent.SET_DOWNLOAD_TARGET_FAILED_MESSAGE },
             )
             eventChannel.send(PlaylistEvent.ShowToast(message))
         }
@@ -100,7 +103,7 @@ class PlaylistViewModel constructor(
     private fun makeNewPlaylist(title: String) {
         viewModelScope.launch {
             addNewPlaylistUseCase(title).onFailure {
-                eventChannel.send(PlaylistEvent.ShowToast("플레이리스트를 만들지 못했습니다. 저장 공간을 확인하고 다시 시도해 주세요."))
+                eventChannel.send(PlaylistEvent.ShowToast(PlaylistEvent.MAKE_FAILED_MESSAGE))
             }
         }
     }
@@ -108,7 +111,7 @@ class PlaylistViewModel constructor(
     private fun deletePlaylist(playlistId: Int) {
         viewModelScope.launch {
             deletePlaylistUseCase(playlistId).onFailure {
-                eventChannel.send(PlaylistEvent.ShowToast("플레이리스트를 지우지 못했습니다. 잠시 뒤 다시 시도해 주세요."))
+                eventChannel.send(PlaylistEvent.ShowToast(PlaylistEvent.DELETE_FAILED_MESSAGE))
             }
         }
     }

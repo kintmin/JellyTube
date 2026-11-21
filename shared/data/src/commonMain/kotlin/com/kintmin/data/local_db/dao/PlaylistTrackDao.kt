@@ -16,8 +16,17 @@ interface PlaylistTrackDao {
     suspend fun insertPlaylistTrackList(entities: List<PlaylistTrackEntity>)
 
     @Transaction
-    @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId ORDER BY sequence")
-    fun getPlaylistTrackFullListFlow(playlistId: Int): Flow<List<PlaylistTrackFullDto>>
+    @Query(
+        """
+SELECT * FROM PLAYLIST_TRACK
+WHERE playlistId = :playlistId
+    AND (:showSecretInTotal
+        OR playlistId NOT IN (SELECT id FROM PLAYLIST WHERE type = 'TOTAL')
+        OR audioMediaId NOT IN ($SECRET_AUDIO_MEDIA_IDS))
+ORDER BY sequence
+"""
+    )
+    fun getPlaylistTrackFullListFlow(playlistId: Int, showSecretInTotal: Boolean): Flow<List<PlaylistTrackFullDto>>
 
     @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
@@ -34,6 +43,9 @@ interface PlaylistTrackDao {
 
     @Query("SELECT playlistId FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
     suspend fun getLinkedPlaylistIdList(audioMediaId: Int): List<Int>
+
+    @Query("SELECT DISTINCT audioMediaId FROM ($SECRET_AUDIO_MEDIA_IDS)")
+    fun getSecretAudioMediaIdListFlow(): Flow<List<Int>>
 
     @Query("SELECT * FROM PLAYLIST_TRACK")
     suspend fun getAll(): List<PlaylistTrackEntity>

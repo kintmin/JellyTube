@@ -64,6 +64,12 @@ object DeepLinkParser {
             }
 
             DeepLinkConstants.Path.PLAYLISTS -> {
+                val isEntryHint = pathSegments.size == 2 &&
+                    UrlParts.queryParameter(url, DeepLinkConstants.QueryKey.HINT) == DeepLinkConstants.HINT_SECRET_PLAYLIST_ENTRY
+                if (isEntryHint) {
+                    intents += NavigationEvent.HintSecretPlaylistEntry
+                    return intents
+                }
                 intents += NavigationEvent.NavigateToMainPlaylistsTab
 
                 val playlistId = pathSegments.getOrNull(2)?.toIntOrNull() ?: return intents

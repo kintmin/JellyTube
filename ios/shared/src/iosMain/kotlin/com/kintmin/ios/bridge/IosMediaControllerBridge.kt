@@ -40,6 +40,9 @@ interface IosMediaControllerBridge {
 
     fun removeItem(mediaId: String)
 
+    /** 재생을 멈추고 큐를 비운다. 한 곡씩 빼면 빠진 자리를 다음 곡이 이어받아 잠깐 재생된다. */
+    fun clearQueue()
+
     fun replaceItem(mediaId: String, item: IosMediaItem)
 }
 

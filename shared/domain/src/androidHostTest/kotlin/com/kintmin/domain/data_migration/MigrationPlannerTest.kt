@@ -149,6 +149,31 @@ class MigrationPlannerTest {
     }
 
     @Test
+    fun `비밀 플레이리스트는 이름이 같은 비밀 플레이리스트와만 합치고 새로 만들 때 종류를 지킨다`() {
+        val source = snapshot(
+            audios = listOf(audio(101, "https://youtu.be/a"), audio(102, "https://youtu.be/b")),
+            playlists = sourceSystem +
+                playlist(14, PlaylistType.SECRET, name = "드라이브") +
+                playlist(15, PlaylistType.SECRET, name = "밤"),
+            tracks = listOf(track(11, 101, 1), track(11, 102, 2), track(14, 101, 1), track(15, 102, 1)),
+        )
+        val target = snapshot(
+            playlists = targetSystem +
+                playlist(21, PlaylistType.USER, name = "드라이브") +
+                playlist(22, PlaylistType.SECRET, name = "밤"),
+        )
+
+        val plan = MigrationPlanner.plan(source, target)
+
+        assertEquals(listOf(14 to PlaylistType.SECRET), plan.newPlaylists.map { it.id to it.type })
+        assertTrue(MigrationTrackAddition(Incoming(14), listOf(Incoming(101))) in plan.trackAdditions)
+        assertTrue(MigrationTrackAddition(Existing(22), listOf(Incoming(102))) in plan.trackAdditions)
+        assertTrue(plan.trackAdditions.none { it.playlist == Existing(21) })
+        // 비밀 플레이리스트에 든 곡은 분류된 곡이라 미분류에 넣지 않는다.
+        assertTrue(plan.trackAdditions.none { it.playlist == Existing(2) })
+    }
+
+    @Test
     fun `보내는 쪽에 이름이 같은 플레이리스트가 여럿이면 하나로 만들어 합친다`() {
         val source = snapshot(
             audios = listOf(audio(101, "https://youtu.be/a"), audio(102, "https://youtu.be/b")),

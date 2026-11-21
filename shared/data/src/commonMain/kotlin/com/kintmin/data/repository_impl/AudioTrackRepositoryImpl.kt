@@ -45,8 +45,8 @@ class AudioTrackRepositoryImpl constructor(
             .map { it.toDomain(fileManager).getOrThrow() }
     }
 
-    override fun getPlaylistTrackAggregateListFlow(playlistId: Int): Flow<List<PlaylistTrackAggregate>> {
-        return playlistTrackDao.getPlaylistTrackFullListFlow(playlistId).map { list ->
+    override fun getPlaylistTrackAggregateListFlow(playlistId: Int, showSecretInTotal: Boolean): Flow<List<PlaylistTrackAggregate>> {
+        return playlistTrackDao.getPlaylistTrackFullListFlow(playlistId, showSecretInTotal).map { list ->
             list.map {
                 it.toDomain(fileManager).getOrThrow()
             }
@@ -56,6 +56,8 @@ class AudioTrackRepositoryImpl constructor(
     override fun getPlaylistIdListFlow(audioMediaId: Int): Flow<List<Int>> {
         return playlistTrackDao.getPlaylistIdListFlow(audioMediaId)
     }
+
+    override fun getSecretAudioMediaIdListFlow(): Flow<List<Int>> = playlistTrackDao.getSecretAudioMediaIdListFlow()
 
     override suspend fun setFavorite(audioMediaId: Int, isFavorite: Boolean): Result<Unit> =
         withContext(Dispatchers.IO) {

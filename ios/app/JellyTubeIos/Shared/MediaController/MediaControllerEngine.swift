@@ -232,6 +232,19 @@ final class MediaControllerEngine {
         broadcast()
     }
 
+    func clearQueue() {
+        queue.removeAll()
+        originalQueue.removeAll()
+        currentPlaylistId = nil
+        stopPlayer()
+        currentFile = nil
+        currentIndex = 0
+        lastKnownPosition = 0
+        isPlayingIntent = false
+        pauseEngine()
+        broadcast()
+    }
+
     /// 같은 자리에 다른 파일이 들어온다(음원 편집 결과 등). 듣고 있던 곡이면 처음부터 다시 건다.
     func replaceItem(mediaId: Int, with item: MediaControllerItem) {
         if let index = originalQueue.firstIndex(where: { $0.id == mediaId }) {

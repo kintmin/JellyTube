@@ -185,6 +185,14 @@ class DeepLinkParserTest {
     }
 
     @Test
+    fun `비밀 플레이리스트 입구 딥링크는 스택을 비우고 입구를 보여 준다`() {
+        assertEquals(
+            listOf(NavigationEvent.PopAll, NavigationEvent.HintSecretPlaylistEntry),
+            parse(DeepLinkConstants.UrlBuilder.secretPlaylistEntryHint()),
+        )
+    }
+
+    @Test
     fun `플레이리스트 딥링크는 포커스 음원까지 넘긴다`() {
         assertEquals(
             listOf(
