@@ -214,7 +214,7 @@ private fun DiscoveryStatusCard(
                 if (discoveryState == DiscoveryState.NOT_FOUND) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "앱 설정 → 파일 공유 받기 → 파일 공유 받기 시작 버튼을 눌러주세요.",
+                        text = "앱 설정 → PC에서 공유받기 → 파일 공유 받기 시작 버튼을 눌러주세요.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                     )
