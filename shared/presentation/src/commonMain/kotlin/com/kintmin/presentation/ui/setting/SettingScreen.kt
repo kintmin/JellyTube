@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.SystemSettingsTarget
 import com.kintmin.presentation.platform.isDeviceSaveSupported
-import com.kintmin.presentation.platform.isFileShareReceiveSupported
 import com.kintmin.presentation.platform.rememberAppVersionName
 import com.kintmin.presentation.platform.rememberAudioFilePicker
 import com.kintmin.presentation.platform.rememberPermissionController
@@ -228,14 +227,12 @@ fun SettingScreen(
                         null
                     },
                 )
-                if (isFileShareReceiveSupported) {
-                    SettingItemView(
-                        title = "PC에서 공유받기",
-                        icon = Icons.Rounded.Computer,
-                        onClick = { sendIntent(SettingIntent.OnClickFileShareReceiveTile) },
-                        trailing = { SettingNavigateIcon(contentDescription = "PC에서 공유받기 화면으로 이동") },
-                    )
-                }
+                SettingItemView(
+                    title = "PC에서 공유받기",
+                    icon = Icons.Rounded.Computer,
+                    onClick = { sendIntent(SettingIntent.OnClickFileShareReceiveTile) },
+                    trailing = { SettingNavigateIcon(contentDescription = "PC에서 공유받기 화면으로 이동") },
+                )
                 SettingItemView(
                     title = "다른 기기로 데이터 보내기",
                     icon = Icons.Rounded.MobileScreenShare,
