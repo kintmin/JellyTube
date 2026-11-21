@@ -3,6 +3,7 @@ package com.kintmin.data.python_bridge
 import com.kintmin.data.python_bridge.model.PlayableAudioDownloadDto
 import com.kintmin.data.python_bridge.model.YoutubeDownloadDto
 
+/** 구현은 블로킹 Python 호출이라 코루틴 취소·`withTimeout` 으로 끊기지 않는다. 시간 상한은 Python 안에서 건다. */
 interface PythonExecutor {
     suspend fun downloadYoutubeMedia(
         youtubeUrl: String,
