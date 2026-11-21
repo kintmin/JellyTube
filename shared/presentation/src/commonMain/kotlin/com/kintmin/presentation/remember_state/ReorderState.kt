@@ -174,7 +174,7 @@ class ReorderState<T>(
                 // 이번 스크롤이 사라지고, 이미 보정한 dragOffset 만큼 항목이 덜컥 튄다.
                 if (heldLayoutInfo === listState.layoutInfo) continue
                 heldLayoutInfo = null
-                // 실제 스크롤된 양(consumed)만큼만 dragOffset 을 보정한다.
+                // 실제로 스크롤된 양만큼만 dragOffset 을 보정한다.
                 // 끝에 닿아 스크롤이 0이면 보정도 0 → 헛누적으로 인한 폭주를 막는다.
                 dragOffset += listState.scrollBy(autoScrollVelocity * scrollSpeedPx)
                 settle()
