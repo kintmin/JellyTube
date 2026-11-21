@@ -2,7 +2,6 @@ package com.kintmin.log.model
 
 sealed class SentryEvent(val logName: SentryLogName, vararg val params: Pair<SentryParamName, String?>) {
 
-    /** 값이 없는 파라미터는 싣지 않는다. 두 플랫폼이 이 결과를 그대로 보낸다. */
     val attributes: Map<String, String>
         get() = params.mapNotNull { (key, value) -> value?.let { key.name to it } }.toMap()
 
