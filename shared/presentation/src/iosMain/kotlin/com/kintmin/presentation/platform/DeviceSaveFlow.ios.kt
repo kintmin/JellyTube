@@ -2,8 +2,6 @@ package com.kintmin.presentation.platform
 
 import platform.UIKit.UIDevice
 
-actual val isDeviceSaveSupported: Boolean = true
-
 actual val deviceSaveFlow: DeviceSaveFlow =
     if (isRingtoneShareSupported(UIDevice.currentDevice.systemVersion)) {
         DeviceSaveFlow.RingtoneShareSheet

@@ -37,7 +37,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.SystemSettingsTarget
-import com.kintmin.presentation.platform.isDeviceSaveSupported
 import com.kintmin.presentation.platform.rememberAppVersionName
 import com.kintmin.presentation.platform.rememberAudioFilePicker
 import com.kintmin.presentation.platform.rememberPermissionController
@@ -245,14 +244,12 @@ fun SettingScreen(
                     onClick = { sendIntent(SettingIntent.OnClickDataMigrationReceiveTile) },
                     trailing = { SettingNavigateIcon(contentDescription = "데이터 가져오기 화면으로 이동") },
                 )
-                if (isDeviceSaveSupported) {
-                    SettingItemView(
-                        title = "파일 기기에 저장하기",
-                        icon = Icons.Rounded.SaveAlt,
-                        onClick = { sendIntent(SettingIntent.OnClickDeviceSaveTile) },
-                        trailing = { SettingNavigateIcon(contentDescription = "기기에 저장하기 화면으로 이동") },
-                    )
-                }
+                SettingItemView(
+                    title = "파일 기기에 저장하기",
+                    icon = Icons.Rounded.SaveAlt,
+                    onClick = { sendIntent(SettingIntent.OnClickDeviceSaveTile) },
+                    trailing = { SettingNavigateIcon(contentDescription = "기기에 저장하기 화면으로 이동") },
+                )
             }
 
             SettingSectionView(title = "걸음수") {
