@@ -30,14 +30,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.kintmin.presentation.animation.FollowActiveLyricLine
+import com.kintmin.presentation.animation.PlaybackPollingEffect
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.destructiveContent
@@ -50,9 +49,7 @@ import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
 import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
 import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -109,19 +106,7 @@ fun LyricsViewerScreen(
         onConfirmDelete = { sendIntent(LyricsViewerIntent.OnClickDeleteLyrics) },
     )
 
-    // 재생 위치는 Flow가 없으므로 300ms 폴링으로 현재 가사 줄을 갱신한다.
-    // RESUMED 동안만 돈다. repeatOnLifecycle 안에서 lifecycleScope.launch 로 빠져나가면
-    // 화면을 벗어나도 루프가 취소되지 않아 백그라운드에서 계속 돌았다.
-    val scope = rememberCoroutineScope()
-    LifecycleResumeEffect(Unit) {
-        val job = scope.launch {
-            while (isActive) {
-                delay(300)
-                sendIntent(LyricsViewerIntent.OnRefreshPosition)
-            }
-        }
-        onPauseOrDispose { job.cancel() }
-    }
+    PlaybackPollingEffect { sendIntent(LyricsViewerIntent.OnRefreshPosition) }
 
     val listState = rememberLazyListState()
     FollowActiveLyricLine(listState = listState, activeIndex = data.activeIndex)

@@ -1,10 +1,5 @@
 package com.kintmin.presentation.ui.main
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kintmin.presentation.animation.FloatingFieldVisibility
 import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
@@ -341,11 +337,7 @@ fun MainScreen(
                         },
                         modifier = Modifier.fillMaxSize(),
                     )
-                    AnimatedVisibility(
-                        visible = isSearchFieldVisible,
-                        enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight }) + fadeIn(),
-                        exit = slideOutVertically(targetOffsetY = { fullHeight -> -fullHeight }) + fadeOut(),
-                    ) {
+                    FloatingFieldVisibility(visible = isSearchFieldVisible) {
                         YoutubeUrlField(
                             modifier = Modifier
                                 .fillMaxWidth()

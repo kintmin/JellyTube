@@ -49,7 +49,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,8 +61,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.LifecycleResumeEffect
-import com.kintmin.presentation.animation.PLAYBACK_POLLING_INTERVAL_MILLIS
+import com.kintmin.presentation.animation.PlaybackPollingEffect
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.platform.rememberToaster
@@ -90,9 +88,6 @@ import com.kintmin.presentation.ui.player_detail.lyrics.PlayerLyricsPanelView
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -142,18 +137,7 @@ fun PlayerDetailScreen(
     data: PlayerDetailUiState,
     sendIntent: (PlayerDetailIntent) -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
-    // RESUMED 동안만 폴링한다. repeatOnLifecycle 안에서 lifecycleScope.launch 로
-    // 빠져나가면 화면을 벗어나도 루프가 취소되지 않아 백그라운드에서 계속 돈다.
-    LifecycleResumeEffect(Unit) {
-        val job = scope.launch {
-            while (isActive) {
-                delay(PLAYBACK_POLLING_INTERVAL_MILLIS.toLong())
-                sendIntent(PlayerDetailIntent.OnRefreshMediaData)
-            }
-        }
-        onPauseOrDispose { job.cancel() }
-    }
+    PlaybackPollingEffect { sendIntent(PlayerDetailIntent.OnRefreshMediaData) }
 
     val playbackSeconds = max(1L, data.playbackDuration.inWholeSeconds)
     val currentSeconds = min(data.currentDuration.inWholeSeconds, playbackSeconds)

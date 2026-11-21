@@ -19,7 +19,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,16 +28,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.LifecycleStartEffect
-import com.kintmin.presentation.animation.PLAYBACK_POLLING_INTERVAL_MILLIS
+import com.kintmin.presentation.animation.PlaybackPollingEffect
 import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.emptyTrack
 import com.kintmin.presentation.ui.common.AudioArtwork
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 private val BAR_HEIGHT = 64.dp
 private val ARTWORK_SIZE = 48.dp
@@ -54,18 +49,7 @@ fun PlayerBar(
     sendIntent: (PlayerBarIntent) -> Unit,
     onClickBar: () -> Unit = {},
 ) {
-    val scope = rememberCoroutineScope()
-    // 보이는(STARTED) 동안만 폴링한다. RESUMED 는 화면 전환 애니메이션이 끝나야 와서 바가 늦게 뜬다.
-    // repeatOnLifecycle 안에서 lifecycleScope.launch 로 빠져나가면 화면을 벗어나도 루프가 취소되지 않는다.
-    LifecycleStartEffect(Unit) {
-        val job = scope.launch {
-            while (isActive) {
-                sendIntent(PlayerBarIntent.OnRefreshMediaData)
-                delay(PLAYBACK_POLLING_INTERVAL_MILLIS.toLong())
-            }
-        }
-        onStopOrDispose { job.cancel() }
-    }
+    PlaybackPollingEffect(whileStarted = true) { sendIntent(PlayerBarIntent.OnRefreshMediaData) }
 
     if (data.id == "") return
 

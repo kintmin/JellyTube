@@ -1,12 +1,5 @@
 package com.kintmin.presentation.ui.common
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,10 +15,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.animation.FloatingFieldVisibility
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarIconSize
 
-private const val SEARCH_FIELD_ANIMATION_MILLIS = 300
 
 /**
  * 상단 바의 [SearchToggleButton] 으로 여닫는 floating 검색 필드. 닫을 때는 [onClose] 가 검색어도 비운다.
@@ -43,13 +36,9 @@ fun CollapsibleSearchField(
 ) {
     val focusRequester = remember { FocusRequester() }
 
-    AnimatedVisibility(
+    FloatingFieldVisibility(
         modifier = modifier,
         visible = visible,
-        enter = expandVertically(tween(SEARCH_FIELD_ANIMATION_MILLIS, easing = FastOutSlowInEasing)) +
-            fadeIn(tween(SEARCH_FIELD_ANIMATION_MILLIS, easing = FastOutSlowInEasing)),
-        exit = shrinkVertically(tween(SEARCH_FIELD_ANIMATION_MILLIS, easing = FastOutSlowInEasing)) +
-            fadeOut(tween(SEARCH_FIELD_ANIMATION_MILLIS, easing = FastOutSlowInEasing)),
     ) {
         // AnimatedVisibility 안에서 요청한다. 바깥에서 visible 로 걸면 필드가 아직 붙지 않은
         // 시점에 돌 수 있다.
