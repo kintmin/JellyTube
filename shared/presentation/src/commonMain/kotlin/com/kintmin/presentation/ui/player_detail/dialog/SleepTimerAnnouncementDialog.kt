@@ -19,6 +19,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -99,11 +103,18 @@ private fun SleepTimerAnnouncementRow(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
+    // 고른 행은 체크만이 아니라 채움으로도 드러낸다. 작은 체크 하나로는 어느 줄인지 잘 안 보인다.
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 2.dp)
+            // clickable 보다 먼저 잘라야 눌림 표시도 둥글게 번진다.
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else Color.Transparent,
+            )
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = 8.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -111,6 +122,7 @@ private fun SleepTimerAnnouncementRow(
                 text = name,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 15.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -129,7 +141,8 @@ private fun SleepTimerAnnouncementRow(
                 modifier = Modifier.size(20.dp),
                 imageVector = Icons.Rounded.Check,
                 contentDescription = "고름",
-                tint = MaterialTheme.colorScheme.primary,
+                // primary 는 surface 대비가 2.6:1 이라 작은 아이콘에 필요한 3:1 에 못 미친다.
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

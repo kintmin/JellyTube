@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,6 +19,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -94,12 +97,16 @@ fun SleepTimerDialog(
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider()
+            // 칩·+/- 버튼처럼 채움으로 가른다. 구분선을 두면 이 대화상자만 설정 화면 줄처럼 읽힌다.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    // clickable 보다 먼저 잘라야 눌림 표시도 둥글게 번진다.
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
                     .clickable(onClick = onClickAnnouncement)
-                    .padding(vertical = 14.dp),
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -122,7 +129,6 @@ fun SleepTimerDialog(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            HorizontalDivider()
 
             Spacer(modifier = Modifier.height(16.dp))
             Button(
