@@ -1,6 +1,6 @@
 package com.kintmin.presentation.port.model
 
-/** 데이터 이전을 시작하기 전에 끝나 있어야 하는 작업. */
+/** 데이터 이전이나 백업 복원을 시작하기 전에 끝나 있어야 하는 작업. */
 enum class RunningTask(val label: String) {
     YOUTUBE_DOWNLOAD("음원 다운로드"),
     LYRICS_VARIANT("가사 번역·음차"),

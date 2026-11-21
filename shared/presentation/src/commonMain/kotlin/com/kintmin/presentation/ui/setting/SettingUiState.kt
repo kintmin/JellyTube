@@ -13,4 +13,5 @@ data class SettingUiState(
     val isImporting: Boolean = false,
     val isStepEnabled: Boolean = true,
     val deviceId: String? = null,
+    val backupDescription: String = "",
 )

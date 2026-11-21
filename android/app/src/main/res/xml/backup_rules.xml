@@ -1,13 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older that API 31
-   See https://developer.android.com/about/versions/12/backup-restore
--->
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 이하. 백업 사본 하나만 싣는다 — 음원까지 실으면 25MB 를 넘어 백업이 통째로 빠지고,
+     DB 만 되살아나면 파일 없는 행만 남는다. 경로는 BackupFiles.LOCAL_DIR_NAME 이다. -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <include domain="file" path="backup/" />
 </full-backup-content>

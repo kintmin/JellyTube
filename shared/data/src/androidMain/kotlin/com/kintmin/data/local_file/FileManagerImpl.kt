@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import com.kintmin.data.backup.BackupFiles
 import com.kintmin.data.local_file.model.CopiedAudioInfo
 import com.kintmin.data.local_file.model.ExportedAudioInfo
 import com.kintmin.domain.audio_media.model.AudioExportTarget
@@ -65,6 +66,8 @@ internal class FileManagerImpl(
 
     // 음원 디렉터리와 볼륨이 달라 옮기기는 복사로 떨어진다.
     override fun getMigrationStagingDirPath() = core.getMigrationStagingDirPath()
+
+    override fun getBackupDirPath() = core.getBackupDirPath()
 
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String) =
         runCatching {
@@ -548,6 +551,7 @@ private class AndroidAppDirectories(private val context: Context) : AppDirectori
     override fun lyric() = context.filesDir.resolve(AppDirectories.LYRIC_DIR_NAME).toOkioPath()
     override fun log() = context.filesDir.resolve(AppDirectories.LOG_DIR_NAME).toOkioPath()
     override fun migrationStaging() = context.filesDir.resolve(AppDirectories.MIGRATION_STAGING_DIR_NAME).toOkioPath()
+    override fun backup() = context.filesDir.resolve(BackupFiles.LOCAL_DIR_NAME).toOkioPath()
 
     // 외부 저장소를 쓸 수 없으면 null 이다.
     private fun File?.required(): Path = (this ?: throw Exception("디렉토리를 찾을 수 없습니다.")).toOkioPath()

@@ -2,6 +2,8 @@ package com.kintmin.data.di
 
 import com.kintmin.data.audio_edit.AudioEditor
 import com.kintmin.data.audio_edit.AudioEditorImpl
+import com.kintmin.data.backup.BackupFolderAccess
+import com.kintmin.data.backup.BookmarkBackupFolderAccess
 import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.data.device_status.DeviceStatus
 import com.kintmin.data.device_status.DeviceStatusImpl
@@ -42,6 +44,7 @@ fun dataIosModule(
     single<DeviceStatus> { DeviceStatusImpl() }
     single<AudioEditor> { AudioEditorImpl() }
     single<FileManager> { FileManagerImpl() }
+    single<BackupFolderAccess> { BookmarkBackupFolderAccess() }
     single<MigrationDataSource> { MigrationDataSourceImpl(get(), ::localDeviceName) }
     single<PythonExecutor> { IosPythonExecutorAdapter(pythonExecutorBridge) }
     // 브릿지 자체도 꺼낼 수 있어야 한다 — 끝난 전송 목록처럼 PythonExecutor 밖의 일이 있다.

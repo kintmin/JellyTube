@@ -30,6 +30,8 @@ import com.kintmin.domain.audio_play_setting.repository.AudioPlaySettingReposito
 import com.kintmin.domain.audio_play_setting.usecase.*
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.audio_track.usecase.*
+import com.kintmin.domain.backup.repository.BackupRepository
+import com.kintmin.domain.backup.usecase.*
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
 import com.kintmin.domain.data_migration.usecase.*
 import com.kintmin.domain.karaoke.repository.KaraokeRepository
@@ -40,6 +42,7 @@ import com.kintmin.domain.lyrics.usecase.*
 import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.domain.common_usecase.FetchLoadBalancingDelaySecondUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
+import com.kintmin.domain.device.usecase.FetchConnectionStatusUseCase
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.domain.playlist.usecase.*
 import com.kintmin.domain.step.repository.StepRepository
@@ -74,6 +77,7 @@ val dataCommonModule: Module = module {
     singleOf(::AudioMediaRepositoryImpl) bind AudioMediaRepository::class
     singleOf(::AudioPlaySettingRepositoryImpl) bind AudioPlaySettingRepository::class
     singleOf(::AudioTrackRepositoryImpl) bind AudioTrackRepository::class
+    singleOf(::BackupRepositoryImpl) bind BackupRepository::class
     singleOf(::DataMigrationRepositoryImpl) bind DataMigrationRepository::class
     singleOf(::DeviceStatusRepositoryImpl) bind DeviceStatusRepository::class
     singleOf(::LyricsRepositoryImpl) bind LyricsRepository::class
@@ -114,6 +118,17 @@ val dataCommonModule: Module = module {
     factoryOf(::ImportMigrationDataUseCase)
     factoryOf(::ReceiveMigrationDataUseCase)
     factoryOf(::ClearMigrationStagingUseCase)
+
+    factoryOf(::BackupNowUseCase)
+    factoryOf(::BackupIfDueUseCase)
+    factoryOf(::RegisterBackupFolderUseCase)
+    factoryOf(::FetchBackupStatusFlowUseCase)
+    factoryOf(::ReadBackupFileUseCase)
+    factoryOf(::FindBackupToRestoreUseCase)
+    factoryOf(::HasLocalBackupUseCase)
+    factoryOf(::PreviewRestoreUseCase)
+    factoryOf(::RestoreBackupUseCase)
+    factoryOf(::FetchConnectionStatusUseCase)
 
     factoryOf(::CleanupAnomalousDataUseCase)
     factoryOf(::DeleteAudioMediaListUseCase)
