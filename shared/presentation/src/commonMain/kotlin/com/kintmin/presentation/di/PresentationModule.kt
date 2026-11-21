@@ -22,6 +22,7 @@ import com.kintmin.presentation.ui.playlist_detail.list.PlaylistDetailListViewMo
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListViewModel
 import com.kintmin.presentation.ui.setting.SettingViewModel
 import com.kintmin.presentation.ui.setting.app_log.AppLogViewModel
+import com.kintmin.presentation.ui.playlist_download.PlaylistDownloadViewModel
 import com.kintmin.presentation.ui.setting.backup_restore.SettingBackupRestoreViewModel
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveViewModel
 import com.kintmin.presentation.ui.setting.data_migration_send.SettingDataMigrationSendViewModel
@@ -43,6 +44,7 @@ val presentationModule: Module = module {
     viewModelOf(::SettingDataMigrationSendViewModel)
     viewModelOf(::SettingDataMigrationReceiveViewModel)
     viewModelOf(::SettingBackupRestoreViewModel)
+    viewModelOf(::PlaylistDownloadViewModel)
     viewModelOf(::SettingDeviceSaveSelectViewModel)
     viewModelOf(::AppLogViewModel)
     viewModelOf(::PlayerDetailViewModel)
