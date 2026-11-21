@@ -45,7 +45,7 @@ class AppLogViewModel constructor(
             val firstDate = logDateList.firstOrNull()
             _uiState.update {
                 it.copy(
-                    isLoading = false,
+                    isLoading = firstDate != null,
                     logDateList = logDateList,
                     selectedLogDate = firstDate,
                 )
@@ -60,7 +60,6 @@ class AppLogViewModel constructor(
             _uiState.update {
                 it.copy(
                     selectedLogDate = date,
-                    logLineList = emptyList(),
                     hasNextPage = false,
                     isLoading = true,
                 )
