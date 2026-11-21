@@ -26,7 +26,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.kintmin.presentation.animation.WaveReveal
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentDisabled
 import com.kintmin.presentation.theme.contentSubtle
@@ -57,92 +56,89 @@ fun PlaylistView(
     // 라이브러리가 비어 있으면 아직 안 읽힌 것이다(아래 빈 상태 분기와 같은 기준).
     val isLoaded = libraryItems.isNotEmpty()
 
-    // 목록은 비동기로 도착한다. 도착하는 순간 툭 나타나지 않게 물결로 차오르게 한다.
-    WaveReveal(revealed = isLoaded, modifier = modifier) {
-        LazyVerticalGrid(
-            modifier = Modifier.fillMaxSize(),
-            columns = GridCells.Fixed(2),
-            // 좌우 여백을 격자에 주지 않는다. 라이브러리 행의 ink 가 가장자리까지 닿아야 한다.
-            // 가장자리 여백은 각 항목이 자기 안쪽 패딩으로 만든다.
-            contentPadding = PaddingValues(vertical = 8.dp),
-        ) {
-            // 읽히기 전에는 항목을 하나도 두지 않는다. 머리말만 먼저 놓이면 스크롤이 그 key 에 붙어,
-            // 나중에 위로 끼어드는 라이브러리가 화면 밖으로 밀린다.
-            if (!isLoaded) return@LazyVerticalGrid
+    LazyVerticalGrid(
+        modifier = modifier,
+        columns = GridCells.Fixed(2),
+        // 좌우 여백을 격자에 주지 않는다. 라이브러리 행의 ink 가 가장자리까지 닿아야 한다.
+        // 가장자리 여백은 각 항목이 자기 안쪽 패딩으로 만든다.
+        contentPadding = PaddingValues(vertical = 8.dp),
+    ) {
+        // 읽히기 전에는 항목을 하나도 두지 않는다. 머리말만 먼저 놓이면 스크롤이 그 key 에 붙어,
+        // 나중에 위로 끼어드는 라이브러리가 화면 밖으로 밀린다.
+        if (!isLoaded) return@LazyVerticalGrid
 
-            if (libraryItems.isNotEmpty()) {
-                // 머리말을 붙이지 않는다. 아래 머리말과 구분선이 이미 둘을 가르고,
-                // 한 줄을 비워야 전체 항목이 처음 화면에 들어온다.
-                item(key = "library-block", span = { GridItemSpan(maxLineSpan) }) {
-                    PlaylistLibraryBlockView(
-                        modifier = Modifier.fillMaxWidth(),
-                        data = libraryItems,
-                        sendIntent = sendIntent,
-                    )
-                }
-            }
-
-            item(key = "user-header", span = { GridItemSpan(maxLineSpan) }) {
-                SectionHeader(
-                    text = "내 플레이리스트",
-                    showDivider = libraryItems.isNotEmpty(),
-                    action = {
-                        // 빈 상태가 제 CTA 를 갖는다. 같은 명령으로 가는 버튼을 둘 보이지 않게 한다.
-                        if (userItems.isEmpty()) return@SectionHeader
-                        // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
-                        val canReorder = userItems.size > 1
-                        // 색을 한 단계 낮춰 만들기가 주, 순서가 보조로 읽히게 한다.
-                        Row(
-                            modifier = Modifier
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                    enabled = canReorder,
-                                    onClick = { sendIntent(PlaylistIntent.OnClickShowReorderBottomSheet) },
-                                )
-                                .heightIn(min = 48.dp)
-                                .padding(horizontal = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            val reorderColor = if (canReorder) contentSubtle else contentDisabled
-                            Icon(
-                                modifier = Modifier.size(18.dp),
-                                imageVector = Icons.Rounded.SwapVert,
-                                contentDescription = null,
-                                tint = reorderColor,
-                            )
-                            Text(
-                                modifier = Modifier.padding(start = 4.dp),
-                                text = "순서",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = reorderColor,
-                            )
-                        }
-                        PlaylistAddButtonView(text = "새로 만들기", onClick = { showAddDialog = true })
-                    },
+        if (libraryItems.isNotEmpty()) {
+            // 머리말을 붙이지 않는다. 아래 머리말과 구분선이 이미 둘을 가르고,
+            // 한 줄을 비워야 전체 항목이 처음 화면에 들어온다.
+            item(key = "library-block", span = { GridItemSpan(maxLineSpan) }) {
+                PlaylistLibraryBlockView(
+                    modifier = Modifier.fillMaxWidth(),
+                    data = libraryItems,
+                    sendIntent = sendIntent,
                 )
             }
+        }
 
-            // 라이브러리가 비어 있다는 것은 아직 안 읽혔다는 뜻이다 — 시스템 플레이리스트 셋은
-            // 앱 시작 때 보장된다. 그것으로 가르지 않으면 첫 프레임마다 빈 상태가 깜박인다.
-            if (userItems.isEmpty() && libraryItems.isNotEmpty()) {
-                item(key = "user-empty", span = { GridItemSpan(maxLineSpan) }) {
-                    PlaylistEmptyView(
-                        modifier = Modifier,
-                        onClickAdd = { showAddDialog = true },
-                    )
-                }
-            } else {
-                items(
-                    count = userItems.size,
-                    key = { index -> userItems[index].id }
-                ) { index ->
-                    PlaylistItemView(
-                        modifier = Modifier,
-                        data = userItems[index],
-                        sendIntent = sendIntent,
-                    )
-                }
+        item(key = "user-header", span = { GridItemSpan(maxLineSpan) }) {
+            SectionHeader(
+                text = "내 플레이리스트",
+                showDivider = libraryItems.isNotEmpty(),
+                action = {
+                    // 빈 상태가 제 CTA 를 갖는다. 같은 명령으로 가는 버튼을 둘 보이지 않게 한다.
+                    if (userItems.isEmpty()) return@SectionHeader
+                    // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
+                    val canReorder = userItems.size > 1
+                    // 색을 한 단계 낮춰 만들기가 주, 순서가 보조로 읽히게 한다.
+                    Row(
+                        modifier = Modifier
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                enabled = canReorder,
+                                onClick = { sendIntent(PlaylistIntent.OnClickShowReorderBottomSheet) },
+                            )
+                            .heightIn(min = 48.dp)
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        val reorderColor = if (canReorder) contentSubtle else contentDisabled
+                        Icon(
+                            modifier = Modifier.size(18.dp),
+                            imageVector = Icons.Rounded.SwapVert,
+                            contentDescription = null,
+                            tint = reorderColor,
+                        )
+                        Text(
+                            modifier = Modifier.padding(start = 4.dp),
+                            text = "순서",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = reorderColor,
+                        )
+                    }
+                    PlaylistAddButtonView(text = "새로 만들기", onClick = { showAddDialog = true })
+                },
+            )
+        }
+
+        // 라이브러리가 비어 있다는 것은 아직 안 읽혔다는 뜻이다 — 시스템 플레이리스트 셋은
+        // 앱 시작 때 보장된다. 그것으로 가르지 않으면 첫 프레임마다 빈 상태가 깜박인다.
+        if (userItems.isEmpty() && libraryItems.isNotEmpty()) {
+            item(key = "user-empty", span = { GridItemSpan(maxLineSpan) }) {
+                PlaylistEmptyView(
+                    modifier = Modifier,
+                    onClickAdd = { showAddDialog = true },
+                )
+            }
+        } else {
+            items(
+                count = userItems.size,
+                key = { index -> userItems[index].id }
+            ) { index ->
+                PlaylistItemView(
+                    modifier = Modifier,
+                    data = userItems[index],
+                    sendIntent = sendIntent,
+                )
             }
         }
     }
