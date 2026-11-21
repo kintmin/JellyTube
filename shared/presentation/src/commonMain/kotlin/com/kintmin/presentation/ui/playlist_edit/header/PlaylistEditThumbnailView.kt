@@ -35,7 +35,8 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.white
+import com.kintmin.presentation.theme.overlayScrim
+import com.kintmin.presentation.theme.overlayContent
 import okio.Path.Companion.toPath
 
 @Composable
@@ -89,11 +90,11 @@ fun PlaylistEditThumbnailView(
                 modifier = Modifier
                     .size(32.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f),
+                        color = overlayScrim,
                         shape = CircleShape,
                     )
                     .padding(6.dp),
-                tint = white,
+                tint = overlayContent,
             )
             DropdownMenu(
                 expanded = isMenuExpanded,

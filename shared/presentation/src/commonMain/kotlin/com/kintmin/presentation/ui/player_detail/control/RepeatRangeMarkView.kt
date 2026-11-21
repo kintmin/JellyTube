@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -24,6 +23,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkBackdropFallback
+import com.kintmin.presentation.theme.overlayContentFaint
+import com.kintmin.presentation.theme.overlayContentMuted
 
 private val LINK_WIDTH = 9.dp
 private val LINK_HEIGHT = 2.dp
@@ -64,7 +66,7 @@ fun RepeatRangeMarkView(
                 .width(LINK_WIDTH)
                 .height(LINK_HEIGHT)
                 .clip(RoundedCornerShape(LINK_HEIGHT / 2))
-                .background(if (isLinked) MaterialTheme.colorScheme.tertiary else Color.White.copy(alpha = 0.3f)),
+                .background(if (isLinked) MaterialTheme.colorScheme.tertiary else overlayContentFaint),
         )
         RangeLetter(letter = "B", isOn = isEndSelected)
     }
@@ -74,7 +76,7 @@ fun RepeatRangeMarkView(
 private fun RangeLetter(letter: String, isOn: Boolean) {
     Text(
         text = letter,
-        color = if (isOn) MaterialTheme.colorScheme.tertiary else Color.White.copy(alpha = 0.5f),
+        color = if (isOn) MaterialTheme.colorScheme.tertiary else overlayContentMuted,
         fontSize = 14.sp,
         lineHeight = 14.sp,
         fontWeight = FontWeight.Bold,
@@ -87,7 +89,7 @@ private fun RepeatRangeMarkViewPreview() {
     JellyTubeTheme {
         Row(
             modifier = Modifier
-                .background(Color(0xFF1D1C1A))
+                .background(artworkBackdropFallback[1])
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -96,7 +98,7 @@ private fun RepeatRangeMarkViewPreview() {
             RepeatRangeMarkView(isStartSelected = true, isEndSelected = false, onClick = {})
             RepeatRangeMarkView(isStartSelected = true, isEndSelected = true, onClick = {})
             // 옆에 설 아이콘과 무게가 맞는지 같이 본다.
-            Box(modifier = Modifier.size(24.dp).background(Color.White.copy(alpha = 0.5f)))
+            Box(modifier = Modifier.size(24.dp).background(overlayContentMuted))
         }
     }
 }

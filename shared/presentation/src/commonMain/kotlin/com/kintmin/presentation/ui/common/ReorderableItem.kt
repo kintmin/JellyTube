@@ -46,7 +46,7 @@ import androidx.compose.ui.zIndex
 import com.kintmin.presentation.remember_state.ReorderState
 import com.kintmin.presentation.remember_state.rememberReorderState
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 
 private val DRAG_ELEVATION = 8.dp
 private val DRAG_INSET = 12.dp
@@ -237,7 +237,7 @@ private fun ReorderableItemPreview() {
                             modifier = dragHandleModifier.align(Alignment.CenterEnd),
                             imageVector = Icons.Rounded.Reorder,
                             contentDescription = "끌어서 순서 변경",
-                            tint = gray60,
+                            tint = contentMuted,
                         )
                     }
                 }

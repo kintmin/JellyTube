@@ -24,8 +24,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.seaBlue40
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.accentContent
 import com.kintmin.presentation.ui.audio_media_detail.AudioMediaDetailUiState
 
 /**
@@ -54,7 +54,7 @@ fun AudioMediaDetailInfoView(
                 text = data.artist,
                 fontSize = 16.sp,
                 lineHeight = 20.sp,
-                color = gray60,
+                color = contentMuted,
             )
         }
 
@@ -93,13 +93,13 @@ fun AudioMediaDetailInfoView(
                     modifier = Modifier.weight(1f),
                     label = "출처",
                     value = data.webViewUrl,
-                    valueColor = seaBlue40,
+                    valueColor = accentContent,
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = seaBlue40,
+                    tint = accentContent,
                 )
             }
         } else if (data.source.isNotBlank()) {
@@ -121,7 +121,7 @@ fun AudioMediaDetailInfoView(
                 text = "설명",
                 fontSize = 12.sp,
                 lineHeight = 16.sp,
-                color = gray60,
+                color = contentMuted,
             )
             // 여러 줄 단락이라 라벨과 줄 간격을 MetaField 의 한 줄 값보다 넉넉하게 둔다.
             Text(
@@ -146,7 +146,7 @@ private fun MetaField(
             text = label,
             fontSize = 12.sp,
             lineHeight = 16.sp,
-            color = gray60,
+            color = contentMuted,
         )
         Text(
             text = value,

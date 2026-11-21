@@ -23,9 +23,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray40
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.gray80
+import com.kintmin.presentation.theme.contentDisabled
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.contentSubtle
 
 private val EMPTY_HEIGHT = 240.dp
 
@@ -51,14 +51,14 @@ fun PlaylistDetailListEmptyView(
             modifier = Modifier.size(48.dp),
             imageVector = if (isSearching) Icons.Rounded.SearchOff else Icons.Rounded.LibraryMusic,
             contentDescription = null,
-            tint = gray40,
+            tint = contentDisabled,
         )
         Text(
             modifier = Modifier.padding(top = 16.dp),
             // 검색어가 사용자 입력이라 조사를 붙이면 받침에서 비문이 된다.
             text = if (isSearching) "'$searchText' 와 일치하는 음원이 없습니다" else "담긴 음원이 없습니다",
             style = MaterialTheme.typography.bodyLarge,
-            color = gray80,
+            color = contentSubtle,
             textAlign = TextAlign.Center,
         )
         Text(
@@ -69,7 +69,7 @@ fun PlaylistDetailListEmptyView(
                 "곡을 담아 두면 한 번에 재생할 수 있습니다"
             },
             style = MaterialTheme.typography.bodySmall,
-            color = gray60,
+            color = contentMuted,
             textAlign = TextAlign.Center,
         )
         if (!isSearching && !isBasePlaylist) {

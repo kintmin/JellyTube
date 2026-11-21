@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,6 +24,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.animation.FollowActiveLyricLine
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkBackdropFallback
+import com.kintmin.presentation.theme.overlayContent
+import com.kintmin.presentation.theme.overlayContentMuted
 import com.kintmin.presentation.ui.player_detail.PlayerLyricLineUiState
 
 @Composable
@@ -48,7 +50,7 @@ fun PlayerLyricsPanelView(
             val isActive = index == activeIndex
             // 아트워크에서 뽑은 어두운 그라데이션 위에 그린다. 이 테마의 primary 는 그 위에서
             // 흰 글자보다 어두워, 활성 줄을 그 색으로 알리면 오히려 흐려진다.
-            val color = if (isActive) Color.White else Color.White.copy(alpha = 0.55f)
+            val color = if (isActive) overlayContent else overlayContentMuted
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -111,7 +113,7 @@ private fun PlayerLyricsPanelViewSyncedPreview() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp)
-                .background(Color(0xFF1D1C1A)),
+                .background(artworkBackdropFallback[1]),
         )
     }
 }
@@ -127,7 +129,7 @@ private fun PlayerLyricsPanelViewUnsyncedPreview() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp)
-                .background(Color(0xFF1D1C1A)),
+                .background(artworkBackdropFallback[1]),
         )
     }
 }

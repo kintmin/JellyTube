@@ -29,9 +29,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCut
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray40
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.gray80
+import com.kintmin.presentation.theme.contentDisabled
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.contentSubtle
 
 /**
  * 이 음원에 딸린 기능 한 줄(가사·노래방 번호·편집본). [onClick] 이 null 이면 눌리지 않는다.
@@ -65,7 +65,7 @@ fun AudioMediaActionRowView(
             modifier = Modifier.size(22.dp),
             imageVector = icon,
             contentDescription = null,
-            tint = if (enabled) gray80 else gray40,
+            tint = if (enabled) contentSubtle else contentDisabled,
         )
         Column(
             modifier = Modifier.weight(1f),
@@ -75,7 +75,7 @@ fun AudioMediaActionRowView(
                 text = title,
                 fontSize = 16.sp,
                 lineHeight = 20.sp,
-                color = if (enabled) MaterialTheme.colorScheme.onBackground else gray40,
+                color = if (enabled) MaterialTheme.colorScheme.onBackground else contentDisabled,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -84,7 +84,7 @@ fun AudioMediaActionRowView(
                     text = description,
                     fontSize = 14.sp,
                     lineHeight = 18.sp,
-                    color = gray60,
+                    color = contentMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -100,7 +100,7 @@ fun AudioMediaActionRowView(
                 onClick != null -> Icon(
                     imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = gray60,
+                    tint = contentMuted,
                 )
             }
         }
@@ -121,7 +121,7 @@ fun AudioMediaActionUnlinkButton(
         Icon(
             imageVector = Icons.Rounded.Close,
             contentDescription = contentDescription,
-            tint = if (enabled) gray60 else gray40,
+            tint = if (enabled) contentMuted else contentDisabled,
         )
     }
 }

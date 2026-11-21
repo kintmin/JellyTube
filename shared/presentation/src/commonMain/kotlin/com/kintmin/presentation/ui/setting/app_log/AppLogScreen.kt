@@ -10,9 +10,9 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
-import com.kintmin.presentation.theme.gray40
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.gray80
+import com.kintmin.presentation.theme.contentDisabled
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.contentSubtle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -241,7 +241,7 @@ private fun AppLogLineView(line: AppLogLineUiState) {
                 Text(
                     text = line.time,
                     style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-                    color = gray60,
+                    color = contentMuted,
                 )
                 line.type?.let { type ->
                     Text(
@@ -276,20 +276,20 @@ private fun AppLogEmptyView(hasLogDate: Boolean) {
             modifier = Modifier.size(48.dp),
             imageVector = Icons.Rounded.Description,
             contentDescription = null,
-            tint = gray40,
+            tint = contentDisabled,
         )
         Text(
             modifier = Modifier.padding(top = 16.dp),
             text = if (hasLogDate) "이 날의 로그가 없습니다" else "남은 로그가 없습니다",
             style = MaterialTheme.typography.bodyLarge,
-            color = gray80,
+            color = contentSubtle,
             textAlign = TextAlign.Center,
         )
         Text(
             modifier = Modifier.padding(top = 6.dp),
             text = "앱을 쓰는 동안 남은 기록이 날짜별로 여기에 모입니다",
             style = MaterialTheme.typography.bodySmall,
-            color = gray60,
+            color = contentMuted,
             textAlign = TextAlign.Center,
         )
     }

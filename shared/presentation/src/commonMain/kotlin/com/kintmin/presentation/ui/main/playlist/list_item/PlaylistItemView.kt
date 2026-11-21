@@ -41,8 +41,8 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.softRed
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistDeleteDialog
@@ -89,7 +89,7 @@ fun PlaylistItemView(
                     imageVector = Icons.Rounded.LibraryMusic,
                     contentDescription = null,
                     modifier = Modifier.size(36.dp),
-                    tint = gray60,
+                    tint = contentMuted,
                 )
             }
         } else {
@@ -125,13 +125,13 @@ fun PlaylistItemView(
                                 .size(14.dp),
                             imageVector = Icons.Rounded.Download,
                             contentDescription = "기본 다운로드 플레이리스트",
-                            tint = gray60,
+                            tint = contentMuted,
                         )
                     }
                     Text(
                         text = data.summaryString,
                         style = MaterialTheme.typography.bodySmall,
-                        color = gray60,
+                        color = contentMuted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -142,7 +142,7 @@ fun PlaylistItemView(
                     Icon(
                         imageVector = Icons.Rounded.MoreVert,
                         contentDescription = "더보기",
-                        tint = gray60,
+                        tint = contentMuted,
                     )
                 }
 
@@ -179,7 +179,7 @@ fun PlaylistItemView(
                     )
                     DropdownMenuItem(
                         text = { Text("삭제하기") },
-                        colors = MenuDefaults.itemColors(textColor = softRed),
+                        colors = MenuDefaults.itemColors(textColor = destructiveContent),
                         onClick = {
                             isDropDownExpanded = false
                             isShowDialog = true

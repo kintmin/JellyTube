@@ -24,6 +24,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kintmin.presentation.theme.selectedFill
+import com.kintmin.presentation.theme.subtleFill
 
 @Composable
 internal fun PlaybackStepButton(
@@ -35,7 +37,7 @@ internal fun PlaybackStepButton(
         modifier = Modifier.size(36.dp),
         onClick = onClick,
         colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+            containerColor = selectedFill,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
     ) {
@@ -75,7 +77,7 @@ internal fun PlaybackOptionChip(
         // 테두리를 두면 고른 칸과 안 고른 칸의 차이가 테두리에 묻힌다. 채움으로만 가른다.
         border = null,
         colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
+            containerColor = subtleFill,
             labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             selectedContainerColor = MaterialTheme.colorScheme.primary,
             selectedLabelColor = MaterialTheme.colorScheme.onPrimary,

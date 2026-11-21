@@ -31,8 +31,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray20
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.outlineSubtle
+import com.kintmin.presentation.theme.contentMuted
 
 /**
  * X 는 입력이 있으면 지우고, 비어 있으면 [onCloseWhenEmpty] 가 있을 때만 닫기로 남는다 — 비어
@@ -67,7 +67,7 @@ fun SearchField(
             modifier = Modifier
                 .padding(start = 16.dp, end = 8.dp)
                 .size(20.dp),
-            tint = gray60,
+            tint = contentMuted,
             imageVector = Icons.Rounded.Search,
             contentDescription = null,
         )
@@ -88,7 +88,7 @@ fun SearchField(
                         Text(
                             text = placeholder,
                             style = textStyle,
-                            color = gray60,
+                            color = contentMuted,
                             maxLines = 1,
                         )
                     }
@@ -105,7 +105,7 @@ fun SearchField(
                     modifier = Modifier.size(20.dp),
                     imageVector = Icons.Rounded.Close,
                     contentDescription = if (isEmpty) "검색 닫기" else "검색어 전체 삭제",
-                    tint = gray60,
+                    tint = contentMuted,
                 )
             }
         }
@@ -116,7 +116,7 @@ fun SearchField(
 fun Modifier.floatingField(): Modifier = this
     // M3 elevation level 3. BottomActionButton 과 같은 높이다.
     .shadow(elevation = 6.dp, shape = CircleShape)
-    .border(width = 1.dp, color = gray20, shape = CircleShape)
+    .border(width = 1.dp, color = outlineSubtle, shape = CircleShape)
 
 /** [floatingField] 를 감싼 바깥 여백(위아래 8dp)까지 더한 높이. 아래 목록이 이만큼 비켜 준다. */
 val FloatingSearchFieldHeight = 64.dp

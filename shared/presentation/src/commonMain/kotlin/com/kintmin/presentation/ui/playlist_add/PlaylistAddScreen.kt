@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
@@ -121,7 +121,7 @@ fun PlaylistAddScreen(
                         Text(
                             text = playlistName,
                             style = MaterialTheme.typography.bodySmall,
-                            color = gray60,
+                            color = contentMuted,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )

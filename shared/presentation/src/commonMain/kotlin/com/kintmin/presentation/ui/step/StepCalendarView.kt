@@ -32,8 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.step.model.YearMonth
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.deepSea40
-import com.kintmin.presentation.theme.seaBlue10
+import com.kintmin.presentation.theme.accentDeep
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.number
@@ -153,7 +152,7 @@ fun StepCalendarView(
                     val isSelected = date == selectedDate
                     val dayColor = when (date?.dayOfWeek) {
                         DayOfWeek.SUNDAY -> MaterialTheme.colorScheme.error
-                        DayOfWeek.SATURDAY -> deepSea40
+                        DayOfWeek.SATURDAY -> accentDeep
                         else -> MaterialTheme.colorScheme.onSurface
                     }
                     val daySteps = date?.let { dailyStepsByDate[it] ?: 0 }
@@ -164,7 +163,7 @@ fun StepCalendarView(
                             .height(46.dp)
                             .padding(horizontal = 2.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (isSelected) seaBlue10 else Color.Transparent)
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                             .let {
                                 if (date != null) {
                                     it.clickable { onSelectDate(date) }

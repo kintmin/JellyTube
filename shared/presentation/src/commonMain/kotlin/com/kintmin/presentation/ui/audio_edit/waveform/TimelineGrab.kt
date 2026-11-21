@@ -7,9 +7,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
-import com.kintmin.presentation.theme.black
-import com.kintmin.presentation.theme.seaBlue100
-import com.kintmin.presentation.theme.white
+import com.kintmin.presentation.theme.accentLight
+import com.kintmin.presentation.theme.overlayContent
+import com.kintmin.presentation.theme.overlayScrim
 
 /**
  * 파형에서 꾹 눌러 잡은 대상. 손가락을 떼면 null이 된다.
@@ -48,13 +48,13 @@ internal fun DrawScope.drawGrabHighlight(
 
                 if (group == grabbedGroup) {
                     drawRoundRect(
-                        color = white.copy(alpha = 0.12f),
+                        color = overlayContent.copy(alpha = 0.12f),
                         topLeft = Offset(x = left, y = 0f),
                         size = clipSize,
                         cornerRadius = clipCorner,
                     )
                     drawRoundRect(
-                        color = seaBlue100,
+                        color = accentLight,
                         topLeft = Offset(x = left, y = 0f),
                         size = clipSize,
                         cornerRadius = clipCorner,
@@ -62,7 +62,7 @@ internal fun DrawScope.drawGrabHighlight(
                     )
                 } else {
                     drawRoundRect(
-                        color = black.copy(alpha = 0.45f),
+                        color = overlayScrim,
                         topLeft = Offset(x = left, y = 0f),
                         size = clipSize,
                         cornerRadius = clipCorner,
@@ -77,7 +77,7 @@ internal fun DrawScope.drawGrabHighlight(
                 AudioEditTimeline.Edge.End -> grabbedClip.positionEndMs
             }
             drawRect(
-                color = white,
+                color = overlayContent,
                 topLeft = Offset(x = viewport.xOf(edgeMs) - 1.dp.toPx(), y = 0f),
                 size = Size(width = 2.dp.toPx(), height = size.height),
             )

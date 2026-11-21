@@ -32,7 +32,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.selectedFill
 import kotlin.math.abs
 
 /**
@@ -110,7 +111,7 @@ fun NumberWheelPicker(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
-                color = gray60,
+                color = contentMuted,
             )
             Spacer(Modifier.height(4.dp))
         }
@@ -171,7 +172,7 @@ fun WheelPickerHighlight(modifier: Modifier = Modifier) {
             .height(WHEEL_ITEM_HEIGHT)
             .clip(MaterialTheme.shapes.medium)
             // 시트 배경 위에 다른 색상을 얹지 않고 본문색 state layer(M3 선택 8%)로 올린다.
-            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)),
+            .background(selectedFill),
     )
 }
 

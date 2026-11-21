@@ -14,7 +14,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 
 /**
  * 설정 화면의 한 섹션. 섹션 제목 헤더 아래에 항목들을 세로로 배치한다.
@@ -41,7 +41,7 @@ fun SettingSectionView(
                 .semantics { heading() },
             text = title,
             style = MaterialTheme.typography.labelLarge,
-            color = gray60,
+            color = contentMuted,
         )
         content()
     }

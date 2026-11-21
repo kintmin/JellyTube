@@ -40,8 +40,8 @@ import coil3.request.ImageRequest
 import com.kintmin.presentation.animation.PLAYBACK_POLLING_INTERVAL_MILLIS
 import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray10
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.emptyTrack
+import com.kintmin.presentation.theme.contentMuted
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -108,7 +108,7 @@ fun PlayerBar(
                         imageVector = Icons.Rounded.LibraryMusic,
                         contentDescription = null,
                         modifier = Modifier.size(22.dp),
-                        tint = gray60,
+                        tint = contentMuted,
                     )
                 }
             } else {
@@ -141,7 +141,7 @@ fun PlayerBar(
                     // 폴링마다 다시 그려지는 숫자라 비례폭이면 초마다 글자가 밀린다.
                     style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
                     maxLines = 1,
-                    color = gray60,
+                    color = contentMuted,
                 )
             }
             IconButton(
@@ -180,7 +180,7 @@ private fun PlayerBarProgress(data: PlayerBarUiState) {
         modifier = Modifier
             .fillMaxWidth()
             .height(PROGRESS_HEIGHT)
-            .background(gray10),
+            .background(emptyTrack),
     ) {
         Box(
             modifier = Modifier

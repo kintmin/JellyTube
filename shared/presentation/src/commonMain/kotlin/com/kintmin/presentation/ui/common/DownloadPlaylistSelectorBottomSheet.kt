@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.selectedFill
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 
 @Composable
@@ -64,7 +65,7 @@ fun DownloadPlaylistSelectorBottomSheet(
                         .height(56.dp)
                         // 짙은 남색 배경은 회색 시트 위에서 탁하게 가라앉는다
                         .background(
-                            if (item.isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else Color.Transparent,
+                            if (item.isSelected) selectedFill else Color.Transparent,
                         )
                         .selectable(
                             selected = item.isSelected,

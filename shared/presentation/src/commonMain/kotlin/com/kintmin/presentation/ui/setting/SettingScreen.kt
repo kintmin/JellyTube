@@ -53,7 +53,7 @@ import com.kintmin.presentation.platform.rememberSystemSettingsOpener
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.platform.textClipEntry
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
@@ -338,7 +338,7 @@ fun SettingScreen(
                             modifier = Modifier.size(20.dp),
                             imageVector = Icons.Rounded.ContentCopy,
                             contentDescription = "기기 식별자 복사",
-                            tint = gray60,
+                            tint = contentMuted,
                         )
                     },
                 )

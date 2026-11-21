@@ -21,7 +21,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 
 /** 행 전체가 탭을 받으므로 표시만 하고 따로 눌리지 않는다. */
 @Composable
@@ -50,7 +50,7 @@ fun SelectionCheckIndicator(
             Box(
                 modifier = Modifier
                     .size(22.dp)
-                    .border(width = 1.5.dp, color = gray60, shape = CircleShape),
+                    .border(width = 1.5.dp, color = contentMuted, shape = CircleShape),
             )
         }
     }

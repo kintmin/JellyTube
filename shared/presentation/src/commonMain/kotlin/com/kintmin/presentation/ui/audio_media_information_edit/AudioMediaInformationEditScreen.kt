@@ -46,7 +46,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.domain.audio_media.AudioMediaTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
@@ -242,7 +242,7 @@ fun AudioMediaInformationEditScreen(
                             .semantics { heading() },
                         text = "연결된 플레이리스트",
                         style = MaterialTheme.typography.labelLarge,
-                        color = gray60,
+                        color = contentMuted,
                     )
                     PlaylistAddButtonView(
                         text = "추가",

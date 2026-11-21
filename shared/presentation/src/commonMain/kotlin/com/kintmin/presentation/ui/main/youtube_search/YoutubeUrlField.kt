@@ -28,7 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 
 /** SearchField 와 같은 pill 이다. 지우기 대신 보내기를 두므로 따로 둔다. */
 @Composable
@@ -56,7 +56,7 @@ fun YoutubeUrlField(
             modifier = Modifier
                 .padding(start = 16.dp, end = 8.dp)
                 .size(20.dp),
-            tint = gray60,
+            tint = contentMuted,
             imageVector = Icons.Rounded.Link,
             contentDescription = null,
         )
@@ -75,7 +75,7 @@ fun YoutubeUrlField(
                         Text(
                             text = "이동할 URL 붙여넣기",
                             style = textStyle,
-                            color = gray60,
+                            color = contentMuted,
                             maxLines = 1,
                         )
                     }
@@ -91,7 +91,7 @@ fun YoutubeUrlField(
                 modifier = Modifier.size(20.dp),
                 imageVector = Icons.AutoMirrored.Rounded.Send,
                 contentDescription = "URL 로드",
-                tint = gray60,
+                tint = contentMuted,
             )
         }
     }

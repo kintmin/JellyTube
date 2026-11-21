@@ -33,7 +33,6 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.SelectionCheckIndicator
-import com.kintmin.presentation.theme.gray80
 import com.kintmin.presentation.ui.playlist_add.PlaylistAddIntent
 import okio.Path.Companion.toPath
 

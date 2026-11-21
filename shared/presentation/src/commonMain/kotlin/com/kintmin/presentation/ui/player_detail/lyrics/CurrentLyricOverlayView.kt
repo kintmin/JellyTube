@@ -28,8 +28,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import kotlinx.coroutines.delay
+import com.kintmin.presentation.theme.artworkBackdropFallback
+import com.kintmin.presentation.theme.overlayScrimSoft
+import com.kintmin.presentation.theme.overlayScrimStrong
+import com.kintmin.presentation.theme.overlayContent
+import com.kintmin.presentation.theme.overlayContentSecondary
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 
 /** 줄마다 높이가 변하면 그라데이션이 커졌다 작아진다. 두 줄이 들어가는 높이로 고정한다. */
 private val OVERLAY_HEIGHT = 56.dp
@@ -85,8 +90,8 @@ fun CurrentLyricOverlayView(
                 .background(
                     Brush.verticalGradient(
                         0f to Color.Transparent,
-                        0.35f to Color.Black.copy(alpha = 0.35f),
-                        1f to Color.Black.copy(alpha = 0.72f),
+                        0.35f to overlayScrimSoft,
+                        1f to overlayScrimStrong,
                     ),
                 )
                 .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -96,7 +101,7 @@ fun CurrentLyricOverlayView(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = shownLine,
-                    color = Color.White,
+                    color = overlayContent,
                     fontSize = 16.sp,
                     lineHeight = 20.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -107,7 +112,7 @@ fun CurrentLyricOverlayView(
                 shownTranslation?.let { translationText ->
                     Text(
                         text = translationText,
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = overlayContentSecondary,
                         fontSize = 13.sp,
                         lineHeight = 16.sp,
                         maxLines = 1,
@@ -128,7 +133,7 @@ private fun CurrentLyricOverlayViewPreview() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(160.dp)
-                .background(Color(0xFF8A7F6A)),
+                .background(artworkBackdropFallback[0]),
         ) {
             CurrentLyricOverlayView(
                 line = "今の歌詞の一行がここに表示されます",

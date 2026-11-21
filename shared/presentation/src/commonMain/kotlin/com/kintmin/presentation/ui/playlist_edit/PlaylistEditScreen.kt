@@ -3,13 +3,13 @@ package com.kintmin.presentation.ui.playlist_edit
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -41,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,18 +48,20 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import org.koin.compose.viewmodel.koinViewModel
+import com.kintmin.presentation.animation.FocusSpreadOverlay
 import com.kintmin.presentation.platform.rememberImagePicker
 import com.kintmin.presentation.platform.rememberToaster
+import com.kintmin.presentation.remember_state.rememberReorderState
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.animation.FocusSpreadOverlay
-import com.kintmin.presentation.theme.gray10
-import com.kintmin.presentation.theme.softRed
-import com.kintmin.presentation.theme.gray40
+import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
+import com.kintmin.presentation.ui.common.ReorderableItem
+import com.kintmin.presentation.ui.common.dragToSelect
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderUiState
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderView
@@ -69,13 +70,9 @@ import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListIntent
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListItemUiState
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListItemView
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListViewModel
-import com.kintmin.presentation.remember_state.rememberReorderState
-import com.kintmin.presentation.ui.common.ReorderableItem
-import com.kintmin.presentation.ui.common.dragToSelect
-import com.kintmin.presentation.ui.common.BottomActionBar
-import com.kintmin.presentation.ui.common.BottomActionButton
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun PlaylistEditScreen(
@@ -227,7 +224,7 @@ fun PlaylistEditScreen(
                         // 휴지통만 두면 "플레이리스트에서 빼기" 로 읽힐 수 있어 글자로 못 박는다.
                         TextButton(
                             modifier = Modifier.padding(end = 4.dp),
-                            colors = ButtonDefaults.textButtonColors(contentColor = softRed),
+                            colors = ButtonDefaults.textButtonColors(contentColor = destructiveContent),
                             onClick = { isShowDialog = true },
                         ) {
                             Icon(

@@ -52,7 +52,7 @@ import com.kintmin.presentation.platform.rememberWebViewHandle
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarRootTitleFontSize
@@ -279,8 +279,8 @@ fun MainScreen(
                     val navigationBarItemColors = ShortNavigationBarItemDefaults.colors().copy(
                         selectedIconColor = MaterialTheme.colorScheme.onSurface,
                         selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unselectedIconColor = gray60,
-                        unselectedTextColor = gray60,
+                        unselectedIconColor = contentMuted,
+                        unselectedTextColor = contentMuted,
                     )
                     ShortNavigationBarItem(
                         icon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(NAV_ICON_SIZE)) },

@@ -17,9 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.deepSea40
-import com.kintmin.presentation.theme.seaBlue10
-import com.kintmin.presentation.theme.seaBlue40
+import com.kintmin.presentation.theme.accentContent
 
 @Composable
 fun StepDailySummaryView(
@@ -54,7 +52,7 @@ fun StepDailySummaryView(
                 Text(
                     text = "${totalSteps}걸음",
                     style = MaterialTheme.typography.titleLarge,
-                    color = seaBlue40,
+                    color = accentContent,
                     fontWeight = FontWeight.Bold,
                 )
             }

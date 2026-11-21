@@ -41,7 +41,7 @@ import com.kintmin.presentation.platform.deviceSaveFlow
 import com.kintmin.presentation.platform.rememberSystemSettingsOpener
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
@@ -175,7 +175,7 @@ private fun StepGroup(
         Text(
             text = title,
             style = MaterialTheme.typography.labelLarge,
-            color = gray60,
+            color = contentMuted,
         )
         content()
     }

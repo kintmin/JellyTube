@@ -20,9 +20,9 @@ import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.ContentCut
 import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.LibraryMusic
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -53,31 +53,32 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.softRed
-import com.kintmin.presentation.theme.white
+import com.kintmin.presentation.theme.overlayScrim
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.destructiveContent
+import com.kintmin.presentation.theme.overlayContent
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
-import com.kintmin.presentation.ui.common.BottomActionBar
-import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.audio_media_detail.dialog.AudioEditRevertDialog
 import com.kintmin.presentation.ui.audio_media_detail.dialog.KaraokeUnlinkDialog
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionProgressIndicator
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionRowView
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionUnlinkButton
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaDetailInfoView
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
 import okio.Path.Companion.toPath
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun AudioMediaDetailScreen(
@@ -215,7 +216,7 @@ fun AudioMediaDetailScreen(
                             ) {
                                 DropdownMenuItem(
                                     text = { Text("음원 파일 삭제") },
-                                    colors = MenuDefaults.itemColors(textColor = softRed),
+                                    colors = MenuDefaults.itemColors(textColor = destructiveContent),
                                     onClick = {
                                         isMenuExpanded = false
                                         isShowDialog = true
@@ -301,11 +302,11 @@ fun AudioMediaDetailScreen(
                                 .padding(end = 16.dp, bottom = 16.dp)
                                 .size(32.dp)
                                 .background(
-                                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.5f),
+                                    color = overlayScrim,
                                     shape = CircleShape,
                                 )
                                 .padding(6.dp),
-                            tint = white,
+                            tint = overlayContent,
                         )
                     }
                 }
@@ -405,14 +406,14 @@ fun AudioMediaDetailScreen(
                             text = "플레이리스트",
                             fontSize = 14.sp,
                             lineHeight = 18.sp,
-                            color = gray60,
+                            color = contentMuted,
                         )
                         if (data.playlists.isEmpty()) {
                             Text(
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
                                 text = "아직 추가된 플레이리스트가 없습니다.",
                                 fontSize = 16.sp,
-                                color = gray60,
+                                color = contentMuted,
                             )
                         }
                     }

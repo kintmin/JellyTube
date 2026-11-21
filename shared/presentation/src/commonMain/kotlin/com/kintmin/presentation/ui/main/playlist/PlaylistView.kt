@@ -32,9 +32,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray40
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.gray80
+import com.kintmin.presentation.theme.contentDisabled
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.contentSubtle
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
@@ -103,7 +103,7 @@ fun PlaylistView(
                             .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        val reorderColor = if (canReorder) gray80 else gray40
+                        val reorderColor = if (canReorder) contentSubtle else contentDisabled
                         Icon(
                             modifier = Modifier.size(18.dp),
                             imageVector = Icons.Rounded.SwapVert,
@@ -177,7 +177,7 @@ private fun PlaylistSectionLabel(
                     .semantics { heading() },
                 text = text,
                 style = MaterialTheme.typography.labelLarge,
-                color = gray60,
+                color = contentMuted,
             )
             action?.invoke(this)
         }

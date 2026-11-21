@@ -44,7 +44,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.animation.FollowActiveLyricLine
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.softRed
+import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
@@ -213,7 +213,7 @@ fun LyricsViewerScreen(
                         )
                         DropdownMenuItem(
                             text = { Text("삭제하기") },
-                            colors = MenuDefaults.itemColors(textColor = softRed),
+                            colors = MenuDefaults.itemColors(textColor = destructiveContent),
                             onClick = {
                                 menuExpanded = false
                                 showDeleteDialog = true

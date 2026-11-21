@@ -15,7 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.softRed
+import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 
 /** 되돌릴 수 있는 쪽이라 테두리 버튼에 빨간 글씨까지만 쓴다. */
@@ -65,7 +65,7 @@ fun RemoveLinkedPlaylistDialog(
                 }
                 OutlinedButton(
                     contentPadding = PaddingValues(horizontal = 32.dp, vertical = 0.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = softRed),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = destructiveContent),
                     onClick = {
                         removeFromPlaylist()
                         onDismiss()

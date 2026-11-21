@@ -49,7 +49,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.bloodyRed100
+import com.kintmin.presentation.theme.attention
 import com.kintmin.presentation.theme.topAppBarCompactHeight
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
@@ -327,7 +327,7 @@ fun AudioEditScreen(
  */
 private fun AudioEditUiState.durationSummary(): AnnotatedString = buildAnnotatedString {
     append("원본 ${originDurationMs.milliseconds.to_hh_colon_mm_colon_ss()} → 결과 ")
-    withStyle(SpanStyle(color = bloodyRed100, fontWeight = FontWeight.Bold)) {
+    withStyle(SpanStyle(color = attention, fontWeight = FontWeight.Bold)) {
         append(resultDurationMs.milliseconds.to_hh_colon_mm_colon_ss())
     }
 }

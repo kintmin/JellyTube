@@ -29,8 +29,8 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Lyrics
-import androidx.compose.material.icons.rounded.OpenInFull
 import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.OpenInFull
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
@@ -63,8 +63,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.koin.compose.koinInject
-import org.koin.compose.viewmodel.koinViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
@@ -75,9 +73,11 @@ import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.deepSea60
-import com.kintmin.presentation.theme.deepSea80
-import com.kintmin.presentation.theme.seaBlue40
+import com.kintmin.presentation.theme.artworkBackdropFallback
+import com.kintmin.presentation.theme.overlayScrimSoft
+import com.kintmin.presentation.theme.overlayContent
+import com.kintmin.presentation.theme.overlayContentMuted
+import com.kintmin.presentation.theme.overlayContentSecondary
 import com.kintmin.presentation.ui.common.PlaybackToggleButton
 import com.kintmin.presentation.ui.player_detail.control.PLAYBACK_VALUE_WIDTH
 import com.kintmin.presentation.ui.player_detail.control.PlaybackSliderView
@@ -91,13 +91,15 @@ import com.kintmin.presentation.ui.player_detail.dialog.toPitchSemitoneText
 import com.kintmin.presentation.ui.player_detail.dialog.toPlaybackSpeedText
 import com.kintmin.presentation.ui.player_detail.lyrics.CurrentLyricOverlayView
 import com.kintmin.presentation.ui.player_detail.lyrics.PlayerLyricsPanelView
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okio.Path.Companion.toPath
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.time.Duration.Companion.seconds
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun PlayerDetailScreen(
@@ -161,22 +163,9 @@ fun PlayerDetailScreen(
 
     val playbackSeconds = max(1L, data.playbackDuration.inWholeSeconds)
     val currentSeconds = min(data.currentDuration.inWholeSeconds, playbackSeconds)
-    var gradientColors by remember {
-        mutableStateOf(
-            listOf(
-                Color(0xFF4B453B),
-                Color(0xFF1D1C1A),
-                Color(0xFF0D0D0D),
-            ),
-        )
-    }
+    var gradientColors by remember { mutableStateOf(artworkBackdropFallback) }
     LaunchedEffect(data.imageFileFullPath) {
-        gradientColors = extractGradientFromArtwork(data.imageFileFullPath)
-            ?: listOf(
-                Color(0xFF4B453B),
-                Color(0xFF1D1C1A),
-                Color(0xFF0D0D0D),
-            )
+        gradientColors = extractGradientFromArtwork(data.imageFileFullPath) ?: artworkBackdropFallback
     }
 
     Scaffold(
@@ -210,7 +199,7 @@ fun PlayerDetailScreen(
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             contentDescription = "뒤로 가기",
-                            tint = Color.White.copy(alpha = 0.82f),
+                            tint = overlayContentSecondary,
                         )
                     }
                     Column(
@@ -224,7 +213,7 @@ fun PlayerDetailScreen(
                                 .fillMaxWidth()
                                 .basicMarquee(),
                             text = data.title,
-                            color = Color.White,
+                            color = overlayContent,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -236,7 +225,7 @@ fun PlayerDetailScreen(
                                 .fillMaxWidth()
                                 .basicMarquee(),
                             text = data.artist,
-                            color = Color.White.copy(alpha = 0.72f),
+                            color = overlayContentMuted,
                             fontSize = 12.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -247,7 +236,7 @@ fun PlayerDetailScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.Subject,
                             contentDescription = "음원 정보",
-                            tint = Color.White.copy(alpha = 0.82f),
+                            tint = overlayContentSecondary,
                         )
                     }
                 }
@@ -267,7 +256,7 @@ fun PlayerDetailScreen(
                     val artworkModifier = Modifier
                         .fillMaxSize()
                         .clip(RoundedCornerShape(2.dp))
-                        .background(Color.Black.copy(alpha = 0.25f))
+                        .background(overlayScrimSoft)
                         .clickable { sendIntent(PlayerDetailIntent.OnClickLyrics) }
 
                     if (showsLyrics) {
@@ -290,7 +279,7 @@ fun PlayerDetailScreen(
                                     modifier = Modifier.size(22.dp),
                                     imageVector = Icons.Rounded.OpenInFull,
                                     contentDescription = "가사 크게 보기",
-                                    tint = Color.White.copy(alpha = 0.82f),
+                                    tint = overlayContentSecondary,
                                 )
                             }
                         }
@@ -303,7 +292,7 @@ fun PlayerDetailScreen(
                                         .align(Alignment.Center),
                                     imageVector = Icons.Rounded.LibraryMusic,
                                     contentDescription = null,
-                                    tint = Color.White.copy(alpha = 0.7f),
+                                    tint = overlayContentMuted,
                                 )
                             } else {
                                 AsyncImage(
@@ -346,7 +335,7 @@ fun PlayerDetailScreen(
                                 modifier = Modifier.size(24.dp),
                                 imageVector = if (data.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
                                 contentDescription = if (data.isFavorite) "찜 켜짐" else "찜 꺼짐",
-                                tint = if (data.isFavorite) Color.White else Color.White.copy(alpha = 0.6f),
+                                tint = if (data.isFavorite) overlayContent else overlayContentMuted,
                             )
                         }
                     }
@@ -374,7 +363,7 @@ fun PlayerDetailScreen(
                                     contentDescription = data.sleepTimerRemainingMinutes
                                         ?.let { "잠들기 타이머 켜짐, ${it}분 남음" }
                                         ?: "잠들기 타이머",
-                                    tint = Color.White.copy(alpha = 0.82f),
+                                    tint = overlayContentSecondary,
                                 )
                             }
                         }
@@ -385,7 +374,7 @@ fun PlayerDetailScreen(
                                 modifier = Modifier.size(24.dp),
                                 imageVector = Icons.Rounded.Lyrics,
                                 contentDescription = if (data.showsLyricsPanel) "가사 닫기" else "가사 보기",
-                                tint = if (data.showsLyricsPanel) Color.White else Color.White.copy(alpha = 0.6f),
+                                tint = if (data.showsLyricsPanel) overlayContent else overlayContentMuted,
                             )
                         }
                     }
@@ -406,12 +395,12 @@ fun PlayerDetailScreen(
                 ) {
                     Text(
                         text = currentSeconds.seconds.to_hh_colon_mm_colon_ss(),
-                        color = Color.White.copy(alpha = 0.88f),
+                        color = overlayContentSecondary,
                         fontSize = 13.sp,
                     )
                     Text(
                         text = playbackSeconds.seconds.to_hh_colon_mm_colon_ss(),
-                        color = Color.White.copy(alpha = 0.88f),
+                        color = overlayContentSecondary,
                         fontSize = 13.sp,
                     )
                 }
@@ -441,7 +430,7 @@ fun PlayerDetailScreen(
                             label = "셔플",
                             isOn = data.isShuffling,
                             iconSize = 24.dp,
-                            offColor = Color.White.copy(alpha = 0.6f),
+                            offColor = overlayContentMuted,
                             onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) },
                         )
                     }
@@ -450,7 +439,7 @@ fun PlayerDetailScreen(
                             modifier = Modifier.size(48.dp),
                             imageVector = Icons.AutoMirrored.Rounded.NavigateBefore,
                             contentDescription = "이전 음원",
-                            tint = Color.White,
+                            tint = overlayContent,
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -459,7 +448,7 @@ fun PlayerDetailScreen(
                             .size(72.dp)
                             .border(
                                 width = 2.dp,
-                                color = Color.White.copy(alpha = 0.85f),
+                                color = overlayContentSecondary,
                                 shape = CircleShape,
                             ),
                         onClick = { sendIntent(PlayerDetailIntent.OnClickPlayOrPauseButton) },
@@ -468,7 +457,7 @@ fun PlayerDetailScreen(
                             modifier = Modifier.size(38.dp),
                             imageVector = if (data.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                             contentDescription = if (data.isPlaying) "일시정지" else "재생",
-                            tint = Color.White,
+                            tint = overlayContent,
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -477,7 +466,7 @@ fun PlayerDetailScreen(
                             modifier = Modifier.size(48.dp),
                             imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
                             contentDescription = "다음 음원",
-                            tint = Color.White,
+                            tint = overlayContent,
                         )
                     }
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
@@ -486,7 +475,7 @@ fun PlayerDetailScreen(
                             label = "반복",
                             isOn = data.isRepeating,
                             iconSize = 24.dp,
-                            offColor = Color.White.copy(alpha = 0.6f),
+                            offColor = overlayContentMuted,
                             onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) },
                         )
                     }
@@ -524,12 +513,12 @@ fun PlayerDetailScreen(
                             modifier = Modifier.size(16.dp),
                             imageVector = Icons.Rounded.LibraryMusic,
                             contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.82f),
+                            tint = overlayContentSecondary,
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (data.playlistName.isBlank()) "플레이리스트에서 재생중" else "${data.playlistName}에서 재생중",
-                            color = Color.White.copy(alpha = 0.88f),
+                            color = overlayContentSecondary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,

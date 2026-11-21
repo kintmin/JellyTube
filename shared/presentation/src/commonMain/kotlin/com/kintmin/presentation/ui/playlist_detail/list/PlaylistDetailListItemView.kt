@@ -1,7 +1,8 @@
 package com.kintmin.presentation.ui.playlist_detail.list
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LibraryMusic
@@ -37,12 +37,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -50,9 +50,9 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.animation.NowPlayingBars
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.gray80
-import com.kintmin.presentation.theme.softRed
+import com.kintmin.presentation.theme.overlayScrim
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.ui.playlist_detail.dialog.RemoveAudioMediaFromPlaylistDialog
 import okio.Path.Companion.toPath
 
@@ -149,7 +149,7 @@ fun PlaylistDetailListItemView(
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
-                                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)),
+                                .background(overlayScrim),
                         )
                         // 기둥은 Canvas 라 스크린리더에 아무것도 남기지 않는다.
                         NowPlayingBars(
@@ -195,7 +195,7 @@ fun PlaylistDetailListItemView(
                             imageVector = Icons.Rounded.MoreVert,
                             contentDescription = "더보기",
                             modifier = Modifier.size(20.dp),
-                            tint = gray60,
+                            tint = contentMuted,
                         )
                     }
 
@@ -230,7 +230,7 @@ fun PlaylistDetailListItemView(
                         if (canRemoveTrack) {
                             DropdownMenuItem(
                                 text = { Text("플레이리스트에서 빼기") },
-                                colors = MenuDefaults.itemColors(textColor = softRed),
+                                colors = MenuDefaults.itemColors(textColor = destructiveContent),
                                 onClick = {
                                     isMenuExpanded = false
                                     isShowRemoveDialog = true

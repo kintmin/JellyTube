@@ -23,7 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 
 private const val TITLE_MAX_LENGTH = 20
@@ -84,7 +84,7 @@ fun PlaylistAddDialog(
                         text = "새 플레이리스트 제목",
                         fontSize = 14.sp,
                         lineHeight = 14.sp,
-                        color = gray60,
+                        color = contentMuted,
                     )
                 },
                 supportingText = {

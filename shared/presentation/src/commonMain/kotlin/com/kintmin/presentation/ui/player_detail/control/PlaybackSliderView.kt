@@ -19,13 +19,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkBackdropFallback
+import com.kintmin.presentation.theme.overlayContent
+import com.kintmin.presentation.theme.overlayContentFaint
 
 private val TRACK_HEIGHT = 4.dp
 private val PIN_WIDTH = 2.dp
@@ -67,9 +69,9 @@ fun PlaybackSliderView(
                 onValueChangeFinished()
             },
             colors = SliderDefaults.colors(
-                thumbColor = Color.White,
-                activeTrackColor = Color.White,
-                inactiveTrackColor = Color.White.copy(alpha = 0.28f),
+                thumbColor = overlayContent,
+                activeTrackColor = overlayContent,
+                inactiveTrackColor = overlayContentFaint,
             ),
         )
         RepeatRangeBand(
@@ -150,7 +152,7 @@ private fun PlaybackSliderViewPreview() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF1D1C1A)),
+                .background(artworkBackdropFallback[1]),
         ) {
             PlaybackSliderView(
                 playbackSeconds = 300,
@@ -172,7 +174,7 @@ private fun PlaybackSliderViewWithoutRangePreview() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF1D1C1A)),
+                .background(artworkBackdropFallback[1]),
         ) {
             PlaybackSliderView(
                 playbackSeconds = 300,

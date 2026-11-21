@@ -25,7 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.remember_state.rememberReorderState
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
+import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import com.kintmin.presentation.ui.common.ReorderableItem
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
@@ -142,7 +142,7 @@ private fun PlaylistReorderItemView(
                 .padding(12.dp),
             imageVector = Icons.Rounded.Reorder,
             contentDescription = "끌어서 순서 변경",
-            tint = gray60,
+            tint = contentMuted,
         )
     }
 }

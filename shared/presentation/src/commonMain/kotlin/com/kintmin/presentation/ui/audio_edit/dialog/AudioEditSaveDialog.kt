@@ -31,7 +31,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_media.AudioMediaTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.bloodyRed100
+import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 
 private enum class SaveMode { Overwrite, NewMedia }
@@ -115,7 +115,7 @@ fun AudioEditSaveDialog(
                     modifier = Modifier.padding(top = 12.dp),
                     text = "이 음원에는 시간이 맞춰진 가사가 있습니다. 길이가 바뀌면 가사 표시 시점이 어긋나므로 가사를 다시 맞춰야 합니다.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = bloodyRed100,
+                    color = destructiveContent,
                 )
             }
 

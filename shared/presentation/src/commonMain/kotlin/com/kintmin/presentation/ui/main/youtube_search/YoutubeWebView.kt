@@ -19,7 +19,7 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.kintmin.presentation.platform.PlatformWebView
 import com.kintmin.presentation.platform.WebViewHandle
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray80
+import com.kintmin.presentation.theme.contentSubtle
 import androidx.compose.ui.tooling.preview.Preview
 
 private const val HOME_URL = "https://m.youtube.com/"
@@ -34,7 +34,7 @@ fun YoutubeWebView(
 ) {
     if (LocalInspectionMode.current) {
         Box(
-            modifier = modifier.background(gray80),
+            modifier = modifier.background(contentSubtle),
             contentAlignment = Alignment.Center,
         ) {
             Text("WebView Preview")
@@ -85,7 +85,7 @@ private fun WebViewCreationFailedView(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier.background(gray80),
+        modifier = modifier.background(contentSubtle),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
