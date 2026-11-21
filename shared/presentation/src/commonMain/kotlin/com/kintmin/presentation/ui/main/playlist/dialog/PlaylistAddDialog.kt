@@ -56,7 +56,7 @@ fun PlaylistAddDialog(
                     newPlaylistTitle = newText
                 },
                 textStyle = MaterialTheme.typography.titleMedium,
-                placeholder = "예: 출근길에 듣는 곡",
+                placeholder = "제목 입력",
                 singleLine = true,
                 maxLength = TITLE_MAX_LENGTH,
                 errorMessage = errorMessage.takeIf { hasEdited },

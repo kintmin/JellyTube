@@ -11,7 +11,6 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +31,7 @@ import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.ui.common.DialogButtonRow
 import com.kintmin.presentation.ui.common.DialogColumn
 import com.kintmin.presentation.ui.common.JellyTubeDialog
+import com.kintmin.presentation.ui.common.UnderlineTextField
 
 private enum class SaveMode { Overwrite, NewMedia }
 
@@ -88,18 +88,16 @@ fun AudioEditSaveDialog(
             }
 
             if (saveMode == SaveMode.NewMedia) {
-                OutlinedTextField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
+                UnderlineTextField(
+                    modifier = Modifier.padding(top = 16.dp),
+                    label = "새 음원 이름",
                     value = newMediaName,
-                    onValueChange = {
-                        if (it.length > AudioMediaTextLimit.MAX_NAME_LENGTH) return@OutlinedTextField
-                        newMediaName = it
-                    },
-                    label = { Text(text = "새 음원 이름") },
-                    isError = newMediaName.isBlank(),
+                    onValueChange = { newMediaName = it },
+                    textStyle = MaterialTheme.typography.titleMedium,
+                    placeholder = "이름 입력",
                     singleLine = true,
+                    maxLength = AudioMediaTextLimit.MAX_NAME_LENGTH,
+                    errorMessage = if (newMediaName.isBlank()) "이름을 입력해 주세요" else null,
                 )
             }
 
