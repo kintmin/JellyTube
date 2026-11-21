@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -71,13 +70,14 @@ fun SleepTimerDialog(
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 SleepTimerMinuteOptions.forEach { option ->
-                    FilterChip(
-                        selected = minutes == option,
+                    PlaybackOptionChip(
+                        modifier = Modifier.weight(1f),
+                        label = "${option}분",
+                        isSelected = minutes == option,
                         onClick = { onSelectMinutes(option) },
-                        label = { Text(text = "${option}분", fontSize = 12.sp) },
                     )
                 }
             }
