@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.positionChange
@@ -40,6 +41,7 @@ private sealed interface WaveformGesture {
  * - 두 손가락: 확대/축소와 이동
  * - 길게 누른 뒤 끌기: 경계 근처면 그 조각 끝을 늘리거나 줄이고, 조각 안쪽이면 조각을 통째로 옮긴다.
  *   끄는 중 화면 가장자리에 닿으면 그쪽으로 화면이 밀린다([TimelineEdgeAutoScroller])
+ * - 선택한 조각의 경계는 길게 누르지 않고 바로 끈다. 손잡이가 밝게 보이는 곳이라 끌면 늘어날 것으로 읽힌다
  *
  * 탭·이동·길게 누르기는 서로 배타적이다. 터치 슬롭을 넘으면 이동, 넘기 전에 떼면 탭,
  * 움직이지 않고 길게 누르고 있으면 길게 누르기로 갈린다.
@@ -48,6 +50,7 @@ internal suspend fun PointerInputScope.timelineWaveformGestures(
     viewport: TimelineViewportState,
     autoScroller: TimelineEdgeAutoScroller,
     timeline: () -> AudioEditTimeline,
+    selectedClipIndex: () -> Int?,
     onTap: (ms: Long) -> Unit,
     onGrabStarted: (TimelineGrab) -> Unit,
     onGrabEnded: () -> Unit,
@@ -56,6 +59,28 @@ internal suspend fun PointerInputScope.timelineWaveformGestures(
 ) {
     awaitEachGesture {
         val down = awaitFirstDown()
+
+        val selectedEdge = selectedClipIndex()?.let { selectedIndex ->
+            val currentTimeline = timeline()
+            findGrabbedEdge(
+                viewport = viewport,
+                timeline = currentTimeline,
+                touchX = down.position.x,
+                radiusPx = EDGE_TOUCH_RADIUS.toPx(),
+            )?.takeIf { (index, _) -> index in currentTimeline.groupRangeOf(selectedIndex) }
+        }
+        if (selectedEdge != null) {
+            val (index, edge) = selectedEdge
+            onGrabStarted(TimelineGrab(clipIndex = index, edge = edge))
+            trackGrab(
+                down = down,
+                viewport = viewport,
+                autoScroller = autoScroller,
+                onDrag = { ms -> onEdgeDragged(index, edge, ms) },
+                onGrabEnded = onGrabEnded,
+            )
+            return@awaitEachGesture
+        }
 
         val gesture = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
             var decided: WaveformGesture? = null
@@ -122,25 +147,42 @@ internal suspend fun PointerInputScope.timelineWaveformGestures(
                     else -> return@awaitEachGesture
                 }
                 onGrabStarted(grab ?: return@awaitEachGesture)
-                autoScroller.start(pointerX = down.position.x, onScrolled = { x -> onDrag(viewport.msAt(x)) })
-
-                // 제스처가 취소돼도 잡힘 표시가 남지 않도록 반드시 놓아 준다
-                try {
-                    while (true) {
-                        val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-                        if (!change.pressed) break
-                        if (change.positionChange() != Offset.Zero) {
-                            onDrag(viewport.msAt(change.position.x))
-                            autoScroller.update(change.position.x)
-                        }
-                        change.consume()
-                    }
-                } finally {
-                    autoScroller.stop()
-                    onGrabEnded()
-                }
+                trackGrab(
+                    down = down,
+                    viewport = viewport,
+                    autoScroller = autoScroller,
+                    onDrag = onDrag,
+                    onGrabEnded = onGrabEnded,
+                )
             }
         }
+    }
+}
+
+/** 잡은 손가락을 뗄 때까지 [onDrag]로 따라간다. */
+private suspend fun AwaitPointerEventScope.trackGrab(
+    down: PointerInputChange,
+    viewport: TimelineViewportState,
+    autoScroller: TimelineEdgeAutoScroller,
+    onDrag: (Long) -> Unit,
+    onGrabEnded: () -> Unit,
+) {
+    autoScroller.start(pointerX = down.position.x, onScrolled = { x -> onDrag(viewport.msAt(x)) })
+
+    // 제스처가 취소돼도 잡힘 표시가 남지 않도록 반드시 놓아 준다
+    try {
+        while (true) {
+            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+            if (!change.pressed) break
+            if (change.positionChange() != Offset.Zero) {
+                onDrag(viewport.msAt(change.position.x))
+                autoScroller.update(change.position.x)
+            }
+            change.consume()
+        }
+    } finally {
+        autoScroller.stop()
+        onGrabEnded()
     }
 }
 

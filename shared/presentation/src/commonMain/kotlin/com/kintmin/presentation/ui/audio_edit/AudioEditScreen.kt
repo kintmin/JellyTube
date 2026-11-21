@@ -136,7 +136,7 @@ fun AudioEditScreen(
         onConfirmExit = navigateToBack,
     )
 
-    // 가로 화면처럼 높이가 낮으면 제목·저장 버튼을 상단 바로 올리고 조작부를 한 줄로 줄여 파형 자리를 확보한다.
+    // 가로 화면처럼 높이가 낮으면 결과 시간·저장 버튼을 상단 바로 올리고 조작부를 한 줄로 줄여 파형 자리를 확보한다.
     // 방향이 아니라 높이로 판단해야 분할 화면에서도 맞다.
     // LocalConfiguration 은 Android 전용이라 창 크기를 직접 재서 dp 로 환산한다.
     val windowHeightPx = LocalWindowInfo.current.containerSize.height
@@ -148,17 +148,14 @@ fun AudioEditScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    if (isCompactHeight) {
-                        Text(
-                            text = data.audioMediaName,
-                            fontSize = topAppBarDetailTitleFontSize,
-                            lineHeight = topAppBarDetailTitleLineHeight,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    } else {
+                    Column {
                         Text(
                             text = "음원 편집",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = data.audioMediaName,
                             fontSize = topAppBarDetailTitleFontSize,
                             lineHeight = topAppBarDetailTitleLineHeight,
                             maxLines = 1,
@@ -270,13 +267,7 @@ fun AudioEditScreen(
         ) {
             if (!isCompactHeight) {
                 Text(
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
-                    text = data.audioMediaName,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
                     text = durationSummary,
                     fontSize = 15.sp,
                 )
@@ -287,6 +278,8 @@ fun AudioEditScreen(
                 viewport = viewport,
                 baselineMs = data.baselineMs,
                 endMs = data.resultDurationMs,
+                canSplit = data.canSplit,
+                canMerge = data.canMerge,
                 baselineSnapTargetsMs = baselineSnapTargetsMs,
                 endSnapTargetsMs = endSnapTargetsMs,
                 onBaselineChanged = { ms -> sendIntent(AudioEditIntent.OnBaselineChanged(ms)) },

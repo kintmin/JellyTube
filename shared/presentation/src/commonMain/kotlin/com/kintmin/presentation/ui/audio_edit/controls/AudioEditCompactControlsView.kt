@@ -20,12 +20,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss_dot_sss
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_edit.AudioEditIntent
 import com.kintmin.presentation.ui.audio_edit.AudioEditUiState
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineGrab
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun AudioEditCompactControlsView(
@@ -39,23 +37,18 @@ fun AudioEditCompactControlsView(
             .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = "기준선 ${data.baselineMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss()}",
-            fontSize = 14.sp,
-        )
-
         val hasAudio = data.timeline.hasAudio
         Text(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 12.dp),
+                .padding(end = 12.dp),
             text = when {
                 !hasAudio -> NO_AUDIO_MESSAGE
                 // 잡고 있는 동안에는 진행률보다 지금 하는 조작이 중요하다
                 grab == null && data.waveformLoadingPercent != null ->
                     "파형 불러오는 중 ${data.waveformLoadingPercent}%"
 
-                else -> data.gestureHint(grab)
+                else -> data.gestureHint(grab).orEmpty()
             },
             fontSize = 12.sp,
             color = if (hasAudio) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,

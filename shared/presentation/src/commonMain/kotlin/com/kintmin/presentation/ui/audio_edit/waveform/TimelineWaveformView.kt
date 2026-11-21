@@ -20,7 +20,6 @@ import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.black
-import com.kintmin.presentation.theme.bloodyRed100
 import com.kintmin.presentation.theme.deepSea40
 import com.kintmin.presentation.theme.deepSea80
 import com.kintmin.presentation.theme.gray10
@@ -35,7 +34,7 @@ import com.kintmin.presentation.theme.white
  * - 0초~끝 표시는 트랙 배경을 깔아, 빈칸과 뒤에 붙인 무음도 "비어 있는 트랙"으로 보이게 한다
  * - 조각은 양옆을 조금씩 띄운 둥근 블록으로 그려, 맞닿은 조각도 경계가 보이게 한다.
  *   병합한 묶음은 블록 하나로 그리고, 원본이 이어지지 않는 이음매만 흐린 점선으로 남긴다
- * - 결과물 끝 뒤는 어둡게 덮고 끝 표시(빨간 선)를 긋는다
+ * - 결과물 끝 뒤는 어둡게 덮기만 한다. 끝 표시는 눈금 줄의 손잡이가 맡는다
  * - 기준선(흰색)과 미리듣기선(파란색)은 별개다
  */
 @Composable
@@ -54,6 +53,7 @@ fun TimelineWaveformView(
     onGrabChanged: (TimelineGrab?) -> Unit,
 ) {
     val currentTimeline by rememberUpdatedState(timeline)
+    val currentSelectedClipIndex by rememberUpdatedState(selectedClipIndex)
     val currentOnClipSelected by rememberUpdatedState(onClipSelected)
     val currentOnClipEdgeDragged by rememberUpdatedState(onClipEdgeDragged)
     val currentOnClipMoved by rememberUpdatedState(onClipMoved)
@@ -69,6 +69,7 @@ fun TimelineWaveformView(
                     viewport = viewport,
                     autoScroller = autoScroller,
                     timeline = { currentTimeline },
+                    selectedClipIndex = { currentSelectedClipIndex },
                     onTap = { ms -> currentOnClipSelected(currentTimeline.clipIndexAt(ms)) },
                     onGrabStarted = { grab ->
                         // 잡은 조각을 바로 선택해 두면 놓은 뒤 곧장 삭제할 수 있다
@@ -132,18 +133,13 @@ fun TimelineWaveformView(
                 topLeft = Offset(x = dimLeft, y = 0f),
                 size = Size(width = size.width - dimLeft, height = size.height),
             )
-            drawRect(
-                color = bloodyRed100,
-                topLeft = Offset(x = endX - 1.dp.toPx(), y = 0f),
-                size = Size(width = 2.dp.toPx(), height = size.height),
-            )
         }
 
         // 기준선
         drawRect(
             color = white,
-            topLeft = Offset(x = viewport.xOf(baselineMs) - 1.dp.toPx() / 2f, y = 0f),
-            size = Size(width = 1.dp.toPx(), height = size.height),
+            topLeft = Offset(x = viewport.xOf(baselineMs) - 1.dp.toPx(), y = 0f),
+            size = Size(width = 2.dp.toPx(), height = size.height),
         )
 
         // 미리듣기선

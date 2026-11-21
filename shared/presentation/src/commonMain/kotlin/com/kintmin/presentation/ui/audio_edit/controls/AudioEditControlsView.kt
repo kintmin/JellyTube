@@ -35,15 +35,10 @@ import kotlin.time.Duration.Companion.milliseconds
 
 internal const val NO_AUDIO_MESSAGE = "남은 소리가 없어 저장할 수 없습니다. 조각 경계를 꾹 눌러 끌어 되살려주세요."
 
-internal fun AudioEditUiState.gestureHint(grab: TimelineGrab?): String {
-    val grabbedClip = grab?.let { timeline.clips.getOrNull(it.clipIndex) }
+/** 잡고 있는 동안만 지금 하는 조작과 그 시각을 알려준다. */
+internal fun AudioEditUiState.gestureHint(grab: TimelineGrab?): String? {
+    val grabbedClip = grab?.let { timeline.clips.getOrNull(it.clipIndex) } ?: return null
     return when {
-        grabbedClip == null && selectedClipIndex != null ->
-            "양 끝을 꾹 눌러 끌면 길이 조절 · 가운데를 꾹 눌러 끌면 이동"
-
-        grabbedClip == null ->
-            "위 눈금을 누르거나 끌면 기준선 이동 · 파형을 누르면 조각 선택 · 두 손가락으로 확대/축소"
-
         grab.edge == null -> {
             val groupStartMs = timeline.clips[timeline.groupRangeOf(grab.clipIndex).first].positionMs
             "이동 중 · 시작 ${groupStartMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss()}"
@@ -71,25 +66,16 @@ fun AudioEditControlsView(
     grab: TimelineGrab?,
     sendIntent: (AudioEditIntent) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        data.waveformLoadingPercent?.let { percent ->
             Text(
-                modifier = Modifier.weight(1f),
-                text = "기준선 ${data.baselineMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss()}",
-                fontSize = 15.sp,
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                text = "파형 불러오는 중 $percent%",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            data.waveformLoadingPercent?.let { percent ->
-                Text(
-                    text = "파형 불러오는 중 $percent%",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
 
         val buttonPadding = PaddingValues(horizontal = 8.dp)
@@ -143,12 +129,14 @@ fun AudioEditControlsView(
             }
         }
 
-        Text(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            text = data.gestureHint(grab),
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        data.gestureHint(grab)?.let { hint ->
+            Text(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                text = hint,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
         if (!data.timeline.hasAudio) {
             Text(
