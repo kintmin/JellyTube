@@ -8,6 +8,7 @@ import com.kintmin.data.local_db.mapper.toAudioEditTimelineOrNull
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.mapper.toTimelineJson
 import com.kintmin.data.local_db.model.AudioMediaEntity
+import com.kintmin.data.local_db.model.clampText
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
@@ -201,7 +202,7 @@ internal class AudioEditRepositoryImpl constructor(
                 // 가사는 길이가 달라져 맞지 않으므로 가져오지 않는다
                 lyricFileNameWithExt = null,
                 tjKaraokeNumber = originEntity.tjKaraokeNumber,
-            )
+            ).clampText()
 
             val added = runCatching {
                 audioMediaFacade.addNewAudioMedia(

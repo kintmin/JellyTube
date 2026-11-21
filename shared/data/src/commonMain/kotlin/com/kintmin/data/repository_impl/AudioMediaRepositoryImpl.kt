@@ -5,6 +5,7 @@ import com.kintmin.data.local_db.dao_facade.AddNewAudioMediaResult
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.model.AudioMediaEntity
+import com.kintmin.data.local_db.model.clampText
 import com.kintmin.data.local_file.AudioFileExtensionCorrector
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.data_source.HttpDataSource
@@ -112,7 +113,7 @@ internal class AudioMediaRepositoryImpl constructor(
                     rawAudioDurationSeconds = downloadedAudioMedia.duration.toLongOrNull(),
                     audioFileNameWithExt = downloadedAudioMedia.audioFileNameWithExt,
                     imageFileNameWithExt = downloadedAudioMedia.imageFileNameWithExt,
-                )
+                ).clampText()
                 val added = audioMediaFacade.addNewAudioMedia(
                     newAudioMedia = audioMediaEntityToSave,
                     requestedPlaylistId = playlistIdOnDownload,
@@ -324,7 +325,7 @@ internal class AudioMediaRepositoryImpl constructor(
                     rawAudioDurationSeconds = copiedInfo.durationMs?.let { it / 1000 },
                     audioFileNameWithExt = copiedInfo.fileNameWithExt,
                     imageFileNameWithExt = copiedInfo.imageFileNameWithExt,
-                )
+                ).clampText()
                 val added = audioMediaFacade.addNewAudioMedia(
                     newAudioMedia = entity,
                     requestedPlaylistId = playlistIdOnDownload,
@@ -359,7 +360,7 @@ internal class AudioMediaRepositoryImpl constructor(
                     rawAudioDurationSeconds = copiedInfo.durationMs?.let { it / 1000 },
                     audioFileNameWithExt = copiedInfo.fileNameWithExt,
                     imageFileNameWithExt = copiedInfo.imageFileNameWithExt,
-                )
+                ).clampText()
                 val added = audioMediaFacade.addNewAudioMedia(
                     newAudioMedia = entity,
                     requestedPlaylistId = playlistIdOnDownload,

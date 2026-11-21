@@ -29,14 +29,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.domain.audio_media.AudioMediaTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.bloodyRed100
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 
 private enum class SaveMode { Overwrite, NewMedia }
-
-/** 새 음원으로 저장할 때 이름 길이 상한. */
-private const val MAX_NAME_LENGTH = 100
 
 @Composable
 fun AudioEditSaveDialog(
@@ -103,7 +101,7 @@ fun AudioEditSaveDialog(
                         .padding(top = 8.dp),
                     value = newMediaName,
                     onValueChange = {
-                        if (it.length > MAX_NAME_LENGTH) return@OutlinedTextField
+                        if (it.length > AudioMediaTextLimit.MAX_NAME_LENGTH) return@OutlinedTextField
                         newMediaName = it
                     },
                     label = { Text(text = "새 음원 이름") },

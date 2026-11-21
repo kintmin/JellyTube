@@ -7,11 +7,11 @@ def get_version():
 
 def test_extract(url, audio_path):
     info_dict = {}
-    title = (info_dict.get("title") or "")[:100] or None
+    title = info_dict.get("title") or None
     thumbnail_url = info_dict.get("thumbnail") or None
     duration = info_dict.get("duration") or None
-    uploader = (info_dict.get("uploader") or "")[:50] or None
-    description = (info_dict.get("description") or "")[:100] or None
+    uploader = info_dict.get("uploader") or None
+    description = info_dict.get("description") or None
     return title, thumbnail_url, duration, uploader, description
 
 def download_audio(url, audio_path):
@@ -41,11 +41,11 @@ def download_audio(url, audio_path):
             filepath = (requested[0].get("filepath") if requested else None) or ydl.prepare_filename(info_dict)
             audio_file_name_with_ext = os.path.basename(filepath)
 
-            title = (info_dict.get("title") or "")[:100] or None
+            title = info_dict.get("title") or None
             thumbnail_url = info_dict.get("thumbnail") or None
             duration = info_dict.get("duration") or None
-            uploader = (info_dict.get("uploader") or "")[:50] or None
-            description = (info_dict.get("description") or "")[:100] or None
+            uploader = info_dict.get("uploader") or None
+            description = info_dict.get("description") or None
 
             return title, thumbnail_url, duration, uploader, description, audio_file_name_with_ext
     except Exception as e:
@@ -225,11 +225,11 @@ def extract_audio_source(url, prefer_hls="0"):
                 hls_playlist = urlh.read().decode("utf-8", "ignore")
                 direct_url = urlh.url
 
-            title = (info_dict.get("title") or "")[:100] or None
+            title = info_dict.get("title") or None
             thumbnail_url = info_dict.get("thumbnail") or None
             duration = info_dict.get("duration") or None
-            uploader = (info_dict.get("uploader") or "")[:50] or None
-            description = (info_dict.get("description") or "")[:100] or None
+            uploader = info_dict.get("uploader") or None
+            description = info_dict.get("description") or None
 
             return (
                 direct_url,
