@@ -10,7 +10,6 @@ import com.kintmin.data.python_bridge.model.YoutubeDownloadDto
 import com.kintmin.data.python_bridge.model.withDefaults
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 
 class PythonExecutorImpl(
     private val context: Context
@@ -23,23 +22,21 @@ class PythonExecutorImpl(
         withContext(Dispatchers.IO) {
             ensurePythonStarted()
 
-            withTimeout(TIME_OUT) {
-                val module = Python.getInstance().getModule(FILE_NAME)
-                val version = module.callAttr(METHOD_GET_VERSION).toString()
-                Log.d("DEBUG", "yt-dlp version: $version")
+            val module = Python.getInstance().getModule(FILE_NAME)
+            val version = module.callAttr(METHOD_GET_VERSION).toString()
+            Log.d("DEBUG", "yt-dlp version: $version")
 
-                val pyResult =
-                    module.callAttr(METHOD_DOWNLOAD_AUDIO, youtubeUrl, audioDownloadPath).asList()
+            val pyResult =
+                module.callAttr(METHOD_DOWNLOAD_AUDIO, youtubeUrl, audioDownloadPath).asList()
 
-                YoutubeDownloadDto(
-                    title = pyResult.getOrNull(0)?.toString().orEmpty(),
-                    thumbnailDownloadUrl = pyResult.getOrNull(1)?.toString().orEmpty(),
-                    duration = pyResult.getOrNull(2)?.toString().orEmpty(),
-                    uploader = pyResult.getOrNull(3)?.toString().orEmpty(),
-                    description = pyResult.getOrNull(4)?.toString().orEmpty(),
-                    audioFileNameWithExt = pyResult.getOrNull(5)?.toString().orEmpty(),
-                ).withDefaults()
-            }
+            YoutubeDownloadDto(
+                title = pyResult.getOrNull(0)?.toString().orEmpty(),
+                thumbnailDownloadUrl = pyResult.getOrNull(1)?.toString().orEmpty(),
+                duration = pyResult.getOrNull(2)?.toString().orEmpty(),
+                uploader = pyResult.getOrNull(3)?.toString().orEmpty(),
+                description = pyResult.getOrNull(4)?.toString().orEmpty(),
+                audioFileNameWithExt = pyResult.getOrNull(5)?.toString().orEmpty(),
+            ).withDefaults()
         }
     }
 
@@ -50,14 +47,12 @@ class PythonExecutorImpl(
         runCatching {
             ensurePythonStarted()
 
-            withTimeout(TIME_OUT) {
-                val module = Python.getInstance().getModule(FILE_NAME)
-                val pyResult = module.callAttr(METHOD_DOWNLOAD_PLAYABLE_AUDIO, youtubeUrl, audioDownloadPath).asList()
-                PlayableAudioDownloadDto(
-                    audioFileNameWithExt = pyResult.getOrNull(0)?.toString().orEmpty(),
-                    duration = pyResult.getOrNull(1)?.toString().orEmpty(),
-                )
-            }
+            val module = Python.getInstance().getModule(FILE_NAME)
+            val pyResult = module.callAttr(METHOD_DOWNLOAD_PLAYABLE_AUDIO, youtubeUrl, audioDownloadPath).asList()
+            PlayableAudioDownloadDto(
+                audioFileNameWithExt = pyResult.getOrNull(0)?.toString().orEmpty(),
+                duration = pyResult.getOrNull(1)?.toString().orEmpty(),
+            )
         }
     }
 
@@ -65,10 +60,8 @@ class PythonExecutorImpl(
         runCatching {
             ensurePythonStarted()
 
-            withTimeout(TIME_OUT) {
-                val module = Python.getInstance().getModule(FILE_NAME)
-                module.callAttr(METHOD_EXTRACT_PLAYLIST, playlistUrl).asList().first().toString()
-            }
+            val module = Python.getInstance().getModule(FILE_NAME)
+            module.callAttr(METHOD_EXTRACT_PLAYLIST, playlistUrl).asList().first().toString()
         }
     }
 
@@ -78,7 +71,6 @@ class PythonExecutorImpl(
     }
 
     private companion object {
-        const val TIME_OUT = 30000L
         const val FILE_NAME = "download_youtube_audio"
         const val METHOD_GET_VERSION = "get_version"
         const val METHOD_DOWNLOAD_AUDIO = "download_audio"

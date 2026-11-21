@@ -3,14 +3,15 @@ package com.kintmin.domain.playlist_download.usecase
 import com.kintmin.domain.audio_media.ParallelDownloader
 import com.kintmin.domain.audio_media.model.AgeRestrictedMedia
 import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
-import com.kintmin.domain.audio_track.model.AudioTrack
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.data_migration.SourceKey
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist_download.PlaylistMergeOrder
 import com.kintmin.domain.playlist_download.model.PlaylistDownloadFailure
 import com.kintmin.domain.playlist_download.model.PlaylistDownloadFailureReason
@@ -36,6 +37,7 @@ class DownloadYoutubePlaylistUseCase(
     private val audioMediaRepository: AudioMediaRepository,
     private val audioTrackRepository: AudioTrackRepository,
     private val playlistRepository: PlaylistRepository,
+    private val addNewPlaylistUseCase: AddNewPlaylistUseCase,
     private val downloadAudioMediaUseCase: DownloadAudioMediaUseCase,
     private val downloadLyricsForAudioMediaUseCase: DownloadLyricsForAudioMediaUseCase,
     private val appLog: AppLog,
@@ -45,14 +47,14 @@ class DownloadYoutubePlaylistUseCase(
         onProgress: (PlaylistDownloadProgress) -> Unit,
     ): Result<PlaylistDownloadSummary> = runCatching {
         val entries = playlist.entries.distinctBy { it.videoId }
-        val (available, unavailable) = entries.partition { it.isAvailable }
         val owned = ownedIdByKey()
-        val toDownload = available.filter { SourceKey.of(it.url) !in owned }
+        val (onDevice, notOnDevice) = entries.partition { SourceKey.of(it.url) in owned }
+        val (toDownload, unavailable) = notOnDevice.partition { it.isAvailable }
 
         val resultLock = Mutex()
         val downloaded = mutableMapOf<String, Int>()
         val ageRestricted = mutableSetOf<String>()
-        fun idsInOrder() = available.mapNotNull { owned[SourceKey.of(it.url)] ?: downloaded[it.videoId] }
+        fun idsInOrder() = entries.mapNotNull { owned[SourceKey.of(it.url)] ?: downloaded[it.videoId] }
 
         onProgress(PlaylistDownloadProgress(PlaylistDownloadStage.DOWNLOAD, 0, toDownload.size))
         val results = try {
@@ -61,11 +63,23 @@ class DownloadYoutubePlaylistUseCase(
                 onDone = { onProgress(PlaylistDownloadProgress(PlaylistDownloadStage.DOWNLOAD, it, toDownload.size)) },
             ) { entry ->
                 // 다시 시도해도 받을 수 없으니 실패로 넘겨 재시도를 태우지 않는다.
-                try {
-                    val id = download(entry)
-                    resultLock.withLock { downloaded[entry.videoId] = id }
+                val acquired = try {
+                    acquire(entry)
                 } catch (e: AgeRestrictedMedia) {
-                    resultLock.withLock { ageRestricted += entry.videoId }
+                    null
+                }
+                // 곡 행은 이미 생겼으니 멈추는 중이어도 기록해야 재생목록에 담긴다.
+                withContext(NonCancellable) {
+                    resultLock.withLock {
+                        if (acquired == null) ageRestricted += entry.videoId else downloaded[entry.videoId] = acquired.first.id
+                    }
+                }
+                if (acquired?.second == true) {
+                    downloadLyricsForAudioMediaUseCase(
+                        audioMediaId = acquired.first.id,
+                        title = acquired.first.name,
+                        targetDurationSeconds = entry.durationSeconds?.toDouble(),
+                    )
                 }
             }
         } catch (e: Throwable) {
@@ -85,7 +99,7 @@ class DownloadYoutubePlaylistUseCase(
             playlistId = playlistId,
             playlistName = playlist.title.trim(),
             downloadedCount = downloaded.size,
-            alreadyOnDeviceCount = available.size - toDownload.size,
+            alreadyOnDeviceCount = onDevice.size,
             failures = unavailable.map { PlaylistDownloadFailure(it.title, PlaylistDownloadFailureReason.UNAVAILABLE) } +
                 toDownload.filter { it.videoId !in downloaded }.map {
                     val reason = if (it.videoId in ageRestricted) {
@@ -104,18 +118,13 @@ class DownloadYoutubePlaylistUseCase(
     private suspend fun ownedIdByKey(): Map<String, Int> =
         audioMediaRepository.getAudioMediaListFlow().first().associate { SourceKey.of(it.source) to it.id }
 
-    /** 이 곡이 다른 주소로 이미 있으면 받지 않고 그 곡을 쓴다. 가사는 곡을 들인 뒤 찾고, 실패해도 곡은 남긴다. */
-    private suspend fun download(entry: YoutubePlaylistEntry): Int {
+    /** 받는 사이 같은 주소로 들어온 곡이 있으면 받지 않고 그 곡을 쓴다. 두 번째 값은 새로 받았는지다. */
+    private suspend fun acquire(entry: YoutubePlaylistEntry): Pair<AudioMedia, Boolean> {
         val result = downloadAudioMediaUseCase(entry.url, intoUncategorized = true).getOrElse { error ->
-            if (error is AlreadyDownloadedMedia) return audioMediaRepository.getAudioMediaBySource(entry.url).getOrThrow().id
+            if (error is AlreadyDownloadedMedia) return audioMediaRepository.getAudioMediaBySource(entry.url).getOrThrow() to false
             throw error
         }
-        downloadLyricsForAudioMediaUseCase(
-            audioMediaId = result.audioMedia.id,
-            title = result.audioMedia.name,
-            targetDurationSeconds = entry.durationSeconds?.toDouble(),
-        )
-        return result.audioMedia.id
+        return result.audioMedia to true
     }
 
     /** 곡은 맨 뒤에만 담을 수 있어 빠진 곡을 붙인 뒤 유튜브 순서의 제자리로 옮긴다. */
@@ -128,36 +137,24 @@ class DownloadYoutubePlaylistUseCase(
         val existing = playlistRepository.getAllPlaylistFlow().first()
             .firstOrNull { it.type == PlaylistType.USER && it.name.trim() == name }
         if (existing == null && audioMediaIds.isEmpty()) return null
-        val playlistId = existing?.id ?: playlistRepository.addPlaylist(name).getOrThrow()
+        val playlistId = existing?.id ?: addNewPlaylistUseCase(name).getOrThrow()
         val youtubeOrder = audioMediaIds.distinct()
         onProgress(PlaylistDownloadProgress(PlaylistDownloadStage.ADD_TO_PLAYLIST, 0, youtubeOrder.size))
         val before = trackIds(playlistId)
         val toAdd = youtubeOrder.filter { it !in before }
         if (toAdd.isNotEmpty()) {
             audioTrackRepository.addCustomAudioTrack(playlistId, toAdd).getOrThrow()
-            moveInto(playlistId, PlaylistMergeOrder.of(before, youtubeOrder))
+            val target = PlaylistMergeOrder.of(before, youtubeOrder)
+            if (target != before + toAdd) audioTrackRepository.reorderTracks(playlistId, target).getOrThrow()
         }
         onProgress(PlaylistDownloadProgress(PlaylistDownloadStage.ADD_TO_PLAYLIST, youtubeOrder.size, youtubeOrder.size))
         return playlistId
     }
 
-    /** 한 곡을 옮기면 사이의 곡이 밀리므로 옮긴 뒤에 다시 읽는다. */
-    private suspend fun moveInto(playlistId: Int, target: List<Int>) {
-        var tracks = tracks(playlistId)
-        target.forEachIndexed { index, id ->
-            if (tracks.getOrNull(index)?.audioMediaId == id) return@forEachIndexed
-            val from = tracks.firstOrNull { it.audioMediaId == id } ?: return@forEachIndexed
-            audioTrackRepository.updateTrackSequence(playlistId, id, from.trackSequence, tracks[index].trackSequence).getOrThrow()
-            tracks = tracks(playlistId)
-        }
-    }
-
-    private suspend fun tracks(playlistId: Int): List<AudioTrack> =
+    private suspend fun trackIds(playlistId: Int): List<Int> =
         audioTrackRepository.getPlaylistTrackAggregateListFlow(playlistId).first()
-            .map { it.audioTrack }
-            .sortedBy { it.trackSequence }
-
-    private suspend fun trackIds(playlistId: Int): List<Int> = tracks(playlistId).map { it.audioMediaId }
+            .sortedBy { it.audioTrack.trackSequence }
+            .map { it.audioMedia.id }
 
     private fun log(message: String) {
         appLog.sendDebugLog(DebugLog("DownloadYoutubePlaylistUseCase", message))

@@ -32,6 +32,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
@@ -162,6 +163,15 @@ class DownloadAudioMediaUseCaseTest {
         job.cancelAndJoin()
 
         coVerify(exactly = 1) { audioMediaRepository.addAudioMedia(mockDownloadedMedia, UNCATEGORIZED_ID, false) }
+    }
+
+    @Test
+    fun `멈춰서 끊긴 받기는 실패로 기록하지 않는다`() = runTest {
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } throws CancellationException("stop")
+
+        useCase(downloadUrl)
+
+        verifyFailedDownloadAudioMediaLog(exception = CancellationException("stop"), exactly = 0)
     }
 
     @Test

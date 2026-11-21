@@ -49,7 +49,6 @@ class PlaylistDownloadViewModel(
     private val _eventFlow = Channel<PlaylistDownloadEvent>(Channel.BUFFERED)
     val eventFlow: Flow<PlaylistDownloadEvent> = _eventFlow.receiveAsFlow()
 
-    /** 다시 받기는 처음 읽은 목록으로 한다. 받은 곡은 건너뛰므로 빠진 곡만 받는다. */
     private var playlist: YoutubePlaylist? = null
     private var runJob: Job? = null
 
@@ -63,7 +62,8 @@ class PlaylistDownloadViewModel(
             PlaylistDownloadIntent.OnConfirmCellular -> run()
             PlaylistDownloadIntent.OnDismissCellular -> updatePreview { it.copy(askCellular = false) }
             PlaylistDownloadIntent.OnClickStop -> stop()
-            PlaylistDownloadIntent.OnClickRetry -> if (playlist == null) read() else run()
+            // 기다리는 사이 목록과 연결이 바뀌었을 수 있어 다시 읽고 남은 곡과 Wi-Fi 를 다시 묻는다.
+            PlaylistDownloadIntent.OnClickRetry -> read()
             PlaylistDownloadIntent.OnClickOpenPlaylist -> openPlaylist()
             PlaylistDownloadIntent.OnConfirmExit -> exit()
         }
@@ -117,7 +117,8 @@ class PlaylistDownloadViewModel(
         _uiState.update { it.copy(isStopping = true) }
         viewModelScope.launch {
             runJob?.cancelAndJoin()
-            interrupt(cause = null)
+            // 담기를 마치고 끝난 결과는 덮지 않는다.
+            if (_uiState.value.isRunning) interrupt(cause = null)
         }
     }
 

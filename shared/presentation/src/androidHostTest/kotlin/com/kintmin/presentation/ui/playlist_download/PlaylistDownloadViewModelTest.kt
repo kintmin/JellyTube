@@ -122,6 +122,23 @@ class PlaylistDownloadViewModelTest {
     }
 
     @Test
+    fun `다시 확인하면 바로 받지 않고 목록을 다시 읽어 Wi-Fi 를 다시 묻는다`() {
+        coEvery { monitor.runningTasks() } returns mapOf(RunningTask.YOUTUBE_DOWNLOAD to 1)
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlaylistDownloadIntent.OnClickStart)
+        coEvery { monitor.runningTasks() } returns emptyMap()
+        isWifi = false
+
+        viewModel.sendIntent(PlaylistDownloadIntent.OnClickRetry)
+        assertTrue(viewModel.uiState.value.phase is PlaylistDownloadPhase.Preview)
+        viewModel.sendIntent(PlaylistDownloadIntent.OnClickStart)
+
+        assertTrue((viewModel.uiState.value.phase as PlaylistDownloadPhase.Preview).askCellular)
+        coVerify(exactly = 2) { previewUseCase(url) }
+        coVerify(exactly = 0) { download(any(), any()) }
+    }
+
+    @Test
     fun `받는 동안 앱을 살려 두고 끝나면 받지 못한 곡만 다시 받을 수 있다`() {
         coEvery { download(playlist, any()) } returns Result.success(
             summary(
@@ -146,8 +163,9 @@ class PlaylistDownloadViewModelTest {
             summary(listOf(PlaylistDownloadFailure("비공개", PlaylistDownloadFailureReason.UNAVAILABLE))),
         )
         viewModel.sendIntent(PlaylistDownloadIntent.OnClickRetry)
+        viewModel.sendIntent(PlaylistDownloadIntent.OnClickStart)
         assertFalse((viewModel.uiState.value.phase as PlaylistDownloadPhase.Finished).hasRetryableFailures)
-        coVerify(exactly = 1) { previewUseCase(url) }
+        coVerify(exactly = 2) { previewUseCase(url) }
     }
 
     @Test
@@ -175,6 +193,7 @@ class PlaylistDownloadViewModelTest {
 
         coEvery { download(playlist, any()) } returns Result.success(summary())
         viewModel.sendIntent(PlaylistDownloadIntent.OnClickRetry)
+        viewModel.sendIntent(PlaylistDownloadIntent.OnClickStart)
         viewModel.sendIntent(PlaylistDownloadIntent.OnClickOpenPlaylist)
         assertEquals(PlaylistDownloadEvent.NavigateToPlaylist(5), viewModel.eventFlow.first())
     }
@@ -200,6 +219,22 @@ class PlaylistDownloadViewModelTest {
         inFlight.complete(Unit)
         assertTrue(viewModel.uiState.value.phase is PlaylistDownloadPhase.Interrupted)
         assertFalse(viewModel.uiState.value.isStopping)
+    }
+
+    @Test
+    fun `멈추는 사이 담기까지 마쳐 끝났으면 멈췄다고 덮지 않는다`() = runTest {
+        val inFlight = CompletableDeferred<Unit>()
+        coEvery { download(playlist, any()) } coAnswers {
+            withContext(NonCancellable) { inFlight.await() }
+            Result.success(summary())
+        }
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlaylistDownloadIntent.OnClickStart)
+
+        viewModel.sendIntent(PlaylistDownloadIntent.OnClickStop)
+        inFlight.complete(Unit)
+
+        assertTrue(viewModel.uiState.value.phase is PlaylistDownloadPhase.Finished)
     }
 
     @Test

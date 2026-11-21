@@ -64,6 +64,9 @@ WHERE playlistId = :playlistId
     )
     suspend fun updateSequence(playlistId: Int, audioMediaId: Int, oldSequence: Int, newSequence: Int)
 
+    @Query("UPDATE PLAYLIST_TRACK SET sequence = :sequence WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
+    suspend fun setSequence(playlistId: Int, audioMediaId: Int, sequence: Int)
+
     @Query("DELETE FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId IN (:audioMediaIdList)")
     suspend fun deletePlaylistTracks(playlistId: Int, audioMediaIdList: List<Int>)
 

@@ -443,6 +443,17 @@ class AudioMediaFacade constructor(
         }
     }
 
+    suspend fun reorderTracks(playlistId: Int, orderedAudioMediaIds: List<Int>) {
+        db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                orderedAudioMediaIds.forEachIndexed { index, audioMediaId ->
+                    playlistTrackDao.setSequence(playlistId, audioMediaId, sequence = index + 1)
+                }
+                syncPlaylistWhenUpdateTrack(playlistId)
+            }
+        }
+    }
+
     suspend fun updatePlaylistSequences(orderedPlaylistIds: List<Int>) {
         db.useWriterConnection { transactor ->
             transactor.immediateTransaction {

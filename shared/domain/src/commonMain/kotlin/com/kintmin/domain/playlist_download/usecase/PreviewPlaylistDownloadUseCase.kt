@@ -19,8 +19,8 @@ class PreviewPlaylistDownloadUseCase(
         val playlist = audioMediaRepository.fetchYoutubePlaylist(YoutubeUrl.playlistPageUrlOf(playlistId)).getOrThrow()
         val ownedKeys = audioMediaRepository.getAudioMediaListFlow().first().map { SourceKey.of(it.source) }.toSet()
         val entries = playlist.entries.distinctBy { it.videoId }
-        val (available, unavailable) = entries.partition { it.isAvailable }
-        val (owned, toDownload) = available.partition { SourceKey.of(it.url) in ownedKeys }
+        val (owned, notOwned) = entries.partition { SourceKey.of(it.url) in ownedKeys }
+        val (toDownload, unavailable) = notOwned.partition { it.isAvailable }
         PlaylistDownloadPreview(
             playlist = playlist,
             totalCount = entries.size,

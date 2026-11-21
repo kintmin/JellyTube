@@ -74,6 +74,7 @@ fun PlaylistDownloadScreen(
     KeepScreenOnEffect(enabled = uiState.isRunning)
 
     var isExitDialogVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.isRunning) { if (!uiState.isRunning) isExitDialogVisible = false }
     val onBack = { if (uiState.isRunning) isExitDialogVisible = true else navigateToBack() }
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),

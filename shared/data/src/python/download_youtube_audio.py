@@ -283,4 +283,4 @@ def extract_playlist(playlist_url):
 
 
 UNAVAILABLE_TITLES = ("[Private video]", "[Deleted video]")
-UNAVAILABLE_AVAILABILITY = ("private", "needs_auth", "subscriber_only", "premium_only")
+UNAVAILABLE_AVAILABILITY = ("private", "subscriber_only", "premium_only")

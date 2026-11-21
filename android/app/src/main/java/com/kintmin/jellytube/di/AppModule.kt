@@ -64,7 +64,8 @@ val appModule: Module = module {
     single<StartAudioEditSave> { StartAudioEditSaveImpl(androidContext()) }
     single<MigrationSourceDiscovery> { NsdMigrationSourceDiscovery(androidContext()) }
     single<MigrationReceiveKeepAlive> { MigrationReceiveKeepAliveImpl(androidContext()) }
-    single<BulkDownloadKeepAlive> { BulkDownloadKeepAliveImpl(androidContext()) }
+    single { BulkDownloadKeepAliveImpl(androidContext()) }
+    single<BulkDownloadKeepAlive> { get<BulkDownloadKeepAliveImpl>() }
     single<DataMigrationSendController> { DataMigrationSendControllerImpl(androidContext(), get(), get(), get()) }
-    single<RunningTaskMonitor> { RunningTaskMonitorImpl(androidContext(), get(), get()) }
+    single<RunningTaskMonitor> { RunningTaskMonitorImpl(androidContext(), get(), get(), get()) }
 }

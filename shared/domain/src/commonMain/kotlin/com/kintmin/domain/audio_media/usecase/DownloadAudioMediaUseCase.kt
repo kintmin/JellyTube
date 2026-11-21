@@ -16,6 +16,7 @@ import com.kintmin.log.model.FirebaseEvent
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.measureTimedValue
 
 class DownloadAudioMediaUseCase constructor(
@@ -37,6 +38,8 @@ class DownloadAudioMediaUseCase constructor(
             audioMediaRepository.releaseDownload(downloadUrl)
         }
     }.onFailure { exception ->
+        // 멈추기·나가기로 끊긴 것은 받기 실패가 아니다.
+        if (exception is CancellationException) return@onFailure
         val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()
         val connectionStatus = deviceStatusRepository.getConnectionStatus().getOrNull()
 

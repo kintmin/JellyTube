@@ -20,4 +20,7 @@ interface AudioTrackRepository {
     suspend fun getPlaylistTrackCount(playlistId: Int): Result<Int>
 
     suspend fun updateTrackSequence(playlistId: Int, audioMediaId: Int, oldSequence: Int, newSequence: Int): Result<Unit>
+
+    /** 재생목록의 곡을 [orderedAudioMediaIds] 순서대로 한 번에 다시 매긴다. 재생목록의 곡을 모두 담아야 한다. */
+    suspend fun reorderTracks(playlistId: Int, orderedAudioMediaIds: List<Int>): Result<Unit>
 }

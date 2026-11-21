@@ -12,6 +12,7 @@ import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist_download.model.PlaylistDownloadFailure
 import com.kintmin.domain.playlist_download.model.PlaylistDownloadFailureReason
 import com.kintmin.domain.playlist_download.usecase.DownloadYoutubePlaylistUseCase
@@ -62,7 +63,9 @@ class PlaylistDownloadUseCaseTest {
     }
     private val playlistRepository = mockk<PlaylistRepository> {
         every { getAllPlaylistFlow() } answers { flowOf(playlists) }
-        coEvery { addPlaylist(any()) } returns Result.success(50)
+    }
+    private val addNewPlaylist = mockk<AddNewPlaylistUseCase> {
+        coEvery { this@mockk(any()) } returns Result.success(50)
     }
     private val audioTrackRepository = mockk<AudioTrackRepository> {
         every { getPlaylistTrackAggregateListFlow(any()) } answers {
@@ -84,10 +87,9 @@ class PlaylistDownloadUseCaseTest {
             tracks += secondArg<List<Int>>()
             Result.success(tracks.size)
         }
-        coEvery { updateTrackSequence(any(), any(), any(), any()) } answers {
-            val id = secondArg<Int>()
-            tracks.remove(id)
-            tracks.add(arg<Int>(3) - 1, id)
+        coEvery { reorderTracks(any(), any()) } answers {
+            tracks.clear()
+            tracks += secondArg<List<Int>>()
             Result.success(Unit)
         }
     }
@@ -103,7 +105,8 @@ class PlaylistDownloadUseCaseTest {
     }
 
     private fun downloadUseCase() = DownloadYoutubePlaylistUseCase(
-        audioMediaRepository, audioTrackRepository, playlistRepository, downloadAudio, downloadLyrics, mockk<AppLog>(relaxed = true),
+        audioMediaRepository, audioTrackRepository, playlistRepository, addNewPlaylist, downloadAudio, downloadLyrics,
+        mockk<AppLog>(relaxed = true),
     )
 
     @Test
@@ -114,7 +117,7 @@ class PlaylistDownloadUseCaseTest {
         val summary = downloadUseCase()(playlist) {}.getOrThrow()
 
         coVerify(exactly = 0) { downloadAudio("https://www.youtube.com/watch?v=b", any()) }
-        coVerify { playlistRepository.addPlaylist("드라이브") }
+        coVerify { addNewPlaylist("드라이브") }
         assertEquals(listOf(100, 7, 101), tracks)
         assertEquals(50, summary.playlistId)
         assertEquals(2, summary.downloadedCount)
@@ -129,7 +132,7 @@ class PlaylistDownloadUseCaseTest {
 
         val summary = downloadUseCase()(YoutubePlaylist("드라이브", listOf(entry("a"), entry("b")))) {}.getOrThrow()
 
-        coVerify(exactly = 0) { playlistRepository.addPlaylist(any()) }
+        coVerify(exactly = 0) { addNewPlaylist(any()) }
         assertEquals(listOf(7, 100), tracks)
         assertEquals(9, summary.playlistId)
     }
@@ -161,7 +164,7 @@ class PlaylistDownloadUseCaseTest {
 
         job.cancelAndJoin()
 
-        coVerify { playlistRepository.addPlaylist("목록") }
+        coVerify { addNewPlaylist("목록") }
         assertEquals(listOf(100), tracks)
     }
 
@@ -187,11 +190,33 @@ class PlaylistDownloadUseCaseTest {
     }
 
     @Test
+    fun `받아 둔 곡은 유튜브에서 비공개가 돼도 재생목록에 담는다`() = runTest {
+        owned = listOf(audio(7, "https://www.youtube.com/watch?v=a"))
+
+        val summary = downloadUseCase()(YoutubePlaylist("목록", listOf(entry("a", available = false), entry("b")))) {}.getOrThrow()
+
+        assertEquals(listOf(7, 100), tracks)
+        assertEquals(1, summary.alreadyOnDeviceCount)
+        assertTrue(summary.failures.isEmpty())
+    }
+
+    @Test
+    fun `가사를 찾는 사이에 멈춰도 받은 곡은 재생목록에 담는다`() = runTest {
+        coEvery { downloadLyrics(any(), any(), any()) } coAnswers { awaitCancellation() }
+        val job = launch { downloadUseCase()(YoutubePlaylist("목록", listOf(entry("a")))) {} }
+        advanceUntilIdle()
+
+        job.cancelAndJoin()
+
+        assertEquals(listOf(100), tracks)
+    }
+
+    @Test
     fun `담을 곡이 하나도 없으면 빈 재생목록을 만들지 않는다`() = runTest {
         val summary = downloadUseCase()(YoutubePlaylist("목록", listOf(entry("x", available = false)))) {}.getOrThrow()
 
         assertNull(summary.playlistId)
-        coVerify(exactly = 0) { playlistRepository.addPlaylist(any()) }
+        coVerify(exactly = 0) { addNewPlaylist(any()) }
     }
 
     @Test
@@ -217,5 +242,17 @@ class PlaylistDownloadUseCaseTest {
         coEvery { audioMediaRepository.fetchYoutubePlaylist("https://www.youtube.com/playlist?list=PLx") } returns Result.success(YoutubePlaylist("새 목록", listOf(entry("a"))))
 
         assertFalse(PreviewPlaylistDownloadUseCase(audioMediaRepository, playlistRepository)("https://m.youtube.com/watch?v=a&list=PLx&index=2").getOrThrow().mergesIntoExistingPlaylist)
+    }
+
+    @Test
+    fun `미리보기는 받아 둔 곡이 비공개가 돼도 이미 있는 곡으로 센다`() = runTest {
+        owned = listOf(audio(7, "https://youtu.be/a"))
+        coEvery { audioMediaRepository.fetchYoutubePlaylist("https://www.youtube.com/playlist?list=PLx") } returns
+            Result.success(YoutubePlaylist("목록", listOf(entry("a", available = false), entry("x", available = false))))
+
+        val preview = PreviewPlaylistDownloadUseCase(audioMediaRepository, playlistRepository)("https://m.youtube.com/playlist?list=PLx").getOrThrow()
+
+        assertEquals(1, preview.alreadyOnDeviceCount)
+        assertEquals(1, preview.unavailableCount)
     }
 }
