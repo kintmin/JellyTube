@@ -25,12 +25,12 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import kotlin.math.PI
 import kotlin.math.sin
 
-private const val WAVE_REVEAL_MILLIS = 700
+private const val WAVE_REVEAL_MILLIS = 450
 // 정수 폭이라야 띠가 픽셀에 맞아 이음매가 겹치거나 비지 않는다.
 private const val STRIP_PX = 6
 private const val TAU = (2 * PI).toFloat()
 private val WaveAmplitude = 28.dp
-private val FeatherHeight = 120.dp
+private val FeatherHeight = 96.dp
 
 /**
  * [revealed] 가 켜질 때 아래에서 물결이 차오르며 내용을 드러낸다. 경계는 위로 갈수록 투명해진다.
