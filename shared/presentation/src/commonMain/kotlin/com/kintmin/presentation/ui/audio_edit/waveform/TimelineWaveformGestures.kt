@@ -159,7 +159,6 @@ internal suspend fun PointerInputScope.timelineWaveformGestures(
     }
 }
 
-/** 잡은 손가락을 뗄 때까지 [onDrag]로 따라간다. */
 private suspend fun AwaitPointerEventScope.trackGrab(
     down: PointerInputChange,
     viewport: TimelineViewportState,

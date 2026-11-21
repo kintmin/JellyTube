@@ -195,7 +195,6 @@ class PlayerDetailViewModel constructor(
                 }
             }
 
-            // 아트워크(한 줄 가사 포함)와 부가 줄의 가사 버튼이 같은 일을 한다. 가사 없는 곡이면 찾으러 보낸다.
             PlayerDetailIntent.OnClickLyrics -> {
                 if (uiState.value.hasLyrics) {
                     _uiState.update { it.copy(isLyricsPanelVisible = !it.isLyricsPanelVisible) }

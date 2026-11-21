@@ -111,7 +111,7 @@ fun TimelineRulerView(
             tickMs += intervalMs
         }
 
-        // 끝 표시 손잡이 — 꽉 찬 세로 막대는 재생 위치로 읽혀 `]` 모양으로 결과물이 여기서 닫힌다는 것을 보여준다
+        // 끝 표시 손잡이 — 꽉 찬 세로 막대는 재생 위치로 읽혀 `]` 모양으로 그린다
         val endX = viewport.xOf(endMs)
         val barWidth = 3.dp.toPx()
         val armLength = 8.dp.toPx()
@@ -145,7 +145,7 @@ fun TimelineRulerView(
         )
         drawText(textLayoutResult = endLabel, topLeft = Offset(x = labelX, y = labelY))
 
-        // 기준선 머리 — 지금 시각과, 그 자리에서 자르거나 병합할 수 있으면 그 아이콘을 함께 보여준다
+        // 기준선 머리
         val baselineX = viewport.xOf(baselineMs)
         val baselineLabel = textMeasurer.measure(
             text = baselineMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss(),

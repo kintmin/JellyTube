@@ -17,7 +17,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray10
 import com.kintmin.presentation.theme.gray60
 
-/** 설정 항목의 trailing 토글. 켜짐을 색뿐 아니라 thumb 의 체크로도 보여준다. */
+/** 켜짐을 색으로만 알리지 않는다. */
 @Composable
 fun SettingSwitchView(
     checked: Boolean,

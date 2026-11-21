@@ -31,7 +31,7 @@ import com.kintmin.presentation.ui.player_detail.PlayerLyricLineUiState
 fun PlayerLyricsPanelView(
     lines: List<PlayerLyricLineUiState>,
     activeIndex: Int,
-    /** 싱크 가사일 때만 준다. 그 줄의 시각으로 옮긴다. */
+    /** 싱크 가사일 때만 준다. */
     onClickLine: ((index: Int) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {

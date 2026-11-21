@@ -1,6 +1,6 @@
 package com.kintmin.presentation.ui.setting.app_log
 
-/** 날짜는 화면에서 이미 골랐으므로 담지 않는다. 형식을 벗어난 줄은 [time]·[type] 없이 원문이 [message]다. */
+/** 날짜는 화면에서 이미 골랐으므로 담지 않는다. */
 data class AppLogLineUiState(
     val time: String?,
     val type: String?,

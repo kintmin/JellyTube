@@ -57,7 +57,7 @@ fun MainFloatingActionButton(
     )
 }
 
-/** 왼쪽은 곧바로 받고, 오른쪽은 받을 재생목록을 바꾼다. 어디로 받는지가 버튼 위에 늘 보인다. */
+/** 받을 재생목록 이름을 버튼에서 빼지 않는다. 숨기면 어디로 받는지 모른 채 누르게 된다. */
 @Composable
 fun MainFloatingActionButton(
     uiState: MainFloatingActionUiState,

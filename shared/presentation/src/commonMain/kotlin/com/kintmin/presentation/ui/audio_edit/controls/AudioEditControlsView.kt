@@ -35,7 +35,6 @@ import kotlin.time.Duration.Companion.milliseconds
 
 internal const val NO_AUDIO_MESSAGE = "남은 소리가 없어 저장할 수 없습니다. 조각 경계를 꾹 눌러 끌어 되살려주세요."
 
-/** 잡고 있는 동안만 지금 하는 조작과 그 시각을 알려준다. */
 internal fun AudioEditUiState.gestureHint(grab: TimelineGrab?): String? {
     val grabbedClip = grab?.let { timeline.clips.getOrNull(it.clipIndex) } ?: return null
     return when {
