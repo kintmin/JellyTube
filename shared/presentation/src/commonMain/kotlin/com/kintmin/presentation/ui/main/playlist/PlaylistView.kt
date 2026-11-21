@@ -54,9 +54,11 @@ fun PlaylistView(
         makePlaylist = { title -> sendIntent(PlaylistIntent.MakeNewPlaylist(title)) },
     )
 
-    // 목록은 비동기로 도착한다. 도착하는 순간 툭 나타나지 않게 물결로 차오르게 한다.
     // 라이브러리가 비어 있으면 아직 안 읽힌 것이다(아래 빈 상태 분기와 같은 기준).
-    WaveReveal(revealed = libraryItems.isNotEmpty(), modifier = modifier) {
+    val isLoaded = libraryItems.isNotEmpty()
+
+    // 목록은 비동기로 도착한다. 도착하는 순간 툭 나타나지 않게 물결로 차오르게 한다.
+    WaveReveal(revealed = isLoaded, modifier = modifier) {
         LazyVerticalGrid(
             modifier = Modifier.fillMaxSize(),
             columns = GridCells.Fixed(2),
@@ -64,6 +66,10 @@ fun PlaylistView(
             // 가장자리 여백은 각 항목이 자기 안쪽 패딩으로 만든다.
             contentPadding = PaddingValues(vertical = 8.dp),
         ) {
+            // 읽히기 전에는 항목을 하나도 두지 않는다. 머리말만 먼저 놓이면 스크롤이 그 key 에 붙어,
+            // 나중에 위로 끼어드는 라이브러리가 화면 밖으로 밀린다.
+            if (!isLoaded) return@LazyVerticalGrid
+
             if (libraryItems.isNotEmpty()) {
                 // 머리말을 붙이지 않는다. 아래 머리말과 구분선이 이미 둘을 가르고,
                 // 한 줄을 비워야 전체 항목이 처음 화면에 들어온다.
