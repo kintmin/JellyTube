@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.kintmin.jellytube.service.StepForegroundService
+import com.kintmin.presentation.navigation.AppIntent
 import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -21,7 +22,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        viewModel.initializeMediaController()
+        viewModel.sendIntent(AppIntent.InitializeMediaController)
         handleIntent(intent)
         installSplashScreen()
 
@@ -33,9 +34,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             JellyTubeApp(
-                navigationIntentFlow = viewModel.navigationIntentFlow,
+                navigationEventFlow = viewModel.eventFlow,
                 isDebugTabVisible = BuildConfig.DEBUG,
-                onDeepLink = viewModel::handleDeepLink,
+                onDeepLink = { url -> viewModel.sendIntent(AppIntent.HandleDeepLink(url)) },
             )
         }
 
@@ -54,7 +55,7 @@ class MainActivity : ComponentActivity() {
         val uri = intent.data
         if (uri != null) {
             intent.data = null  // 사용된 딥링크는 소비
-            viewModel.handleDeepLink(uri.toString())
+            viewModel.sendIntent(AppIntent.HandleDeepLink(uri.toString()))
             return
         }
 
@@ -65,7 +66,7 @@ class MainActivity : ComponentActivity() {
         }
         if (sharedUris.isNotEmpty()) {
             intent.removeExtra(Intent.EXTRA_STREAM)  // 재처리 방지
-            viewModel.importSharedAudio(sharedUris.map { it.toString() })
+            viewModel.sendIntent(AppIntent.ImportSharedAudio(sharedUris.map { it.toString() }))
         }
     }
 

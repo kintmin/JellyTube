@@ -1,5 +1,6 @@
 package com.kintmin.domain.lyrics.usecase
 
+import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlin.math.abs
 
@@ -13,7 +14,7 @@ import kotlin.math.abs
  * 4. 적용된 가사에 한글이 없으면 번역 파일을, 일본어면 음차 파일을 바로 생성한다. (각각 실패는 무시)
  */
 class DownloadLyricsForAudioMediaUseCase(
-    private val buildLyricsSearchQuery: BuildLyricsSearchQueryUseCase,
+    private val buildSongSearchQuery: BuildSongSearchQueryUseCase,
     private val searchLyrics: SearchLyricsUseCase,
     private val sortLyricsSearchResults: SortLyricsSearchResultsUseCase,
     private val matchLyricsTrackName: MatchLyricsTrackNameUseCase,
@@ -27,7 +28,7 @@ class DownloadLyricsForAudioMediaUseCase(
         title: String,
         targetDurationSeconds: Double?,
     ): Result<Unit> = runCatching {
-        val query = buildLyricsSearchQuery(title)
+        val query = buildSongSearchQuery(title)
         val results = searchLyrics(query).getOrNull().orEmpty()
 
         if (targetDurationSeconds == null) return@runCatching

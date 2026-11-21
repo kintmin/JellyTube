@@ -79,7 +79,7 @@ fun AudioEditScreen(
     navigateToBack: () -> Unit,
 ) {
     val viewModel = koinViewModel<AudioEditViewModel>()
-    val data by viewModel.data.collectAsState()
+    val data by viewModel.uiState.collectAsState()
     val toaster = rememberToaster()
 
     LaunchedEffect(Unit) {

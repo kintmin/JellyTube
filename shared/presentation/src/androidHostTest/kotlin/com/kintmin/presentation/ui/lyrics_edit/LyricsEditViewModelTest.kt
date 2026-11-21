@@ -75,57 +75,57 @@ class LyricsEditViewModelTest {
     @Test
     fun `지운 줄을 되돌리면 같은 자리에 같은 내용으로 돌아온다`() {
         val viewModel = viewModel()
-        val before = viewModel.data.value.rows
+        val before = viewModel.uiState.value.rows
         val deleted = before[1]
 
         viewModel.sendIntent(LyricsEditIntent.OnDeleteRow(deleted.id))
-        assertEquals(2, viewModel.data.value.rows.size)
+        assertEquals(2, viewModel.uiState.value.rows.size)
 
         viewModel.sendIntent(LyricsEditIntent.OnUndoDeleteRow)
 
-        assertEquals(before, viewModel.data.value.rows)
+        assertEquals(before, viewModel.uiState.value.rows)
     }
 
     @Test
     fun `되돌리기는 한 번만 적용된다`() {
         val viewModel = viewModel()
-        viewModel.sendIntent(LyricsEditIntent.OnDeleteRow(viewModel.data.value.rows[0].id))
+        viewModel.sendIntent(LyricsEditIntent.OnDeleteRow(viewModel.uiState.value.rows[0].id))
 
         viewModel.sendIntent(LyricsEditIntent.OnUndoDeleteRow)
         viewModel.sendIntent(LyricsEditIntent.OnUndoDeleteRow)
 
-        assertEquals(3, viewModel.data.value.rows.size)
+        assertEquals(3, viewModel.uiState.value.rows.size)
     }
 
     @Test
     fun `시간을 바꾸면 시간 순 자리로 옮겨 간다`() {
         val viewModel = viewModel()
-        val first = viewModel.data.value.rows[0]
+        val first = viewModel.uiState.value.rows[0]
 
         viewModel.sendIntent(LyricsEditIntent.OnChangeTime(first.id, 7_000L))
 
         assertEquals(
             listOf("둘째 줄", "첫 줄", "셋째 줄"),
-            viewModel.data.value.rows.map { it.text },
+            viewModel.uiState.value.rows.map { it.text },
         )
     }
 
     @Test
     fun `같은 시간의 줄은 원래 순서를 지킨다`() {
         val viewModel = viewModel()
-        val first = viewModel.data.value.rows[0]
+        val first = viewModel.uiState.value.rows[0]
         viewModel.sendIntent(LyricsEditIntent.OnAddRowBelow(first.id))
 
-        viewModel.sendIntent(LyricsEditIntent.OnChangeTime(viewModel.data.value.rows[1].id, 5_000L))
+        viewModel.sendIntent(LyricsEditIntent.OnChangeTime(viewModel.uiState.value.rows[1].id, 5_000L))
 
-        assertEquals(listOf("첫 줄", "", "둘째 줄", "셋째 줄"), viewModel.data.value.rows.map { it.text })
+        assertEquals(listOf("첫 줄", "", "둘째 줄", "셋째 줄"), viewModel.uiState.value.rows.map { it.text })
     }
 
     @Test
     fun `줄넘김이 든 줄이 있을 때만 쪼개기를 보인다`() {
-        assertFalse(viewModel().data.value.canSplit)
+        assertFalse(viewModel().uiState.value.canSplit)
 
         parsedLines = listOf(LyricsLine(timeMs = null, text = "첫 줄\n둘째 줄"))
-        assertTrue(viewModel().data.value.canSplit)
+        assertTrue(viewModel().uiState.value.canSplit)
     }
 }

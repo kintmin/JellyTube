@@ -1,6 +1,8 @@
 package com.kintmin.presentation.remember_state
 
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.lazy.LazyListItemInfo
+import androidx.compose.foundation.lazy.LazyListLayoutInfo
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -12,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputChange
@@ -20,7 +23,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.sign
 
 /**
  * LazyColumn 드래그 재정렬 상태. 아이템 타입에 독립적이며 [idOf]로 아이템을 식별한다.
@@ -28,7 +34,7 @@ import kotlinx.coroutines.launch
  * 드래그 핸들의 `detectDragGestures`가 넘겨주는 세로 이동량으로 순서를 계산
  *  1) 드래그로 쌓인 세로 이동량([dragOffset])을 아이템 한 칸 높이([itemHeightPx])로 나눠
  *     "몇 칸 이동했는지"를 구하고, 그만큼 [items]를 실제로 재배치한다.
- *  2) 리스트 가장자리에 닿으면 자동 스크롤(overscroll)로 화면을 따라 밀어준다.
+ *  2) 리스트 가장자리에 닿으면 자동 스크롤로 화면을 따라 밀어준다.
  *
  * 부드러운 재배치 애니메이션(`Modifier.animateItem`), 외부 데이터와의 동기화(`LaunchedEffect`),
  * 드래그 종료 시점의 DB 커밋은 [ReorderState]가 관여하지 않고 호출부에서 배선한다.
@@ -39,7 +45,7 @@ class ReorderState<T>(
     val listState: LazyListState,
     val items: SnapshotStateList<T>,    // 화면에 표시되는 실제 순서. onDrag가 in-place로 재배치하고 LazyColumn이 이 리스트를 그린다.
     private val scrollZonePx: Float,    // 위/아래 가장자리에서 자동 스크롤이 시작되는 경계 두께(px).
-    private val scrollSpeedPx: Float,   // 자동 스크롤 1회 이동량(px).
+    private val scrollSpeedPx: Float,   // 자동 스크롤 한 프레임 이동량(px).
 ) {
     // 드래그 시작점 기준 누적된 세로 이동량(px).
     private var dragOffset by mutableFloatStateOf(0f)
@@ -48,8 +54,15 @@ class ReorderState<T>(
     // (dragOffset 은 스왑 시 이웃 높이만큼 빠지며 부호가 반대로 튈 수 있어 방향 게이트로 쓸 수 없다.)
     private var dragDirection = 0
 
-    // 자동 스크롤 코루틴. 중복 실행을 막기 위해 진행 중이면 재시작하지 않는다.
-    private var overscrollJob by mutableStateOf<Job?>(null)
+    // 자동 스크롤 루프. 방향이 바뀔 때만 다시 띄우고, 속도는 루프가 프레임마다 읽는다.
+    private var autoScrollJob: Job? = null
+    private var autoScrollVelocity = 0f
+
+    // 위치 고정을 요청한 시점의 측정 결과. 다음 측정이 끝나 바뀔 때까지 자동 스크롤을 쉰다.
+    private var heldLayoutInfo: LazyListLayoutInfo? = null
+
+    // 뷰포트 위쪽을 덮는 상단 바 높이(px). 덮인 자리에서는 스크롤 존에 닿을 수 없다.
+    internal var topInsetPx = 0f
 
     // 현재 드래그 중인 아이템의 id. null이면 드래그 중이 아니다.
     var draggingItemId by mutableStateOf<Int?>(null)
@@ -84,80 +97,94 @@ class ReorderState<T>(
         dragOffset += dragAmount.y
         // 손가락이 실제로 움직인 방향만 방향 게이트에 반영(정지 시 마지막 방향 유지).
         if (dragAmount.y < 0f) dragDirection = -1 else if (dragAmount.y > 0f) dragDirection = 1
+        settle()
+    }
 
-        // 고정 높이 가정 없이, 실제 이웃 아이템의 렌더 높이(visibleItemsInfo.size)를 기준으로
-        // 한 프레임에 최대 한 칸씩만 스왑한다. 동적(가변) 높이 아이템에서도 정확하다.
+    // 스왑·그릴 거리·자동 스크롤 방향을 지금 배치에 맞춘다. 스크롤 루프도 매 프레임 부른다 —
+    // 손가락이 가장자리에 멈춰 있으면 onDrag 가 오지 않는다.
+    private fun settle() {
         val info = listState.layoutInfo.visibleItemsInfo
-        val fromIndex = items.indexOfFirst { idOf(it) == draggingItemId }
-        if (fromIndex != -1) {
-            if (dragOffset > 0f) {
-                // 아래로: 바로 아래 이웃의 절반을 넘으면 그 이웃과 자리를 바꾸고, 이웃 높이만큼 소비한다.
-                val next = items.getOrNull(fromIndex + 1)
-                val nextInfo = next?.let { n -> info.find { it.key == idOf(n) } }
-                if (nextInfo != null && dragOffset > nextInfo.size / 2f) {
-                    items.add(fromIndex + 1, items.removeAt(fromIndex))
-                    dragOffset -= nextInfo.size
-                }
-            } else if (dragOffset < 0f) {
-                // 위로: 바로 위 이웃의 절반을 넘으면 스왑.
-                val prev = items.getOrNull(fromIndex - 1)
-                val prevInfo = prev?.let { p -> info.find { it.key == idOf(p) } }
-                if (prevInfo != null && -dragOffset > prevInfo.size / 2f) {
-                    items.add(fromIndex - 1, items.removeAt(fromIndex))
-                    dragOffset += prevInfo.size
-                }
-            }
-        }
-        // 이웃이 화면 밖이면 스왑을 건너뛰되, 아래 오토스크롤이 화면을 밀어 이웃을 노출시킨다.
+        val currentInfo = info.find { it.key == draggingItemId }
+        // 스왑은 배치를 옮긴 만큼 dragOffset 을 되돌려 그려진 위치를 그대로 둔다. 그래서 스왑 전에
+        // 잰다 — 스왑 뒤에 옛 배치와 더하면 한 칸 아래로 읽혀 스크롤 존을 벗어난 것으로 판정된다.
+        val itemTop = currentInfo?.let { it.offset + dragOffset }
+        swapPastNeighbors(info, currentInfo)
 
         val settledIndex = items.indexOfFirst { idOf(it) == draggingItemId }
         dragOffsetY = clampDragOffsetY(dragOffset, settledIndex, items.lastIndex)
 
-        // 오토 스크롤: 드래그 아이템이 뷰포트 위/아래 경계(scrollZone) 안에 들어오면 그 방향으로 스크롤한다.
-        val currentItem = info.find { it.key == draggingItemId }
+        if (currentInfo == null || itemTop == null) return updateAutoScroll(0f)
+        updateAutoScroll(
+            autoScrollVelocity(
+                itemTop = itemTop,
+                itemBottom = itemTop + currentInfo.size,
+                viewStart = listState.layoutInfo.viewportStartOffset + topInsetPx,
+                viewEnd = listState.layoutInfo.viewportEndOffset.toFloat(),
+                scrollZone = scrollZonePx,
+                dragDirection = dragDirection,
+                canMoveUp = settledIndex > 0,
+                canMoveDown = settledIndex in 0 until items.lastIndex,
+                canScrollBackward = listState.canScrollBackward,
+                canScrollForward = listState.canScrollForward,
+            )
+        )
+    }
 
-        if (currentItem != null) {
-            val viewStart = listState.layoutInfo.viewportStartOffset
-            val viewEnd = listState.layoutInfo.viewportEndOffset
-            // 드래그 누적량을 반영한 실제 시각 위치로 경계를 판정한다.
-            val itemTop = currentItem.offset + dragOffset
-            val itemBottom = itemTop + currentItem.size
-            // 넘어갈 이웃이 없는 방향으로는 스크롤하지 않는다. 스크롤해도 스왑이 생기지 않는데
-            // 보정만 쌓여, 잡은 항목은 잠겨 있고 손가락만 그만큼 빚을 지게 된다.
-            val canMoveUp = settledIndex > 0
-            val canMoveDown = settledIndex in 0 until items.lastIndex
+    // 빠르게 끌면 한 이벤트에 여러 칸을 지나므로 절반을 넘긴 이웃은 모두 바꾼다.
+    // 스왑마다 |dragOffset| 이 줄어 반드시 끝난다.
+    private fun swapPastNeighbors(info: List<LazyListItemInfo>, currentInfo: LazyListItemInfo?) {
+        var index = items.indexOfFirst { idOf(it) == draggingItemId }
+        if (index == -1) return
+        val firstVisible = listState.firstVisibleItemIndex
+        var touchesFirstVisible = currentInfo?.index == firstVisible
+        var swapped = false
+        while (dragOffset != 0f) {
+            val step = if (dragOffset > 0f) 1 else -1
+            val neighbor = items.getOrNull(index + step) ?: break
+            // 이웃이 화면 밖이면 멈춘다. 자동 스크롤이 화면을 밀어 이웃을 드러낸다.
+            val neighborInfo = info.find { it.key == idOf(neighbor) } ?: break
+            if (abs(dragOffset) <= neighborInfo.size / 2f) break
+            if (neighborInfo.index == firstVisible) touchesFirstVisible = true
+            items.add(index + step, items.removeAt(index))
+            dragOffset -= step * neighborInfo.size
+            index += step
+            swapped = true
+        }
+        if (swapped && touchesFirstVisible) holdScrollPosition()
+    }
 
-            when {
-                // 위쪽 경계 안 + 위로 드래그 중(dragDirection<0) + 더 스크롤할 여지가 있으면 → 위로 스크롤.
-                // 방향 게이트가 없으면, 아이템이 상단 존에 들어간 순간 손가락을 아래로 내려도
-                // 위 오토스크롤이 계속 발동해 아이템이 상단에 갇힌다.
-                canMoveUp && itemTop < viewStart + scrollZonePx && dragDirection < 0 && listState.canScrollBackward -> {
-                    if (overscrollJob?.isActive == true) return
-                    overscrollJob = coroutineScope.launch {
-                        // 실제 스크롤된 양(consumed)만큼만 dragOffset 을 보정한다.
-                        // 끝에 닿아 스크롤이 0이면 보정도 0 → 헛누적으로 인한 폭주를 막는다.
-                        val consumed = listState.scrollBy(-scrollSpeedPx)
-                        dragOffset += consumed
-                    }
-                }
+    // LazyList 는 첫 보이는 항목의 key 를 따라 스크롤 위치를 옮긴다. 그 항목이 스왑에 끼면
+    // 목록이 한 칸 튀어 잡은 항목이 화면 밖으로 밀려나고, 컴포지션에서 빠지며 끌기가 취소된다.
+    private fun holdScrollPosition() {
+        listState.requestScrollToItem(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+        heldLayoutInfo = listState.layoutInfo
+    }
 
-                // 아래쪽 경계 안 + 아래로 드래그 중(dragDirection>0) + 더 스크롤할 여지가 있으면 → 아래로 스크롤.
-                canMoveDown && itemBottom > viewEnd - scrollZonePx && dragDirection > 0 && listState.canScrollForward -> {
-                    if (overscrollJob?.isActive == true) return
-                    overscrollJob = coroutineScope.launch {
-                        val consumed = listState.scrollBy(scrollSpeedPx)
-                        dragOffset += consumed
-                    }
-                }
-
-                else -> overscrollJob?.cancel()
+    private fun updateAutoScroll(velocity: Float) {
+        val isSameDirection = sign(velocity) == sign(autoScrollVelocity)
+        autoScrollVelocity = velocity
+        if (isSameDirection) return
+        autoScrollJob?.cancel()
+        if (velocity == 0f) return
+        autoScrollJob = coroutineScope.launch {
+            while (isActive) {
+                // 고정 지연으로 돌면 화면 갱신과 어긋나 한 프레임에 두 번 또는 0 번 스크롤된다.
+                withFrameNanos { }
+                // 위치 고정은 다음 측정에서 적용된다. 그 전에 스크롤하면 측정이 요청 위치로 덮어써
+                // 이번 스크롤이 사라지고, 이미 보정한 dragOffset 만큼 항목이 덜컥 튄다.
+                if (heldLayoutInfo === listState.layoutInfo) continue
+                heldLayoutInfo = null
+                // 실제로 스크롤된 양만큼만 dragOffset 을 보정한다.
+                // 끝에 닿아 스크롤이 0이면 보정도 0 → 헛누적으로 인한 폭주를 막는다.
+                dragOffset += listState.scrollBy(autoScrollVelocity * scrollSpeedPx)
+                settle()
             }
         }
     }
 
     fun onDragEnd() {
         draggingItemId = null
-        overscrollJob?.cancel()
+        updateAutoScroll(0f)
     }
 
     // 드래그가 끝난 시점의 최종 인덱스. 호출부가 이 값으로 커밋 여부/순서를 판단한다.
@@ -165,6 +192,31 @@ class ReorderState<T>(
         return items.indexOfFirst { idOf(it) == draggingItemId }.takeIf { it != -1 }
     }
 }
+
+/** 자동 스크롤 속도. 부호가 방향(- 위, + 아래)이고 크기는 존에 들어간 깊이다. */
+internal fun autoScrollVelocity(
+    itemTop: Float,
+    itemBottom: Float,
+    viewStart: Float,
+    viewEnd: Float,
+    scrollZone: Float,
+    dragDirection: Int,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    canScrollBackward: Boolean,
+    canScrollForward: Boolean,
+): Float = when {
+    canMoveUp && dragDirection < 0 && canScrollBackward && itemTop < viewStart + scrollZone ->
+        -depthFraction(viewStart + scrollZone - itemTop, scrollZone)
+    canMoveDown && dragDirection > 0 && canScrollForward && itemBottom > viewEnd - scrollZone ->
+        depthFraction(itemBottom - (viewEnd - scrollZone), scrollZone)
+    else -> 0f
+}
+
+private fun depthFraction(depth: Float, scrollZone: Float): Float =
+    (depth / scrollZone).coerceIn(MIN_AUTO_SCROLL_FRACTION, 1f)
+
+private const val MIN_AUTO_SCROLL_FRACTION = 0.25f
 
 internal fun clampDragOffsetY(offset: Float, index: Int, lastIndex: Int): Float {
     var clamped = offset
@@ -187,6 +239,7 @@ fun <T> rememberReorderState(
     idOf: (T) -> Int,
     scrollZone: Dp = 80.dp,
     scrollSpeed: Dp = 12.dp,
+    topInset: Dp = 0.dp,
 ): ReorderState<T> {
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
@@ -202,6 +255,7 @@ fun <T> rememberReorderState(
             scrollSpeedPx = with(density) { scrollSpeed.toPx() },
         )
     }
+    state.topInsetPx = with(density) { topInset.toPx() }
 
     LaunchedEffect(dataList) {
         // 끄는 중이라고 건너뛰면 그 방출은 다시 오지 않는다. 키가 되돌아오지 않아서다.

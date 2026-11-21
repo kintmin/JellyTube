@@ -15,13 +15,14 @@ import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.toMediaControlData
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.util.Throttle
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -37,14 +38,14 @@ class PlaylistDetailHeaderViewModel constructor(
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<PlaylistDetailScreenRoute>()
-    val playlistId = route.playlistId
+    private val playlistId = route.playlistId
 
-    private val _eventFlow = MutableSharedFlow<PlaylistDetailHeaderEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val eventChannel = Channel<PlaylistDetailHeaderEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<PlaylistDetailHeaderEvent> = eventChannel.receiveAsFlow()
 
-    val clickThrottle = Throttle(300L)
+    private val clickThrottle = Throttle(300L)
 
-    val headerDataFlow: StateFlow<PlaylistDetailHeaderUiState> =
+    val uiState: StateFlow<PlaylistDetailHeaderUiState> =
         combine(
             fetchPlaylistFlowUseCase(playlistId),
             fetchIsPlaybackRepeatingFlowUseCase(),
@@ -98,21 +99,21 @@ class PlaylistDetailHeaderViewModel constructor(
 
     private fun updatePlaybackRepeating() {
         viewModelScope.launch {
-            val newValue = !headerDataFlow.value.isRepeating
+            val newValue = !uiState.value.isRepeating
             updatePlaybackRepeatingUseCase(newValue)
         }
     }
 
     private fun updateIsPlaybackShuffling() {
         viewModelScope.launch {
-            val newValue = !headerDataFlow.value.isShuffling
+            val newValue = !uiState.value.isShuffling
             updateIsPlaybackShufflingUseCase(newValue)
         }
     }
 
     private fun triggerEvent(newEvent: PlaylistDetailHeaderEvent) {
         viewModelScope.launch {
-            _eventFlow.emit(newEvent)
+            eventChannel.send(newEvent)
         }
     }
 }

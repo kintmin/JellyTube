@@ -2,14 +2,14 @@ package com.kintmin.presentation.port.model
 
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.presentation.deeplink.DeepLinkParser
-import com.kintmin.presentation.navigation.NavigationIntent
+import com.kintmin.presentation.navigation.NavigationEvent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class WorkResultNoticeTest {
 
-    private fun destinationOf(notice: WorkResultNotice): NavigationIntent? =
+    private fun destinationOf(notice: WorkResultNotice): NavigationEvent? =
         notice.deepLink?.let { DeepLinkParser.parse(it).last() }
 
     @Test
@@ -17,7 +17,7 @@ class WorkResultNoticeTest {
         val notice = WorkResultNotice.Download.Success(artist = "가수", name = "곡", playlistId = 3, audioMediaId = 7)
 
         assertEquals(
-            NavigationIntent.NavigateToPlaylistContent(playlistId = 3, focusAudioMediaId = 7),
+            NavigationEvent.NavigateToPlaylistContent(playlistId = 3, focusAudioMediaId = 7),
             destinationOf(notice),
         )
     }
@@ -26,17 +26,17 @@ class WorkResultNoticeTest {
     fun `가사 변형이 끝나면 가사 뷰어로 간다`() {
         val notice = WorkResultNotice.LyricsVariantCreation.Success(LyricsVariant.TRANSLATION, audioMediaId = 7)
 
-        assertEquals(NavigationIntent.NavigateToLyricsViewer(7), destinationOf(notice))
+        assertEquals(NavigationEvent.NavigateToLyricsViewer(7), destinationOf(notice))
     }
 
     @Test
     fun `편집본을 저장하면 저장된 음원 상세로 간다`() {
         assertEquals(
-            NavigationIntent.NavigateToAudioMedia(7),
+            NavigationEvent.NavigateToAudioMedia(7),
             destinationOf(WorkResultNotice.AudioEditSave.OverwriteSuccess(name = "곡", audioMediaId = 7)),
         )
         assertEquals(
-            NavigationIntent.NavigateToAudioMedia(8),
+            NavigationEvent.NavigateToAudioMedia(8),
             destinationOf(WorkResultNotice.AudioEditSave.NewMediaSuccess(name = "곡", audioMediaId = 8)),
         )
     }
@@ -49,7 +49,7 @@ class WorkResultNoticeTest {
             WorkResultNotice.AnomalyCheck.Failure,
             WorkResultNotice.AudioEditSave.Failure,
         ).forEach { notice ->
-            assertEquals(NavigationIntent.NavigateToSettingAppLog, destinationOf(notice))
+            assertEquals(NavigationEvent.NavigateToSettingAppLog, destinationOf(notice))
         }
     }
 

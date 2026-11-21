@@ -60,7 +60,7 @@ fun LyricsEditScreen(
     navigateToBack: () -> Unit,
 ) {
     val viewModel = koinViewModel<LyricsEditViewModel>()
-    val data by viewModel.data.collectAsState()
+    val data by viewModel.uiState.collectAsState()
     val toaster = rememberToaster()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()

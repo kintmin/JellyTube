@@ -105,7 +105,7 @@ class LyricsViewerViewModelTest {
     fun `이 곡이 재생 중이면 줄을 눌러 그 줄의 시간으로 이동한다`() {
         val viewModel = viewModel()
         viewModel.sendIntent(LyricsViewerIntent.OnRefreshPosition)
-        assertTrue(viewModel.data.value.canSeek)
+        assertTrue(viewModel.uiState.value.canSeek)
 
         viewModel.sendIntent(LyricsViewerIntent.OnClickLine(1))
 
@@ -120,7 +120,7 @@ class LyricsViewerViewModelTest {
 
         viewModel.sendIntent(LyricsViewerIntent.OnClickLine(1))
 
-        assertFalse(viewModel.data.value.canSeek)
+        assertFalse(viewModel.uiState.value.canSeek)
         verify(exactly = 0) { controller.seek(any()) }
     }
 
@@ -132,7 +132,7 @@ class LyricsViewerViewModelTest {
 
         viewModel.sendIntent(LyricsViewerIntent.OnClickLine(0))
 
-        assertFalse(viewModel.data.value.canSeek)
+        assertFalse(viewModel.uiState.value.canSeek)
         verify(exactly = 0) { controller.seek(any()) }
     }
 
@@ -143,7 +143,7 @@ class LyricsViewerViewModelTest {
         viewModel.sendIntent(LyricsViewerIntent.OnClickCreateTranslation)
         viewModel.sendIntent(LyricsViewerIntent.OnClickCreateTranslation)
 
-        assertTrue(viewModel.data.value.isCreatingTranslation)
+        assertTrue(viewModel.uiState.value.isCreatingTranslation)
         verify(exactly = 1) {
             startVariantCreation(
                 audioMediaId = audioMediaId,

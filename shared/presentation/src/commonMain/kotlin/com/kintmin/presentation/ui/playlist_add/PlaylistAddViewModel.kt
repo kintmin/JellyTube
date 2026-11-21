@@ -6,10 +6,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_track.usecase.AddAudioMediaListToPlaylistUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListToAddTrackFlowUseCase
+import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.presentation.extension.matchKorean
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemUiState
 import com.kintmin.presentation.ui.playlist_add.list.toPlaylistAddListItemUiState
-import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
+import com.kintmin.presentation.ui.playlist_add.navigation.PlaylistAddScreenRoute
 import com.kintmin.presentation.util.Debounce
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -17,8 +18,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -27,10 +28,12 @@ import kotlinx.coroutines.launch
 class PlaylistAddViewModel constructor(
     savedStateHandle: SavedStateHandle,
     fetchAudioMediaListFlowUseCase: FetchAudioMediaListToAddTrackFlowUseCase,
+    fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
     private val addAudioMediaListToPlaylistUseCase: AddAudioMediaListToPlaylistUseCase,
 ) : ViewModel() {
 
-    private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
+    private val route = savedStateHandle.toRoute<PlaylistAddScreenRoute>()
+    private val playlistId = route.playlistId
 
     private val _eventChannel = Channel<PlaylistAddEvent>(Channel.BUFFERED)
     val eventFlow: Flow<PlaylistAddEvent> = _eventChannel.receiveAsFlow()
@@ -42,22 +45,26 @@ class PlaylistAddViewModel constructor(
     private val changeSearchTextDebounce = Debounce(200L)
     private val _searchText = MutableStateFlow("")
 
-    // 첫 방출 전에는 null 이라 "추가할 곡이 없다" 가 잠깐 비치지 않는다.
-    val audioListFlow: StateFlow<List<PlaylistAddListItemUiState>?> = combine(
+    val uiState: StateFlow<PlaylistAddUiState> = combine(
         fetchAudioMediaListFlowUseCase(playlistId),
         _checkedItemIdList,
         _searchText,
-    ) { mediaList, checkedIds, searchText ->
-        mediaList.filter { it.audioMedia.name.matchKorean(searchText) }.map { data ->
-            data.toPlaylistAddListItemUiState(
-                isChecked = data.audioMedia.id in checkedIds
-            )
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    val checkedItemCountFlow = _checkedItemIdList.map { list -> list.size }
-        .distinctUntilChanged()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+        fetchPlaylistFlowUseCase(playlistId).map { it.name }.onStart { emit(route.playlistNameSeed) },
+    ) { mediaList, checkedIds, searchText, playlistName ->
+        PlaylistAddUiState(
+            audioList = mediaList.filter { it.audioMedia.name.matchKorean(searchText) }.map { data ->
+                data.toPlaylistAddListItemUiState(
+                    isChecked = data.audioMedia.id in checkedIds
+                )
+            },
+            checkedItemCount = checkedIds.size,
+            playlistName = playlistName,
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        PlaylistAddUiState(playlistName = route.playlistNameSeed),
+    )
 
     fun sendIntent(intent: PlaylistAddIntent) {
         when (intent) {

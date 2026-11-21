@@ -64,7 +64,7 @@ fun RepeatRangeMarkView(
                 .width(LINK_WIDTH)
                 .height(LINK_HEIGHT)
                 .clip(RoundedCornerShape(LINK_HEIGHT / 2))
-                .background(if (isLinked) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.3f)),
+                .background(if (isLinked) MaterialTheme.colorScheme.tertiary else Color.White.copy(alpha = 0.3f)),
         )
         RangeLetter(letter = "B", isOn = isEndSelected)
     }
@@ -74,7 +74,7 @@ fun RepeatRangeMarkView(
 private fun RangeLetter(letter: String, isOn: Boolean) {
     Text(
         text = letter,
-        color = if (isOn) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.5f),
+        color = if (isOn) MaterialTheme.colorScheme.tertiary else Color.White.copy(alpha = 0.5f),
         fontSize = 14.sp,
         lineHeight = 14.sp,
         fontWeight = FontWeight.Bold,

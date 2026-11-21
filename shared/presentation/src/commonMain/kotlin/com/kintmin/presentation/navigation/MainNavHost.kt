@@ -63,7 +63,7 @@ val navOptions = navOptions {
 @Composable
 fun MainNavHost(
     navController: NavHostController,
-    navigationIntentFlow: Flow<NavigationIntent>,
+    navigationEventFlow: Flow<NavigationEvent>,
     isDebugTabVisible: Boolean,
     onDeepLink: (url: String) -> Unit,
 ) {
@@ -107,8 +107,8 @@ fun MainNavHost(
             navigateToPlaylistEdit = { playlistId ->
                 navController.navigateToPlaylistEditScreen(playlistId, null, navOptions)
             },
-            navigateToPlaylistAdd = { playlistId ->
-                navController.navigateToPlaylistAddScreen(playlistId, navOptions)
+            navigateToPlaylistAdd = { playlistId, playlistName ->
+                navController.navigateToPlaylistAddScreen(playlistId, navOptions, playlistName)
             },
             navigateToSetting = {
                 navController.navigateToSettingScreen(navOptions)
@@ -122,8 +122,8 @@ fun MainNavHost(
         )
         playlistDetail(
             navigateToBack = { navController.popBackStack() },
-            navigateToAddAudioMediaScreen = { playlistId ->
-                navController.navigateToPlaylistAddScreen(playlistId, navOptions)
+            navigateToAddAudioMediaScreen = { playlistId, playlistName ->
+                navController.navigateToPlaylistAddScreen(playlistId, navOptions, playlistName)
             },
             navigateToPlaylistEditScreen = { playlistId, focusAudioMediaId ->
                 navController.navigateToPlaylistEditScreen(playlistId, focusAudioMediaId, navOptions)
@@ -286,19 +286,19 @@ fun MainNavHost(
         )
     }
 
-    LaunchedEffect(navController, navigationIntentFlow) {
-        navigationIntentFlow.collectLatest { navigationIntent ->
-            consumeNavigationIntent(navController, navigationIntent)
+    LaunchedEffect(navController, navigationEventFlow) {
+        navigationEventFlow.collectLatest { navigationEvent ->
+            consumeNavigationEvent(navController, navigationEvent)
         }
     }
 }
 
-private fun consumeNavigationIntent(
+private fun consumeNavigationEvent(
     navController: NavHostController,
-    navigationIntent: NavigationIntent,
+    navigationEvent: NavigationEvent,
 ) {
-    when (navigationIntent) {
-        NavigationIntent.PopAll -> {
+    when (navigationEvent) {
+        NavigationEvent.PopAll -> {
             navController.navigate(MainScreenRoute(MainTabItem.Playlist)) {
                 popUpTo(navController.graph.startDestinationId) {
                     inclusive = true
@@ -306,48 +306,48 @@ private fun consumeNavigationIntent(
                 launchSingleTop = true
             }
         }
-        NavigationIntent.NavigateToSettings -> {
+        NavigationEvent.NavigateToSettings -> {
             navController.navigateToSettingScreen(navOptions)
         }
-        NavigationIntent.NavigateToSettingAppLog -> {
+        NavigationEvent.NavigateToSettingAppLog -> {
             navController.navigateToAppLogScreen(navOptions)
         }
-        NavigationIntent.NavigateToStep -> {
+        NavigationEvent.NavigateToStep -> {
             navController.navigateToStepScreen(navOptions)
         }
-        is NavigationIntent.NavigateToMainDownloadTab -> {
+        is NavigationEvent.NavigateToMainDownloadTab -> {
             navController.navigateToMainScreen(
                 MainTabItem.Search,
                 navOptions,
-                navigationIntent.targetUrl,
+                navigationEvent.targetUrl,
             )
         }
-        NavigationIntent.NavigateToMainPlaylistsTab -> {
+        NavigationEvent.NavigateToMainPlaylistsTab -> {
             navController.navigateToMainScreen(
                 MainTabItem.Playlist,
                 navOptions,
             )
         }
-        is NavigationIntent.NavigateToPlaylistContent -> {
+        is NavigationEvent.NavigateToPlaylistContent -> {
             navController.navigateToPlaylistDetailScreen(
-                navigationIntent.playlistId,
-                navigationIntent.focusAudioMediaId,
+                navigationEvent.playlistId,
+                navigationEvent.focusAudioMediaId,
                 navOptions,
             )
         }
-        is NavigationIntent.NavigateToAudioMedia -> {
+        is NavigationEvent.NavigateToAudioMedia -> {
             navController.navigateToAudioMediaDetailScreen(
-                navigationIntent.audioMediaId,
+                navigationEvent.audioMediaId,
                 navOptions,
             )
         }
-        is NavigationIntent.NavigateToLyricsViewer -> {
+        is NavigationEvent.NavigateToLyricsViewer -> {
             navController.navigateToLyricsViewerScreen(
-                navigationIntent.audioMediaId,
+                navigationEvent.audioMediaId,
                 navOptions,
             )
         }
-        NavigationIntent.NavigateToPlayer -> {
+        NavigationEvent.NavigateToPlayer -> {
             navController.navigateToPlayerDetailScreen(navOptions)
         }
     }

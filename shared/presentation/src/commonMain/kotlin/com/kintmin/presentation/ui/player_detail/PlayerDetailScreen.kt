@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -72,11 +73,10 @@ import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.deepSea100
 import com.kintmin.presentation.theme.deepSea60
 import com.kintmin.presentation.theme.deepSea80
 import com.kintmin.presentation.theme.seaBlue40
-import com.kintmin.presentation.theme.seaBlue80
+import com.kintmin.presentation.ui.common.PlaybackToggleButton
 import com.kintmin.presentation.ui.player_detail.control.PLAYBACK_VALUE_WIDTH
 import com.kintmin.presentation.ui.player_detail.control.PlaybackSliderView
 import com.kintmin.presentation.ui.player_detail.control.PlaybackValueView
@@ -106,7 +106,7 @@ fun PlayerDetailScreen(
     navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
 ) {
     val viewModel = koinViewModel<PlayerDetailViewModel>()
-    val data by viewModel.data.collectAsState()
+    val data by viewModel.uiState.collectAsState()
     val toaster = rememberToaster()
 
     PlayerDetailScreen(
@@ -328,20 +328,23 @@ fun PlayerDetailScreen(
                         }
                     }
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickSleepTimerButton) }) {
-                            // 켜짐을 tint 로만 알리지 않는다. 남은 시간은 뱃지가 말한다.
-                            BadgedBox(
-                                badge = {
-                                    data.sleepTimerRemainingMinutes?.let { minutes ->
-                                        Badge(
-                                            containerColor = seaBlue80,
-                                            contentColor = deepSea100,
-                                        ) {
-                                            Text(text = "$minutes")
-                                        }
+                        // 켜짐을 tint 로만 알리지 않는다. 남은 시간은 뱃지가 말한다.
+                        // IconButton 은 자기 영역을 원으로 잘라, 안에 두면 모서리로 나간 뱃지가 잘린다.
+                        BadgedBox(
+                            badge = {
+                                data.sleepTimerRemainingMinutes?.let { minutes ->
+                                    Badge(
+                                        // 48dp 버튼이 아니라 가운데 24dp 아이콘의 모서리에 붙인다.
+                                        modifier = Modifier.offset(x = (-12).dp, y = 12.dp),
+                                        containerColor = MaterialTheme.colorScheme.tertiary,
+                                        contentColor = MaterialTheme.colorScheme.onTertiary,
+                                    ) {
+                                        Text(text = "$minutes")
                                     }
-                                },
-                            ) {
+                                }
+                            },
+                        ) {
+                            IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickSleepTimerButton) }) {
                                 Icon(
                                     modifier = Modifier.size(24.dp),
                                     imageVector = Icons.Rounded.Bedtime,
@@ -400,14 +403,14 @@ fun PlayerDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) }) {
-                            Icon(
-                                modifier = Modifier.size(24.dp),
-                                imageVector = Icons.Rounded.Shuffle,
-                                contentDescription = if (data.isShuffling) "셔플 켜짐" else "셔플 꺼짐",
-                                tint = if (data.isShuffling) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.6f),
-                            )
-                        }
+                        PlaybackToggleButton(
+                            imageVector = Icons.Rounded.Shuffle,
+                            label = "셔플",
+                            isOn = data.isShuffling,
+                            iconSize = 24.dp,
+                            offColor = Color.White.copy(alpha = 0.6f),
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickShuffleButton) },
+                        )
                     }
                     IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton) }) {
                         Icon(
@@ -445,14 +448,14 @@ fun PlayerDetailScreen(
                         )
                     }
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) }) {
-                            Icon(
-                                modifier = Modifier.size(24.dp),
-                                imageVector = Icons.Rounded.Repeat,
-                                contentDescription = if (data.isRepeating) "반복 켜짐" else "반복 꺼짐",
-                                tint = if (data.isRepeating) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.6f),
-                            )
-                        }
+                        PlaybackToggleButton(
+                            imageVector = Icons.Rounded.Repeat,
+                            label = "반복",
+                            isOn = data.isRepeating,
+                            iconSize = 24.dp,
+                            offColor = Color.White.copy(alpha = 0.6f),
+                            onClick = { sendIntent(PlayerDetailIntent.OnClickRepeatButton) },
+                        )
                     }
                 }
 

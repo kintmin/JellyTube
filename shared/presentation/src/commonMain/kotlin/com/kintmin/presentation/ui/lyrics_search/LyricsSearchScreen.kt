@@ -1,28 +1,21 @@
 package com.kintmin.presentation.ui.lyrics_search
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -32,12 +25,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.common.SearchField
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
@@ -58,7 +53,7 @@ fun LyricsSearchScreen(
     navigateToLyricsEdit: (audioMediaId: Int) -> Unit,
 ) {
     val viewModel = koinViewModel<LyricsSearchViewModel>()
-    val data by viewModel.data.collectAsState()
+    val data by viewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
@@ -109,57 +104,36 @@ fun LyricsSearchScreen(
                         Icon(
                             imageVector = Icons.Rounded.ArrowBackIosNew,
                             modifier = Modifier.size(topAppBarIconSize),
-                            contentDescription = "ArrowBackIosNew",
+                            contentDescription = "뒤로",
                         )
                     }
                 },
             )
         },
         bottomBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .navigationBarsPadding()
-                    .padding(16.dp),
-            ) {
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
+            BottomActionBar {
+                BottomActionButton(
+                    text = "가사 직접 추가하기",
                     onClick = { sendIntent(LyricsSearchIntent.OnClickAddLyricsManually) },
-                ) {
-                    Text(text = "가사 직접 추가하기")
-                }
+                )
             }
         },
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
-                .padding(innerPadding)
+                .padding(top = innerPadding.calculateTopPadding())
                 .fillMaxSize(),
+            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
         ) {
             item(key = "search_bar") {
-                OutlinedTextField(
+                SearchField(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     value = data.query,
+                    placeholder = "가사 검색 (제목·아티스트)",
                     onValueChange = { sendIntent(LyricsSearchIntent.OnChangeQuery(it)) },
-                    label = { Text("가사 검색 (제목·아티스트)") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { sendIntent(LyricsSearchIntent.OnClickSearch) }),
-                    trailingIcon = {
-                        if (data.query.isNotEmpty()) {
-                            IconButton(onClick = { sendIntent(LyricsSearchIntent.OnChangeQuery("")) }) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = "검색어 전체 삭제",
-                                )
-                            }
-                        }
-                    },
+                    onSearch = { sendIntent(LyricsSearchIntent.OnClickSearch) },
                 )
             }
 

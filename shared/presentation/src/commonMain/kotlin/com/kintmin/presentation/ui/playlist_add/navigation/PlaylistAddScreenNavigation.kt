@@ -8,12 +8,16 @@ import com.kintmin.presentation.ui.playlist_add.PlaylistAddScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class PlaylistAddScreenRoute(val playlistId: Int)
+data class PlaylistAddScreenRoute(
+    val playlistId: Int,
+    val playlistNameSeed: String = "",
+)
 
 fun NavController.navigateToPlaylistAddScreen(
     playlistId: Int,
     navOptions: NavOptions,
-) = navigate(PlaylistAddScreenRoute(playlistId), navOptions)
+    playlistNameSeed: String = "",
+) = navigate(PlaylistAddScreenRoute(playlistId, playlistNameSeed), navOptions)
 
 fun NavGraphBuilder.playlistAdd(
     navigateToBack: () -> Unit,

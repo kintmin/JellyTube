@@ -5,6 +5,7 @@ import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
 import com.kintmin.ios.notification.localNotificationDeepLinkOf
+import com.kintmin.presentation.navigation.AppIntent
 import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
 import com.kintmin.presentation.port.StartYoutubeDownload
@@ -25,7 +26,7 @@ private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 /** Koin 초기화 직후 한 번 부른다. */
 fun startApp() {
     appScope.launch { KoinPlatform.getKoin().get<RegisterUserUseCase>()() }
-    appViewModel.initializeMediaController()
+    appViewModel.sendIntent(AppIntent.InitializeMediaController)
     restoreStepMeasurementIfEnabled()
     resumeFinishedDownloads()
 }
@@ -54,24 +55,24 @@ private fun restoreStepMeasurementIfEnabled() {
 
 fun mainViewController(): UIViewController = ComposeUIViewController {
     JellyTubeApp(
-        navigationIntentFlow = appViewModel.navigationIntentFlow,
+        navigationEventFlow = appViewModel.eventFlow,
         // iOS 에는 대응하는 빌드 변형이 없다.
         isDebugTabVisible = false,
-        onDeepLink = appViewModel::handleDeepLink,
+        onDeepLink = { url -> appViewModel.sendIntent(AppIntent.HandleDeepLink(url)) },
     )
 }
 
 /** SwiftUI 의 `onOpenURL` 이 넘겨준다. */
 fun handleDeepLink(url: String) {
-    appViewModel.handleDeepLink(url)
+    appViewModel.sendIntent(AppIntent.HandleDeepLink(url))
 }
 
 fun handleNotificationTap(userInfo: Map<Any?, *>) {
     val deepLink = localNotificationDeepLinkOf(userInfo) ?: return
-    appViewModel.handleDeepLink(deepLink)
+    appViewModel.sendIntent(AppIntent.HandleDeepLink(deepLink))
 }
 
 /** 다른 앱이 "JellyTube 로 열기"로 넘긴 `file://` 주소. */
 fun handleSharedAudioFile(url: String) {
-    appViewModel.importSharedAudio(listOf(url))
+    appViewModel.sendIntent(AppIntent.ImportSharedAudio(listOf(url)))
 }

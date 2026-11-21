@@ -6,15 +6,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Search
@@ -27,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.ShortNavigationBarItemDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -44,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -79,8 +75,10 @@ import com.kintmin.presentation.ui.main.playlist.PlaylistView
 import com.kintmin.presentation.ui.main.playlist.PlaylistViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadIntent
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadViewModel
+import com.kintmin.presentation.ui.main.youtube_search.YoutubeUrlField
+import com.kintmin.presentation.ui.common.floatingField
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebView
-import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebViewEvent
+import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadEvent
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
 import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
 import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
@@ -93,7 +91,7 @@ fun MainScreen(
     isDebugTabVisible: Boolean,
     navigateToPlaylistDetail: (id: Int, isBasePlaylist: Boolean) -> Unit,
     navigateToPlaylistEdit: (id: Int) -> Unit,
-    navigateToPlaylistAdd: (id: Int) -> Unit,
+    navigateToPlaylistAdd: (id: Int, playlistName: String) -> Unit,
     navigateToSetting: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
     navigateToFileShareReceive: () -> Unit,
@@ -104,15 +102,14 @@ fun MainScreen(
     val playlistViewModel = koinViewModel<PlaylistViewModel>()
     val playerBarViewModel = koinViewModel<PlayerBarViewModel>()
 
-    val playlist by playlistViewModel.playlistFlow.collectAsState()
-    val isReorderBottomSheetVisible by playlistViewModel.isReorderBottomSheetVisible.collectAsState()
-    val selectedTab by mainViewModel.tabItem.collectAsState()
-    val currentUrl by downloadViewModel.currentUrl.collectAsState()
-    val currentMediaItem by playerBarViewModel.currentMediaItem.collectAsState()
+    val playlistUiState by playlistViewModel.uiState.collectAsState()
+    val mainUiState by mainViewModel.uiState.collectAsState()
+    val youtubeDownloadUiState by downloadViewModel.uiState.collectAsState()
+    val currentMediaItem by playerBarViewModel.uiState.collectAsState()
 
     val permissionController = rememberPermissionController()
     val audioFilePicker = rememberAudioFilePicker { fileIdentifiers ->
-        mainViewModel.sendIntent(MainScreenIntent.ImportMediaFiles(fileIdentifiers))
+        mainViewModel.sendIntent(MainIntent.ImportMediaFiles(fileIdentifiers))
     }
     LaunchedEffect(Unit) {
         // 어떤 권한이 OS 버전별로 실제 필요한지는 구현이 판단한다.
@@ -124,7 +121,7 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         downloadViewModel.eventFlow.collect { event ->
             when (event) {
-                is YoutubeWebViewEvent.ShowToast -> toaster.show(event.message)
+                is YoutubeDownloadEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }
@@ -132,7 +129,7 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         mainViewModel.eventFlow.collect { event ->
             when (event) {
-                is MainScreenEvent.ShowToast -> toaster.show(event.message)
+                is MainEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }
@@ -142,7 +139,7 @@ fun MainScreen(
             when (event) {
                 is PlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistInfo.id, event.playlistInfo.isBasePlaylist)
                 is PlaylistEvent.NavigateToPlaylistEditScreen -> navigateToPlaylistEdit(event.playlistId)
-                is PlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId)
+                is PlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId, event.playlistName)
                 is PlaylistEvent.ShowToast -> toaster.show(event.message)
             }
         }
@@ -150,10 +147,10 @@ fun MainScreen(
 
     MainScreen(
         isDebugTabVisible = isDebugTabVisible,
-        selectedTab = selectedTab,
-        playlist = playlist,
+        selectedTab = mainUiState.tabItem,
+        playlist = playlistUiState.playlists,
         playerBar = currentMediaItem,
-        currentUrl = currentUrl,
+        currentUrl = youtubeDownloadUiState.currentUrl,
         navigateToSetting = navigateToSetting,
         navigateToPlayerDetail = navigateToPlayerDetail,
         navigateToFileShareReceive = navigateToFileShareReceive,
@@ -164,9 +161,9 @@ fun MainScreen(
         sendPlayerBarIntent = playerBarViewModel::sendIntent,
     )
 
-    if (isReorderBottomSheetVisible) {
+    if (playlistUiState.isReorderBottomSheetVisible) {
         PlaylistReorderBottomSheet(
-            playlists = playlist.filterNot { it.isBasePlaylist },
+            playlists = playlistUiState.playlists.filterNot { it.isBasePlaylist },
             onReorder = { orderedIds ->
                 playlistViewModel.sendIntent(PlaylistIntent.OnReorderPlaylist(orderedIds))
             },
@@ -189,7 +186,7 @@ fun MainScreen(
     navigateToPlayerDetail: () -> Unit,
     navigateToFileShareReceive: () -> Unit,
     onClickPickMedia: () -> Unit,
-    sendMainIntent: (MainScreenIntent) -> Unit,
+    sendMainIntent: (MainIntent) -> Unit,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
@@ -198,7 +195,7 @@ fun MainScreen(
     val webViewHandle = rememberWebViewHandle()
 
     var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
-    var searchInput by rememberSaveable { mutableStateOf(currentUrl) }
+    var searchInput by rememberSaveable { mutableStateOf("") }
     val tabSaveableStateHolder = rememberSaveableStateHolder()
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -246,7 +243,7 @@ fun MainScreen(
                                     val showSearchBar = !isSearchFieldVisible
                                     isSearchFieldVisible = showSearchBar
                                     if (showSearchBar) {
-                                        searchInput = currentUrl
+                                        searchInput = ""
                                     }
                                 },
                             ) {
@@ -272,32 +269,6 @@ fun MainScreen(
                         }
                     },
                 )
-
-                AnimatedVisibility(
-                    visible = selectedTab == MainTabItem.Search && isSearchFieldVisible,
-                    enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { fullHeight -> -fullHeight }) + fadeOut(),
-                ) {
-                    OutlinedTextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        value = searchInput,
-                        onValueChange = { searchInput = it },
-                        label = { Text("Youtube URL 붙여넣기") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { submitSearchUrl() }),
-                        trailingIcon = {
-                            IconButton(onClick = { submitSearchUrl() }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.Send,
-                                    contentDescription = "URL 로드",
-                                )
-                            }
-                        },
-                    )
-                }
             }
         },
         floatingActionButton = {
@@ -340,7 +311,7 @@ fun MainScreen(
                             )
                         },
                         selected = selectedTab == MainTabItem.Search,
-                        onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Search)) },
+                        onClick = { sendMainIntent(MainIntent.ChangeTab(MainTabItem.Search)) },
                         colors = navigationBarItemColors,
                     )
                     ShortNavigationBarItem(
@@ -353,7 +324,7 @@ fun MainScreen(
                             )
                         },
                         selected = selectedTab == MainTabItem.Playlist,
-                        onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist)) },
+                        onClick = { sendMainIntent(MainIntent.ChangeTab(MainTabItem.Playlist)) },
                         colors = navigationBarItemColors,
                     )
                     if (isDebugTabVisible) {
@@ -367,7 +338,7 @@ fun MainScreen(
                                 )
                             },
                             selected = selectedTab == MainTabItem.Debug,
-                            onClick = { sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Debug)) },
+                            onClick = { sendMainIntent(MainIntent.ChangeTab(MainTabItem.Debug)) },
                             colors = navigationBarItemColors,
                         )
                     }
@@ -377,17 +348,36 @@ fun MainScreen(
     ) { innerPadding ->
         tabSaveableStateHolder.SaveableStateProvider(key = selectedTab.name) {
             when (selectedTab) {
-                MainTabItem.Search -> YoutubeWebView(
-                    currentUrl = currentUrl,
-                    webViewHandle = webViewHandle,
-                    sendIntent = sendYoutubeDownloadIntent,
-                    onNavigateToPlaylist = {
-                        sendMainIntent(MainScreenIntent.ChangeTab(MainTabItem.Playlist))
-                    },
+                MainTabItem.Search -> Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
-                )
+                ) {
+                    YoutubeWebView(
+                        currentUrl = currentUrl,
+                        webViewHandle = webViewHandle,
+                        sendIntent = sendYoutubeDownloadIntent,
+                        onNavigateToPlaylist = {
+                            sendMainIntent(MainIntent.ChangeTab(MainTabItem.Playlist))
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    AnimatedVisibility(
+                        visible = isSearchFieldVisible,
+                        enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { fullHeight -> -fullHeight }) + fadeOut(),
+                    ) {
+                        YoutubeUrlField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .floatingField(),
+                            value = searchInput,
+                            onValueChange = { searchInput = it },
+                            onSubmit = { submitSearchUrl() },
+                        )
+                    }
+                }
 
                 MainTabItem.Playlist -> PlaylistView(
                     modifier = Modifier

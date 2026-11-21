@@ -10,6 +10,7 @@ import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
 import com.kintmin.presentation.ui.main.navigation.mainScreenTypeMap
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -19,21 +20,23 @@ class MainViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val importSharedAudioMediaUseCase: ImportSharedAudioMediaUseCase,
 ) : ViewModel() {
-    private val _currentTabItem = MutableStateFlow(savedStateHandle.toRoute<MainScreenRoute>(mainScreenTypeMap).tabItem)
-    val tabItem = _currentTabItem.asStateFlow()
+    private val _uiState = MutableStateFlow(
+        MainUiState(tabItem = savedStateHandle.toRoute<MainScreenRoute>(mainScreenTypeMap).tabItem)
+    )
+    val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    private val eventChannel = Channel<MainScreenEvent>(capacity = 8)
+    private val eventChannel = Channel<MainEvent>(capacity = 8)
     val eventFlow = eventChannel.receiveAsFlow()
 
-    fun sendIntent(intent: MainScreenIntent) {
+    fun sendIntent(intent: MainIntent) {
         when (intent) {
-            is MainScreenIntent.ChangeTab -> updateTabItem(intent.tab)
-            is MainScreenIntent.ImportMediaFiles -> importMediaFiles(intent.uriStrings)
+            is MainIntent.ChangeTab -> updateTabItem(intent.tab)
+            is MainIntent.ImportMediaFiles -> importMediaFiles(intent.uriStrings)
         }
     }
 
     private fun updateTabItem(newTabItem: MainTabItem) {
-        _currentTabItem.update { newTabItem }
+        _uiState.update { it.copy(tabItem = newTabItem) }
     }
 
     private fun importMediaFiles(uriStrings: List<String>) {
@@ -53,16 +56,11 @@ class MainViewModel constructor(
             }
 
             if (success > 0) {
-                eventChannel.send(MainScreenEvent.ShowToast("${success}개 파일이 라이브러리에 추가되었습니다."))
+                eventChannel.send(MainEvent.ShowToast("${success}개 파일이 라이브러리에 추가되었습니다."))
             }
             errors.distinct().forEach { error ->
-                eventChannel.send(MainScreenEvent.ShowToast(error))
+                eventChannel.send(MainEvent.ShowToast(error))
             }
         }
     }
 }
-
-sealed interface MainScreenEvent {
-    data class ShowToast(val message: String) : MainScreenEvent
-}
-

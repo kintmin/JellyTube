@@ -6,8 +6,3 @@ sealed interface MainFloatingActionIntent {
     data object OnDismissPlaylistBottomSheet : MainFloatingActionIntent
     data class OnSelectPlaylist(val playlistId: Int) : MainFloatingActionIntent
 }
-
-sealed interface MainFloatingActionEvent {
-    data class Download(val url: String) : MainFloatingActionEvent
-    data class ShowToast(val message: String) : MainFloatingActionEvent
-}

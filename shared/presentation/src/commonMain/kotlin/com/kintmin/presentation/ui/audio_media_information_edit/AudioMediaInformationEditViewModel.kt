@@ -39,7 +39,7 @@ class AudioMediaInformationEditViewModel constructor(
     private val addThrottle = Throttle(500)
     private val isAddPlaylistBottomSheetVisible = MutableStateFlow(false)
 
-    val data: StateFlow<AudioMediaInformationEditUiState> = combine(
+    val uiState: StateFlow<AudioMediaInformationEditUiState> = combine(
         fetchAudioMediaDetailFlowUseCase(audioMediaId).map { it.toAudioMediaInformationEditUiState() },
         fetchAllPlaylistFlowUseCase(),
         isAddPlaylistBottomSheetVisible,

@@ -11,13 +11,15 @@ import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.AudioFile
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.CleaningServices
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Computer
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.DirectionsWalk
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.SaveAlt
-import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.MobileScreenShare
+import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -49,7 +52,9 @@ import com.kintmin.presentation.platform.rememberAudioFilePicker
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberSystemSettingsOpener
 import com.kintmin.presentation.platform.rememberToaster
+import com.kintmin.presentation.platform.textClipEntry
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
@@ -74,6 +79,7 @@ fun SettingScreen(
     val viewModel = koinViewModel<SettingViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val toaster = rememberToaster()
+    val clipboard = LocalClipboard.current
     val appVersion = rememberAppVersionName()
     val permissionController = rememberPermissionController()
     val systemSettingsOpener = rememberSystemSettingsOpener()
@@ -98,6 +104,10 @@ fun SettingScreen(
                 SettingEvent.LaunchAudioFilePicker -> audioFilePicker.launch()
                 is SettingEvent.ShowToast ->
                     toaster.show(event.message)
+                is SettingEvent.CopyDeviceId -> {
+                    clipboard.setClipEntry(textClipEntry(event.deviceId))
+                    toaster.show("기기 식별자를 복사했습니다.")
+                }
                 SettingEvent.RequestActivityRecognitionPermission -> {
                     // 이 권한이 OS 버전별로 필요한지는 구현이 판단한다.
                     if (permissionController.isGranted(AppPermission.ActivityRecognition)) {
@@ -254,13 +264,13 @@ fun SettingScreen(
                 }
                 SettingItemView(
                     title = "다른 기기로 데이터 보내기",
-                    icon = Icons.Rounded.SwapHoriz,
+                    icon = Icons.Rounded.MobileScreenShare,
                     onClick = { sendIntent(SettingIntent.OnClickDataMigrationSendTile) },
                     trailing = { SettingNavigateIcon(contentDescription = "데이터 보내기 화면으로 이동") },
                 )
                 SettingItemView(
                     title = "다른 기기에서 데이터 가져오기",
-                    icon = Icons.Rounded.SwapHoriz,
+                    icon = Icons.Rounded.SystemUpdate,
                     onClick = { sendIntent(SettingIntent.OnClickDataMigrationReceiveTile) },
                     trailing = { SettingNavigateIcon(contentDescription = "데이터 가져오기 화면으로 이동") },
                 )
@@ -322,7 +332,15 @@ fun SettingScreen(
                     title = "기기 식별자",
                     icon = Icons.Rounded.Info,
                     description = uiState.deviceId ?: "확인 중",
-                    onClick = null,
+                    onClick = uiState.deviceId?.let { { sendIntent(SettingIntent.OnClickDeviceIdTile) } },
+                    trailing = {
+                        Icon(
+                            modifier = Modifier.size(20.dp),
+                            imageVector = Icons.Rounded.ContentCopy,
+                            contentDescription = "기기 식별자 복사",
+                            tint = gray60,
+                        )
+                    },
                 )
             }
         }

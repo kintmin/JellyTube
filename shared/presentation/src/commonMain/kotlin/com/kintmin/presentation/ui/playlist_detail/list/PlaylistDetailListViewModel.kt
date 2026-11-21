@@ -13,12 +13,14 @@ import com.kintmin.presentation.extension.matchKorean
 import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
 import com.kintmin.presentation.util.Debounce
 import com.kintmin.presentation.util.Throttle
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -33,10 +35,10 @@ class PlaylistDetailListViewModel constructor(
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
 
-    private val _eventFlow = MutableSharedFlow<PlaylistDetailListEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val eventChannel = Channel<PlaylistDetailListEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<PlaylistDetailListEvent> = eventChannel.receiveAsFlow()
 
-    val clickThrottle = Throttle(300L)
+    private val clickThrottle = Throttle(300L)
 
     private val changeSearchTextDebounce = Debounce(200L)
     private val _searchText = MutableStateFlow("")
@@ -47,10 +49,10 @@ class PlaylistDetailListViewModel constructor(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // 화면 표시용 — 검색어로 실시간 필터링
-    val audioListFlow =
+    val uiState: StateFlow<PlaylistDetailListUiState> =
         combine(fullAudioListFlow, _searchText) { list, searchText ->
-            list.filter { it.mediaName.matchKorean(searchText) }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+            PlaylistDetailListUiState(audioList = list.filter { it.mediaName.matchKorean(searchText) })
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlaylistDetailListUiState())
 
     fun sendIntent(intent: PlaylistDetailListIntent) {
         if (intent is PlaylistDetailListIntent.OnChangeSearchText) {
@@ -140,7 +142,7 @@ class PlaylistDetailListViewModel constructor(
 
     private fun triggerEvent(newEvent: PlaylistDetailListEvent) {
         viewModelScope.launch {
-            _eventFlow.emit(newEvent)
+            eventChannel.send(newEvent)
         }
     }
 }

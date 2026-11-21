@@ -37,6 +37,7 @@ import com.kintmin.domain.karaoke.usecase.*
 import com.kintmin.domain.lyrics.repository.LyricsRepository
 import com.kintmin.domain.lyrics.repository.LyricsTranslationRepository
 import com.kintmin.domain.lyrics.usecase.*
+import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.domain.common_usecase.FetchLoadBalancingDelaySecondUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.playlist.repository.PlaylistRepository
@@ -130,7 +131,7 @@ val dataCommonModule: Module = module {
     factoryOf(::SaveAudioMediaImageUseCase)
     factoryOf(::UpdateAudioMediaUseCase)
     factoryOf(::SearchLyricsUseCase)
-    factoryOf(::BuildLyricsSearchQueryUseCase)
+    factoryOf(::BuildSongSearchQueryUseCase)
     factoryOf(::SortLyricsSearchResultsUseCase)
     factoryOf(::MatchLyricsTrackNameUseCase)
     factoryOf(::ApplyLyricsToAudioMediaUseCase)

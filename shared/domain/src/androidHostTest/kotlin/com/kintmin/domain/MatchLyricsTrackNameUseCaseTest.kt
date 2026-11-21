@@ -1,6 +1,6 @@
 package com.kintmin.domain
 
-import com.kintmin.domain.lyrics.usecase.BuildLyricsSearchQueryUseCase
+import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.domain.lyrics.usecase.MatchLyricsTrackNameUseCase
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -8,7 +8,7 @@ import org.junit.Test
 
 class MatchLyricsTrackNameUseCaseTest {
 
-    private val useCase = MatchLyricsTrackNameUseCase(BuildLyricsSearchQueryUseCase())
+    private val useCase = MatchLyricsTrackNameUseCase(BuildSongSearchQueryUseCase())
 
     @Test
     fun `제목 앞뒤에 다른 단어가 있어도 곡명이 연속으로 들어 있으면 일치한다`() {

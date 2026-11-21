@@ -68,8 +68,8 @@ fun LyricsViewerScreen(
 ) {
     val viewModel = koinViewModel<LyricsViewerViewModel>()
     val playerBarViewModel = koinViewModel<PlayerBarViewModel>()
-    val data by viewModel.data.collectAsState()
-    val playerBar by playerBarViewModel.currentMediaItem.collectAsState()
+    val data by viewModel.uiState.collectAsState()
+    val playerBar by playerBarViewModel.uiState.collectAsState()
     val toaster = rememberToaster()
 
     LaunchedEffect(viewModel) {

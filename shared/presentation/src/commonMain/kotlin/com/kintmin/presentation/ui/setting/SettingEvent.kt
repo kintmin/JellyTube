@@ -10,4 +10,5 @@ sealed interface SettingEvent {
     data object NavigateToDataMigrationReceiveScreen : SettingEvent
     data object RequestActivityRecognitionPermission : SettingEvent
     data class ShowToast(val message: String) : SettingEvent
+    data class CopyDeviceId(val deviceId: String) : SettingEvent
 }

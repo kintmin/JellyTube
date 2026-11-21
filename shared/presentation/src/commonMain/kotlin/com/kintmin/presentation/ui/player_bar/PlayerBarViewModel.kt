@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.time.Duration.Companion.milliseconds
@@ -14,9 +15,9 @@ class PlayerBarViewModel constructor(
     private val mediaControllerManager: PlaybackController,
 ) : ViewModel() {
 
-    private val _currentMediaItem = MutableStateFlow(buildUiState(mediaControllerManager.playingMediaItem))
+    private val _uiState = MutableStateFlow(buildUiState(mediaControllerManager.playingMediaItem))
 
-    val currentMediaItem = _currentMediaItem.asStateFlow()
+    val uiState: StateFlow<PlayerBarUiState> = _uiState.asStateFlow()
 
     fun sendIntent(intent: PlayerBarIntent) {
         when (intent) {
@@ -26,7 +27,7 @@ class PlayerBarViewModel constructor(
                 } else {
                     mediaControllerManager.resume()
                 }
-                _currentMediaItem.update {
+                _uiState.update {
                     it.copy(isPlaying = mediaControllerManager.isPlaying)
                 }
             }
@@ -35,17 +36,17 @@ class PlayerBarViewModel constructor(
                 val currentDuration = mediaControllerManager.currentPosition?.toDuration(DurationUnit.MILLISECONDS)
 
                 val playingMediaItem = mediaControllerManager.playingMediaItem
-                val isSameMedia = currentMediaItem.value.id == (playingMediaItem?.mediaId ?: "") &&
-                    currentMediaItem.value.playbackDuration == (playingMediaItem?.mediaDurationMs ?: 0L).milliseconds
-                val isChangePlaying = mediaControllerManager.isPlaying != currentMediaItem.value.isPlaying || currentDuration == null
+                val isSameMedia = uiState.value.id == (playingMediaItem?.mediaId ?: "") &&
+                    uiState.value.playbackDuration == (playingMediaItem?.mediaDurationMs ?: 0L).milliseconds
+                val isChangePlaying = mediaControllerManager.isPlaying != uiState.value.isPlaying || currentDuration == null
                 if (!isSameMedia) {
-                    _currentMediaItem.update { buildUiState(playingMediaItem) }
+                    _uiState.update { buildUiState(playingMediaItem) }
                 } else if (isChangePlaying) {
-                    _currentMediaItem.update {
+                    _uiState.update {
                         it.copy(isPlaying = mediaControllerManager.isPlaying)
                     }
                 } else {
-                    _currentMediaItem.update {
+                    _uiState.update {
                         it.copy(currentDuration = currentDuration)
                     }
                 }

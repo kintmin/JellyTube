@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.playlist_detail.header
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -26,7 +24,6 @@ import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -38,8 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,8 +44,8 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.gray60
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
+import com.kintmin.presentation.ui.common.PlaybackToggleButton
 import okio.Path.Companion.toPath
 
 @Composable
@@ -214,7 +209,7 @@ fun PlaylistDetailHeaderView(
                         contentDescription = null,
                     )
                     Text(
-                        text = "수정",
+                        text = "편집",
                         fontSize = 12.sp,
                     )
                 }
@@ -238,73 +233,6 @@ fun PlaylistDetailHeaderView(
                     )
                 }
             }
-        }
-    }
-}
-
-private val TOGGLE_ICON_SIZE = 20.dp
-private val TOGGLE_DOT_SIZE = 4.dp
-
-/**
- * `Shuffle` 과 `Repeat` 는 Filled·Rounded 변종이 20dp 에서 구분되지 않는다 — 아래 점을 빼면
- * 켜짐이 색으로만 전달된다.
- *
- * 점은 꺼짐일 때도 투명으로 자리를 지킨다 — 빼면 켤 때마다 아이콘이 위로 밀린다.
- */
-@Composable
-private fun PlaybackToggleButton(
-    modifier: Modifier,
-    imageVector: ImageVector,
-    label: String,
-    isOn: Boolean,
-    onClick: () -> Unit,
-) {
-    val color by animateColorAsState(
-        targetValue = if (isOn) MaterialTheme.colorScheme.primary else gray60,
-        label = "playbackToggleColor",
-    )
-
-    IconButton(
-        onClick = onClick,
-        modifier = modifier,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                modifier = Modifier.size(TOGGLE_ICON_SIZE),
-                imageVector = imageVector,
-                contentDescription = if (isOn) "$label 켜짐" else "$label 꺼짐",
-                tint = color,
-            )
-            Box(
-                modifier = Modifier
-                    .padding(top = 3.dp)
-                    .size(TOGGLE_DOT_SIZE)
-                    .clip(CircleShape)
-                    .background(if (isOn) color else Color.Transparent),
-            )
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun PlaybackToggleButtonPreview() {
-    JellyTubeTheme {
-        Row {
-            PlaybackToggleButton(
-                modifier = Modifier,
-                imageVector = Icons.Rounded.Shuffle,
-                label = "셔플",
-                isOn = true,
-                onClick = {},
-            )
-            PlaybackToggleButton(
-                modifier = Modifier,
-                imageVector = Icons.Rounded.Repeat,
-                label = "반복",
-                isOn = false,
-                onClick = {},
-            )
         }
     }
 }

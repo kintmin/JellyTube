@@ -1,14 +1,17 @@
 package com.kintmin.presentation.ui.common
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
@@ -17,39 +20,44 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray20
 import com.kintmin.presentation.theme.gray60
 
+/**
+ * X 는 입력이 있으면 지우고, 비어 있으면 [onCloseWhenEmpty] 가 있을 때만 닫기로 남는다 — 비어
+ * 있을 때 지울 것이 없으니 닫는 것이 유일하게 뜻이 있다.
+ */
 @Composable
-fun SearchBar(
+fun SearchField(
     modifier: Modifier = Modifier,
-    searchText: String = "",
-    placeholder: String = "",
-    onSearchTextChanged: (String) -> Unit = {}
+    value: String,
+    placeholder: String,
+    onValueChange: (String) -> Unit,
+    onSearch: (() -> Unit)? = null,
+    onCloseWhenEmpty: (() -> Unit)? = null,
 ) {
-    var internalText by remember { mutableStateOf(searchText) }
     // 입력과 placeholder 의 줄 높이가 다르면 빈 칸일 때 커서가 placeholder 높이에 맞춰 위로 뜬다.
     val textStyle = TextStyle(
         fontSize = 14.sp,
         lineHeight = 20.sp,
         color = MaterialTheme.colorScheme.onSurface,
     )
+    val isEmpty = value.isEmpty()
+    val isTrailingVisible = !isEmpty || onCloseWhenEmpty != null
 
     Row(
         modifier = modifier
-            .fillMaxWidth()
             .height(48.dp)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surface),
@@ -66,18 +74,17 @@ fun SearchBar(
         BasicTextField(
             modifier = Modifier
                 .weight(1f)
-                .padding(end = if (internalText.isEmpty()) 16.dp else 0.dp),
-            value = internalText,
-            onValueChange = {
-                internalText = it
-                onSearchTextChanged(it)
-            },
+                .padding(end = if (isTrailingVisible) 0.dp else 16.dp),
+            value = value,
+            onValueChange = onValueChange,
             singleLine = true,
             textStyle = textStyle,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+            keyboardOptions = if (onSearch != null) KeyboardOptions(imeAction = ImeAction.Search) else KeyboardOptions.Default,
+            keyboardActions = KeyboardActions(onSearch = onSearch?.let { { it() } }),
             decorationBox = { innerTextField ->
                 Box(contentAlignment = Alignment.CenterStart) {
-                    if (internalText.isEmpty()) {
+                    if (isEmpty) {
                         Text(
                             text = placeholder,
                             style = textStyle,
@@ -89,18 +96,15 @@ fun SearchBar(
                 }
             },
         )
-        if (internalText.isNotEmpty()) {
+        if (isTrailingVisible) {
             IconButton(
                 modifier = Modifier.padding(end = 4.dp),
-                onClick = {
-                    internalText = ""
-                    onSearchTextChanged("")
-                },
+                onClick = { if (isEmpty) onCloseWhenEmpty?.invoke() else onValueChange("") },
             ) {
                 Icon(
                     modifier = Modifier.size(20.dp),
                     imageVector = Icons.Rounded.Close,
-                    contentDescription = "검색어 전체 삭제",
+                    contentDescription = if (isEmpty) "검색 닫기" else "검색어 전체 삭제",
                     tint = gray60,
                 )
             }
@@ -108,14 +112,22 @@ fun SearchBar(
     }
 }
 
+/** 목록·웹뷰 위에 뜬 필드. 다크 테마에서는 그림자가 배경에 묻혀 테두리를 함께 두른다. */
+fun Modifier.floatingField(): Modifier = this
+    // M3 elevation level 3. BottomActionButton 과 같은 높이다.
+    .shadow(elevation = 6.dp, shape = CircleShape)
+    .border(width = 1.dp, color = gray20, shape = CircleShape)
+
+/** [floatingField] 를 감싼 바깥 여백(위아래 8dp)까지 더한 높이. 아래 목록이 이만큼 비켜 준다. */
+val FloatingSearchFieldHeight = 64.dp
+
 @Preview
 @Composable
-fun SearchBarPreview() {
+private fun SearchFieldPreview() {
     JellyTubeTheme {
-        SearchBar(
-            modifier = Modifier,
-            placeholder = "곡 이름 검색",
-            onSearchTextChanged = {},
-        )
+        Column {
+            SearchField(value = "", placeholder = "노래 제목으로 검색", onValueChange = {}, onSearch = {})
+            SearchField(value = "밤편지", placeholder = "노래 제목으로 검색", onValueChange = {}, onSearch = {})
+        }
     }
 }

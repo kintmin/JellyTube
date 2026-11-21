@@ -1,6 +1,7 @@
 package com.kintmin.presentation.ui.player_detail.dialog
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -43,11 +48,11 @@ fun SleepTimerAnnouncementDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 20.dp),
+                .padding(horizontal = 20.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "마무리 음성",
+                text = "마무리 음원",
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
@@ -56,15 +61,18 @@ fun SleepTimerAnnouncementDialog(
                 text = "30초 이내이고 길이를 아는 음원만 고를 수 있습니다",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
-                modifier = Modifier.padding(top = 6.dp, start = 20.dp, end = 20.dp),
+                modifier = Modifier.padding(top = 6.dp),
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 320.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 item {
                     SleepTimerAnnouncementRow(
                         name = "없음",
-                        description = "마무리 음성 없이 멈춥니다",
+                        description = "마무리 음원 없이 멈춥니다",
                         isSelected = selectedMediaId == null,
                         onClick = { onSelect(null) },
                     )
@@ -83,7 +91,7 @@ fun SleepTimerAnnouncementDialog(
                             text = "고를 수 있는 음원이 없습니다. 음원 편집으로 30초 이내의 음원을 만들어 주세요.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                            modifier = Modifier.padding(vertical = 16.dp),
                         )
                     }
                 }
@@ -99,11 +107,17 @@ private fun SleepTimerAnnouncementRow(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
+    // 고른 행은 체크만이 아니라 채움으로도 드러낸다. 작은 체크 하나로는 어느 줄인지 잘 안 보인다.
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            // clickable 보다 먼저 잘라야 눌림 표시도 둥글게 번진다.
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else Color.Transparent,
+            )
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -111,6 +125,7 @@ private fun SleepTimerAnnouncementRow(
                 text = name,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 15.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -129,7 +144,8 @@ private fun SleepTimerAnnouncementRow(
                 modifier = Modifier.size(20.dp),
                 imageVector = Icons.Rounded.Check,
                 contentDescription = "고름",
-                tint = MaterialTheme.colorScheme.primary,
+                // primary 는 surface 대비가 2.6:1 이라 작은 아이콘에 필요한 3:1 에 못 미친다.
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

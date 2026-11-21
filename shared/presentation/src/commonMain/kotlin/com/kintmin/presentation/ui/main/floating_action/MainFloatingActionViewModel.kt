@@ -7,12 +7,12 @@ import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
 import com.kintmin.domain.youtube.YoutubeUrl
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -23,8 +23,8 @@ class MainFloatingActionViewModel constructor(
 
     private val isPlaylistBottomSheetVisible = MutableStateFlow(false)
 
-    private val _eventFlow = MutableSharedFlow<MainFloatingActionEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val eventChannel = Channel<MainFloatingActionEvent>(Channel.BUFFERED)
+    val eventFlow = eventChannel.receiveAsFlow()
 
     val uiState: StateFlow<MainFloatingActionUiState> = combine(
         fetchDownloadTargetPlaylistsFlowUseCase(),
@@ -77,9 +77,9 @@ class MainFloatingActionViewModel constructor(
     private fun handleClickDownload(url: String) {
         viewModelScope.launch {
             if (YoutubeUrl.isDownloadable(url)) {
-                _eventFlow.emit(MainFloatingActionEvent.Download(url))
+                eventChannel.send(MainFloatingActionEvent.Download(url))
             } else {
-                _eventFlow.emit(MainFloatingActionEvent.ShowToast("다운받을 영상을 골라주세요."))
+                eventChannel.send(MainFloatingActionEvent.ShowToast("다운받을 영상을 골라주세요."))
             }
         }
     }

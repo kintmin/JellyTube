@@ -4,54 +4,60 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.domain.karaoke.model.KaraokeSong
 import com.kintmin.domain.karaoke.usecase.ApplyKaraokeNumberToAudioMediaUseCase
 import com.kintmin.domain.karaoke.usecase.SearchKaraokeUseCase
 import com.kintmin.presentation.ui.karaoke_search.navigation.KaraokeSearchScreenRoute
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class KaraokeSearchViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val searchKaraokeUseCase: SearchKaraokeUseCase,
+    buildSongSearchQueryUseCase: BuildSongSearchQueryUseCase,
     private val applyKaraokeNumberToAudioMediaUseCase: ApplyKaraokeNumberToAudioMediaUseCase,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<KaraokeSearchScreenRoute>()
     private val audioMediaId = route.audioMediaId
 
-    private val _data = MutableStateFlow(
-        KaraokeSearchUiState(query = route.initialQuery, isLoading = false, results = emptyList())
-    )
-    val data = _data.asStateFlow()
+    private val initialQuery = buildSongSearchQueryUseCase(route.initialQuery)
 
-    private val _eventFlow = MutableSharedFlow<KaraokeSearchEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
+    private val _uiState = MutableStateFlow(
+        KaraokeSearchUiState(query = initialQuery, isLoading = false, results = emptyList())
+    )
+    val uiState: StateFlow<KaraokeSearchUiState> = _uiState.asStateFlow()
+
+    private val eventChannel = Channel<KaraokeSearchEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<KaraokeSearchEvent> = eventChannel.receiveAsFlow()
 
     // 진행 중인 검색 코루틴. 새 검색을 시작하기 전에 취소한다.
     private var searchJob: Job? = null
 
     init {
-        startSearch(route.initialQuery)
+        startSearch(initialQuery)
     }
 
     fun sendIntent(intent: KaraokeSearchIntent) {
         when (intent) {
             is KaraokeSearchIntent.OnChangeQuery ->
-                _data.update { it.copy(query = intent.query) }
+                _uiState.update { it.copy(query = intent.query) }
 
             KaraokeSearchIntent.OnClickSearch ->
-                startSearch(_data.value.query)
+                startSearch(_uiState.value.query)
 
             is KaraokeSearchIntent.OnClickResult ->
                 viewModelScope.launch {
                     applyKaraokeNumberToAudioMediaUseCase(audioMediaId, intent.item.number)
-                    _eventFlow.emit(KaraokeSearchEvent.NavigateBack)
+                    eventChannel.send(KaraokeSearchEvent.NavigateBack)
                 }
         }
     }
@@ -64,13 +70,13 @@ class KaraokeSearchViewModel constructor(
 
     private suspend fun performSearch(query: String) {
         if (query.isBlank()) {
-            _data.update { it.copy(isLoading = false, results = emptyList()) }
+            _uiState.update { it.copy(isLoading = false, results = emptyList()) }
             return
         }
-        _data.update { it.copy(isLoading = true) }
+        _uiState.update { it.copy(isLoading = true) }
         val results = searchKaraokeUseCase(query).getOrNull().orEmpty()
             .mapIndexed { index, song -> song.toItem(index) }
-        _data.update { it.copy(isLoading = false, results = results) }
+        _uiState.update { it.copy(isLoading = false, results = results) }
     }
 }
 

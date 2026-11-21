@@ -12,15 +12,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -71,13 +73,14 @@ fun SleepTimerDialog(
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 SleepTimerMinuteOptions.forEach { option ->
-                    FilterChip(
-                        selected = minutes == option,
+                    PlaybackOptionChip(
+                        modifier = Modifier.weight(1f),
+                        label = "${option}분",
+                        isSelected = minutes == option,
                         onClick = { onSelectMinutes(option) },
-                        label = { Text(text = "${option}분", fontSize = 12.sp) },
                     )
                 }
             }
@@ -94,16 +97,20 @@ fun SleepTimerDialog(
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider()
+            // 칩·+/- 버튼처럼 채움으로 가른다. 구분선을 두면 이 대화상자만 설정 화면 줄처럼 읽힌다.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    // clickable 보다 먼저 잘라야 눌림 표시도 둥글게 번진다.
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
                     .clickable(onClick = onClickAnnouncement)
-                    .padding(vertical = 14.dp),
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "마무리 음성",
+                    text = "마무리 음원",
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 14.sp,
                     modifier = Modifier.weight(1f),
@@ -118,11 +125,10 @@ fun SleepTimerDialog(
                         .padding(start = 4.dp)
                         .size(18.dp),
                     imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
-                    contentDescription = "마무리 음성 고르기",
+                    contentDescription = "마무리 음원 고르기",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            HorizontalDivider()
 
             Spacer(modifier = Modifier.height(16.dp))
             Button(
@@ -132,8 +138,10 @@ fun SleepTimerDialog(
                 Text(text = if (remaining == null) "${minutes}분 뒤에 멈추기" else "${minutes}분으로 다시 맞추기")
             }
             if (remaining != null) {
-                TextButton(
-                    modifier = Modifier.fillMaxWidth(),
+                OutlinedButton(
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth(),
                     onClick = onCancelTimer,
                 ) {
                     Text(text = "타이머 끄기")

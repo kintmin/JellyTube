@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
@@ -25,7 +26,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.seaBlue80
 
 private val TRACK_HEIGHT = 4.dp
 private val PIN_WIDTH = 2.dp
@@ -118,7 +118,7 @@ private fun RepeatRangeBand(
             .width(bandWidth)
             .height(TRACK_HEIGHT)
             .clip(RoundedCornerShape(TRACK_HEIGHT / 2))
-            .background(seaBlue80.copy(alpha = 0.55f)),
+            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.55f)),
     )
 }
 
@@ -139,7 +139,7 @@ private fun RepeatRangePin(
             .offset(x = pinOffset - PIN_WIDTH / 2)
             .width(PIN_WIDTH)
             .height(PIN_HEIGHT)
-            .background(seaBlue80),
+            .background(MaterialTheme.colorScheme.tertiary),
     )
 }
 

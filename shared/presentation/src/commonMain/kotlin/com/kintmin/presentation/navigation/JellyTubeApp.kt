@@ -18,7 +18,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun JellyTubeApp(
-    navigationIntentFlow: Flow<NavigationIntent>,
+    navigationEventFlow: Flow<NavigationEvent>,
     isDebugTabVisible: Boolean,
     onDeepLink: (url: String) -> Unit,
 ) {
@@ -35,7 +35,7 @@ fun JellyTubeApp(
             Box(modifier = Modifier.fillMaxSize()) {
                 MainNavHost(
                     navController = navController,
-                    navigationIntentFlow = navigationIntentFlow,
+                    navigationEventFlow = navigationEventFlow,
                     isDebugTabVisible = isDebugTabVisible,
                     onDeepLink = onDeepLink,
                 )
