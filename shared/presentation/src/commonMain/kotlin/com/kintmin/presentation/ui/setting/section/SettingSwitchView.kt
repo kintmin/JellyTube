@@ -7,7 +7,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import com.kintmin.presentation.theme.JellyTubeTheme
@@ -22,8 +21,6 @@ fun SettingSwitchView(
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Switch(
-        // 줄이면 스위치 자체의 터치 영역도 줄지만, 설정 행 전체가 같은 동작으로 눌린다
-        modifier = Modifier.scale(0.8f),
         checked = checked,
         onCheckedChange = onCheckedChange,
         colors = SwitchDefaults.colors(
