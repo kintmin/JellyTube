@@ -2,7 +2,6 @@ package com.kintmin.presentation.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -11,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.compose.rememberNavController
-import com.kintmin.presentation.animation.AppEntrance
 import com.kintmin.presentation.platform.KeepScreenOnEffect
 import com.kintmin.presentation.platform.PlatformToastHost
 import com.kintmin.presentation.platform.keepsReceivingInBackground
@@ -38,17 +36,14 @@ fun JellyTubeApp(
     }
 
     JellyTubeTheme {
-        // 스플래시·런치 화면과 같은 색이라야 진입 페이드 중에 다른 면이 비치지 않는다.
-        Surface(color = MaterialTheme.colorScheme.background) {
+        Surface {
             Box(modifier = Modifier.fillMaxSize()) {
-                AppEntrance {
-                    MainNavHost(
-                        navController = navController,
-                        navigationEventFlow = navigationEventFlow,
-                        isDebugTabVisible = isDebugTabVisible,
-                        onDeepLink = onDeepLink,
-                    )
-                }
+                MainNavHost(
+                    navController = navController,
+                    navigationEventFlow = navigationEventFlow,
+                    isDebugTabVisible = isDebugTabVisible,
+                    onDeepLink = onDeepLink,
+                )
                 // 화면 위에 떠야 하므로 NavHost 뒤에 둔다. Android 에서는 no-op 이다.
                 PlatformToastHost()
             }
