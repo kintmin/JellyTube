@@ -75,6 +75,6 @@ class EndSecretModeUseCaseTest {
 
         useCase()
 
-        verify { appLog.sendDebugLog(match { it.message.startsWith("다운로드 대상을 미분류로 되돌리지 못함") }) }
+        verify { appLog.sendErrorLog(match { it.message == "다운로드 대상을 미분류로 되돌리지 못함" && it.throwable?.message == "boom" }) }
     }
 }

@@ -31,6 +31,7 @@ object PropertyName {
     const val STORE_PASSWORD = "JELLY_TUBE_KEYSTORE_PASSWORD"
     const val KEY_ALIAS = "JELLY_TUBE_KEY_ALIAS"
     const val KEY_PASSWORD = "JELLY_TUBE_KEY_PASSWORD"
+    const val SENTRY_AUTH_TOKEN = "JELLY_TUBE_SENTRY_AUTH_TOKEN"
 }
 
 object SigningConfigName {

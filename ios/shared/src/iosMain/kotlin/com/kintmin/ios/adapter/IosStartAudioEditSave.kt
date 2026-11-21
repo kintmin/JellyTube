@@ -6,7 +6,7 @@ import com.kintmin.domain.audio_edit.usecase.SaveEditedAudioAsNewMediaUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.ios.notification.IosLocalNotification
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.presentation.platform.continueInBackgroundWhile
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.StartAudioEditSave
@@ -64,6 +64,6 @@ internal class IosStartAudioEditSave(
     }
 
     private suspend fun log(throwable: Throwable) {
-        appLog.sendDebugLog(DebugLog("IosStartAudioEditSave", throwable.message ?: "알 수 없는 오류"))
+        appLog.sendErrorLog(ErrorLog("IosStartAudioEditSave", "편집본 저장 실패", throwable))
     }
 }

@@ -47,7 +47,7 @@ You are a performance reviewer for the **JellyTube** Kotlin Multiplatform projec
 ### iOS (`ios/shared` + `ios/app`, Compose Multiplatform + SKIE)
 - **UI is shared Compose.** Recomposition findings belong to `shared:presentation`, not to Swift.
 - **`UIKitView` interop**: the native view is a real UIView in the hierarchy — check it is not recreated per recomposition (`factory` must not capture changing state), and that `onDispose` releases delegates/message handlers (`WKWebView` leaks the whole page otherwise).
-- **Swift bridges** (`PythonExecutorBridgeImpl`, `MediaControllerBridgeImpl`, `AppLogBridgeImpl`): work must leave the main thread (`DispatchQueue.global`) — PythonKit calls block; completion handlers must not fan out repeated Koin lookups.
+- **Swift bridges** (`PythonExecutorBridgeImpl`, `MediaControllerBridgeImpl`): work must leave the main thread (`DispatchQueue.global`) — PythonKit calls block; completion handlers must not fan out repeated Koin lookups.
 - Background `URLSession`: one session per identifier, reused; do not create a session per download.
 
 ### Desktop (`desktop`)

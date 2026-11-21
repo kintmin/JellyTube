@@ -3,7 +3,7 @@ package com.kintmin.domain.playlist.usecase
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.FirebaseEvent
+import com.kintmin.log.model.SentryEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.first
@@ -24,8 +24,8 @@ class DeletePlaylistUseCase constructor(
             val trackCount = audioTrackRepository.getPlaylistTrackCount(playlistId).getOrThrow()
 
             playlistRepository.deletePlaylist(playlistId).onSuccess {
-                appLog.sendFirebaseEvent(
-                    FirebaseEvent.DeletePlaylist(
+                appLog.sendSentryEvent(
+                    SentryEvent.DeletePlaylist(
                         playlistId = playlistToDelete.id,
                         playlistTitle = playlistToDelete.name,
                         audioMediaCount = trackCount,

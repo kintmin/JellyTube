@@ -3,6 +3,7 @@ package com.kintmin.jellytube
 import android.app.Application
 import com.kintmin.data.di.dataAndroidModule
 import com.kintmin.data.di.dataCommonModule
+import com.kintmin.data.log.initSentry
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
 import com.kintmin.jellytube.di.appModule
 import com.kintmin.jellytube.di.workerModule
@@ -23,6 +24,10 @@ class JellyTubeApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        initSentry(
+            isDebug = BuildConfig.DEBUG,
+            release = "${BuildConfig.APPLICATION_ID}@${BuildConfig.VERSION_NAME}+${BuildConfig.VERSION_CODE}",
+        )
         startKoin {
             androidLogger(Level.ERROR)
             androidContext(this@JellyTubeApplication)

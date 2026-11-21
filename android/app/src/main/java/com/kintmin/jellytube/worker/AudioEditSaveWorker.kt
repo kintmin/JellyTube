@@ -14,7 +14,7 @@ import com.kintmin.domain.audio_edit.model.SavedAudioEdit
 import com.kintmin.domain.audio_edit.usecase.ReleaseAudioEditSaveUseCase
 import com.kintmin.domain.audio_edit.usecase.SaveAudioEditUseCase
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.jellytube.push_notification.PushNotificationIdGenerator
 import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.notifications.AudioEditSaveNotification
@@ -58,9 +58,8 @@ class AudioEditSaveWorker(
         // 저장을 시작하면 끝날 때 저장하는 쪽이 푼다.
         val foregroundResult = runCatching { setForegroundAsync(getForegroundInfo()) }
         if (foregroundResult.isFailure) {
-            val errorMessage = "포그라운드 서비스 시작 실패: ${foregroundResult.exceptionOrNull()?.message ?: "알 수 없는 오류"}"
             releaseAudioEditSaveUseCase(audioMediaId)
-            notifyFailure(errorMessage)
+            notifyFailure("포그라운드 서비스 시작 실패", foregroundResult.exceptionOrNull())
             return Result.failure()
         }
 
@@ -90,14 +89,14 @@ class AudioEditSaveWorker(
                 Result.success()
             },
             onFailure = { error ->
-                notifyFailure(error.message.toString())
+                notifyFailure("편집본 저장 실패", error)
                 Result.failure()
             },
         )
     }
 
-    private suspend fun notifyFailure(errorMessage: String) {
-        appLog.sendDebugLog(DebugLog("AudioEditSaveWorker", errorMessage))
+    private suspend fun notifyFailure(message: String, throwable: Throwable? = null) {
+        appLog.sendErrorLog(ErrorLog("AudioEditSaveWorker", message, throwable))
         pushNotificationManager.sendNotification(AudioEditSaveResultNotification(WorkResultNotice.AudioEditSave.Failure))
     }
 

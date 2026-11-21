@@ -61,6 +61,7 @@ kotlin {
             implementation(libs.ktor.server.content.negotiation)
             implementation(libs.koin.core)
             implementation(libs.okio)
+            implementation(libs.sentry.kmp)
         }
 
         androidMain.dependencies {

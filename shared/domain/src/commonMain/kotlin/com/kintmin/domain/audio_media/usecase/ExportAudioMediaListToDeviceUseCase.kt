@@ -6,7 +6,7 @@ import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
 import com.kintmin.domain.audio_media.model.AudioMediaExportSummary
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 
 class ExportAudioMediaListToDeviceUseCase constructor(
     private val audioMediaRepository: AudioMediaRepository,
@@ -35,11 +35,8 @@ class ExportAudioMediaListToDeviceUseCase constructor(
                 }
             }.onFailure { throwable ->
                 failedNameList += audioMedia.name
-                appLog.sendDebugLog(
-                    DebugLog(
-                        tag = "ExportAudioMediaListToDeviceUseCase",
-                        message = "${audioMedia.name} 기기 저장 실패: $throwable",
-                    )
+                appLog.sendErrorLog(
+                    ErrorLog("ExportAudioMediaListToDeviceUseCase", "${audioMedia.name} 기기 저장 실패", throwable),
                 )
             }
         }

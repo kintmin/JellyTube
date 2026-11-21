@@ -2,7 +2,7 @@ package com.kintmin.data.file_share
 
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import io.ktor.server.application.Application
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
@@ -45,7 +45,7 @@ internal class FileShareServer(
             // 바인드까지 끝낸 뒤 취소·실패하면 엔진이 포트를 쥔 채 남아 다음 시작이 실패한다.
             withContext(NonCancellable) { runCatching { server.stopSuspend(0, 0) } }
             if (e is CancellationException) throw e
-            appLog.sendDebugLog(DebugLog(LOG_TAG, "파일 공유 서버를 띄우지 못했습니다: ${e.message}"))
+            appLog.sendErrorLog(ErrorLog(LOG_TAG, "파일 공유 서버를 띄우지 못했습니다", e))
             onStartFailed()
             return
         }

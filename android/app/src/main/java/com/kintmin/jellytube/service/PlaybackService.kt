@@ -9,7 +9,7 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.kintmin.jellytube.intent.mediaSessionPendingIntent
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -34,11 +34,8 @@ class PlaybackService : MediaSessionService(), KoinComponent {
             .apply {
                 addListener(object : Player.Listener {
                     override fun onPlayerError(error: PlaybackException) {
-                        appLog.sendDebugLog(
-                            DebugLog(
-                                "PlaybackService",
-                                "${error.errorCodeName} mediaId=${currentMediaItem?.mediaId}: ${error.cause ?: error.message}",
-                            ),
+                        appLog.sendErrorLog(
+                            ErrorLog("PlaybackService", "${error.errorCodeName} mediaId=${currentMediaItem?.mediaId}", error),
                         )
                     }
                 })

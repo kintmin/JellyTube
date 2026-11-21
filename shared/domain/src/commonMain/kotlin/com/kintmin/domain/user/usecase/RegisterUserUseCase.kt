@@ -4,7 +4,7 @@ import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.user.repository.UserRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
-import com.kintmin.log.model.FirebaseEvent
+import com.kintmin.log.model.SentryEvent
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -26,11 +26,11 @@ class RegisterUserUseCase constructor(
 
         val newUserId = Uuid.random().toString()
         userRepository.setUserId(newUserId).onSuccess {
-            appLog.sendFirebaseEvent(FirebaseEvent.SuccessRegisterUser(newUserId))
+            appLog.sendSentryEvent(SentryEvent.SuccessRegisterUser(newUserId))
         }
         newUserId
     }.onFailure { error ->
-        appLog.sendFirebaseEvent(FirebaseEvent.FailedRegisterUser(error))
+        appLog.sendSentryEvent(SentryEvent.FailedRegisterUser(error))
     }.onSuccess { userId ->
         appLog.setLogConfig(userId)
     }

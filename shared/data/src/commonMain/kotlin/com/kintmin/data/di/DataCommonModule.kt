@@ -60,6 +60,8 @@ import com.kintmin.domain.user.repository.UserRepository
 import com.kintmin.domain.user.usecase.FetchUserIdUseCase
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
 import io.ktor.client.HttpClient
+import com.kintmin.data.log.SentryAppLog
+import com.kintmin.log.AppLog
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
@@ -81,6 +83,7 @@ val dataCommonModule: Module = module {
     singleOf(::AudioMediaFacade)
 
     singleOf(::AppLogRepositoryImpl) bind AppLogRepository::class
+    singleOf(::SentryAppLog) bind AppLog::class
     singleOf(::AppSettingRepositoryImpl) bind AppSettingRepository::class
     singleOf(::AudioEditRepositoryImpl) bind AudioEditRepository::class
     singleOf(::AudioMediaRepositoryImpl) bind AudioMediaRepository::class

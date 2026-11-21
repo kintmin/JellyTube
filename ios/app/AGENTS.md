@@ -85,7 +85,7 @@ final class SomethingBridgeImpl: SomethingBridge { ... }
 - 브릿지는 **원시 타입과 거울 DTO** 만 주고받는다. 포트가 쓰는 `presentation` 타입은 Swift 가
   볼 수 없어서다. 거울 DTO 가 있는 이유가 그것이다.
 - **판정은 Kotlin 이 한다.** Swift 는 "시킨 일" 만 한다. 같은 판단을 두 플랫폼이 다르게 내리면
-  그 자체가 버그다 — 주소 파싱, 로그 자르기, 재생 구간 규칙이 전부 Kotlin 에 있는 이유다.
+  그 자체가 버그다 — 주소 파싱, 재생 구간 규칙이 전부 Kotlin 에 있는 이유다.
   - 예외는 **전송·재생 엔진의 세부**다. 전송을 쥔 쪽이 재시도와 실패 분류를 하고, 엔진 기본
     동작에 맞춘 조작도 그쪽에 둔다. 다만 **범위와 기본값은 Kotlin 이 정해 넘긴다.**
 - 비동기는 completion handler 로 받는다. SKIE 가 Swift `async` 로 바꿔 준다.

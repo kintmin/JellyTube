@@ -1,6 +1,5 @@
 import com.android.build.api.artifact.ArtifactTransformationRequest
 import com.android.build.api.artifact.SingleArtifact
-import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 import com.kintmin.buildSrc.AppConfiguration
 import com.kintmin.buildSrc.DeepLinkConstantsSource
 import com.kintmin.buildSrc.ManifestPlaceholdersKey
@@ -16,8 +15,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.chaquopy)
-    alias(libs.plugins.google.services)
-    alias(libs.plugins.crashlytics)
+    alias(libs.plugins.sentry.android)
 }
 
 android {
@@ -59,10 +57,6 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName(SigningConfigName.RELEASE)
-            // Crashlytics 확장은 android{} 가 아니라 buildType 에 등록된다.
-            configure<CrashlyticsExtension> {
-                mappingFileUploadEnabled = true
-            }
         }
         debug {
             ndk { abiFilters += listOf("x86_64") }
@@ -139,6 +133,18 @@ androidComponents {
     }
 }
 
+sentry {
+    org.set("kintmin-personal")
+    projectName.set("jellytube")
+    // 토큰이 없는 클론에서도 release 빌드가 되도록, 그때는 mapping 을 올리지 않는다.
+    val sentryAuthToken = findProperty(PropertyName.SENTRY_AUTH_TOKEN)?.toString()
+    authToken.set(sentryAuthToken)
+    autoUploadProguardMapping.set(sentryAuthToken != null)
+    // SDK 는 shared:data 가 KMP SDK 로 가져온다. 플러그인이 또 넣으면 버전이 갈린다.
+    autoInstallation { enabled.set(false) }
+    tracingInstrumentation { enabled.set(false) }
+}
+
 chaquopy {
     sourceSets {
         getByName("main") {
@@ -165,11 +171,6 @@ dependencies {
     implementation(project(":shared:domain"))
     implementation(project(":shared:data"))
     implementation(project(":shared:file-share"))
-
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
-
 
     implementation(libs.koin.android)
     implementation(libs.koin.workmanager)

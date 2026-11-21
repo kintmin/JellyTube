@@ -253,7 +253,7 @@ private fun AppLogLineViewPreview() {
     JellyTubeTheme {
         Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
             AppLogLineView(
-                line = parseAppLogLine("[2026-11-21 09:05:01.042] [FIREBASE_EVENT] download 완료"),
+                line = parseAppLogLine("[2026-11-21 09:05:01.042] [SENTRY_EVENT] download 완료"),
             )
             AppLogLineView(line = parseAppLogLine("    at com.kintmin.Foo.bar(Foo.kt:12)"))
         }

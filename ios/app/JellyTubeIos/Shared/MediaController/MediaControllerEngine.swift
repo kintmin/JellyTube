@@ -20,7 +20,7 @@ private let mcLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "Med
 /// `os_log` 만으로는 `app_logs` 에 가지 않아 공유받은 로그에서 재생 실패가 보이지 않는다.
 private func playbackErrorLog(_ message: String) {
     mcLog.error("\(message, privacy: .public)")
-    SwiftAppLogKt.swiftDebugLog(tag: "PlaybackEngine", message: message)
+    SwiftAppLogKt.swiftErrorLog(tag: "PlaybackEngine", message: message)
 }
 
 @MainActor

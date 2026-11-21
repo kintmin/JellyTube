@@ -11,6 +11,7 @@
 		4A000000000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000009 /* Assets.xcassets */; };
 		C9E4F40D2FD13000009FB07B /* python in Resources */ = {isa = PBXBuildFile; fileRef = C9E4F40E2FD13000009FB07B /* python */; };
 		C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */ = {isa = PBXBuildFile; productRef = C9E4F4102FD14000009FB07B /* PythonKit */; };
+		C9E5000000000000000000A3 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = C9E5000000000000000000A2 /* Sentry */; };
 		C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */; };
 		4A0000000000000000000094 /* YoutubeDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000093 /* YoutubeDownloader.swift */; };
 		4A00000000000000000000B1 /* MigrationSourceBrowserBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000B0 /* MigrationSourceBrowserBridgeImpl.swift */; };
@@ -20,7 +21,6 @@
 		4A0000000000000000000088 /* MediaControllerItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000087 /* MediaControllerItem.swift */; };
 		4A000000000000000000008A /* MediaControllerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000089 /* MediaControllerEngine.swift */; };
 		4A0000000000000000000092 /* MediaControllerBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */; };
-		4A00000000000000000000A2 /* AppLogBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000A1 /* AppLogBridgeImpl.swift */; };
 		4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A000000000000000000008D /* NowPlayingCoordinator.swift */; };
 		4A00000000000000000000C1 /* LyricsTranslatorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000C0 /* LyricsTranslatorBridgeImpl.swift */; };
 		4A00000000000000000000E1 /* PythonExecutorBridgeImplTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000E2 /* PythonExecutorBridgeImplTests.swift */; };
@@ -42,7 +42,6 @@
 		4A0000000000000000000087 /* MediaControllerItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerItem.swift; sourceTree = "<group>"; };
 		4A0000000000000000000089 /* MediaControllerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerEngine.swift; sourceTree = "<group>"; };
 		4A0000000000000000000091 /* MediaControllerBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaControllerBridgeImpl.swift; sourceTree = "<group>"; };
-		4A00000000000000000000A1 /* AppLogBridgeImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogBridgeImpl.swift; sourceTree = "<group>"; };
 		4A000000000000000000008D /* NowPlayingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingCoordinator.swift; sourceTree = "<group>"; };
 		4A00000000000000000000E2 /* PythonExecutorBridgeImplTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonExecutorBridgeImplTests.swift; sourceTree = "<group>"; };
 		4A00000000000000000000E3 /* JellyTubeIosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = JellyTubeIosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -55,6 +54,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */,
+				C9E5000000000000000000A3 /* Sentry in Frameworks */,
 				4A0000000000000000000061 /* Python.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -155,7 +155,6 @@
 			isa = PBXGroup;
 			children = (
 				4A0000000000000000000086 /* MediaController */,
-				4A00000000000000000000A3 /* Log */,
 				4A00000000000000000000B2 /* Migration */,
 				4A00000000000000000000C2 /* Translation */,
 			);
@@ -171,14 +170,6 @@
 				4A000000000000000000008D /* NowPlayingCoordinator.swift */,
 			);
 			path = MediaController;
-			sourceTree = "<group>";
-		};
-		4A00000000000000000000A3 /* Log */ = {
-			isa = PBXGroup;
-			children = (
-				4A00000000000000000000A1 /* AppLogBridgeImpl.swift */,
-			);
-			path = Log;
 			sourceTree = "<group>";
 		};
 		4A00000000000000000000B2 /* Migration */ = {
@@ -227,6 +218,7 @@
 			name = JellyTubeIos;
 			packageProductDependencies = (
 				C9E4F4102FD14000009FB07B /* PythonKit */,
+				C9E5000000000000000000A2 /* Sentry */,
 			);
 			productName = JellyTubeIos;
 			productReference = 4A0000000000000000000003 /* JellyTubeIos.app */;
@@ -282,6 +274,7 @@
 			mainGroup = 4A0000000000000000000004;
 			packageReferences = (
 				C9E4F4112FD14000009FB07B /* XCRemoteSwiftPackageReference "PythonKit" */,
+				C9E5000000000000000000A1 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 			);
 			productRefGroup = 4A0000000000000000000006 /* Products */;
 			projectDirPath = "";
@@ -367,7 +360,6 @@
 				4A0000000000000000000088 /* MediaControllerItem.swift in Sources */,
 				4A000000000000000000008A /* MediaControllerEngine.swift in Sources */,
 				4A0000000000000000000092 /* MediaControllerBridgeImpl.swift in Sources */,
-				4A00000000000000000000A2 /* AppLogBridgeImpl.swift in Sources */,
 				4A000000000000000000008E /* NowPlayingCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -669,6 +661,14 @@
 				kind = branch;
 			};
 		};
+		C9E5000000000000000000A1 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
+			requirement = {
+				kind = exactVersion;
+				version = 9.35.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -676,6 +676,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C9E4F4112FD14000009FB07B /* XCRemoteSwiftPackageReference "PythonKit" */;
 			productName = PythonKit;
+		};
+		C9E5000000000000000000A2 /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C9E5000000000000000000A1 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -8,8 +8,8 @@ class AppLogLineTest {
     @Test
     fun `시각과 타입과 메시지로 나눈다`() {
         assertEquals(
-            AppLogLineUiState(time = "09:05:01.042", type = "FIREBASE_EVENT", message = "download [id=3] 완료"),
-            parseAppLogLine("[2026-11-21 09:05:01.042] [FIREBASE_EVENT] download [id=3] 완료"),
+            AppLogLineUiState(time = "09:05:01.042", type = "SENTRY_EVENT", message = "download [id=3] 완료"),
+            parseAppLogLine("[2026-11-21 09:05:01.042] [SENTRY_EVENT] download [id=3] 완료"),
         )
     }
 

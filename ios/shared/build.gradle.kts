@@ -1,10 +1,12 @@
 import com.kintmin.buildSrc.DeepLinkConstantsSource
+import io.sentry.kotlin.multiplatform.gradle.AppleDependencyProvider
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.skie)
+    alias(libs.plugins.sentry.kmp)
 }
 
 /**
@@ -69,3 +71,10 @@ val verifyDeepLinkScheme = tasks.register("verifyDeepLinkScheme") {
 }
 
 tasks.named("check") { dependsOn(verifyDeepLinkScheme) }
+
+// Sentry Cocoa 는 Xcode 프로젝트가 SPM 으로 든다(버전은 KMP SDK 호환표에 맞춘다).
+// 기본값으로 돌리면 플러그인도 SwiftPM 으로 설치해 Sentry 가 두 벌 링크된다.
+sentryKmp {
+    autoInstall.apple.provider = AppleDependencyProvider.NONE
+    linker.xcodeprojPath = rootProject.file("ios/app/JellyTubeIos.xcodeproj").absolutePath
+}

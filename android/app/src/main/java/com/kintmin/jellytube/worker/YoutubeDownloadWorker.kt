@@ -10,6 +10,7 @@ import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.jellytube.push_notification.PushNotificationManager
 import com.kintmin.jellytube.push_notification.notifications.DownloadNotification
 import com.kintmin.jellytube.push_notification.notifications.DownloadResultNotification
@@ -51,11 +52,8 @@ class YoutubeDownloadWorker(
         }
 
         if (foregroundResult.isFailure) {
-            val exception = foregroundResult.exceptionOrNull()
-            val errorMessage = "포그라운드 서비스 시작 실패: ${exception?.message ?: "알 수 없는 오류"}"
-
             pushNotificationManager.sendNotification(DownloadResultNotification(WorkResultNotice.Download.Failure))
-            appLog.sendDebugLog(DebugLog("YoutubeDownloadWorker", errorMessage))
+            appLog.sendErrorLog(ErrorLog("YoutubeDownloadWorker", "포그라운드 서비스 시작 실패", foregroundResult.exceptionOrNull()))
             return Result.failure()
         }
 

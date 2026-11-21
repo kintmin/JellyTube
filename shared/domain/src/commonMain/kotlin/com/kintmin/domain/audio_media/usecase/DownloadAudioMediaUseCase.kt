@@ -12,7 +12,7 @@ import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
-import com.kintmin.log.model.FirebaseEvent
+import com.kintmin.log.model.SentryEvent
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -43,8 +43,8 @@ class DownloadAudioMediaUseCase constructor(
         val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()
         val connectionStatus = deviceStatusRepository.getConnectionStatus().getOrNull()
 
-        appLog.sendFirebaseEvent(
-            FirebaseEvent.FailedDownloadAudioMedia(
+        appLog.sendSentryEvent(
+            SentryEvent.FailedDownloadAudioMedia(
                 source = downloadUrl,
                 exception = exception,
                 availableRemMemory = systemMemory?.availableRemMemory,
@@ -89,7 +89,7 @@ class DownloadAudioMediaUseCase constructor(
             audioMediaRepository.deleteDownloadedFile(downloadedAudioMedia)
         }.getOrThrow()
 
-        appLog.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(downloadUrl, added.totalPlaylistMediaCount))
+        appLog.sendSentryEvent(SentryEvent.AddAudioMedia(downloadUrl, added.totalPlaylistMediaCount))
         return DownloadedAudioMediaResult(
             audioMedia = added.audioMedia,
             playlistIdOnDownload = added.resolvedPlaylistIdOnDownload,
