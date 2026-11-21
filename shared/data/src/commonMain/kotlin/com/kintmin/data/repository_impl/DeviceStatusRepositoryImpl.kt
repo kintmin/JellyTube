@@ -1,6 +1,7 @@
 package com.kintmin.data.repository_impl
 
 import com.kintmin.data.device_status.DeviceStatus
+import com.kintmin.domain.device.model.AppEnvironment
 import com.kintmin.domain.device.model.ConnectionStatus
 import com.kintmin.domain.device.model.DeviceMemory
 import com.kintmin.domain.device.repository.DeviceStatusRepository
@@ -27,6 +28,16 @@ class DeviceStatusRepositoryImpl constructor(
                 isCellular = it.isCellular,
                 downstreamKbps = it.downstreamKbps,
                 upstreamKbps = it.upstreamKbps,
+            )
+        }
+    }
+
+    override fun getAppEnvironment(): Result<AppEnvironment> {
+        return deviceStatus.getAppEnvironment().map {
+            AppEnvironment(
+                appVersion = it.appVersion,
+                osVersion = it.osVersion,
+                deviceModel = it.deviceModel,
             )
         }
     }

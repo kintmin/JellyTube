@@ -1,9 +1,15 @@
 package com.kintmin.data.device_status
 
+import com.kintmin.data.device_status.model.AppEnvironmentDto
 import com.kintmin.data.device_status.model.ConnectionStatusDto
 import com.kintmin.data.device_status.model.DeviceMemoryDto
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.toKString
+import platform.Foundation.NSBundle
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSFileSystemFreeSize
 import platform.Foundation.NSHomeDirectory
@@ -19,6 +25,8 @@ import platform.Network.nw_path_monitor_start
 import platform.Network.nw_path_status_satisfied
 import platform.Network.nw_path_uses_interface_type
 import platform.darwin.dispatch_queue_create
+import platform.posix.uname
+import platform.posix.utsname
 import kotlin.concurrent.Volatile
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
@@ -68,5 +76,22 @@ class DeviceStatusImpl : DeviceStatus {
 
     override fun getConnectionStatus(): Result<ConnectionStatusDto> = runCatching {
         cachedConnection
+    }
+
+    // UIDevice 는 메인 스레드에서만 읽으므로 스레드 제약이 없는 쪽으로 읽는다. 모델은 "iPhone15,2" 같은 식별자다.
+    override fun getAppEnvironment(): Result<AppEnvironmentDto> = runCatching {
+        val bundle = NSBundle.mainBundle
+        val versionName = bundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String
+        val buildNumber = bundle.objectForInfoDictionaryKey("CFBundleVersion") as? String
+        val machine = memScoped {
+            val systemInfo = alloc<utsname>()
+            uname(systemInfo.ptr)
+            systemInfo.machine.toKString()
+        }
+        AppEnvironmentDto(
+            appVersion = "$versionName($buildNumber)",
+            osVersion = "iOS ${NSProcessInfo.processInfo.operatingSystemVersionString}",
+            deviceModel = machine,
+        )
     }
 }
