@@ -69,13 +69,19 @@ class MainFloatingActionViewModel constructor(
             is MainFloatingActionIntent.OnSelectPlaylist -> {
                 updatePlaylistIdOnDownload(intent.playlistId)
             }
+            // 시트 위에 다이얼로그를 겹치면 키보드가 올라올 때 시트가 따라 올라간다. 시트를 닫고 띄운다.
             MainFloatingActionIntent.OnClickCreatePlaylist -> {
+                isPlaylistBottomSheetVisible.value = false
                 isCreatePlaylistDialogVisible.value = true
             }
             MainFloatingActionIntent.OnDismissCreatePlaylistDialog -> {
-                isCreatePlaylistDialogVisible.value = false
+                if (isCreatePlaylistDialogVisible.value) {
+                    isCreatePlaylistDialogVisible.value = false
+                    isPlaylistBottomSheetVisible.value = true
+                }
             }
             is MainFloatingActionIntent.OnCreatePlaylist -> {
+                isCreatePlaylistDialogVisible.value = false
                 createPlaylistAsDownloadTarget(intent.title)
             }
         }
