@@ -29,11 +29,12 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.topAppBarHeight
-import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
+import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.setting.device_save.ActionGuideCard
 
 private const val GARAGEBAND_RINGTONE_GUIDE_URL = "https://support.apple.com/en-us/120692"
@@ -125,7 +126,10 @@ private fun RingtoneNeedsNewerOsView() {
         text = "이 기능은 iOS 26 이상에서 쓸 수 있습니다. " +
             "설정 > 일반 > 소프트웨어 업데이트에서 업데이트해주세요.",
     )
-    TextButton(onClick = { uriHandler.openUri(GARAGEBAND_RINGTONE_GUIDE_URL) }) {
+    TextButton(
+        colors = JellyTubeButtonColors.text(),
+        onClick = { uriHandler.openUri(GARAGEBAND_RINGTONE_GUIDE_URL) },
+    ) {
         Text("GarageBand 로 벨소리 만드는 방법 (Apple 지원)")
     }
 }

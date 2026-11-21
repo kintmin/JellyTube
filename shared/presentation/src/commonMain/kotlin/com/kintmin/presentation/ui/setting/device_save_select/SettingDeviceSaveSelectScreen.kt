@@ -2,20 +2,15 @@ package com.kintmin.presentation.ui.setting.device_save_select
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -23,10 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -59,15 +52,17 @@ import com.kintmin.presentation.platform.deviceSaveFlow
 import com.kintmin.presentation.platform.rememberAudioFileSharer
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
+import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneDefaultChangeDialog
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneTooLongDialog
 import com.kintmin.presentation.ui.setting.device_save_select.list.SettingDeviceSaveSelectListItemView
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -175,15 +170,12 @@ fun SettingDeviceSaveSelectScreen(
                 actions = {
                     if (uiState.checkedItemCount > 0) {
                         TextButton(
+                            colors = JellyTubeButtonColors.text(),
                             onClick = {
                                 sendIntent(SettingDeviceSaveSelectIntent.OnClickClearCheckedItemList)
                             },
                         ) {
-                            Text(
-                                text = "${uiState.checkedItemCount} 선택 해제",
-                                fontSize = 14.sp,
-                                lineHeight = 14.sp,
-                            )
+                            Text(text = "${uiState.checkedItemCount}개 선택 해제")
                         }
                     }
                 },
@@ -201,29 +193,17 @@ fun SettingDeviceSaveSelectScreen(
                         sendIntent = sendIntent,
                     )
                 }
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RectangleShape,
-                    enabled = uiState.isSaveEnabled,
-                    onClick = onClickSave,
-                ) {
-                    if (uiState.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                        Spacer(Modifier.width(8.dp))
-                    }
-                    Text(text = if (isRingtoneShareFlow) "벨소리로 사용" else "${uiState.checkedItemCount}개 기기에 저장")
+                BottomActionBar {
+                    BottomActionButton(
+                        text = when {
+                            uiState.isSaving -> "저장 중…"
+                            isRingtoneShareFlow -> "벨소리로 사용"
+                            else -> "${uiState.checkedItemCount}개 기기에 저장"
+                        },
+                        enabled = uiState.isSaveEnabled,
+                        onClick = onClickSave,
+                    )
                 }
-                Box(
-                    modifier = Modifier
-                        .windowInsetsBottomHeight(WindowInsets.navigationBars)
-                        .background(MaterialTheme.colorScheme.surface),
-                )
             }
         },
     ) { innerPadding ->
@@ -317,17 +297,14 @@ private fun ExportTargetSelector(
                         sendIntent(SettingDeviceSaveSelectIntent.OnToggleExportTarget(target))
                     },
                     label = {
-                        Text(
-                            text = target.displayName,
-                            fontSize = 12.sp,
-                        )
+                        Text(text = target.displayName)
                     },
                     leadingIcon = if (isSelected) {
                         {
                             Icon(
                                 imageVector = Icons.Rounded.Check,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(FilterChipDefaults.IconSize),
                             )
                         }
                     } else {

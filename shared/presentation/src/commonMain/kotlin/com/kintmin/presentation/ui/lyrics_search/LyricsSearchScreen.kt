@@ -30,13 +30,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.ui.common.SearchField
-import com.kintmin.presentation.ui.common.BottomActionBar
-import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
+import com.kintmin.presentation.ui.common.SearchField
 import com.kintmin.presentation.ui.lyrics_search.list_item.LyricsSearchItemView
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -149,7 +149,7 @@ fun LyricsSearchScreen(
                             CircularProgressIndicator()
                             Text(
                                 modifier = Modifier.padding(top = 12.dp),
-                                text = "검색 중...",
+                                text = "검색 중…",
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

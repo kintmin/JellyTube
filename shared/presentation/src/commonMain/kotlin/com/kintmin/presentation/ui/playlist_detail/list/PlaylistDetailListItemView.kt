@@ -50,9 +50,9 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import com.kintmin.presentation.animation.NowPlayingBars
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.overlayScrim
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.destructiveContent
+import com.kintmin.presentation.theme.overlayScrim
 import com.kintmin.presentation.ui.playlist_detail.dialog.RemoveAudioMediaFromPlaylistDialog
 import okio.Path.Companion.toPath
 
@@ -187,14 +187,10 @@ fun PlaylistDetailListItemView(
                 Box(
                     modifier = Modifier.align(Alignment.CenterVertically),
                 ) {
-                    IconButton(
-                        modifier = Modifier.size(48.dp),
-                        onClick = { isMenuExpanded = true },
-                    ) {
+                    IconButton(onClick = { isMenuExpanded = true }) {
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,
                             contentDescription = "더보기",
-                            modifier = Modifier.size(20.dp),
                             tint = contentMuted,
                         )
                     }

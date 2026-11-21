@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationFailureItem
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationReceivePhase
@@ -66,7 +67,7 @@ fun DataMigrationResultView(
             }
             if (isFailure) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = onClickExit) { Text("나가기") }
+                    OutlinedButton(onClick = onClickExit, colors = JellyTubeButtonColors.secondary()) { Text("나가기") }
                     Button(onClick = onClickRetry) { Text("다시 시도") }
                 }
             }

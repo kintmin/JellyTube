@@ -1,22 +1,10 @@
 package com.kintmin.presentation.ui.main.playlist.dialog
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.ui.common.JellyTubeDialog
+import com.kintmin.presentation.ui.common.ConfirmStyle
+import com.kintmin.presentation.ui.common.JellyTubeConfirmDialog
 
 @Composable
 fun PlaylistDeleteDialog(
@@ -26,70 +14,23 @@ fun PlaylistDeleteDialog(
     audioMediaCount: Int,
     deletePlaylist: () -> Unit,
 ) {
-    JellyTubeDialog(
+    JellyTubeConfirmDialog(
         showDialog = showDialog,
-        onDismiss = onDismiss,
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                modifier = Modifier.padding(bottom = 16.dp),
-                text = "플레이리스트 삭제",
-                style = MaterialTheme.typography.titleLarge,
-            )
-            Text(
-                modifier = Modifier.padding(bottom = 12.dp),
-                // 이름이 사용자 입력이라 조사를 붙이면 받침에서 비문이 된다.
-                text = buildString {
-                    append("'$playlistName' 플레이리스트를 지웁니다.")
-                    if (audioMediaCount > 0) {
-                        // 곡이 다른 USER 플레이리스트에도 들어 있으면 미분류로 가지 않고 거기 남는다.
-                        append("\n담긴 ${audioMediaCount}곡은 지워지지 않습니다.")
-                        append("\n다른 플레이리스트에 없는 곡은 미분류로 갑니다.")
-                    }
-                },
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Row(
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                OutlinedButton(
-                    // 파괴적 버튼과 간격을 벌려 반사적으로 눌리지 않게 한다.
-                    modifier = Modifier.padding(end = 24.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                    onClick = { onDismiss() },
-                ) {
-                    Text(
-                        text = "취소",
-                        fontSize = 14.sp,
-                        lineHeight = 14.sp,
-                    )
-                }
-                Button(
-                    contentPadding = PaddingValues(horizontal = 32.dp, vertical = 0.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError,
-                    ),
-                    onClick = {
-                        deletePlaylist()
-                        onDismiss()
-                    },
-                ) {
-                    Text(
-                        text = "삭제하기",
-                        fontSize = 14.sp,
-                        lineHeight = 14.sp,
-                    )
-                }
+        title = "플레이리스트 삭제",
+        // 이름이 사용자 입력이라 조사를 붙이면 받침에서 비문이 된다.
+        message = buildString {
+            append("'$playlistName' 플레이리스트를 지웁니다.")
+            if (audioMediaCount > 0) {
+                // 곡이 다른 USER 플레이리스트에도 들어 있으면 미분류로 가지 않고 거기 남는다.
+                append("\n담긴 ${audioMediaCount}곡은 지워지지 않습니다.")
+                append("\n다른 플레이리스트에 없는 곡은 미분류로 갑니다.")
             }
-        }
-    }
+        },
+        confirmText = "삭제",
+        confirmStyle = ConfirmStyle.Destructive,
+        onConfirm = deletePlaylist,
+        onDismiss = onDismiss,
+    )
 }
 
 @Preview

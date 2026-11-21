@@ -1,11 +1,6 @@
 package com.kintmin.presentation.ui.playlist_add
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,10 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,7 +33,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
@@ -48,12 +40,15 @@ import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.CollapsibleSearchField
 import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
 import com.kintmin.presentation.ui.common.SearchToggleButton
 import com.kintmin.presentation.ui.common.dragToSelect
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemUiState
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemView
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun PlaylistAddScreen(
@@ -147,19 +142,14 @@ fun PlaylistAddScreen(
                 },
             )
         },
-        floatingActionButton = {
-            AnimatedVisibility(
-                visible = checkedItemCount > 0,
-                enter = fadeIn() + scaleIn(),
-                exit = fadeOut() + scaleOut(),
-            ) {
-                ExtendedFloatingActionButton(
-                    modifier = Modifier.imePadding(),
-                    onClick = { sendIntent(PlaylistAddIntent.OnClickAdd) },
-                    shape = MaterialTheme.shapes.extraLarge,
-                    icon = { Icon(imageVector = Icons.Rounded.Add, contentDescription = null) },
-                    text = { Text(text = "${checkedItemCount}곡 추가") },
-                )
+        bottomBar = {
+            if (checkedItemCount > 0) {
+                BottomActionBar(modifier = Modifier.imePadding()) {
+                    BottomActionButton(
+                        text = "${checkedItemCount}곡 추가",
+                        onClick = { sendIntent(PlaylistAddIntent.OnClickAdd) },
+                    )
+                }
             }
         },
     ) { innerPadding ->
@@ -171,7 +161,7 @@ fun PlaylistAddScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(top = innerPadding.calculateTopPadding())
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 if (dataList?.isEmpty() == true) {
@@ -201,8 +191,10 @@ fun PlaylistAddScreen(
                             onCheckedIdsChange = { sendIntent(PlaylistAddIntent.OnDragSelectItems(it)) },
                         ),
                     state = listState,
-                    // 마지막 곡이 추가 버튼에 가려지지 않게 버튼 높이만큼 비운다.
-                    contentPadding = PaddingValues(top = searchFieldInset, bottom = 88.dp),
+                    contentPadding = PaddingValues(
+                        top = searchFieldInset,
+                        bottom = innerPadding.calculateBottomPadding(),
+                    ),
                 ) {
                     items(
                         count = items.size,

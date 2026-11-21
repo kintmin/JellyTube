@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.port.model.MigrationSource
+import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationReceivePhase
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveIntent
@@ -63,6 +64,7 @@ fun DataMigrationConnectView(
                     StatusText("데이터를 보낼 기기를 골라 주세요.")
                     phase.sources.forEach { source ->
                         OutlinedButton(
+                            colors = JellyTubeButtonColors.secondary(),
                             modifier = Modifier.fillMaxWidth(),
                             enabled = source.isCompatible,
                             onClick = { sendIntent(SettingDataMigrationReceiveIntent.OnSelectSource(source)) },

@@ -28,6 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
+import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.subtleFill
 import com.kintmin.presentation.ui.common.JellyTubeDialog
@@ -140,6 +141,7 @@ fun SleepTimerDialog(
             }
             if (remaining != null) {
                 OutlinedButton(
+                    colors = JellyTubeButtonColors.secondary(),
                     modifier = Modifier
                         .padding(top = 8.dp)
                         .fillMaxWidth(),

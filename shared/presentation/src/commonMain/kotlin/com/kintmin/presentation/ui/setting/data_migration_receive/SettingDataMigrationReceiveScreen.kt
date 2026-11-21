@@ -31,14 +31,15 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.kintmin.presentation.platform.KeepScreenOnEffect
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.topAppBarHeight
-import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
+import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.ui.common.ConfirmStyle
+import com.kintmin.presentation.ui.common.JellyTubeConfirmDialog
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationConnectView
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationResultView
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationStageListView
-import com.kintmin.presentation.ui.setting.dialog.SettingConfirmDialog
 import com.kintmin.presentation.ui.setting.section.SettingStepCardView
 import com.kintmin.presentation.ui.setting.section.SettingWarningBannerView
 import org.koin.compose.viewmodel.koinViewModel
@@ -83,12 +84,13 @@ fun SettingDataMigrationReceiveScreen(
         isExitDialogVisible = true
     }
     uiState.exitConfirmation?.let { confirmation ->
-        SettingConfirmDialog(
-            isShow = isExitDialogVisible,
+        JellyTubeConfirmDialog(
+            showDialog = isExitDialogVisible,
             title = confirmation.title(),
             message = confirmation.message(),
-            dismissText = "계속하기",
+            dismissText = confirmation.dismissText(),
             confirmText = "나가기",
+            confirmStyle = confirmation.confirmStyle(),
             onDismiss = { isExitDialogVisible = false },
             onConfirm = { sendIntent(SettingDataMigrationReceiveIntent.OnConfirmExit) },
         )
@@ -176,6 +178,16 @@ private fun DataMigrationExitConfirmation.title(): String = when (this) {
     DataMigrationExitConfirmation.StopRunning -> "가져오기를 중단할까요?"
     DataMigrationExitConfirmation.StopInterrupted -> "가져오기를 그만둘까요?"
     is DataMigrationExitConfirmation.LeaveFailures -> "가져오지 못한 곡이 있습니다"
+}
+
+private fun DataMigrationExitConfirmation.dismissText(): String = when (this) {
+    DataMigrationExitConfirmation.StopRunning -> "계속 받기"
+    DataMigrationExitConfirmation.StopInterrupted, is DataMigrationExitConfirmation.LeaveFailures -> "취소"
+}
+
+private fun DataMigrationExitConfirmation.confirmStyle(): ConfirmStyle = when (this) {
+    DataMigrationExitConfirmation.StopRunning, DataMigrationExitConfirmation.StopInterrupted -> ConfirmStyle.Destructive
+    is DataMigrationExitConfirmation.LeaveFailures -> ConfirmStyle.Primary
 }
 
 private fun DataMigrationExitConfirmation.message(): String = when (this) {

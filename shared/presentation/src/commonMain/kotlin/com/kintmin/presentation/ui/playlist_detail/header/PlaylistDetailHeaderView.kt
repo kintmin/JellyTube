@@ -2,10 +2,12 @@ package com.kintmin.presentation.ui.playlist_detail.header
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -43,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
+import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.FullScreenImageViewer
 import com.kintmin.presentation.ui.common.PlaybackToggleButton
@@ -167,70 +171,52 @@ fun PlaylistDetailHeaderView(
                     )
                 }
             }
-            // 40dp 는 M3 버튼 기본값이다. 고정하지 않는 이유는 글꼴 배율을 키웠을 때 글자
-            // 상하가 깎여서다.
+            // 높이를 고정하면 글꼴 배율을 키웠을 때 글자 상하가 깎인다.
             Row(
                 modifier = Modifier.heightIn(min = 40.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (!isBasePlaylist) {
                     OutlinedButton(
-                        onClick = {
-                            sendIntent(PlaylistDetailHeaderIntent.OnClickAdd)
-                        },
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        modifier = Modifier.wrapContentWidth()
+                        onClick = { sendIntent(PlaylistDetailHeaderIntent.OnClickAdd) },
+                        contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                        colors = JellyTubeButtonColors.secondary(),
                     ) {
                         Icon(
-                            modifier = Modifier
-                                .size(20.dp)
-                                .padding(0.dp),
+                            modifier = Modifier.size(ButtonDefaults.IconSize),
                             imageVector = Icons.Rounded.Add,
                             contentDescription = null,
                         )
-                        Text(
-                            modifier = Modifier.padding(0.dp),
-                            text = "추가",
-                            fontSize = 12.sp,
-                        )
+                        Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+                        Text(text = "추가")
                     }
-                    Box(modifier = Modifier.width(8.dp))
                 }
                 OutlinedButton(
-                    onClick = {
-                        sendIntent(PlaylistDetailHeaderIntent.OnClickEdit)
-                    },
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    modifier = Modifier.wrapContentWidth()
+                    onClick = { sendIntent(PlaylistDetailHeaderIntent.OnClickEdit) },
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                    colors = JellyTubeButtonColors.secondary(),
                 ) {
                     Icon(
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(ButtonDefaults.IconSize),
                         imageVector = Icons.Rounded.Edit,
                         contentDescription = null,
                     )
-                    Text(
-                        text = "편집",
-                        fontSize = 12.sp,
-                    )
+                    Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+                    Text(text = "편집")
                 }
                 Button(
-                    onClick = {
-                        sendIntent(PlaylistDetailHeaderIntent.OnClickPlay)
-                    },
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .weight(1f),
-                    contentPadding = PaddingValues(0.dp),
+                    onClick = { sendIntent(PlaylistDetailHeaderIntent.OnClickPlay) },
+                    modifier = Modifier.weight(1f),
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                 ) {
                     Icon(
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(ButtonDefaults.IconSize),
                         imageVector = Icons.Rounded.PlayArrow,
                         contentDescription = null,
                     )
-                    Text(
-                        text = "모두 재생",
-                        fontSize = 12.sp,
-                    )
+                    Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+                    Text(text = "모두 재생")
                 }
             }
         }

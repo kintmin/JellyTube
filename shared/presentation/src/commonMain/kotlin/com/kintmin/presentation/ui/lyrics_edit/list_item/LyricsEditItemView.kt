@@ -202,7 +202,7 @@ fun LyricsEditItemView(
 
         Box(modifier = Modifier.align(Alignment.Top)) {
             IconButton(onClick = { menuExpanded = true }) {
-                Icon(Icons.Rounded.MoreVert, contentDescription = "줄 메뉴")
+                Icon(Icons.Rounded.MoreVert, contentDescription = "줄 메뉴", tint = contentMuted)
             }
             DropdownMenu(
                 expanded = menuExpanded,

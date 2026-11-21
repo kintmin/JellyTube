@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss_dot_sss
+import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_edit.AudioEditIntent
 import com.kintmin.presentation.ui.audio_edit.AudioEditUiState
@@ -102,6 +103,7 @@ fun AudioEditControlsView(
                 )
             }
             OutlinedButton(
+                colors = JellyTubeButtonColors.secondary(),
                 modifier = Modifier.weight(1f),
                 contentPadding = buttonPadding,
                 enabled = data.canDelete,
@@ -115,6 +117,7 @@ fun AudioEditControlsView(
                 Text(modifier = Modifier.padding(start = 4.dp), text = "삭제", maxLines = 1)
             }
             OutlinedButton(
+                colors = JellyTubeButtonColors.secondary(),
                 modifier = Modifier.weight(1f),
                 contentPadding = buttonPadding,
                 onClick = { sendIntent(AudioEditIntent.OnClickTogglePreview) },
@@ -124,7 +127,7 @@ fun AudioEditControlsView(
                     imageVector = if (data.isPreviewPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                     contentDescription = null,
                 )
-                Text(modifier = Modifier.padding(start = 4.dp), text = "미리듣기", maxLines = 1)
+                Text(modifier = Modifier.padding(start = 4.dp), text = if (data.isPreviewPlaying) "멈춤" else "미리듣기", maxLines = 1)
             }
         }
 

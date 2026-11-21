@@ -1,19 +1,15 @@
 package com.kintmin.presentation.ui.audio_edit
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -41,6 +37,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigationevent.NavigationEventInfo
@@ -48,6 +45,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.rememberToaster
+import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.attention
 import com.kintmin.presentation.theme.topAppBarCompactHeight
@@ -63,9 +61,9 @@ import com.kintmin.presentation.ui.audio_edit.waveform.TimelineGrab
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineRulerView
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineWaveformView
 import com.kintmin.presentation.ui.audio_edit.waveform.rememberTimelineViewportState
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
 import kotlin.time.Duration.Companion.milliseconds
-import androidx.compose.ui.tooling.preview.Preview
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** 이 높이(dp)보다 낮으면 가로 화면용 압축 배치를 쓴다. */
@@ -174,10 +172,11 @@ fun AudioEditScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         TextButton(
+                            colors = JellyTubeButtonColors.text(),
                             enabled = data.canSave,
                             onClick = { isShowSaveDialog = true },
                         ) {
-                            Text(text = if (data.isSaving) "저장 중..." else "저장")
+                            Text(text = if (data.isSaving) "저장 중…" else "저장")
                         }
                     }
                 },
@@ -195,22 +194,12 @@ fun AudioEditScreen(
         bottomBar = {
             // 압축 배치에서는 저장 버튼이 상단 바에 있다
             if (isCompactHeight) return@Scaffold
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .navigationBarsPadding()
-                    .padding(16.dp),
-            ) {
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
+            BottomActionBar {
+                BottomActionButton(
+                    text = if (data.isSaving) "저장 중…" else "편집한 음원 저장",
                     enabled = data.canSave,
                     onClick = { isShowSaveDialog = true },
-                ) {
-                    Text(text = if (data.isSaving) "저장 중..." else "편집한 음원 저장")
-                }
+                )
             }
         },
     ) { innerPadding ->

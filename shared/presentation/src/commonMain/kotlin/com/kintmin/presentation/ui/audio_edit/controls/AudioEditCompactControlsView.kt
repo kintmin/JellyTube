@@ -75,7 +75,7 @@ fun AudioEditCompactControlsView(
         IconButton(onClick = { sendIntent(AudioEditIntent.OnClickTogglePreview) }) {
             Icon(
                 imageVector = if (data.isPreviewPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                contentDescription = "미리듣기",
+                contentDescription = if (data.isPreviewPlaying) "미리듣기 멈춤" else "미리듣기",
             )
         }
     }

@@ -1,6 +1,5 @@
 package com.kintmin.presentation.ui.audio_edit.dialog
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,9 +10,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -32,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_media.AudioMediaTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.destructiveContent
+import com.kintmin.presentation.ui.common.DialogButtonRow
+import com.kintmin.presentation.ui.common.DialogColumn
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 
 private enum class SaveMode { Overwrite, NewMedia }
@@ -62,17 +61,11 @@ fun AudioEditSaveDialog(
         onDismiss = onDismiss,
         modifier = Modifier.imePadding(),
     ) {
-        Column(
-            modifier = Modifier
-                // 키보드가 올라와 남은 높이보다 내용이 길면 스크롤해서 입력칸과 버튼을 볼 수 있게 한다
-                .verticalScroll(rememberScrollState())
-                .padding(vertical = 12.dp, horizontal = 24.dp),
+        DialogColumn(
+            title = "편집한 음원을 저장할까요?",
+            // 키보드가 올라와 남은 높이보다 내용이 길면 스크롤해서 입력칸과 버튼을 볼 수 있게 한다
+            modifier = Modifier.verticalScroll(rememberScrollState()),
         ) {
-            Text(
-                modifier = Modifier.padding(vertical = 12.dp),
-                text = "편집한 음원을 저장할까요?",
-                style = MaterialTheme.typography.titleLarge,
-            )
             Text(
                 text = "편집 결과 길이는 $resultPlayTime 입니다. 원본 파일은 지우지 않습니다.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -119,28 +112,18 @@ fun AudioEditSaveDialog(
                 )
             }
 
-            Row(
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(top = 20.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedButton(onClick = onDismiss) {
-                    Text(text = "취소")
-                }
-                Button(
-                    enabled = saveMode == SaveMode.Overwrite || newMediaName.isNotBlank(),
-                    onClick = {
-                        when (saveMode) {
-                            SaveMode.Overwrite -> onConfirmOverwrite()
-                            SaveMode.NewMedia -> onConfirmSaveAsNew(newMediaName)
-                        }
-                        onDismiss()
-                    },
-                ) {
-                    Text(text = "저장")
-                }
-            }
+            DialogButtonRow(
+                dismissText = "취소",
+                onDismiss = onDismiss,
+                confirmText = "저장",
+                confirmEnabled = saveMode == SaveMode.Overwrite || newMediaName.isNotBlank(),
+                onConfirm = {
+                    when (saveMode) {
+                        SaveMode.Overwrite -> onConfirmOverwrite()
+                        SaveMode.NewMedia -> onConfirmSaveAsNew(newMediaName)
+                    }
+                },
+            )
         }
     }
 }

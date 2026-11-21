@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,8 +23,6 @@ import androidx.compose.material.icons.rounded.Computer
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material.icons.rounded.Wifi
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,13 +42,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.keepsReceivingInBackground
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.topAppBarHeight
-import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
+import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.theme.topAppBarIconSize
+import com.kintmin.presentation.ui.common.BottomActionBar
+import com.kintmin.presentation.ui.common.BottomActionButton
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SettingFileShareReceiveScreen(
@@ -101,33 +100,16 @@ fun SettingFileShareReceiveScreen(
             )
         },
         bottomBar = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-            ) {
+            BottomActionBar {
                 when (uiState.serverStatus) {
-                    ServerStatus.STOPPED -> Button(
-                        onClick = {
-                            sendIntent(SettingFileShareReceiveIntent.OnClickStartServer)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("파일 공유 받기 시작")
-                    }
-                    ServerStatus.RUNNING -> Button(
-                        onClick = {
-                            sendIntent(SettingFileShareReceiveIntent.OnClickStopServer)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                        ),
-                    ) {
-                        Text("파일 공유 받기 중지")
-                    }
+                    ServerStatus.STOPPED -> BottomActionButton(
+                        text = "파일 공유 받기 시작",
+                        onClick = { sendIntent(SettingFileShareReceiveIntent.OnClickStartServer) },
+                    )
+                    ServerStatus.RUNNING -> BottomActionButton(
+                        text = "파일 공유 받기 중지",
+                        onClick = { sendIntent(SettingFileShareReceiveIntent.OnClickStopServer) },
+                    )
                 }
             }
         },

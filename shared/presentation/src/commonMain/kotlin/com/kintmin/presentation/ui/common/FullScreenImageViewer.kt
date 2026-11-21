@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -146,8 +146,8 @@ private fun FullScreenImageViewerContent(
                     .size(48.dp),
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Close,
-                    contentDescription = "Close",
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = "닫기",
                     tint = overlayContent,
                 )
             }

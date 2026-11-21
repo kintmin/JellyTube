@@ -1,11 +1,11 @@
 package com.kintmin.presentation.ui.common.wheel_picker
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -19,8 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 
 /** audioDurationMs 가 null 일 때 시/분 컬럼의 기본 상한(99분). */
 private const val DEFAULT_MAX_MS = 99 * 60_000L
@@ -103,7 +103,7 @@ fun TimePickerBottomSheet(
                     onConfirm(totalMs)
                 },
             ) {
-                Text("확인")
+                Text("적용")
             }
         }
     }
