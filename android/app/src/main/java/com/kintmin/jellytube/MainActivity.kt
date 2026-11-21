@@ -22,11 +22,11 @@ class MainActivity : ComponentActivity() {
     private val viewModel: AppViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-
-        viewModel.sendIntent(AppIntent.InitializeMediaController)
-        handleIntent(intent)
-        installSplashScreen().setOnExitAnimationListener { splash ->
+        splashScreen.setOnExitAnimationListener { splash ->
+            // API 31~32 에서는 이 콜백 직전에 라이브러리가 테마의 시스템 바 설정으로 되돌려 놓는다.
+            applyEdgeToEdge()
             splash.view.animate()
                 .alpha(0f)
                 .setDuration(SPLASH_FADE_MILLIS)
@@ -34,11 +34,9 @@ class MainActivity : ComponentActivity() {
                 .start()
         }
 
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.BLACK),
-        )
-        setTheme(R.style.Theme_JellyTube)
+        viewModel.sendIntent(AppIntent.InitializeMediaController)
+        handleIntent(intent)
+        applyEdgeToEdge()
 
         setContent {
             JellyTubeApp(
@@ -50,6 +48,13 @@ class MainActivity : ComponentActivity() {
         }
 
         StepForegroundService.startService(this)
+    }
+
+    private fun applyEdgeToEdge() {
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.BLACK),
+        )
     }
 
     override fun onNewIntent(intent: Intent) {
