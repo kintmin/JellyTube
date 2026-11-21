@@ -73,7 +73,7 @@ fun YoutubeUrlField(
                 Box(contentAlignment = Alignment.CenterStart) {
                     if (value.isEmpty()) {
                         Text(
-                            text = "Youtube URL 붙여넣기",
+                            text = "이동할 URL 붙여넣기",
                             style = textStyle,
                             color = gray60,
                             maxLines = 1,

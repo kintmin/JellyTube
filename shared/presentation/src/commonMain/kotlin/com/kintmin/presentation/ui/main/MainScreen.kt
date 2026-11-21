@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -75,6 +76,7 @@ import com.kintmin.presentation.ui.main.playlist.PlaylistViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadIntent
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeUrlField
+import com.kintmin.presentation.ui.common.floatingField
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebView
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadEvent
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
@@ -89,7 +91,7 @@ fun MainScreen(
     isDebugTabVisible: Boolean,
     navigateToPlaylistDetail: (id: Int, isBasePlaylist: Boolean) -> Unit,
     navigateToPlaylistEdit: (id: Int) -> Unit,
-    navigateToPlaylistAdd: (id: Int) -> Unit,
+    navigateToPlaylistAdd: (id: Int, playlistName: String) -> Unit,
     navigateToSetting: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
     navigateToFileShareReceive: () -> Unit,
@@ -137,7 +139,7 @@ fun MainScreen(
             when (event) {
                 is PlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistInfo.id, event.playlistInfo.isBasePlaylist)
                 is PlaylistEvent.NavigateToPlaylistEditScreen -> navigateToPlaylistEdit(event.playlistId)
-                is PlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId)
+                is PlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId, event.playlistName)
                 is PlaylistEvent.ShowToast -> toaster.show(event.message)
             }
         }
@@ -193,7 +195,7 @@ fun MainScreen(
     val webViewHandle = rememberWebViewHandle()
 
     var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
-    var searchInput by rememberSaveable { mutableStateOf(currentUrl) }
+    var searchInput by rememberSaveable { mutableStateOf("") }
     val tabSaveableStateHolder = rememberSaveableStateHolder()
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -241,7 +243,7 @@ fun MainScreen(
                                     val showSearchBar = !isSearchFieldVisible
                                     isSearchFieldVisible = showSearchBar
                                     if (showSearchBar) {
-                                        searchInput = currentUrl
+                                        searchInput = ""
                                     }
                                 },
                             ) {
@@ -267,21 +269,6 @@ fun MainScreen(
                         }
                     },
                 )
-
-                AnimatedVisibility(
-                    visible = selectedTab == MainTabItem.Search && isSearchFieldVisible,
-                    enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { fullHeight -> -fullHeight }) + fadeOut(),
-                ) {
-                    YoutubeUrlField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        value = searchInput,
-                        onValueChange = { searchInput = it },
-                        onSubmit = { submitSearchUrl() },
-                    )
-                }
             }
         },
         floatingActionButton = {
@@ -361,17 +348,36 @@ fun MainScreen(
     ) { innerPadding ->
         tabSaveableStateHolder.SaveableStateProvider(key = selectedTab.name) {
             when (selectedTab) {
-                MainTabItem.Search -> YoutubeWebView(
-                    currentUrl = currentUrl,
-                    webViewHandle = webViewHandle,
-                    sendIntent = sendYoutubeDownloadIntent,
-                    onNavigateToPlaylist = {
-                        sendMainIntent(MainIntent.ChangeTab(MainTabItem.Playlist))
-                    },
+                MainTabItem.Search -> Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
-                )
+                ) {
+                    YoutubeWebView(
+                        currentUrl = currentUrl,
+                        webViewHandle = webViewHandle,
+                        sendIntent = sendYoutubeDownloadIntent,
+                        onNavigateToPlaylist = {
+                            sendMainIntent(MainIntent.ChangeTab(MainTabItem.Playlist))
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    AnimatedVisibility(
+                        visible = isSearchFieldVisible,
+                        enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { fullHeight -> -fullHeight }) + fadeOut(),
+                    ) {
+                        YoutubeUrlField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .floatingField(),
+                            value = searchInput,
+                            onValueChange = { searchInput = it },
+                            onSubmit = { submitSearchUrl() },
+                        )
+                    }
+                }
 
                 MainTabItem.Playlist -> PlaylistView(
                     modifier = Modifier
