@@ -78,7 +78,7 @@ class ReorderStateTest {
         viewStart: Float = 0f,
         canMoveUp: Boolean = true,
         canMoveDown: Boolean = true,
-    ) = autoScrollDirection(
+    ) = autoScrollVelocity(
         itemTop = itemTop,
         itemBottom = itemTop + 80f,
         viewStart = viewStart,
@@ -93,28 +93,34 @@ class ReorderStateTest {
 
     @Test
     fun `위쪽 존에서 위로 끌면 손가락이 멈춰도 위로 스크롤한다`() {
-        assertEquals(-1, direction(itemTop = 50f, dragDirection = -1))
+        assertEquals(-0.5f, direction(itemTop = 50f, dragDirection = -1), 0f)
     }
 
     @Test
     fun `위쪽 존에서 손가락을 아래로 돌리면 스크롤을 멈춘다`() {
-        assertEquals(0, direction(itemTop = 50f, dragDirection = 1))
+        assertEquals(0f, direction(itemTop = 50f, dragDirection = 1), 0f)
     }
 
     @Test
     fun `상단 바에 덮인 만큼 위쪽 존이 내려온다`() {
-        assertEquals(0, direction(itemTop = 150f, dragDirection = -1))
-        assertEquals(-1, direction(itemTop = 150f, dragDirection = -1, viewStart = 100f))
+        assertEquals(0f, direction(itemTop = 150f, dragDirection = -1), 0f)
+        assertEquals(-0.5f, direction(itemTop = 150f, dragDirection = -1, viewStart = 100f), 0f)
     }
 
     @Test
     fun `넘어갈 이웃이 없는 방향으로는 스크롤하지 않는다`() {
-        assertEquals(0, direction(itemTop = 50f, dragDirection = -1, canMoveUp = false))
-        assertEquals(0, direction(itemTop = 900f, dragDirection = 1, canMoveDown = false))
+        assertEquals(0f, direction(itemTop = 50f, dragDirection = -1, canMoveUp = false), 0f)
+        assertEquals(0f, direction(itemTop = 900f, dragDirection = 1, canMoveDown = false), 0f)
     }
 
     @Test
     fun `아래쪽 존에서 아래로 끌면 아래로 스크롤한다`() {
-        assertEquals(1, direction(itemTop = 900f, dragDirection = 1))
+        assertEquals(0.8f, direction(itemTop = 900f, dragDirection = 1), 0.0001f)
+    }
+
+    @Test
+    fun `존에 막 들어서면 최저 속도부터 시작하고 깊을수록 빨라진다`() {
+        assertEquals(-0.25f, direction(itemTop = 95f, dragDirection = -1), 0f)
+        assertEquals(-1f, direction(itemTop = -20f, dragDirection = -1), 0f)
     }
 }

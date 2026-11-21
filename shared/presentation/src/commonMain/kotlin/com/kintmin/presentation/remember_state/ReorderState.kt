@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputChange
@@ -21,9 +22,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.math.sign
 
 /**
  * LazyColumn 드래그 재정렬 상태. 아이템 타입에 독립적이며 [idOf]로 아이템을 식별한다.
@@ -51,9 +52,9 @@ class ReorderState<T>(
     // (dragOffset 은 스왑 시 이웃 높이만큼 빠지며 부호가 반대로 튈 수 있어 방향 게이트로 쓸 수 없다.)
     private var dragDirection = 0
 
-    // 자동 스크롤 루프. 방향(-1, 0, +1)이 바뀔 때만 다시 띄운다.
+    // 자동 스크롤 루프. 방향이 바뀔 때만 다시 띄우고, 속도는 루프가 프레임마다 읽는다.
     private var autoScrollJob: Job? = null
-    private var autoScrollDirection = 0
+    private var autoScrollVelocity = 0f
 
     // 뷰포트 위쪽을 덮는 상단 바 높이(px). 덮인 자리에서는 스크롤 존에 닿을 수 없다.
     internal var topInsetPx = 0f
@@ -128,10 +129,10 @@ class ReorderState<T>(
         val settledIndex = items.indexOfFirst { idOf(it) == draggingItemId }
         dragOffsetY = clampDragOffsetY(dragOffset, settledIndex, items.lastIndex)
 
-        val currentItem = info.find { it.key == draggingItemId } ?: return updateAutoScroll(0)
+        val currentItem = info.find { it.key == draggingItemId } ?: return updateAutoScroll(0f)
         val itemTop = currentItem.offset + dragOffset
         updateAutoScroll(
-            autoScrollDirection(
+            autoScrollVelocity(
                 itemTop = itemTop,
                 itemBottom = itemTop + currentItem.size,
                 viewStart = listState.layoutInfo.viewportStartOffset + topInsetPx,
@@ -155,25 +156,27 @@ class ReorderState<T>(
         }
     }
 
-    private fun updateAutoScroll(direction: Int) {
-        if (direction == autoScrollDirection) return
-        autoScrollDirection = direction
+    private fun updateAutoScroll(velocity: Float) {
+        val isSameDirection = sign(velocity) == sign(autoScrollVelocity)
+        autoScrollVelocity = velocity
+        if (isSameDirection) return
         autoScrollJob?.cancel()
-        if (direction == 0) return
+        if (velocity == 0f) return
         autoScrollJob = coroutineScope.launch {
             while (isActive) {
+                // 고정 지연으로 돌면 화면 갱신과 어긋나 한 프레임에 두 번 또는 0 번 스크롤된다.
+                withFrameNanos { }
                 // 실제 스크롤된 양(consumed)만큼만 dragOffset 을 보정한다.
                 // 끝에 닿아 스크롤이 0이면 보정도 0 → 헛누적으로 인한 폭주를 막는다.
-                dragOffset += listState.scrollBy(direction * scrollSpeedPx)
+                dragOffset += listState.scrollBy(autoScrollVelocity * scrollSpeedPx)
                 settle()
-                delay(AUTO_SCROLL_FRAME_MILLIS)
             }
         }
     }
 
     fun onDragEnd() {
         draggingItemId = null
-        updateAutoScroll(0)
+        updateAutoScroll(0f)
     }
 
     // 드래그가 끝난 시점의 최종 인덱스. 호출부가 이 값으로 커밋 여부/순서를 판단한다.
@@ -183,13 +186,15 @@ class ReorderState<T>(
 }
 
 /**
- * 자동 스크롤 방향. -1 위, +1 아래, 0 멈춤.
+ * 자동 스크롤 속도. 부호가 방향(- 위, + 아래)이고 크기는 존에 들어간 깊이다. 존 경계에서 최고
+ * 속도로 튀어 나가지 않게 깊이에 비례시키되, 너무 느리게 기지 않도록 [MIN_AUTO_SCROLL_FRACTION]
+ * 에서 시작한다.
  *
  * 손가락 방향 게이트가 없으면, 항목이 상단 존에 들어간 순간 손가락을 아래로 내려도 위 스크롤이
  * 계속 돌아 항목이 상단에 갇힌다. 넘어갈 이웃이 없는 방향으로 스크롤하면 스왑 없이 보정만 쌓여
  * 손가락이 그만큼 빚을 진다.
  */
-internal fun autoScrollDirection(
+internal fun autoScrollVelocity(
     itemTop: Float,
     itemBottom: Float,
     viewStart: Float,
@@ -200,13 +205,18 @@ internal fun autoScrollDirection(
     canMoveDown: Boolean,
     canScrollBackward: Boolean,
     canScrollForward: Boolean,
-): Int = when {
-    canMoveUp && dragDirection < 0 && canScrollBackward && itemTop < viewStart + scrollZone -> -1
-    canMoveDown && dragDirection > 0 && canScrollForward && itemBottom > viewEnd - scrollZone -> 1
-    else -> 0
+): Float = when {
+    canMoveUp && dragDirection < 0 && canScrollBackward && itemTop < viewStart + scrollZone ->
+        -depthFraction(viewStart + scrollZone - itemTop, scrollZone)
+    canMoveDown && dragDirection > 0 && canScrollForward && itemBottom > viewEnd - scrollZone ->
+        depthFraction(itemBottom - (viewEnd - scrollZone), scrollZone)
+    else -> 0f
 }
 
-private const val AUTO_SCROLL_FRAME_MILLIS = 16L
+private fun depthFraction(depth: Float, scrollZone: Float): Float =
+    (depth / scrollZone).coerceIn(MIN_AUTO_SCROLL_FRACTION, 1f)
+
+private const val MIN_AUTO_SCROLL_FRACTION = 0.25f
 
 internal fun clampDragOffsetY(offset: Float, index: Int, lastIndex: Int): Float {
     var clamped = offset
