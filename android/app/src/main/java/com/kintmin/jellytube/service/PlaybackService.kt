@@ -2,6 +2,7 @@ package com.kintmin.jellytube.service
 
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -9,6 +10,7 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.kintmin.jellytube.intent.mediaSessionPendingIntent
 import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -35,8 +37,31 @@ class PlaybackService : MediaSessionService(), KoinComponent {
                 addListener(object : Player.Listener {
                     override fun onPlayerError(error: PlaybackException) {
                         appLog.sendErrorLog(
-                            ErrorLog("PlaybackService", "${error.errorCodeName} mediaId=${currentMediaItem?.mediaId}", error),
+                            ErrorLog(LOG_TAG, "${error.errorCodeName} mediaId=${currentMediaItem?.mediaId}", error),
                         )
+                    }
+
+                    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                        val why = when (reason) {
+                            Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT -> "반복"
+                            Player.MEDIA_ITEM_TRANSITION_REASON_AUTO -> "다음 곡 자동"
+                            Player.MEDIA_ITEM_TRANSITION_REASON_SEEK -> "곡 이동"
+                            Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED -> "재생목록 바뀜"
+                            else -> "reason=$reason"
+                        }
+                        log("곡 바뀜($why): mediaId=${mediaItem?.mediaId} ${mediaItem?.mediaMetadata?.title}")
+                    }
+
+                    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                        val why = when (reason) {
+                            Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST -> "사용자·리모컨"
+                            Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_FOCUS_LOSS -> "오디오 포커스 잃음"
+                            Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_BECOMING_NOISY -> "이어폰 빠짐"
+                            Player.PLAY_WHEN_READY_CHANGE_REASON_REMOTE -> "원격"
+                            Player.PLAY_WHEN_READY_CHANGE_REASON_END_OF_MEDIA_ITEM -> "곡 끝"
+                            else -> "reason=$reason"
+                        }
+                        log("${if (playWhenReady) "재생" else "일시정지"}($why): mediaId=${currentMediaItem?.mediaId}")
                     }
                 })
             }
@@ -47,6 +72,8 @@ class PlaybackService : MediaSessionService(), KoinComponent {
             .build()
     }
 
+    private fun log(message: String) = appLog.sendDebugLog(DebugLog(LOG_TAG, message))
+
     override fun onDestroy() {
         mediaSession?.run {
             player.release()
@@ -56,3 +83,5 @@ class PlaybackService : MediaSessionService(), KoinComponent {
         super.onDestroy()
     }
 }
+
+private const val LOG_TAG = "PlaybackService"
