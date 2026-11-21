@@ -68,4 +68,25 @@ sealed interface PreferencesKey<T> {
     data object IsStepEnabled : PreferencesKey<Boolean> {
         override val key = booleanPreferencesKey("isStepEnabled")
     }
+
+    data object BackupFolderId : PreferencesKey<String> {
+        override val key = stringPreferencesKey("backupFolderId")
+    }
+
+    data object BackupFolderLabel : PreferencesKey<String> {
+        override val key = stringPreferencesKey("backupFolderLabel")
+    }
+
+    data object BackupLastSuccessMillis : PreferencesKey<Long> {
+        override val key = longPreferencesKey("backupLastSuccessMillis")
+    }
+
+    data object BackupLastFailureMillis : PreferencesKey<Long> {
+        override val key = longPreferencesKey("backupLastFailureMillis")
+    }
+
+    /** `BackupFailureReason` 의 name. */
+    data object BackupLastFailureReason : PreferencesKey<String> {
+        override val key = stringPreferencesKey("backupLastFailureReason")
+    }
 }

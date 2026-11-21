@@ -8,6 +8,8 @@ sealed interface SettingIntent {
     data object OnDismissPlaylistIdOnDownloadBottomSheet : SettingIntent
     data class OnSelectPlaylistIdOnDownload(val playlistId: Int) : SettingIntent
     data object OnClickStepTile : SettingIntent
+    data object OnClickBackupRestoreTile : SettingIntent
+    data class OnBackupFolderPicked(val folderId: String, val label: String) : SettingIntent
     data object OnClickAnomalyDataCheckTile : SettingIntent
     data object OnClickAppLogTile : SettingIntent
     data object OnClickImportAudioTile : SettingIntent

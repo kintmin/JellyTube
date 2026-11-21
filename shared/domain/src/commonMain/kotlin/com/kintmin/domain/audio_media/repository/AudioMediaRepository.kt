@@ -8,10 +8,14 @@ import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.lyrics.model.LyricsVariant
+import com.kintmin.domain.youtube.model.YoutubePlaylist
 import kotlinx.coroutines.flow.Flow
 
 interface AudioMediaRepository {
     suspend fun downloadYoutubeAudio(downloadUrl: String): Result<DownloadedYoutubeAudio>
+
+    /** 영상은 받지 않고 재생목록 페이지만 읽는다. */
+    suspend fun fetchYoutubePlaylist(playlistUrl: String): Result<YoutubePlaylist>
 
     /** 받은 썸네일을 [fileName] 으로 압축해 저장하고 확장자 붙은 이름을 돌려준다. */
     suspend fun saveThumbnail(thumbnailUrl: String, fileName: String): Result<String>

@@ -37,6 +37,7 @@ fun NavGraphBuilder.mainScreen(
     navigateToSetting: () -> Unit,
     navigateToSecretPlaylist: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
+    navigateToPlaylistDownload: (url: String) -> Unit,
 ) {
     composable<MainScreenRoute>(typeMap = mainScreenTypeMap) { backStackEntry ->
         MainScreen(
@@ -48,6 +49,7 @@ fun NavGraphBuilder.mainScreen(
             navigateToSetting = navigateToSetting,
             navigateToSecretPlaylist = navigateToSecretPlaylist,
             navigateToPlayerDetail = navigateToPlayerDetail,
+            navigateToPlaylistDownload = navigateToPlaylistDownload,
         )
     }
 }

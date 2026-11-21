@@ -7,12 +7,14 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlo
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
+import com.kintmin.domain.backup.usecase.BackupIfDueUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.EnsureSystemPlaylistsUseCase
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.deeplink.DeepLinkParser
+import com.kintmin.presentation.platform.continueInBackgroundWhile
 import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.drop
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 
 /**
  * Compose 밖에서 들어오는 딥링크를 화면과 같은 인스턴스로 넘겨야 해서 한 벌만 잡는다.
@@ -37,6 +40,7 @@ class AppViewModel(
     private val fetchSecretModeEnabledFlowUseCase: FetchSecretModeEnabledFlowUseCase,
     private val endSecretModeUseCase: EndSecretModeUseCase,
     private val fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase,
+    private val backupIfDueUseCase: BackupIfDueUseCase,
 ) : ViewModel() {
 
     private val eventChannel = Channel<NavigationEvent>(capacity = 8)
@@ -75,6 +79,13 @@ class AppViewModel(
             AppIntent.InitializeMediaController -> initializeMediaController()
             is AppIntent.HandleDeepLink -> handleDeepLink(intent.url)
             is AppIntent.ImportSharedAudio -> importSharedAudio(intent.fileIdentifiers)
+            AppIntent.OnAppBackground -> backupIfDue()
+        }
+    }
+
+    private fun backupIfDue() {
+        viewModelScope.launch {
+            continueInBackgroundWhile { backupIfDueUseCase(Clock.System.now().toEpochMilliseconds()) }
         }
     }
 

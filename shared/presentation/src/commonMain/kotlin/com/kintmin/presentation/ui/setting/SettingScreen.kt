@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AudioFile
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.Computer
 import androidx.compose.material.icons.rounded.ContentCopy
@@ -40,6 +41,7 @@ import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.SystemSettingsTarget
 import com.kintmin.presentation.platform.rememberAppVersionName
 import com.kintmin.presentation.platform.rememberAudioFilePicker
+import com.kintmin.presentation.platform.rememberBackupFolderPicker
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberSystemSettingsOpener
 import com.kintmin.presentation.platform.rememberToaster
@@ -66,6 +68,7 @@ fun SettingScreen(
     navigateToDataMigrationReceive: () -> Unit,
     navigateToDeviceSave: () -> Unit,
     navigateToSecretPlaylistGuide: () -> Unit,
+    navigateToBackupRestore: () -> Unit,
 ) {
     val viewModel = koinViewModel<SettingViewModel>()
     val uiState by viewModel.uiState.collectAsState()
@@ -78,6 +81,9 @@ fun SettingScreen(
     // 음원 가져오기는 선택기를 "오디오" 루트에서 연다.
     val audioFilePicker = rememberAudioFilePicker(startAtAudioRoot = true) { fileIdentifiers ->
         viewModel.sendIntent(SettingIntent.OnAudioFilesSelected(fileIdentifiers))
+    }
+    val backupFolderPicker = rememberBackupFolderPicker { folderId, label ->
+        viewModel.sendIntent(SettingIntent.OnBackupFolderPicked(folderId, label))
     }
 
     LaunchedEffect(Unit) {
@@ -94,6 +100,8 @@ fun SettingScreen(
                 SettingEvent.NavigateToDeviceSaveScreen -> navigateToDeviceSave()
                 SettingEvent.NavigateToSecretPlaylistGuideScreen -> navigateToSecretPlaylistGuide()
                 SettingEvent.LaunchAudioFilePicker -> audioFilePicker.launch()
+                SettingEvent.NavigateToBackupRestoreScreen -> navigateToBackupRestore()
+                SettingEvent.LaunchBackupFolderPicker -> backupFolderPicker.launch()
                 is SettingEvent.ShowToast ->
                     toaster.show(event.message)
                 is SettingEvent.CopyDeviceId -> {
@@ -287,6 +295,13 @@ fun SettingScreen(
             }
 
             SettingSectionView(title = "문제 해결") {
+                SettingItemView(
+                    title = "백업 및 복원",
+                    icon = Icons.Rounded.Backup,
+                    description = uiState.backupDescription,
+                    onClick = { sendIntent(SettingIntent.OnClickBackupRestoreTile) },
+                    trailing = { SettingNavigateIcon(contentDescription = "백업 및 복원 화면으로 이동") },
+                )
                 SettingItemView(
                     title = "이상 데이터 점검 및 제거",
                     icon = Icons.Rounded.CleaningServices,

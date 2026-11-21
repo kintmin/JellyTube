@@ -27,6 +27,7 @@ fun NavGraphBuilder.settingGraph(
     navigateToDataMigrationReceive: () -> Unit,
     navigateToDeviceSave: () -> Unit,
     navigateToSecretPlaylistGuide: () -> Unit,
+    navigateToBackupRestore: () -> Unit,
     settingDestination: NavGraphBuilder.() -> Unit,
 ) {
     navigation<SettingGraph>(startDestination = SettingScreenRoute) {
@@ -40,6 +41,7 @@ fun NavGraphBuilder.settingGraph(
                 navigateToDataMigrationReceive = navigateToDataMigrationReceive,
                 navigateToDeviceSave = navigateToDeviceSave,
                 navigateToSecretPlaylistGuide = navigateToSecretPlaylistGuide,
+                navigateToBackupRestore = navigateToBackupRestore,
             )
         }
 

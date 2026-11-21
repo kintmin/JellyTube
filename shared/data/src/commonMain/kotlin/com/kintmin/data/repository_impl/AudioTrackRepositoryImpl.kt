@@ -82,4 +82,9 @@ class AudioTrackRepositoryImpl constructor(
             }
         }
     }
+
+    override suspend fun reorderTracks(playlistId: Int, orderedAudioMediaIds: List<Int>): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching { audioMediaFacade.reorderTracks(playlistId, orderedAudioMediaIds) }
+        }
 }

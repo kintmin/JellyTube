@@ -1,5 +1,6 @@
 package com.kintmin.data.local_file
 
+import com.kintmin.data.backup.BackupFiles
 import com.kintmin.data.local_file.model.CopiedAudioInfo
 import com.kintmin.data.local_file.model.ExportedAudioInfo
 import com.kintmin.domain.audio_media.model.AudioExportTarget
@@ -67,6 +68,8 @@ internal class FileManagerImpl : FileManager {
     override fun getLyricFileFullPath(fileNameWithExt: String) = core.getLyricFileFullPath(fileNameWithExt)
 
     override fun getMigrationStagingDirPath() = core.getMigrationStagingDirPath()
+
+    override fun getBackupDirPath() = core.getBackupDirPath()
 
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<String> = runCatching {
         withContext(Dispatchers.IO) {
@@ -226,6 +229,7 @@ private object IosAppDirectories : AppDirectories {
     override fun lyric() = documents() / AppDirectories.LYRIC_DIR_NAME
     override fun log() = documents() / AppDirectories.LOG_DIR_NAME
     override fun migrationStaging() = documents() / AppDirectories.MIGRATION_STAGING_DIR_NAME
+    override fun backup() = documents() / BackupFiles.LOCAL_DIR_NAME
 
     private fun documents(): Path {
         val url: NSURL = NSFileManager.defaultManager.URLForDirectory(
@@ -253,7 +257,7 @@ private fun NSData.sha256Hex(): String = memScoped {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private fun NSData.toByteArray(): ByteArray {
+internal fun NSData.toByteArray(): ByteArray {
     val size = length.toInt()
     if (size == 0) return ByteArray(0)
     val source = bytes?.reinterpret<ByteVar>() ?: return ByteArray(0)
@@ -262,7 +266,7 @@ private fun NSData.toByteArray(): ByteArray {
 
 /** 빈 배열은 `addressOf(0)` 이 터지므로 따로 막는다. */
 @OptIn(ExperimentalForeignApi::class)
-private fun ByteArray.toNSData(): NSData {
+internal fun ByteArray.toNSData(): NSData {
     if (isEmpty()) return NSData()
     return usePinned { pinned ->
         NSData.create(bytes = pinned.addressOf(0), length = size.toULong())

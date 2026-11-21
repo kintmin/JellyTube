@@ -15,6 +15,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,19 +29,28 @@ import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationS
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveUiState
 
 @Composable
-fun DataMigrationStageListView(stages: List<DataMigrationStageItem>) {
+fun DataMigrationStageListView(
+    stages: List<DataMigrationStageItem>,
+    label: (DataMigrationStageKind) -> String = { it.label },
+) {
     Card(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            stages.forEach { StageRow(it) }
-        }
+        DataMigrationStageRows(stages = stages, label = label, modifier = Modifier.padding(16.dp))
     }
 }
 
 @Composable
-private fun StageRow(stage: DataMigrationStageItem) {
+fun DataMigrationStageRows(
+    stages: List<DataMigrationStageItem>,
+    label: (DataMigrationStageKind) -> String,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        stages.forEach { StageRow(it, label(it.kind)) }
+    }
+}
+
+@Composable
+private fun StageRow(stage: DataMigrationStageItem, label: String) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -48,7 +58,7 @@ private fun StageRow(stage: DataMigrationStageItem) {
         ) {
             StageIcon(stage.status)
             Text(
-                text = stage.kind.label,
+                text = label,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
@@ -117,5 +127,15 @@ private fun DataMigrationStageListViewFailedPreview() {
                 DataMigrationStageItem(DataMigrationStageKind.APPLY, DataMigrationStageStatus.PENDING),
             ),
         )
+    }
+}
+
+@Preview
+@Composable
+private fun DataMigrationStageRowsPreview() {
+    JellyTubeTheme {
+        Surface {
+            DataMigrationStageRows(stages = SettingDataMigrationReceiveUiState.getMock().stages, label = { it.label })
+        }
     }
 }

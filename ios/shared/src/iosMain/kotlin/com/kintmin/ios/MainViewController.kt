@@ -59,6 +59,7 @@ fun mainViewController(): UIViewController = ComposeUIViewController {
         // iOS 에는 대응하는 빌드 변형이 없다.
         isDebugTabVisible = false,
         onDeepLink = { url -> appViewModel.sendIntent(AppIntent.HandleDeepLink(url)) },
+        onAppBackground = { appViewModel.sendIntent(AppIntent.OnAppBackground) },
     )
 }
 

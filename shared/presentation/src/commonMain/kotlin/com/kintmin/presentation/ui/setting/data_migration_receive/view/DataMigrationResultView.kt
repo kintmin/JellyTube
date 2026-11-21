@@ -9,6 +9,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -58,7 +59,8 @@ fun DataMigrationResultView(
                         )
                     }
                     if (phase.failures.isNotEmpty()) {
-                        HorizontalDivider()
+                        // 기본 구분선 색은 색이 깔린 카드 위에서 떠 보여 카드 글자색을 옅게 쓴다.
+                        HorizontalDivider(color = LocalContentColor.current.copy(alpha = 0.3f))
                         phase.failures.forEach { FailureRow(it) }
                     }
                 }

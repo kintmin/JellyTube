@@ -25,31 +25,35 @@ import com.kintmin.fileshare.MigrationTrackDto
 
 fun MigrationExport.toManifestDto() = MigrationManifestDto(
     formatVersion = FileShareConstants.MIGRATION_FORMAT_VERSION,
-    snapshot = MigrationSnapshotDto(
-        audioMedias = snapshot.audioMedias.map { it.toDto() },
-        playlists = snapshot.playlists.map { it.toDto() },
-        tracks = snapshot.tracks.map { MigrationTrackDto(it.playlistId, it.audioMediaId, it.sequence) },
-        editProjects = snapshot.editProjects.map { MigrationEditProjectDto(it.audioMediaId, it.timelineJson) },
-        steps = snapshot.steps.map { MigrationStepDto(it.createdTimeMillis, it.stepSensor) },
-    ),
+    snapshot = snapshot.toDto(),
     files = files.map { MigrationFileDto(kind = it.file.kind.name, name = it.file.name, size = it.size) },
     downloadSettings = downloadSettings?.let { MigrationDownloadSettingsDto(it.shouldInsertAtTop, it.playlistId) },
 )
 
 /** 모르는 종류의 파일은 버린다. 그 파일을 가리키는 값은 받지 못한 것으로 친다. */
 fun MigrationManifestDto.toExport() = MigrationExport(
-    snapshot = MigrationSnapshot(
-        audioMedias = snapshot.audioMedias.map { it.toDomain() },
-        playlists = snapshot.playlists.map { it.toDomain() },
-        tracks = snapshot.tracks.map { MigrationTrack(it.playlistId, it.audioMediaId, it.sequence) },
-        editProjects = snapshot.editProjects.map { MigrationEditProject(it.audioMediaId, it.timelineJson) },
-        steps = snapshot.steps.map { MigrationStep(it.createdTimeMillis, it.stepSensor) },
-    ),
+    snapshot = snapshot.toDomain(),
     files = files.mapNotNull { dto ->
         val kind = runCatching { MigrationFileKind.valueOf(dto.kind) }.getOrNull() ?: return@mapNotNull null
         MigrationFileEntry(MigrationFile(kind, dto.name), dto.size)
     },
     downloadSettings = downloadSettings?.let { MigrationDownloadSettings(it.shouldInsertAtTop, it.playlistId) },
+)
+
+fun MigrationSnapshot.toDto() = MigrationSnapshotDto(
+    audioMedias = audioMedias.map { it.toDto() },
+    playlists = playlists.map { it.toDto() },
+    tracks = tracks.map { MigrationTrackDto(it.playlistId, it.audioMediaId, it.sequence) },
+    editProjects = editProjects.map { MigrationEditProjectDto(it.audioMediaId, it.timelineJson) },
+    steps = steps.map { MigrationStepDto(it.createdTimeMillis, it.stepSensor) },
+)
+
+fun MigrationSnapshotDto.toDomain() = MigrationSnapshot(
+    audioMedias = audioMedias.map { it.toDomain() },
+    playlists = playlists.map { it.toDomain() },
+    tracks = tracks.map { MigrationTrack(it.playlistId, it.audioMediaId, it.sequence) },
+    editProjects = editProjects.map { MigrationEditProject(it.audioMediaId, it.timelineJson) },
+    steps = steps.map { MigrationStep(it.createdTimeMillis, it.stepSensor) },
 )
 
 private fun MigrationAudioMedia.toDto() = MigrationAudioMediaDto(

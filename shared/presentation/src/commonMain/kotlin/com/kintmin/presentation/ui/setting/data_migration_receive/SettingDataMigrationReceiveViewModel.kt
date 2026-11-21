@@ -230,6 +230,7 @@ class SettingDataMigrationReceiveViewModel constructor(
         MigrationFailureReason.UNSUPPORTED_FORMAT -> "이 기기에서 재생할 수 없는 형식"
         MigrationFailureReason.REDOWNLOAD_FAILED -> "원본에서 다시 받을 수 없음"
         MigrationFailureReason.TRANSFER_FAILED -> "전송 실패"
+        MigrationFailureReason.NOT_RESTORABLE -> "원본이 유튜브 링크가 아니라 다시 받을 수 없음"
     }
 
     private fun Throwable.toMessage(): String = when (this) {

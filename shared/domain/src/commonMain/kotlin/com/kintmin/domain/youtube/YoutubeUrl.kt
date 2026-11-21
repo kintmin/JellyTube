@@ -14,8 +14,34 @@ object YoutubeUrl {
         "youtu.be",
     )
 
+    private const val MIX_PREFIX = "RD"
+
     /** yt-dlp 는 영상 ID 를 뽑을 수 있는 주소면 받는다. 같은 기준으로 가른다. */
     fun isDownloadable(url: String): Boolean = videoIdOf(url) != null
+
+    fun kindOf(url: String): YoutubeUrlKind {
+        val isPlaylist = playlistIdOf(url) != null
+        val isVideo = videoIdOf(url) != null
+        return when {
+            isVideo && isPlaylist -> YoutubeUrlKind.VIDEO_IN_PLAYLIST
+            isVideo -> YoutubeUrlKind.VIDEO
+            isPlaylist && pathOf(url)?.split('/')?.firstOrNull() == "playlist" -> YoutubeUrlKind.PLAYLIST
+            else -> YoutubeUrlKind.NOT_DOWNLOADABLE
+        }
+    }
+
+    /**
+     * `list` 값. 유튜브가 영상마다 자동으로 만드는 믹스(`RD` 로 시작)는 볼 때마다 사람마다 내용이 달라
+     * 받을 재생목록으로 보지 않는다.
+     */
+    fun playlistIdOf(url: String): String? {
+        val host = hostOf(url)?.lowercase() ?: return null
+        if (host !in DOWNLOADABLE_HOSTS) return null
+        val listId = firstQueryValueOf(url, key = "list")?.ifEmpty { null } ?: return null
+        return listId.takeUnless { it.startsWith(MIX_PREFIX) }
+    }
+
+    fun playlistPageUrlOf(playlistId: String): String = "https://www.youtube.com/playlist?list=$playlistId"
 
     /** 같은 영상을 가리키는 주소는 `si`·`t` 같은 파라미터나 호스트가 달라도 같은 값을 낸다. 영상 주소가 아니면 null. */
     fun videoIdOf(url: String): String? {

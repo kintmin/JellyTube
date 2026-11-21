@@ -91,6 +91,7 @@ fun MainScreen(
     navigateToSetting: () -> Unit,
     navigateToSecretPlaylist: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
+    navigateToPlaylistDownload: (url: String) -> Unit,
 ) {
     val toaster = rememberToaster()
     val mainViewModel = koinViewModel<MainViewModel>()
@@ -140,6 +141,7 @@ fun MainScreen(
         navigateToSetting = navigateToSetting,
         navigateToSecretPlaylist = navigateToSecretPlaylist,
         navigateToPlayerDetail = navigateToPlayerDetail,
+        navigateToPlaylistDownload = navigateToPlaylistDownload,
         sendMainIntent = mainViewModel::sendIntent,
         sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
         sendPlaylistIntent = playlistViewModel::sendIntent,
@@ -171,6 +173,7 @@ fun MainScreen(
     navigateToSetting: () -> Unit,
     navigateToSecretPlaylist: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
+    navigateToPlaylistDownload: (url: String) -> Unit,
     sendMainIntent: (MainIntent) -> Unit,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
@@ -270,6 +273,7 @@ fun MainScreen(
                     onClickDownload = { url ->
                         sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnClickDownload(url))
                     },
+                    navigateToPlaylistDownload = navigateToPlaylistDownload,
                 )
             }
         },
@@ -400,6 +404,7 @@ fun MainScreenSearchTabPreview() {
             navigateToSetting = {},
             navigateToSecretPlaylist = {},
             navigateToPlayerDetail = {},
+            navigateToPlaylistDownload = {},
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},
@@ -421,6 +426,7 @@ fun MainScreenPlayTabPreview() {
             navigateToSetting = {},
             navigateToSecretPlaylist = {},
             navigateToPlayerDetail = {},
+            navigateToPlaylistDownload = {},
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},

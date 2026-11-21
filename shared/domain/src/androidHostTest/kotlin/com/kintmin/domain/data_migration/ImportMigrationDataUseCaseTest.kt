@@ -135,6 +135,10 @@ class ImportMigrationDataUseCaseTest {
             Result.success(MigrationApplyResult(plan.newPlaylists.associate { it.id to it.id + 1000 }))
         }
 
+        override suspend fun stageLocalFile(fileFullPath: String, file: MigrationFile) = error("이전에서 부르지 않는다")
+        override suspend fun stageText(file: MigrationFile, text: String) = error("이전에서 부르지 않는다")
+        override suspend fun fetchStagedFiles() = error("이전에서 부르지 않는다")
+
         override suspend fun clearStaging(): Result<Unit> {
             calls += "clear"
             return if (failClearStaging) Result.failure(IllegalStateException("디스크 오류")) else Result.success(Unit)

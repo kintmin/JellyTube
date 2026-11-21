@@ -3,6 +3,8 @@ package com.kintmin.presentation.ui.setting
 sealed interface SettingEvent {
     data object NavigateToStepScreen : SettingEvent
     data object NavigateToAppLogScreen : SettingEvent
+    data object NavigateToBackupRestoreScreen : SettingEvent
+    data object LaunchBackupFolderPicker : SettingEvent
     data object LaunchAudioFilePicker : SettingEvent
     data object NavigateToDeviceSaveScreen : SettingEvent
     data object NavigateToSecretPlaylistGuideScreen : SettingEvent

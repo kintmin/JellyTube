@@ -23,6 +23,7 @@ class FileManagerCoreTest {
                 override fun lyric() = root / AppDirectories.LYRIC_DIR_NAME
                 override fun log() = root / AppDirectories.LOG_DIR_NAME
                 override fun migrationStaging() = root / AppDirectories.MIGRATION_STAGING_DIR_NAME
+                override fun backup() = root / "backup"
             },
         )
     }

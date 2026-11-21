@@ -108,6 +108,24 @@ class DataMigrationRepositoryImplTest {
     }
 
     @Test
+    fun `이 기기에서 만든 파일과 가사를 쌓아 두면 받아 둔 목록에 들고 반영할 수 있다`() = runTest {
+        facade.ensureSystemPlaylists()
+        val downloaded = root / "downloaded.m4a"
+        fileSystem.write(downloaded) { write(byteArrayOf(1, 2, 3, 4)) }
+        val lyric = MigrationFile(MigrationFileKind.LYRIC, "a.lrc")
+
+        repository.stageLocalFile(downloaded.toString(), audioEntry.file).getOrThrow()
+        repository.stageText(lyric, "[00:01.00]가사").getOrThrow()
+        fileSystem.write(root / "staging" / "AUDIO" / "b.m4a.part") { write(byteArrayOf(9)) }
+
+        assertFalse(fileSystem.exists(downloaded))
+        assertEquals(setOf(audioEntry.file, lyric), repository.fetchStagedFiles().getOrThrow())
+        val source = sourceWithOneAudio().let { s -> s.copy(audioMedias = s.audioMedias.map { it.copy(lyricFileName = "a.lrc") }) }
+        repository.applyPlan(MigrationPlanner.plan(source, facade.fetchMigrationSnapshot())).getOrThrow()
+        assertEquals("[00:01.00]가사", fileSystem.read(root / "lyrics" / "a.lrc") { readUtf8() })
+    }
+
+    @Test
     fun `DB 반영이 실패하면 옮긴 파일을 지우고 아무 행도 남기지 않는다`() = runTest {
         facade.ensureSystemPlaylists()
         repository.stageFile(endpoint, "t", audioEntry) {}.getOrThrow()

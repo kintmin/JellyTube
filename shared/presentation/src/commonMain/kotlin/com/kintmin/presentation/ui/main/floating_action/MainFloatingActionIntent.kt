@@ -8,4 +8,9 @@ sealed interface MainFloatingActionIntent {
     data object OnClickCreatePlaylist : MainFloatingActionIntent
     data object OnDismissCreatePlaylistDialog : MainFloatingActionIntent
     data class OnCreatePlaylist(val title: String) : MainFloatingActionIntent
+
+    /** 재생목록에서 연 영상을 받을 때 그 곡만 받을지 재생목록 전체를 받을지 고른다. */
+    data object OnChooseSingleDownload : MainFloatingActionIntent
+    data object OnChoosePlaylistDownload : MainFloatingActionIntent
+    data object OnDismissDownloadChoice : MainFloatingActionIntent
 }

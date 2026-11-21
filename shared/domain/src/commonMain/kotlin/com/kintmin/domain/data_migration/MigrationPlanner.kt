@@ -5,8 +5,14 @@ import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationPlaylist
 import com.kintmin.domain.data_migration.model.MigrationRef
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
+import com.kintmin.domain.data_migration.model.MigrationStep
 import com.kintmin.domain.data_migration.model.MigrationTrackAddition
 import com.kintmin.domain.playlist.model.PlaylistType
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /** 보내는 기기의 데이터를 받는 기기에 합치는 계획을 세운다. [target] 에는 시스템 플레이리스트가 모두 있어야 한다. */
 object MigrationPlanner {
@@ -14,7 +20,12 @@ object MigrationPlanner {
     private val creationOrder = compareBy<MigrationAudioMedia>({ it.createdTimeMillis }, { it.id })
     private val playlistOrder = compareBy<MigrationPlaylist>({ it.sequence }, { it.id })
 
-    fun plan(source: MigrationSnapshot, target: MigrationSnapshot): MigrationPlan {
+    fun plan(
+        source: MigrationSnapshot,
+        target: MigrationSnapshot,
+        timeZone: TimeZone = TimeZone.currentSystemDefault(),
+        today: LocalDate = Clock.System.now().toLocalDateTime(timeZone).date,
+    ): MigrationPlan {
         val targetAudioIdByKey = target.audioMedias.sortedWith(creationOrder)
             .distinctBy { SourceKey.of(it.source) }
             .associate { SourceKey.of(it.source) to it.id }
@@ -101,9 +112,24 @@ object MigrationPlanner {
             uncategorizedRemovals = uncategorizedRemovals,
             // 편집 상태는 편집본 파일과 짝이다.
             editProjects = source.editProjects.filter { it.audioMediaId in editedNewAudioIds },
-            steps = source.steps,
+            steps = stepsToAdd(source, target, timeZone, today),
             requiredFiles = MigrationFiles.referencedBy(newAudioMedias, newPlaylists),
             playlistRefBySourceId = playlistRefBySourceId,
         )
+    }
+
+    /**
+     * 하루 걸음수는 그날 기록의 증가분을 더한다. 기준점이 다른 기록이 한 날에 섞이면 값이 부풀어, 날짜 단위로 한쪽만 쓴다.
+     * 이 기기에 기록이 있는 날과, 걸음 측정을 켜는 순간 이 기기의 센서 값이 붙는 오늘은 이 기기 쪽이다.
+     */
+    private fun stepsToAdd(
+        source: MigrationSnapshot,
+        target: MigrationSnapshot,
+        timeZone: TimeZone,
+        today: LocalDate,
+    ): List<MigrationStep> {
+        fun dateOf(step: MigrationStep) = Instant.fromEpochMilliseconds(step.createdTimeMillis).toLocalDateTime(timeZone).date
+        val targetDates = target.steps.map(::dateOf).toSet()
+        return source.steps.filter { step -> dateOf(step).let { it != today && it !in targetDates } }
     }
 }

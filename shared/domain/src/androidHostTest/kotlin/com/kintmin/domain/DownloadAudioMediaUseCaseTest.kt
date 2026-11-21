@@ -21,13 +21,18 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
@@ -139,6 +144,34 @@ class DownloadAudioMediaUseCaseTest {
             Result.success(addedResult(resolvedPlaylistId = UNCATEGORIZED_ID))
 
         assert(useCase(downloadUrl).isSuccess)
+    }
+
+    @Test
+    fun `음원을 받은 뒤에 취소돼도 행을 만들어 파일만 남지 않게 한다`() = runTest {
+        val started = CompletableDeferred<Unit>()
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
+        coEvery { audioMediaRepository.saveThumbnail(any(), any()) } coAnswers {
+            started.complete(Unit)
+            delay(1_000)
+            Result.failure(Exception())
+        }
+        coEvery { audioMediaRepository.addAudioMedia(mockDownloadedMedia, UNCATEGORIZED_ID, false) } returns
+            Result.success(addedResult(resolvedPlaylistId = UNCATEGORIZED_ID))
+
+        val job = launch { useCase(downloadUrl) }
+        started.await()
+        job.cancelAndJoin()
+
+        coVerify(exactly = 1) { audioMediaRepository.addAudioMedia(mockDownloadedMedia, UNCATEGORIZED_ID, false) }
+    }
+
+    @Test
+    fun `멈춰서 끊긴 받기는 실패로 기록하지 않는다`() = runTest {
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } throws CancellationException("stop")
+
+        useCase(downloadUrl)
+
+        verifyFailedDownloadAudioMediaLog(exception = CancellationException("stop"), exactly = 0)
     }
 
     @Test

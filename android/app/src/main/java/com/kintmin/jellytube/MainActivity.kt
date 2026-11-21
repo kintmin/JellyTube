@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
                 navigationEventFlow = viewModel.eventFlow,
                 isDebugTabVisible = BuildConfig.DEBUG,
                 onDeepLink = { url -> viewModel.sendIntent(AppIntent.HandleDeepLink(url)) },
+                onAppBackground = { viewModel.sendIntent(AppIntent.OnAppBackground) },
             )
         }
 

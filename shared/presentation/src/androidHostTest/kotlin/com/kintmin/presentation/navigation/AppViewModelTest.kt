@@ -5,6 +5,7 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlo
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
+import com.kintmin.domain.backup.usecase.BackupIfDueUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
@@ -12,6 +13,7 @@ import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.testPlaylist
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -45,6 +47,9 @@ class AppViewModelTest {
     private val fetchPlaylistsByTypeUseCase = mockk<FetchPlaylistsByTypeUseCase> {
         every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(testPlaylist(SECRET_PLAYLIST_ID, PlaylistType.SECRET)))
     }
+    private val backupIfDueUseCase = mockk<BackupIfDueUseCase> {
+        coEvery { this@mockk(any(), any()) } returns Result.success(null)
+    }
 
     @Before
     fun setUp() {
@@ -69,6 +74,7 @@ class AppViewModelTest {
             fetchSecretModeEnabledFlowUseCase = fetchSecretModeEnabledFlowUseCase,
             endSecretModeUseCase = endSecretModeUseCase,
             fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
+            backupIfDueUseCase = mockk(),
         )
 
         verify { manager.setRepeatMode(true) }
@@ -138,6 +144,15 @@ class AppViewModelTest {
 
     private fun playlistUrl(playlistId: Int) = DeepLinkConstants.UrlBuilder.playlistContentScreen(playlistId)
 
+    @Test
+    fun `앱이 내려가면 오늘 백업할 때인지 확인한다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.sendIntent(AppIntent.OnAppBackground)
+
+        coVerify { backupIfDueUseCase(any(), any()) }
+    }
+
     private fun createViewModel() = AppViewModel(
         mediaControllerManager = manager,
         importSharedAudioMediaUseCase = importSharedAudioMediaUseCase,
@@ -149,6 +164,7 @@ class AppViewModelTest {
         fetchSecretModeEnabledFlowUseCase = fetchSecretModeEnabledFlowUseCase,
         endSecretModeUseCase = endSecretModeUseCase,
         fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
+        backupIfDueUseCase = backupIfDueUseCase,
     )
 
 
