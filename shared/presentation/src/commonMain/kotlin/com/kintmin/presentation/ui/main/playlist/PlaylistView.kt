@@ -39,6 +39,7 @@ import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistLibraryBlockV
 fun PlaylistView(
     modifier: Modifier,
     data: List<PlaylistItemUiState>,
+    isLoaded: Boolean,
     sendIntent: (PlaylistIntent) -> Unit,
 ) {
     val libraryItems = data.filter { it.isBasePlaylist }
@@ -53,9 +54,6 @@ fun PlaylistView(
         makePlaylist = { title -> sendIntent(PlaylistIntent.MakeNewPlaylist(title)) },
     )
 
-    // 라이브러리가 비어 있으면 아직 안 읽힌 것이다(아래 빈 상태 분기와 같은 기준).
-    val isLoaded = libraryItems.isNotEmpty()
-
     LazyVerticalGrid(
         modifier = modifier,
         columns = GridCells.Fixed(2),
@@ -63,8 +61,8 @@ fun PlaylistView(
         // 가장자리 여백은 각 항목이 자기 안쪽 패딩으로 만든다.
         contentPadding = PaddingValues(vertical = 8.dp),
     ) {
-        // 읽히기 전에는 항목을 하나도 두지 않는다. 머리말만 먼저 놓이면 스크롤이 그 key 에 붙어,
-        // 나중에 위로 끼어드는 라이브러리가 화면 밖으로 밀린다.
+        // 읽히기 전에는 항목을 하나도 두지 않는다. 빈 상태가 깜박이고, 머리말만 먼저 놓이면 스크롤이
+        // 그 key 에 붙어 나중에 위로 끼어드는 라이브러리가 화면 밖으로 밀린다.
         if (!isLoaded) return@LazyVerticalGrid
 
         if (libraryItems.isNotEmpty()) {
@@ -120,9 +118,7 @@ fun PlaylistView(
             )
         }
 
-        // 라이브러리가 비어 있다는 것은 아직 안 읽혔다는 뜻이다 — 시스템 플레이리스트 셋은
-        // 앱 시작 때 보장된다. 그것으로 가르지 않으면 첫 프레임마다 빈 상태가 깜박인다.
-        if (userItems.isEmpty() && libraryItems.isNotEmpty()) {
+        if (userItems.isEmpty()) {
             item(key = "user-empty", span = { GridItemSpan(maxLineSpan) }) {
                 PlaylistEmptyView(
                     modifier = Modifier,
@@ -151,6 +147,7 @@ fun PlaylistPreview() {
         PlaylistView(
             modifier = Modifier.fillMaxSize(),
             PlaylistItemUiState.getMockList(),
+            isLoaded = true,
             sendIntent = {},
         )
     }
