@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Reorder
 import androidx.compose.material3.Card
@@ -55,7 +54,7 @@ fun PlaylistEditListItemView(
                     .fillMaxHeight()
                     .aspectRatio(1f)
                     .padding(8.dp)
-                    .clip(RoundedCornerShape(16))
+                    .clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.surface),
                 placeholderIconSize = 16.dp,
             )

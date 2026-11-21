@@ -481,7 +481,7 @@ fun PlayerDetailScreen(
                     Row(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(MaterialTheme.shapes.medium)
                             .clickable { sendIntent(PlayerDetailIntent.OnClickPlayingPlaylistButton) }
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,

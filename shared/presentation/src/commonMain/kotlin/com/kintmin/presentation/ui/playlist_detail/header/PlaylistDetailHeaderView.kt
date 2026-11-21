@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
@@ -78,7 +77,7 @@ fun PlaylistDetailHeaderView(
                     .fillMaxWidth()
                     .height(220.dp)
                     .padding(bottom = 16.dp)
-                    .clip(RoundedCornerShape(4))
+                    .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.surface)
                     .clickable(enabled = headerData.imageFileFullPath != null) { isShowFullScreenImageViewer = true },
                 placeholderIconSize = 36.dp,

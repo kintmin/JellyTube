@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.NavigateNext
 import androidx.compose.material3.Button
@@ -93,7 +92,7 @@ fun SleepTimerDialog(
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
                     // clickable 보다 먼저 잘라야 눌림 표시도 둥글게 번진다.
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(MaterialTheme.shapes.medium)
                     .background(subtleFill)
                     .clickable(onClick = onClickAnnouncement)
                     .padding(horizontal = 16.dp),

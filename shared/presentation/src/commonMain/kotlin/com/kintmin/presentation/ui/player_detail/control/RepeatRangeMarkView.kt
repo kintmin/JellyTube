@@ -47,7 +47,7 @@ fun RepeatRangeMarkView(
     val isLinked = isStartSelected && isEndSelected
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(MaterialTheme.shapes.medium)
             .clickable(onClick = onClick)
             .semantics {
                 contentDescription = when {

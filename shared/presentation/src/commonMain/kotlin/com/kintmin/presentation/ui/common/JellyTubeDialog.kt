@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -28,7 +27,7 @@ fun JellyTubeDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     dismissOnClickOutside: Boolean = true,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape = MaterialTheme.shapes.large,
     scrimColor: Color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f),
     containerColor: Color = MaterialTheme.colorScheme.surface,
     tonalElevation: Dp = 0.dp,
