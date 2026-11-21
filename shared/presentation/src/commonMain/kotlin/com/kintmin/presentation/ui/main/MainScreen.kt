@@ -130,7 +130,6 @@ fun MainScreen(
         isDebugTabVisible = isDebugTabVisible,
         selectedTab = mainUiState.tabItem,
         playlist = playlistUiState.playlists,
-        isPlaylistLoaded = playlistUiState.isLoaded,
         playerBar = currentMediaItem,
         currentUrl = youtubeDownloadUiState.currentUrl,
         navigateToSetting = navigateToSetting,
@@ -160,7 +159,6 @@ fun MainScreen(
     isDebugTabVisible: Boolean,
     selectedTab: MainTabItem,
     playlist: List<PlaylistItemUiState>,
-    isPlaylistLoaded: Boolean,
     playerBar: PlayerBarUiState,
     currentUrl: String,
     navigateToSetting: () -> Unit,
@@ -357,7 +355,6 @@ fun MainScreen(
                         .fillMaxSize()
                         .padding(innerPadding),
                     data = playlist,
-                    isLoaded = isPlaylistLoaded,
                     sendIntent = sendPlaylistIntent,
                 )
 
@@ -383,7 +380,6 @@ fun MainScreenSearchTabPreview() {
             isDebugTabVisible = true,
             selectedTab = MainTabItem.Search,
             playlist = PlaylistItemUiState.getMockList(),
-            isPlaylistLoaded = true,
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
             navigateToSetting = {},
@@ -404,7 +400,6 @@ fun MainScreenPlayTabPreview() {
             isDebugTabVisible = true,
             selectedTab = MainTabItem.Playlist,
             playlist = PlaylistItemUiState.getMockList(),
-            isPlaylistLoaded = true,
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
             navigateToSetting = {},

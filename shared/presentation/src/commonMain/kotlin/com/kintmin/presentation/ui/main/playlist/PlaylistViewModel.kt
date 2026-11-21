@@ -41,7 +41,6 @@ class PlaylistViewModel constructor(
         PlaylistUiState(
             playlists = playlistList.map { it.toUiModel(isDownloadTarget = it.id == downloadTarget.targetId) },
             isReorderBottomSheetVisible = isReorderVisible,
-            isLoaded = true,
         )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PlaylistUiState())
