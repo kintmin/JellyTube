@@ -44,7 +44,7 @@ class SecretPlaylistViewModel(
     private val deletePlaylistUseCase: DeletePlaylistUseCase,
 ) : ViewModel() {
 
-    private val eventChannel = Channel<PlaylistEvent>(Channel.BUFFERED)
+    private val eventChannel = Channel<SecretPlaylistEvent>(Channel.BUFFERED)
     val eventFlow = eventChannel.receiveAsFlow()
 
     private val isEnabledFlow = fetchSecretModeEnabledFlowUseCase()
@@ -94,23 +94,23 @@ class SecretPlaylistViewModel(
         viewModelScope.launch {
             when (intent) {
                 is PlaylistIntent.OnClickPlaylistItem ->
-                    eventChannel.send(PlaylistEvent.NavigateToPlaylistDetailScreen(intent.playlistInfo))
+                    eventChannel.send(SecretPlaylistEvent.NavigateToPlaylistDetailScreen(intent.playlistInfo.id))
                 is PlaylistIntent.OnClickModifyPlaylist ->
-                    eventChannel.send(PlaylistEvent.NavigateToPlaylistEditScreen(intent.data.id))
+                    eventChannel.send(SecretPlaylistEvent.NavigateToPlaylistEditScreen(intent.data.id))
                 is PlaylistIntent.OnClickAddPlaylist ->
-                    eventChannel.send(PlaylistEvent.NavigateToPlaylistAddScreen(intent.data.id, intent.data.name))
+                    eventChannel.send(SecretPlaylistEvent.NavigateToPlaylistAddScreen(intent.data.id, intent.data.name))
                 is PlaylistIntent.MakeNewPlaylist -> addNewPlaylistUseCase(intent.title, PlaylistType.SECRET).onFailure {
-                    eventChannel.send(PlaylistEvent.ShowToast(PlaylistEvent.MAKE_FAILED_MESSAGE))
+                    eventChannel.send(SecretPlaylistEvent.ShowToast(PlaylistEvent.MAKE_FAILED_MESSAGE))
                 }
                 is PlaylistIntent.OnClickDeletePlaylist -> deletePlaylistUseCase(intent.data.id).onFailure {
-                    eventChannel.send(PlaylistEvent.ShowToast(PlaylistEvent.DELETE_FAILED_MESSAGE))
+                    eventChannel.send(SecretPlaylistEvent.ShowToast(PlaylistEvent.DELETE_FAILED_MESSAGE))
                 }
                 is PlaylistIntent.OnClickSetDownloadTarget -> {
                     val message = updatePlaylistIdOnDownloadUseCase(intent.data.id).fold(
                         onSuccess = { "비밀모드가 끝날 때까지 다운로드한 곡은 '${intent.data.name}'에 담깁니다." },
                         onFailure = { PlaylistEvent.SET_DOWNLOAD_TARGET_FAILED_MESSAGE },
                     )
-                    eventChannel.send(PlaylistEvent.ShowToast(message))
+                    eventChannel.send(SecretPlaylistEvent.ShowToast(message))
                 }
                 // 이 화면에는 순서 바꾸기가 없다.
                 PlaylistIntent.OnClickShowReorderBottomSheet,

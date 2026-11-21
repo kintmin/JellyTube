@@ -7,6 +7,7 @@ import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUse
 import com.kintmin.domain.secret_mode.usecase.StartSecretModeUseCase
 import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -14,8 +15,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * **화면이 아니라 앱에 하나만 있어야 한다.** 화면을 떠나도 정한 시간이 지나면 꺼져야 한다.
@@ -28,33 +29,42 @@ class SecretModeRunner(
     private val endSecretModeUseCase: EndSecretModeUseCase,
     private val fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase,
     private val fetchSecretAudioMediaIdListFlowUseCase: FetchSecretAudioMediaIdListFlowUseCase,
+    private val clock: Clock = Clock.System,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
 
-    private var endMark: TimeMark? = null
+    // 기기가 깊이 잠들면 delay 도 단조 시계도 멈춘다. 종료 시각은 벽시계로 두고 앱이 다시 보일 때
+    // [endIfExpired] 로 한 번 더 본다.
+    private var endsAt: Instant? = null
     private var job: Job? = null
 
     /** 꺼져 있으면 null. */
     val remaining: Duration?
-        get() = endMark?.let { -it.elapsedNow() }?.coerceAtLeast(Duration.ZERO)
+        get() = endsAt?.let { (it - clock.now()).coerceAtLeast(Duration.ZERO) }
 
     fun start(total: Duration) {
         job?.cancel()
-        startSecretModeUseCase()
-        endMark = TimeSource.Monotonic.markNow() + total
-        job = scope.launch {
+        endsAt = clock.now() + total
+        job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            startSecretModeUseCase()
             delay(total)
             finish()
         }
     }
 
+    fun endIfExpired() {
+        val deadline = endsAt ?: return
+        if (clock.now() >= deadline) end()
+    }
+
     fun end() {
         job?.cancel()
-        job = scope.launch { finish() }
+        // 끄는 것을 미루지 않는다. 다음 프레임에 비밀 화면이 그려지기 전에 꺼져 있어야 한다.
+        job = scope.launch(start = CoroutineStart.UNDISPATCHED) { finish() }
     }
 
     private suspend fun finish() {
-        endMark = null
+        endsAt = null
         endSecretModeUseCase()
         removeSecretTracksFromQueue()
     }
@@ -66,8 +76,12 @@ class SecretModeRunner(
         if (isPlaylistOf(PlaylistType.SECRET, playlistId)) {
             playbackController.clearQueue()
         } else if (isPlaylistOf(PlaylistType.TOTAL, playlistId)) {
-            fetchSecretAudioMediaIdListFlowUseCase().first().forEach {
-                playbackController.tryDeleteMediaItem(playlistId, it)
+            val secretIds = fetchSecretAudioMediaIdListFlowUseCase().first().toSet()
+            // 듣던 곡을 빼면 빠진 자리를 다음 곡(비밀일 수 있다)이 이어받아 재생된다.
+            if (playbackController.playingMediaItem?.mediaId?.toIntOrNull() in secretIds) {
+                playbackController.clearQueue()
+            } else {
+                secretIds.forEach { playbackController.tryDeleteMediaItem(playlistId, it) }
             }
         }
     }

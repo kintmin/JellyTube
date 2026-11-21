@@ -12,7 +12,6 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -20,7 +19,7 @@ import org.junit.Test
 class EndSecretModeUseCaseTest {
 
     private val secretModeRepository: SecretModeRepository = mockk {
-        every { setEnabled(any()) } just Runs
+        coEvery { setEnabled(any()) } just Runs
     }
     private val appSettingRepository: AppSettingRepository = mockk {
         coEvery { updatePlaylistIdOnDownload(any()) } returns Result.success(Unit)
@@ -38,7 +37,7 @@ class EndSecretModeUseCaseTest {
 
         useCase()
 
-        verify { secretModeRepository.setEnabled(false) }
+        coVerify { secretModeRepository.setEnabled(false) }
         coVerify { appSettingRepository.updatePlaylistIdOnDownload(2) }
     }
 
@@ -50,7 +49,7 @@ class EndSecretModeUseCaseTest {
             useCase()
         }
 
-        verify(exactly = 2) { secretModeRepository.setEnabled(false) }
+        coVerify(exactly = 2) { secretModeRepository.setEnabled(false) }
         coVerify(exactly = 0) { appSettingRepository.updatePlaylistIdOnDownload(any()) }
     }
 

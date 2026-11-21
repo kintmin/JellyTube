@@ -100,7 +100,7 @@ class AppViewModelTest {
 
         coVerify { importSharedAudioMediaUseCase("a") }
         coVerify { importSharedAudioMediaUseCase("b") }
-        assertEquals(NavigationEvent.NavigateToMainPlaylistsTab, viewModel.eventFlow.first())
+        assertEquals(NavigationEvent.NavigateToMainPlaylistsTab, viewModel.eventFlow.first { it !is NavigationEvent.LeaveSecretScreens })
     }
 
     @Test
@@ -127,6 +127,26 @@ class AppViewModelTest {
         isSecretModeEnabled.value = false
 
         assertEquals(NavigationEvent.LeaveSecretScreens(setOf(SECRET_PLAYLIST_ID)), viewModel.eventFlow.first())
+    }
+
+    @Test
+    fun `앱이 뜰 때 비밀모드가 꺼져 있으면 복원된 비밀 화면을 닫게 한다`() = runTest {
+        val viewModel = createViewModel()
+
+        assertEquals(NavigationEvent.LeaveSecretScreens(setOf(SECRET_PLAYLIST_ID)), viewModel.eventFlow.first())
+    }
+
+    @Test
+    fun `비밀모드가 꺼져 있으면 비밀 플레이리스트 안의 곡 상세 딥링크도 따르지 않는다`() = runTest {
+        val viewModel = createViewModel()
+        val events = mutableListOf<NavigationEvent>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.eventFlow.collect { events += it } }
+
+        viewModel.sendIntent(
+            AppIntent.HandleDeepLink(DeepLinkConstants.UrlBuilder.playlistAudioMediaDetailScreen(SECRET_PLAYLIST_ID, 9)),
+        )
+
+        assertFalse(events.any { it is NavigationEvent.NavigateToAudioMedia })
     }
 
     @Test

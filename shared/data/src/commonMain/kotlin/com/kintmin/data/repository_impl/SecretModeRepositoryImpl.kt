@@ -16,7 +16,7 @@ class SecretModeRepositoryImpl constructor(
     private val isEnabled = MutableStateFlow(false)
     override val isEnabledFlow: StateFlow<Boolean> = isEnabled.asStateFlow()
 
-    override fun setEnabled(value: Boolean) {
+    override suspend fun setEnabled(value: Boolean) {
         isEnabled.value = value
     }
 

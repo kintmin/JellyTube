@@ -414,6 +414,28 @@ class ImportMigrationDataUseCaseTest {
     }
 
     @Test
+    fun `다운로드 대상이 비밀 플레이리스트면 미분류로 둔다`() = runTest {
+        val sourcePlaylists = listOf(
+            MigrationPlaylist(11, "전체", "", null, 0, PlaylistType.TOTAL, 0),
+            MigrationPlaylist(12, "미분류", "", null, 0, PlaylistType.UNCATEGORIZED, 0),
+            MigrationPlaylist(13, "즐겨찾기", "", null, 0, PlaylistType.FAVORITE, 0),
+            MigrationPlaylist(16, "새 비밀", "", null, 1, PlaylistType.SECRET, 0),
+            MigrationPlaylist(17, "있는 비밀", "", null, 2, PlaylistType.SECRET, 0),
+        )
+        val target = emptyTarget.copy(
+            playlists = targetSystem + MigrationPlaylist(8, "있는 비밀", "", null, 1, PlaylistType.SECRET, 0),
+        )
+        suspend fun runWith(playlistId: Int) = useCase(
+            FakeRepository(export(emptyList(), emptyList(), sourcePlaylists, MigrationDownloadSettings(false, playlistId)), target),
+        )(endpoint, "t") {}.getOrThrow()
+
+        runWith(16)
+        runWith(17)
+
+        coVerify(exactly = 2) { appSettingRepository.updatePlaylistIdOnDownload(2) }
+    }
+
+    @Test
     fun `설정이 없는 manifest 면 받는 기기 설정을 건드리지 않는다`() = runTest {
         useCase(FakeRepository(export(emptyList(), emptyList()), emptyTarget))(endpoint, "t") {}.getOrThrow()
 

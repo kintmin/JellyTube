@@ -17,7 +17,6 @@ import com.kintmin.presentation.deeplink.DeepLinkParser
 import com.kintmin.presentation.platform.continueInBackgroundWhile
 import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
@@ -58,8 +57,8 @@ class AppViewModel(
     }
 
     private fun leaveSecretScreensWhenSecretModeEnds() {
-        // 첫 값은 지금 상태라 버린다. 그 뒤의 false 는 켜져 있다가 꺼진 것이다.
-        fetchSecretModeEnabledFlowUseCase().drop(1).filter { !it }.onEach {
+        // 첫 값도 받는다. 프로세스가 죽은 뒤 복원된 화면 스택에 비밀 화면이 남아 있을 수 있다.
+        fetchSecretModeEnabledFlowUseCase().filter { !it }.onEach {
             eventChannel.send(NavigationEvent.LeaveSecretScreens(secretPlaylistIds()))
         }.launchIn(viewModelScope)
     }
@@ -100,8 +99,11 @@ class AppViewModel(
                 url = url,
                 playingPlaylistId = mediaControllerManager.currentPlaylistId,
                 playingMediaId = mediaControllerManager.playingMediaItem?.mediaId?.toIntOrNull(),
-            ).forEach { navigationEvent ->
-                if (navigationEvent.isHiddenSecretPlaylist()) return@forEach
+            ).let { events ->
+                // 비밀 플레이리스트 뒤에 쌓이는 곡 상세도 그 플레이리스트의 것이다. 거기서부터 버린다.
+                val hiddenIndex = events.indexOfFirst { it.isHiddenSecretPlaylist() }
+                if (hiddenIndex < 0) events else events.take(hiddenIndex)
+            }.forEach { navigationEvent ->
                 eventChannel.send(navigationEvent)
             }
         }

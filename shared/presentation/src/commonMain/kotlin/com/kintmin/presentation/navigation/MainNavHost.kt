@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.navOptions
@@ -424,20 +423,21 @@ private fun consumeNavigationEvent(
         }
         is NavigationEvent.LeaveSecretScreens -> {
             navController.popBackStack<SecretPlaylistScreenRoute>(inclusive = true)
-            // 재생 화면에서 바로 연 비밀 플레이리스트는 비밀 화면 위에 쌓이지 않는다.
-            while (navController.currentBackStackEntry?.isPlaylistScreenOf(navigationEvent.secretPlaylistIds) == true) {
-                navController.popBackStack()
+            // 재생 화면에서 바로 연 비밀 플레이리스트는 비밀 화면 위에 쌓이지 않고, 그 위에 다른 화면이 올 수 있다.
+            while (true) {
+                val entry = navController.topmostPlaylistScreenOf(navigationEvent.secretPlaylistIds) ?: break
+                navController.popBackStack(entry.destination.id, inclusive = true)
             }
         }
     }
 }
 
-private fun NavBackStackEntry.isPlaylistScreenOf(playlistIds: Set<Int>): Boolean {
-    val playlistId = when {
-        destination.hasRoute<PlaylistDetailScreenRoute>() -> toRoute<PlaylistDetailScreenRoute>().playlistId
-        destination.hasRoute<PlaylistEditScreenRoute>() -> toRoute<PlaylistEditScreenRoute>().playlistId
-        destination.hasRoute<PlaylistAddScreenRoute>() -> toRoute<PlaylistAddScreenRoute>().playlistId
-        else -> return false
-    }
-    return playlistId in playlistIds
-}
+/** 스택 전체를 보는 API 는 공개돼 있지 않다. 종류마다 가장 위의 항목을 꺼내 본다. */
+private fun NavHostController.topmostPlaylistScreenOf(playlistIds: Set<Int>): NavBackStackEntry? = listOfNotNull(
+    runCatching { getBackStackEntry<PlaylistDetailScreenRoute>() }.getOrNull()
+        ?.takeIf { it.toRoute<PlaylistDetailScreenRoute>().playlistId in playlistIds },
+    runCatching { getBackStackEntry<PlaylistEditScreenRoute>() }.getOrNull()
+        ?.takeIf { it.toRoute<PlaylistEditScreenRoute>().playlistId in playlistIds },
+    runCatching { getBackStackEntry<PlaylistAddScreenRoute>() }.getOrNull()
+        ?.takeIf { it.toRoute<PlaylistAddScreenRoute>().playlistId in playlistIds },
+).firstOrNull()

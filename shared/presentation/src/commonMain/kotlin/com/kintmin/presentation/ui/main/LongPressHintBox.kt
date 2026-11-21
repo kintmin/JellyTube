@@ -16,7 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import com.kintmin.presentation.animation.FocusSpreadOverlay
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -35,13 +37,17 @@ internal fun LongPressHintBox(
     LaunchedEffect(isHintRequested) {
         if (!isHintRequested || isConsumed) return@LaunchedEffect
         isConsumed = true
-        // 화면 전환이 끝난 뒤에 시작해야 보인다.
-        delay(START_DELAY)
-        repeat(REPEAT_COUNT) {
-            progress.snapTo(0f)
-            progress.animateTo(1f, tween(durationMillis = DURATION_MILLIS, easing = LinearEasing))
+        try {
+            // 화면 전환이 끝난 뒤에 시작해야 보인다.
+            delay(START_DELAY)
+            repeat(REPEAT_COUNT) {
+                progress.snapTo(0f)
+                progress.animateTo(1f, tween(durationMillis = DURATION_MILLIS, easing = LinearEasing))
+            }
+        } finally {
+            // 도중에 탭을 바꿔 취소돼도 눌린 채로 남지 않게 한다.
+            withContext(NonCancellable) { progress.snapTo(0f) }
         }
-        progress.snapTo(0f)
     }
 
     val value = progress.value
