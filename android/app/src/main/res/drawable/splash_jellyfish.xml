@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 스플래시 아이콘 캔버스는 240dp 이고 지름 160dp 원으로 잘린다. 그림은 가운데 원 안에 둔다. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="240"
+    android:viewportHeight="240">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M88,122 C88,94 102,76 120,76 C138,76 152,94 152,122 Q144,129 136,122 Q128,129 120,122 Q112,129 104,122 Q96,129 88,122 Z" />
+    <path
+        android:pathData="M104,130 C98,140 110,146 104,156 C101,161 96,161 95,157"
+        android:strokeWidth="6"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M120,130 C114,142 126,150 120,162 C117,167 112,167 111,163"
+        android:strokeWidth="6"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M136,130 C130,140 142,146 136,156 C133,161 128,161 127,157"
+        android:strokeWidth="6"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
