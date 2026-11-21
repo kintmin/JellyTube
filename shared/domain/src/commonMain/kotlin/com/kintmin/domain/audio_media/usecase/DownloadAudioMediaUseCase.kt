@@ -7,12 +7,15 @@ import com.kintmin.domain.audio_media.model.AlreadyDownloadingMedia
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.DownloadedAudioMediaResult
 import com.kintmin.domain.audio_media.model.DownloadedMedia
+import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.FirebaseEvent
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import kotlin.time.measureTimedValue
 
 class DownloadAudioMediaUseCase constructor(
@@ -22,10 +25,14 @@ class DownloadAudioMediaUseCase constructor(
     private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase,
     private val appLog: AppLog,
 ) {
-    suspend operator fun invoke(downloadUrl: String): Result<DownloadedAudioMediaResult> = runCatching {
+    /** [intoUncategorized] 면 다운로드 설정을 따르지 않고 미분류 맨 뒤에 넣는다. 담을 자리는 호출자가 정한다. */
+    suspend operator fun invoke(
+        downloadUrl: String,
+        intoUncategorized: Boolean = false,
+    ): Result<DownloadedAudioMediaResult> = runCatching {
         if (!audioMediaRepository.reserveDownload(downloadUrl)) throw AlreadyDownloadingMedia()
         try {
-            download(downloadUrl)
+            download(downloadUrl, intoUncategorized)
         } finally {
             audioMediaRepository.releaseDownload(downloadUrl)
         }
@@ -49,18 +56,27 @@ class DownloadAudioMediaUseCase constructor(
         )
     }
 
-    private suspend fun download(downloadUrl: String): DownloadedAudioMediaResult {
+    private suspend fun download(downloadUrl: String, intoUncategorized: Boolean): DownloadedAudioMediaResult {
         audioMediaRepository.getAudioMediaBySource(source = downloadUrl).onSuccess {
             throw AlreadyDownloadedMedia()
         }
 
-        val downloadedAudioMediaTimedValue = measureTimedValue { downloadWithThumbnail(downloadUrl) }
-        appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "downloadAudioMedia: ${downloadedAudioMediaTimedValue.duration}"))
+        val audioTimedValue = measureTimedValue { audioMediaRepository.downloadYoutubeAudio(downloadUrl).getOrThrow() }
+        appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "downloadAudioMedia: ${audioTimedValue.duration}"))
 
-        val downloadedAudioMedia = downloadedAudioMediaTimedValue.value
+        // 음원을 받은 뒤에는 행을 만들 때까지 끊지 않는다. 끊으면 어디에도 연결되지 않은 파일만 남는다.
+        return withContext(NonCancellable) { addDownloaded(downloadUrl, audioTimedValue.value, intoUncategorized) }
+    }
 
-        val shouldInsertAtTopOnDownload = fetchShouldInsertAtTopOnDownloadFlowUseCase().first()
-        val playlistIdOnDownload = fetchPlaylistIdOnDownloadFlowUseCase().first()
+    private suspend fun addDownloaded(
+        downloadUrl: String,
+        audio: DownloadedYoutubeAudio,
+        intoUncategorized: Boolean,
+    ): DownloadedAudioMediaResult {
+        val downloadedAudioMedia = withThumbnail(downloadUrl, audio)
+
+        val shouldInsertAtTopOnDownload = !intoUncategorized && fetchShouldInsertAtTopOnDownloadFlowUseCase().first()
+        val playlistIdOnDownload = if (intoUncategorized) null else fetchPlaylistIdOnDownloadFlowUseCase().first()
 
         val added = audioMediaRepository.addAudioMedia(
             downloadedAudioMedia = downloadedAudioMedia,
@@ -80,8 +96,7 @@ class DownloadAudioMediaUseCase constructor(
     }
 
     // 썸네일은 없어도 곡은 들일 수 있어 실패를 무시한다.
-    private suspend fun downloadWithThumbnail(downloadUrl: String): DownloadedMedia {
-        val audio = audioMediaRepository.downloadYoutubeAudio(downloadUrl).getOrThrow()
+    private suspend fun withThumbnail(downloadUrl: String, audio: DownloadedYoutubeAudio): DownloadedMedia {
         return DownloadedMedia(
             downloadUrl = downloadUrl,
             title = audio.title,

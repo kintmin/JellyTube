@@ -18,7 +18,8 @@ interface PythonExecutor {
         audioDownloadPath: String,
     ): Result<PlayableAudioDownloadDto>
 
-    suspend fun extractYoutubeUrlsFromPlaylist(
+    /** 재생목록 이름과 항목을 담은 JSON. */
+    suspend fun extractYoutubePlaylist(
         playlistUrl: String,
-    ): Result<List<String>>
+    ): Result<String>
 }

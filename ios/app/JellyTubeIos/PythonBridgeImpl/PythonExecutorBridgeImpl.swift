@@ -202,7 +202,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
         }
     }
 
-    func __extractYoutubeUrlsFromPlaylist(
+    func __extractYoutubePlaylist(
         playlistUrl: String,
         completionHandler: @escaping @Sendable ([String]?, Error?) -> Void,
     ) {
@@ -210,7 +210,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
             do {
                 let result = try self.runtime.callFunction(
                     moduleName: Self.fileName,
-                    functionName: Self.methodExtractVideoUrlsFromPlaylist,
+                    functionName: Self.methodExtractPlaylist,
                     arguments: [playlistUrl]
                 )
                 completionHandler(result, nil)
@@ -244,7 +244,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
 
     private static let fileName = "download_youtube_audio"
     private static let methodDownloadAudio = "download_audio"
-    private static let methodExtractVideoUrlsFromPlaylist = "extract_video_urls_from_playlist"
+    private static let methodExtractPlaylist = "extract_playlist"
     private static let methodExtractAudioSource = "extract_audio_source"
     private static let methodDownloadPlayableAudio = "download_playable_audio"
     private static let methodDownloadHlsAudio = "download_hls_audio"

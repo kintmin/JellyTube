@@ -16,7 +16,7 @@ interface IosPythonExecutorBridge {
         audioDownloadPath: String,
     ): PlayableAudioDownloadDto
 
-    suspend fun extractYoutubeUrlsFromPlaylist(
+    suspend fun extractYoutubePlaylist(
         playlistUrl: String,
     ): List<String>
 
@@ -54,7 +54,7 @@ internal class IosPythonExecutorAdapter(
         bridge.downloadPlayableAudio(youtubeUrl = youtubeUrl, audioDownloadPath = audioDownloadPath)
     }
 
-    override suspend fun extractYoutubeUrlsFromPlaylist(playlistUrl: String): Result<List<String>> = runCatching {
-        bridge.extractYoutubeUrlsFromPlaylist(playlistUrl)
+    override suspend fun extractYoutubePlaylist(playlistUrl: String): Result<String> = runCatching {
+        bridge.extractYoutubePlaylist(playlistUrl).first()
     }
 }

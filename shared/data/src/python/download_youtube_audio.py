@@ -1,3 +1,4 @@
+import json
 import os
 
 import yt_dlp
@@ -252,22 +253,34 @@ def extract_audio_source(url, prefer_hls="0"):
         raise Exception(f"Extract audio source failed: {e}\n{traceback.format_exc()}")
 
 
-def extract_video_urls_from_playlist(playlist_url):
-    try:
-        ydl_opts = {
-            'quiet': True,
-            'extract_flat': True,
-            'skip_download': True,
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.cache.remove()
-            info_dict = ydl.extract_info(playlist_url, download=False)
-            if info_dict is None:
-                raise Exception("No information extracted for URL")
+def extract_playlist(playlist_url):
+    """영상은 열지 않고 재생목록 페이지만 읽는다. 브릿지가 문자열 목록만 주고받아 JSON 하나를 담아 돌려준다."""
+    ydl_opts = {
+        'quiet': True,
+        'extract_flat': True,
+        'skip_download': True,
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.cache.remove()
+        info_dict = ydl.extract_info(playlist_url, download=False)
+    if info_dict is None:
+        raise Exception("No information extracted for URL")
 
-            entries = info_dict.get("entries", [])
-            video_urls = [entry.get("url") for entry in entries if "url" in entry]
+    entries = []
+    for entry in info_dict.get("entries") or []:
+        if not entry or not entry.get("id"):
+            continue
+        title = entry.get("title") or ""
+        # 비공개·삭제된 영상도 목록에는 이 제목으로 남는다.
+        unavailable = title in UNAVAILABLE_TITLES or entry.get("availability") in UNAVAILABLE_AVAILABILITY
+        entries.append({
+            "id": entry["id"],
+            "title": title,
+            "duration": entry.get("duration"),
+            "available": not unavailable,
+        })
+    return [json.dumps({"title": info_dict.get("title") or "", "entries": entries}, ensure_ascii=False)]
 
-            return video_urls
-    except Exception as e:
-        raise Exception(f"Extract urls failed: {e}")
+
+UNAVAILABLE_TITLES = ("[Private video]", "[Deleted video]")
+UNAVAILABLE_AVAILABILITY = ("private", "needs_auth", "subscriber_only", "premium_only")

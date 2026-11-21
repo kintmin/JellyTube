@@ -61,14 +61,13 @@ class PythonExecutorImpl(
         }
     }
 
-    override suspend fun extractYoutubeUrlsFromPlaylist(playlistUrl: String): Result<List<String>> = withContext(Dispatchers.IO) {
+    override suspend fun extractYoutubePlaylist(playlistUrl: String): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             ensurePythonStarted()
 
             withTimeout(TIME_OUT) {
                 val module = Python.getInstance().getModule(FILE_NAME)
-                val pyList = module.callAttr(METHOD_EXTRACT_VIDEO_URLS_FROM_PLAYLIST, playlistUrl).asList()
-                pyList.mapNotNull { it?.toString() }
+                module.callAttr(METHOD_EXTRACT_PLAYLIST, playlistUrl).asList().first().toString()
             }
         }
     }
@@ -84,6 +83,6 @@ class PythonExecutorImpl(
         const val METHOD_GET_VERSION = "get_version"
         const val METHOD_DOWNLOAD_AUDIO = "download_audio"
         const val METHOD_DOWNLOAD_PLAYABLE_AUDIO = "download_playable_audio"
-        const val METHOD_EXTRACT_VIDEO_URLS_FROM_PLAYLIST = "extract_video_urls_from_playlist"
+        const val METHOD_EXTRACT_PLAYLIST = "extract_playlist"
     }
 }
