@@ -28,6 +28,8 @@ import androidx.compose.material.icons.rounded.Bedtime
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.OpenInFull
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -104,6 +106,7 @@ fun PlayerDetailScreen(
     navigateToAudioMediaInformationEdit: (audioMediaId: Int) -> Unit,
     navigateToPlayingPlaylist: (playlistId: Int, audioMediaId: Int?) -> Unit,
     navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
+    navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
 ) {
     val viewModel = koinViewModel<PlayerDetailViewModel>()
     val data by viewModel.uiState.collectAsState()
@@ -125,6 +128,7 @@ fun PlayerDetailScreen(
                     event.query,
                     event.durationSeconds,
                 )
+                is PlayerDetailEvent.NavigateToLyricsViewer -> navigateToLyricsViewer(event.audioMediaId)
                 is PlayerDetailEvent.NavigateToPlayingPlaylist -> navigateToPlayingPlaylist(
                     event.playlistId,
                     event.audioMediaId
@@ -258,8 +262,8 @@ fun PlayerDetailScreen(
                         .weight(1f),
                     targetState = data.showsLyricsPanel,
                 ) { showsLyrics ->
-                    // 가사로 가는 유일한 입구다. 가사 없는 곡이면 찾으러 보낸다 — 그 안내를
-                    // 화면에 상시로 띄우지 않고 눌렀을 때만 꺼낸다.
+                    // 가사 없는 곡이면 찾으러 보낸다 — 그 안내를 화면에 상시로 띄우지 않고 눌렀을 때만 꺼낸다.
+                    // 패널에서는 싱크 가사의 줄이 탭을 먼저 받고, 줄 밖을 누르면 아트워크로 돌아간다.
                     val artworkModifier = Modifier
                         .fillMaxSize()
                         .clip(RoundedCornerShape(2.dp))
@@ -267,11 +271,29 @@ fun PlayerDetailScreen(
                         .clickable { sendIntent(PlayerDetailIntent.OnClickLyrics) }
 
                     if (showsLyrics) {
-                        PlayerLyricsPanelView(
-                            lines = data.lyricLines,
-                            activeIndex = data.activeLyricIndex,
-                            modifier = artworkModifier,
-                        )
+                        Box(modifier = artworkModifier) {
+                            PlayerLyricsPanelView(
+                                lines = data.lyricLines,
+                                activeIndex = data.activeLyricIndex,
+                                onClickLine = if (data.isLyricsSynced) {
+                                    { index -> sendIntent(PlayerDetailIntent.OnClickLyricLine(index)) }
+                                } else {
+                                    null
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                            IconButton(
+                                modifier = Modifier.align(Alignment.TopEnd),
+                                onClick = { sendIntent(PlayerDetailIntent.OnClickLyricsViewerButton) },
+                            ) {
+                                Icon(
+                                    modifier = Modifier.size(22.dp),
+                                    imageVector = Icons.Rounded.OpenInFull,
+                                    contentDescription = "가사 크게 보기",
+                                    tint = Color.White.copy(alpha = 0.82f),
+                                )
+                            }
+                        }
                     } else {
                         Box(modifier = artworkModifier) {
                             if (data.imageFileFullPath == null) {
@@ -300,6 +322,7 @@ fun PlayerDetailScreen(
                             // 오버레이가 스스로 다룬다.
                             CurrentLyricOverlayView(
                                 line = data.currentLyricLine,
+                                translation = data.currentLyricTranslation,
                                 modifier = Modifier.align(Alignment.BottomCenter),
                             )
                         }
@@ -309,7 +332,7 @@ fun PlayerDetailScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // 부가 기능 — 재생을 바꾸지 않고 이 곡·이 세션을 다루는 것들.
-                // 셋에게 폭을 똑같이 나눠 준다. SpaceEvenly 는 간격만 같게 해서, 글자인 A-B 가
+                // 칸마다 폭을 똑같이 나눠 준다. SpaceEvenly 는 간격만 같게 해서, 글자인 A-B 가
                 // 아이콘보다 넓으면 가운데 것이 화면 중앙에서 밀린다.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -354,6 +377,16 @@ fun PlayerDetailScreen(
                                     tint = Color.White.copy(alpha = 0.82f),
                                 )
                             }
+                        }
+                    }
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickLyrics) }) {
+                            Icon(
+                                modifier = Modifier.size(24.dp),
+                                imageVector = Icons.Rounded.Lyrics,
+                                contentDescription = if (data.showsLyricsPanel) "가사 닫기" else "가사 보기",
+                                tint = if (data.showsLyricsPanel) Color.White else Color.White.copy(alpha = 0.6f),
+                            )
                         }
                     }
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {

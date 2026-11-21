@@ -71,8 +71,8 @@ import org.koin.compose.viewmodel.koinViewModel
 /** 이 높이(dp)보다 낮으면 가로 화면용 압축 배치를 쓴다. */
 private const val COMPACT_HEIGHT_DP = 480
 
-/** 파형 최대 높이. 높이가 넉넉해도 이보다 커지면 보기 좋지 않다. */
-private val MAX_WAVEFORM_HEIGHT = 200.dp
+/** 세로 화면의 파형 최대 높이. 높이가 넉넉해도 이보다 커지면 보기 좋지 않다. */
+private val MAX_WAVEFORM_HEIGHT = 280.dp
 
 @Composable
 fun AudioEditScreen(
@@ -136,7 +136,7 @@ fun AudioEditScreen(
         onConfirmExit = navigateToBack,
     )
 
-    // 가로 화면처럼 높이가 낮으면 제목·저장 버튼을 상단 바로 올리고 조작부를 한 줄로 줄여 파형 자리를 확보한다.
+    // 가로 화면처럼 높이가 낮으면 결과 시간·저장 버튼을 상단 바로 올리고 조작부를 한 줄로 줄여 파형 자리를 확보한다.
     // 방향이 아니라 높이로 판단해야 분할 화면에서도 맞다.
     // LocalConfiguration 은 Android 전용이라 창 크기를 직접 재서 dp 로 환산한다.
     val windowHeightPx = LocalWindowInfo.current.containerSize.height
@@ -148,17 +148,14 @@ fun AudioEditScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    if (isCompactHeight) {
-                        Text(
-                            text = data.audioMediaName,
-                            fontSize = topAppBarDetailTitleFontSize,
-                            lineHeight = topAppBarDetailTitleLineHeight,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    } else {
+                    Column {
                         Text(
                             text = "음원 편집",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = data.audioMediaName,
                             fontSize = topAppBarDetailTitleFontSize,
                             lineHeight = topAppBarDetailTitleLineHeight,
                             maxLines = 1,
@@ -270,13 +267,7 @@ fun AudioEditScreen(
         ) {
             if (!isCompactHeight) {
                 Text(
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
-                    text = data.audioMediaName,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
                     text = durationSummary,
                     fontSize = 15.sp,
                 )
@@ -287,18 +278,24 @@ fun AudioEditScreen(
                 viewport = viewport,
                 baselineMs = data.baselineMs,
                 endMs = data.resultDurationMs,
+                canSplit = data.canSplit,
+                canMerge = data.canMerge,
                 baselineSnapTargetsMs = baselineSnapTargetsMs,
                 endSnapTargetsMs = endSnapTargetsMs,
                 onBaselineChanged = { ms -> sendIntent(AudioEditIntent.OnBaselineChanged(ms)) },
                 onEndChanged = { ms -> sendIntent(AudioEditIntent.OnTimelineEndChanged(ms)) },
             )
-            // 파형은 남는 높이를 쓰되 최대 높이까지만 커진다. 가로 화면에서는 조작부를 밀어내지 않고,
-            // 세로 화면에서는 지나치게 커지지 않는다. 남는 공간은 조작부 아래 빈칸이 된다.
+            // 가로 화면은 조작부를 뺀 높이를 다 쓴다. 세로 화면은 최대 높이까지만 커지고, 남는 공간은
+            // 조작부 아래 빈칸이 된다.
             TimelineWaveformView(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .heightIn(max = MAX_WAVEFORM_HEIGHT)
-                    .fillMaxHeight(),
+                modifier = if (isCompactHeight) {
+                    Modifier.weight(1f)
+                } else {
+                    Modifier
+                        .weight(1f, fill = false)
+                        .heightIn(max = MAX_WAVEFORM_HEIGHT)
+                        .fillMaxHeight()
+                },
                 viewport = viewport,
                 waveform = data.waveform,
                 timeline = data.timeline,

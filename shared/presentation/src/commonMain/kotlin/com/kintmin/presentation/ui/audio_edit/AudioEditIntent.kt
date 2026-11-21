@@ -13,7 +13,7 @@ sealed interface AudioEditIntent {
     /** 파형에서 조각을 눌렀다. 빈칸을 누르면 null로 선택이 풀린다. */
     data class OnClipSelected(val index: Int?) : AudioEditIntent
 
-    /** 조각 경계를 꾹 눌러 끌었다. */
+    /** 조각 경계를 끌었다. */
     data class OnClipEdgeDragged(
         val index: Int,
         val edge: AudioEditTimeline.Edge,

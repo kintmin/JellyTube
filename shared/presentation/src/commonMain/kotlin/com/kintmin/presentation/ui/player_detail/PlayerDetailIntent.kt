@@ -10,6 +10,8 @@ sealed interface PlayerDetailIntent {
     data object OnClickRepeatRangeButton : PlayerDetailIntent
     data object OnClickFavoriteButton : PlayerDetailIntent
     data object OnClickLyrics : PlayerDetailIntent
+    data class OnClickLyricLine(val index: Int) : PlayerDetailIntent
+    data object OnClickLyricsViewerButton : PlayerDetailIntent
     data object OnClickAddButton : PlayerDetailIntent
     data object OnClickMoreButton : PlayerDetailIntent
     data object OnClickPlayingPlaylistButton : PlayerDetailIntent

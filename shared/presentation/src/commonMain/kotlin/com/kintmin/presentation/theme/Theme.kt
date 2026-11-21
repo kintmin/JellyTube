@@ -17,7 +17,7 @@ private val DarkColorScheme = darkColorScheme(
     onSecondaryContainer = gray100,
 
     // 켜짐·재생 중 강조. primary 는 어두운 배경과 scrim 위에서 꺼짐보다 어둡게 보인다.
-    tertiary = seaBlue80,
+    tertiary = seaBlue60,
     onTertiary = deepSea100,
 
     background = dark80,

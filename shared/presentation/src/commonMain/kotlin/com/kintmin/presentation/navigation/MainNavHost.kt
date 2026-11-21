@@ -116,9 +116,6 @@ fun MainNavHost(
             navigateToPlayerDetail = {
                 navController.navigateToPlayerDetailScreen(navOptions)
             },
-            navigateToFileShareReceive = {
-                navController.navigateToSettingFileShareReceiveScreen(navOptions)
-            },
         )
         playlistDetail(
             navigateToBack = { navController.popBackStack() },
@@ -270,6 +267,9 @@ fun MainNavHost(
             },
             navigateToLyricsSearch = { audioMediaId, query, durationSeconds ->
                 navController.navigateToLyricsSearchScreen(audioMediaId, query, durationSeconds, navOptions)
+            },
+            navigateToLyricsViewer = { audioMediaId ->
+                navController.navigateToLyricsViewerScreen(audioMediaId, navOptions)
             },
         )
         lyricsViewerScreen(

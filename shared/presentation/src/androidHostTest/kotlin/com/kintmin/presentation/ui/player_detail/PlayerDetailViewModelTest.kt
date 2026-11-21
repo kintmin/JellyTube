@@ -4,6 +4,8 @@ import com.kintmin.domain.audio_play_setting.model.RepeatRangeState
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
+import com.kintmin.domain.lyrics.model.LyricsVariant
+import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
 import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.port.PlaybackController
@@ -27,6 +29,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
 /** 잠들기 타이머가 곡 교체에 휩쓸리지 않는지, 그리고 가사 세 상태의 분기를 본다. */
@@ -80,6 +83,13 @@ class PlayerDetailViewModelTest {
 
     private val getParsedLyrics = mockk<GetParsedLyricsUseCase> {
         coEvery { this@mockk.invoke(any()) } answers { parsedLines }
+    }
+
+    /** 음차·번역 파일을 파싱한 결과. 없는 variant 는 파일이 없는 것이다. */
+    private var variantLines: Map<LyricsVariant, List<LyricsLine>> = emptyMap()
+
+    private val getLyricsVariant = mockk<GetLyricsVariantUseCase> {
+        coEvery { this@mockk.invoke(any(), any()) } answers { Result.success(variantLines[secondArg()]) }
     }
 
     @Before
@@ -171,6 +181,56 @@ class PlayerDetailViewModelTest {
         assertEquals(-1, viewModel.uiState.value.activeLyricIndex)
         assertEquals("", viewModel.uiState.value.currentLyricLine)
         assertEquals(2, viewModel.uiState.value.lyricLines.size)
+    }
+
+    @Test
+    fun `음차·번역 파일이 있으면 같은 번호의 줄에 붙는다`() {
+        givenSyncedLyrics()
+        variantLines = mapOf(
+            LyricsVariant.TRANSLATION to listOf(
+                LyricsLine(timeMs = 0L, text = "first"),
+                LyricsLine(timeMs = 2_000L, text = "second"),
+                LyricsLine(timeMs = 5_000L, text = ""),
+            ),
+        )
+        val viewModel = viewModel()
+
+        val lines = viewModel.uiState.value.lyricLines
+        assertEquals(listOf("first", "second", null), lines.map { it.translation })
+        assertEquals(listOf(null, null, null), lines.map { it.transliteration })
+        assertEquals("second", viewModel.uiState.value.currentLyricTranslation)
+    }
+
+    @Test
+    fun `음차·번역 파일이 없으면 원문만 있다`() {
+        givenSyncedLyrics()
+        val viewModel = viewModel()
+
+        val lines = viewModel.uiState.value.lyricLines
+        assertTrue(lines.all { it.translation == null && it.transliteration == null })
+        assertEquals(null, viewModel.uiState.value.currentLyricTranslation)
+    }
+
+    @Test
+    fun `싱크 가사의 줄을 누르면 그 줄의 시각으로 옮긴다`() {
+        givenSyncedLyrics()
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine(2))
+
+        assertTrue(viewModel.uiState.value.isLyricsSynced)
+        verify(exactly = 1) { manager.seek(5_000.milliseconds) }
+    }
+
+    @Test
+    fun `비싱크 가사의 줄을 눌러도 옮기지 않는다`() {
+        givenUnsyncedLyrics()
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine(1))
+
+        assertFalse(viewModel.uiState.value.isLyricsSynced)
+        verify(exactly = 0) { manager.seek(any()) }
     }
 
     @Test
@@ -296,5 +356,6 @@ class PlayerDetailViewModelTest {
         fetchAudioMediaDetailFlowUseCase = fetchAudioMediaDetail,
         toggleFavoriteUseCase = mockk(relaxed = true),
         getParsedLyricsUseCase = getParsedLyrics,
+        getLyricsVariantUseCase = getLyricsVariant,
     )
 }

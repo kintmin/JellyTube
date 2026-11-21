@@ -3,14 +3,20 @@ package com.kintmin.presentation.ui.audio_edit.waveform
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ContentCut
+import androidx.compose.material.icons.rounded.Merge
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.TextStyle
@@ -21,6 +27,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
+import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss_dot_sss
+import com.kintmin.presentation.theme.black
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.bloodyRed100
 import com.kintmin.presentation.theme.gray40
@@ -43,6 +51,8 @@ fun TimelineRulerView(
     viewport: TimelineViewportState,
     baselineMs: Long,
     endMs: Long,
+    canSplit: Boolean,
+    canMerge: Boolean,
     /** 기준선이 달라붙는 위치들. */
     baselineSnapTargetsMs: List<Long>,
     /** 끝 표시가 달라붙는 위치들. */
@@ -51,6 +61,8 @@ fun TimelineRulerView(
     onEndChanged: (Long) -> Unit,
 ) {
     val textMeasurer = rememberTextMeasurer()
+    val cutPainter = rememberVectorPainter(Icons.Rounded.ContentCut)
+    val mergePainter = rememberVectorPainter(Icons.Rounded.Merge)
     // 끝 라벨 뒤를 배경색으로 덮어 눈금 라벨과 겹쳐도 읽히게 한다
     val backgroundColor = MaterialTheme.colorScheme.background
     val currentEndMs by rememberUpdatedState(endMs)
@@ -99,20 +111,20 @@ fun TimelineRulerView(
             tickMs += intervalMs
         }
 
-        // 끝 표시 손잡이 — 조각 손잡이처럼 세로 줄을 넣어 잡아 끄는 곳으로 보이게 한다
+        // 끝 표시 손잡이 — 꽉 찬 세로 막대는 재생 위치로 읽혀 `]` 모양으로 그린다
         val endX = viewport.xOf(endMs)
-        val handleWidth = 12.dp.toPx()
+        val barWidth = 3.dp.toPx()
+        val armLength = 8.dp.toPx()
         drawRect(
             color = bloodyRed100,
-            topLeft = Offset(x = endX - handleWidth, y = 0f),
-            size = Size(width = handleWidth, height = size.height),
+            topLeft = Offset(x = endX - barWidth, y = 0f),
+            size = Size(width = barWidth, height = size.height),
         )
-        val gripLineHeight = size.height * 0.5f
-        listOf(endX - handleWidth * 0.65f, endX - handleWidth * 0.35f).forEach { lineX ->
+        listOf(0f, size.height - barWidth).forEach { armY ->
             drawRect(
-                color = white.copy(alpha = 0.8f),
-                topLeft = Offset(x = lineX - 0.5.dp.toPx(), y = (size.height - gripLineHeight) / 2f),
-                size = Size(width = 1.dp.toPx(), height = gripLineHeight),
+                color = bloodyRed100,
+                topLeft = Offset(x = endX - armLength, y = armY),
+                size = Size(width = armLength, height = barWidth),
             )
         }
 
@@ -123,7 +135,7 @@ fun TimelineRulerView(
             style = TextStyle(color = bloodyRed100, fontSize = 11.sp, fontWeight = FontWeight.Bold),
         )
         val labelGap = 4.dp.toPx()
-        val labelLeftX = endX - handleWidth - labelGap - endLabel.size.width
+        val labelLeftX = endX - armLength - labelGap - endLabel.size.width
         val labelX = if (labelLeftX >= 0f) labelLeftX else endX + labelGap
         val labelY = (size.height * 0.6f - endLabel.size.height).coerceAtLeast(0f)
         drawRect(
@@ -135,15 +147,43 @@ fun TimelineRulerView(
 
         // 기준선 머리
         val baselineX = viewport.xOf(baselineMs)
-        val headSize = 8.dp.toPx()
-        drawPath(
-            path = Path().apply {
-                moveTo(baselineX - headSize, size.height - headSize * 1.5f)
-                lineTo(baselineX + headSize, size.height - headSize * 1.5f)
-                lineTo(baselineX, size.height)
-                close()
-            },
+        val baselineLabel = textMeasurer.measure(
+            text = baselineMs.milliseconds.to_hh_colon_mm_colon_ss_dot_sss(),
+            style = TextStyle(color = black, fontSize = 11.sp, fontWeight = FontWeight.Bold),
+        )
+        val actionPainter = when {
+            canMerge -> mergePainter
+            canSplit -> cutPainter
+            else -> null
+        }
+        val iconSize = 12.dp.toPx()
+        val bubblePadding = 6.dp.toPx()
+        val iconGap = 3.dp.toPx()
+        val bubbleHeight = baselineLabel.size.height + 4.dp.toPx()
+        val bubbleWidth = bubblePadding * 2 + baselineLabel.size.width + if (actionPainter != null) iconSize + iconGap else 0f
+        // 기준선이 화면 밖에 있어도 시각은 읽히도록 가장자리에 붙인다
+        val bubbleLeft = (baselineX - bubbleWidth / 2f).coerceIn(0f, (size.width - bubbleWidth).coerceAtLeast(0f))
+        drawRect(
             color = white,
+            topLeft = Offset(x = baselineX - 1.dp.toPx(), y = bubbleHeight),
+            size = Size(width = 2.dp.toPx(), height = size.height - bubbleHeight),
+        )
+        drawRoundRect(
+            color = white,
+            topLeft = Offset(x = bubbleLeft, y = 0f),
+            size = Size(width = bubbleWidth, height = bubbleHeight),
+            cornerRadius = CornerRadius(bubbleHeight / 2f),
+        )
+        var contentX = bubbleLeft + bubblePadding
+        actionPainter?.let { painter ->
+            translate(left = contentX, top = (bubbleHeight - iconSize) / 2f) {
+                with(painter) { draw(size = Size(iconSize, iconSize), colorFilter = ColorFilter.tint(black)) }
+            }
+            contentX += iconSize + iconGap
+        }
+        drawText(
+            textLayoutResult = baselineLabel,
+            topLeft = Offset(x = contentX, y = (bubbleHeight - baselineLabel.size.height) / 2f),
         )
     }
 }
@@ -170,6 +210,8 @@ fun TimelineRulerViewPreview() {
             viewport = viewport,
             baselineMs = 60_000,
             endMs = 300_000,
+            canSplit = true,
+            canMerge = false,
             baselineSnapTargetsMs = listOf(0L, 300_000L),
             endSnapTargetsMs = listOf(300_000L),
             onBaselineChanged = {},

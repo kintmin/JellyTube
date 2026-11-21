@@ -8,6 +8,7 @@ sealed interface PlayerDetailEvent {
         val query: String,
         val durationSeconds: Double,
     ) : PlayerDetailEvent
+    data class NavigateToLyricsViewer(val audioMediaId: Int) : PlayerDetailEvent
     data class NavigateToPlayingPlaylist(val playlistId: Int, val audioMediaId: Int?) : PlayerDetailEvent
     data class ShowToast(val message: String) : PlayerDetailEvent
 }

@@ -49,7 +49,6 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.rememberWebViewHandle
-import com.kintmin.presentation.platform.rememberAudioFilePicker
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
@@ -94,7 +93,6 @@ fun MainScreen(
     navigateToPlaylistAdd: (id: Int, playlistName: String) -> Unit,
     navigateToSetting: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
-    navigateToFileShareReceive: () -> Unit,
 ) {
     val toaster = rememberToaster()
     val mainViewModel = koinViewModel<MainViewModel>()
@@ -108,9 +106,6 @@ fun MainScreen(
     val currentMediaItem by playerBarViewModel.uiState.collectAsState()
 
     val permissionController = rememberPermissionController()
-    val audioFilePicker = rememberAudioFilePicker { fileIdentifiers ->
-        mainViewModel.sendIntent(MainIntent.ImportMediaFiles(fileIdentifiers))
-    }
     LaunchedEffect(Unit) {
         // 어떤 권한이 OS 버전별로 실제 필요한지는 구현이 판단한다.
         permissionController.request(
@@ -122,14 +117,6 @@ fun MainScreen(
         downloadViewModel.eventFlow.collect { event ->
             when (event) {
                 is YoutubeDownloadEvent.ShowToast -> toaster.show(event.message)
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        mainViewModel.eventFlow.collect { event ->
-            when (event) {
-                is MainEvent.ShowToast -> toaster.show(event.message)
             }
         }
     }
@@ -153,8 +140,6 @@ fun MainScreen(
         currentUrl = youtubeDownloadUiState.currentUrl,
         navigateToSetting = navigateToSetting,
         navigateToPlayerDetail = navigateToPlayerDetail,
-        navigateToFileShareReceive = navigateToFileShareReceive,
-        onClickPickMedia = { audioFilePicker.launch() },
         sendMainIntent = mainViewModel::sendIntent,
         sendYoutubeDownloadIntent = downloadViewModel::sendIntent,
         sendPlaylistIntent = playlistViewModel::sendIntent,
@@ -184,8 +169,6 @@ fun MainScreen(
     currentUrl: String,
     navigateToSetting: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
-    navigateToFileShareReceive: () -> Unit,
-    onClickPickMedia: () -> Unit,
     sendMainIntent: (MainIntent) -> Unit,
     sendYoutubeDownloadIntent: (YoutubeDownloadIntent) -> Unit,
     sendPlaylistIntent: (PlaylistIntent) -> Unit,
@@ -278,8 +261,6 @@ fun MainScreen(
                     onClickDownload = { url ->
                         sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnClickDownload(url))
                     },
-                    onClickPickMedia = onClickPickMedia,
-                    onClickDesktopFileShare = navigateToFileShareReceive,
                 )
             }
         },
@@ -413,8 +394,6 @@ fun MainScreenSearchTabPreview() {
             currentUrl = "",
             navigateToSetting = {},
             navigateToPlayerDetail = {},
-            navigateToFileShareReceive = {},
-            onClickPickMedia = {},
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},
@@ -435,8 +414,6 @@ fun MainScreenPlayTabPreview() {
             currentUrl = "",
             navigateToSetting = {},
             navigateToPlayerDetail = {},
-            navigateToFileShareReceive = {},
-            onClickPickMedia = {},
             sendMainIntent = {},
             sendYoutubeDownloadIntent = {},
             sendPlaylistIntent = {},

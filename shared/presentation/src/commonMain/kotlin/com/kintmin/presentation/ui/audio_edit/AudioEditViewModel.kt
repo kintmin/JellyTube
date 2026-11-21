@@ -128,10 +128,12 @@ class AudioEditViewModel constructor(
                 // 원본 길이가 다르면 다른 원본으로 만든 편집 상태라 조각 위치를 믿을 수 없다
                 ?.takeIf { it.originDurationMs == originDurationMs }
 
+            val timeline = savedTimeline ?: initialTimeline
             _uiState.update { state ->
                 state.copy(
-                    timeline = savedTimeline ?: initialTimeline,
-                    savedTimeline = savedTimeline ?: initialTimeline,
+                    timeline = timeline,
+                    savedTimeline = timeline,
+                    baselineMs = timeline.endMs / 2,
                     isLoading = false,
                 )
             }

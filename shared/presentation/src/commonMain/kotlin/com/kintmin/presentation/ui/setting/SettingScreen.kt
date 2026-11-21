@@ -26,7 +26,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -64,6 +63,7 @@ import com.kintmin.presentation.ui.setting.dialog.MotionPermissionDialog
 import com.kintmin.presentation.ui.setting.section.SettingItemView
 import com.kintmin.presentation.ui.setting.section.SettingNavigateIcon
 import com.kintmin.presentation.ui.setting.section.SettingSectionView
+import com.kintmin.presentation.ui.setting.section.SettingSwitchView
 
 
 @Composable
@@ -221,7 +221,7 @@ fun SettingScreen(
                     icon = Icons.Rounded.VerticalAlignTop,
                     onClick = { sendIntent(SettingIntent.OnClickShouldInsertAtTopOnDownloadTile) },
                     trailing = {
-                        Switch(
+                        SettingSwitchView(
                             checked = uiState.shouldInsertAtTopOnDownload,
                             onCheckedChange = { isChecked ->
                                 sendIntent(SettingIntent.OnToggleShouldInsertAtTopOnDownload(isChecked))
@@ -290,7 +290,7 @@ fun SettingScreen(
                     icon = Icons.Rounded.DirectionsWalk,
                     onClick = { sendIntent(SettingIntent.OnToggleIsStepEnabled(!uiState.isStepEnabled)) },
                     trailing = {
-                        Switch(
+                        SettingSwitchView(
                             checked = uiState.isStepEnabled,
                             onCheckedChange = { isChecked ->
                                 sendIntent(SettingIntent.OnToggleIsStepEnabled(isChecked))

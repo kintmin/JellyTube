@@ -3,7 +3,10 @@ package com.kintmin.presentation.ui.audio_edit.waveform
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_edit.model.AudioEditTimeline
@@ -12,17 +15,20 @@ import com.kintmin.presentation.theme.seaBlue100
 import com.kintmin.presentation.theme.white
 
 /**
- * 조각 양 끝의 손잡이. 꾹 눌러 끌면 길이가 바뀌는 자리라는 것을 보여준다.
+ * 선택한 조각 양 끝의 손잡이와 가운데 이동 표시.
  *
+ * 선택한 조각에만 그린다. 손잡이가 보이는 경계는 바로 끌리고, 선택하지 않은 조각은 꾹 눌러야
+ * 잡히므로 손잡이를 그리면 바로 끌릴 것처럼 보인다.
  * 길이 조절 중에는 잡은 쪽 손잡이만 크고 밝게 바꿔, 어느 경계가 잡혔는지 보여준다.
  * 손잡이는 실제로 경계를 잡는 범위([edgeTouchRadiusPx]) 안쪽에 그린다. 조각이 너무 좁아
- * 손잡이를 그릴 자리가 없으면 생략한다.
+ * 손잡이나 이동 표시를 그릴 자리가 없으면 생략한다.
  */
 internal fun DrawScope.drawClipGrips(
     viewport: TimelineViewportState,
     timeline: AudioEditTimeline,
     selectedClipIndex: Int?,
     grab: TimelineGrab?,
+    moveHandlePainter: Painter,
 ) {
     val gripWidth = 3.dp.toPx()
     val gripHeight = 24.dp.toPx()
@@ -31,31 +37,46 @@ internal fun DrawScope.drawClipGrips(
     val grabbedGripHeight = 40.dp.toPx()
     val maxRadiusPx = EDGE_TOUCH_RADIUS.toPx()
 
+    val moveHandleSize = 20.dp.toPx()
+
     // 병합한 묶음은 한 덩이라 안쪽 경계에는 손잡이가 없다
-    timeline.groupRanges.forEach { group ->
-        val left = viewport.xOf(timeline.clips[group.first].positionMs)
-        val right = viewport.xOf(timeline.clips[group.last].positionEndMs)
-        if (right < 0f || left > size.width) return@forEach
+    val group = selectedClipIndex?.let(timeline::groupRangeOf) ?: return
+    val left = viewport.xOf(timeline.clips[group.first].positionMs)
+    val right = viewport.xOf(timeline.clips[group.last].positionEndMs)
+    if (right < 0f || left > size.width) return
 
-        val radiusPx = edgeTouchRadiusPx(clipWidthPx = right - left, maxRadiusPx = maxRadiusPx)
-        if (radiusPx < gripInset + gripWidth) return@forEach
+    val radiusPx = edgeTouchRadiusPx(clipWidthPx = right - left, maxRadiusPx = maxRadiusPx)
+    if (radiusPx < gripInset + gripWidth) return
 
-        val color = if (selectedClipIndex in group) seaBlue100 else gray60.copy(alpha = 0.7f)
-        listOf(
-            Triple(AudioEditTimeline.Edge.Start, group.first, left + gripInset),
-            Triple(AudioEditTimeline.Edge.End, group.last, right - gripInset),
-        ).forEach { (edge, clipIndex, edgeX) ->
-            val isGrabbed = grab?.clipIndex == clipIndex && grab.edge == edge
-            val width = if (isGrabbed) grabbedGripWidth else gripWidth
-            val height = if (isGrabbed) grabbedGripHeight else gripHeight
-            drawRoundRect(
-                color = if (isGrabbed) white else color,
-                topLeft = Offset(
-                    x = if (edge == AudioEditTimeline.Edge.Start) edgeX else edgeX - width,
-                    y = (size.height - height) / 2f,
-                ),
-                size = Size(width = width, height = height),
-                cornerRadius = CornerRadius(width / 2f),
+    listOf(
+        Triple(AudioEditTimeline.Edge.Start, group.first, left + gripInset),
+        Triple(AudioEditTimeline.Edge.End, group.last, right - gripInset),
+    ).forEach { (edge, clipIndex, edgeX) ->
+        val isGrabbed = grab?.clipIndex == clipIndex && grab.edge == edge
+        val width = if (isGrabbed) grabbedGripWidth else gripWidth
+        val height = if (isGrabbed) grabbedGripHeight else gripHeight
+        drawRoundRect(
+            color = if (isGrabbed) white else seaBlue100,
+            topLeft = Offset(
+                x = if (edge == AudioEditTimeline.Edge.Start) edgeX else edgeX - width,
+                y = (size.height - height) / 2f,
+            ),
+            size = Size(width = width, height = height),
+            cornerRadius = CornerRadius(width / 2f),
+        )
+    }
+
+    // 가운데 절반은 늘 옮기기용으로 남아 있어, 그 폭에 들어갈 때만 이동 표시를 그린다
+    if ((right - left) / 2f < moveHandleSize) return
+    val isMoving = grab != null && grab.clipIndex in group && grab.edge == null
+    translate(
+        left = (left + right - moveHandleSize) / 2f,
+        top = (size.height - moveHandleSize) / 2f,
+    ) {
+        with(moveHandlePainter) {
+            draw(
+                size = Size(moveHandleSize, moveHandleSize),
+                colorFilter = ColorFilter.tint(if (isMoving) white else seaBlue100),
             )
         }
     }

@@ -42,7 +42,6 @@ import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.gray10
 import com.kintmin.presentation.theme.gray60
-import com.kintmin.presentation.theme.seaBlue60
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -187,7 +186,7 @@ private fun PlayerBarProgress(data: PlayerBarUiState) {
             modifier = Modifier
                 .fillMaxWidth(playedRatio)
                 .fillMaxHeight()
-                .background(seaBlue60),
+                .background(MaterialTheme.colorScheme.tertiary),
         )
     }
 }

@@ -8,4 +8,5 @@ data class MainFloatingActionUiState(
     val playlistIdOnDownloadName: String = PlaylistType.UNCATEGORIZED.defaultName,
     val selectablePlaylistList: List<DownloadPlaylistUiState> = emptyList(),
     val isPlaylistBottomSheetVisible: Boolean = false,
+    val isCreatePlaylistDialogVisible: Boolean = false,
 )

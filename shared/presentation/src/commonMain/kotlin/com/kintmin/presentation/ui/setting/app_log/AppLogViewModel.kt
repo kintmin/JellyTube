@@ -24,7 +24,7 @@ class AppLogViewModel constructor(
     private val _eventFlow = Channel<AppLogEvent>(Channel.BUFFERED)
     val eventFlow = _eventFlow.receiveAsFlow()
 
-    private var fullLogLineList: List<String> = emptyList()
+    private var fullLogLineList: List<AppLogLineUiState> = emptyList()
     private val pageSize = 200
 
     fun sendIntent(intent: AppLogIntent) {
@@ -45,7 +45,7 @@ class AppLogViewModel constructor(
             val firstDate = logDateList.firstOrNull()
             _uiState.update {
                 it.copy(
-                    isLoading = false,
+                    isLoading = firstDate != null,
                     logDateList = logDateList,
                     selectedLogDate = firstDate,
                 )
@@ -60,7 +60,6 @@ class AppLogViewModel constructor(
             _uiState.update {
                 it.copy(
                     selectedLogDate = date,
-                    logLineList = emptyList(),
                     hasNextPage = false,
                     isLoading = true,
                 )
@@ -70,7 +69,7 @@ class AppLogViewModel constructor(
     }
 
     private suspend fun loadLineList(date: String) {
-        fullLogLineList = fetchAppLogLineListUseCase(date).getOrElse { emptyList() }
+        fullLogLineList = fetchAppLogLineListUseCase(date).getOrElse { emptyList() }.map(::parseAppLogLine)
         val firstPageLineList = fullLogLineList.take(pageSize)
         _uiState.update {
             it.copy(
