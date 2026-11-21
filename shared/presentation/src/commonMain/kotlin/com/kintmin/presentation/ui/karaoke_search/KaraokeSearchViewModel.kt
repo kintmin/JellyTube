@@ -39,7 +39,6 @@ class KaraokeSearchViewModel constructor(
     private val eventChannel = Channel<KaraokeSearchEvent>(Channel.BUFFERED)
     val eventFlow: Flow<KaraokeSearchEvent> = eventChannel.receiveAsFlow()
 
-    // 진행 중인 검색 코루틴. 새 검색을 시작하기 전에 취소한다.
     private var searchJob: Job? = null
 
     init {
@@ -62,7 +61,6 @@ class KaraokeSearchViewModel constructor(
         }
     }
 
-    // 이미 로딩 중인 검색이 있으면 취소하고, 현재 상태로 새 검색을 시작한다.
     private fun startSearch(query: String) {
         searchJob?.cancel()
         searchJob = viewModelScope.launch { performSearch(query) }

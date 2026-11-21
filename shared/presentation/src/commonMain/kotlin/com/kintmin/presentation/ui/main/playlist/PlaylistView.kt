@@ -35,10 +35,6 @@ import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistLibraryBlockView
 
-/**
- * 성격이 다른 둘을 다른 컴포넌트로 그린다. 위는 시스템이 관리하는 라이브러리(1열 리스트 행),
- * 아래는 사용자가 만든 플레이리스트(2열 카드)다. 한 격자 안에서 span 으로 나눈다.
- */
 @Composable
 fun PlaylistView(
     modifier: Modifier,

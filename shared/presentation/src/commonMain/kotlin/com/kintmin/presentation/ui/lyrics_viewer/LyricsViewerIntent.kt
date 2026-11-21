@@ -5,7 +5,6 @@ sealed interface LyricsViewerIntent {
     data object OnRefreshPosition : LyricsViewerIntent
     data class OnClickLine(val index: Int) : LyricsViewerIntent
     data object OnClickDeleteLyrics : LyricsViewerIntent
-    // 번역/음차 변형 파일 생성 (백그라운드 Worker enqueue)
     data object OnClickCreateTranslation : LyricsViewerIntent
     data object OnClickCreateTransliteration : LyricsViewerIntent
 }

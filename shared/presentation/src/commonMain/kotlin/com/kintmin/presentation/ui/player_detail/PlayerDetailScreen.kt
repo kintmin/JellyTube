@@ -168,7 +168,6 @@ fun PlayerDetailScreen(
             ) {
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // 찜이 부가 줄로 내려가 좌우에 하나씩만 남았다. 그래서 제목이 가운데를 쓸 수 있다.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -268,9 +267,6 @@ fun PlayerDetailScreen(
                             placeholderIconSize = 100.dp,
                             placeholderTint = overlayContentMuted,
                         ) {
-                            // 지금 가사는 그림 위에 얹는다. 세로를 따로 쓰지 않고, 보여 줄 줄이
-                            // 없는 곡에서는 막까지 걷혀 그림이 깨끗하다. 뜨고 지는 것은
-                            // 오버레이가 스스로 다룬다.
                             CurrentLyricOverlayView(
                                 line = data.currentLyricLine,
                                 translation = data.currentLyricTranslation,

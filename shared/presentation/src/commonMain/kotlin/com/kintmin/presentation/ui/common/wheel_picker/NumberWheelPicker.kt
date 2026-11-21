@@ -36,10 +36,6 @@ import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.selectedFill
 import kotlin.math.abs
 
-/**
- * 별도 라이브러리 없이 LazyColumn + 스냅으로 구현한 숫자 휠 피커.
- * 뷰포트 중앙에 가장 가까운 값을 선택값으로 보고 onValueChange 로 알린다.
- */
 internal val WHEEL_ITEM_HEIGHT = 40.dp
 internal const val WHEEL_VISIBLE_COUNT = 5
 
@@ -171,7 +167,6 @@ fun WheelPickerHighlight(modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .height(WHEEL_ITEM_HEIGHT)
             .clip(MaterialTheme.shapes.medium)
-            // 시트 배경 위에 다른 색상을 얹지 않고 본문색 state layer(M3 선택 8%)로 올린다.
             .background(selectedFill),
     )
 }

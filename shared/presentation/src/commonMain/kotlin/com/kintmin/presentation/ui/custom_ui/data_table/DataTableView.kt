@@ -45,12 +45,7 @@ interface ColumnType<T> {
     fun makeCell(cellHeight: Dp, data: T)
 }
 
-/**
- * 가로, 세로를 전부 LazyColumn, LazyRow로 만들면 동기화가 매우 힘든 이슈 존재.
- * 따라서 아래 구조 이용.
- * 세로: LazyColumn
- * 가로: 그냥 Row지만, 현재 보이는 Column의 개수를 제한하여 최적화.
- */
+/** 가로는 LazyRow 가 아니라 보이는 열만 그리는 Row 다 — LazyRow 는 세로와 스크롤이 동기화되지 않는다. */
 @Composable
 fun <T> DataTableView(
     modifier: Modifier,
@@ -71,7 +66,6 @@ fun <T> DataTableView(
         flexibleHeaderList.sumOf { it.headerWidth.value.toDouble() }.dp
     }
 
-    // 각 Column의 가로 길이를 메모이제이션
     val flexiblePrefixWidthsPx = remember(flexibleHeaderList, density) {
         IntArray(flexibleHeaderList.size + 1).apply {
             for (index in flexibleHeaderList.indices) {
@@ -85,7 +79,6 @@ fun <T> DataTableView(
         val fixedWidthPx = with(density) { fixedWidth.roundToPx() }
         val flexibleViewportWidthPx = (maxWidthPx - fixedWidthPx).coerceAtLeast(0)
 
-        // 가로 스크롤에 따라 현재 보이는 Column을 계산하기 위한 상태
         val visibleRange by remember(flexibleViewportWidthPx, flexiblePrefixWidthsPx, horizontalScrollState) {
             derivedStateOf {
                 findVisibleRange(

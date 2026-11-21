@@ -2,12 +2,7 @@ package com.kintmin.presentation.extension
 
 import kotlin.math.roundToLong
 
-/**
- * 소수점 [digits] 자리로 반올림한 문자열을 만든다.
- *
- * `String.format` 은 JVM 전용이라 공통 코드에서 쓸 수 없으므로 직접 구현한다.
- * 로케일에 상관없이 소수점은 항상 `.` 이다.
- */
+/** `String.format` 은 JVM 전용이다. 로케일과 무관하게 소수점은 `.` 이다. */
 fun Float.toFixed(digits: Int): String {
     require(digits >= 0) { "digits 는 0 이상이어야 한다: $digits" }
 

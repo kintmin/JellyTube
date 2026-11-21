@@ -26,7 +26,6 @@ object DeepLinkParser {
         val pathSegments = UrlParts.pathSegments(url)
         if (pathSegments.getOrNull(0) != DeepLinkConstants.Path.MAIN) return emptyList()
 
-        // 뿌리 경로까지 맞으면 먼저 스택을 비운다. 이후 분기가 중간에 포기해도 이것은 남는다.
         val intents = mutableListOf<NavigationEvent>(NavigationEvent.PopAll)
 
         when (pathSegments.getOrNull(1)) {

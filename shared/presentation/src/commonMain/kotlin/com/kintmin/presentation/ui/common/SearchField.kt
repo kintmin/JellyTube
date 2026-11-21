@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.floatingElevation
 import com.kintmin.presentation.theme.outlineSubtle
 
 /**
@@ -153,8 +154,7 @@ fun PillTextFieldTrailingButton(
 
 /** 목록·웹뷰 위에 뜬 필드. 다크 테마에서는 그림자가 배경에 묻혀 테두리를 함께 두른다. */
 fun Modifier.floatingField(): Modifier = this
-    // M3 elevation level 3. BottomActionButton 과 같은 높이다.
-    .shadow(elevation = 6.dp, shape = CircleShape)
+    .shadow(elevation = floatingElevation, shape = CircleShape)
     .border(width = 1.dp, color = outlineSubtle, shape = CircleShape)
 
 /** [floatingField] 를 감싼 바깥 여백(위아래 8dp)까지 더한 높이. 아래 목록이 이만큼 비켜 준다. */

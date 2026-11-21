@@ -8,7 +8,7 @@ fun LocalDateTime.toKoreanDateTimeString(): String {
     return "${year}년 ${month.number}월 ${day}일 ${hour}시 ${minute}분 ${second}.${millis}초"
 }
 
-/** "yyyy년 M월 d일 H시 m분" 형태. 초는 담지 않는다. */
+/** "yyyy년 M월 d일 H시 m분" 형태. */
 fun LocalDateTime.toKoreanDateTimeStringWithoutSecond(): String =
     "${year}년 ${month.number}월 ${day}일 ${hour}시 ${minute}분"
 

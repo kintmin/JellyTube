@@ -29,10 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.artworkBackdropFallback
-import com.kintmin.presentation.theme.overlayScrimSoft
-import com.kintmin.presentation.theme.overlayScrimStrong
 import com.kintmin.presentation.theme.overlayContent
 import com.kintmin.presentation.theme.overlayContentSecondary
+import com.kintmin.presentation.theme.overlayScrimSoft
+import com.kintmin.presentation.theme.overlayScrimStrong
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 
@@ -47,12 +47,7 @@ private const val FADE_MILLIS = 500
  */
 private val HIDE_DELAY = 1.seconds
 
-/**
- * 지금 가사 한 줄을 아트워크 위에 얹는다.
- *
- * 세로를 따로 쓰지 않으려고 그림 위로 올렸다. 보여 줄 줄이 없으면 막까지 함께 걷어
- * 대부분의 곡에서 그림이 깨끗하다.
- */
+/** 지금 가사 한 줄을 아트워크 위에 얹는다. 보여 줄 줄이 없으면 막까지 걷는다. */
 @Composable
 fun CurrentLyricOverlayView(
     line: String,

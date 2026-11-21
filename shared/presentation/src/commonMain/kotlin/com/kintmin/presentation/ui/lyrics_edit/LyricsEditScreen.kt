@@ -102,7 +102,6 @@ fun LyricsEditScreen(
         if (data.isDirty) showExitDialog = true else navigateToBack()
     }
 
-    // 수정사항이 있으면 기기 뒤로가기를 가로채 확인 다이얼로그를 띄운다.
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
         isBackEnabled = data.isDirty,

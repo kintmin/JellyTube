@@ -9,7 +9,6 @@ data class LyricsViewerUiState(
     // 번역/음차 변형 가사 (원본 lines 와 인덱스 정렬, 없으면 null)
     val translationLines: List<String>? = null,
     val transliterationLines: List<String>? = null,
-    // ⋮ 메뉴 노출 여부
     val showTranslateMenu: Boolean = false,
     val showTransliterateMenu: Boolean = false,
     val isCreatingTranslation: Boolean = false,

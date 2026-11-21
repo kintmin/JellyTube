@@ -34,6 +34,9 @@ object JellyTubeButtonColors {
     fun removal(): ButtonColors = ButtonDefaults.outlinedButtonColors(contentColor = destructiveContent)
 }
 
+/** 목록 위에 떠 있는 버튼·입력칸의 그림자. */
+val floatingElevation = 6.dp
+
 val dialogContentPadding = 24.dp
 val dialogTitleSpacing = 16.dp
 val dialogActionsSpacing = 24.dp

@@ -128,7 +128,7 @@ fun LyricsEditItemView(
             )
 
             if (showTranslation || showTransliteration) {
-                // 눌림 표시를 그리지 않는다. 글자와 화살표가 바뀌는 것으로 충분하고, 리플은 줄 높이만큼 길게 떠 보였다.
+                // 눌림 표시를 그리지 않는다 — 리플이 줄 높이만큼 길게 뜬다.
                 Row(
                     modifier = Modifier
                         .clickable(

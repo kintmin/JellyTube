@@ -29,11 +29,11 @@ import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss_dot_sss
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.attention
 import com.kintmin.presentation.theme.contentDisabled
 import com.kintmin.presentation.theme.contentMuted
-import com.kintmin.presentation.theme.overlayContent
-import com.kintmin.presentation.theme.attention
 import com.kintmin.presentation.theme.onAttention
+import com.kintmin.presentation.theme.overlayContent
 import kotlin.time.Duration.Companion.milliseconds
 
 /** 눈금 간격 후보. 라벨이 겹치지 않을 만큼 넓은 것 중 가장 촘촘한 것을 고른다. */
@@ -42,7 +42,6 @@ private val TICK_INTERVAL_MS_LIST = listOf(
     60_000L, 120_000L, 300_000L, 600_000L, 1_800_000L,
 )
 
-/** 눈금 라벨 사이 최소 간격. */
 private val MIN_TICK_SPACING = 72.dp
 
 @Composable
@@ -53,9 +52,7 @@ fun TimelineRulerView(
     endMs: Long,
     canSplit: Boolean,
     canMerge: Boolean,
-    /** 기준선이 달라붙는 위치들. */
     baselineSnapTargetsMs: List<Long>,
-    /** 끝 표시가 달라붙는 위치들. */
     endSnapTargetsMs: List<Long>,
     onBaselineChanged: (Long) -> Unit,
     onEndChanged: (Long) -> Unit,

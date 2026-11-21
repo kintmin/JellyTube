@@ -7,7 +7,6 @@ data class LyricsDetailUiState(
     val syncedLyrics: String,
     val isApplying: Boolean,
 ) {
-    // 화면에는 일반 가사를 우선 표시하고, 없으면 싱크 가사 원문을 표시한다.
     val displayLyrics: String get() = plainLyrics.ifBlank { syncedLyrics }
 
     companion object {

@@ -25,6 +25,11 @@ import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.sleep_timer.SleepTimerRunner
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -39,11 +44,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 class PlayerDetailViewModel constructor(
     private val mediaControllerManager: PlaybackController,
@@ -96,7 +96,6 @@ class PlayerDetailViewModel constructor(
 
     private var isHandlingSlider = false
 
-    // 현재 곡의 파싱된 가사 줄(싱크 가사면 timeMs 포함). 재생 위치에 맞는 줄을 골라 표시한다.
     private var parsedLyricLines: List<LyricsLine> = emptyList()
 
     // 마지막으로 가사를 로드한 파일 경로. 곡이 바뀔 때만 재로드하기 위한 캐시 키.
@@ -435,8 +434,6 @@ class PlayerDetailViewModel constructor(
         }
     }
 
-    // 현재 재생 곡(uiState.id)이 바뀔 때마다 즐겨찾기/가사/표기 상태를 재구독한다.
-    // flatMapLatest가 이전 곡의 구독을 자동 취소하므로 별도 Job 관리가 필요 없다.
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeAudioMediaDetail() {
         viewModelScope.launch {
@@ -457,9 +454,7 @@ class PlayerDetailViewModel constructor(
                         it.copy(
                             isFavorite = isFavorite,
                             hasLyrics = lyricFileFullPath != null,
-                            // 제목·아티스트는 저장소가 진실이다. 재생기가 들고 있는 값은 곡을 걸 때
-                            // 찍힌 스냅샷이라, 정보를 고쳐도 다시 걸기 전까지 옛 이름이 남았다.
-                            // 어느 플레이리스트에도 없어 목록이 비면 덮지 않고 그대로 둔다.
+                            // 재생기 값은 곡을 걸 때 찍힌 스냅샷이라 저장소 값으로 덮는다.
                             title = audioMedia?.name ?: it.title,
                             artist = audioMedia?.artist ?: it.artist,
                         )
@@ -469,7 +464,6 @@ class PlayerDetailViewModel constructor(
         }
     }
 
-    // 곡이 바뀌어 가사 파일 경로가 달라졌을 때만 가사를 로드/파싱한다.
     private fun loadLyricsIfNeeded(lyricFileFullPath: String?) {
         if (lyricFileFullPath == loadedLyricPath) return
         loadedLyricPath = lyricFileFullPath
@@ -501,7 +495,6 @@ class PlayerDetailViewModel constructor(
         }
     }
 
-    // 비싱크(시간정보 없음) 가사면 activeLyricIndex 가 늘 -1 이라 활성 줄이 없다.
     private fun refreshActiveLyricIndex() {
         val index = if (parsedLyricLines.isEmpty()) {
             -1

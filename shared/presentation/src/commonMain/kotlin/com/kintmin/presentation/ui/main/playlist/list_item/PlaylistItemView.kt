@@ -131,7 +131,6 @@ fun PlaylistItemView(
                         }
                     )
                     DropdownMenuItem(
-                        // "추가" 가 이 화면에서 세 가지를 뜻했다. 여기는 곡을 넣는 쪽이다.
                         text = { Text("곡 추가하기") },
                         onClick = {
                             isDropDownExpanded = false

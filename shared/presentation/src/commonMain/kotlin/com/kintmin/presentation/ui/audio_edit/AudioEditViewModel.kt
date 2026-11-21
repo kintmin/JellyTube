@@ -56,7 +56,6 @@ class AudioEditViewModel constructor(
         const val MIN_WAVEFORM_BUCKET_COUNT = 400L
         const val MAX_WAVEFORM_BUCKET_COUNT = 100_000L
 
-        /** 미리듣기 커서 갱신 주기. */
         const val PREVIEW_POLLING_INTERVAL_MS = 100L
     }
 

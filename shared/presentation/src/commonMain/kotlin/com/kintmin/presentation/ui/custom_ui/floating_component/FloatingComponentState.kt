@@ -85,7 +85,6 @@ class FloatingComponentViewState {
         val containerHeight = containerSize.height.toFloat()
         if (containerWidth <= 0f || containerHeight <= 0f) return
 
-        // Keep rotated bounds inside container while moving.
         val constrained = constrainPlacementForRotation(
             left = component.leftPx + deltaX,
             top = component.topPx + deltaY,
@@ -156,7 +155,6 @@ class FloatingComponentViewState {
         val oldHeight = component.heightPx
         val ratio = safeRatio(oldWidth, oldHeight)
 
-        // Local axis bounds around center (before resize).
         var minX = -oldWidth / 2f
         var maxX = oldWidth / 2f
         var minY = -oldHeight / 2f
@@ -242,7 +240,6 @@ class FloatingComponentViewState {
         val localCenterShiftX = (minX + maxX) / 2f
         val localCenterShiftY = (minY + maxY) / 2f
 
-        // Convert local center shift back to screen shift.
         val (screenShiftX, screenShiftY) = localToScreenVector(
             localX = localCenterShiftX,
             localY = localCenterShiftY,
@@ -254,7 +251,6 @@ class FloatingComponentViewState {
         val left = (oldCenterX + screenShiftX) - newWidth / 2f
         val top = (oldCenterY + screenShiftY) - newHeight / 2f
 
-        // Final safety clamp in container.
         val constrained = constrainPlacementForRotation(
             left = left,
             top = top,
@@ -345,7 +341,6 @@ class FloatingComponentViewState {
         var w = width.coerceAtLeast(1f).coerceAtMost(containerWidth)
         var h = height.coerceAtLeast(1f).coerceAtMost(containerHeight)
 
-        // Ensure rotated footprint can fit in container.
         val (bboxWidth, bboxHeight) = rotatedBoundsSize(w, h, rotationDeg)
         if (bboxWidth > containerWidth || bboxHeight > containerHeight) {
             val scaleW = if (bboxWidth > 0f) containerWidth / bboxWidth else 1f

@@ -19,12 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
 
-/**
- * 섹션 머리말에 붙는 만들기·추가 입구.
- *
- * 격자 맨 끝 타일이 아니라 여기 둔다. 끝에 두면 플레이리스트가 늘수록 자리가 밀려 화면 밖으로
- * 내려가는데, 만드는 일은 보는 일보다 드물어도 자리는 고정돼 있어야 찾을 수 있다.
- */
+/** 섹션 머리말에 붙는 만들기·추가 입구. 격자 끝에 두면 목록이 늘수록 밀려나 찾을 수 없다. */
 @Composable
 fun PlaylistAddButtonView(
     text: String,

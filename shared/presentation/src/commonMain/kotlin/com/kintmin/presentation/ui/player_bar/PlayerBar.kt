@@ -39,7 +39,7 @@ private val BAR_HEIGHT = 64.dp
 private val ARTWORK_SIZE = 48.dp
 private val PROGRESS_HEIGHT = 2.dp
 
-// 영역은 최소 터치 타깃이라 줄이지 않는다. 아이콘을 M3 비율(약 60%)로 키워 영역을 메운다.
+// 영역은 최소 터치 타깃이라 줄이지 않는다. 아이콘을 키워 영역을 메운다.
 private val PLAY_BUTTON_SIZE = 48.dp
 private val PLAY_ICON_SIZE = 28.dp
 
