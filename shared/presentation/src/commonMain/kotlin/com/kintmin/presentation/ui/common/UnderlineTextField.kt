@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,7 +26,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.outlineSubtle
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.destructiveContent
 
@@ -45,6 +46,8 @@ fun UnderlineTextField(
     underlineOnlyWhenFocused: Boolean = false,
     modifier: Modifier = Modifier,
     errorMessage: String? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -54,7 +57,8 @@ fun UnderlineTextField(
         isFocused -> contentColor
         // 자리는 남겨 두고 색만 지운다. 포커스가 들어올 때 줄 높이가 흔들리지 않게.
         underlineOnlyWhenFocused -> Color.Transparent
-        else -> outlineSubtle
+        // 값이 채워지면 이 줄만이 입력 칸이라는 신호다. 칸 경계 대비 3:1 을 넘는 토큰을 쓴다.
+        else -> MaterialTheme.colorScheme.outline
     }
 
     BasicTextField(
@@ -66,6 +70,8 @@ fun UnderlineTextField(
         },
         textStyle = textStyle.copy(color = contentColor),
         singleLine = singleLine,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
         cursorBrush = SolidColor(contentColor),
         interactionSource = interactionSource,
         decorationBox = { innerTextField ->

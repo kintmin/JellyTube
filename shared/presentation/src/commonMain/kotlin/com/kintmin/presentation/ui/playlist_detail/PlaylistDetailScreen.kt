@@ -113,6 +113,7 @@ fun PlaylistDetailScreen(
         navigateToBack = navigateToBack,
         headerData = headerData,
         audioPlayDataList = listUiState.audioList,
+        isAudioListLoaded = listUiState.isLoaded,
         isBasePlaylist = headerData.isBasePlaylist,
         playerBar = currentMediaItem,
         navigateToPlayerDetail = navigateToPlayerDetail,
@@ -129,6 +130,7 @@ fun PlaylistDetailScreen(
     navigateToBack: () -> Unit,
     headerData: PlaylistDetailHeaderUiState,
     audioPlayDataList: List<PlaylistDetailListItemUiState>,
+    isAudioListLoaded: Boolean,
     isBasePlaylist: Boolean,
     playerBar: PlayerBarUiState,
     navigateToPlayerDetail: () -> Unit,
@@ -236,7 +238,7 @@ fun PlaylistDetailScreen(
                         sendIntent = sendPlaylistDetailHeaderIntent,
                     )
                 }
-                if (audioPlayDataList.isEmpty()) {
+                if (isAudioListLoaded && audioPlayDataList.isEmpty()) {
                     item {
                         PlaylistDetailListEmptyView(
                             modifier = Modifier,
@@ -344,6 +346,7 @@ fun PlaylistDetailScreenPreview() {
             navigateToBack = {},
             headerData = PlaylistDetailHeaderUiState.getMock(),
             audioPlayDataList = PlaylistDetailListItemUiState.getMockList(),
+            isAudioListLoaded = true,
             isBasePlaylist = false,
             playerBar = PlayerBarUiState.getMock(),
             navigateToPlayerDetail = {},
@@ -362,6 +365,7 @@ fun PlaylistDetailScreenEmptyPreview() {
             navigateToBack = {},
             headerData = PlaylistDetailHeaderUiState.getMock(),
             audioPlayDataList = emptyList(),
+            isAudioListLoaded = true,
             isBasePlaylist = false,
             playerBar = PlayerBarUiState.getMock(),
             navigateToPlayerDetail = {},

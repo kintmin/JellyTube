@@ -13,6 +13,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.port.model.MigrationSource
 import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationReceivePhase
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveIntent
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveUiState
@@ -93,6 +96,15 @@ fun DataMigrationConnectView(
                         isError = phase.errorMessage != null,
                         supportingText = phase.errorMessage?.let { message -> { Text(message) } },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        // 기본 primary·error 는 이 파란 카드 위에서 3:1 에 못 미친다. 카드 위 글자 계열로 맞춘다.
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            unfocusedBorderColor = contentMuted,
+                            cursorColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            errorBorderColor = destructiveContent,
+                            errorCursorColor = destructiveContent,
+                            errorSupportingTextColor = destructiveContent,
+                        ),
                     )
                     Button(
                         enabled = uiState.canConnect,

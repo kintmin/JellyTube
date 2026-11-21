@@ -350,7 +350,7 @@ fun AudioMediaDetailScreen(
 
                     if (!data.isDeleted) {
                         SectionHeader(text = "플레이리스트")
-                        if (data.playlists.isEmpty()) {
+                        if (data.isLoaded && data.playlists.isEmpty()) {
                             Text(
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
                                 text = "아직 추가된 플레이리스트가 없습니다.",

@@ -1,24 +1,23 @@
 package com.kintmin.presentation.ui.main.playlist.dialog
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.sp
+import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.ui.common.DialogButtonRow
 import com.kintmin.presentation.ui.common.DialogColumn
 import com.kintmin.presentation.ui.common.JellyTubeDialog
-
-private const val TITLE_MAX_LENGTH = 20
+import com.kintmin.presentation.ui.common.UnderlineTextField
 
 @Composable
 fun PlaylistAddDialog(
@@ -36,6 +35,8 @@ fun PlaylistAddDialog(
         var newPlaylistTitle by remember { mutableStateOf("") }
         // 열자마자 빈 칸을 에러로 칠하지 않는다. 손을 댄 뒤부터 말해 준다.
         var hasEdited by remember { mutableStateOf(false) }
+        val focusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
         val trimmedTitle = newPlaylistTitle.trim()
         val errorMessage = when {
@@ -43,42 +44,30 @@ fun PlaylistAddDialog(
             trimmedTitle in existingNames -> "같은 이름의 플레이리스트가 이미 있습니다"
             else -> null
         }
-        val visibleErrorMessage = errorMessage.takeIf { hasEdited }
 
         DialogColumn(title = "새 플레이리스트") {
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(),
+            UnderlineTextField(
+                modifier = Modifier.focusRequester(focusRequester),
+                label = "제목",
                 value = newPlaylistTitle,
                 onValueChange = { newText ->
                     hasEdited = true
-                    newPlaylistTitle = newText.take(TITLE_MAX_LENGTH)
+                    newPlaylistTitle = newText
                 },
-                isError = visibleErrorMessage != null,
-                maxLines = 1,
-                label = {
-                    Text(
-                        text = "제목 (${newPlaylistTitle.length}/$TITLE_MAX_LENGTH)",
-                        fontSize = 14.sp,
-                        lineHeight = 14.sp,
-                    )
-                },
-                placeholder = {
-                    Text(
-                        text = "새 플레이리스트 제목",
-                        fontSize = 14.sp,
-                        lineHeight = 14.sp,
-                        color = contentMuted,
-                    )
-                },
-                supportingText = {
-                    // 자리를 늘 차지하게 둬서 메시지가 뜰 때 버튼이 밀리지 않게 한다.
-                    Text(
-                        text = visibleErrorMessage.orEmpty(),
-                        fontSize = 12.sp,
-                        lineHeight = 14.sp,
-                    )
-                },
+                textStyle = MaterialTheme.typography.titleMedium,
+                placeholder = "제목 입력",
+                singleLine = true,
+                maxLength = PlaylistTextLimit.MAX_TITLE_LENGTH,
+                errorMessage = errorMessage.takeIf { hasEdited },
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        hasEdited = true
+                        if (errorMessage == null) {
+                            makePlaylist(trimmedTitle)
+                            onDismiss()
+                        }
+                    },
+                ),
             )
             DialogButtonRow(
                 dismissText = "취소",
