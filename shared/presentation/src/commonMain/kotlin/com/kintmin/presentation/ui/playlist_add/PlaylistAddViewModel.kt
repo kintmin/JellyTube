@@ -9,7 +9,7 @@ import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListToAddTrackFlowU
 import com.kintmin.presentation.extension.matchKorean
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemUiState
 import com.kintmin.presentation.ui.playlist_add.list.toPlaylistAddListItemUiState
-import com.kintmin.presentation.ui.playlist_detail.navigation.PlaylistDetailScreenRoute
+import com.kintmin.presentation.ui.playlist_add.navigation.PlaylistAddScreenRoute
 import com.kintmin.presentation.util.Debounce
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -28,7 +28,7 @@ class PlaylistAddViewModel constructor(
     private val addAudioMediaListToPlaylistUseCase: AddAudioMediaListToPlaylistUseCase,
 ) : ViewModel() {
 
-    private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
+    private val playlistId = savedStateHandle.toRoute<PlaylistAddScreenRoute>().playlistId
 
     private val _eventChannel = Channel<PlaylistAddEvent>(Channel.BUFFERED)
     val eventFlow: Flow<PlaylistAddEvent> = _eventChannel.receiveAsFlow()
