@@ -21,8 +21,9 @@ import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.device.usecase.FetchConnectionStatusUseCase
-import com.kintmin.presentation.port.RestoreKeepAlive
+import com.kintmin.presentation.port.BulkDownloadKeepAlive
 import com.kintmin.presentation.port.RunningTaskMonitor
+import com.kintmin.presentation.port.model.BulkDownloadTask
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationFailureItem
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationStageItem
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationStageKind
@@ -49,7 +50,7 @@ class SettingBackupRestoreViewModel(
     private val restoreBackupUseCase: RestoreBackupUseCase,
     private val fetchConnectionStatusUseCase: FetchConnectionStatusUseCase,
     private val runningTaskMonitor: RunningTaskMonitor,
-    private val restoreKeepAlive: RestoreKeepAlive,
+    private val bulkDownloadKeepAlive: BulkDownloadKeepAlive,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingBackupRestoreUiState())
@@ -191,7 +192,7 @@ class SettingBackupRestoreViewModel(
                 updateRestore(RestorePhase.Blocked(runningTasks))
                 return@launch
             }
-            restoreKeepAlive.keepAlive {
+            bulkDownloadKeepAlive.keepAlive(BulkDownloadTask.BACKUP_RESTORE) {
                 restoreBackupUseCase(backup) { progress -> updateStage(progress.toStageItem()) }
             }
                 .onSuccess { finish(it) }

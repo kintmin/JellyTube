@@ -20,8 +20,9 @@ import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.device.model.ConnectionStatus
 import com.kintmin.domain.device.usecase.FetchConnectionStatusUseCase
-import com.kintmin.presentation.port.RestoreKeepAlive
+import com.kintmin.presentation.port.BulkDownloadKeepAlive
 import com.kintmin.presentation.port.RunningTaskMonitor
+import com.kintmin.presentation.port.model.BulkDownloadTask
 import com.kintmin.presentation.port.model.RunningTask
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationFailureItem
 import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationStageStatus
@@ -99,7 +100,7 @@ class SettingBackupRestoreViewModelTest {
         restoreBackupUseCase = restore,
         fetchConnectionStatusUseCase = connection,
         runningTaskMonitor = monitor,
-        restoreKeepAlive = PassThroughKeepAlive,
+        bulkDownloadKeepAlive = PassThroughKeepAlive,
     )
 
     @Test
@@ -300,7 +301,7 @@ class SettingBackupRestoreViewModelTest {
         assertEquals(SettingBackupRestoreEvent.NavigateToBack, viewModel.eventFlow.first())
     }
 
-    private object PassThroughKeepAlive : RestoreKeepAlive {
-        override suspend fun <T> keepAlive(block: suspend () -> T): T = block()
+    private object PassThroughKeepAlive : BulkDownloadKeepAlive {
+        override suspend fun <T> keepAlive(task: BulkDownloadTask, block: suspend () -> T): T = block()
     }
 }

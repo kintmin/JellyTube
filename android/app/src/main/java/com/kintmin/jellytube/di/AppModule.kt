@@ -13,7 +13,7 @@ import com.kintmin.jellytube.python_bridge_impl.PythonExecutorImpl
 import com.kintmin.jellytube.service_controller.DataMigrationSendControllerImpl
 import com.kintmin.jellytube.service_controller.FileShareServerControllerImpl
 import com.kintmin.jellytube.service_controller.MigrationReceiveKeepAliveImpl
-import com.kintmin.jellytube.service_controller.RestoreKeepAliveImpl
+import com.kintmin.jellytube.service_controller.BulkDownloadKeepAliveImpl
 import com.kintmin.jellytube.service_controller.PlaybackControllerImpl
 import com.kintmin.jellytube.service_controller.StepMeasurementControllerImpl
 import com.kintmin.jellytube.worker.RunningTaskMonitorImpl
@@ -32,7 +32,7 @@ import com.kintmin.presentation.port.StartYoutubeDownload
 import com.kintmin.presentation.port.FileShareServerController
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.MigrationReceiveKeepAlive
-import com.kintmin.presentation.port.RestoreKeepAlive
+import com.kintmin.presentation.port.BulkDownloadKeepAlive
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.StepMeasurementController
@@ -64,7 +64,7 @@ val appModule: Module = module {
     single<StartAudioEditSave> { StartAudioEditSaveImpl(androidContext()) }
     single<MigrationSourceDiscovery> { NsdMigrationSourceDiscovery(androidContext()) }
     single<MigrationReceiveKeepAlive> { MigrationReceiveKeepAliveImpl(androidContext()) }
-    single<RestoreKeepAlive> { RestoreKeepAliveImpl(androidContext()) }
+    single<BulkDownloadKeepAlive> { BulkDownloadKeepAliveImpl(androidContext()) }
     single<DataMigrationSendController> { DataMigrationSendControllerImpl(androidContext(), get(), get(), get()) }
     single<RunningTaskMonitor> { RunningTaskMonitorImpl(androidContext(), get(), get()) }
 }
