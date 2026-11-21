@@ -1,0 +1,123 @@
+package com.kintmin.presentation.ui.common
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.gray60
+
+/**
+ * 48dp pill 검색 필드. [onSearch] 가 있으면 키보드의 검색 키로 부른다.
+ *
+ * X 는 입력이 있으면 지우고, 비어 있으면 [onCloseWhenEmpty] 가 있을 때만 닫기로 남는다 — 비어
+ * 있을 때 지울 것이 없으니 닫는 것이 유일하게 뜻이 있다.
+ */
+@Composable
+fun SearchField(
+    modifier: Modifier = Modifier,
+    value: String,
+    placeholder: String,
+    onValueChange: (String) -> Unit,
+    onSearch: (() -> Unit)? = null,
+    onCloseWhenEmpty: (() -> Unit)? = null,
+) {
+    // 입력과 placeholder 의 줄 높이가 다르면 빈 칸일 때 커서가 placeholder 높이에 맞춰 위로 뜬다.
+    val textStyle = TextStyle(
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        color = MaterialTheme.colorScheme.onSurface,
+    )
+    val isEmpty = value.isEmpty()
+    val isTrailingVisible = !isEmpty || onCloseWhenEmpty != null
+
+    Row(
+        modifier = modifier
+            .height(48.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surface),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            modifier = Modifier
+                .padding(start = 16.dp, end = 8.dp)
+                .size(20.dp),
+            tint = gray60,
+            imageVector = Icons.Rounded.Search,
+            contentDescription = null,
+        )
+        BasicTextField(
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = if (isTrailingVisible) 0.dp else 16.dp),
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = textStyle,
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+            keyboardOptions = if (onSearch != null) KeyboardOptions(imeAction = ImeAction.Search) else KeyboardOptions.Default,
+            keyboardActions = KeyboardActions(onSearch = onSearch?.let { { it() } }),
+            decorationBox = { innerTextField ->
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (isEmpty) {
+                        Text(
+                            text = placeholder,
+                            style = textStyle,
+                            color = gray60,
+                            maxLines = 1,
+                        )
+                    }
+                    innerTextField()
+                }
+            },
+        )
+        if (isTrailingVisible) {
+            IconButton(
+                modifier = Modifier.padding(end = 4.dp),
+                onClick = { if (isEmpty) onCloseWhenEmpty?.invoke() else onValueChange("") },
+            ) {
+                Icon(
+                    modifier = Modifier.size(20.dp),
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = if (isEmpty) "검색 닫기" else "검색어 전체 삭제",
+                    tint = gray60,
+                )
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun SearchFieldPreview() {
+    JellyTubeTheme {
+        Column {
+            SearchField(value = "", placeholder = "노래 제목으로 검색", onValueChange = {}, onSearch = {})
+            SearchField(value = "밤편지", placeholder = "노래 제목으로 검색", onValueChange = {}, onSearch = {})
+        }
+    }
+}

@@ -9,17 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -29,12 +25,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.ui.common.SearchField
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
@@ -130,26 +126,14 @@ fun LyricsSearchScreen(
             contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
         ) {
             item(key = "search_bar") {
-                OutlinedTextField(
+                SearchField(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     value = data.query,
+                    placeholder = "가사 검색 (제목·아티스트)",
                     onValueChange = { sendIntent(LyricsSearchIntent.OnChangeQuery(it)) },
-                    label = { Text("가사 검색 (제목·아티스트)") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { sendIntent(LyricsSearchIntent.OnClickSearch) }),
-                    trailingIcon = {
-                        if (data.query.isNotEmpty()) {
-                            IconButton(onClick = { sendIntent(LyricsSearchIntent.OnChangeQuery("")) }) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = "검색어 전체 삭제",
-                                )
-                            }
-                        }
-                    },
+                    onSearch = { sendIntent(LyricsSearchIntent.OnClickSearch) },
                 )
             }
 

@@ -40,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.platform.LocalDensity
@@ -388,12 +387,6 @@ fun PlaylistDetailScreen(
                 visible = isSearchFieldVisible,
                 value = searchInput,
                 placeholder = "음원 제목 검색",
-                // 상단 바는 헤더 위에서 투명하다가 스크롤하면 background 가 된다.
-                containerColor = lerp(
-                    MaterialTheme.colorScheme.surfaceContainerHighest,
-                    MaterialTheme.colorScheme.background,
-                    progress,
-                ),
                 onValueChange = ::changeSearchInput,
                 onClose = ::closeSearchField,
             )

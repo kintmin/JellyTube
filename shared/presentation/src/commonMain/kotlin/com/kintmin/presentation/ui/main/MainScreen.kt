@@ -6,15 +6,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Search
@@ -27,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.ShortNavigationBarItemDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -44,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -79,6 +74,7 @@ import com.kintmin.presentation.ui.main.playlist.PlaylistView
 import com.kintmin.presentation.ui.main.playlist.PlaylistViewModel
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadIntent
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadViewModel
+import com.kintmin.presentation.ui.main.youtube_search.YoutubeUrlField
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeWebView
 import com.kintmin.presentation.ui.main.youtube_search.YoutubeDownloadEvent
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
@@ -277,24 +273,13 @@ fun MainScreen(
                     enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight }) + fadeIn(),
                     exit = slideOutVertically(targetOffsetY = { fullHeight -> -fullHeight }) + fadeOut(),
                 ) {
-                    OutlinedTextField(
+                    YoutubeUrlField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
                         value = searchInput,
                         onValueChange = { searchInput = it },
-                        label = { Text("Youtube URL 붙여넣기") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { submitSearchUrl() }),
-                        trailingIcon = {
-                            IconButton(onClick = { submitSearchUrl() }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.Send,
-                                    contentDescription = "URL 로드",
-                                )
-                            }
-                        },
+                        onSubmit = { submitSearchUrl() },
                     )
                 }
             }
