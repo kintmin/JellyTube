@@ -387,7 +387,7 @@ fun PlaylistDetailScreen(
                 modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
                 visible = isSearchFieldVisible,
                 value = searchInput,
-                label = "음원 제목 검색",
+                placeholder = "음원 제목 검색",
                 // 상단 바는 헤더 위에서 투명하다가 스크롤하면 background 가 된다.
                 containerColor = lerp(
                     MaterialTheme.colorScheme.surfaceContainerHighest,

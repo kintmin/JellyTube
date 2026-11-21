@@ -104,7 +104,7 @@ fun PlaylistAddScreen(
                 expandedHeight = topAppBarHeight,
                 title = {
                     Text(
-                        text = "플레이리스트 추가",
+                        text = "곡 추가",
                         fontSize = topAppBarDetailTitleFontSize,
                         lineHeight = topAppBarDetailTitleLineHeight,
                         maxLines = 1,
@@ -155,7 +155,7 @@ fun PlaylistAddScreen(
             CollapsibleSearchField(
                 visible = isSearchFieldVisible,
                 value = searchText,
-                label = "곡 이름 검색",
+                placeholder = "곡 이름 검색",
                 onValueChange = ::changeSearchText,
                 onClose = ::closeSearchField,
             )
