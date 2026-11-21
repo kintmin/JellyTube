@@ -129,13 +129,21 @@ fun <T> LazyItemScope.ReorderableItem(
     val currentOnDragEnd by rememberUpdatedState(onDragEnd)
     val haptic = LocalHapticFeedback.current
     val dragHandleModifier = Modifier.pointerInput(id, longPressToStart) {
+        // 감지기는 끌기를 시작하지 않았어도 코루틴이 취소되면 onDragCancel 을 부른다. 자동 스크롤로
+        // 다른 행이 화면 밖으로 빠질 때마다 그 행의 취소가 남의 끌기를 끝내지 않게, 이 행이 시작한
+        // 끌기만 끝낸다.
+        var isDraggingHere = false
+
         fun finish() {
+            if (!isDraggingHere) return
+            isDraggingHere = false
             // 호출부를 먼저 부른다 — draggingItemId 가 아직 살아 있어야 옮긴 항목을 찾을 수 있다.
             currentOnDragEnd()
             state.onDragEnd()
         }
 
         fun start(offset: Offset) {
+            isDraggingHere = true
             // 핸들이 없으면 잡혔다는 것을 알리는 신호가 햅틱뿐이다.
             if (longPressToStart) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             state.onDragStart(offset, id)
