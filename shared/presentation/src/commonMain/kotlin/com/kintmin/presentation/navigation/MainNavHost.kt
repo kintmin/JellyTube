@@ -35,6 +35,8 @@ import com.kintmin.presentation.ui.playlist_add.navigation.navigateToPlaylistAdd
 import com.kintmin.presentation.ui.playlist_add.navigation.playlistAdd
 import com.kintmin.presentation.ui.playlist_detail.navigation.navigateToPlaylistDetailScreen
 import com.kintmin.presentation.ui.playlist_detail.navigation.playlistDetail
+import com.kintmin.presentation.ui.playlist_download.navigation.navigateToPlaylistDownloadScreen
+import com.kintmin.presentation.ui.playlist_download.navigation.playlistDownloadScreen
 import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEditScreen
 import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
 import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
@@ -120,6 +122,16 @@ fun MainNavHost(
             },
             navigateToPlayerDetail = {
                 navController.navigateToPlayerDetailScreen(navOptions)
+            },
+            navigateToPlaylistDownload = { url ->
+                navController.navigateToPlaylistDownloadScreen(url, navOptions)
+            },
+        )
+        playlistDownloadScreen(
+            navigateToBack = { navController.popBackStack() },
+            navigateToPlaylist = { playlistId ->
+                navController.popBackStack()
+                navController.navigateToPlaylistDetailScreen(playlistId = playlistId, navOptions = navOptions)
             },
         )
         playlistDetail(

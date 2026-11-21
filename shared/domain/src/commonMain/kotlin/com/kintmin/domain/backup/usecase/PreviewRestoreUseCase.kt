@@ -1,5 +1,6 @@
 package com.kintmin.domain.backup.usecase
 
+import com.kintmin.domain.audio_media.DownloadSizeEstimate
 import com.kintmin.domain.backup.model.BackupContent
 import com.kintmin.domain.backup.model.RestorePreview
 import com.kintmin.domain.data_migration.SourceKey
@@ -21,15 +22,7 @@ class PreviewRestoreUseCase(
             alreadyOnDeviceCount = existing.size,
             redownloadCount = redownload.size,
             notRestorableCount = notRestorable.size,
-            estimatedDownloadBytes = redownload.sumOf {
-                (it.rawAudioDurationSeconds ?: FALLBACK_DURATION_SECONDS) * BYTES_PER_SECOND
-            },
+            estimatedDownloadBytes = redownload.sumOf { DownloadSizeEstimate.bytesFor(it.rawAudioDurationSeconds) },
         )
-    }
-
-    private companion object {
-        // 받는 형식이 대개 128kbps AAC 다.
-        const val BYTES_PER_SECOND = 16_000L
-        const val FALLBACK_DURATION_SECONDS = 240L
     }
 }

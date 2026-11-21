@@ -45,6 +45,8 @@ import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.device.usecase.FetchConnectionStatusUseCase
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.domain.playlist.usecase.*
+import com.kintmin.domain.playlist_download.usecase.DownloadYoutubePlaylistUseCase
+import com.kintmin.domain.playlist_download.usecase.PreviewPlaylistDownloadUseCase
 import com.kintmin.domain.step.repository.StepRepository
 import com.kintmin.domain.step.usecase.*
 import com.kintmin.domain.user.repository.UserRepository
@@ -129,6 +131,9 @@ val dataCommonModule: Module = module {
     factoryOf(::PreviewRestoreUseCase)
     factoryOf(::RestoreBackupUseCase)
     factoryOf(::FetchConnectionStatusUseCase)
+
+    factoryOf(::PreviewPlaylistDownloadUseCase)
+    factoryOf(::DownloadYoutubePlaylistUseCase)
 
     factoryOf(::CleanupAnomalousDataUseCase)
     factoryOf(::DeleteAudioMediaListUseCase)

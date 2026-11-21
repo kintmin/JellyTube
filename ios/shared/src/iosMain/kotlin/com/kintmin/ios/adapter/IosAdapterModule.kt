@@ -14,7 +14,7 @@ import com.kintmin.presentation.port.StartYoutubeDownload
 import com.kintmin.presentation.port.FileShareServerController
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.MigrationReceiveKeepAlive
-import com.kintmin.presentation.port.RestoreKeepAlive
+import com.kintmin.presentation.port.BulkDownloadKeepAlive
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.StepMeasurementController
@@ -39,7 +39,7 @@ internal fun iosAdapterModule(
     single<StartLyricsVariantCreation> { IosStartLyricsVariantCreation(get(), get()) }
     single<StartAudioEditSave> { IosStartAudioEditSave(get(), get(), get(), get()) }
     single<MigrationReceiveKeepAlive> { IosMigrationReceiveKeepAlive() }
-    single<RestoreKeepAlive> { IosRestoreKeepAlive() }
+    single<BulkDownloadKeepAlive> { IosBulkDownloadKeepAlive() }
     single<DataMigrationSendController> { IosDataMigrationSendController(get(), get(), get()) }
     single<RunningTaskMonitor> { IosRunningTaskMonitor(get(), get()) }
 }

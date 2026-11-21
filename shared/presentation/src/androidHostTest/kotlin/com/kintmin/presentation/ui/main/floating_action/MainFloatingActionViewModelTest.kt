@@ -10,6 +10,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -17,7 +18,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -88,5 +91,35 @@ class MainFloatingActionViewModelTest {
         assertFalse(viewModel.uiState.value.isCreatePlaylistDialogVisible)
         assertFalse(viewModel.uiState.value.isPlaylistBottomSheetVisible)
         coVerify(exactly = 1) { updatePlaylistIdOnDownload(42) }
+    }
+
+    @Test
+    fun `재생목록 주소는 재생목록 받기로 가고 믹스는 그 영상만 받는다`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(MainFloatingActionIntent.OnClickDownload("https://m.youtube.com/playlist?list=PLx"))
+        assertEquals(MainFloatingActionEvent.NavigateToPlaylistDownload("https://m.youtube.com/playlist?list=PLx"), viewModel.eventFlow.first())
+
+        val mix = "https://m.youtube.com/watch?v=a&list=RDa"
+        viewModel.sendIntent(MainFloatingActionIntent.OnClickDownload(mix))
+        assertEquals(MainFloatingActionEvent.Download(mix), viewModel.eventFlow.first())
+    }
+
+    @Test
+    fun `재생목록에서 연 영상은 무엇을 받을지 물은 뒤 고른 대로 보낸다`() = runTest {
+        val viewModel = viewModel()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
+        val url = "https://m.youtube.com/watch?v=a&list=PLx"
+
+        viewModel.sendIntent(MainFloatingActionIntent.OnClickDownload(url))
+        assertEquals(url, viewModel.uiState.value.downloadChoiceUrl)
+
+        viewModel.sendIntent(MainFloatingActionIntent.OnChooseSingleDownload)
+        assertNull(viewModel.uiState.value.downloadChoiceUrl)
+        assertEquals(MainFloatingActionEvent.Download(url), viewModel.eventFlow.first())
+
+        viewModel.sendIntent(MainFloatingActionIntent.OnClickDownload(url))
+        viewModel.sendIntent(MainFloatingActionIntent.OnChoosePlaylistDownload)
+        assertEquals(MainFloatingActionEvent.NavigateToPlaylistDownload(url), viewModel.eventFlow.first())
     }
 }

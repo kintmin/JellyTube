@@ -31,12 +31,14 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
+import com.kintmin.presentation.ui.main.floating_action.dialog.DownloadChoiceDialog
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 
 @Composable
 fun MainFloatingActionButton(
     currentUrl: String,
     onClickDownload: (String) -> Unit,
+    navigateToPlaylistDownload: (url: String) -> Unit,
 ) {
     val viewModel = koinViewModel<MainFloatingActionViewModel>()
     val uiState by viewModel.uiState.collectAsState()
@@ -46,6 +48,7 @@ fun MainFloatingActionButton(
         viewModel.eventFlow.collect { event ->
             when (event) {
                 is MainFloatingActionEvent.Download -> onClickDownload(event.url)
+                is MainFloatingActionEvent.NavigateToPlaylistDownload -> navigateToPlaylistDownload(event.url)
                 is MainFloatingActionEvent.ShowToast -> toaster.show(event.message)
             }
         }
@@ -84,6 +87,12 @@ fun MainFloatingActionButton(
         onDismiss = { sendIntent(MainFloatingActionIntent.OnDismissCreatePlaylistDialog) },
         existingNames = uiState.selectablePlaylistList.map { it.name },
         makePlaylist = { title -> sendIntent(MainFloatingActionIntent.OnCreatePlaylist(title)) },
+    )
+    DownloadChoiceDialog(
+        showDialog = uiState.downloadChoiceUrl != null,
+        onChooseSingle = { sendIntent(MainFloatingActionIntent.OnChooseSingleDownload) },
+        onChoosePlaylist = { sendIntent(MainFloatingActionIntent.OnChoosePlaylistDownload) },
+        onDismiss = { sendIntent(MainFloatingActionIntent.OnDismissDownloadChoice) },
     )
 
     Surface(

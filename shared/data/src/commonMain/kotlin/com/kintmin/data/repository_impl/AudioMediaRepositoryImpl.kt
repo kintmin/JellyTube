@@ -10,6 +10,8 @@ import com.kintmin.data.local_file.AudioFileExtensionCorrector
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.data_source.HttpDataSource
 import com.kintmin.data.python_bridge.PythonExecutor
+import com.kintmin.data.python_bridge.YtDlpError
+import com.kintmin.data.python_bridge.model.parseYoutubePlaylist
 import com.kintmin.domain.audio_media.model.AddedAudioMedia
 import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.model.AudioExportTarget
@@ -21,8 +23,10 @@ import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.lyrics.LyricsFile
 import com.kintmin.domain.lyrics.model.LyricsVariant
+import com.kintmin.domain.youtube.model.YoutubePlaylist
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +35,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -43,14 +48,30 @@ internal class AudioMediaRepositoryImpl constructor(
     private val pythonExecutor: PythonExecutor,
 ) : AudioMediaRepository {
 
-    override suspend fun downloadYoutubeAudio(downloadUrl: String): Result<DownloadedYoutubeAudio> =
+    override suspend fun downloadYoutubeAudio(downloadUrl: String): Result<DownloadedYoutubeAudio> {
+        val fileName = Uuid.random().toString()
+        return try {
+            downloadYoutubeAudio(downloadUrl, fileName)
+        } catch (e: CancellationException) {
+            // 받기 호출은 도중에 끊기지 않아 파일은 생기고 결과만 버려진다. 이 이름으로 생긴 파일을 지운다.
+            withContext(NonCancellable + Dispatchers.IO) { deleteFilesNamed(fileName) }
+            throw e
+        }
+    }
+
+    private suspend fun deleteFilesNamed(fileName: String) {
+        fileManager.listAudioAndImageFileFullPaths().getOrNull().orEmpty()
+            .filter { fileManager.getFileNameWithExt(it).getOrNull()?.startsWith(fileName) == true }
+            .forEach { fileManager.deleteFileAtFullPath(it) }
+    }
+
+    private suspend fun downloadYoutubeAudio(downloadUrl: String, fileName: String): Result<DownloadedYoutubeAudio> =
         withContext(Dispatchers.IO) {
             runCatching {
-                val fileName = Uuid.random().toString()
                 val downloadDto = pythonExecutor.downloadYoutubeMedia(
                     youtubeUrl = downloadUrl,
                     audioDownloadPath = fileManager.getAudioDownloadBasePath(fileName = fileName).getOrThrow(),
-                ).getOrThrow()
+                ).getOrElse { throw YtDlpError.classify(it) }
                 DownloadedYoutubeAudio(
                     fileName = fileName,
                     audioFileNameWithExt = downloadDto.audioFileNameWithExt.ifBlank {
@@ -63,6 +84,11 @@ internal class AudioMediaRepositoryImpl constructor(
                     description = downloadDto.description,
                 )
             }
+        }
+
+    override suspend fun fetchYoutubePlaylist(playlistUrl: String): Result<YoutubePlaylist> =
+        withContext(Dispatchers.IO) {
+            runCatching { parseYoutubePlaylist(pythonExecutor.extractYoutubePlaylist(playlistUrl).getOrThrow()) }
         }
 
     override suspend fun saveThumbnail(thumbnailUrl: String, fileName: String): Result<String> =
