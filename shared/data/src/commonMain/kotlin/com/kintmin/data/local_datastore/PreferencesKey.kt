@@ -64,4 +64,8 @@ sealed interface PreferencesKey<T> {
     data object IsStepEnabled : PreferencesKey<Boolean> {
         override val key = booleanPreferencesKey("isStepEnabled")
     }
+
+    data object IsAudioEditGuideShown : PreferencesKey<Boolean> {
+        override val key = booleanPreferencesKey("isAudioEditGuideShown")
+    }
 }

@@ -3,6 +3,8 @@ package com.kintmin.presentation.ui.audio_edit.waveform
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DragIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -11,6 +13,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.tooling.preview.Preview
@@ -59,6 +62,7 @@ fun TimelineWaveformView(
     val currentOnClipMoved by rememberUpdatedState(onClipMoved)
     val currentOnGrabChanged by rememberUpdatedState(onGrabChanged)
     val autoScroller = rememberTimelineEdgeAutoScroller(viewport)
+    val moveHandlePainter = rememberVectorPainter(Icons.Rounded.DragIndicator)
 
     Canvas(
         modifier = modifier
@@ -122,7 +126,13 @@ fun TimelineWaveformView(
 
         drawWaveformBars(viewport = viewport, waveform = waveform, timeline = timeline)
         drawMergeSeams(viewport = viewport, timeline = timeline)
-        drawClipGrips(viewport = viewport, timeline = timeline, selectedClipIndex = selectedClipIndex, grab = grab)
+        drawClipGrips(
+            viewport = viewport,
+            timeline = timeline,
+            selectedClipIndex = selectedClipIndex,
+            grab = grab,
+            moveHandlePainter = moveHandlePainter,
+        )
         drawGrabHighlight(viewport = viewport, timeline = timeline, grab = grab)
 
         // 결과물 끝 뒤는 저장되지 않는다

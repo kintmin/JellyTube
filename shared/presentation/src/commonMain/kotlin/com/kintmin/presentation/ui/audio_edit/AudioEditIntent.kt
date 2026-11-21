@@ -13,7 +13,7 @@ sealed interface AudioEditIntent {
     /** 파형에서 조각을 눌렀다. 빈칸을 누르면 null로 선택이 풀린다. */
     data class OnClipSelected(val index: Int?) : AudioEditIntent
 
-    /** 조각 경계를 꾹 눌러 끌었다. */
+    /** 조각 경계를 끌었다. */
     data class OnClipEdgeDragged(
         val index: Int,
         val edge: AudioEditTimeline.Edge,
@@ -40,4 +40,7 @@ sealed interface AudioEditIntent {
 
     /** 편집본을 원본과 별개인 새 음원으로 저장한다. */
     data class OnConfirmSaveAsNew(val name: String) : AudioEditIntent
+
+    /** 처음 들어왔을 때 띄운 사용법 안내를 닫았다. 다시 띄우지 않는다. */
+    data object OnDismissGuide : AudioEditIntent
 }

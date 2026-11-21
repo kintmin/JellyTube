@@ -58,6 +58,7 @@ import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditCompactControlsView
 import com.kintmin.presentation.ui.audio_edit.controls.AudioEditControlsView
 import com.kintmin.presentation.ui.audio_edit.dialog.AudioEditExitDialog
+import com.kintmin.presentation.ui.audio_edit.dialog.AudioEditGuideDialog
 import com.kintmin.presentation.ui.audio_edit.dialog.AudioEditSaveDialog
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineGrab
 import com.kintmin.presentation.ui.audio_edit.waveform.TimelineRulerView
@@ -129,6 +130,10 @@ fun AudioEditScreen(
         onDismiss = { isShowSaveDialog = false },
         onConfirmOverwrite = { sendIntent(AudioEditIntent.OnConfirmOverwrite) },
         onConfirmSaveAsNew = { name -> sendIntent(AudioEditIntent.OnConfirmSaveAsNew(name)) },
+    )
+    AudioEditGuideDialog(
+        isShow = data.isGuideVisible && !data.isLoading,
+        onDismiss = { sendIntent(AudioEditIntent.OnDismissGuide) },
     )
     AudioEditExitDialog(
         isShow = isShowExitDialog,
