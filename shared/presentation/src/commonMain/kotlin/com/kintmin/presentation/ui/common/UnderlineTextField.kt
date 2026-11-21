@@ -26,7 +26,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.outlineSubtle
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.destructiveContent
 
@@ -58,7 +57,8 @@ fun UnderlineTextField(
         isFocused -> contentColor
         // 자리는 남겨 두고 색만 지운다. 포커스가 들어올 때 줄 높이가 흔들리지 않게.
         underlineOnlyWhenFocused -> Color.Transparent
-        else -> outlineSubtle
+        // 값이 채워지면 이 줄만이 입력 칸이라는 신호다. 칸 경계 대비 3:1 을 넘는 토큰을 쓴다.
+        else -> MaterialTheme.colorScheme.outline
     }
 
     BasicTextField(
