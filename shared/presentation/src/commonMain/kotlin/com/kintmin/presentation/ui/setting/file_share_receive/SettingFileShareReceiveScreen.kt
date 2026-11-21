@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -106,14 +107,6 @@ fun SettingFileShareReceiveScreen(
                     .navigationBarsPadding()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
-                if (uiState.serverStatus == ServerStatus.RUNNING) {
-                    Text(
-                        text = "서버가 실행 중입니다. PC에서 파일을 전송해 주세요.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
-                }
                 when (uiState.serverStatus) {
                     ServerStatus.STOPPED -> Button(
                         onClick = {
@@ -147,38 +140,48 @@ fun SettingFileShareReceiveScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(
-                text = "PC에서 음원 파일을 JellyTube로 전송하는 방법",
-                style = MaterialTheme.typography.titleMedium,
-            )
-
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
                 ),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically,
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    FlowNode(icon = Icons.Rounded.Computer, label = "PC JellyTube")
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FlowNode(icon = Icons.Rounded.Computer, label = "PC JellyTube")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                        FlowNode(icon = Icons.Rounded.Wifi, label = "Wi-Fi")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                        FlowNode(icon = Icons.Rounded.MusicNote, label = "JellyTube")
+                    }
+                    Text(
+                        text = when (uiState.serverStatus) {
+                            ServerStatus.STOPPED -> "PC의 JellyTube에서 이 기기로 음원을 보냅니다.\n아래 버튼으로 받기를 시작해 주세요."
+                            ServerStatus.RUNNING -> "받을 준비가 됐습니다.\nPC에서 파일을 보내 주세요."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        textAlign = TextAlign.Center,
                     )
-                    FlowNode(icon = Icons.Rounded.Wifi, label = "Wi-Fi")
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    FlowNode(icon = Icons.Rounded.MusicNote, label = "JellyTube")
                 }
             }
 
@@ -264,7 +267,7 @@ private fun FlowNode(icon: ImageVector, label: String) {
             modifier = Modifier
                 .size(48.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = MaterialTheme.colorScheme.surface,
                     shape = CircleShape,
                 ),
             contentAlignment = Alignment.Center,
@@ -272,14 +275,14 @@ private fun FlowNode(icon: ImageVector, label: String) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(24.dp),
             )
         }
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
     }
 }
