@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
 import com.kintmin.presentation.platform.keepsReceivingInBackground
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.deepSea60
 import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
@@ -267,7 +268,7 @@ private fun FlowNode(icon: ImageVector, label: String) {
             modifier = Modifier
                 .size(48.dp)
                 .background(
-                    color = MaterialTheme.colorScheme.surface,
+                    color = deepSea60,
                     shape = CircleShape,
                 ),
             contentAlignment = Alignment.Center,
@@ -275,7 +276,7 @@ private fun FlowNode(icon: ImageVector, label: String) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.size(24.dp),
             )
         }

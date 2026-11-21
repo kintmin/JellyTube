@@ -121,8 +121,8 @@ fun SettingDeviceSaveScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(32.dp),
         ) {
             // 저장하기 전에는 알람음·벨소리 목록에 나타나지 않는다. 그 순서를 단계 머리말이 말한다.
             StepGroup(title = "1단계 · 기기에 저장") {
