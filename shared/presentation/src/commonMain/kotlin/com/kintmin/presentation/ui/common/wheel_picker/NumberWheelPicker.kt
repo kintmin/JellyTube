@@ -22,6 +22,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,13 +80,15 @@ fun NumberWheelPicker(
         }
     }
 
+    // 받은 값을 되돌려 보내지 않는다. 저장값을 읽기 전의 기본값으로 처음 그려지면 그 기본값이 저장값을 덮는다.
+    val currentSelectedValue by rememberUpdatedState(selectedValue)
     LaunchedEffect(centerIndex) {
         val target = programmaticTarget
         if (target != null) {
             if (centerIndex != target) return@LaunchedEffect
             programmaticTarget = null
         }
-        values.getOrNull(centerIndex)?.let(onValueChange)
+        values.getOrNull(centerIndex)?.takeIf { it != currentSelectedValue }?.let(onValueChange)
     }
 
     // 손으로 돌리는 중에는 건드리지 않는다 — 휠이 만든 값이 한 프레임 늦게 돌아와 휠과 싸운다.
