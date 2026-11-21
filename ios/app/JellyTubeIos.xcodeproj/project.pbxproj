@@ -11,6 +11,7 @@
 		4A000000000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000009 /* Assets.xcassets */; };
 		C9E4F40D2FD13000009FB07B /* python in Resources */ = {isa = PBXBuildFile; fileRef = C9E4F40E2FD13000009FB07B /* python */; };
 		C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */ = {isa = PBXBuildFile; productRef = C9E4F4102FD14000009FB07B /* PythonKit */; };
+		C9E5000000000000000000A3 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = C9E5000000000000000000A2 /* Sentry */; };
 		C9E4F40A2FD13000009FB07B /* PythonExecutorBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4F40B2FD13000009FB07B /* PythonExecutorBridgeImpl.swift */; };
 		4A0000000000000000000094 /* YoutubeDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0000000000000000000093 /* YoutubeDownloader.swift */; };
 		4A00000000000000000000B1 /* MigrationSourceBrowserBridgeImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A00000000000000000000B0 /* MigrationSourceBrowserBridgeImpl.swift */; };
@@ -53,6 +54,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C9E4F40F2FD14000009FB07B /* PythonKit in Frameworks */,
+				C9E5000000000000000000A3 /* Sentry in Frameworks */,
 				4A0000000000000000000061 /* Python.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -216,6 +218,7 @@
 			name = JellyTubeIos;
 			packageProductDependencies = (
 				C9E4F4102FD14000009FB07B /* PythonKit */,
+				C9E5000000000000000000A2 /* Sentry */,
 			);
 			productName = JellyTubeIos;
 			productReference = 4A0000000000000000000003 /* JellyTubeIos.app */;
@@ -271,6 +274,7 @@
 			mainGroup = 4A0000000000000000000004;
 			packageReferences = (
 				C9E4F4112FD14000009FB07B /* XCRemoteSwiftPackageReference "PythonKit" */,
+				C9E5000000000000000000A1 /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
 			);
 			productRefGroup = 4A0000000000000000000006 /* Products */;
 			projectDirPath = "";
@@ -657,6 +661,14 @@
 				kind = branch;
 			};
 		};
+		C9E5000000000000000000A1 /* XCRemoteSwiftPackageReference "sentry-cocoa" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/getsentry/sentry-cocoa";
+			requirement = {
+				kind = exactVersion;
+				version = 9.35.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -664,6 +676,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C9E4F4112FD14000009FB07B /* XCRemoteSwiftPackageReference "PythonKit" */;
 			productName = PythonKit;
+		};
+		C9E5000000000000000000A2 /* Sentry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C9E5000000000000000000A1 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
+			productName = Sentry;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
