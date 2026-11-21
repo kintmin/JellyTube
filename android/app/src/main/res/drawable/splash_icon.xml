@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 배경 없는 스플래시 아이콘은 288dp 로 그려진다. 108dp 래스터를 그 크기로 늘리면 흐려지므로 원래 크기(37.5%)로 줄인다. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@mipmap/ic_launcher_foreground"
+    android:inset="31.25%" />
