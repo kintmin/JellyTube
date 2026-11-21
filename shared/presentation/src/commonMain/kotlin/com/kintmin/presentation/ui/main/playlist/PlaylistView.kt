@@ -60,22 +60,25 @@ fun PlaylistView(
         // 가장자리 여백은 각 항목이 자기 안쪽 패딩으로 만든다.
         contentPadding = PaddingValues(vertical = 8.dp),
     ) {
-        if (libraryItems.isNotEmpty()) {
-            // 머리말을 붙이지 않는다. 아래 머리말과 구분선이 이미 둘을 가르고,
-            // 한 줄을 비워야 전체 항목이 처음 화면에 들어온다.
-            item(key = "library-block", span = { GridItemSpan(maxLineSpan) }) {
-                PlaylistLibraryBlockView(
-                    modifier = Modifier.fillMaxWidth(),
-                    data = libraryItems,
-                    sendIntent = sendIntent,
-                )
-            }
+        // 라이브러리가 비어 있다는 것은 아직 안 읽혔다는 뜻이다 — 시스템 플레이리스트 셋은 앱 시작 때
+        // 보장되지만 비동기로 들어가 첫 방출에는 없을 수 있다. 그때 항목을 두면 빈 상태가 깜박이고,
+        // 머리말에 스크롤이 붙어 뒤이어 위로 끼어드는 라이브러리가 화면 밖으로 밀린다.
+        if (libraryItems.isEmpty()) return@LazyVerticalGrid
+
+        // 머리말을 붙이지 않는다. 아래 머리말과 구분선이 이미 둘을 가르고,
+        // 한 줄을 비워야 전체 항목이 처음 화면에 들어온다.
+        item(key = "library-block", span = { GridItemSpan(maxLineSpan) }) {
+            PlaylistLibraryBlockView(
+                modifier = Modifier.fillMaxWidth(),
+                data = libraryItems,
+                sendIntent = sendIntent,
+            )
         }
 
         item(key = "user-header", span = { GridItemSpan(maxLineSpan) }) {
             SectionHeader(
                 text = "내 플레이리스트",
-                showDivider = libraryItems.isNotEmpty(),
+                showDivider = true,
                 action = {
                     // 빈 상태가 제 CTA 를 갖는다. 같은 명령으로 가는 버튼을 둘 보이지 않게 한다.
                     if (userItems.isEmpty()) return@SectionHeader
@@ -113,9 +116,7 @@ fun PlaylistView(
             )
         }
 
-        // 라이브러리가 비어 있다는 것은 아직 안 읽혔다는 뜻이다 — 시스템 플레이리스트 셋은
-        // 앱 시작 때 보장된다. 그것으로 가르지 않으면 첫 프레임마다 빈 상태가 깜박인다.
-        if (userItems.isEmpty() && libraryItems.isNotEmpty()) {
+        if (userItems.isEmpty()) {
             item(key = "user-empty", span = { GridItemSpan(maxLineSpan) }) {
                 PlaylistEmptyView(
                     modifier = Modifier,
