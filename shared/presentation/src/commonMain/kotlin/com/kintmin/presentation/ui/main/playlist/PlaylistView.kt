@@ -1,5 +1,8 @@
 package com.kintmin.presentation.ui.main.playlist
 
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
@@ -34,6 +39,9 @@ import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistLibraryBlockView
+
+private const val REVEAL_MILLIS = 300
+private val RevealOffset = 12.dp
 
 @Composable
 fun PlaylistView(
@@ -46,6 +54,14 @@ fun PlaylistView(
     // 입구가 둘(머리말·빈 상태)이라 다이얼로그는 여기 한 벌만 둔다.
     var showAddDialog by remember { mutableStateOf(false) }
 
+    // 목록이 비동기로 도착하는 순간 툭 나타나지 않게 한다.
+    val isLoaded = libraryItems.isNotEmpty()
+    val revealProgress by animateFloatAsState(
+        targetValue = if (isLoaded) 1f else 0f,
+        animationSpec = tween(REVEAL_MILLIS, easing = LinearOutSlowInEasing),
+    )
+    val revealOffsetPx = with(LocalDensity.current) { RevealOffset.toPx() }
+
     PlaylistAddDialog(
         showDialog = showAddDialog,
         onDismiss = { showAddDialog = false },
@@ -54,7 +70,10 @@ fun PlaylistView(
     )
 
     LazyVerticalGrid(
-        modifier = modifier,
+        modifier = modifier.graphicsLayer {
+            alpha = revealProgress
+            translationY = (1f - revealProgress) * revealOffsetPx
+        },
         columns = GridCells.Fixed(2),
         // 좌우 여백을 격자에 주지 않는다. 라이브러리 행의 ink 가 가장자리까지 닿아야 한다.
         // 가장자리 여백은 각 항목이 자기 안쪽 패딩으로 만든다.
