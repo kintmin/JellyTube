@@ -84,7 +84,7 @@ class AudioMediaFacade constructor(
                             imageFileNameWithExt = playlist.customImageFileName,
                             isCustomImage = playlist.customImageFileName != null,
                             sequence = nextSequence++,
-                            type = PlaylistType.USER.name,
+                            type = playlist.type.name,
                         )
                     ).toInt()
                 }
