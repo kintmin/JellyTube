@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             JellyTubeApp(
-                navigationIntentFlow = viewModel.eventFlow,
+                navigationEventFlow = viewModel.eventFlow,
                 isDebugTabVisible = BuildConfig.DEBUG,
                 onDeepLink = { url -> viewModel.sendIntent(AppIntent.HandleDeepLink(url)) },
             )

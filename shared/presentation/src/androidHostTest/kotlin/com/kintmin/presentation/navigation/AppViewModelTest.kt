@@ -74,7 +74,7 @@ class AppViewModelTest {
 
         coVerify { importSharedAudioMediaUseCase("a") }
         coVerify { importSharedAudioMediaUseCase("b") }
-        assertEquals(NavigationIntent.NavigateToMainPlaylistsTab, viewModel.eventFlow.first())
+        assertEquals(NavigationEvent.NavigateToMainPlaylistsTab, viewModel.eventFlow.first())
     }
 
     private fun createViewModel() = AppViewModel(

@@ -55,7 +55,7 @@ private fun restoreStepMeasurementIfEnabled() {
 
 fun mainViewController(): UIViewController = ComposeUIViewController {
     JellyTubeApp(
-        navigationIntentFlow = appViewModel.eventFlow,
+        navigationEventFlow = appViewModel.eventFlow,
         // iOS 에는 대응하는 빌드 변형이 없다.
         isDebugTabVisible = false,
         onDeepLink = { url -> appViewModel.sendIntent(AppIntent.HandleDeepLink(url)) },

@@ -2,7 +2,7 @@ package com.kintmin.presentation
 
 import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.deeplink.DeepLinkParser
-import com.kintmin.presentation.navigation.NavigationIntent
+import com.kintmin.presentation.navigation.NavigationEvent
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -13,11 +13,11 @@ class DeepLinkParserTest {
 
     @Test
     fun `우리 주소가 아니면 아무 명령도 내지 않는다`() {
-        assertEquals(emptyList<NavigationIntent>(), parse("http://www.jellytube.com/main/step"))
-        assertEquals(emptyList<NavigationIntent>(), parse("https://evil.com/main/step"))
-        assertEquals(emptyList<NavigationIntent>(), parse("https://www.jellytube.com/other/step"))
-        assertEquals(emptyList<NavigationIntent>(), parse("https://www.jellytube.com"))
-        assertEquals(emptyList<NavigationIntent>(), parse("not a url"))
+        assertEquals(emptyList<NavigationEvent>(), parse("http://www.jellytube.com/main/step"))
+        assertEquals(emptyList<NavigationEvent>(), parse("https://evil.com/main/step"))
+        assertEquals(emptyList<NavigationEvent>(), parse("https://www.jellytube.com/other/step"))
+        assertEquals(emptyList<NavigationEvent>(), parse("https://www.jellytube.com"))
+        assertEquals(emptyList<NavigationEvent>(), parse("not a url"))
     }
 
     @Test
@@ -29,9 +29,9 @@ class DeepLinkParserTest {
         )
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
-                NavigationIntent.NavigateToLyricsViewer(9),
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
+                NavigationEvent.NavigateToLyricsViewer(9),
             ),
             parse("jellytube://www.jellytube.com/main/lyrics/9"),
         )
@@ -39,15 +39,15 @@ class DeepLinkParserTest {
 
     @Test
     fun `커스텀 스킴이어도 호스트가 다르면 거른다`() {
-        assertEquals(emptyList<NavigationIntent>(), parse("jellytube://evil.com/main/step"))
-        assertEquals(emptyList<NavigationIntent>(), parse("jellytubex://www.jellytube.com/main/step"))
+        assertEquals(emptyList<NavigationEvent>(), parse("jellytube://evil.com/main/step"))
+        assertEquals(emptyList<NavigationEvent>(), parse("jellytubex://www.jellytube.com/main/step"))
     }
 
     @Test
     fun `프래그먼트로 경로를 가장한 주소는 명령을 내지 않는다`() {
         // 경로 없는 주소 뒤에 #/main/download?encodedUrl=... 을 붙여 웹뷰에 임의 주소를 넘기려는 꼴.
         assertEquals(
-            emptyList<NavigationIntent>(),
+            emptyList<NavigationEvent>(),
             DeepLinkParser.parse(
                 "https://www.jellytube.com#/main/download?encodedUrl=https%253A%252F%252Fevil.example",
                 playingPlaylistId = null,
@@ -59,11 +59,11 @@ class DeepLinkParserTest {
     @Test
     fun `신뢰 호스트를 가장한 주소를 거른다`() {
         assertEquals(
-            emptyList<NavigationIntent>(),
+            emptyList<NavigationEvent>(),
             parse("https://www.jellytube.com@evil.com/main/step"),
         )
         assertEquals(
-            emptyList<NavigationIntent>(),
+            emptyList<NavigationEvent>(),
             parse("https://evil.com\\www.jellytube.com/main/step"),
         )
     }
@@ -72,9 +72,9 @@ class DeepLinkParserTest {
     fun `설정 딥링크는 목록 탭을 거쳐 설정으로 간다`() {
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
-                NavigationIntent.NavigateToSettings,
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
+                NavigationEvent.NavigateToSettings,
             ),
             parse(DeepLinkConstants.UrlBuilder.settingsScreen()),
         )
@@ -84,10 +84,10 @@ class DeepLinkParserTest {
     fun `앱 로그 딥링크는 설정 뒤에 로그 화면을 쌓는다`() {
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
-                NavigationIntent.NavigateToSettings,
-                NavigationIntent.NavigateToSettingAppLog,
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
+                NavigationEvent.NavigateToSettings,
+                NavigationEvent.NavigateToSettingAppLog,
             ),
             parse(DeepLinkConstants.UrlBuilder.appLogScreen()),
         )
@@ -97,10 +97,10 @@ class DeepLinkParserTest {
     fun `걸음수 딥링크는 설정 뒤에 걸음수 화면을 쌓는다`() {
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
-                NavigationIntent.NavigateToSettings,
-                NavigationIntent.NavigateToStep,
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
+                NavigationEvent.NavigateToSettings,
+                NavigationEvent.NavigateToStep,
             ),
             parse(DeepLinkConstants.UrlBuilder.stepScreen()),
         )
@@ -112,7 +112,7 @@ class DeepLinkParserTest {
         val url = DeepLinkConstants.UrlBuilder.mainScreenDownloadTab(target)
 
         assertEquals(
-            NavigationIntent.NavigateToMainDownloadTab(target),
+            NavigationEvent.NavigateToMainDownloadTab(target),
             parse(url).last(),
         )
     }
@@ -125,7 +125,7 @@ class DeepLinkParserTest {
             "?encodedUrl=https%253A%252F%252Fyoutu.be%252Fabc"
 
         assertEquals(
-            NavigationIntent.NavigateToMainDownloadTab("https://youtu.be/abc"),
+            NavigationEvent.NavigateToMainDownloadTab("https://youtu.be/abc"),
             parse(url).last(),
         )
     }
@@ -134,8 +134,8 @@ class DeepLinkParserTest {
     fun `다운로드 딥링크에 주소가 없으면 null 로 흘린다`() {
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainDownloadTab(null),
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainDownloadTab(null),
             ),
             parse("https://www.jellytube.com/main/download"),
         )
@@ -145,9 +145,9 @@ class DeepLinkParserTest {
     fun `플레이어 딥링크는 기본적으로 플레이어만 띄운다`() {
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
-                NavigationIntent.NavigateToPlayer,
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
+                NavigationEvent.NavigateToPlayer,
             ),
             parse(DeepLinkConstants.UrlBuilder.playerScreen()),
         )
@@ -160,10 +160,10 @@ class DeepLinkParserTest {
 
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
-                NavigationIntent.NavigateToPlaylistContent(playlistId = 7, focusAudioMediaId = 42),
-                NavigationIntent.NavigateToPlayer,
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
+                NavigationEvent.NavigateToPlaylistContent(playlistId = 7, focusAudioMediaId = 42),
+                NavigationEvent.NavigateToPlayer,
             ),
             parse(url, playlistId = 7, mediaId = 42),
         )
@@ -176,9 +176,9 @@ class DeepLinkParserTest {
 
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
-                NavigationIntent.NavigateToPlayer,
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
+                NavigationEvent.NavigateToPlayer,
             ),
             parse(url, playlistId = null, mediaId = 42),
         )
@@ -188,9 +188,9 @@ class DeepLinkParserTest {
     fun `플레이리스트 딥링크는 포커스 음원까지 넘긴다`() {
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
-                NavigationIntent.NavigateToPlaylistContent(playlistId = 3, focusAudioMediaId = 9),
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
+                NavigationEvent.NavigateToPlaylistContent(playlistId = 3, focusAudioMediaId = 9),
             ),
             parse(DeepLinkConstants.UrlBuilder.playlistContentScreen(3, 9)),
         )
@@ -200,10 +200,10 @@ class DeepLinkParserTest {
     fun `플레이리스트 안의 음원 딥링크는 상세까지 쌓는다`() {
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
-                NavigationIntent.NavigateToPlaylistContent(playlistId = 3, focusAudioMediaId = null),
-                NavigationIntent.NavigateToAudioMedia(9),
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
+                NavigationEvent.NavigateToPlaylistContent(playlistId = 3, focusAudioMediaId = null),
+                NavigationEvent.NavigateToAudioMedia(9),
             ),
             parse(DeepLinkConstants.UrlBuilder.playlistAudioMediaDetailScreen(3, 9)),
         )
@@ -214,8 +214,8 @@ class DeepLinkParserTest {
         // 뿌리 경로가 맞은 뒤의 포기라 PopAll 과 목록 탭은 이미 확정이다.
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
             ),
             parse("https://www.jellytube.com/main/playlists/abc/audioMedias"),
         )
@@ -225,14 +225,14 @@ class DeepLinkParserTest {
     fun `음원 딥링크는 아이디가 깨지면 스택만 비운다`() {
         // 이 분기는 목록 탭을 쌓기 전에 포기한다 — 안드로이드 구현과 같은 순서다.
         assertEquals(
-            listOf(NavigationIntent.PopAll),
+            listOf(NavigationEvent.PopAll),
             parse("https://www.jellytube.com/main/audioMedias/abc"),
         )
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
-                NavigationIntent.NavigateToAudioMedia(9),
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
+                NavigationEvent.NavigateToAudioMedia(9),
             ),
             parse(DeepLinkConstants.UrlBuilder.audioMediaDetailScreen(9)),
         )
@@ -242,14 +242,14 @@ class DeepLinkParserTest {
     fun `가사 딥링크는 가사 뷰어로 간다`() {
         assertEquals(
             listOf(
-                NavigationIntent.PopAll,
-                NavigationIntent.NavigateToMainPlaylistsTab,
-                NavigationIntent.NavigateToLyricsViewer(9),
+                NavigationEvent.PopAll,
+                NavigationEvent.NavigateToMainPlaylistsTab,
+                NavigationEvent.NavigateToLyricsViewer(9),
             ),
             parse(DeepLinkConstants.UrlBuilder.lyricsViewerScreen(9)),
         )
         assertEquals(
-            listOf(NavigationIntent.PopAll),
+            listOf(NavigationEvent.PopAll),
             parse("https://www.jellytube.com/main/lyrics/abc"),
         )
     }
@@ -257,7 +257,7 @@ class DeepLinkParserTest {
     @Test
     fun `모르는 경로는 스택만 비운다`() {
         assertEquals(
-            listOf(NavigationIntent.PopAll),
+            listOf(NavigationEvent.PopAll),
             parse("https://www.jellytube.com/main/unknown"),
         )
     }

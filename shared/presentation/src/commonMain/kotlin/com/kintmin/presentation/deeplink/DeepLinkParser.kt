@@ -1,6 +1,6 @@
 package com.kintmin.presentation.deeplink
 
-import com.kintmin.presentation.navigation.NavigationIntent
+import com.kintmin.presentation.navigation.NavigationEvent
 
 /**
  * 앱 밖에서 들어온 주소를 화면 이동 명령으로 바꾼다.
@@ -16,7 +16,7 @@ object DeepLinkParser {
         url: String,
         playingPlaylistId: Int? = null,
         playingMediaId: Int? = null,
-    ): List<NavigationIntent> {
+    ): List<NavigationEvent> {
         val scheme = UrlParts.scheme(url)
         if (scheme != DeepLinkConstants.SCHEME && scheme != DeepLinkConstants.APP_SCHEME) {
             return emptyList()
@@ -27,48 +27,48 @@ object DeepLinkParser {
         if (pathSegments.getOrNull(0) != DeepLinkConstants.Path.MAIN) return emptyList()
 
         // 뿌리 경로까지 맞으면 먼저 스택을 비운다. 이후 분기가 중간에 포기해도 이것은 남는다.
-        val intents = mutableListOf<NavigationIntent>(NavigationIntent.PopAll)
+        val intents = mutableListOf<NavigationEvent>(NavigationEvent.PopAll)
 
         when (pathSegments.getOrNull(1)) {
             DeepLinkConstants.Path.SETTINGS -> {
-                intents += NavigationIntent.NavigateToMainPlaylistsTab
-                intents += NavigationIntent.NavigateToSettings
+                intents += NavigationEvent.NavigateToMainPlaylistsTab
+                intents += NavigationEvent.NavigateToSettings
 
                 if (pathSegments.getOrNull(2) == DeepLinkConstants.Path.APP_LOG) {
-                    intents += NavigationIntent.NavigateToSettingAppLog
+                    intents += NavigationEvent.NavigateToSettingAppLog
                 }
             }
 
             DeepLinkConstants.Path.STEP -> {
-                intents += NavigationIntent.NavigateToMainPlaylistsTab
-                intents += NavigationIntent.NavigateToSettings
-                intents += NavigationIntent.NavigateToStep
+                intents += NavigationEvent.NavigateToMainPlaylistsTab
+                intents += NavigationEvent.NavigateToSettings
+                intents += NavigationEvent.NavigateToStep
             }
 
             DeepLinkConstants.Path.DOWNLOAD -> {
-                intents += NavigationIntent.NavigateToMainDownloadTab(targetUrlOf(url))
+                intents += NavigationEvent.NavigateToMainDownloadTab(targetUrlOf(url))
             }
 
             DeepLinkConstants.Path.PLAYER -> {
-                intents += NavigationIntent.NavigateToMainPlaylistsTab
+                intents += NavigationEvent.NavigateToMainPlaylistsTab
 
                 val isFromPlaylist = UrlParts.queryParameter(url, DeepLinkConstants.QueryKey.ENTRY) ==
                     DeepLinkConstants.PlayerScreenEntry.Playlist.path
 
                 if (isFromPlaylist && playingPlaylistId != null) {
-                    intents += NavigationIntent.NavigateToPlaylistContent(
+                    intents += NavigationEvent.NavigateToPlaylistContent(
                         playlistId = playingPlaylistId,
                         focusAudioMediaId = playingMediaId,
                     )
                 }
-                intents += NavigationIntent.NavigateToPlayer
+                intents += NavigationEvent.NavigateToPlayer
             }
 
             DeepLinkConstants.Path.PLAYLISTS -> {
-                intents += NavigationIntent.NavigateToMainPlaylistsTab
+                intents += NavigationEvent.NavigateToMainPlaylistsTab
 
                 val playlistId = pathSegments.getOrNull(2)?.toIntOrNull() ?: return intents
-                intents += NavigationIntent.NavigateToPlaylistContent(
+                intents += NavigationEvent.NavigateToPlaylistContent(
                     playlistId = playlistId,
                     focusAudioMediaId = UrlParts
                         .queryParameter(url, DeepLinkConstants.QueryKey.FOCUS_AUDIO_MEDIA_ID)
@@ -77,21 +77,21 @@ object DeepLinkParser {
 
                 if (pathSegments.getOrNull(3) == DeepLinkConstants.Path.AUDIO_MEDIAS) {
                     pathSegments.getOrNull(4)?.toIntOrNull()?.let { audioMediaId ->
-                        intents += NavigationIntent.NavigateToAudioMedia(audioMediaId)
+                        intents += NavigationEvent.NavigateToAudioMedia(audioMediaId)
                     }
                 }
             }
 
             DeepLinkConstants.Path.AUDIO_MEDIAS -> {
                 val audioMediaId = pathSegments.getOrNull(2)?.toIntOrNull() ?: return intents
-                intents += NavigationIntent.NavigateToMainPlaylistsTab
-                intents += NavigationIntent.NavigateToAudioMedia(audioMediaId)
+                intents += NavigationEvent.NavigateToMainPlaylistsTab
+                intents += NavigationEvent.NavigateToAudioMedia(audioMediaId)
             }
 
             DeepLinkConstants.Path.LYRICS -> {
                 val audioMediaId = pathSegments.getOrNull(2)?.toIntOrNull() ?: return intents
-                intents += NavigationIntent.NavigateToMainPlaylistsTab
-                intents += NavigationIntent.NavigateToLyricsViewer(audioMediaId)
+                intents += NavigationEvent.NavigateToMainPlaylistsTab
+                intents += NavigationEvent.NavigateToLyricsViewer(audioMediaId)
             }
         }
 

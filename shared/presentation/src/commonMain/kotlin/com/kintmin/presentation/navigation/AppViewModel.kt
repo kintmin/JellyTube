@@ -29,7 +29,7 @@ class AppViewModel(
     private val fetchPlaybackPitchSemitoneFlowUseCase: FetchPlaybackPitchSemitoneFlowUseCase,
 ) : ViewModel() {
 
-    private val eventChannel = Channel<NavigationIntent>(capacity = 8)
+    private val eventChannel = Channel<NavigationEvent>(capacity = 8)
     val eventFlow = eventChannel.receiveAsFlow()
 
     init {
@@ -66,8 +66,8 @@ class AppViewModel(
                 url = url,
                 playingPlaylistId = mediaControllerManager.currentPlaylistId,
                 playingMediaId = mediaControllerManager.playingMediaItem?.mediaId?.toIntOrNull(),
-            ).forEach { navigationIntent ->
-                eventChannel.send(navigationIntent)
+            ).forEach { navigationEvent ->
+                eventChannel.send(navigationEvent)
             }
         }
     }
@@ -79,7 +79,7 @@ class AppViewModel(
             fileIdentifiers.forEach { fileIdentifier ->
                 importSharedAudioMediaUseCase(fileIdentifier)
             }
-            eventChannel.send(NavigationIntent.NavigateToMainPlaylistsTab)
+            eventChannel.send(NavigationEvent.NavigateToMainPlaylistsTab)
         }
     }
 }
