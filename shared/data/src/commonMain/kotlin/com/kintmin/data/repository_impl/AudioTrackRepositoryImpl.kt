@@ -5,7 +5,6 @@ import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
-import com.kintmin.domain.audio_track.model.SecretTrack
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -13,7 +12,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import kotlin.time.Duration.Companion.seconds
 
 class AudioTrackRepositoryImpl constructor(
     private val audioMediaFacade: AudioMediaFacade,
@@ -47,8 +45,8 @@ class AudioTrackRepositoryImpl constructor(
             .map { it.toDomain(fileManager).getOrThrow() }
     }
 
-    override fun getPlaylistTrackAggregateListFlow(playlistId: Int): Flow<List<PlaylistTrackAggregate>> {
-        return playlistTrackDao.getPlaylistTrackFullListFlow(playlistId).map { list ->
+    override fun getPlaylistTrackAggregateListFlow(playlistId: Int, showSecretInTotal: Boolean): Flow<List<PlaylistTrackAggregate>> {
+        return playlistTrackDao.getPlaylistTrackFullListFlow(playlistId, showSecretInTotal).map { list ->
             list.map {
                 it.toDomain(fileManager).getOrThrow()
             }
@@ -59,11 +57,7 @@ class AudioTrackRepositoryImpl constructor(
         return playlistTrackDao.getPlaylistIdListFlow(audioMediaId)
     }
 
-    override fun getSecretTrackListFlow(): Flow<List<SecretTrack>> {
-        return playlistTrackDao.getSecretTrackListFlow().map { list ->
-            list.map { SecretTrack(audioMediaId = it.audioMediaId, playbackDuration = it.durationSeconds.seconds) }
-        }
-    }
+    override fun getSecretAudioMediaIdListFlow(): Flow<List<Int>> = playlistTrackDao.getSecretAudioMediaIdListFlow()
 
     override suspend fun setFavorite(audioMediaId: Int, isFavorite: Boolean): Result<Unit> =
         withContext(Dispatchers.IO) {

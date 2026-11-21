@@ -1,10 +1,9 @@
 package com.kintmin.presentation.secret_mode
 
-import com.kintmin.domain.audio_track.model.SecretTrack
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
-import com.kintmin.domain.secret_mode.usecase.FetchSecretTrackListFlowUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.StartSecretModeUseCase
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.testPlaylist
@@ -33,8 +32,8 @@ class SecretModeRunnerTest {
         every { this@mockk(PlaylistType.TOTAL) } returns flowOf(listOf(testPlaylist(1, PlaylistType.TOTAL)))
         every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(testPlaylist(5, PlaylistType.SECRET)))
     }
-    private val fetchSecretTrackListFlowUseCase: FetchSecretTrackListFlowUseCase = mockk {
-        every { this@mockk() } returns flowOf(listOf(SecretTrack(10, 1.seconds), SecretTrack(11, 1.seconds)))
+    private val fetchSecretAudioMediaIdListFlowUseCase: FetchSecretAudioMediaIdListFlowUseCase = mockk {
+        every { this@mockk() } returns flowOf(listOf(10, 11))
     }
 
     @Test
@@ -90,7 +89,7 @@ class SecretModeRunnerTest {
         startSecretModeUseCase = startSecretModeUseCase,
         endSecretModeUseCase = endSecretModeUseCase,
         fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
-        fetchSecretTrackListFlowUseCase = fetchSecretTrackListFlowUseCase,
+        fetchSecretAudioMediaIdListFlowUseCase = fetchSecretAudioMediaIdListFlowUseCase,
         scope = backgroundScope,
     )
 

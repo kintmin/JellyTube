@@ -1,6 +1,5 @@
 package com.kintmin.domain.playlist
 
-import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
@@ -22,7 +21,6 @@ class FetchAllPlaylistFlowUseCaseTest {
         playlistRepository = mockk<PlaylistRepository> {
             every { getAllPlaylistFlow() } returns flowOf(listOf(testPlaylist(1, PlaylistType.TOTAL), testPlaylist(5, PlaylistType.SECRET)))
         },
-        audioTrackRepository = mockk<AudioTrackRepository> { every { getSecretTrackListFlow() } returns flowOf(emptyList()) },
         fetchSecretModeEnabledFlowUseCase = mockk<FetchSecretModeEnabledFlowUseCase> { every { this@mockk() } returns isSecretModeEnabled },
     )
 

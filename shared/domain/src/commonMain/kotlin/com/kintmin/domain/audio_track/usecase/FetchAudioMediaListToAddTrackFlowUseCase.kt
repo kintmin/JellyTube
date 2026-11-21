@@ -20,21 +20,21 @@ class FetchAudioMediaListToAddTrackFlowUseCase constructor(
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(playlistId: Int): Flow<List<PlaylistTrackAggregate>> {
-        return fetchPlaylistsByTypeUseCase(PlaylistType.TOTAL)
-            .flatMapLatest { totalPlaylists ->
-                val totalId = totalPlaylists.firstOrNull()?.id ?: return@flatMapLatest flowOf(emptyList())
+        return combine(
+            fetchPlaylistsByTypeUseCase(PlaylistType.TOTAL),
+            fetchPlaylistsByTypeUseCase(PlaylistType.SECRET),
+        ) { totalPlaylists, secretPlaylists ->
+            // 비밀 플레이리스트에 담을 때만 비밀 곡도 후보다.
+            totalPlaylists.firstOrNull()?.id to secretPlaylists.any { it.id == playlistId }
+        }
+            .distinctUntilChanged()
+            .flatMapLatest { (totalId, isSecretTarget) ->
+                if (totalId == null) return@flatMapLatest flowOf(emptyList())
                 combine(
-                    audioTrackRepository.getPlaylistTrackAggregateListFlow(totalId),
+                    audioTrackRepository.getPlaylistTrackAggregateListFlow(totalId, showSecretInTotal = isSecretTarget),
                     audioTrackRepository.getPlaylistTrackAggregateListFlow(playlistId),
-                    audioTrackRepository.getSecretTrackListFlow(),
-                    fetchPlaylistsByTypeUseCase(PlaylistType.SECRET),
-                ) { totalList, currentList, secretTracks, secretPlaylists ->
-                    val hiddenIds = if (secretPlaylists.any { it.id == playlistId }) emptySet()
-                    else secretTracks.mapTo(HashSet()) { it.audioMediaId }
-                    totalList.filter { total ->
-                        total.audioMedia.id !in hiddenIds &&
-                            currentList.firstOrNull { it.audioMedia.id == total.audioMedia.id } == null
-                    }
+                ) { totalList, currentList ->
+                    totalList.filter { total -> currentList.firstOrNull { it.audioMedia.id == total.audioMedia.id } == null }
                 }
             }
             .flowOn(Dispatchers.IO)

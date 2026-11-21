@@ -3,7 +3,7 @@ package com.kintmin.presentation.secret_mode
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
-import com.kintmin.domain.secret_mode.usecase.FetchSecretTrackListFlowUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.StartSecretModeUseCase
 import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +27,7 @@ class SecretModeRunner(
     private val startSecretModeUseCase: StartSecretModeUseCase,
     private val endSecretModeUseCase: EndSecretModeUseCase,
     private val fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase,
-    private val fetchSecretTrackListFlowUseCase: FetchSecretTrackListFlowUseCase,
+    private val fetchSecretAudioMediaIdListFlowUseCase: FetchSecretAudioMediaIdListFlowUseCase,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
 
@@ -66,8 +66,8 @@ class SecretModeRunner(
         if (isPlaylistOf(PlaylistType.SECRET, playlistId)) {
             playbackController.clearQueue()
         } else if (isPlaylistOf(PlaylistType.TOTAL, playlistId)) {
-            fetchSecretTrackListFlowUseCase().first().forEach {
-                playbackController.tryDeleteMediaItem(playlistId, it.audioMediaId)
+            fetchSecretAudioMediaIdListFlowUseCase().first().forEach {
+                playbackController.tryDeleteMediaItem(playlistId, it)
             }
         }
     }

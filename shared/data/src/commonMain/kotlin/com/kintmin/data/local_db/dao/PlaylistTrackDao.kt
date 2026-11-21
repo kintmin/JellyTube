@@ -7,7 +7,6 @@ import androidx.room.Query
 import androidx.room.Transaction
 import com.kintmin.data.local_db.model.PlaylistTrackEntity
 import com.kintmin.data.local_db.model.PlaylistTrackFullDto
-import com.kintmin.data.local_db.model.SecretTrackDto
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -17,8 +16,17 @@ interface PlaylistTrackDao {
     suspend fun insertPlaylistTrackList(entities: List<PlaylistTrackEntity>)
 
     @Transaction
-    @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId ORDER BY sequence")
-    fun getPlaylistTrackFullListFlow(playlistId: Int): Flow<List<PlaylistTrackFullDto>>
+    @Query(
+        """
+SELECT * FROM PLAYLIST_TRACK
+WHERE playlistId = :playlistId
+    AND (:showSecretInTotal
+        OR playlistId NOT IN (SELECT id FROM PLAYLIST WHERE type = 'TOTAL')
+        OR audioMediaId NOT IN ($SECRET_AUDIO_MEDIA_IDS))
+ORDER BY sequence
+"""
+    )
+    fun getPlaylistTrackFullListFlow(playlistId: Int, showSecretInTotal: Boolean): Flow<List<PlaylistTrackFullDto>>
 
     @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
@@ -36,19 +44,8 @@ interface PlaylistTrackDao {
     @Query("SELECT playlistId FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
     suspend fun getLinkedPlaylistIdList(audioMediaId: Int): List<Int>
 
-    // 'SECRET' 은 PlaylistType.SECRET.name 이다. 편집본이 있으면 편집본 길이가 재생 길이다.
-    @Query(
-        """
-SELECT id AS audioMediaId, COALESCE(editedAudioDurationSeconds, rawAudioDurationSeconds, 0) AS durationSeconds
-FROM AUDIO_MEDIA
-WHERE id IN (
-    SELECT PT.audioMediaId FROM PLAYLIST_TRACK PT
-    JOIN PLAYLIST P ON P.id = PT.playlistId
-    WHERE P.type = 'SECRET'
-)
-"""
-    )
-    fun getSecretTrackListFlow(): Flow<List<SecretTrackDto>>
+    @Query("SELECT DISTINCT audioMediaId FROM ($SECRET_AUDIO_MEDIA_IDS)")
+    fun getSecretAudioMediaIdListFlow(): Flow<List<Int>>
 
     @Query("SELECT * FROM PLAYLIST_TRACK")
     suspend fun getAll(): List<PlaylistTrackEntity>
