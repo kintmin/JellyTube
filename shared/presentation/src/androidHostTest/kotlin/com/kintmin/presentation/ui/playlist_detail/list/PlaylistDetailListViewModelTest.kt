@@ -53,6 +53,7 @@ class PlaylistDetailListViewModelTest {
         deleteAudioTrackListUseCase = mockk(relaxed = true),
         updateTrackSequenceUseCase = mockk(relaxed = true),
         mediaControllerManager = mockk(relaxed = true),
+        appLog = mockk(relaxed = true),
     )
 
     @Test

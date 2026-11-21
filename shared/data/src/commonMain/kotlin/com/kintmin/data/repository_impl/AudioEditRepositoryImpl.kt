@@ -68,7 +68,8 @@ internal class AudioEditRepositoryImpl constructor(
     override suspend fun fetchEditTimeline(audioMediaId: Int): Result<AudioEditTimeline?> =
         withContext(Dispatchers.IO) {
             runCatching {
-                audioEditProjectDao.getByAudioMediaId(audioMediaId)?.timelineJson?.toAudioEditTimelineOrNull()
+                audioEditProjectDao.getByAudioMediaId(audioMediaId)?.timelineJson
+                    ?.let { it.toAudioEditTimelineOrNull() ?: error("편집 상태를 읽을 수 없습니다.") }
             }
         }
 

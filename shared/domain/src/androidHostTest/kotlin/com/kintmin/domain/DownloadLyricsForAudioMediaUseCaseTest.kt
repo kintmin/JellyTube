@@ -37,6 +37,7 @@ class DownloadLyricsForAudioMediaUseCaseTest {
         parseLyrics = ParseLyricsUseCase(),
         detectLyricsLanguage = DetectLyricsLanguageUseCase(),
         createLyricsVariant = createVariant,
+        appLog = mockk(relaxed = true),
     )
 
     private fun result(
