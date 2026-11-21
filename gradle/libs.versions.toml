@@ -23,9 +23,8 @@ uiTooling = "1.11.4"
 coilCompose = "3.5.0"
 jetbrainsKotlinJvm = "2.4.20"
 navigationCompose = "2.9.6"
-google-service = "4.5.0"
-firebase-bom = "35.1.0"
-crashlytics = "3.0.8"
+sentry-kmp = "0.30.0"
+sentry-android-gradle = "6.27.0"
 splash = "1.2.0"
 junit = "4.13.2"
 mockk = "1.14.11"
@@ -104,9 +103,7 @@ okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
 androidx-compose-material = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 androidx-datastore-preferences-core = { group = "androidx.datastore", name = "datastore-preferences-core", version.ref = "datastore" }
-firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
-firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
-firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
+sentry-kmp = { group = "io.sentry", name = "sentry-kotlin-multiplatform", version.ref = "sentry-kmp" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test" }
@@ -144,8 +141,8 @@ chaquopy = { id = "com.chaquo.python", version.ref = "chaquopy" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
-google-services = { id = "com.google.gms.google-services", version.ref = "google-service" }
-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlytics" }
+sentry-android = { id = "io.sentry.android.gradle", version.ref = "sentry-android-gradle" }
+sentry-kmp = { id = "io.sentry.kotlin.multiplatform.gradle", version.ref = "sentry-kmp" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }
 skie = { id = "co.touchlab.skie", version.ref = "skie" }

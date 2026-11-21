@@ -10,8 +10,8 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.chaquopy) apply false
     alias(libs.plugins.jetbrains.kotlin.jvm) apply false
-    alias(libs.plugins.google.services) apply false
-    alias(libs.plugins.crashlytics) apply false
+    alias(libs.plugins.sentry.android) apply false
+    alias(libs.plugins.sentry.kmp) apply false
     alias(libs.plugins.compose.multiplatform) apply false
     alias(libs.plugins.skie) apply false
 }
