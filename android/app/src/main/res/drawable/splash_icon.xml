@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 배경 없는 스플래시 아이콘은 288dp 로 그려진다. 108dp 래스터를 그 크기로 늘리면 흐려지므로 원래 크기(37.5%)로 줄인다. -->
+<!-- splash_logo 는 런처 전경 레이어에서 바깥 흰 배경만 투명하게 걷어낸 사본이다. -->
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
-    android:drawable="@mipmap/ic_launcher_foreground"
+    android:drawable="@drawable/splash_logo"
     android:inset="31.25%" />
