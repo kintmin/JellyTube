@@ -10,6 +10,7 @@ import com.kintmin.ios.bridge.IosMigrationSourceBrowserBridge
 import com.kintmin.ios.adapter.iosAdapterModule
 import com.kintmin.presentation.di.presentationModule
 import org.koin.core.context.startKoin
+import platform.Foundation.NSBundle
 import kotlin.experimental.ExperimentalNativeApi
 
 /**
@@ -23,7 +24,13 @@ fun initIosKoin(
     mediaControllerBridge: IosMediaControllerBridge,
     migrationSourceBrowserBridge: IosMigrationSourceBrowserBridge,
 ) {
-    initSentry(isDebug = Platform.isDebugBinary)
+    val bundle = NSBundle.mainBundle
+    val version = bundle.objectForInfoDictionaryKey("CFBundleShortVersionString")
+    val build = bundle.objectForInfoDictionaryKey("CFBundleVersion")
+    initSentry(
+        isDebug = Platform.isDebugBinary,
+        release = "${bundle.bundleIdentifier}@$version+$build",
+    )
     startKoin {
         modules(
             dataCommonModule,

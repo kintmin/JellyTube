@@ -24,7 +24,10 @@ class JellyTubeApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        initSentry(isDebug = BuildConfig.DEBUG)
+        initSentry(
+            isDebug = BuildConfig.DEBUG,
+            release = "${BuildConfig.APPLICATION_ID}@${BuildConfig.VERSION_NAME}+${BuildConfig.VERSION_CODE}",
+        )
         startKoin {
             androidLogger(Level.ERROR)
             androidContext(this@JellyTubeApplication)
