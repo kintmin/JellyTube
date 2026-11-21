@@ -5,7 +5,9 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlo
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCase
+import com.kintmin.domain.backup.usecase.BackupIfDueUseCase
 import com.kintmin.presentation.port.PlaybackController
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -28,6 +30,9 @@ class AppViewModelTest {
 
     private val manager = mockk<PlaybackController>(relaxed = true)
     private val importSharedAudioMediaUseCase = mockk<ImportSharedAudioMediaUseCase>(relaxed = true)
+    private val backupIfDueUseCase = mockk<BackupIfDueUseCase> {
+        coEvery { this@mockk(any(), any()) } returns Result.success(null)
+    }
 
     @Before
     fun setUp() {
@@ -49,6 +54,7 @@ class AppViewModelTest {
             fetchIsPlaybackShufflingFlowUseCase = mockk { every { this@mockk() } returns flowOf(true) },
             fetchPlaybackSpeedFlowUseCase = mockk { every { this@mockk() } returns flowOf(1.5f) },
             fetchPlaybackPitchSemitoneFlowUseCase = mockk { every { this@mockk() } returns flowOf(2) },
+            backupIfDueUseCase = mockk(),
         )
 
         verify { manager.setRepeatMode(true) }
@@ -77,6 +83,15 @@ class AppViewModelTest {
         assertEquals(NavigationEvent.NavigateToMainPlaylistsTab, viewModel.eventFlow.first())
     }
 
+    @Test
+    fun `앱이 내려가면 오늘 백업할 때인지 확인한다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.sendIntent(AppIntent.OnAppBackground)
+
+        coVerify { backupIfDueUseCase(any(), any()) }
+    }
+
     private fun createViewModel() = AppViewModel(
         mediaControllerManager = manager,
         importSharedAudioMediaUseCase = importSharedAudioMediaUseCase,
@@ -85,5 +100,6 @@ class AppViewModelTest {
         fetchIsPlaybackShufflingFlowUseCase = mockk { every { this@mockk() } returns flowOf(false) },
         fetchPlaybackSpeedFlowUseCase = mockk { every { this@mockk() } returns flowOf(1f) },
         fetchPlaybackPitchSemitoneFlowUseCase = mockk { every { this@mockk() } returns flowOf(0) },
+        backupIfDueUseCase = backupIfDueUseCase,
     )
 }

@@ -16,6 +16,7 @@ import com.kintmin.domain.data_migration.usecase.CloseMigrationSendUseCase
 import com.kintmin.domain.data_migration.usecase.FetchMigrationSendStatusUseCase
 import com.kintmin.domain.file_share.usecase.StopPcFileShareServerUseCase
 import com.kintmin.jellytube.push_notification.PushNotificationIds
+import com.kintmin.jellytube.push_notification.notifications.BackupRestoreNotification
 import com.kintmin.jellytube.push_notification.notifications.DataMigrationReceiveNotification
 import com.kintmin.jellytube.push_notification.notifications.DataMigrationSendNotification
 import com.kintmin.jellytube.push_notification.notifications.FileShareServerNotification
@@ -48,7 +49,7 @@ class FileShareForegroundService : Service(), KoinComponent {
     private var migrationWakeLockRenewJob: Job? = null
     private var generation = NO_GENERATION
 
-    enum class Owner { PC_FILE_SHARE, DATA_MIGRATION, DATA_MIGRATION_RECEIVE }
+    enum class Owner { PC_FILE_SHARE, DATA_MIGRATION, DATA_MIGRATION_RECEIVE, BACKUP_RESTORE }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -67,6 +68,7 @@ class FileShareForegroundService : Service(), KoinComponent {
         val notification = when {
             Owner.DATA_MIGRATION in owners.value -> DataMigrationSendNotification
             Owner.DATA_MIGRATION_RECEIVE in owners.value -> DataMigrationReceiveNotification
+            Owner.BACKUP_RESTORE in owners.value -> BackupRestoreNotification
             else -> FileShareServerNotification
         }
         runCatching { startForegroundWith(notification) }.onSuccess {
@@ -111,7 +113,8 @@ class FileShareForegroundService : Service(), KoinComponent {
             combine(fetchMigrationSendStatusUseCase(), owners) { status, current ->
                 status is DataMigrationSendStatus.Paired ||
                     status is DataMigrationSendStatus.Finished ||
-                    Owner.DATA_MIGRATION_RECEIVE in current
+                    Owner.DATA_MIGRATION_RECEIVE in current ||
+                    Owner.BACKUP_RESTORE in current
             }.distinctUntilChanged().collect { isHeld ->
                 if (isHeld) acquireMigrationLocks() else releaseMigrationLocks()
             }

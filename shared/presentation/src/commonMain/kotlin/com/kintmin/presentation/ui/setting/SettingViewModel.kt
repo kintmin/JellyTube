@@ -9,27 +9,38 @@ import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
 import com.kintmin.domain.app_setting.usecase.UpdateShouldInsertAtTopOnDownloadUseCase
 import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
+import com.kintmin.domain.backup.model.BackupFolder
+import com.kintmin.domain.backup.model.BackupOutcome
+import com.kintmin.domain.backup.usecase.FetchBackupStatusFlowUseCase
+import com.kintmin.domain.backup.usecase.HasLocalBackupUseCase
+import com.kintmin.domain.backup.usecase.RegisterBackupFolderUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
 import com.kintmin.domain.user.usecase.FetchUserIdUseCase
 import com.kintmin.presentation.port.StartAnomalyDataCheck
 import com.kintmin.presentation.port.StepMeasurementController
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
+import com.kintmin.presentation.ui.setting.backup_restore.toDescription
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 
 class SettingViewModel constructor(
     fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase,
     fetchDownloadTargetPlaylistsFlowUseCase: FetchDownloadTargetPlaylistsFlowUseCase,
     fetchIsStepEnabledFlowUseCase: FetchIsStepEnabledFlowUseCase,
     fetchUserIdUseCase: FetchUserIdUseCase,
+    private val fetchBackupStatusFlowUseCase: FetchBackupStatusFlowUseCase,
+    private val registerBackupFolderUseCase: RegisterBackupFolderUseCase,
+    private val hasLocalBackupUseCase: HasLocalBackupUseCase,
     private val updateShouldInsertAtTopOnDownloadUseCase: UpdateShouldInsertAtTopOnDownloadUseCase,
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
     private val updateIsStepEnabledUseCase: UpdateIsStepEnabledUseCase,
@@ -77,6 +88,8 @@ class SettingViewModel constructor(
         state.copy(isImporting = isImportingNow)
     }.combine(deviceId) { state, id ->
         state.copy(deviceId = id)
+    }.combine(fetchBackupStatusFlowUseCase()) { state, backupStatus ->
+        state.copy(backupDescription = backupStatus.toDescription())
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
@@ -110,6 +123,19 @@ class SettingViewModel constructor(
                     eventChannel.send(SettingEvent.NavigateToStepScreen)
                 }
             }
+            SettingIntent.OnClickBackupRestoreTile -> {
+                viewModelScope.launch {
+                    val hasFolder = fetchBackupStatusFlowUseCase().first().folder != null
+                    eventChannel.send(
+                        if (hasFolder || hasLocalBackupUseCase()) {
+                            SettingEvent.NavigateToBackupRestoreScreen
+                        } else {
+                            SettingEvent.LaunchBackupFolderPicker
+                        },
+                    )
+                }
+            }
+            is SettingIntent.OnBackupFolderPicked -> registerBackupFolder(BackupFolder(intent.folderId, intent.label))
             SettingIntent.OnClickAnomalyDataCheckTile -> {
                 viewModelScope.launch {
                     val started = executeAnomalyDataCheck()
@@ -220,6 +246,20 @@ class SettingViewModel constructor(
             errorList.distinct().forEach { error ->
                 eventChannel.send(SettingEvent.ShowToast(error))
             }
+        }
+    }
+
+    private fun registerBackupFolder(folder: BackupFolder) {
+        viewModelScope.launch {
+            val result = registerBackupFolderUseCase(folder, Clock.System.now().toEpochMilliseconds())
+            val message = when {
+                result.getOrNull() == BackupOutcome.WRITTEN -> "백업했습니다. 이제 하루 한 번 이 폴더에 백업합니다."
+                result.getOrNull() == BackupOutcome.KEPT_EXISTING -> "이 폴더에서 백업을 찾았습니다. 복원할 수 있게 덮어쓰지 않았습니다."
+                result.isSuccess -> "백업 폴더를 지정했습니다. 음원이 생기면 백업합니다."
+                else -> "백업 폴더를 지정했지만 백업하지 못했습니다."
+            }
+            eventChannel.send(SettingEvent.ShowToast(message))
+            eventChannel.send(SettingEvent.NavigateToBackupRestoreScreen)
         }
     }
 

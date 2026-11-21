@@ -21,9 +21,7 @@ class PythonExecutorImpl(
         audioDownloadPath: String,
     ) = runCatching {
         withContext(Dispatchers.IO) {
-            if (!Python.isStarted()) {
-                Python.start(AndroidPlatform(context))
-            }
+            ensurePythonStarted()
 
             withTimeout(TIME_OUT) {
                 val module = Python.getInstance().getModule(FILE_NAME)
@@ -50,9 +48,7 @@ class PythonExecutorImpl(
         audioDownloadPath: String,
     ): Result<PlayableAudioDownloadDto> = withContext(Dispatchers.IO) {
         runCatching {
-            if (!Python.isStarted()) {
-                Python.start(AndroidPlatform(context))
-            }
+            ensurePythonStarted()
 
             withTimeout(TIME_OUT) {
                 val module = Python.getInstance().getModule(FILE_NAME)
@@ -67,9 +63,7 @@ class PythonExecutorImpl(
 
     override suspend fun extractYoutubeUrlsFromPlaylist(playlistUrl: String): Result<List<String>> = withContext(Dispatchers.IO) {
         runCatching {
-            if (!Python.isStarted()) {
-                Python.start(AndroidPlatform(context))
-            }
+            ensurePythonStarted()
 
             withTimeout(TIME_OUT) {
                 val module = Python.getInstance().getModule(FILE_NAME)
@@ -77,6 +71,11 @@ class PythonExecutorImpl(
                 pyList.mapNotNull { it?.toString() }
             }
         }
+    }
+
+    // 동시에 처음 불리면 둘 다 시작하려 들고 Chaquopy 는 두 번째 시작에서 던진다.
+    private fun ensurePythonStarted() = synchronized(PythonExecutorImpl::class) {
+        if (!Python.isStarted()) Python.start(AndroidPlatform(context))
     }
 
     private companion object {

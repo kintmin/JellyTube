@@ -9,4 +9,6 @@ enum class MigrationFailureReason {
 
     /** 보내는 기기에서 음원 파일을 받지 못했다(파일이 없거나 크기가 다르다). */
     TRANSFER_FAILED,
+    /** 백업에는 음원 파일이 없는데 원본 주소가 유튜브가 아니라 다시 받을 수 없다. */
+    NOT_RESTORABLE,
 }

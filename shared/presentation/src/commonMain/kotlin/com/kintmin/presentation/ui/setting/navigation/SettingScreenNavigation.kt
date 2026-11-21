@@ -26,6 +26,7 @@ fun NavGraphBuilder.settingGraph(
     navigateToDataMigrationSend: () -> Unit,
     navigateToDataMigrationReceive: () -> Unit,
     navigateToDeviceSave: () -> Unit,
+    navigateToBackupRestore: () -> Unit,
     settingDestination: NavGraphBuilder.() -> Unit,
 ) {
     navigation<SettingGraph>(startDestination = SettingScreenRoute) {
@@ -38,6 +39,7 @@ fun NavGraphBuilder.settingGraph(
                 navigateToDataMigrationSend = navigateToDataMigrationSend,
                 navigateToDataMigrationReceive = navigateToDataMigrationReceive,
                 navigateToDeviceSave = navigateToDeviceSave,
+                navigateToBackupRestore = navigateToBackupRestore,
             )
         }
 

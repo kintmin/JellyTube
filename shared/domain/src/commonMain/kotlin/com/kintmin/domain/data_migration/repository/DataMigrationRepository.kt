@@ -40,6 +40,14 @@ interface DataMigrationRepository {
     /** 받아 둔 파일을 제자리로 옮기고 DB 에 한 트랜잭션으로 반영한다. DB 반영이 실패하면 옮긴 파일을 지운다. */
     suspend fun applyPlan(plan: MigrationPlan): Result<MigrationApplyResult>
 
+    /** 이 기기에서 만든 파일을 임시 공간으로 옮긴다. [fileFullPath] 는 호출 뒤 다시 읽지 않는다. */
+    suspend fun stageLocalFile(fileFullPath: String, file: MigrationFile): Result<Unit>
+
+    suspend fun stageText(file: MigrationFile, text: String): Result<Unit>
+
+    /** 다 받아 둔 파일만. 받다 끊긴 파일은 들어가지 않는다. */
+    suspend fun fetchStagedFiles(): Result<Set<MigrationFile>>
+
     suspend fun clearStaging(): Result<Unit>
 
     /** 보내는 기기에 끝났다고 알린다. 보내는 기기는 이걸 받아야 화면을 떠나도 된다고 안내한다. */

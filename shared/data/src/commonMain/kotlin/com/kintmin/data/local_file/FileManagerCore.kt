@@ -17,6 +17,7 @@ internal interface AppDirectories {
     fun lyric(): Path
     fun log(): Path
     fun migrationStaging(): Path
+    fun backup(): Path
 
     companion object {
         const val LYRIC_DIR_NAME = "lyrics"
@@ -48,6 +49,8 @@ internal class FileManagerCore(
     fun getLyricFileFullPath(fileNameWithExt: String): Result<String> = runCatching { (lyricDir() / fileNameWithExt).toString() }
 
     fun getMigrationStagingDirPath(): Result<String> = runCatching { directories.migrationStaging().ensured().toString() }
+
+    fun getBackupDirPath(): Result<String> = runCatching { directories.backup().ensured().toString() }
 
     suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<String> = io {
         val ext = if (synced) LyricsFile.SYNCED_EXT else LyricsFile.PLAIN_EXT

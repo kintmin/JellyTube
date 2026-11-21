@@ -39,6 +39,8 @@ import com.kintmin.presentation.ui.playlist_edit.navigation.navigateToPlaylistEd
 import com.kintmin.presentation.ui.playlist_edit.navigation.playlistEdit
 import com.kintmin.presentation.ui.setting.app_log.navigation.appLogScreen
 import com.kintmin.presentation.ui.setting.app_log.navigation.navigateToAppLogScreen
+import com.kintmin.presentation.ui.setting.backup_restore.navigation.navigateToSettingBackupRestoreScreen
+import com.kintmin.presentation.ui.setting.backup_restore.navigation.settingBackupRestoreScreen
 import com.kintmin.presentation.ui.setting.data_migration_receive.navigation.navigateToSettingDataMigrationReceiveScreen
 import com.kintmin.presentation.ui.setting.data_migration_receive.navigation.settingDataMigrationReceiveScreen
 import com.kintmin.presentation.ui.setting.data_migration_send.navigation.navigateToSettingDataMigrationSendScreen
@@ -221,6 +223,9 @@ fun MainNavHost(
             navigateToDeviceSave = {
                 navController.navigateToSettingDeviceSaveScreen(navOptions)
             },
+            navigateToBackupRestore = {
+                navController.navigateToSettingBackupRestoreScreen(navOptions)
+            },
         ) {
             appLogScreen(
                 navigateToBack = { navController.popBackStack() },
@@ -239,6 +244,10 @@ fun MainNavHost(
             )
 
             settingDataMigrationReceiveScreen(
+                navigateToBack = { navController.popBackStack() },
+            )
+
+            settingBackupRestoreScreen(
                 navigateToBack = { navController.popBackStack() },
             )
 

@@ -150,6 +150,37 @@ class DataMigrationRepositoryImpl constructor(
         }
     }
 
+    override suspend fun stageLocalFile(fileFullPath: String, file: MigrationFile): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val staged = stagedPath(file)
+            fileSystem.createDirectories(staged.parent!!)
+            fileSystem.moveFile(fileFullPath.toPath(), staged)
+        }
+    }
+
+    override suspend fun stageText(file: MigrationFile, text: String): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val staged = stagedPath(file)
+            val part = "$staged.part".toPath()
+            fileSystem.createDirectories(staged.parent!!)
+            fileSystem.write(part) { writeUtf8(text) }
+            fileSystem.atomicMove(part, staged)
+        }
+    }
+
+    override suspend fun fetchStagedFiles(): Result<Set<MigrationFile>> = withContext(Dispatchers.IO) {
+        runCatching {
+            val root = fileManager.getMigrationStagingDirPath().getOrThrow().toPath()
+            MigrationFileKind.entries.flatMap { kind ->
+                val dir = root / kind.name
+                if (!fileSystem.exists(dir)) return@flatMap emptyList()
+                fileSystem.list(dir)
+                    .filter { it.name.endsWith(".part").not() }
+                    .map { MigrationFile(kind, it.name) }
+            }.toSet()
+        }
+    }
+
     override suspend fun clearStaging(): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             fileSystem.deleteRecursively(fileManager.getMigrationStagingDirPath().getOrThrow().toPath(), mustExist = false)
