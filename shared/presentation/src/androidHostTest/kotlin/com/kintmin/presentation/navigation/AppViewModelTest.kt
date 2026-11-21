@@ -11,6 +11,7 @@ import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
+import com.kintmin.log.AppLog
 import com.kintmin.presentation.deeplink.DeepLinkConstants
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.testPlaylist
@@ -54,6 +55,7 @@ class AppViewModelTest {
     private val backupIfDueUseCase = mockk<BackupIfDueUseCase> {
         coEvery { this@mockk(any(), any()) } returns Result.success(null)
     }
+    private val appLog = mockk<AppLog>(relaxed = true)
 
     @Before
     fun setUp() {
@@ -80,6 +82,7 @@ class AppViewModelTest {
             fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
             fetchSecretAudioMediaIdListFlowUseCase = fetchSecretAudioMediaIdListFlowUseCase,
             backupIfDueUseCase = mockk(),
+            appLog = appLog,
         )
 
         verify { manager.setRepeatMode(true) }
@@ -182,6 +185,24 @@ class AppViewModelTest {
         assertEquals(true, events.any { it is NavigationEvent.NavigateToPlaylistContent && it.playlistId == 4 })
     }
 
+    @Test
+    fun `우리 주소가 아니면 이동하지 않고 그 주소를 로그에 남긴다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.sendIntent(AppIntent.HandleDeepLink("https://example.com"))
+
+        verify { appLog.sendDebugLog(match { it.tag == "DeepLink" && it.message.endsWith("https://example.com") }) }
+    }
+
+    @Test
+    fun `비밀 화면이라 버린 딥링크도 로그에 남긴다`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.sendIntent(AppIntent.HandleDeepLink(playlistUrl(SECRET_PLAYLIST_ID)))
+
+        verify { appLog.sendDebugLog(match { it.message.startsWith("비밀 화면이라") }) }
+    }
+
     private fun playlistUrl(playlistId: Int) = DeepLinkConstants.UrlBuilder.playlistContentScreen(playlistId)
 
     @Test
@@ -206,6 +227,7 @@ class AppViewModelTest {
         fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
         fetchSecretAudioMediaIdListFlowUseCase = fetchSecretAudioMediaIdListFlowUseCase,
         backupIfDueUseCase = backupIfDueUseCase,
+        appLog = appLog,
     )
 
 

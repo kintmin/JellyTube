@@ -16,6 +16,8 @@ import com.kintmin.domain.audio_play_setting.model.RepeatRangeState
 import com.kintmin.jellytube.service.PlaybackService
 import com.kintmin.jellytube.service_controller.mapper.toMediaControlData
 import com.kintmin.jellytube.service_controller.mapper.toMediaItem
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.MediaControlData
 import kotlin.math.pow
@@ -24,6 +26,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class PlaybackControllerImpl(
     private val appContext: Context,
+    private val appLog: AppLog,
 ) : PlaybackController {
 
     private var mediaController: MediaController? = null
@@ -55,6 +58,7 @@ class PlaybackControllerImpl(
                         it.shuffleModeEnabled = isShuffleState
                     }
                 }.onFailure {
+                    appLog.sendDebugLog(DebugLog("PlaybackController", "MediaController 연결 실패: $it"))
                     controllerFuture = null
                 }
             }, ContextCompat.getMainExecutor(appContext))

@@ -278,7 +278,6 @@ fun PlayerDetailScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // 부가 기능 — 재생을 바꾸지 않고 이 곡·이 세션을 다루는 것들.
                 // 칸마다 폭을 똑같이 나눠 준다. SpaceEvenly 는 간격만 같게 해서, 글자인 A-B 가
                 // 아이콘보다 넓으면 가운데 것이 화면 중앙에서 밀린다.
                 Row(
@@ -377,7 +376,6 @@ fun PlayerDetailScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // 재생 기능 — 셔플과 반복이 양옆 빈 자리의 가운데에 서서 좌 1 : 우 1 로 대칭이다.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -443,7 +441,6 @@ fun PlayerDetailScreen(
                 // 여기를 줄이면 버튼이 그만큼 내려앉는다. 손이 기억하는 자리라 바꾸지 않는다.
                 Spacer(modifier = Modifier.height(48.dp))
 
-                // 재생 부가 — 지금 걸려 있는 값과 어디서 재생 중인지.
                 // 양 끝을 같은 폭으로 잡아야 가운데 글자가 화면 중앙에 선다.
                 Row(
                     modifier = Modifier
