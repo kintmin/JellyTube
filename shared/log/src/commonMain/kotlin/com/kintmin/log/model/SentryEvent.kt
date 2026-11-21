@@ -50,17 +50,25 @@ sealed class SentryEvent(val logName: SentryLogName, vararg val params: Pair<Sen
     data class AddAudioMedia(
         val source: String,
         val audioMediaCount: Int,
+        val audioMediaId: Int? = null,
+        val audioMediaName: String? = null,
+        val playlistId: Int? = null,
     ) : SentryEvent(
         SentryLogName.AddAudioMedia,
         SentryParamName.Source to source,
         SentryParamName.AudioMediaCount to audioMediaCount.toString(),
+        SentryParamName.AudioMediaId to audioMediaId?.toString(),
+        SentryParamName.AudioMediaName to audioMediaName,
+        SentryParamName.PlaylistId to playlistId?.toString(),
     )
 
     data class DeleteAudioMedia(
         val source: String,
+        val audioMediaId: Int? = null,
     ) : SentryEvent(
         SentryLogName.DeleteAudioMedia,
         SentryParamName.Source to source,
+        SentryParamName.AudioMediaId to audioMediaId?.toString(),
     )
 
     data class AddPlaylist(

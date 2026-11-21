@@ -3,7 +3,6 @@ package com.kintmin.domain.lyrics.usecase
 import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
-import com.kintmin.log.model.ErrorLog
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
@@ -49,7 +48,6 @@ class DownloadLyricsForAudioMediaUseCase(
             plainLyrics = picked.plainLyrics,
             syncedLyrics = picked.syncedLyrics,
         ).getOrThrow()
-        log("가사 적용: id=$audioMediaId")
 
         // 선택한 가사 기준으로 언어를 판별해 조건별 변형을 생성한다.
         val sourceLyrics = picked.syncedLyrics ?: picked.plainLyrics.orEmpty()
@@ -64,7 +62,7 @@ class DownloadLyricsForAudioMediaUseCase(
                 .onFailure { log("음차 만들기 실패: id=$audioMediaId $it") }
         }
     }.onFailure {
-        if (it !is CancellationException) appLog.sendErrorLog(ErrorLog(LOG_TAG, "가사 자동 적용 실패: id=$audioMediaId", it))
+        if (it !is CancellationException) log("가사 자동 적용 실패: id=$audioMediaId $it")
     }
 
     private fun log(message: String) = appLog.sendDebugLog(DebugLog(LOG_TAG, message))

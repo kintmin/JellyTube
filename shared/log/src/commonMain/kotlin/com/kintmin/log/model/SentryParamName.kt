@@ -13,6 +13,8 @@ enum class SentryParamName {
     DownstreamKbps,
     UpstreamKbps,
     AudioMediaCount,
+    AudioMediaId,
+    AudioMediaName,
     PlaylistId,
     PlaylistTitle,
     FallbackReason,

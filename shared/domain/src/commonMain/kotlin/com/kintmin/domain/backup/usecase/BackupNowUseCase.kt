@@ -58,6 +58,7 @@ class BackupNowUseCase(
         }
         if (written.localCopySkipped) log("백업이 ${written.sizeBytes}B 라 클라우드 자동 백업용 사본은 쓰지 않음")
         backupRepository.recordSuccess(nowMillis).getOrThrow()
+        log("백업 완료: ${written.sizeBytes}B")
         BackupOutcome.WRITTEN
     }.onFailure {
         if (it is CancellationException) throw it

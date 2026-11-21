@@ -140,7 +140,7 @@ class BackupIfDueUseCaseTest {
         status()
         coEvery { backupRepository.readFolderCopy() } returns Result.failure(Exception("provider unavailable"))
 
-        val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow)(folder, now).getOrThrow()
+        val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow, mockk(relaxed = true))(folder, now).getOrThrow()
 
         assertEquals(BackupOutcome.KEPT_EXISTING, outcome)
         coVerify(exactly = 0) { backupNow(any()) }
@@ -151,7 +151,7 @@ class BackupIfDueUseCaseTest {
         status()
         coEvery { backupRepository.readFolderCopy() } returns Result.success(backup)
 
-        val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow)(folder, now).getOrThrow()
+        val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow, mockk(relaxed = true))(folder, now).getOrThrow()
 
         assertEquals(BackupOutcome.KEPT_EXISTING, outcome)
         coVerify(exactly = 0) { backupNow(any()) }
@@ -162,7 +162,7 @@ class BackupIfDueUseCaseTest {
         status(lastSuccess = yesterday)
         coEvery { backupRepository.readFolderCopy() } returns Result.success(backup)
 
-        val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow)(folder, now).getOrThrow()
+        val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow, mockk(relaxed = true))(folder, now).getOrThrow()
 
         assertEquals(BackupOutcome.WRITTEN, outcome)
     }

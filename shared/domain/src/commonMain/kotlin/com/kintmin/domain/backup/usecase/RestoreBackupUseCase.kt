@@ -93,7 +93,7 @@ class RestoreBackupUseCase(
             newPlaylistCount = plan.newPlaylists.size,
             redownloadedCount = restored.size,
             failures = failures,
-        )
+        ).also { log("복원 완료: $it") }
     }.onFailure {
         if (it is CancellationException) throw it
         logError("복원 중단", it)

@@ -13,7 +13,7 @@ import org.junit.Test
 class ApplyLyricsToAudioMediaUseCaseTest {
 
     private val audioMediaRepository = mockk<AudioMediaRepository>()
-    private val useCase = ApplyLyricsToAudioMediaUseCase(audioMediaRepository)
+    private val useCase = ApplyLyricsToAudioMediaUseCase(audioMediaRepository, mockk(relaxed = true))
 
     @Test
     fun `synced 가사가 있으면 syncedLyrics를 싱크로 저장하고 컬럼을 갱신한다`() = runTest {

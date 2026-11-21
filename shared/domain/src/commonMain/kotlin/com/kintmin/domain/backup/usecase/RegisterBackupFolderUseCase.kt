@@ -1,6 +1,8 @@
 package com.kintmin.domain.backup.usecase
 
 import com.kintmin.domain.backup.model.BackupFolder
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
 import com.kintmin.domain.backup.model.BackupOutcome
 import com.kintmin.domain.backup.repository.BackupRepository
 import kotlinx.coroutines.flow.first
@@ -12,9 +14,11 @@ import kotlinx.coroutines.flow.first
 class RegisterBackupFolderUseCase(
     private val backupRepository: BackupRepository,
     private val backupNowUseCase: BackupNowUseCase,
+    private val appLog: AppLog,
 ) {
     suspend operator fun invoke(folder: BackupFolder, nowMillis: Long): Result<BackupOutcome> {
         backupRepository.registerFolder(folder).onFailure { return Result.failure(it) }
+        appLog.sendDebugLog(DebugLog("RegisterBackupFolderUseCase", "백업 폴더 등록: $folder"))
         val hasNeverBackedUp = backupRepository.getStatusFlow().first().lastSuccessMillis == null
         // 읽지 못하면 있는 것으로 본다 — 없다고 보면 남은 백업을 덮는다.
         if (hasNeverBackedUp && backupRepository.readFolderCopy().let { it.isFailure || it.getOrNull() != null }) {

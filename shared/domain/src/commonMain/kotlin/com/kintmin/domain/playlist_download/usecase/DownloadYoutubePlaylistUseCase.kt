@@ -48,6 +48,7 @@ class DownloadYoutubePlaylistUseCase(
         onProgress: (PlaylistDownloadProgress) -> Unit,
     ): Result<PlaylistDownloadSummary> = runCatching {
         val entries = playlist.entries.distinctBy { it.videoId }
+        log("재생목록 받기 시작: ${playlist.title} (${entries.size}곡)")
         val owned = ownedIdByKey()
         val (onDevice, notOnDevice) = entries.partition { SourceKey.of(it.url) in owned }
         val (toDownload, unavailable) = notOnDevice.partition { it.isAvailable }
@@ -110,7 +111,7 @@ class DownloadYoutubePlaylistUseCase(
                     }
                     PlaylistDownloadFailure(it.title, reason)
                 },
-        )
+        ).also { log("재생목록 받기 완료: $it") }
     }.onFailure {
         if (it is CancellationException) throw it
         logError("재생목록 받기 중단", it)

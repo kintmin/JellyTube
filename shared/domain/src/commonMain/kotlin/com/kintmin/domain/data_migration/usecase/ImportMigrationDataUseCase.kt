@@ -134,6 +134,7 @@ class ImportMigrationDataUseCase constructor(
             redownloadedCount = redownloaded.size,
             failures = failures,
         ).also { summary ->
+            log("이전 완료: $summary")
             dataMigrationRepository.notifyFinished(endpoint, token, summary)
                 .onFailure { logError("완료 알림 실패", it) }
         }
