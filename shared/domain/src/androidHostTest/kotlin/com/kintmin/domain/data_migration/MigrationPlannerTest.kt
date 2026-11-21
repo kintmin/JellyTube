@@ -12,6 +12,9 @@ import com.kintmin.domain.data_migration.model.MigrationStep
 import com.kintmin.domain.data_migration.model.MigrationTrack
 import com.kintmin.domain.data_migration.model.MigrationTrackAddition
 import com.kintmin.domain.playlist.model.PlaylistType
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlin.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -206,7 +209,7 @@ class MigrationPlannerTest {
     }
 
     @Test
-    fun `이미 옮겨 온 데이터를 다시 옮기면 걸음 수 말고는 할 일이 없다`() {
+    fun `이미 옮겨 온 데이터를 다시 옮기면 할 일이 없다`() {
         val data = snapshot(
             audios = listOf(audio(101, "https://youtu.be/a"), audio(102, "https://youtu.be/b")),
             playlists = sourceSystem + playlist(14, PlaylistType.USER, name = "A"),
@@ -226,6 +229,49 @@ class MigrationPlannerTest {
         assertTrue(plan.uncategorizedRemovals.isEmpty())
         assertTrue(plan.editProjects.isEmpty())
         assertTrue(plan.requiredFiles.isEmpty())
+        assertTrue(plan.steps.isEmpty())
+    }
+
+    private val seoul = TimeZone.of("Asia/Seoul")
+    private val today = LocalDate(2026, 11, 21)
+    private fun step(iso: String, sensor: Long) = MigrationStep(Instant.parse(iso).toEpochMilliseconds(), sensor)
+
+    @Test
+    fun `이 기기에 걸음 기록이 있는 날은 보내는 쪽 기록을 하나도 넣지 않는다`() {
+        val source = snapshot(
+            playlists = sourceSystem,
+            steps = listOf(
+                step("2026-11-19T09:00:00+09:00", 100), step("2026-11-19T18:00:00+09:00", 900),
+                step("2026-11-20T09:00:00+09:00", 5_000), step("2026-11-20T18:00:00+09:00", 9_000),
+            ),
+        )
+        val target = snapshot(playlists = targetSystem, steps = listOf(step("2026-11-20T12:00:00+09:00", 30)))
+
+        val plan = MigrationPlanner.plan(source, target, seoul, today)
+
+        assertEquals(source.steps.take(2), plan.steps)
+    }
+
+    @Test
+    fun `오늘 기록은 이 기기에 없어도 넣지 않는다`() {
+        val source = snapshot(
+            playlists = sourceSystem,
+            steps = listOf(step("2026-11-20T09:00:00+09:00", 100), step("2026-11-21T08:00:00+09:00", 300)),
+        )
+
+        val plan = MigrationPlanner.plan(source, snapshot(playlists = targetSystem), seoul, today)
+
+        assertEquals(source.steps.take(1), plan.steps)
+    }
+
+    @Test
+    fun `날짜는 기기 시간대로 자른다`() {
+        // 서울 11월 20일 08시는 UTC 로 11월 19일이다.
+        val source = snapshot(playlists = sourceSystem, steps = listOf(step("2026-11-20T08:00:00+09:00", 100)))
+        val target = snapshot(playlists = targetSystem, steps = listOf(step("2026-11-20T20:00:00+09:00", 30)))
+
+        assertTrue(MigrationPlanner.plan(source, target, seoul, today).steps.isEmpty())
+        assertEquals(source.steps, MigrationPlanner.plan(source, target, TimeZone.UTC, today).steps)
     }
 
     private fun snapshot(
