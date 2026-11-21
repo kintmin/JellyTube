@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,6 +47,7 @@ fun UnderlineTextField(
     underlineOnlyWhenFocused: Boolean = false,
     modifier: Modifier = Modifier,
     errorMessage: String? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -68,6 +70,7 @@ fun UnderlineTextField(
         },
         textStyle = textStyle.copy(color = contentColor),
         singleLine = singleLine,
+        keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         cursorBrush = SolidColor(contentColor),
         interactionSource = interactionSource,

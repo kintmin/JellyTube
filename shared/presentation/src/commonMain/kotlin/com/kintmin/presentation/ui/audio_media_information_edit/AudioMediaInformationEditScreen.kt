@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.LibraryMusic
@@ -28,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -133,7 +135,9 @@ fun AudioMediaInformationEditScreen(
                     UnderlineTextField(
                         label = "제목",
                         value = audioMediaName,
-                        onValueChange = { newText ->
+                        onValueChange = { input ->
+                            // 긴 제목을 접어 보이려고 여러 줄 칸을 쓴다. 줄바꿈 문자는 붙여넣기로도 들이지 않는다.
+                            val newText = input.replace(Regex("[\r\n]+"), " ")
                             audioMediaName = newText
                             hasEditedName = true
                             if (newText.isNotEmpty()) {
@@ -144,6 +148,7 @@ fun AudioMediaInformationEditScreen(
                         placeholder = "제목 입력",
                         maxLength = AudioMediaTextLimit.MAX_NAME_LENGTH,
                         singleLine = false,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         errorMessage = if (isNameError) "제목을 입력해 주세요. 비워 두면 이전 제목이 남습니다." else null,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
