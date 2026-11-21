@@ -21,7 +21,6 @@ class RepeatRange {
         return RepeatRangeState(mediaId = heldMediaId, startDuration = start, endDuration = end)
     }
 
-    /** 누를 때마다 시작점 → 끝점 → 해제로 돈다. */
     fun update(playingMediaId: String, currentDuration: Duration) {
         clearIfMediaChanged(playingMediaId)
 

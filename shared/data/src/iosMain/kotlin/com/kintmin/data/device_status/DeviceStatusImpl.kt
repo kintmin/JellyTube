@@ -78,7 +78,7 @@ class DeviceStatusImpl : DeviceStatus {
         cachedConnection
     }
 
-    // UIDevice 는 메인 스레드에서만 읽으므로 스레드 제약이 없는 쪽으로 읽는다. 모델은 "iPhone15,2" 같은 식별자다.
+    // UIDevice 는 메인 스레드에서만 읽으므로 스레드 제약이 없는 쪽으로 읽는다.
     override fun getAppEnvironment(): Result<AppEnvironmentDto> = runCatching {
         val bundle = NSBundle.mainBundle
         val versionName = bundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String
