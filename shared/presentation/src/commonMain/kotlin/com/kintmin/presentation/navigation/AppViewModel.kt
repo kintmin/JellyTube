@@ -1,5 +1,7 @@
 package com.kintmin.presentation.navigation
 
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
@@ -42,6 +44,7 @@ class AppViewModel(
     private val fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase,
     private val fetchSecretAudioMediaIdListFlowUseCase: FetchSecretAudioMediaIdListFlowUseCase,
     private val backupIfDueUseCase: BackupIfDueUseCase,
+    private val appLog: AppLog,
 ) : ViewModel() {
 
     private val eventChannel = Channel<NavigationEvent>(capacity = 8)
@@ -102,9 +105,13 @@ class AppViewModel(
                 playingPlaylistId = mediaControllerManager.currentPlaylistId,
                 playingMediaId = mediaControllerManager.playingMediaItem?.mediaId?.toIntOrNull(),
             ).let { events ->
+                if (events.isEmpty()) log("우리 주소가 아니거나 형식이 틀림: $url")
                 // 비밀 플레이리스트 뒤에 쌓이는 곡 상세도 그 플레이리스트의 것이다. 거기서부터 버린다.
                 val hiddenIndex = events.indexOfFirst { it.isHiddenSecret() }
+                if (hiddenIndex >= 0) log("비밀 화면이라 ${hiddenIndex}번째 이동부터 버림: $url")
                 if (hiddenIndex < 0) events else events.take(hiddenIndex)
+            }.also { events ->
+                if (events.isNotEmpty()) log("받음: $url → 이동 ${events.size}건")
             }.forEach { navigationEvent ->
                 eventChannel.send(navigationEvent)
             }
@@ -120,6 +127,8 @@ class AppViewModel(
             else -> false
         }
     }
+
+    private fun log(message: String) = appLog.sendDebugLog(DebugLog("DeepLink", message))
 
     private suspend fun secretAudioMediaIds(): List<Int> = fetchSecretAudioMediaIdListFlowUseCase().first()
 
