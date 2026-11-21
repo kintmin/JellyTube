@@ -60,7 +60,10 @@ fun UnderlineTextField(
     BasicTextField(
         modifier = modifier.fillMaxWidth(),
         value = value,
-        onValueChange = { newText -> if (maxLength == null || newText.length <= maxLength) onValueChange(newText) },
+        // 제한보다 길게 저장된 값도 있어 줄이는 편집은 막지 않는다. 막으면 한 글자도 지울 수 없다.
+        onValueChange = { newText ->
+            if (maxLength == null || newText.length <= maxLength || newText.length < value.length) onValueChange(newText)
+        },
         textStyle = textStyle.copy(color = contentColor),
         singleLine = singleLine,
         cursorBrush = SolidColor(contentColor),

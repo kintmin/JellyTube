@@ -21,13 +21,16 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.seaBlue60
 
 /**
- * 섹션 머리말에 붙는 만들기 입구.
+ * 섹션 머리말에 붙는 만들기·추가 입구.
  *
  * 격자 맨 끝 타일이 아니라 여기 둔다. 끝에 두면 플레이리스트가 늘수록 자리가 밀려 화면 밖으로
  * 내려가는데, 만드는 일은 보는 일보다 드물어도 자리는 고정돼 있어야 찾을 수 있다.
  */
 @Composable
-fun PlaylistAddButtonView(onClick: () -> Unit) {
+fun PlaylistAddButtonView(
+    text: String,
+    onClick: () -> Unit,
+) {
     // ink 를 쓰지 않는다. 이 앱에 강조색 글자 버튼에 ink 를 두는 자리가 없어 혼자 튄다.
     Row(
         modifier = Modifier
@@ -48,7 +51,7 @@ fun PlaylistAddButtonView(onClick: () -> Unit) {
         )
         Text(
             modifier = Modifier.padding(start = 4.dp),
-            text = "새로 만들기",
+            text = text,
             style = MaterialTheme.typography.labelLarge,
             color = seaBlue60,
         )
@@ -59,6 +62,6 @@ fun PlaylistAddButtonView(onClick: () -> Unit) {
 @Composable
 fun PlaylistAddButtonPreview() {
     JellyTubeTheme {
-        PlaylistAddButtonView(onClick = {})
+        PlaylistAddButtonView(text = "새로 만들기", onClick = {})
     }
 }

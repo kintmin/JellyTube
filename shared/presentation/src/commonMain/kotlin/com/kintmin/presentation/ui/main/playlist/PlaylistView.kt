@@ -117,7 +117,7 @@ fun PlaylistView(
                             color = reorderColor,
                         )
                     }
-                    PlaylistAddButtonView(onClick = { showAddDialog = true })
+                    PlaylistAddButtonView(text = "새로 만들기", onClick = { showAddDialog = true })
                 },
             )
         }
