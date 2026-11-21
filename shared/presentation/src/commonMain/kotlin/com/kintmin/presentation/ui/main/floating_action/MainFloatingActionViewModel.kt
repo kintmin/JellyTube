@@ -69,7 +69,7 @@ class MainFloatingActionViewModel constructor(
             is MainFloatingActionIntent.OnSelectPlaylist -> {
                 updatePlaylistIdOnDownload(intent.playlistId)
             }
-            // 시트 위에 다이얼로그를 겹치면 키보드가 올라올 때 시트가 따라 올라간다. 시트를 닫고 띄운다.
+            // M3 시트는 루트의 imePadding 때문에 위에 띄운 다이얼로그의 키보드를 따라 올라간다. 겹쳐 띄우지 않는다.
             MainFloatingActionIntent.OnClickCreatePlaylist -> {
                 isPlaylistBottomSheetVisible.value = false
                 isCreatePlaylistDialogVisible.value = true
@@ -94,7 +94,6 @@ class MainFloatingActionViewModel constructor(
         }
     }
 
-    /** 받을 재생목록을 고르다 만든 것이므로 곧바로 받을 곳으로 삼는다. */
     private fun createPlaylistAsDownloadTarget(title: String) {
         viewModelScope.launch {
             addNewPlaylistUseCase(title)
