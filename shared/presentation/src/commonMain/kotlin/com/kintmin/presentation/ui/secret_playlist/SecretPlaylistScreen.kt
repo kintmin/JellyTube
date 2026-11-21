@@ -43,7 +43,7 @@ import com.kintmin.presentation.ui.setting.section.SettingSwitchView
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Duration.Companion.minutes
 
-private val SecretModeMinuteOptions = listOf(5, 10, 15, 30, 60)
+private val SecretModeMinuteOptions = listOf(15, 30, 45, 60, 90)
 
 private val SecretModeMinuteRange = (1..120).toList()
 
