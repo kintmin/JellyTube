@@ -6,6 +6,7 @@ import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Box
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerInputChange
@@ -119,6 +121,8 @@ fun <T> LazyItemScope.ReorderableItem(
     // M3 의 드래그 상태 레이어. 내용 **위에** 그린다 — 뒤에 깔면 호출부의 행이 불투명한
     // 배경을 가질 때(Card) 통째로 가려져 끄는 동안 아무 색도 변하지 않는다.
     val stateLayerColor = MaterialTheme.colorScheme.onSurface
+    // 행이 바탕을 칠하지 않으면 들린 동안 아래 행이 비치고 그림자가 선처럼 드러난다.
+    val liftedSurfaceColor = MaterialTheme.colorScheme.surface
     val stateLayerAlpha = animateFloatAsState(
         targetValue = if (isDragging) DRAG_STATE_LAYER_ALPHA else 0f,
         label = "reorderDragStateLayer",
@@ -196,6 +200,7 @@ fun <T> LazyItemScope.ReorderableItem(
                 shape = RoundedCornerShape(corner.value)
                 clip = true
             }
+            .background(if (isLifted) liftedSurfaceColor else Color.Transparent)
             .drawWithContent {
                 drawContent()
                 // 프레임마다 바뀌는 값은 여기서만 읽는다. 바깥에서 읽으면 끄는 한 프레임마다
