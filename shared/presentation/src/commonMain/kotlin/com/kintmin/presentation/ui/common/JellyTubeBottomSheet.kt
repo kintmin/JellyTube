@@ -1,6 +1,12 @@
 package com.kintmin.presentation.ui.common
 
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +34,10 @@ fun JellyTubeBottomSheet(
         sheetGesturesEnabled = sheetGesturesEnabled,
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
+        // 기본값은 키보드도 피해, 시트 위에 띄운 다이얼로그에 입력하면 시트까지 밀려 올라간다
+        contentWindowInsets = {
+            WindowInsets.systemBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Vertical)
+        },
     ) {
         PlatformBottomSheetSystemBarEffect(lightNavigationBarIcons = false)
         content()

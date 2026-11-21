@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,8 +62,9 @@ fun DownloadPlaylistSelectorBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
+                        // 짙은 남색 배경은 회색 시트 위에서 탁하게 가라앉는다
                         .background(
-                            if (item.isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                            if (item.isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else Color.Transparent,
                         )
                         .selectable(
                             selected = item.isSelected,
@@ -77,7 +81,14 @@ fun DownloadPlaylistSelectorBottomSheet(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    SelectionCheckIndicator(isChecked = item.isSelected)
+                    if (item.isSelected) {
+                        Icon(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                        )
+                    }
                 }
             }
         }
