@@ -1,6 +1,7 @@
 package com.kintmin.presentation.ui.player_detail.dialog
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,7 +48,7 @@ fun SleepTimerAnnouncementDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 20.dp),
+                .padding(horizontal = 20.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -60,11 +61,14 @@ fun SleepTimerAnnouncementDialog(
                 text = "30초 이내이고 길이를 아는 음원만 고를 수 있습니다",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
-                modifier = Modifier.padding(top = 6.dp, start = 20.dp, end = 20.dp),
+                modifier = Modifier.padding(top = 6.dp),
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 320.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 item {
                     SleepTimerAnnouncementRow(
                         name = "없음",
@@ -87,7 +91,7 @@ fun SleepTimerAnnouncementDialog(
                             text = "고를 수 있는 음원이 없습니다. 음원 편집으로 30초 이내의 음원을 만들어 주세요.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                            modifier = Modifier.padding(vertical = 16.dp),
                         )
                     }
                 }
@@ -107,14 +111,13 @@ private fun SleepTimerAnnouncementRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 2.dp)
             // clickable 보다 먼저 잘라야 눌림 표시도 둥글게 번진다.
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else Color.Transparent,
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
