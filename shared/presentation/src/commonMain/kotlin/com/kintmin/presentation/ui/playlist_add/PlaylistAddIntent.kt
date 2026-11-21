@@ -7,4 +7,5 @@ sealed interface PlaylistAddIntent {
     data class OnDragSelectItems(val checkedIds: Set<Int>) : PlaylistAddIntent
     data class OnChangeSearchText(val searchText: String) : PlaylistAddIntent
     data object OnClickAdd : PlaylistAddIntent
+    data object OnClickClearCheckedItemList : PlaylistAddIntent
 }

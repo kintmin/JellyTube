@@ -1,8 +1,11 @@
 package com.kintmin.presentation.ui.setting.device_save_select
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,13 +24,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,12 +42,13 @@ import com.kintmin.presentation.platform.deviceSaveFlow
 import com.kintmin.presentation.platform.rememberAudioFileSharer
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
-import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
-import com.kintmin.presentation.ui.common.DetailTopAppBar
-import com.kintmin.presentation.ui.common.SearchField
+import com.kintmin.presentation.ui.common.CollapsibleSearchField
+import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
+import com.kintmin.presentation.ui.common.SearchToggleButton
+import com.kintmin.presentation.ui.common.SelectionTopAppBar
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneDefaultChangeDialog
 import com.kintmin.presentation.ui.setting.device_save_select.dialog.RingtoneTooLongDialog
 import com.kintmin.presentation.ui.setting.device_save_select.list.SettingDeviceSaveSelectListItemView
@@ -126,26 +130,34 @@ fun SettingDeviceSaveSelectScreen(
     onClickSave: () -> Unit,
     sendIntent: (SettingDeviceSaveSelectIntent) -> Unit,
 ) {
-    var searchText by remember { mutableStateOf("") }
+    var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
+    var searchText by rememberSaveable { mutableStateOf("") }
+    fun changeSearchText(text: String) {
+        searchText = text
+        sendIntent(SettingDeviceSaveSelectIntent.OnChangeSearchText(text))
+    }
+    fun closeSearchField() {
+        isSearchFieldVisible = false
+        changeSearchText("")
+    }
     val isRingtoneShareFlow = deviceSaveFlow == DeviceSaveFlow.RingtoneShareSheet
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            DetailTopAppBar(
+            SelectionTopAppBar(
                 title = if (isRingtoneShareFlow) "벨소리로 쓸 음원 선택" else "기기에 저장할 음원 선택",
+                selectedCount = uiState.checkedItemCount,
                 onClickBack = navigateToBack,
+                onClearSelection = { sendIntent(SettingDeviceSaveSelectIntent.OnClickClearCheckedItemList) },
                 actions = {
-                    if (uiState.checkedItemCount > 0) {
-                        TextButton(
-                            colors = JellyTubeButtonColors.text(),
-                            onClick = {
-                                sendIntent(SettingDeviceSaveSelectIntent.OnClickClearCheckedItemList)
-                            },
-                        ) {
-                            Text(text = "${uiState.checkedItemCount}개 선택 해제")
-                        }
-                    }
+                    SearchToggleButton(
+                        isSearchFieldVisible = isSearchFieldVisible,
+                        contentDescription = "음원 검색",
+                        onClick = {
+                            if (isSearchFieldVisible) closeSearchField() else isSearchFieldVisible = true
+                        },
+                    )
                 },
             )
         },
@@ -175,24 +187,19 @@ fun SettingDeviceSaveSelectScreen(
             }
         },
     ) { innerPadding ->
-        Column(
+        // 필드가 목록 위에 뜨므로 그만큼 목록 머리를 비워 첫 곡이 가려지지 않게 한다.
+        val searchFieldInset by animateDpAsState(
+            targetValue = if (isSearchFieldVisible) FloatingSearchFieldHeight else 0.dp,
+            label = "searchFieldInset",
+        )
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            SearchField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                value = searchText,
-                placeholder = "음원 제목으로 검색",
-                onValueChange = { newText ->
-                    searchText = newText
-                    sendIntent(SettingDeviceSaveSelectIntent.OnChangeSearchText(newText))
-                },
-            )
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = searchFieldInset),
             ) {
                 items(
                     count = uiState.audioMediaList.size,
@@ -205,6 +212,13 @@ fun SettingDeviceSaveSelectScreen(
                     )
                 }
             }
+            CollapsibleSearchField(
+                visible = isSearchFieldVisible,
+                value = searchText,
+                placeholder = "음원 제목 검색",
+                onValueChange = ::changeSearchText,
+                onClose = ::closeSearchField,
+            )
         }
     }
 }
