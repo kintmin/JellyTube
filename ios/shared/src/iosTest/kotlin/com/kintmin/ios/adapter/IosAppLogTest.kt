@@ -3,7 +3,7 @@ package com.kintmin.ios.adapter
 import com.kintmin.domain.app_log.repository.AppLogRepository
 import com.kintmin.ios.bridge.IosAppLogBridge
 import com.kintmin.log.model.DebugLog
-import com.kintmin.log.model.FirebaseEvent
+import com.kintmin.log.model.SentryEvent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -15,24 +15,10 @@ class IosAppLogTest {
     private val appLog = IosAppLog(bridge, repository)
 
     @Test
-    fun `param 값은 100자로 자른다`() {
-        appLog.sendFirebaseEvent(FirebaseEvent.AddAudioMedia(source = "a".repeat(200), audioMediaCount = 1))
-
-        assertEquals(100, bridge.events.single().second.getValue("Source").length)
-    }
-
-    @Test
-    fun `userId 는 256자로 자른다`() {
-        appLog.setLogConfig("u".repeat(300))
-
-        assertEquals(256, bridge.userIds.single().length)
-    }
-
-    @Test
     fun `값이 없는 param 은 보내지 않는다`() {
         // Android 의 bundleOf 도 null 을 싣지 않는다. 두 플랫폼이 같은 모양을 보내야 한다.
-        appLog.sendFirebaseEvent(
-            FirebaseEvent.FailedDownloadAudioMedia(source = "s", exception = Exception("boom")),
+        appLog.sendSentryEvent(
+            SentryEvent.FailedDownloadAudioMedia(source = "s", exception = Exception("boom")),
         )
 
         assertEquals(setOf("Source", "ErrorMessage"), bridge.events.single().second.keys)
@@ -41,7 +27,7 @@ class IosAppLogTest {
     @Test
     fun `보낸 것은 파일 로그에도 남는다`() {
         appLog.sendDebugLog(DebugLog("tag", "message"))
-        appLog.sendFirebaseEvent(FirebaseEvent.DeleteAudioMedia(source = "s"))
+        appLog.sendSentryEvent(SentryEvent.DeleteAudioMedia(source = "s"))
 
         assertEquals(listOf("DEBUG", "FIREBASE_EVENT"), repository.lines.map { it.first })
         assertTrue(repository.lines.first().second.startsWith("tag: message"))

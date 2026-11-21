@@ -2,7 +2,7 @@ package com.kintmin.domain.audio_media.usecase
 
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.FirebaseEvent
+import com.kintmin.log.model.SentryEvent
 
 class DeleteAudioMediaUseCase constructor(
     private val audioMediaRepository: AudioMediaRepository,
@@ -12,6 +12,6 @@ class DeleteAudioMediaUseCase constructor(
         audioMediaId: Int,
         source: String,
     ): Result<Unit> = audioMediaRepository.deleteAudioMedia(audioMediaId).onSuccess {
-        appLog.sendFirebaseEvent(FirebaseEvent.DeleteAudioMedia(source))
+        appLog.sendSentryEvent(SentryEvent.DeleteAudioMedia(source))
     }
 }

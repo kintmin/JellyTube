@@ -12,7 +12,7 @@ import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.log.AppLog
-import com.kintmin.log.model.FirebaseEvent
+import com.kintmin.log.model.SentryEvent
 import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.coEvery
@@ -255,9 +255,9 @@ class DownloadAudioMediaUseCaseTest {
         exactly: Int = -1,
     ) {
         verify(inverse = inverse, exactly = exactly) {
-            appLog.sendFirebaseEvent(
+            appLog.sendSentryEvent(
                 match {
-                    it is FirebaseEvent.AddAudioMedia && it.source == downloadUrl
+                    it is SentryEvent.AddAudioMedia && it.source == downloadUrl
                 }
             )
         }
@@ -269,9 +269,9 @@ class DownloadAudioMediaUseCaseTest {
         exactly: Int = -1,
     ) {
         verify(inverse = inverse, exactly = exactly) {
-            appLog.sendFirebaseEvent(
+            appLog.sendSentryEvent(
                 match {
-                    it is FirebaseEvent.FailedDownloadAudioMedia &&
+                    it is SentryEvent.FailedDownloadAudioMedia &&
                             it.source == downloadUrl &&
                             it.exception.message == exception.message
                 }
@@ -281,7 +281,7 @@ class DownloadAudioMediaUseCaseTest {
 
     private fun everyLogDefaults() {
         io.mockk.every { appLog.sendDebugLog(any()) } returns Unit
-        io.mockk.every { appLog.sendFirebaseEvent(any()) } returns Unit
+        io.mockk.every { appLog.sendSentryEvent(any()) } returns Unit
         io.mockk.every { appLog.setLogConfig(any()) } returns Unit
         io.mockk.every { deviceStatusRepository.getSystemMemory() } returns Result.failure(Exception())
         io.mockk.every { deviceStatusRepository.getConnectionStatus() } returns Result.failure(Exception())

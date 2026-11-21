@@ -9,16 +9,13 @@ import com.kintmin.domain.app_log.repository.AppLogRepository
 import com.kintmin.jellytube.BuildConfig
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
-import com.kintmin.log.model.FirebaseEvent
-import com.kintmin.log.model.analyticsUserId
-import com.kintmin.log.model.toAnalyticsEvent
+import com.kintmin.log.model.SentryEvent
 
 class AppLogImpl(
     private val appLogRepository: AppLogRepository,
 ) : AppLog {
 
     override fun setLogConfig(userId: String) {
-        val userId = analyticsUserId(userId)
         FirebaseCrashlytics.getInstance().setUserId(userId)
         Firebase.analytics.setUserId(userId)
         appLogRepository.appendAppLog("FIREBASE_CONFIG", "setUserId=$userId")
@@ -29,10 +26,9 @@ class AppLogImpl(
         appLogRepository.appendAppLog("DEBUG", "${debugLog.tag}: ${debugLog.message}")
     }
 
-    override fun sendFirebaseEvent(firebaseEvent: FirebaseEvent) {
-        val event = firebaseEvent.toAnalyticsEvent()
-        val logName = event.name
-        val params = bundleOf(*event.params.toList().toTypedArray())
+    override fun sendSentryEvent(sentryEvent: SentryEvent) {
+        val logName = sentryEvent.logName.name
+        val params = bundleOf(*sentryEvent.attributes.toList().toTypedArray())
 
         if (BuildConfig.DEBUG) {
             val logMessage = if (!params.isEmpty) {
@@ -44,7 +40,7 @@ class AppLogImpl(
                 logName
             }
 
-            Log.d("JellyTubeFirebaseEvent", logMessage)
+            Log.d("JellyTubeSentryEvent", logMessage)
         }
 
         Firebase.analytics.logEvent(logName, params)
