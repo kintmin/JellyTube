@@ -15,6 +15,8 @@ import com.kintmin.presentation.navigation.AppViewModel
 import com.kintmin.presentation.navigation.JellyTubeApp
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
+private const val SPLASH_FADE_MILLIS = 200L
+
 class MainActivity : ComponentActivity() {
 
     private val viewModel: AppViewModel by viewModel()
@@ -24,7 +26,13 @@ class MainActivity : ComponentActivity() {
 
         viewModel.sendIntent(AppIntent.InitializeMediaController)
         handleIntent(intent)
-        installSplashScreen()
+        installSplashScreen().setOnExitAnimationListener { splash ->
+            splash.view.animate()
+                .alpha(0f)
+                .setDuration(SPLASH_FADE_MILLIS)
+                .withEndAction { splash.remove() }
+                .start()
+        }
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
