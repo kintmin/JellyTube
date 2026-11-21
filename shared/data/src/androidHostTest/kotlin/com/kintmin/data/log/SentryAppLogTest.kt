@@ -2,6 +2,7 @@ package com.kintmin.data.log
 
 import com.kintmin.domain.app_log.repository.AppLogRepository
 import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.log.model.SentryEvent
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -14,10 +15,15 @@ class SentryAppLogTest {
     @Test
     fun `보낸 것은 파일 로그에도 남는다`() {
         appLog.sendDebugLog(DebugLog("tag", "100% message"))
+        appLog.sendErrorLog(ErrorLog("tag", "failed", Exception("boom")))
         appLog.sendSentryEvent(SentryEvent.DeleteAudioMedia(source = "s"))
 
         assertEquals(
-            listOf("DEBUG" to "tag: 100% message", "SENTRY_EVENT" to "DeleteAudioMedia {Source=s}"),
+            listOf(
+                "DEBUG" to "tag: 100% message",
+                "ERROR" to "tag: failed / java.lang.Exception: boom",
+                "SENTRY_EVENT" to "DeleteAudioMedia {Source=s}",
+            ),
             repository.lines,
         )
     }

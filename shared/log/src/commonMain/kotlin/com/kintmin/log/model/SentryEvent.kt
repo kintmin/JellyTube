@@ -6,6 +6,9 @@ sealed class SentryEvent(val logName: SentryLogName, vararg val params: Pair<Sen
     val attributes: Map<String, String>
         get() = params.mapNotNull { (key, value) -> value?.let { key.name to it } }.toMap()
 
+    /** 있으면 수집기에 Issue 로도 올라간다. */
+    open val throwable: Throwable? get() = null
+
     data class SuccessRegisterUser(val userId: String) : SentryEvent(
         SentryLogName.SuccessRegisterUser,
         SentryParamName.UserId to userId
@@ -14,7 +17,9 @@ sealed class SentryEvent(val logName: SentryLogName, vararg val params: Pair<Sen
     data class FailedRegisterUser(val exception: Throwable) : SentryEvent(
         SentryLogName.FailedRegisterUser,
         SentryParamName.ErrorMessage to exception.toString(),
-    )
+    ) {
+        override val throwable get() = exception
+    }
 
     data class FailedDownloadAudioMedia(
         val source: String,
@@ -39,7 +44,9 @@ sealed class SentryEvent(val logName: SentryLogName, vararg val params: Pair<Sen
         SentryParamName.IsCellular to isCellular?.toString(),
         SentryParamName.DownstreamKbps to downstreamKbps?.toString(),
         SentryParamName.UpstreamKbps to upstreamKbps?.toString(),
-    )
+    ) {
+        override val throwable get() = exception
+    }
 
     data class AddAudioMedia(
         val source: String,
