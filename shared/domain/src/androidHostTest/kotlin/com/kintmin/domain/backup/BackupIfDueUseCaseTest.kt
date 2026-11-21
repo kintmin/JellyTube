@@ -75,6 +75,24 @@ class BackupIfDueUseCaseTest {
     }
 
     @Test
+    fun `폴더 백업을 읽지 못하면 복원을 기다리는 것으로 보고 쓰지 않는다`() = runTest {
+        status()
+        coEvery { backupRepository.readFolderCopy() } returns Result.failure(Exception("provider unavailable"))
+
+        assertNull(run())
+        coVerify(exactly = 0) { backupNow(any()) }
+    }
+
+    @Test
+    fun `받아 둔 이전 파일을 읽지 못하면 복원을 기다리는 것으로 보고 쓰지 않는다`() = runTest {
+        status(lastSuccess = yesterday)
+        coEvery { dataMigrationRepository.fetchStagedFiles() } returns Result.failure(Exception("io"))
+
+        assertNull(run())
+        coVerify(exactly = 0) { backupNow(any()) }
+    }
+
+    @Test
     fun `재설치로 앱 안 사본만 되살아났으면 복원을 기다리며 쓰지 않는다`() = runTest {
         status()
         coEvery { backupRepository.hasLocalCopy() } returns true
