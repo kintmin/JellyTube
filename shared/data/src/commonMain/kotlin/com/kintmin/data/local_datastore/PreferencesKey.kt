@@ -37,6 +37,10 @@ sealed interface PreferencesKey<T> {
         const val NONE = 0
     }
 
+    data object SecretModeMinutes : PreferencesKey<Int> {
+        override val key = intPreferencesKey("SecretModeMinutes")
+    }
+
     data object UserId : PreferencesKey<String> {
         override val key = stringPreferencesKey("UserId")
     }

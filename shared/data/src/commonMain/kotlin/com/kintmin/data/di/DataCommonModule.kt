@@ -41,6 +41,12 @@ import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.domain.common_usecase.FetchLoadBalancingDelaySecondUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.secret_mode.repository.SecretModeRepository
+import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretModeMinutesFlowUseCase
+import com.kintmin.domain.secret_mode.usecase.StartSecretModeUseCase
+import com.kintmin.domain.secret_mode.usecase.UpdateSecretModeMinutesUseCase
 import com.kintmin.domain.playlist.usecase.*
 import com.kintmin.domain.step.repository.StepRepository
 import com.kintmin.domain.step.usecase.*
@@ -80,6 +86,7 @@ val dataCommonModule: Module = module {
     singleOf(::LyricsTranslationRepositoryImpl) bind LyricsTranslationRepository::class
     singleOf(::KaraokeRepositoryImpl) bind KaraokeRepository::class
     singleOf(::PlaylistRepositoryImpl) bind PlaylistRepository::class
+    singleOf(::SecretModeRepositoryImpl) bind SecretModeRepository::class
     singleOf(::StepRepositoryImpl) bind StepRepository::class
     singleOf(::UserRepositoryImpl) bind UserRepository::class
 
@@ -171,6 +178,11 @@ val dataCommonModule: Module = module {
     factoryOf(::UpdateTrackSequenceUseCase)
     factoryOf(::FetchLoadBalancingDelaySecondUseCase)
     factoryOf(::EnsureSystemPlaylistsUseCase)
+    factoryOf(::FetchSecretModeEnabledFlowUseCase)
+    factoryOf(::StartSecretModeUseCase)
+    factoryOf(::EndSecretModeUseCase)
+    factoryOf(::FetchSecretModeMinutesFlowUseCase)
+    factoryOf(::UpdateSecretModeMinutesUseCase)
     factoryOf(::FetchPlaylistsByTypeUseCase)
     factoryOf(::AddNewPlaylistUseCase)
     factoryOf(::DeletePlaylistUseCase)
