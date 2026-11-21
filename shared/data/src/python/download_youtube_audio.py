@@ -2,6 +2,8 @@ import os
 
 import yt_dlp
 
+# 제목·업로더·설명은 여기서 자르지 않는다. 상한은 앱이 도메인 값으로 한 곳에서 적용한다.
+
 def get_version():
     return yt_dlp.version.__version__
 

@@ -2,7 +2,7 @@ package com.kintmin.domain.audio_media
 
 import com.kintmin.domain.extension.clampLength
 
-/** 음원 제목·아티스트·설명의 길이 상한. 설명의 5000 은 유튜브 설명 상한이다. */
+/** 설명의 5000 은 유튜브 설명 상한이다. */
 object AudioMediaTextLimit {
     const val MAX_NAME_LENGTH = 100
     const val MAX_ARTIST_LENGTH = 50
