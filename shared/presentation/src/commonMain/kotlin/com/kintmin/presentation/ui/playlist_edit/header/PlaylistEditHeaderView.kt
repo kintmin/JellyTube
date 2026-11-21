@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.presentation.ui.common.UnderlineTextField
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListIntent
@@ -64,7 +65,7 @@ fun PlaylistEditHeaderView(
                 },
                 textStyle = MaterialTheme.typography.titleMedium,
                 placeholder = "제목 입력",
-                maxLength = 20,
+                maxLength = PlaylistTextLimit.MAX_TITLE_LENGTH,
                 singleLine = true,
                 errorMessage = if (isTitleError) "제목을 입력해 주세요. 비워 두면 이전 제목이 남습니다." else null,
             )
@@ -78,7 +79,7 @@ fun PlaylistEditHeaderView(
                 },
                 textStyle = MaterialTheme.typography.bodyMedium,
                 placeholder = "설명 추가",
-                maxLength = 100,
+                maxLength = PlaylistTextLimit.MAX_DESCRIPTION_LENGTH,
                 singleLine = false,
             )
         }

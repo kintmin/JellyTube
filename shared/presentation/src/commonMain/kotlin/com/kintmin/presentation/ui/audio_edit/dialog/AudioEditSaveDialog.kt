@@ -90,14 +90,14 @@ fun AudioEditSaveDialog(
             if (saveMode == SaveMode.NewMedia) {
                 UnderlineTextField(
                     modifier = Modifier.padding(top = 16.dp),
-                    label = "새 음원 이름",
+                    label = "새 음원 제목",
                     value = newMediaName,
                     onValueChange = { newMediaName = it },
                     textStyle = MaterialTheme.typography.titleMedium,
-                    placeholder = "이름 입력",
+                    placeholder = "제목 입력",
                     singleLine = true,
                     maxLength = AudioMediaTextLimit.MAX_NAME_LENGTH,
-                    errorMessage = if (newMediaName.isBlank()) "이름을 입력해 주세요" else null,
+                    errorMessage = if (newMediaName.isBlank()) "제목을 입력해 주세요" else null,
                 )
             }
 

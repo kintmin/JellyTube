@@ -12,13 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.tooling.preview.Preview
+import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DialogButtonRow
 import com.kintmin.presentation.ui.common.DialogColumn
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 import com.kintmin.presentation.ui.common.UnderlineTextField
-
-private const val TITLE_MAX_LENGTH = 20
 
 @Composable
 fun PlaylistAddDialog(
@@ -58,7 +57,7 @@ fun PlaylistAddDialog(
                 textStyle = MaterialTheme.typography.titleMedium,
                 placeholder = "제목 입력",
                 singleLine = true,
-                maxLength = TITLE_MAX_LENGTH,
+                maxLength = PlaylistTextLimit.MAX_TITLE_LENGTH,
                 errorMessage = errorMessage.takeIf { hasEdited },
                 keyboardActions = KeyboardActions(
                     onDone = {
