@@ -1,7 +1,7 @@
 name: Release
 
 # PR 마다 브랜치 규칙을 보고, main 으로 가는 PR 에서는 버전을 대조한다.
-# main 에 들어오면 태그를 붙이고 develop 에 반영하고, 새 mobile 버전이면 APK 를 GitHub Release 에 올린다.
+# main 에 들어오면 태그를 붙이고 develop 에 반영하고, 새 mobile 버전이면 APK·IPA 를 GitHub Release 에 올린다.
 on:
   pull_request:
   push:
@@ -86,37 +86,41 @@ jobs:
             fi
           done
 
-  android-release:
+  mobile-release-needed:
     if: github.event_name == 'push'
     needs: [versions, tag]
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    env:
-      TAG: mobile/v${{ needs.versions.outputs.mobile }}
-      GH_TOKEN: ${{ github.token }}
+    outputs:
+      needed: ${{ steps.check.outputs.needed }}
     steps:
       - id: check
-        name: Skip when the release already exists
+        env:
+          TAG: mobile/v${{ needs.versions.outputs.mobile }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "$TAG 릴리스는 이미 있다"; echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "$TAG 릴리스는 이미 있다"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
           fi
-      - if: steps.check.outputs.skip != 'true'
-        uses: actions/checkout@v4
-      - if: steps.check.outputs.skip != 'true'
-        uses: actions/setup-java@v4
+
+  android-apk:
+    needs: mobile-release-needed
+    if: needs.mobile-release-needed.outputs.needed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
       # Chaquopy 가 빌드 때 pip 로 패키지를 받으려면 앱과 같은 버전의 Python 이 PATH 에 있어야 한다.
-      - if: steps.check.outputs.skip != 'true'
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - if: steps.check.outputs.skip != 'true'
-        uses: gradle/actions/setup-gradle@v4
-      - if: steps.check.outputs.skip != 'true'
-        name: Build the signed release APK
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build the signed release APK
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -140,14 +144,111 @@ jobs:
             export ORG_GRADLE_PROJECT_JELLY_TUBE_SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN"
           fi
           ./gradlew :android:app:assembleRelease
-      - if: steps.check.outputs.skip != 'true'
-        name: Publish the APK to GitHub Release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+  # 서명하지 않은 IPA 다. SideStore 가 설치할 때 사용자 Apple ID 로 서명한다.
+  ios-ipa:
+    needs: mobile-release-needed
+    if: needs.mobile-release-needed.outputs.needed == 'true'
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./scripts/setup-ios-vendor.sh
+      - name: Archive without signing
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          apks=(android/app/build/outputs/apk/release/*.apk)
-          [[ ${#apks[@]} -eq 1 ]] || { echo "::error::release APK 가 하나가 아니다: ${apks[*]}"; exit 1; }
-          gh release create "$TAG" "${apks[0]}" --verify-tag --title "JellyTube ${TAG#mobile/v}" --generate-notes
+          xcodebuild archive \
+            -project ios/app/JellyTubeIos.xcodeproj -scheme JellyTubeIos -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/JellyTube.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+      - name: Package the IPA
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          mkdir Payload
+          cp -R JellyTube.xcarchive/Products/Applications/JellyTubeIos.app Payload/
+          zip -qry "$GITHUB_WORKSPACE/JellyTube.ipa" Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ipa
+          path: JellyTube.ipa
+          if-no-files-found: error
+
+  mobile-release:
+    needs: [versions, android-apk, ios-ipa]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.versions.outputs.mobile }}
+      TAG: mobile/v${{ needs.versions.outputs.mobile }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create the release
+        run: |
+          set -euo pipefail
+          # 지정하지 않으면 직전 릴리스부터 모으는데, desktop 릴리스가 끼면 범위가 어긋난다.
+          previous=$(git tag -l 'mobile/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
+          gh release create "$TAG" dist/* --verify-tag --title "JellyTube $VERSION" \
+            --generate-notes ${previous:+--notes-start-tag "$previous"}
+      # SideStore 소스는 releases/latest/download/source.json 으로 구독한다. 최신 릴리스가 늘 이 파일을 갖는다.
+      - name: Attach the SideStore source
+        run: |
+          set -euo pipefail
+          config=buildSrc/src/main/java/com/kintmin/buildSrc/AppConfiguration.kt
+          code=$(sed -n 's/^ *const val VERSION_CODE = \([0-9]*\)$/\1/p' "$config")
+          pbxproj=ios/app/JellyTubeIos.xcodeproj/project.pbxproj
+          bundle_id=$(sed -n 's/.*PRODUCT_BUNDLE_IDENTIFIER = \(.*\);/\1/p' "$pbxproj" | grep -v 'Tests$' | sort -u)
+          min_os=$(sed -n 's/.*IPHONEOS_DEPLOYMENT_TARGET = \(.*\);/\1/p' "$pbxproj" | sort -uV | tail -n1)
+          [[ -n "$code" && -n "$bundle_id" && -n "$min_os" ]] || { echo "::error::source.json 에 넣을 값을 읽지 못했다"; exit 1; }
+          release=$(gh release view "$TAG" --json body,publishedAt,assets)
+          jq -n \
+            --argjson release "$release" \
+            --arg repo "$GITHUB_REPOSITORY" --arg sha "$GITHUB_SHA" \
+            --arg version "$VERSION" --arg code "$code" \
+            --arg bundle_id "$bundle_id" --arg min_os "$min_os" '
+            ($release.assets[] | select(.name == "JellyTube.ipa")) as $ipa | {
+              name: "JellyTube",
+              identifier: "com.kintmin.jellytube.source",
+              sourceURL: "https://github.com/\($repo)/releases/latest/download/source.json",
+              apps: [{
+                name: "JellyTube",
+                bundleIdentifier: $bundle_id,
+                developerName: "kintmin",
+                localizedDescription: "JellyTube",
+                iconURL: "https://raw.githubusercontent.com/\($repo)/\($sha)/ios/app/JellyTubeIos/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+                versions: [{
+                  version: $version,
+                  buildVersion: $code,
+                  date: $release.publishedAt,
+                  localizedDescription: $release.body,
+                  downloadURL: $ipa.url,
+                  size: $ipa.size,
+                  minOSVersion: $min_os
+                }],
+                appPermissions: { entitlements: [], privacy: {} }
+              }],
+              news: []
+            }' > source.json
+          gh release upload "$TAG" source.json
 
   sync-develop:
     if: github.event_name == 'push'
