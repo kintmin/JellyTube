@@ -318,6 +318,7 @@ class SettingBackupRestoreViewModel(
                 BackupOutcome.WRITTEN -> "백업했습니다."
                 BackupOutcome.SKIPPED_EMPTY -> "음원이 없어 백업하지 않았습니다. 남아 있던 백업은 그대로 둡니다."
                 BackupOutcome.KEPT_EXISTING -> "이 폴더에서 백업을 찾았습니다. 복원할 수 있게 덮어쓰지 않았습니다."
+                BackupOutcome.KEPT_UNREADABLE -> "이 폴더의 백업을 읽지 못했습니다. 남은 백업일 수 있어 덮어쓰지 않았습니다. 앱 로그에서 원인을 확인할 수 있습니다."
             }
         },
         onFailure = {

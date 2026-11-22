@@ -37,6 +37,7 @@ class DownloadLyricsForAudioMediaUseCaseTest {
         parseLyrics = ParseLyricsUseCase(),
         detectLyricsLanguage = DetectLyricsLanguageUseCase(),
         createLyricsVariant = createVariant,
+        appLog = mockk(relaxed = true),
     )
 
     private fun result(
@@ -196,6 +197,22 @@ class DownloadLyricsForAudioMediaUseCaseTest {
             listOf(
                 result(duration = 200.0, plain = "wrong", synced = null, trackName = "Daydreaming"),
                 result(duration = 200.8, plain = "right", synced = null, trackName = "Leo"),
+            )
+        )
+        stubApplyAndVariant()
+
+        val r = useCase(audioMediaId = 1, title = "Leo", targetDurationSeconds = 200.0)
+
+        assertTrue(r.isSuccess)
+        coVerify(exactly = 1) { applyLyrics(any(), "right", any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `가사 본문이 없는 결과는 건너뛰고 다음 결과를 적용한다`() = runTest {
+        coEvery { searchLyrics(any()) } returns Result.success(
+            listOf(
+                result(duration = 200.0, plain = null, synced = null, trackName = "Leo"),
+                result(duration = 200.5, plain = "right", synced = null, trackName = "Leo"),
             )
         )
         stubApplyAndVariant()

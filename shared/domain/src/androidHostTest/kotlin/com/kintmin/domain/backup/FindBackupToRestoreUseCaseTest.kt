@@ -6,7 +6,9 @@ import com.kintmin.domain.backup.repository.BackupRepository
 import com.kintmin.domain.backup.usecase.FindBackupToRestoreUseCase
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import io.mockk.coEvery
+import com.kintmin.log.AppLog
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -19,11 +21,14 @@ class FindBackupToRestoreUseCaseTest {
         MigrationSnapshot(emptyList(), emptyList(), emptyList(), emptyList(), emptyList()), null, emptyMap(), createdAt,
     )
 
+    private val appLog = mockk<AppLog>(relaxed = true)
+
     private fun useCase(local: Result<BackupContent?>, folder: Result<BackupContent?>) = FindBackupToRestoreUseCase(
         mockk<BackupRepository> {
             coEvery { readLocalCopy() } returns local
             coEvery { readFolderCopy() } returns folder
         },
+        appLog,
     )
 
     @Test
@@ -37,6 +42,7 @@ class FindBackupToRestoreUseCaseTest {
         val found = useCase(Result.failure(BackupFileInvalidException()), Result.success(backup(5)))().getOrThrow()
 
         assertEquals(5L, found?.createdAtMillis)
+        verify { appLog.sendErrorLog(match { it.message == "앱 안 백업 사본 읽기 실패" && it.throwable is BackupFileInvalidException }) }
     }
 
     @Test

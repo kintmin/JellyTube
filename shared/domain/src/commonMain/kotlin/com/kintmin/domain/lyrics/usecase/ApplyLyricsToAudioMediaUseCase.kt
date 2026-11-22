@@ -1,6 +1,9 @@
 package com.kintmin.domain.lyrics.usecase
 
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.domain.lyrics.model.LyricsVariant
 
 /**
@@ -16,6 +19,7 @@ import com.kintmin.domain.lyrics.model.LyricsVariant
  */
 class ApplyLyricsToAudioMediaUseCase(
     private val audioMediaRepository: AudioMediaRepository,
+    private val appLog: AppLog,
 ) {
     suspend operator fun invoke(
         audioMediaId: Int,
@@ -53,4 +57,8 @@ class ApplyLyricsToAudioMediaUseCase(
 
         lyricFileFullPath
     }
+        .onSuccess { appLog.sendDebugLog(DebugLog(LOG_TAG, "가사 저장: id=$audioMediaId")) }
+        .onFailure { appLog.sendErrorLog(ErrorLog(LOG_TAG, "가사 저장 실패: id=$audioMediaId", it)) }
 }
+
+private const val LOG_TAG = "ApplyLyricsToAudioMedia"

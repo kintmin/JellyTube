@@ -175,7 +175,7 @@ class DownloadAudioMediaUseCaseTest {
     }
 
     @Test
-    fun `기존 다운로드가 있으면 실패 반환 테스트`() = runTest {
+    fun `기존 다운로드가 있으면 실패를 돌려주되 받기 실패로 올리지 않는다`() = runTest {
         coEvery { audioMediaRepository.getAudioMediaBySource(downloadUrl) } returns Result.success(mockAudioMedia)
 
         val result = useCase(downloadUrl)
@@ -184,7 +184,7 @@ class DownloadAudioMediaUseCaseTest {
         assert(result.exceptionOrNull() is AlreadyDownloadedMedia)
         coVerify(inverse = true) { audioMediaRepository.downloadYoutubeAudio(any()) }
         verifySuccessDownloadAudioMediaLog(inverse = true)
-        verifyFailedDownloadAudioMediaLog(exception = AlreadyDownloadedMedia(), exactly = 1)
+        verifyFailedDownloadAudioMediaLog(exception = AlreadyDownloadedMedia(), exactly = 0)
     }
 
     @Test

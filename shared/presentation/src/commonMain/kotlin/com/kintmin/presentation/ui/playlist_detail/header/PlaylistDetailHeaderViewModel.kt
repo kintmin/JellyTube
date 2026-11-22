@@ -1,5 +1,7 @@
 package com.kintmin.presentation.ui.playlist_detail.header
 
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.ErrorLog
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -35,6 +37,7 @@ class PlaylistDetailHeaderViewModel constructor(
     private val updatePlaybackRepeatingUseCase: UpdatePlaybackRepeatingUseCase,
     private val updateIsPlaybackShufflingUseCase: UpdateIsPlaybackShufflingUseCase,
     private val fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
+    private val appLog: AppLog,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<PlaylistDetailScreenRoute>()
@@ -94,6 +97,7 @@ class PlaylistDetailHeaderViewModel constructor(
         viewModelScope.launch {
             val mediaControlDataList = fetchAudioMediaListFlowUseCase(playlistId).first().map { it.audioMedia.toMediaControlData() }
             mediaControllerManager.playFromPlaylist(playlistId, null, mediaControlDataList)
+                .onFailure { appLog.sendErrorLog(ErrorLog("PlaylistDetailHeader", "재생 시작 실패: playlistId=$playlistId", it)) }
         }
     }
 

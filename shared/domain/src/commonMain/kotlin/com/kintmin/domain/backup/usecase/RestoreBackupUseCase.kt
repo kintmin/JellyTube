@@ -22,6 +22,7 @@ import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.domain.youtube.YoutubeUrl
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
@@ -61,7 +62,7 @@ class RestoreBackupUseCase(
             result
                 .onSuccess { restored[audio.id] = it }
                 .onFailure {
-                    log("다시 받기 실패: ${audio.name} (${audio.source}) $it")
+                    logError("다시 받기 실패: ${audio.name} (${audio.source})", it)
                     failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
                 }
         }
@@ -81,10 +82,10 @@ class RestoreBackupUseCase(
         withContext(NonCancellable) {
             val applied = dataMigrationRepository.applyPlan(plan).getOrThrow()
             // 반영이 끝났다. 여기부터는 실패해도 기록만 한다.
-            dataMigrationRepository.clearStaging().onFailure { log("임시 공간 정리 실패: $it") }
+            dataMigrationRepository.clearStaging().onFailure { logError("임시 공간 정리 실패", it) }
             backup.downloadSettings?.let { settings ->
                 runCatching { appSettingRepository.applyMigratedDownloadSettings(settings, plan, applied, target) }
-                    .onFailure { log("다운로드 설정 반영 실패: $it") }
+                    .onFailure { logError("다운로드 설정 반영 실패", it) }
             }
         }
         MigrationSummary(
@@ -92,10 +93,10 @@ class RestoreBackupUseCase(
             newPlaylistCount = plan.newPlaylists.size,
             redownloadedCount = restored.size,
             failures = failures,
-        )
+        ).also { log("복원 완료: $it") }
     }.onFailure {
         if (it is CancellationException) throw it
-        log("복원 중단: $it")
+        logError("복원 중단", it)
     }
 
     private suspend fun restore(
@@ -155,7 +156,7 @@ class RestoreBackupUseCase(
 
     private fun skip(error: Throwable, message: String): String? {
         if (error is CancellationException) throw error
-        log("$message $error")
+        logError(message, error)
         return null
     }
 
@@ -175,5 +176,9 @@ class RestoreBackupUseCase(
 
     private fun log(message: String) {
         appLog.sendDebugLog(DebugLog("RestoreBackupUseCase", message))
+    }
+
+    private fun logError(message: String, error: Throwable) {
+        appLog.sendErrorLog(ErrorLog("RestoreBackupUseCase", message, error))
     }
 }

@@ -260,6 +260,7 @@ class SettingViewModel constructor(
             val message = when {
                 result.getOrNull() == BackupOutcome.WRITTEN -> "백업했습니다. 이제 하루 한 번 이 폴더에 백업합니다."
                 result.getOrNull() == BackupOutcome.KEPT_EXISTING -> "이 폴더에서 백업을 찾았습니다. 복원할 수 있게 덮어쓰지 않았습니다."
+                result.getOrNull() == BackupOutcome.KEPT_UNREADABLE -> "이 폴더의 백업을 읽지 못했습니다. 남은 백업일 수 있어 덮어쓰지 않았습니다. 앱 로그에서 원인을 확인할 수 있습니다."
                 result.isSuccess -> "백업 폴더를 지정했습니다. 음원이 생기면 백업합니다."
                 else -> "백업 폴더를 지정했지만 백업하지 못했습니다."
             }

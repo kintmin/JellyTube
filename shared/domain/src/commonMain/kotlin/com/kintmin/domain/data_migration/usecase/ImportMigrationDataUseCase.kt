@@ -25,6 +25,7 @@ import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.domain.youtube.YoutubeUrl
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
@@ -122,10 +123,10 @@ class ImportMigrationDataUseCase constructor(
         }.getOrThrow()
 
         // 반영이 끝났다. 다시 받은 파일은 이미 행이 가리키므로 여기부터는 실패해도 기록만 한다.
-        dataMigrationRepository.clearStaging().onFailure { log("임시 공간 정리 실패: $it") }
+        dataMigrationRepository.clearStaging().onFailure { logError("임시 공간 정리 실패", it) }
         export.downloadSettings?.let { settings ->
             runCatching { appSettingRepository.applyMigratedDownloadSettings(settings, applyPlan, applied, target) }
-                .onFailure { log("다운로드 설정 반영 실패: $it") }
+                .onFailure { logError("다운로드 설정 반영 실패", it) }
         }
         MigrationSummary(
             newAudioMediaCount = applyPlan.newAudioMedias.size,
@@ -133,12 +134,13 @@ class ImportMigrationDataUseCase constructor(
             redownloadedCount = redownloaded.size,
             failures = failures,
         ).also { summary ->
+            log("이전 완료: $summary")
             dataMigrationRepository.notifyFinished(endpoint, token, summary)
-                .onFailure { log("완료 알림 실패: $it") }
+                .onFailure { logError("완료 알림 실패", it) }
         }
     }.onFailure {
         if (it is CancellationException) throw it
-        log("이전 중단: $it")
+        logError("이전 중단", it)
     }
 
     private suspend fun deleteRedownloaded(redownloaded: Map<Int, DownloadedAudioFile>) {
@@ -161,7 +163,7 @@ class ImportMigrationDataUseCase constructor(
                 .onSuccess { result[audio.id] = it }
                 .onFailure {
                     if (it is CancellationException) throw it
-                    log("다시 받기 실패: ${audio.name} (${audio.source}) $it")
+                    logError("다시 받기 실패: ${audio.name} (${audio.source})", it)
                     failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
                 }
         }
@@ -212,5 +214,9 @@ class ImportMigrationDataUseCase constructor(
 
     private fun log(message: String) {
         appLog.sendDebugLog(DebugLog("ImportMigrationDataUseCase", message))
+    }
+
+    private fun logError(message: String, error: Throwable) {
+        appLog.sendErrorLog(ErrorLog("ImportMigrationDataUseCase", message, error))
     }
 }

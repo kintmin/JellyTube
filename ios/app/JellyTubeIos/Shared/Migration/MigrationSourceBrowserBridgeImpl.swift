@@ -57,7 +57,16 @@ private final class ServiceBrowse {
             self.queue.asyncAfter(deadline: .now() + settle, execute: work)
         }
         browser.stateUpdateHandler = { state in
-            if case .failed = state { self.finish([]) }
+            switch state {
+            case let .failed(error):
+                SwiftAppLogKt.swiftErrorLog(tag: "MigrationSourceBrowser", message: "기기 탐색 실패: \(error)")
+                self.finish([])
+            // 로컬 네트워크 권한이 없으면 실패가 아니라 대기로 멈춘다.
+            case let .waiting(error):
+                SwiftAppLogKt.swiftDebugLog(tag: "MigrationSourceBrowser", message: "기기 탐색 대기: \(error)")
+            default:
+                break
+            }
         }
         browser.start(queue: queue)
         queue.asyncAfter(deadline: .now() + timeout) { self.finish(self.latest) }
@@ -107,7 +116,8 @@ private final class ServiceResolve {
                 else { return self.finish(nil) }
                 let text = "\(address)".split(separator: "%").first.map(String.init) ?? "\(address)"
                 self.finish(IosResolvedService(host: text, port: Int32(port.rawValue)))
-            case .failed:
+            case let .failed(error):
+                SwiftAppLogKt.swiftDebugLog(tag: "MigrationSourceBrowser", message: "기기 주소 풀기 실패: \(error)")
                 self.finish(nil)
             default:
                 break

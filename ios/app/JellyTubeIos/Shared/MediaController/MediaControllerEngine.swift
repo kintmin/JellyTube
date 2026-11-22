@@ -18,6 +18,11 @@ private enum ScheduleResult {
 private let mcLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "MediaController")
 
 /// `os_log` 만으로는 `app_logs` 에 가지 않아 공유받은 로그에서 재생 실패가 보이지 않는다.
+private func playbackHistoryLog(_ message: String) {
+    mcLog.info("\(message, privacy: .public)")
+    SwiftAppLogKt.swiftDebugLog(tag: "PlaybackEngine", message: message)
+}
+
 private func playbackErrorLog(_ message: String) {
     mcLog.error("\(message, privacy: .public)")
     SwiftAppLogKt.swiftErrorLog(tag: "PlaybackEngine", message: message)
@@ -87,7 +92,7 @@ final class MediaControllerEngine {
         // 셔플 중에는 queue 가 섞여 있으므로 원래 순서와 비교해야 한다.
         let sameList = currentPlaylistId == playlistId && originalQueue.map(\.id) == items.map(\.id)
 
-        mcLog.info("play playlistId=\(playlistId) startMediaId=\(startMediaId ?? -1) items=\(items.count) targetIndex=\(targetIndex) sameList=\(sameList)")
+        playbackHistoryLog("play playlistId=\(playlistId) startMediaId=\(startMediaId ?? -1) items=\(items.count) targetIndex=\(targetIndex) sameList=\(sameList)")
 
         if targetIndex < items.count {
             let url = items[targetIndex].fileURL
@@ -160,14 +165,14 @@ final class MediaControllerEngine {
     func setSpeed(_ speed: Float) {
         currentSpeed = speed
         pitchUnit.rate = speed
-        mcLog.info("applied speed=\(speed)")
+        playbackHistoryLog("applied speed=\(speed)")
         broadcast()
     }
 
     func setPitchSemitone(_ semitone: Int) {
         currentPitchSemitone = semitone
         pitchUnit.pitch = Float(semitone * 100)
-        mcLog.info("applied pitchSemitone=\(semitone)")
+        playbackHistoryLog("applied pitchSemitone=\(semitone)")
         broadcast()
     }
 
@@ -389,6 +394,7 @@ final class MediaControllerEngine {
     private func advanceOnCompletion() {
         hasScheduledSegment = false
         guard isPlayingIntent else { return }
+        playbackHistoryLog("auto advance from index=\(currentIndex)")
         playIfIntended(schedulePlayable(from: currentIndex + 1, startingSeconds: 0))
         broadcast()
     }
@@ -460,17 +466,17 @@ final class MediaControllerEngine {
               let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
         switch type {
         case .began:
-            mcLog.info("interruption began")
+            playbackHistoryLog("interruption began")
             pause()
         case .ended:
             let options = (userInfo[AVAudioSessionInterruptionOptionKey] as? UInt).map {
                 AVAudioSession.InterruptionOptions(rawValue: $0)
             }
             if options?.contains(.shouldResume) == true {
-                mcLog.info("interruption ended: resuming")
+                playbackHistoryLog("interruption ended: resuming")
                 resume()
             } else {
-                mcLog.info("interruption ended: not resuming")
+                playbackHistoryLog("interruption ended: not resuming")
             }
         @unknown default:
             break
@@ -478,7 +484,7 @@ final class MediaControllerEngine {
     }
 
     private func handleConfigurationChange() {
-        mcLog.info("engine configuration changed → restart at \(self.lastKnownPosition)")
+        playbackHistoryLog("engine configuration changed → restart at \(self.lastKnownPosition)")
         // 일시정지 중에 켜면 제어 센터가 다시 재생 중으로 바뀐다. 이어 듣기는 resume() 이 켠다.
         if isPlayingIntent { ensureEngineRunning() }
         guard currentFile != nil else { return }
@@ -491,7 +497,7 @@ final class MediaControllerEngine {
               let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
               let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else { return }
         if reason == .oldDeviceUnavailable {
-            mcLog.info("route: old device unavailable → pause")
+            playbackHistoryLog("route: old device unavailable → pause")
             pause()
         }
     }

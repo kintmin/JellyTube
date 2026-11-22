@@ -59,7 +59,7 @@ val appModule: Module = module {
     single<StartAnomalyDataCheck> { StartAnomalyDataCheckImpl(androidContext()) }
     single<StartLyricsVariantCreation> { StartLyricsVariantCreationImpl(androidContext()) }
     single<StartAudioEditSave> { StartAudioEditSaveImpl(androidContext()) }
-    single<MigrationSourceDiscovery> { NsdMigrationSourceDiscovery(androidContext()) }
+    single<MigrationSourceDiscovery> { NsdMigrationSourceDiscovery(androidContext(), get()) }
     single<MigrationReceiveKeepAlive> { MigrationReceiveKeepAliveImpl(androidContext()) }
     single { BulkDownloadKeepAliveImpl(androidContext()) }
     single<BulkDownloadKeepAlive> { get<BulkDownloadKeepAliveImpl>() }

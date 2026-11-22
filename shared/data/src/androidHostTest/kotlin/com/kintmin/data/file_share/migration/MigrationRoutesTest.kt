@@ -58,7 +58,7 @@ class MigrationRoutesTest {
     private fun migrationSendHandler(): MigrationSendHandler {
         val handler = slot<MigrationSendHandler>()
         val repository = mockk<MigrationSendServerRepository> { every { open(capture(handler)) } just Runs }
-        OpenMigrationSendUseCase(repository, cleanupUseCase, exportUseCase, resolvePathUseCase)()
+        OpenMigrationSendUseCase(repository, cleanupUseCase, exportUseCase, resolvePathUseCase, mockk(relaxed = true))()
         return handler.captured
     }
     private var session: MigrationSession? = MigrationSession(code = CODE, generateToken = { TOKEN })
@@ -85,6 +85,7 @@ class MigrationRoutesTest {
                     validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
                     updateAudioMedia = mockk(),
                     saveAudioMediaImage = mockk(),
+                    appLog = mockk(relaxed = true),
                 ).invoke {},
                 uploadTempDir = tempFolder.root.path,
                 receiveKeepAlive = KeepAliveByForegroundService,

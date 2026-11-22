@@ -842,7 +842,8 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
     private func finish(sourceUrl: String, error: Error?, source: YoutubeAudioSource?) {
         lock.lock()
         var inFlight = Self.load(YoutubeTransfer.self, key: Self.inFlightKey)
-        if let segmentsPath = inFlight.removeValue(forKey: sourceUrl)?.segmentsPath {
+        let transfer = inFlight.removeValue(forKey: sourceUrl)
+        if let segmentsPath = transfer?.segmentsPath {
             segmentUrlsCache.removeValue(forKey: segmentsPath)
         }
         Self.save(inFlight, key: Self.inFlightKey)
@@ -857,6 +858,10 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         lock.unlock()
         refreshExecutionWindow()
 
+        // 구간마다 불리므로 기록을 지운 첫 번째만 본다. 나머지는 이미 보고된 같은 실패다.
+        if transfer != nil, waiter == nil, let error {
+            SwiftAppLogKt.swiftErrorLog(tag: "YoutubeDownload", message: "기다리는 쪽 없이 실패: \(sourceUrl) \(error.localizedDescription)")
+        }
         waiter?(error)
     }
 

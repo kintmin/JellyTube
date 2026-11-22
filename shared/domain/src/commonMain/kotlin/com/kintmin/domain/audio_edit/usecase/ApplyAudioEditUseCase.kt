@@ -31,7 +31,7 @@ class ApplyAudioEditUseCase constructor(
             appLog.sendDebugLog(
                 DebugLog(
                     tag = "ApplyAudioEditUseCase",
-                    message = "편집본 적용: 조각 ${timeline.clips.size}개, 소요 ${timedValue.duration}, " +
+                    message = "편집본 적용: id $audioMediaId, 조각 ${timeline.clips.size}개, 소요 ${timedValue.duration}, " +
                         "결과 ${timedValue.value.exceptionOrNull() ?: "성공"}",
                 )
             )

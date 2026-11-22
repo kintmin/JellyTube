@@ -1,5 +1,8 @@
 package com.kintmin.jellytube.data_migration
 
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.ErrorLog
+import com.kintmin.log.model.DebugLog
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
@@ -15,7 +18,10 @@ import java.net.Inet4Address
 import java.util.Collections
 import kotlin.coroutines.resume
 
-internal class NsdMigrationSourceDiscovery(context: Context) : MigrationSourceDiscovery {
+internal class NsdMigrationSourceDiscovery(
+    context: Context,
+    private val appLog: AppLog,
+) : MigrationSourceDiscovery {
 
     private val manager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
 
@@ -33,6 +39,7 @@ internal class NsdMigrationSourceDiscovery(context: Context) : MigrationSourceDi
             }
 
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
+                appLog.sendErrorLog(ErrorLog(LOG_TAG, "기기 탐색 시작 실패: errorCode=$errorCode"))
                 changes.close()
             }
 
@@ -42,7 +49,10 @@ internal class NsdMigrationSourceDiscovery(context: Context) : MigrationSourceDi
         }
         runCatching {
             manager.discoverServices(FileShareConstants.MIGRATION_NSD_SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, listener)
-        }.onFailure { return emptyList() }
+        }.onFailure {
+            appLog.sendErrorLog(ErrorLog(LOG_TAG, "기기 탐색 시작 실패", it))
+            return emptyList()
+        }
         try {
             withTimeoutOrNull(DISCOVERY_TIMEOUT_MILLIS) {
                 if (changes.receiveCatching().isClosed) return@withTimeoutOrNull
@@ -68,6 +78,7 @@ internal class NsdMigrationSourceDiscovery(context: Context) : MigrationSourceDi
                 target,
                 object : NsdManager.ResolveListener {
                     override fun onResolveFailed(info: NsdServiceInfo, errorCode: Int) {
+                        appLog.sendDebugLog(DebugLog(LOG_TAG, "기기 주소 풀기 실패: ${source.name} errorCode=$errorCode"))
                         if (continuation.isActive) continuation.resume(null)
                     }
 
@@ -98,3 +109,5 @@ private fun NsdServiceInfo.toEndpoint(): MigrationEndpoint? {
 private const val SETTLE_MILLIS = 3_000L
 private const val DISCOVERY_TIMEOUT_MILLIS = 10_000L
 private const val RESOLVE_TIMEOUT_MILLIS = 10_000L
+
+private const val LOG_TAG = "NsdMigrationSourceDiscovery"

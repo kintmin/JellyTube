@@ -2,6 +2,7 @@ package com.kintmin.jellytube.worker
 
 import android.content.Context
 import androidx.work.CoroutineWorker
+import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import com.kintmin.domain.extension.parseBasicIsoDate
 import com.kintmin.domain.extension.startOfDayMillis
@@ -38,25 +39,18 @@ class DailyResetImmediatelyWorker(
                 .minus(1, DateTimeUnit.DAY).toBasicIsoString()
         val lastStepSensor = inputData.getLong(KEY_LAST_STEP_SENSOR, -1L)
 
-        try {
-            if (lastStepSensor != -1L) {
-                val targetLocalDate = targetDate.parseBasicIsoDate()
-                val endOfDayMillis = targetLocalDate
-                    .plus(1, DateTimeUnit.DAY)
-                    .startOfDayMillis(timeZone)
+        if (lastStepSensor == -1L) return Result.success()
 
-                backupStepSensorUseCase(
-                    stepSensor = lastStepSensor,
-                    rawCreatedTime = endOfDayMillis,
-                )
-            }
-            return Result.success()
-        } catch (_: Exception) {
-            return if (runAttemptCount >= 3) {
-                Result.failure()
-            } else {
-                Result.retry()
-            }
-        }
+        val endOfDayMillis = targetDate.parseBasicIsoDate()
+            .plus(1, DateTimeUnit.DAY)
+            .startOfDayMillis(timeZone)
+        val saved = backupStepSensorUseCase(stepSensor = lastStepSensor, rawCreatedTime = endOfDayMillis)
+        return dailyResetWorkResult(saved, runAttemptCount)
     }
+}
+
+internal fun dailyResetWorkResult(saved: kotlin.Result<Unit>, runAttemptCount: Int): ListenableWorker.Result = when {
+    saved.isSuccess -> ListenableWorker.Result.success()
+    runAttemptCount >= 3 -> ListenableWorker.Result.failure()
+    else -> ListenableWorker.Result.retry()
 }
