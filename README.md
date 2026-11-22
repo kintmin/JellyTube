@@ -40,6 +40,32 @@ PC 에 있는 음악 파일은 함께 들어 있는 데스크톱 앱으로 폰�
 ## 구조
 
 Kotlin Multiplatform 으로, 화면을 포함한 코드 대부분을 Android 와 iOS 가 함께 씁니다.
+화살표는 의존하는 방향입니다.
+
+```mermaid
+flowchart TD
+    android["android/app<br/>Android 앱"]
+    ios["ios/shared · ios/app<br/>iOS 앱"]
+    desktop["desktop<br/>Windows 데스크톱 앱"]
+
+    subgraph shared["shared — Android·iOS 공용"]
+        presentation["presentation<br/>화면"]
+        data["data<br/>DB·네트워크·파일"]
+        domain["domain<br/>규칙과 동작"]
+        log["log<br/>로그"]
+        fileshare["file-share<br/>데스크톱과 주고받는 약속"]
+    end
+
+    android --> presentation
+    android --> data
+    ios --> presentation
+    ios --> data
+    desktop --> fileshare
+    presentation --> domain
+    data --> domain
+    data --> fileshare
+    domain --> log
+```
 
 | 경로 | 내용 |
 |---|---|
