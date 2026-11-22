@@ -172,12 +172,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: ./scripts/setup-ios-vendor.sh
       - name: Archive without signing
+        # Python 번들의 설치 스크립트는 서명 설정과 무관하게 확장 모듈마다 codesign 을 불러, 신원이
+        # 비어 있으면 실패한다. ad-hoc(-) 으로 넘긴다 — SideStore 가 설치할 때 전부 다시 서명한다.
         run: |
           set -euo pipefail
           xcodebuild archive \
             -project ios/app/JellyTubeIos.xcodeproj -scheme JellyTubeIos -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/JellyTube.xcarchive" \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            EXPANDED_CODE_SIGN_IDENTITY=-
       - name: Package the IPA
         run: |
           set -euo pipefail
