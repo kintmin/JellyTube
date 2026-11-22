@@ -32,6 +32,9 @@ jobs:
           if [[ "$HEAD" =~ ^(release|hotfix)/ && "$BASE" != main ]]; then
             echo "::error::$HEAD 는 main 에만 병합한다."; exit 1
           fi
+          if [[ "$BASE" == develop && ! "$HEAD" =~ ^(feat|fix|refactor|perf|test|build|ci|docs|revert)/ ]]; then
+            echo "::error::develop 에는 feat/ fix/ refactor/ perf/ test/ build/ ci/ docs/ revert/ 브랜치만 병합한다."; exit 1
+          fi
 
   versions:
     if: github.event_name == 'push' || github.base_ref == 'main'

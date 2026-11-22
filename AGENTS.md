@@ -191,7 +191,9 @@ Kotlin Multiplatform 앱. 하나의 공유 코어를 Android / iOS / Desktop 이
 
 ## 11. 브랜치와 릴리스
 
-- 기본 브랜치는 `develop` 이다. 기능·수정 브랜치는 develop 에서 따서 **squash** 로 병합한다.
+- 기본 브랜치는 `develop` 이다. 작업 브랜치는 develop 에서 따서 **squash** 로 병합한다. 접두어는
+  `feat/` `fix/` `refactor/`(코드 서식 정리 포함) `perf/` `test/` `build/`(빌드 설정·의존성) `ci/`
+  `docs/` `revert/` 이고, 나머지는 한국어로 단어를 `-` 로 잇는다. 접두어는 PR 마다 CI 가 검사한다.
 - `release/<버전>` 은 develop 에서 따고 버전 올리기와 출시 전 수정만 한다. main 에는 **merge commit**
   으로 병합한다. 급한 수정은 main 에서 `hotfix/<버전>` 을 따서 같은 방식으로 병합한다.
 - main 은 `release/*` 와 `hotfix/*` 만 받고, 그 둘은 main 에만 병합한다. PR 마다 CI 가 검사한다.
