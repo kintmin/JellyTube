@@ -25,21 +25,37 @@ Android 와 iOS 에서 같은 화면으로 동작하고, PC 의 음악 파일은
 ## 구조
 
 Kotlin Multiplatform 으로, 화면을 포함한 코드 대부분을 Android 와 iOS 가 함께 씁니다.
+화살표는 의존하는 방향입니다.
 
 ```
-JellyTube
-├── shared/
-│   ├── presentation/   화면 (Compose Multiplatform)
-│   ├── data/           로컬 DB, 네트워크, 파일, 기기 간 파일 공유
-│   ├── domain/         앱의 규칙과 동작
-│   ├── log/            로그
-│   └── file-share/     데스크톱 앱과 주고받는 공유 프로토콜
-├── android/app/        Android 앱
-├── ios/                iOS 앱 (shared: Kotlin 조립, app: Xcode 프로젝트)
-└── desktop/            Windows 앱
+  android/app        ios              desktop
+       │              │                  │
+       ▼              ▼                  │
+  ┌──────────────────────────┐           │
+  │  presentation     data   │           │
+  └──────────────────────────┘           │
+       │                │                │
+       │                ├─────────┐      │
+       ▼                ▼         ▼      ▼
+  ┌──────────────────────────┐  file-share
+  │          domain          │
+  └──────────────────────────┘
+                │
+                ▼
+               log
 ```
 
-의존 방향은 **앱 → presentation·data → domain → log** 이고, 데스크톱 앱은 file-share 만 씁니다.
+| 모듈 | 경로 | 내용 |
+|---|---|---|
+| android/app | `android/app` | Android 앱 |
+| ios | `ios/shared`, `ios/app` | iOS 앱 (Kotlin 조립과 Xcode 프로젝트) |
+| desktop | `desktop` | Windows 앱 |
+| presentation | `shared/presentation` | 화면 (Compose Multiplatform) |
+| data | `shared/data` | 로컬 DB, 네트워크, 파일, 기기 간 파일 공유 |
+| domain | `shared/domain` | 앱의 규칙과 동작 |
+| log | `shared/log` | 로그 |
+| file-share | `shared/file-share` | 데스크톱 앱과 주고받는 공유 프로토콜 |
+
 자세한 구조와 작업 규칙은 [AGENTS.md](AGENTS.md) 에 있습니다.
 
 ## 빌드
