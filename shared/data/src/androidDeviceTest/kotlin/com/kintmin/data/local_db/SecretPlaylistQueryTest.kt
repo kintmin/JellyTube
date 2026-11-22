@@ -48,7 +48,7 @@ class SecretPlaylistQueryTest {
         db.close()
     }
 
-    private suspend fun addAudioMedia(name: String, durationSeconds: Long): Int =
+    private suspend fun addAudioMedia(name: String, durationSeconds: Long = 10): Int =
         facade.addNewAudioMedia(
             newAudioMedia = AudioMediaEntity(
                 source = "https://example.com/$name",
@@ -57,6 +57,7 @@ class SecretPlaylistQueryTest {
                 description = "",
                 rawAudioDurationSeconds = durationSeconds,
                 audioFileNameWithExt = "$name.m4a",
+                imageFileNameWithExt = "$name.webp",
             ),
             requestedPlaylistId = null,
             shouldInsertAtTopOnDownload = false,
@@ -79,6 +80,22 @@ class SecretPlaylistQueryTest {
         assertEquals(1, total.audioMediaCount)
         assertEquals(100L, total.rawPlayTimeDuration)
         assertEquals(total, db.playlistDao().getPlaylistListFlow().first().first { it.id == totalId() })
+    }
+
+    @Test
+    fun 전체의_썸네일은_비밀이_아닌_첫_곡의_것이고_모두_비밀이면_없다() = runTest {
+        facade.ensureSystemPlaylists()
+        val secret = addAudioMedia("secret")
+        val secretPlaylistId = facade.addPlaylist(title = "비밀", type = PlaylistType.SECRET)
+        facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(secret))
+
+        assertEquals("secret.webp", db.playlistDao().getPlaylistById(totalId()).imageFileNameWithExt)
+        assertEquals(null, db.playlistDao().getPlaylistFlow(totalId()).first()!!.imageFileNameWithExt)
+
+        addAudioMedia("visible")
+
+        assertEquals("visible.webp", db.playlistDao().getPlaylistFlow(totalId()).first()!!.imageFileNameWithExt)
+        assertEquals("secret.webp", db.playlistDao().getPlaylistFlow(secretPlaylistId).first()!!.imageFileNameWithExt)
     }
 
     @Test
