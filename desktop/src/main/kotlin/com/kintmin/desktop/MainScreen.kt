@@ -1,21 +1,28 @@
 package com.kintmin.desktop
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -47,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.awtTransferable
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kintmin.fileshare.FileShareConstants
@@ -80,7 +88,7 @@ fun MainScreen() {
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-private fun MainScreenContent(
+internal fun MainScreenContent(
     uiState: MainUiState,
     onRefresh: () -> Unit,
     onAudioFilesDrop: (List<File>) -> Unit,
@@ -114,46 +122,76 @@ private fun MainScreenContent(
     }
 
     MaterialTheme {
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .dragAndDropTarget(
                     shouldStartDragAndDrop = { true },
                     target = dropTarget,
-                ),
+                )
+                .padding(24.dp),
+            contentAlignment = Alignment.TopCenter,
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
+            val isConnected = uiState.discoveryState == DiscoveryState.FOUND
+            val header: @Composable () -> Unit = {
                 Text(
                     text = "JellyTube 파일 공유",
                     style = MaterialTheme.typography.headlineMedium,
                 )
-
                 DiscoveryStatusCard(
                     discoveryState = uiState.discoveryState,
                     onRefresh = onRefresh,
                 )
+            }
+            val bulkControls: @Composable () -> Unit = {
+                BulkControls(
+                    bulkArtist = uiState.bulkArtist,
+                    bulkMessage = uiState.bulkMessage,
+                    hasItems = uiState.uploadItems.isNotEmpty(),
+                    onBulkArtistChange = onBulkArtistChange,
+                    onApplyBulkArtist = onApplyBulkArtist,
+                    onClearAll = onClearAll,
+                )
+            }
+            val uploadList: @Composable (Modifier) -> Unit = { modifier ->
+                UploadList(
+                    uploadItems = uiState.uploadItems,
+                    onRetry = onRetry,
+                    onRemove = onRemoveItem,
+                    modifier = modifier,
+                )
+            }
+            val contentModifier = Modifier.widthIn(max = MAX_CONTENT_WIDTH).fillMaxSize()
 
-                if (uiState.discoveryState == DiscoveryState.FOUND) {
-                    FileDropCard()
-                    BulkControls(
-                        bulkArtist = uiState.bulkArtist,
-                        bulkMessage = uiState.bulkMessage,
-                        hasItems = uiState.uploadItems.isNotEmpty(),
-                        onBulkArtistChange = onBulkArtistChange,
-                        onApplyBulkArtist = onApplyBulkArtist,
-                        onClearAll = onClearAll,
-                    )
-                    UploadList(
-                        uploadItems = uiState.uploadItems,
-                        onRetry = onRetry,
-                        onRemove = onRemoveItem,
-                    )
+            if (maxWidth >= EXPANDED_MIN_WIDTH) {
+                Row(
+                    modifier = contentModifier,
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.width(SIDE_PANE_WIDTH).fillMaxHeight(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        header()
+                        if (isConnected) {
+                            FileDropCard(compact = false, modifier = Modifier.weight(1f))
+                            bulkControls()
+                        }
+                    }
+                    if (isConnected) uploadList(Modifier.weight(1f))
+                }
+            } else {
+                Column(
+                    modifier = contentModifier,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    header()
+                    if (isConnected) {
+                        FileDropCard(compact = true)
+                        bulkControls()
+                        uploadList(Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -236,23 +274,38 @@ private fun DiscoveryStatusCard(
 }
 
 @Composable
-private fun FileDropCard() {
+private fun FileDropCard(compact: Boolean, modifier: Modifier = Modifier) {
     Card(
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(160.dp),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            contentAlignment = Alignment.Center,
-        ) {
+        val title = "음원 파일을 끌어다 놓으면 바로 보냅니다"
+        val caption = "mp3, wav, flac 등 여러 음원 지원 · 이미지 1장은 성공 항목 썸네일로 적용"
+        if (compact) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Upload,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(32.dp),
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(caption, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        } else {
             Column(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Upload,
@@ -261,14 +314,16 @@ private fun FileDropCard() {
                     modifier = Modifier.size(48.dp),
                 )
                 Text(
-                    text = "음원 파일을 끌어다 놓으면 즉시 업로드됩니다",
+                    text = title,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
                 Text(
-                    text = "mp3, wav, flac 등 여러 음원 지원 · 이미지 1장은 성공 항목 썸네일로 적용",
+                    text = caption,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
@@ -329,18 +384,29 @@ private fun UploadList(
     uploadItems: List<UploadFileItem>,
     onRetry: (String) -> Unit,
     onRemove: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        items(uploadItems, key = { it.id }) { item ->
-            UploadListItem(
-                item = item,
-                onRetry = { onRetry(item.id) },
-                onRemove = { onRemove(item.id) },
-            )
+    val listState = rememberLazyListState()
+    Box(modifier = modifier.fillMaxWidth()) {
+        LazyColumn(
+            state = listState,
+            // 스크롤바가 항목을 가리지 않게 그 폭만큼 비운다.
+            contentPadding = PaddingValues(end = 16.dp),
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(uploadItems, key = { it.id }) { item ->
+                UploadListItem(
+                    item = item,
+                    onRetry = { onRetry(item.id) },
+                    onRemove = { onRemove(item.id) },
+                )
+            }
         }
+        VerticalScrollbar(
+            adapter = rememberScrollbarAdapter(listState),
+            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+        )
     }
 }
 
@@ -448,32 +514,34 @@ private fun statusColor(status: UploadStatus) = when (status) {
     UploadStatus.FAILURE -> MaterialTheme.colorScheme.error
 }
 
-@Preview
-@Composable
-private fun MainScreenPreview() {
-    MainScreenContent(
-        uiState = MainUiState(
-            discoveryState = DiscoveryState.FOUND,
-            uploadItems = listOf(
-                UploadFileItem(
-                    file = File("sample-track.mp3"),
-                    status = UploadStatus.SUCCESS,
-                    audioMediaId = 1,
-                    title = "Sample Track",
-                ),
-                UploadFileItem(
-                    file = File("uploading-track.flac"),
-                    status = UploadStatus.UPLOADING,
-                ),
-                UploadFileItem(
-                    file = File("failed-track.wav"),
-                    status = UploadStatus.FAILURE,
-                    errorMessage = "업로드 실패",
-                ),
-            ),
-            bulkArtist = "Sample Artist",
-            bulkMessage = "업로드 완료 항목에 일괄 적용할 수 있습니다.",
+private val previewState = MainUiState(
+    discoveryState = DiscoveryState.FOUND,
+    uploadItems = listOf(
+        UploadFileItem(
+            file = File("sample-track.mp3"),
+            status = UploadStatus.SUCCESS,
+            audioMediaId = 1,
+            title = "Sample Track",
         ),
+        UploadFileItem(
+            file = File("uploading-track.flac"),
+            status = UploadStatus.UPLOADING,
+            progress = 0.42f,
+        ),
+        UploadFileItem(
+            file = File("failed-track.wav"),
+            status = UploadStatus.FAILURE,
+            errorMessage = "업로드 실패",
+        ),
+    ),
+    bulkArtist = "Sample Artist",
+    bulkMessage = "업로드 완료 항목에 일괄 적용할 수 있습니다.",
+)
+
+@Composable
+private fun MainScreenPreviewContent() {
+    MainScreenContent(
+        uiState = previewState,
         onRefresh = {},
         onAudioFilesDrop = {},
         onImageDrop = {},
@@ -486,9 +554,28 @@ private fun MainScreenPreview() {
     )
 }
 
+@Preview
+@Composable
+private fun MainScreenCompactPreview() {
+    Box(Modifier.size(width = 560.dp, height = 720.dp)) { MainScreenPreviewContent() }
+}
+
+@Preview
+@Composable
+private fun MainScreenExpandedPreview() {
+    Box(Modifier.size(width = 1040.dp, height = 720.dp)) { MainScreenPreviewContent() }
+}
+
 private fun isAudioFile(file: File): Boolean = file.extension.lowercase() in FileShareConstants.UPLOAD_AUDIO_EXTENSIONS
 
 private fun isImageFile(file: File): Boolean {
     val imageExtensions = setOf("jpg", "jpeg", "png", "webp")
     return file.extension.lowercase() in imageExtensions
 }
+
+/** MD3 window size class 의 Expanded 시작 폭. */
+private val EXPANDED_MIN_WIDTH = 840.dp
+private val SIDE_PANE_WIDTH = 360.dp
+
+/** 넓은 모니터에서 목록 줄이 끝없이 늘어나지 않게 묶는 폭. */
+private val MAX_CONTENT_WIDTH = 1040.dp
