@@ -21,14 +21,14 @@ class AppLogRepositoryImpl constructor(
     private val logScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val logMutex = Mutex()
 
-    override fun appendAppLog(type: String, message: String) {
+    override fun appendAppLog(type: String, message: String, tag: String?) {
         logScope.launch {
             logMutex.withLock {
                 runCatching {
                     val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
                     val fileDate = "${now.year}-${now.month.number.toString().padStart(2, '0')}-${now.day.toString().padStart(2, '0')}"
                     val time = "${now.hour.toString().padStart(2, '0')}:${now.minute.toString().padStart(2, '0')}:${now.second.toString().padStart(2, '0')}.${(now.nanosecond / 1_000_000).toString().padStart(3, '0')}"
-                    val line = "[$fileDate $time] [$type] $message"
+                    val line = "[$fileDate $time] [$type] " + (tag?.let { "[$it] " } ?: "") + message
                     fileManager.appendAppLog(fileDate, line).getOrThrow()
                 }
             }

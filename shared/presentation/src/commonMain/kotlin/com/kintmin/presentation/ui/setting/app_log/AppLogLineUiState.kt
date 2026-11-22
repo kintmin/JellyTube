@@ -4,14 +4,16 @@ package com.kintmin.presentation.ui.setting.app_log
 data class AppLogLineUiState(
     val time: String?,
     val type: String?,
+    val tag: String?,
     val message: String,
 )
 
-private val APP_LOG_LINE_REGEX = Regex("""^\[\d{4}-\d{2}-\d{2} (\d{2}:\d{2}:\d{2}\.\d{3})] (?:\[([A-Z_]+)] )?(.*)$""")
+private val APP_LOG_LINE_REGEX =
+    Regex("""^\[\d{4}-\d{2}-\d{2} (\d{2}:\d{2}:\d{2}\.\d{3})] (?:\[([A-Z_]+)] )?(?:\[([^\]\s]+)] )?(.*)$""")
 
 fun parseAppLogLine(line: String): AppLogLineUiState {
     val match = APP_LOG_LINE_REGEX.matchEntire(line)
-        ?: return AppLogLineUiState(time = null, type = null, message = line)
-    val (time, type, message) = match.destructured
-    return AppLogLineUiState(time = time, type = type.ifEmpty { null }, message = message)
+        ?: return AppLogLineUiState(time = null, type = null, tag = null, message = line)
+    val (time, type, tag, message) = match.destructured
+    return AppLogLineUiState(time = time, type = type.ifEmpty { null }, tag = tag.ifEmpty { null }, message = message)
 }

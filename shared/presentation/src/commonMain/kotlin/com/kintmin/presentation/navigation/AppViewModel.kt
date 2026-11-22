@@ -113,7 +113,7 @@ class AppViewModel(
                 if (hiddenIndex >= 0) log("비밀 화면이라 ${hiddenIndex}번째 이동부터 버림: $url")
                 if (hiddenIndex < 0) events else events.take(hiddenIndex)
             }.also { events ->
-                if (events.isNotEmpty()) log("받음: $url → 이동 ${events.size}건")
+                if (events.isNotEmpty()) log("받음: $url → ${events.joinToString()}")
             }.forEach { navigationEvent ->
                 eventChannel.send(navigationEvent)
             }
