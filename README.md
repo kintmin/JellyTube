@@ -37,9 +37,24 @@ PC 에 있는 음악 파일은 함께 들어 있는 데스크톱 앱으로 폰�
 
 앱 스토어에는 배포하지 않습니다.
 
-## 빌드
+## 구조
 
-Kotlin Multiplatform 으로, 코드 대부분을 세 앱이 함께 씁니다. 구조와 작업 규칙은 [AGENTS.md](AGENTS.md) 에 있습니다.
+Kotlin Multiplatform 으로, 화면을 포함한 코드 대부분을 Android 와 iOS 가 함께 씁니다.
+
+| 경로 | 내용 |
+|---|---|
+| `shared/domain` | 앱의 규칙과 동작 |
+| `shared/data` | 로컬 DB, 네트워크, 파일, 기기 간 파일 공유 |
+| `shared/presentation` | 화면 (Compose Multiplatform) |
+| `shared/log` | 로그 |
+| `shared/file-share` | 데스크톱 앱과 주고받는 약속 |
+| `android/app` | Android 앱 |
+| `ios/shared`, `ios/app` | iOS 앱 |
+| `desktop` | Windows 데스크톱 앱 |
+
+자세한 구조와 작업 규칙은 [AGENTS.md](AGENTS.md) 에 있습니다.
+
+## 빌드
 
 **준비물**: JDK 17, Android SDK, Python 3.11(Android 빌드가 파이썬 패키지를 받을 때 씁니다).
 iOS 는 macOS 와 Xcode 가 필요합니다.
