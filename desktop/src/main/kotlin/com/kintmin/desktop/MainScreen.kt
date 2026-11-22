@@ -1,7 +1,9 @@
 package com.kintmin.desktop
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalScrollbarStyle
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.VerticalScrollbar
@@ -26,7 +28,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AudioFile
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -152,11 +153,11 @@ internal fun MainScreenContent(
         onFilesDrop(pickFiles("썸네일 이미지 선택", THUMBNAIL_IMAGE_EXTENSIONS, multiple = false))
     }
 
-    MaterialTheme {
+    // Modifier.background 로 칠하면 글자색(LocalContentColor)이 따라오지 않아 다크 테마에서 검게 남는다.
+    Surface(color = MaterialTheme.colorScheme.background) {
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
                 .dragAndDropTarget(
                     shouldStartDragAndDrop = { true },
                     target = dropTarget,
@@ -167,7 +168,7 @@ internal fun MainScreenContent(
             val header: @Composable () -> Unit = {
                 Text(
                     text = "JellyTube 파일 공유",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                 )
                 DiscoveryStatusCard(
                     discoveryState = uiState.discoveryState,
@@ -251,7 +252,6 @@ private fun DiscoveryStatusCard(
         DiscoveryState.DISCOVERING -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     Card(
-        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = when (discoveryState) {
                 DiscoveryState.FOUND -> MaterialTheme.colorScheme.primaryContainer
@@ -312,10 +312,9 @@ private fun FileDropCard(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (isDragging) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = if (isDragging) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = if (isDragging) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
         ),
         border = if (isDragging) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
@@ -371,7 +370,7 @@ private fun BulkControls(
     onPickThumbnail: () -> Unit,
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
@@ -474,11 +473,18 @@ private fun UploadList(
                             item = item,
                             onRetry = { onRetry(item.id) },
                             onRemove = { onRemove(item.id) },
+                            modifier = Modifier.animateItem(),
                         )
                     }
                 }
+                // 데스크톱 기본 스크롤바 색은 테마와 무관한 검정이라 다크 테마에서 보이지 않는다.
+                val onSurface = MaterialTheme.colorScheme.onSurface
                 VerticalScrollbar(
                     adapter = rememberScrollbarAdapter(listState),
+                    style = LocalScrollbarStyle.current.copy(
+                        unhoverColor = onSurface.copy(alpha = 0.25f),
+                        hoverColor = onSurface.copy(alpha = 0.5f),
+                    ),
                     modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
                 )
             }
@@ -501,11 +507,11 @@ private fun UploadListItem(
     item: UploadFileItem,
     onRetry: () -> Unit,
     onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
@@ -546,7 +552,7 @@ private fun UploadListItem(
                     )
                 }
             }
-            StatusIcon(status = item.status)
+            Crossfade(targetState = item.status) { status -> StatusIcon(status) }
             if (item.status == UploadStatus.FAILURE) {
                 IconAction(
                     icon = Icons.Rounded.RestartAlt,
@@ -607,7 +613,7 @@ private fun IconAction(
     TooltipArea(
         tooltip = {
             Surface(
-                shape = RoundedCornerShape(4.dp),
+                shape = MaterialTheme.shapes.extraSmall,
                 color = MaterialTheme.colorScheme.inverseSurface,
                 contentColor = MaterialTheme.colorScheme.inverseOnSurface,
             ) {

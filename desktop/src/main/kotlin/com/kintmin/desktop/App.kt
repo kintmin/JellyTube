@@ -1,5 +1,9 @@
 package com.kintmin.desktop
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.DpSize
@@ -23,7 +27,9 @@ fun App(onCloseRequest: () -> Unit) {
             // AWT 는 픽셀이 아니라 화면 배율이 적용된 좌표를 쓴다.
             window.minimumSize = Dimension(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
         }
-        MainScreen()
+        MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
+            MainScreen()
+        }
     }
 }
 
