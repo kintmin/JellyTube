@@ -194,6 +194,7 @@ Kotlin Multiplatform 앱. 하나의 공유 코어를 Android / iOS / Desktop 이
 - 기본 브랜치는 `develop` 이다. 기능·수정 브랜치는 develop 에서 따서 **squash** 로 병합한다.
 - `release/<버전>` 은 develop 에서 따고 버전 올리기와 출시 전 수정만 한다. main 에는 **merge commit**
   으로 병합한다. 급한 수정은 main 에서 `hotfix/<버전>` 을 따서 같은 방식으로 병합한다.
+- main 은 `release/*` 와 `hotfix/*` 만 받고, 그 둘은 main 에만 병합한다. PR 마다 CI 가 검사한다.
 - **main 과 develop 사이는 squash 하지 않는다.** 조상이 끊겨 다음 병합마다 이미 반영된 변경이
   충돌한다. 브랜치별 병합 방식은 ruleset 이 강제한다.
 - main→develop 반영과 태그(`mobile/v<버전>`, `desktop/v<버전>`)는 CI 가 한다. 사람이 하지 않는다.

@@ -1,9 +1,9 @@
 name: Release
 
-# main 으로 가는 PR 에서는 버전만 대조하고, main 에 들어오면 태그를 붙이고 develop 에 반영한다.
+# PR 마다 브랜치 규칙을 보고, main 으로 가는 PR 에서는 버전을 대조한다.
+# main 에 들어오면 태그를 붙이고 develop 에 반영한다.
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 
@@ -15,7 +15,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  branch-rule:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check where the branch may be merged
+        env:
+          HEAD: ${{ github.head_ref }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          echo "$HEAD → $BASE"
+          if [[ "$BASE" == main && ! "$HEAD" =~ ^(release|hotfix)/ ]]; then
+            echo "::error::main 에는 release/* 와 hotfix/* 만 병합한다."; exit 1
+          fi
+          if [[ "$HEAD" =~ ^(release|hotfix)/ && "$BASE" != main ]]; then
+            echo "::error::$HEAD 는 main 에만 병합한다."; exit 1
+          fi
+
   versions:
+    if: github.event_name == 'push' || github.base_ref == 'main'
     runs-on: ubuntu-latest
     outputs:
       mobile: ${{ steps.read.outputs.mobile }}
