@@ -53,6 +53,7 @@ internal class FileShareServerRepository(
     private val server = FileShareServer(scope, appLog) {
         fileShareModule(
             pcUploadHandler = CurrentPcUploadHandler(),
+            appLog = appLog,
             uploadTempDir = uploadTempDir,
             receiveKeepAlive = receiveKeepAlive,
             currentMigrationSession = { MigrationSessionHolder.session.value },

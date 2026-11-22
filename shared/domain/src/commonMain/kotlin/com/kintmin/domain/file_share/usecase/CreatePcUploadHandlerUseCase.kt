@@ -30,8 +30,8 @@ class CreatePcUploadHandlerUseCase(
                         .onSuccess { log("들여옴: id=${it.audioMedia.id} name=${secret(it.audioMedia.name)}") }
                         .onSuccess(onUploadImported)
                         .onFailure {
-                            if (it is AlreadyDownloadedMedia) log("이미 있는 파일이라 들여오지 않음: ${upload.originalFileName}")
-                            else logError("들여오기 실패: ${upload.originalFileName}", it)
+                            if (it is AlreadyDownloadedMedia) log("이미 있는 파일이라 들여오지 않음: ${upload.describe()}")
+                            else logError("들여오기 실패: ${upload.describe()}", it)
                         }
                 }
             }
@@ -51,6 +51,9 @@ class CreatePcUploadHandlerUseCase(
             .onSuccess { log("썸네일 적용: ${audioMediaIds.size}곡") }
             .onFailure { logError("썸네일 적용 실패: ${audioMediaIds.size}곡", it) }
     }
+
+    private fun UploadedAudioFile.describe() =
+        "name=${secret(originalFileName)} ext=${originalFileName.substringAfterLast('.')} size=$sizeBytes"
 
     private fun log(message: String) = appLog.sendDebugLog(DebugLog(LOG_TAG, message))
 

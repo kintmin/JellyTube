@@ -12,6 +12,8 @@ import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCa
 import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.UploadCommitRequest
+import com.kintmin.log.AppLog
+import com.kintmin.log.secret
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -31,6 +33,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.boolean
@@ -54,6 +57,7 @@ class FileShareServerModuleTest {
     private val updateUseCase = mockk<UpdateAudioMediaUseCase>()
     private val saveImageUseCase = mockk<SaveAudioMediaImageUseCase>()
     private val imported = mutableListOf<ImportedAudioMediaResult>()
+    private val routeAppLog = mockk<AppLog>(relaxed = true)
 
     private fun serverTest(
         migrationSession: MigrationSession? = null,
@@ -71,6 +75,7 @@ class FileShareServerModuleTest {
             saveAudioMediaImage = saveImageUseCase,
             appLog = mockk(relaxed = true),
         ).invoke { imported += it },
+        appLog = routeAppLog,
         uploadTempDir = tempFolder.root.path,
         receiveKeepAlive = KeepAliveByForegroundService,
         currentMigrationSession = { migrationSession },
@@ -178,6 +183,19 @@ class FileShareServerModuleTest {
         assertEquals(HttpStatusCode.BadRequest, noExtension.status)
         assertTrue(noExtension.bodyAsText().contains("확장자가 없는 파일은 저장할 수 없습니다."))
         assertTrue(tempFolder.root.listFiles().isNullOrEmpty())
+    }
+
+    @Test
+    fun `받기를 거절하면 사유와 확장자와 크기를 로그로 남긴다`() = serverTest {
+        stage("song.mp3", ByteArray(0))
+
+        verify {
+            routeAppLog.sendDebugLog(
+                match {
+                    it.message == "받기 거절: 빈 파일은 저장할 수 없습니다. name=${secret("song.mp3")} ext=mp3 length=0 received=0"
+                },
+            )
+        }
     }
 
     @Test

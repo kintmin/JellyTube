@@ -87,6 +87,7 @@ class MigrationRoutesTest {
                     saveAudioMediaImage = mockk(),
                     appLog = mockk(relaxed = true),
                 ).invoke {},
+                appLog = mockk(relaxed = true),
                 uploadTempDir = tempFolder.root.path,
                 receiveKeepAlive = KeepAliveByForegroundService,
                 currentMigrationSession = { session },
