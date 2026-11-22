@@ -1,5 +1,6 @@
 package com.kintmin.presentation.ui.lyrics_search
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,7 +29,9 @@ import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.EmptyStateView
+import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
 import com.kintmin.presentation.ui.common.SearchField
+import com.kintmin.presentation.ui.common.floatingField
 import com.kintmin.presentation.ui.lyrics_search.list_item.LyricsSearchItemView
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -94,68 +97,73 @@ fun LyricsSearchScreen(
             }
         },
     ) { innerPadding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .padding(top = innerPadding.calculateTopPadding())
                 .fillMaxSize(),
-            contentPadding = PaddingValues(bottom = innerPadding.calculateBottomPadding()),
         ) {
-            item(key = "search_bar") {
-                SearchField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    value = data.query,
-                    placeholder = "가사 검색 (제목·아티스트)",
-                    onValueChange = { sendIntent(LyricsSearchIntent.OnChangeQuery(it)) },
-                    onSearch = { sendIntent(LyricsSearchIntent.OnClickSearch) },
-                )
-            }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    top = FloatingSearchFieldHeight,
+                    bottom = innerPadding.calculateBottomPadding(),
+                ),
+            ) {
+                when {
+                    data.isLoading -> {
+                        item(key = "loading") {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 48.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                CircularProgressIndicator()
+                                Text(
+                                    modifier = Modifier.padding(top = 12.dp),
+                                    text = "검색 중…",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
 
-            when {
-                data.isLoading -> {
-                    item(key = "loading") {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 48.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            CircularProgressIndicator()
-                            Text(
-                                modifier = Modifier.padding(top = 12.dp),
-                                text = "검색 중…",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    data.isEmptyResult -> {
+                        item(key = "empty") {
+                            EmptyStateView(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 48.dp),
+                                icon = Icons.Rounded.SearchOff,
+                                title = "검색 결과가 없습니다",
+                            )
+                        }
+                    }
+
+                    else -> {
+                        items(
+                            items = data.results,
+                            key = { item -> item.id },
+                        ) { item ->
+                            LyricsSearchItemView(
+                                item = item,
+                                onClick = { sendIntent(LyricsSearchIntent.OnClickResult(item)) },
                             )
                         }
                     }
                 }
-
-                data.isEmptyResult -> {
-                    item(key = "empty") {
-                        EmptyStateView(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 48.dp),
-                            icon = Icons.Rounded.SearchOff,
-                            title = "검색 결과가 없습니다",
-                        )
-                    }
-                }
-
-                else -> {
-                    items(
-                        items = data.results,
-                        key = { item -> item.id },
-                    ) { item ->
-                        LyricsSearchItemView(
-                            item = item,
-                            onClick = { sendIntent(LyricsSearchIntent.OnClickResult(item)) },
-                        )
-                    }
-                }
             }
+            SearchField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .floatingField(),
+                value = data.query,
+                placeholder = "가사 검색 (제목·아티스트)",
+                onValueChange = { sendIntent(LyricsSearchIntent.OnChangeQuery(it)) },
+                onSearch = { sendIntent(LyricsSearchIntent.OnClickSearch) },
+            )
         }
     }
 }
