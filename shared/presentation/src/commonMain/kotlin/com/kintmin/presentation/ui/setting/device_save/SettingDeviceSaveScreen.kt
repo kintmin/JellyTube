@@ -76,7 +76,7 @@ fun SettingDeviceSaveScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             DetailTopAppBar(
-                title = "파일 기기에 저장하기",
+                title = "알람음 및 벨소리로 쓰기",
                 onClickBack = navigateToBack,
             )
         },

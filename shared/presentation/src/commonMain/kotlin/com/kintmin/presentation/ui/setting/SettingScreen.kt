@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.AudioFile
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Backup
@@ -19,7 +20,6 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MobileScreenShare
-import androidx.compose.material.icons.rounded.SaveAlt
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material3.CircularProgressIndicator
@@ -256,10 +256,10 @@ fun SettingScreen(
                     trailing = { SettingNavigateIcon(contentDescription = "데이터 가져오기 화면으로 이동") },
                 )
                 SettingItemView(
-                    title = "파일 기기에 저장하기",
-                    icon = Icons.Rounded.SaveAlt,
+                    title = "알람음 및 벨소리로 쓰기",
+                    icon = Icons.Rounded.Alarm,
                     onClick = { sendIntent(SettingIntent.OnClickDeviceSaveTile) },
-                    trailing = { SettingNavigateIcon(contentDescription = "기기에 저장하기 화면으로 이동") },
+                    trailing = { SettingNavigateIcon(contentDescription = "알람음 및 벨소리로 쓰기 화면으로 이동") },
                 )
             }
 
