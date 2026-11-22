@@ -28,21 +28,19 @@ Kotlin Multiplatform 으로, 화면을 포함한 코드 대부분을 Android 와
 화살표는 의존하는 방향입니다.
 
 ```
-  android/app        ios              desktop
-       │              │                  │
-       ▼              ▼                  │
-  ┌──────────────────────────┐           │
-  │  presentation     data   │           │
-  └──────────────────────────┘           │
-       │                │                │
-       │                ├─────────┐      │
-       ▼                ▼         ▼      ▼
-  ┌──────────────────────────┐  file-share
-  │          domain          │
-  └──────────────────────────┘
-                │
-                ▼
-               log
+  android/app       ios            desktop
+       │             │                │
+       └──────┬──────┘                │
+         ┌────┴────┐                  │
+         ▼         ▼                  │
+  presentation    data ────────┐      │
+         │         │           ▼      ▼
+         └────┬────┘          file-share
+              ▼
+            domain
+              │
+              ▼
+             log
 ```
 
 | 모듈 | 경로 | 내용 |
