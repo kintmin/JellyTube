@@ -23,7 +23,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import okio.Path.Companion.toPath
 
-const val ARTWORK_TRANSITION_MILLIS = 1000
+const val ARTWORK_TRANSITION_MILLIS = 500
 
 /** 그림과 배경색을 한 값으로 묶는다 — 따로 도착하면 둘이 다른 프레임에 바뀐다. [painter] 가 null 이면 그림이 없는 곡이다. */
 @Immutable
