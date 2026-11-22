@@ -680,7 +680,7 @@
 		C9E5000000000000000000A2 /* Sentry */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C9E5000000000000000000A1 /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
-			productName = Sentry;
+			productName = "Sentry-Dynamic";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

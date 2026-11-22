@@ -1,4 +1,5 @@
 import com.kintmin.buildSrc.DeepLinkConstantsSource
+import co.touchlab.skie.configuration.SuspendInterop
 import io.sentry.kotlin.multiplatform.gradle.AppleDependencyProvider
 
 plugins {
@@ -77,4 +78,14 @@ tasks.named("check") { dependsOn(verifyDeepLinkScheme) }
 sentryKmp {
     autoInstall.apple.provider = AppleDependencyProvider.NONE
     linker.xcodeprojPath = rootProject.file("ios/app/JellyTubeIos.xcodeproj").absolutePath
+}
+
+// Kotlin object 는 Swift 에 static `shared` 로 나와 프레임워크 이름 `shared` 와 겹친다. SKIE 의 suspend
+// 래퍼가 그 안에서 모듈을 `shared.` 로 부르므로 Swift 6.4 부터 컴파일이 깨진다. Swift 가 쓰지 않는 타입이다.
+skie {
+    features {
+        group("com.kintmin.domain.audio_media.ParallelDownloader") {
+            SuspendInterop.Enabled(false)
+        }
+    }
 }
