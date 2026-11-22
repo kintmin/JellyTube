@@ -39,7 +39,8 @@ class DownloadLyricsForAudioMediaUseCase(
         // 길이만으로는 아티스트명으로 걸린 비슷한 길이의 다른 곡을 거르지 못한다.
         val picked = sortLyricsSearchResults(results, title, targetDurationSeconds)
             .firstOrNull {
-                it.duration != null && abs(it.duration - targetDurationSeconds) <= 1.0 &&
+                !(it.plainLyrics.isNullOrBlank() && it.syncedLyrics.isNullOrBlank()) &&
+                    it.duration != null && abs(it.duration - targetDurationSeconds) <= 1.0 &&
                     matchLyricsTrackName(title, it.trackName)
             } ?: return@runCatching log("맞는 가사 없음: id=$audioMediaId (검색 ${results.size}건)")
 
