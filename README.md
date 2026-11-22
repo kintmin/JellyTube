@@ -25,44 +25,21 @@ Android 와 iOS 에서 같은 화면으로 동작하고, PC 의 음악 파일은
 ## 구조
 
 Kotlin Multiplatform 으로, 화면을 포함한 코드 대부분을 Android 와 iOS 가 함께 씁니다.
-화살표는 의존하는 방향입니다.
 
-```mermaid
-flowchart TD
-    android["android/app<br/>Android 앱"]
-    ios["ios<br/>iOS 앱"]
-    desktop["desktop<br/>Windows 앱"]
-
-    subgraph shared["shared — 공유 모듈"]
-        presentation["presentation<br/>화면"]
-        data["data<br/>데이터"]
-        domain["domain<br/>규칙과 동작"]
-        log["log<br/>로그"]
-        fileshare["file-share<br/>공유 프로토콜"]
-    end
-
-    android --> presentation
-    android --> data
-    ios --> presentation
-    ios --> data
-    desktop --> fileshare
-    presentation --> domain
-    data --> domain
-    data --> fileshare
-    domain --> log
+```
+JellyTube
+├── shared/
+│   ├── presentation/   화면 (Compose Multiplatform)
+│   ├── data/           로컬 DB, 네트워크, 파일, 기기 간 파일 공유
+│   ├── domain/         앱의 규칙과 동작
+│   ├── log/            로그
+│   └── file-share/     데스크톱 앱과 주고받는 공유 프로토콜
+├── android/app/        Android 앱
+├── ios/                iOS 앱 (shared: Kotlin 조립, app: Xcode 프로젝트)
+└── desktop/            Windows 앱
 ```
 
-| 경로 | 내용 |
-|---|---|
-| `shared/domain` | 앱의 규칙과 동작 |
-| `shared/data` | 로컬 DB, 네트워크, 파일, 기기 간 파일 공유 |
-| `shared/presentation` | 화면 (Compose Multiplatform) |
-| `shared/log` | 로그 |
-| `shared/file-share` | 데스크톱 앱과 주고받는 공유 프로토콜 |
-| `android/app` | Android 앱 |
-| `ios/shared`, `ios/app` | iOS 앱 |
-| `desktop` | Windows 데스크톱 앱 |
-
+의존 방향은 **앱 → presentation·data → domain → log** 이고, 데스크톱 앱은 file-share 만 씁니다.
 자세한 구조와 작업 규칙은 [AGENTS.md](AGENTS.md) 에 있습니다.
 
 ## 빌드
@@ -78,3 +55,7 @@ iOS 는 macOS 와 Xcode 가 필요합니다.
 
 - 릴리스 서명 키는 저장소에 없습니다. 없으면 release 빌드는 서명 없이 나오고, 나머지 빌드는 그대로 됩니다.
 - 브랜치는 `develop` 에서 따서 PR 을 엽니다. 브랜치 이름과 릴리스 규칙은 AGENTS.md 의 "브랜치와 릴리스" 절을 보세요.
+
+## 라이선스
+
+[MIT](LICENSE)
