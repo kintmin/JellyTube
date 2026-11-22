@@ -1,5 +1,6 @@
 package com.kintmin.presentation.ui.player_detail.artwork
 
+import androidx.compose.animation.core.Transition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,9 +29,14 @@ const val ARTWORK_TRANSITION_MILLIS = 500
 /** 그림과 배경색을 한 값으로 묶는다 — 따로 도착하면 둘이 다른 프레임에 바뀐다. [painter] 가 null 이면 그림이 없는 곡이다. */
 @Immutable
 class PlayerArtwork(
+    val imageFileFullPath: String?,
     val painter: Painter?,
     val gradientColors: List<Color>,
 )
+
+/** 첫 값, 그리고 같은 곡을 칸 크기만 바꿔 다시 읽은 값은 애니메이션 없이 바로 붙인다. */
+fun Transition.Segment<PlayerArtwork?>.isInstant(): Boolean =
+    initialState == null || initialState?.imageFileFullPath == targetState?.imageFileFullPath
 
 /**
  * 곡이 바뀌어도 새 그림을 다 읽을 때까지 이전 값을 돌려준다. 첫 값이 오기 전에는 null 이다.
@@ -52,9 +58,13 @@ private suspend fun loadPlayerArtwork(
     imageFileFullPath: String?,
     size: IntSize,
 ): PlayerArtwork = coroutineScope {
-    if (imageFileFullPath.isNullOrBlank()) return@coroutineScope PlayerArtwork(null, artworkBackdropFallback)
+    if (imageFileFullPath.isNullOrBlank()) {
+        return@coroutineScope PlayerArtwork(imageFileFullPath, null, artworkBackdropFallback)
+    }
 
     val image = async {
+        // 가로 화면에서는 칸 높이가 0 이 되는데 Coil 은 0 크기 요청에서 예외를 던진다. 배경색은 그래도 뽑는다.
+        if (size.width <= 0 || size.height <= 0) return@async null
         val request = ImageRequest.Builder(context)
             .data(imageFileFullPath.toPath())
             .size(size.width, size.height)
@@ -67,6 +77,7 @@ private suspend fun loadPlayerArtwork(
     val gradientColors = async { extractGradientFromArtwork(imageFileFullPath) }
 
     PlayerArtwork(
+        imageFileFullPath = imageFileFullPath,
         painter = image.await()?.asPainter(context),
         gradientColors = gradientColors.await() ?: artworkBackdropFallback,
     )

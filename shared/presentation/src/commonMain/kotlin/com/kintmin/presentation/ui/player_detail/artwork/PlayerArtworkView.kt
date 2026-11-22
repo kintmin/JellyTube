@@ -41,7 +41,7 @@ fun PlayerArtworkView(
             modifier = Modifier.fillMaxSize(),
             transitionSpec = {
                 when {
-                    initialState == null -> EnterTransition.None togetherWith ExitTransition.None
+                    isInstant() -> EnterTransition.None togetherWith ExitTransition.None
                     // 둘 다 반투명해지면 겹친 가운데에서 뒤 바닥이 비친다. 그림이 들어올 때는 나가는 쪽을 덮을 때까지 둔다.
                     targetState?.painter != null ->
                         fadeIn(tween(ARTWORK_TRANSITION_MILLIS)) togetherWith ExitTransition.KeepUntilTransitionsFinished
@@ -80,7 +80,7 @@ fun PlayerArtworkView(
 private fun PlayerArtworkViewPreview() {
     JellyTubeTheme {
         PlayerArtworkView(
-            transition = updateTransition(PlayerArtwork(null, artworkBackdropFallback)),
+            transition = updateTransition(PlayerArtwork(null, null, artworkBackdropFallback)),
             modifier = Modifier
                 .size(300.dp)
                 .background(overlayScrimSoft),

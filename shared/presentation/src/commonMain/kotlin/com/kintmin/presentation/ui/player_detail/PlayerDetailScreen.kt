@@ -79,6 +79,7 @@ import com.kintmin.presentation.theme.overlayScrimSoft
 import com.kintmin.presentation.ui.common.PlaybackToggleButton
 import com.kintmin.presentation.ui.player_detail.artwork.ARTWORK_TRANSITION_MILLIS
 import com.kintmin.presentation.ui.player_detail.artwork.PlayerArtworkView
+import com.kintmin.presentation.ui.player_detail.artwork.isInstant
 import com.kintmin.presentation.ui.player_detail.artwork.rememberPlayerArtwork
 import com.kintmin.presentation.ui.player_detail.control.PLAYBACK_VALUE_WIDTH
 import com.kintmin.presentation.ui.player_detail.control.PlaybackSliderView
@@ -152,7 +153,7 @@ fun PlayerDetailScreen(
     val artworkTransition = updateTransition(rememberPlayerArtwork(data.imageFileFullPath, artworkSize))
     val gradientColors = artworkBackdropFallback.indices.map { index ->
         artworkTransition.animateColor(
-            transitionSpec = { if (initialState == null) snap() else tween(ARTWORK_TRANSITION_MILLIS) },
+            transitionSpec = { if (isInstant()) snap() else tween(ARTWORK_TRANSITION_MILLIS) },
         ) { it?.gradientColors?.get(index) ?: artworkBackdropFallback[index] }.value
     }
 
