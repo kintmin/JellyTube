@@ -4,6 +4,7 @@ import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
 import com.kintmin.log.model.SentryEvent
+import com.kintmin.log.secret
 import org.koin.mp.KoinPlatform
 
 /**
@@ -19,6 +20,9 @@ fun swiftDebugLog(tag: String, message: String) {
         .getOrNull()
         ?.sendDebugLog(DebugLog(tag, message))
 }
+
+/** Swift 가 메시지에 넣을 값을 비밀모드에서 가리도록 표시한다. */
+fun swiftSecret(value: String): String = secret(value)
 
 /** Swift 의 오류는 Kotlin 예외가 아니라 메시지로만 Issue 에 올라간다. */
 fun swiftErrorLog(tag: String, message: String) {
