@@ -167,14 +167,14 @@ jobs:
           name: mobile-apk
           path: dist/*.apk
           if-no-files-found: error
-
-  # 서명하지 않은 IPA 다. SideStore 가 설치할 때 사용자 Apple ID 로 서명한다.
       - name: Notify
         if: always() && github.event_name == 'push'
         env:
           MAIL_PASSWORD: ${{ secrets.JELLY_TUBE_MAIL_PASSWORD }}
           MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
         run: .github/scripts/notify-job.sh android "Android APK" "${{ job.status }}"
+
+  # 서명하지 않은 IPA 다. SideStore 가 설치할 때 사용자 Apple ID 로 서명한다.
   ios-ipa:
     needs: mobile-release-needed
     # 수동 실행에서는 앞 job 이 건너뛰어지므로, 건너뛴 의존을 막지 않게 !cancelled() 로 연다.
