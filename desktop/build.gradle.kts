@@ -36,6 +36,10 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
 
     implementation(libs.jmdns)
+
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.ktor.client.mock)
 }
 
 compose.resources {
@@ -48,7 +52,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "JellyTube File Share"
-            packageVersion = "1.0.0"
+            packageVersion = "1.0.1"
             vendor = "kintmin"
             description = "Desktop file sharing client for JellyTube"
 

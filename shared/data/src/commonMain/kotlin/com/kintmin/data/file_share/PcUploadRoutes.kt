@@ -1,12 +1,17 @@
 package com.kintmin.data.file_share
 
 import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
+import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
+import com.kintmin.domain.audio_media.model.UploadedAudioFile
 import com.kintmin.domain.file_share.PcUploadHandler
 import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.fileshare.BulkArtistUpdateRequest
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.FileShareResponse
+import com.kintmin.fileshare.UploadCommitRequest
+import com.kintmin.fileshare.UploadCommitResponse
 import com.kintmin.fileshare.UploadResponse
+import com.kintmin.fileshare.UploadStageResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -36,63 +41,72 @@ fun Application.installFileShareContentNegotiation() {
 
 /** [installFileShareContentNegotiation] 이 설치돼 있어야 JSON 본문을 읽고 쓴다. */
 @OptIn(ExperimentalUuidApi::class)
-fun Route.pcUploadEndpoints(handler: PcUploadHandler, uploadTempDir: String, receiveKeepAlive: ReceiveKeepAlive) {
-    post(FileShareConstants.HTTP_UPLOAD_PATH) {
+internal fun Route.pcUploadEndpoints(
+    handler: PcUploadHandler,
+    uploadTempDir: String,
+    receiveKeepAlive: ReceiveKeepAlive,
+    stagedUploads: StagedUploads,
+) {
+    post(FileShareConstants.HTTP_UPLOAD_STAGE_PATH) {
         val originalFileName = handler.validateFileName(call.request.header(FileShareConstants.HEADER_FILE_NAME))
             .getOrElse { error ->
                 call.discardBody()
-                call.respond(HttpStatusCode.BadRequest, UploadResponse(success = false, message = error.message.orEmpty()))
+                call.respond(HttpStatusCode.BadRequest, UploadStageResponse(success = false, message = error.message.orEmpty()))
                 return@post
             }
 
         receiveKeepAlive.keepAlive {
             // 대용량 WAV도 힙에 통째로 올리지 않도록 임시 파일로 스트리밍 수신한다.
-            val tempPath = Path(uploadTempDir, TEMP_UPLOAD_PREFIX + Uuid.random())
-            try {
-                val receivedBytes = runCatching {
-                    SystemFileSystem.sink(tempPath).use { sink -> call.receiveChannel().readTo(sink) }
-                }.getOrElse {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        UploadResponse(success = false, message = "파일을 읽을 수 없습니다."),
-                    )
-                    return@keepAlive
-                }
-                val rejection = when {
-                    receivedBytes == 0L -> "빈 파일은 저장할 수 없습니다."
-                    call.request.contentLength()?.let { it != receivedBytes } == true -> "전송이 중간에 끊겼습니다. 다시 보내 주세요."
-                    else -> null
-                }
-                if (rejection != null) {
-                    call.respond(HttpStatusCode.BadRequest, UploadResponse(success = false, message = rejection))
-                    return@keepAlive
-                }
-
-                handler.importUploadedAudio(tempPath.toString(), originalFileName)
-                    .onSuccess { result ->
-                        call.respond(
-                            HttpStatusCode.OK,
-                            UploadResponse(
-                                success = true,
-                                message = "업로드 성공",
-                                audioMediaId = result.audioMedia.id,
-                                title = result.audioMedia.name,
-                            ),
-                        )
+            val stageId = Uuid.random().toString()
+            val tempPath = Path(uploadTempDir, TEMP_UPLOAD_PREFIX + stageId)
+            val rejection = runCatching {
+                SystemFileSystem.sink(tempPath).use { sink -> call.receiveChannel().readTo(sink) }
+            }.fold(
+                onSuccess = { receivedBytes ->
+                    when {
+                        receivedBytes == 0L -> "빈 파일은 저장할 수 없습니다."
+                        call.request.contentLength()?.let { it != receivedBytes } == true -> "전송이 중간에 끊겼습니다. 다시 보내 주세요."
+                        else -> null
                     }
-                    .onFailure { error ->
-                        val message = when (error) {
-                            is AlreadyDownloadedMedia -> "이미 저장된 파일입니다."
-                            else -> error.message ?: "업로드 실패"
-                        }
-                        call.respond(
-                            HttpStatusCode.UnprocessableEntity,
-                            UploadResponse(success = false, message = message),
-                        )
-                    }
-            } finally {
-                runCatching { SystemFileSystem.delete(tempPath, mustExist = false) }
+                },
+                onFailure = { "파일을 읽을 수 없습니다." },
+            )
+            if (rejection != null) {
+                deleteTempFile(tempPath.toString())
+                call.respond(HttpStatusCode.BadRequest, UploadStageResponse(success = false, message = rejection))
+                return@keepAlive
             }
+            stagedUploads.put(stageId, UploadedAudioFile(tempPath.toString(), originalFileName))
+            call.respond(HttpStatusCode.OK, UploadStageResponse(success = true, message = "받기 완료", stageId = stageId))
+        }
+    }
+
+    post(FileShareConstants.HTTP_UPLOAD_COMMIT_PATH) {
+        val request = runCatching { call.receive<UploadCommitRequest>() }
+            .getOrElse {
+                call.respond(HttpStatusCode.BadRequest, FileShareResponse(success = false, message = "요청을 읽을 수 없습니다."))
+                return@post
+            }
+
+        // 여러 곡을 넣다 서스펜드되면 일부만 들어간 채 PC 는 끊김만 받는다.
+        receiveKeepAlive.keepAlive {
+            val staged = request.stageIds.map(stagedUploads::take)
+            val found = staged.filterNotNull()
+            val imported = try {
+                runCatching { handler.importUploadedAudios(found) }
+                    .getOrElse { error -> found.map { Result.failure(error) } }
+            } finally {
+                found.forEach { deleteTempFile(it.fileFullPath) }
+            }
+            val importedIterator = imported.iterator()
+            val results = staged.map { upload ->
+                if (upload == null) {
+                    UploadResponse(success = false, message = "만료된 업로드입니다. 다시 보내 주세요.")
+                } else {
+                    importedIterator.next().toUploadResponse()
+                }
+            }
+            call.respond(HttpStatusCode.OK, UploadCommitResponse(results))
         }
     }
 
@@ -168,5 +182,23 @@ fun Route.pcUploadEndpoints(handler: PcUploadHandler, uploadTempDir: String, rec
 suspend fun ApplicationCall.discardBody() {
     runCatching { receiveChannel().discard() }
 }
+
+private fun Result<ImportedAudioMediaResult>.toUploadResponse(): UploadResponse = fold(
+    onSuccess = { result ->
+        UploadResponse(
+            success = true,
+            message = "업로드 성공",
+            audioMediaId = result.audioMedia.id,
+            title = result.audioMedia.name,
+        )
+    },
+    onFailure = { error ->
+        val message = when (error) {
+            is AlreadyDownloadedMedia -> "이미 저장된 파일입니다."
+            else -> error.message ?: "업로드 실패"
+        }
+        UploadResponse(success = false, message = message)
+    },
+)
 
 private const val TEMP_UPLOAD_PREFIX = "upload_"

@@ -11,6 +11,24 @@ data class UploadResponse(
 )
 
 @Serializable
+data class UploadStageResponse(
+    val success: Boolean,
+    val message: String,
+    val stageId: String? = null,
+)
+
+@Serializable
+data class UploadCommitRequest(
+    val stageIds: List<String>,
+)
+
+/** [UploadCommitRequest.stageIds] 와 같은 순서다. */
+@Serializable
+data class UploadCommitResponse(
+    val results: List<UploadResponse>,
+)
+
+@Serializable
 data class BulkArtistUpdateRequest(
     val audioMediaIds: List<Int>,
     val artist: String,
@@ -21,10 +39,3 @@ data class FileShareResponse(
     val success: Boolean,
     val message: String,
 )
-
-enum class UploadStatus {
-    IDLE,
-    UPLOADING,
-    SUCCESS,
-    FAILURE,
-}

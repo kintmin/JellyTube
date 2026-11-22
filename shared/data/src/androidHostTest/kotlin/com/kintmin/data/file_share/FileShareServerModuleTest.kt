@@ -5,19 +5,23 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
+import com.kintmin.domain.audio_media.model.UploadedAudioFile
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
 import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.fileshare.UploadCommitRequest
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.http.contentType
+import io.ktor.server.application.Application
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
 import io.ktor.utils.io.ByteReadChannel
@@ -26,10 +30,12 @@ import io.ktor.utils.io.writeFully
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
@@ -39,7 +45,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 
-/** 기존 PC → Android 엔드포인트의 동작. 토큰 없이 받아야 한다(배포된 Desktop 앱이 토큰을 모른다). 단, 이전 세션 동안은 거절한다. */
 class FileShareServerModuleTest {
 
     @get:Rule
@@ -54,94 +59,139 @@ class FileShareServerModuleTest {
         migrationSession: MigrationSession? = null,
         block: suspend ApplicationTestBuilder.() -> Unit,
     ) = testApplication {
-        application {
-            fileShareModule(
-                pcUploadHandler = CreatePcUploadHandlerUseCase(
-                    importUploadedAudioMedia = importUseCase,
-                    validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
-                    updateAudioMedia = updateUseCase,
-                    saveAudioMediaImage = saveImageUseCase,
-                    appLog = mockk(relaxed = true),
-                ).invoke { imported += it },
-                uploadTempDir = tempFolder.root.path,
-                receiveKeepAlive = KeepAliveByForegroundService,
-                currentMigrationSession = { migrationSession },
-                migrationSendHandler = mockk(),
-            )
-        }
+        application { testFileShareModule(migrationSession) }
         block()
     }
 
-    @Test
-    fun `업로드는 본문을 임시 파일로 받아 가져오고 끝나면 임시 파일을 지운다`() = serverTest {
-        var receivedBytes: ByteArray? = null
-        var receivedName: String? = null
-        coEvery { importUseCase(any(), any()) } answers {
-            receivedBytes = File(firstArg<String>()).readBytes()
-            receivedName = secondArg()
-            Result.success(ImportedAudioMediaResult(audioMedia(id = 7, name = "곡"), playlistIdOnDownload = 3))
+    private fun Application.testFileShareModule(migrationSession: MigrationSession?) = fileShareModule(
+        pcUploadHandler = CreatePcUploadHandlerUseCase(
+            importUploadedAudioMedia = importUseCase,
+            validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
+            updateAudioMedia = updateUseCase,
+            saveAudioMediaImage = saveImageUseCase,
+            appLog = mockk(relaxed = true),
+        ).invoke { imported += it },
+        uploadTempDir = tempFolder.root.path,
+        receiveKeepAlive = KeepAliveByForegroundService,
+        currentMigrationSession = { migrationSession },
+        migrationSendHandler = mockk(),
+    )
+
+    private suspend fun ApplicationTestBuilder.stage(fileName: String, bytes: ByteArray) =
+        client.post(FileShareConstants.HTTP_UPLOAD_STAGE_PATH) {
+            header(FileShareConstants.HEADER_FILE_NAME, fileName)
+            setBody(bytes)
         }
 
-        val response = client.post(FileShareConstants.HTTP_UPLOAD_PATH) {
-            header(FileShareConstants.HEADER_FILE_NAME, "song.m4a")
-            setBody(byteArrayOf(1, 2, 3))
+    private suspend fun ApplicationTestBuilder.commit(vararg stageIds: String) =
+        client.post(FileShareConstants.HTTP_UPLOAD_COMMIT_PATH) {
+            contentType(ContentType.Application.Json)
+            setBody(Json.encodeToString(UploadCommitRequest(stageIds.toList())))
         }
+
+    private suspend fun stageId(response: HttpResponse) =
+        Json.parseToJsonElement(response.bodyAsText()).jsonObject.getValue("stageId").jsonPrimitive.content
+
+    private suspend fun commitResults(response: HttpResponse) =
+        Json.parseToJsonElement(response.bodyAsText()).jsonObject.getValue("results").jsonArray.map { it.jsonObject }
+
+    @Test
+    fun `stage 는 본문을 임시 파일로 받아 두기만 하고 목록에는 넣지 않는다`() = serverTest {
+        val response = stage("song.m4a", byteArrayOf(1, 2, 3))
 
         assertEquals(HttpStatusCode.OK, response.status)
         val body = Json.parseToJsonElement(response.bodyAsText()).jsonObject
         assertTrue(body.getValue("success").jsonPrimitive.boolean)
-        assertEquals(7, body.getValue("audioMediaId").jsonPrimitive.int)
-        assertEquals("song.m4a", receivedName)
-        assertTrue(byteArrayOf(1, 2, 3).contentEquals(receivedBytes))
-        assertEquals(listOf(7), imported.map { it.audioMedia.id })
+        assertTrue(body.getValue("stageId").jsonPrimitive.content.isNotEmpty())
+        coVerify(exactly = 0) { importUseCase(any()) }
+        assertTrue(byteArrayOf(1, 2, 3).contentEquals(tempFolder.root.listFiles()!!.single().readBytes()))
+    }
+
+    @Test
+    fun `commit 은 요청한 순서대로 넣고 임시 파일을 지운다`() = serverTest {
+        val received = slot<List<UploadedAudioFile>>()
+        var receivedBytes: List<ByteArray> = emptyList()
+        coEvery { importUseCase(capture(received)) } answers {
+            val uploads = firstArg<List<UploadedAudioFile>>()
+            receivedBytes = uploads.map { File(it.fileFullPath).readBytes() }
+            uploads.indices.map { index ->
+                Result.success(ImportedAudioMediaResult(audioMedia(id = index + 10, name = "곡$index"), playlistIdOnDownload = 3))
+            }
+        }
+        val b = stageId(stage("b.mp3", byteArrayOf(2)))
+        val a = stageId(stage("a.mp3", byteArrayOf(1)))
+
+        val response = commit(a, b)
+
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(listOf("a.mp3", "b.mp3"), received.captured.map { it.originalFileName })
+        assertEquals(listOf<Byte>(1, 2), receivedBytes.map { it.single() })
+        assertEquals(listOf(10, 11), commitResults(response).map { it.getValue("audioMediaId").jsonPrimitive.int })
+        assertEquals(listOf(10, 11), imported.map { it.audioMedia.id })
         assertTrue(tempFolder.root.listFiles().isNullOrEmpty())
     }
 
     @Test
-    fun `이미 있는 음원 업로드는 422 와 중복 안내를 돌려준다`() = serverTest {
-        coEvery { importUseCase(any(), any()) } returns Result.failure(AlreadyDownloadedMedia())
+    fun `commit 에서 모르는 id 와 실패한 곡은 그 자리만 실패다`() = serverTest {
+        coEvery { importUseCase(any()) } returns listOf(Result.failure(AlreadyDownloadedMedia()))
+        val known = stageId(stage("song.mp3", byteArrayOf(1)))
 
-        val response = client.post(FileShareConstants.HTTP_UPLOAD_PATH) {
-            header(FileShareConstants.HEADER_FILE_NAME, "song.mp3")
-            setBody(byteArrayOf(1))
-        }
+        val results = commitResults(commit("unknown", known))
 
-        assertEquals(HttpStatusCode.UnprocessableEntity, response.status)
-        assertTrue(response.bodyAsText().contains("이미 저장된 파일입니다."))
+        assertEquals(listOf(false, false), results.map { it.getValue("success").jsonPrimitive.boolean })
+        assertEquals("만료된 업로드입니다. 다시 보내 주세요.", results[0].getValue("message").jsonPrimitive.content)
+        assertEquals("이미 저장된 파일입니다.", results[1].getValue("message").jsonPrimitive.content)
+        coVerify { importUseCase(match { it.size == 1 }) }
         assertTrue(imported.isEmpty())
     }
 
     @Test
-    fun `파일 이름이 없거나 확장자가 없으면 받지 않고 400 이다`() = serverTest {
-        val missing = client.post(FileShareConstants.HTTP_UPLOAD_PATH) { setBody(byteArrayOf(1)) }
-        val noExtension = client.post(FileShareConstants.HTTP_UPLOAD_PATH) {
-            header(FileShareConstants.HEADER_FILE_NAME, "song")
-            setBody(byteArrayOf(1))
+    fun `같은 stageId 는 두 번 반영하지 않는다`() = serverTest {
+        coEvery { importUseCase(any()) } answers {
+            firstArg<List<UploadedAudioFile>>().map { Result.failure(AlreadyDownloadedMedia()) }
         }
+        val id = stageId(stage("song.mp3", byteArrayOf(1)))
+
+        commit(id)
+        val second = commitResults(commit(id)).single()
+
+        assertEquals("만료된 업로드입니다. 다시 보내 주세요.", second.getValue("message").jsonPrimitive.content)
+    }
+
+    @Test
+    fun `반영하지 않은 채 서버가 멈추면 받아 둔 임시 파일을 지운다`() {
+        testApplication {
+            application { testFileShareModule(migrationSession = null) }
+            stage("song.mp3", byteArrayOf(1))
+            assertEquals(1, tempFolder.root.listFiles()!!.size)
+        }
+
+        assertTrue(tempFolder.root.listFiles().isNullOrEmpty())
+    }
+
+    @Test
+    fun `파일 이름이 없거나 확장자가 없으면 받지 않고 400 이다`() = serverTest {
+        val missing = client.post(FileShareConstants.HTTP_UPLOAD_STAGE_PATH) { setBody(byteArrayOf(1)) }
+        val noExtension = stage("song", byteArrayOf(1))
 
         assertEquals(HttpStatusCode.BadRequest, missing.status)
         assertEquals(HttpStatusCode.BadRequest, noExtension.status)
         assertTrue(noExtension.bodyAsText().contains("확장자가 없는 파일은 저장할 수 없습니다."))
-        coVerify(exactly = 0) { importUseCase(any(), any()) }
         assertTrue(tempFolder.root.listFiles().isNullOrEmpty())
     }
 
     @Test
-    fun `빈 본문은 가져오지 않고 400 이다`() = serverTest {
-        val response = client.post(FileShareConstants.HTTP_UPLOAD_PATH) {
-            header(FileShareConstants.HEADER_FILE_NAME, "song.mp3")
-            setBody(ByteArray(0))
-        }
+    fun `빈 본문은 받아 두지 않고 400 이다`() = serverTest {
+        val response = stage("song.mp3", ByteArray(0))
 
         assertEquals(HttpStatusCode.BadRequest, response.status)
         assertTrue(response.bodyAsText().contains("빈 파일은 저장할 수 없습니다."))
-        coVerify(exactly = 0) { importUseCase(any(), any()) }
         assertTrue(tempFolder.root.listFiles().isNullOrEmpty())
     }
 
     @Test
-    fun `알린 길이보다 덜 받으면 가져오지 않고 400 이다`() = serverTest {
-        val response = client.post(FileShareConstants.HTTP_UPLOAD_PATH) {
+    fun `알린 길이보다 덜 받으면 받아 두지 않고 400 이다`() = serverTest {
+        val response = client.post(FileShareConstants.HTTP_UPLOAD_STAGE_PATH) {
             header(FileShareConstants.HEADER_FILE_NAME, "song.mp3")
             setBody(
                 object : OutgoingContent.ReadChannelContent() {
@@ -153,7 +203,7 @@ class FileShareServerModuleTest {
 
         assertEquals(HttpStatusCode.BadRequest, response.status)
         assertTrue(response.bodyAsText().contains("전송이 중간에 끊겼습니다."))
-        coVerify(exactly = 0) { importUseCase(any(), any()) }
+        assertTrue(tempFolder.root.listFiles().isNullOrEmpty())
     }
 
     @Test
@@ -206,7 +256,11 @@ class FileShareServerModuleTest {
     @Test
     fun `이전 세션이 열려 있으면 업로드와 일괄 변경을 409 로 거절한다`() = serverTest(migrationSession = MigrationSession()) {
         val responses = listOf(
-            client.post(FileShareConstants.HTTP_UPLOAD_PATH) { setBody(byteArrayOf(1)) },
+            client.post(FileShareConstants.HTTP_UPLOAD_STAGE_PATH) { setBody(byteArrayOf(1)) },
+            client.post(FileShareConstants.HTTP_UPLOAD_COMMIT_PATH) {
+                contentType(ContentType.Application.Json)
+                setBody("""{"stageIds":["x"]}""")
+            },
             client.post(FileShareConstants.HTTP_BULK_ARTIST_PATH) {
                 contentType(ContentType.Application.Json)
                 setBody("""{"audioMediaIds":[1],"artist":"가수"}""")
@@ -221,7 +275,7 @@ class FileShareServerModuleTest {
             assertEquals(HttpStatusCode.Conflict, response.status)
             assertTrue(response.bodyAsText().contains("다른 기기와 데이터 이전 중입니다."))
         }
-        coVerify(exactly = 0) { importUseCase(any(), any()) }
+        coVerify(exactly = 0) { importUseCase(any()) }
         coVerify(exactly = 0) { updateUseCase(id = any(), artist = any()) }
         coVerify(exactly = 0) { saveImageUseCase(any()) }
     }
@@ -241,7 +295,7 @@ class FileShareServerModuleTest {
             }
         }
 
-        val conflict = client.post(FileShareConstants.HTTP_UPLOAD_PATH) {
+        val conflict = client.post(FileShareConstants.HTTP_UPLOAD_STAGE_PATH) {
             header(FileShareConstants.HEADER_FILE_NAME, "song.m4a")
             setBody(body)
         }

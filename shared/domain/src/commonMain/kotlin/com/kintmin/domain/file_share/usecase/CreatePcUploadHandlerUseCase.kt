@@ -3,6 +3,7 @@ package com.kintmin.domain.file_share.usecase
 import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
+import com.kintmin.domain.audio_media.model.UploadedAudioFile
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
@@ -21,14 +22,18 @@ class CreatePcUploadHandlerUseCase(
     operator fun invoke(onUploadImported: (ImportedAudioMediaResult) -> Unit): PcUploadHandler = object : PcUploadHandler {
         override fun validateFileName(rawFileName: String?): Result<String> = validateUploadedAudioFileName(rawFileName)
 
-        override suspend fun importUploadedAudio(uploadedFileFullPath: String, originalFileName: String) =
-            importUploadedAudioMedia(uploadedFileFullPath, originalFileName)
-                .onSuccess { log("들여옴: id=${it.audioMedia.id} name=${it.audioMedia.name}") }
-                .onSuccess(onUploadImported)
-                .onFailure {
-                    if (it is AlreadyDownloadedMedia) log("이미 있는 파일이라 들여오지 않음: $originalFileName")
-                    else logError("들여오기 실패: $originalFileName", it)
+        override suspend fun importUploadedAudios(uploads: List<UploadedAudioFile>) =
+            importUploadedAudioMedia(uploads).also { results ->
+                uploads.zip(results).forEach { (upload, result) ->
+                    result
+                        .onSuccess { log("들여옴: id=${it.audioMedia.id} name=${it.audioMedia.name}") }
+                        .onSuccess(onUploadImported)
+                        .onFailure {
+                            if (it is AlreadyDownloadedMedia) log("이미 있는 파일이라 들여오지 않음: ${upload.originalFileName}")
+                            else logError("들여오기 실패: ${upload.originalFileName}", it)
+                        }
                 }
+            }
 
         override suspend fun applyArtist(audioMediaIds: List<Int>, artist: String): Result<Unit> = runCatching {
             audioMediaIds.forEach { id -> updateAudioMedia(id = id, artist = artist).getOrThrow() }

@@ -2,6 +2,7 @@ package com.kintmin.data.file_share
 
 import com.kintmin.data.file_share.migration.MigrationSessionHolder
 import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
+import com.kintmin.domain.audio_media.model.UploadedAudioFile
 import com.kintmin.domain.data_migration.MigrationSendHandler
 import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import com.kintmin.domain.data_migration.model.MigrationExport
@@ -130,8 +131,8 @@ internal class FileShareServerRepository(
         override fun validateFileName(rawFileName: String?) =
             pcUploadHandler?.validateFileName(rawFileName) ?: stopped(PC_FILE_SHARE_STOPPED)
 
-        override suspend fun importUploadedAudio(uploadedFileFullPath: String, originalFileName: String): Result<ImportedAudioMediaResult> =
-            pcUploadHandler?.importUploadedAudio(uploadedFileFullPath, originalFileName) ?: stopped(PC_FILE_SHARE_STOPPED)
+        override suspend fun importUploadedAudios(uploads: List<UploadedAudioFile>): List<Result<ImportedAudioMediaResult>> =
+            pcUploadHandler?.importUploadedAudios(uploads) ?: uploads.map { stopped(PC_FILE_SHARE_STOPPED) }
 
         override suspend fun applyArtist(audioMediaIds: List<Int>, artist: String) =
             pcUploadHandler?.applyArtist(audioMediaIds, artist) ?: stopped(PC_FILE_SHARE_STOPPED)
