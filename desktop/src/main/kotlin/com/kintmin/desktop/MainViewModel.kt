@@ -3,7 +3,6 @@ package com.kintmin.desktop
 import com.kintmin.desktop.discovery.DiscoveredDevice
 import com.kintmin.desktop.discovery.discoverDevice
 import com.kintmin.desktop.upload.FileUploader
-import com.kintmin.fileshare.UploadStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

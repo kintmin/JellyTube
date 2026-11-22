@@ -1,6 +1,7 @@
 package com.kintmin.data.file_share
 
 import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
+import com.kintmin.domain.audio_media.model.UploadedAudioFile
 import com.kintmin.domain.file_share.PcUploadHandler
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,8 +11,8 @@ class PlayableOnlyPcUploadHandlerTest {
     private val handler = PlayableOnlyPcUploadHandler(
         object : PcUploadHandler {
             override fun validateFileName(rawFileName: String?) = Result.success(rawFileName.orEmpty())
-            override suspend fun importUploadedAudio(uploadedFileFullPath: String, originalFileName: String) =
-                Result.failure<ImportedAudioMediaResult>(NotImplementedError())
+            override suspend fun importUploadedAudios(uploads: List<UploadedAudioFile>) =
+                uploads.map { Result.failure<ImportedAudioMediaResult>(NotImplementedError()) }
             override suspend fun applyArtist(audioMediaIds: List<Int>, artist: String) = Result.success(Unit)
             override suspend fun applyThumbnail(audioMediaIds: List<Int>, imageData: ByteArray) = Result.success(Unit)
         },

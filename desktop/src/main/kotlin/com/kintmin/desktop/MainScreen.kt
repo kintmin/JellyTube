@@ -50,7 +50,6 @@ import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kintmin.fileshare.FileShareConstants
-import com.kintmin.fileshare.UploadStatus
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.datatransfer.DataFlavor
 import java.io.File

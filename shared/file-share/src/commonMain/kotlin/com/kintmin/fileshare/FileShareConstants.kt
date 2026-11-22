@@ -4,8 +4,10 @@ object FileShareConstants {
     const val NSD_SERVICE_TYPE = "_jellytube._tcp."
     const val NSD_SERVICE_NAME = "JellyTubeFileShare"
     const val DEFAULT_PORT = 52847
-    /** 파일 업로드 HTTP POST endpoint */
-    const val HTTP_UPLOAD_PATH = "/upload"
+    /** 음원을 받아 두기만 하는 HTTP POST endpoint. 목록에는 [HTTP_UPLOAD_COMMIT_PATH] 가 넣는다 */
+    const val HTTP_UPLOAD_STAGE_PATH = "/upload/stage"
+    /** 받아 둔 음원을 요청 순서대로 목록에 넣는 HTTP POST endpoint */
+    const val HTTP_UPLOAD_COMMIT_PATH = "/upload/commit"
     /** 업로드 성공 항목 아티스트 일괄 변경 HTTP POST endpoint */
     const val HTTP_BULK_ARTIST_PATH = "/upload/artist"
     /** 업로드 성공 항목 썸네일 일괄 변경 HTTP POST endpoint */

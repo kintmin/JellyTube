@@ -8,6 +8,7 @@ import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.fileshare.FileShareResponse
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.createRouteScopedPlugin
 import io.ktor.server.application.install
 import io.ktor.server.response.respond
@@ -25,6 +26,8 @@ internal fun Application.fileShareModule(
     migrationSendHandler: MigrationSendHandler,
 ) {
     installFileShareContentNegotiation()
+    val stagedUploads = StagedUploads()
+    monitor.subscribe(ApplicationStopped) { stagedUploads.clear() }
     routing {
         migrationRoutes(currentMigrationSession, migrationSendHandler)
 
@@ -33,6 +36,7 @@ internal fun Application.fileShareModule(
                 handler = pcUploadHandler,
                 uploadTempDir = uploadTempDir,
                 receiveKeepAlive = receiveKeepAlive,
+                stagedUploads = stagedUploads,
             )
         }
     }

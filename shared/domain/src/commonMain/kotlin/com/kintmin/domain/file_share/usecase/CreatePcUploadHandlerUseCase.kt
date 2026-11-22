@@ -2,6 +2,7 @@ package com.kintmin.domain.file_share.usecase
 
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
+import com.kintmin.domain.audio_media.model.UploadedAudioFile
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
@@ -16,8 +17,8 @@ class CreatePcUploadHandlerUseCase(
     operator fun invoke(onUploadImported: (ImportedAudioMediaResult) -> Unit): PcUploadHandler = object : PcUploadHandler {
         override fun validateFileName(rawFileName: String?): Result<String> = validateUploadedAudioFileName(rawFileName)
 
-        override suspend fun importUploadedAudio(uploadedFileFullPath: String, originalFileName: String) =
-            importUploadedAudioMedia(uploadedFileFullPath, originalFileName).onSuccess(onUploadImported)
+        override suspend fun importUploadedAudios(uploads: List<UploadedAudioFile>) =
+            importUploadedAudioMedia(uploads).onEach { it.onSuccess(onUploadImported) }
 
         override suspend fun applyArtist(audioMediaIds: List<Int>, artist: String): Result<Unit> = runCatching {
             audioMediaIds.forEach { id -> updateAudioMedia(id = id, artist = artist).getOrThrow() }

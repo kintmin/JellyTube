@@ -1,6 +1,5 @@
 package com.kintmin.desktop
 
-import com.kintmin.fileshare.UploadStatus
 import java.io.File
 import java.util.UUID
 
@@ -21,3 +20,10 @@ data class UploadFileItem(
     val audioMediaId: Int? = null,
     val title: String? = null,
 )
+
+enum class UploadStatus {
+    IDLE,
+    UPLOADING,
+    SUCCESS,
+    FAILURE,
+}

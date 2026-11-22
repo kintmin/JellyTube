@@ -3,7 +3,10 @@ package com.kintmin.desktop.upload
 import com.kintmin.fileshare.BulkArtistUpdateRequest
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.FileShareResponse
+import com.kintmin.fileshare.UploadCommitRequest
+import com.kintmin.fileshare.UploadCommitResponse
 import com.kintmin.fileshare.UploadResponse
+import com.kintmin.fileshare.UploadStageResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -34,11 +37,15 @@ class FileUploader(
     }
 
     suspend fun uploadFile(file: File): Result<UploadResponse> = runCatching {
-        val response = client.post("http://$hostAddress:$port${FileShareConstants.HTTP_UPLOAD_PATH}") {
+        val staged = client.post("http://$hostAddress:$port${FileShareConstants.HTTP_UPLOAD_STAGE_PATH}") {
             header(FileShareConstants.HEADER_FILE_NAME, file.name)
             setBody(FileContent(file))
-        }
-        response.body<UploadResponse>()
+        }.body<UploadStageResponse>()
+        val stageId = staged.stageId ?: return@runCatching UploadResponse(success = false, message = staged.message)
+        client.post("http://$hostAddress:$port${FileShareConstants.HTTP_UPLOAD_COMMIT_PATH}") {
+            contentType(ContentType.Application.Json)
+            setBody(UploadCommitRequest(listOf(stageId)))
+        }.body<UploadCommitResponse>().results.single()
     }
 
     /** 길이를 알려야 받는 쪽이 중간에 끊긴 전송을 가려낸다. 채널만 넘기면 chunked 로 간다. */
