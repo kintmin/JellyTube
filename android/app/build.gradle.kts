@@ -143,6 +143,13 @@ androidComponents {
             .toTransformMany(SingleArtifact.APK)
         renameApk.configure { transformationRequest.set(request) }
     }
+    // baselineprofile 플러그인이 release 를 본떠 만드는 빌드 타입이다.
+    onVariants { variant ->
+        if (variant.buildType in setOf("benchmarkRelease", "nonMinifiedRelease")) {
+            variant.applicationId.set(AppConfiguration.APPLICATION_ID + AppConfiguration.PERF_APPLICATION_ID_SUFFIX)
+            variant.manifestPlaceholders.put(ManifestPlaceholdersKey.APP_LABEL, AppConfiguration.PERF_APP_NAME)
+        }
+    }
 }
 
 sentry {

@@ -14,7 +14,11 @@ android {
         minSdk = AppConfiguration.MIN_SDK
         targetSdk = AppConfiguration.TARGET_SDK
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "TARGET_PACKAGE", "\"${AppConfiguration.APPLICATION_ID}\"")
+        buildConfigField(
+            "String",
+            "TARGET_PACKAGE",
+            "\"${AppConfiguration.APPLICATION_ID}${AppConfiguration.PERF_APPLICATION_ID_SUFFIX}\"",
+        )
     }
 
     targetProjectPath = ":android:app"

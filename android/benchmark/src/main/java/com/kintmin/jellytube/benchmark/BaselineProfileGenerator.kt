@@ -18,6 +18,7 @@ class BaselineProfileGenerator {
         includeInStartupProfile = true,
     ) {
         pressHome()
+        grantRuntimePermissions()
         startActivityAndWait()
     }
 }
