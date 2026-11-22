@@ -8,6 +8,7 @@ import com.kintmin.domain.data_migration.MigrationFiles
 import com.kintmin.domain.data_migration.MigrationPlanner
 import com.kintmin.domain.data_migration.SourceKey
 import com.kintmin.domain.data_migration.applyMigratedDownloadSettings
+import com.kintmin.domain.data_migration.logText
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
 import com.kintmin.domain.data_migration.model.MigrationFailure
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
@@ -47,7 +48,7 @@ class RestoreBackupUseCase(
         val newAudios = MigrationPlanner.plan(source, target).newAudioMedias
 
         val (redownloadable, notRestorable) = newAudios.partition { YoutubeUrl.videoIdOf(it.source) != null }
-        notRestorable.forEach { log("원본이 유튜브가 아니라 복원하지 않음: ${it.name} (${it.source})") }
+        notRestorable.forEach { log("원본이 유튜브가 아니라 복원하지 않음: ${it.logText()}") }
         val failures = notRestorable.map { MigrationFailure(it.name, MigrationFailureReason.NOT_RESTORABLE) }.toMutableList()
 
         val staged = dataMigrationRepository.fetchStagedFiles().getOrThrow()
@@ -62,7 +63,7 @@ class RestoreBackupUseCase(
             result
                 .onSuccess { restored[audio.id] = it }
                 .onFailure {
-                    logError("다시 받기 실패: ${audio.name} (${audio.source})", it)
+                    logError("다시 받기 실패: ${audio.logText()}", it)
                     failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
                 }
         }
@@ -93,7 +94,7 @@ class RestoreBackupUseCase(
             newPlaylistCount = plan.newPlaylists.size,
             redownloadedCount = restored.size,
             failures = failures,
-        ).also { log("복원 완료: $it") }
+        ).also { log("복원 완료: ${it.logText()}") }
     }.onFailure {
         if (it is CancellationException) throw it
         logError("복원 중단", it)
@@ -135,7 +136,7 @@ class RestoreBackupUseCase(
         staged.firstOrNull { it.kind == MigrationFileKind.IMAGE && it.baseName == base }?.let { return it.name }
         val videoId = YoutubeUrl.videoIdOf(audio.source) ?: return null
         val savedName = audioMediaRepository.saveThumbnail(thumbnailUrlOf(videoId), base)
-            .getOrElse { error -> return skip(error, "썸네일 받기 실패: ${audio.name}") }
+            .getOrElse { error -> return skip(error, "썸네일 받기 실패: ${audio.logText()}") }
         val file = MigrationFile(MigrationFileKind.IMAGE, savedName)
         val path = dataMigrationRepository.resolveFilePath(file).getOrElse { error -> return skip(error, "썸네일 경로 실패: $savedName") }
         dataMigrationRepository.stageLocalFile(path, file).getOrElse { error ->

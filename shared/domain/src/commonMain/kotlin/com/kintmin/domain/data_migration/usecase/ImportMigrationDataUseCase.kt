@@ -7,6 +7,7 @@ import com.kintmin.domain.data_migration.MigrationFiles
 import com.kintmin.domain.data_migration.MigrationPlanner
 import com.kintmin.domain.data_migration.SourceKey
 import com.kintmin.domain.data_migration.applyMigratedDownloadSettings
+import com.kintmin.domain.data_migration.logText
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationFailure
@@ -63,12 +64,16 @@ class ImportMigrationDataUseCase constructor(
             .filter { SourceKey.of(it.source) !in availableKeys }
             .filter { SourceKey.of(it.source) !in targetKeys }
             .distinctBy { SourceKey.of(it.source) }
-        missingOnSender.forEach { log("보내는 기기에 음원 파일이 없음: ${it.name} (${it.audioFileName})") }
+        missingOnSender.forEach { log("보내는 기기에 음원 파일이 없음: ${it.logText()}") }
 
         val unplayable = MigrationPlanner.plan(available, target).newAudioMedias
             .filterNot { dataMigrationRepository.isPlayableAudioFile(it.audioFileName) }
         val (redownloadable, unsupported) = unplayable.partition { YoutubeUrl.videoIdOf(it.source) != null }
-        unsupported.forEach { log("재생할 수 없는 형식이라 들여오지 않음: ${it.name} (${it.audioFileName})") }
+        val sizeByFile = availableEntries.associate { it.file to it.size }
+        unsupported.forEach {
+            val size = sizeByFile[MigrationFile(MigrationFileKind.AUDIO, it.audioFileName)]
+            log("재생할 수 없는 형식이라 들여오지 않음: ${it.logText(size)}")
+        }
         val failures = (
             missingOnSender.map { MigrationFailure(it.name, MigrationFailureReason.TRANSFER_FAILED) } +
                 unsupported.map { MigrationFailure(it.name, MigrationFailureReason.UNSUPPORTED_FORMAT) }
@@ -134,7 +139,7 @@ class ImportMigrationDataUseCase constructor(
             redownloadedCount = redownloaded.size,
             failures = failures,
         ).also { summary ->
-            log("이전 완료: $summary")
+            log("이전 완료: ${summary.logText()}")
             dataMigrationRepository.notifyFinished(endpoint, token, summary)
                 .onFailure { logError("완료 알림 실패", it) }
         }
@@ -163,7 +168,7 @@ class ImportMigrationDataUseCase constructor(
                 .onSuccess { result[audio.id] = it }
                 .onFailure {
                     if (it is CancellationException) throw it
-                    logError("다시 받기 실패: ${audio.name} (${audio.source})", it)
+                    logError("다시 받기 실패: ${audio.logText()}", it)
                     failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
                 }
         }
@@ -198,7 +203,8 @@ class ImportMigrationDataUseCase constructor(
             dataMigrationRepository.stageFile(endpoint, token, entry) { received -> report(index, before + received) }
                 .onFailure { error ->
                     if (error !is MigrationFileUnavailableException) throw error
-                    log("파일 받기 실패: ${entry.file} $error")
+                    val owner = plan.newAudioMedias.firstOrNull { MigrationFile(MigrationFileKind.AUDIO, it.audioFileName) == entry.file }
+                    log("파일 받기 실패: ${entry.file} size=${entry.size} ${owner?.logText().orEmpty()} $error")
                     unavailable += entry.file
                 }
             receivedBytes = before + entry.size
