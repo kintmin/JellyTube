@@ -13,13 +13,14 @@ import org.junit.Test
 
 class AppUpdateRepositoryImplTest {
 
-    private fun repository(releasesJson: String) = AppUpdateRepositoryImpl(
+    private fun repository(releasesJson: String, installerExtension: String = "apk") = AppUpdateRepositoryImpl(
         gitHubReleaseDataSource = mockk<GitHubReleaseDataSource> {
             coEvery { fetchReleases() } returns Result.success(
                 Json { ignoreUnknownKeys = true }.decodeFromString<List<GitHubReleaseDto>>(releasesJson),
             )
         },
         datastoreUtil = mockk(relaxed = true),
+        installerExtension = installerExtension,
     )
 
     @Test
@@ -42,6 +43,18 @@ class AppUpdateRepositoryImplTest {
         val latest = repository(json).fetchLatestRelease().getOrThrow()
 
         assertEquals(AppRelease(versionName = "2.1.0", downloadUrl = "https://dl/apk"), latest)
+    }
+
+    @Test
+    fun `iOS 는 같은 릴리스의 IPA 주소를 받는다`() = runTest {
+        val json = """
+            [{"tag_name": "mobile/v2.1.0", "html_url": "https://github.com/r/mobile", "assets": [
+              {"name": "JellyTube_2.1.0(31)_release.apk", "browser_download_url": "https://dl/apk"},
+              {"name": "JellyTube_2.1.0(31)_release.ipa", "browser_download_url": "https://dl/ipa"}
+            ]}]
+        """
+
+        assertEquals("https://dl/ipa", repository(json, installerExtension = "ipa").fetchLatestRelease().getOrThrow()?.downloadUrl)
     }
 
     @Test

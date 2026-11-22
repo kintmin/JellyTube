@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import com.kintmin.data.local_datastore.DatastoreUtil
 import com.kintmin.data.local_datastore.DatastoreUtilImpl
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
+import com.kintmin.data.app_update.appInstallerExtension
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.network.createHttpClient
 import com.kintmin.data.network.data_source.HttpDataSource
@@ -100,7 +101,7 @@ val dataCommonModule: Module = module {
     singleOf(::LyricsRepositoryImpl) bind LyricsRepository::class
     singleOf(::LyricsTranslationRepositoryImpl) bind LyricsTranslationRepository::class
     singleOf(::KaraokeRepositoryImpl) bind KaraokeRepository::class
-    singleOf(::AppUpdateRepositoryImpl) bind AppUpdateRepository::class
+    single<AppUpdateRepository> { AppUpdateRepositoryImpl(get(), get(), appInstallerExtension) }
     singleOf(::PlaylistRepositoryImpl) bind PlaylistRepository::class
     singleOf(::SecretModeRepositoryImpl) bind SecretModeRepository::class
     singleOf(::StepRepositoryImpl) bind StepRepository::class

@@ -12,13 +12,14 @@ import kotlinx.coroutines.flow.first
 internal class AppUpdateRepositoryImpl(
     private val gitHubReleaseDataSource: GitHubReleaseDataSource,
     private val datastoreUtil: DatastoreUtil,
+    private val installerExtension: String,
 ) : AppUpdateRepository {
 
     override suspend fun fetchLatestRelease(): Result<AppRelease?> =
         gitHubReleaseDataSource.fetchReleases().map { releases ->
             releases
                 .filter { !it.draft && !it.prerelease && it.tagName.startsWith(MOBILE_TAG_PREFIX) }
-                .map { it.toDomain() }
+                .map { it.toDomain(installerExtension) }
                 .maxWithOrNull(byVersion)
         }
 
@@ -46,7 +47,7 @@ private val byVersion = Comparator<AppRelease> { a, b ->
     }
 }
 
-private fun GitHubReleaseDto.toDomain() = AppRelease(
+private fun GitHubReleaseDto.toDomain(installerExtension: String) = AppRelease(
     versionName = tagName.removePrefix(MOBILE_TAG_PREFIX),
-    downloadUrl = assets.firstOrNull { it.name.endsWith(".apk") }?.browserDownloadUrl ?: htmlUrl,
+    downloadUrl = assets.firstOrNull { it.name.endsWith(".$installerExtension") }?.browserDownloadUrl ?: htmlUrl,
 )
