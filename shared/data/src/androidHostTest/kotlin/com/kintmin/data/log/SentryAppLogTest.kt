@@ -25,9 +25,9 @@ class SentryAppLogTest {
 
         assertEquals(
             listOf(
-                "DEBUG" to "tag: 100% message",
-                "ERROR" to "tag: failed / java.lang.Exception: boom",
-                "SENTRY_EVENT" to "DeleteAudioMedia {Source=s}",
+                Triple("DEBUG", "100% message", "tag"),
+                Triple("ERROR", "failed / java.lang.Exception: boom", "tag"),
+                Triple("SENTRY_EVENT", "DeleteAudioMedia {Source=s}", null),
             ),
             repository.lines,
         )
@@ -43,9 +43,9 @@ class SentryAppLogTest {
 
         assertEquals(
             listOf(
-                "DEBUG" to "tag: name=<비밀>",
-                "ERROR" to "tag: name=<비밀> / java.lang.Exception: boom",
-                "SENTRY_EVENT" to "DeleteAudioMedia {Source=<비밀>}",
+                Triple("DEBUG", "name=<비밀>", "tag"),
+                Triple("ERROR", "name=<비밀> / java.lang.Exception: boom", "tag"),
+                Triple("SENTRY_EVENT", "DeleteAudioMedia {Source=<비밀>}", null),
             ),
             repository.lines,
         )
@@ -58,8 +58,8 @@ class SentryAppLogTest {
 
         assertEquals(
             listOf(
-                "DEBUG" to "tag: name=곡",
-                "SENTRY_EVENT" to "DeleteAudioMedia {Source=https://y/1}",
+                Triple("DEBUG", "name=곡", "tag"),
+                Triple("SENTRY_EVENT", "DeleteAudioMedia {Source=https://y/1}", null),
             ),
             repository.lines,
         )
@@ -76,10 +76,10 @@ class SentryAppLogTest {
     }
 
     private class FakeAppLogRepository : AppLogRepository {
-        val lines = mutableListOf<Pair<String, String>>()
+        val lines = mutableListOf<Triple<String, String, String?>>()
 
-        override fun appendAppLog(type: String, message: String) {
-            lines += type to message
+        override fun appendAppLog(type: String, message: String, tag: String?) {
+            lines += Triple(type, message, tag)
         }
 
         override suspend fun fetchAppLogDateList() = Result.success(emptyList<String>())
