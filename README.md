@@ -1,33 +1,18 @@
 # JellyTube
 
-음원을 모아 **가사와 함께 듣는** 음악 앱입니다.
-Android 와 iOS 에서 같은 화면으로 동작합니다.
-PC 에 있는 음악 파일은 함께 들어 있는 데스크톱 앱으로 폰에 보낼 수 있습니다.
+**음원을 모아 가사와 함께 듣는 음악 앱.**
 
-## 무엇을 할 수 있나
+Android 와 iOS 에서 같은 화면으로 동작하고, PC 의 음악 파일은 함께 들어 있는 데스크톱 앱으로 폰에 보낼 수 있습니다.
 
-**음원 모으기**
-- 링크로 곡 하나, 또는 재생목록을 통째로 추가합니다.
-- 폰에 있는 음악 파일을 가져오거나, 다른 앱에서 "JellyTube 로 열기"로 넘겨받습니다.
-- PC 에서 데스크톱 앱(JellyTube File Share)으로 여러 곡을 한 번에 보냅니다.
+## 주요 기능
 
-**듣기**
-- 플레이리스트, 찜, 셔플·반복, 구간 반복
-- 재생 속도와 피치(키) 조절, 잠들기 타이머
+- **어디서든 모으기** — 링크, 폰에 있는 파일, 다른 앱의 공유, PC 에서 보내기로 곡을 모읍니다.
+- **가사와 함께** — 가사를 자동으로 찾아 재생에 맞춰 보여 주고, 외국어 가사는 번역과 읽는 법을 함께 보여 줍니다.
+- **듣는 방식 그대로** — 플레이리스트, 구간 반복, 속도·키 조절, 잠들기 타이머.
+- **기기가 바뀌어도** — 매일 자동 백업하고, Android 와 iPhone 사이에서도 데이터를 통째로 옮깁니다.
+- **나만 보는 공간** — 숨은 입구로만 들어가는 비밀 플레이리스트.
 
-**가사**
-- 받은 곡의 가사를 자동으로 찾아 붙이고, 직접 검색하거나 시간에 맞춰 고칠 수 있습니다.
-- 외국어 가사는 줄마다 번역과 읽는 법(음차)을 함께 보여 줍니다.
-- 노래방 번호를 찾아 붙여 둡니다.
-
-**그 밖에**
-- 곡의 필요한 부분만 남기는 편집, 알람음·벨소리로 쓰기
-- 비밀 플레이리스트: 숨은 입구로만 들어가고, 정해 둔 시간이 지나면 다시 숨습니다.
-- 걸음 수 기록
-- 하루 한 번 고른 폴더에 백업하고, 새 폰에서 복원합니다.
-- Android 와 iPhone 사이에서도 곡·플레이리스트·가사를 통째로 옮깁니다.
-
-## 어떻게 설치하나
+## 설치
 
 | 플랫폼 | 방법 |
 |---|---|
@@ -45,15 +30,15 @@ Kotlin Multiplatform 으로, 화면을 포함한 코드 대부분을 Android 와
 ```mermaid
 flowchart TD
     android["android/app<br/>Android 앱"]
-    ios["ios/shared · ios/app<br/>iOS 앱"]
-    desktop["desktop<br/>Windows 데스크톱 앱"]
+    ios["ios<br/>iOS 앱"]
+    desktop["desktop<br/>Windows 앱"]
 
-    subgraph shared["shared — Android·iOS 공용"]
+    subgraph shared["shared — 공유 모듈"]
         presentation["presentation<br/>화면"]
-        data["data<br/>DB·네트워크·파일"]
+        data["data<br/>데이터"]
         domain["domain<br/>규칙과 동작"]
         log["log<br/>로그"]
-        fileshare["file-share<br/>데스크톱과 주고받는 약속"]
+        fileshare["file-share<br/>공유 프로토콜"]
     end
 
     android --> presentation
@@ -73,7 +58,7 @@ flowchart TD
 | `shared/data` | 로컬 DB, 네트워크, 파일, 기기 간 파일 공유 |
 | `shared/presentation` | 화면 (Compose Multiplatform) |
 | `shared/log` | 로그 |
-| `shared/file-share` | 데스크톱 앱과 주고받는 약속 |
+| `shared/file-share` | 데스크톱 앱과 주고받는 공유 프로토콜 |
 | `android/app` | Android 앱 |
 | `ios/shared`, `ios/app` | iOS 앱 |
 | `desktop` | Windows 데스크톱 앱 |
