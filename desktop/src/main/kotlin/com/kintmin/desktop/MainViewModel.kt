@@ -2,6 +2,8 @@ package com.kintmin.desktop
 
 import com.kintmin.desktop.discovery.DiscoveredDevice
 import com.kintmin.desktop.discovery.discoverDevice
+import com.kintmin.desktop.update.DesktopRelease
+import com.kintmin.desktop.update.DesktopUpdate
 import com.kintmin.desktop.upload.FileUploader
 import com.kintmin.desktop.upload.naturalFileNameOrder
 import com.kintmin.fileshare.FileShareConstants
@@ -26,6 +28,8 @@ import java.util.concurrent.ConcurrentHashMap
 class MainViewModel(
     private val discover: suspend () -> DiscoveredDevice? = { discoverDevice(timeoutMs = 3_000L) },
     private val createUploader: (DiscoveredDevice) -> FileUploader = { FileUploader(it.hostAddress, it.port) },
+    private val findUpdate: suspend () -> DesktopRelease? = DesktopUpdate::find,
+    private val ignoreUpdate: (versionName: String) -> Unit = DesktopUpdate::ignore,
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
 
@@ -44,6 +48,20 @@ class MainViewModel(
 
     init {
         startDiscovery()
+        scope.launch {
+            val update = findUpdate() ?: return@launch
+            _uiState.update { it.copy(availableUpdate = update) }
+        }
+    }
+
+    fun onDismissUpdate() {
+        _uiState.update { it.copy(availableUpdate = null) }
+    }
+
+    fun onIgnoreUpdate() {
+        val update = _uiState.value.availableUpdate ?: return
+        ignoreUpdate(update.versionName)
+        onDismissUpdate()
     }
 
     fun startDiscovery() {
