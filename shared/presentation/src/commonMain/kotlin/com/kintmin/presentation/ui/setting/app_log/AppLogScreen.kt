@@ -12,18 +12,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +42,8 @@ import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.EmptyStateView
+import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
+import com.kintmin.presentation.ui.setting.app_log.date_selector.AppLogDateSelectorView
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -107,92 +104,89 @@ fun AppLogScreen(
             )
         },
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(
-                    items = uiState.logDateList,
-                    key = { date -> date },
-                ) { date ->
-                    val isSelected = date == uiState.selectedLogDate
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { sendIntent(AppLogIntent.OnClickLogDate(date)) },
-                        label = { Text(text = date) },
-                        leadingIcon = if (isSelected) {
-                            {
-                                Icon(
-                                    modifier = Modifier.size(FilterChipDefaults.IconSize),
-                                    imageVector = Icons.Rounded.Check,
-                                    contentDescription = null,
-                                )
-                            }
-                        } else {
-                            null
-                        },
-                    )
+            AppLogContentView(uiState = uiState, sendIntent = sendIntent)
+
+            if (uiState.logDateList.isNotEmpty()) {
+                AppLogDateSelectorView(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    dateList = uiState.logDateList,
+                    selectedDate = uiState.selectedLogDate,
+                    onSelectDate = { date -> sendIntent(AppLogIntent.OnClickLogDate(date)) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppLogContentView(
+    uiState: AppLogUiState,
+    sendIntent: (AppLogIntent) -> Unit,
+) {
+    // 날짜 선택이 목록 위에 떠 있어 그만큼 비켜 둔다.
+    val topInset = if (uiState.logDateList.isNotEmpty()) FloatingSearchFieldHeight else 0.dp
+
+    if (uiState.isLoading && uiState.logLineList.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = topInset),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (uiState.logLineList.isEmpty()) {
+        AppLogEmptyView(
+            modifier = Modifier.padding(top = topInset),
+            hasLogDate = uiState.logDateList.isNotEmpty(),
+        )
+        return
+    }
+
+    val listState = rememberLazyListState()
+    LaunchedEffect(uiState.selectedLogDate) { listState.scrollToItem(0) }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        state = listState,
+        contentPadding = PaddingValues(top = topInset),
+        verticalArrangement = Arrangement.Top,
+    ) {
+        itemsIndexed(
+            items = uiState.logLineList,
+        ) { index, line ->
+            if (index > 0) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+            }
+            AppLogLineView(line = line)
+
+            if (index >= uiState.logLineList.lastIndex - 5 && uiState.hasNextPage) {
+                LaunchedEffect(uiState.logLineList.size) {
+                    sendIntent(AppLogIntent.OnRequestNextPage)
                 }
             }
+        }
 
-            if (uiState.isLoading && uiState.logLineList.isEmpty()) {
+        if (uiState.hasNextPage) {
+            item {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator()
-                }
-                return@Scaffold
-            }
-
-            if (uiState.logLineList.isEmpty()) {
-                AppLogEmptyView(hasLogDate = uiState.logDateList.isNotEmpty())
-                return@Scaffold
-            }
-
-            val listState = rememberLazyListState()
-            LaunchedEffect(uiState.selectedLogDate) { listState.scrollToItem(0) }
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                state = listState,
-                verticalArrangement = Arrangement.Top,
-            ) {
-                itemsIndexed(
-                    items = uiState.logLineList,
-                ) { index, line ->
-                    if (index > 0) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                        )
-                    }
-                    AppLogLineView(line = line)
-
-                    if (index >= uiState.logLineList.lastIndex - 5 && uiState.hasNextPage) {
-                        LaunchedEffect(uiState.logLineList.size) {
-                            sendIntent(AppLogIntent.OnRequestNextPage)
-                        }
-                    }
-                }
-
-                if (uiState.hasNextPage) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    }
                 }
             }
         }
@@ -227,6 +221,13 @@ private fun AppLogLineView(line: AppLogLineUiState) {
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )
                 }
+                line.tag?.let { tag ->
+                    Text(
+                        text = tag,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
         Text(
@@ -238,9 +239,12 @@ private fun AppLogLineView(line: AppLogLineUiState) {
 }
 
 @Composable
-private fun AppLogEmptyView(hasLogDate: Boolean) {
+private fun AppLogEmptyView(
+    hasLogDate: Boolean,
+    modifier: Modifier = Modifier,
+) {
     EmptyStateView(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         icon = Icons.Rounded.Description,
         title = if (hasLogDate) "이 날의 로그가 없습니다" else "남은 로그가 없습니다",
         description = "앱을 쓰는 동안 남은 기록이 날짜별로 여기에 모입니다",
@@ -255,8 +259,22 @@ private fun AppLogLineViewPreview() {
             AppLogLineView(
                 line = parseAppLogLine("[2026-11-21 09:05:01.042] [SENTRY_EVENT] download 완료"),
             )
+            AppLogLineView(line = parseAppLogLine("[2026-11-21 09:05:02.100] [DEBUG] [DeepLink] 받음: jellytube://a"))
             AppLogLineView(line = parseAppLogLine("    at com.kintmin.Foo.bar(Foo.kt:12)"))
         }
+    }
+}
+
+@Preview
+@Composable
+private fun AppLogContentViewPreview() {
+    JellyTubeTheme {
+        AppLogContentView(
+            uiState = AppLogUiState(
+                logLineList = listOf(parseAppLogLine("[2026-11-22 09:05:02.100] [DEBUG] [DeepLink] 받음: jellytube://a")),
+            ),
+            sendIntent = {},
+        )
     }
 }
 
@@ -273,7 +291,11 @@ private fun AppLogEmptyViewPreview() {
 fun AppLogScreenPreview() {
     JellyTubeTheme {
         AppLogScreen(
-            uiState =  AppLogUiState(),
+            uiState = AppLogUiState(
+                logDateList = listOf("2026-11-22", "2026-11-21"),
+                selectedLogDate = "2026-11-22",
+                logLineList = listOf(parseAppLogLine("[2026-11-22 09:05:02.100] [DEBUG] [DeepLink] 받음: jellytube://a")),
+            ),
             navigateToBack = {},
             sendIntent = {},
         )
