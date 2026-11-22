@@ -69,6 +69,7 @@ class FileShareServerModuleTest {
             validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
             updateAudioMedia = updateUseCase,
             saveAudioMediaImage = saveImageUseCase,
+            appLog = mockk(relaxed = true),
         ).invoke { imported += it },
         uploadTempDir = tempFolder.root.path,
         receiveKeepAlive = KeepAliveByForegroundService,

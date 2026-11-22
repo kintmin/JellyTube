@@ -17,6 +17,8 @@ internal class SentryAppLog(
     override fun setLogConfig(userId: String) {
         Sentry.setUser(User(id = userId))
         appLogRepository.appendAppLog("SENTRY_CONFIG", "setUserId=$userId")
+        // 크래시는 수집기만 잡아 앱 로그에는 흔적이 없다. 다음 실행에서 남긴다.
+        if (Sentry.isCrashedLastRun()) appLogRepository.appendAppLog("CRASH", "지난 실행이 비정상 종료됨")
     }
 
     override fun sendDebugLog(debugLog: DebugLog) {

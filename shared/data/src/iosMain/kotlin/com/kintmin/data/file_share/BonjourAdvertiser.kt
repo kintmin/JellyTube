@@ -3,6 +3,7 @@ package com.kintmin.data.file_share
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import kotlinx.cinterop.ObjCSignatureOverride
 import kotlin.concurrent.Volatile
 import kotlinx.coroutines.CoroutineScope
@@ -119,7 +120,10 @@ internal class BonjourRegistration(
     override fun netService(sender: NSNetService, didNotPublish: Map<Any?, *>) {
         if (sender !== service) return
         appLog.sendDebugLog(DebugLog(BONJOUR_LOG_TAG, "Bonjour 광고 등록 실패($serviceType, $retryCount): $didNotPublish"))
-        if (retryCount >= BONJOUR_MAX_RETRIES) return
+        if (retryCount >= BONJOUR_MAX_RETRIES) {
+            appLog.sendErrorLog(ErrorLog(BONJOUR_LOG_TAG, "Bonjour 광고 등록을 $BONJOUR_MAX_RETRIES 번 다시 시도했지만 실패: $serviceType"))
+            return
+        }
         retryCount++
         retryJob?.cancel()
         retryJob = scope.launch {

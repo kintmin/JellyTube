@@ -1,8 +1,14 @@
 import MediaPlayer
 import UIKit
 import os
+import shared
 
 private let npLog = Logger(subsystem: "com.kintmin.JellyTubeIos", category: "NowPlaying")
+
+private func remoteCommandLog(_ message: String) {
+    npLog.info("\(message, privacy: .public)")
+    SwiftAppLogKt.swiftDebugLog(tag: "NowPlaying", message: message)
+}
 
 @MainActor
 final class NowPlayingCoordinator {
@@ -25,31 +31,31 @@ final class NowPlayingCoordinator {
 
         center.playCommand.isEnabled = true
         center.playCommand.addTarget { [weak self] _ in
-            npLog.info("remote: play")
+            remoteCommandLog("remote: play")
             self?.onPlay?()
             return .success
         }
         center.pauseCommand.isEnabled = true
         center.pauseCommand.addTarget { [weak self] _ in
-            npLog.info("remote: pause")
+            remoteCommandLog("remote: pause")
             self?.onPause?()
             return .success
         }
         center.togglePlayPauseCommand.isEnabled = true
         center.togglePlayPauseCommand.addTarget { [weak self] _ in
-            npLog.info("remote: toggle")
+            remoteCommandLog("remote: toggle")
             self?.onTogglePlayPause?()
             return .success
         }
         center.nextTrackCommand.isEnabled = true
         center.nextTrackCommand.addTarget { [weak self] _ in
-            npLog.info("remote: next")
+            remoteCommandLog("remote: next")
             self?.onNext?()
             return .success
         }
         center.previousTrackCommand.isEnabled = true
         center.previousTrackCommand.addTarget { [weak self] _ in
-            npLog.info("remote: previous")
+            remoteCommandLog("remote: previous")
             self?.onPrevious?()
             return .success
         }
@@ -58,7 +64,7 @@ final class NowPlayingCoordinator {
             guard let event = event as? MPChangePlaybackPositionCommandEvent else {
                 return .commandFailed
             }
-            npLog.info("remote: seek \(event.positionTime)")
+            remoteCommandLog("remote: seek \(event.positionTime)")
             self?.onSeek?(event.positionTime)
             return .success
         }

@@ -14,6 +14,7 @@ import com.kintmin.domain.data_migration.model.MigrationFileKind
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.flow.first
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -57,13 +58,18 @@ class BackupNowUseCase(
         }
         if (written.localCopySkipped) log("백업이 ${written.sizeBytes}B 라 클라우드 자동 백업용 사본은 쓰지 않음")
         backupRepository.recordSuccess(nowMillis).getOrThrow()
+        log("백업 완료: ${written.sizeBytes}B")
         BackupOutcome.WRITTEN
     }.onFailure {
         if (it is CancellationException) throw it
-        log("백업 실패: $it")
+        logError("백업 실패", it)
     }
 
     private fun log(message: String) {
         appLog.sendDebugLog(DebugLog("BackupNowUseCase", message))
+    }
+
+    private fun logError(message: String, error: Throwable) {
+        appLog.sendErrorLog(ErrorLog("BackupNowUseCase", message, error))
     }
 }

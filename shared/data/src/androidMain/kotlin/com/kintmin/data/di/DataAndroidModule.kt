@@ -55,7 +55,7 @@ val dataAndroidModule: Module = module {
             appLog = get(),
             uploadTempDir = context.cacheDir.path,
             receiveKeepAlive = KeepAliveByForegroundService,
-            advertiser = NsdAdvertiser(context, scope) {
+            advertiser = NsdAdvertiser(context, scope, get()) {
                 toMigrationInstanceName(localDeviceName(context), userRepository.getUserId().getOrNull())
             },
         )

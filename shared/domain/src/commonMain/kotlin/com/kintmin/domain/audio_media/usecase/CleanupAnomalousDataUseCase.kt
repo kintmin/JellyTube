@@ -6,6 +6,7 @@ import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.first
 
 class CleanupAnomalousDataUseCase constructor(
@@ -66,6 +67,8 @@ class CleanupAnomalousDataUseCase constructor(
 
         val anomalyCount = orphanMediaList.size + correctedFileCount + orphanFileFullPaths.size
         anomalyCount
+    }.onFailure {
+        if (it !is CancellationException) appLog.sendErrorLog(ErrorLog("CleanupAnomalousDataUseCase", "이상 데이터 정리 실패", it))
     }
 
     private suspend fun deleteFileSafely(fileFullPath: String) {

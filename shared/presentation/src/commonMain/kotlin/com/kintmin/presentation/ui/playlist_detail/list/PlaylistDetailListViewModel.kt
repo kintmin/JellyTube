@@ -1,5 +1,7 @@
 package com.kintmin.presentation.ui.playlist_detail.list
 
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.ErrorLog
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,6 +33,7 @@ class PlaylistDetailListViewModel constructor(
     private val deleteAudioTrackListUseCase: DeleteAudioTrackListUseCase,
     private val updateTrackSequenceUseCase: UpdateTrackSequenceUseCase,
     private val mediaControllerManager: PlaybackController,
+    private val appLog: AppLog,
 ) : ViewModel() {
 
     private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
@@ -141,6 +144,7 @@ class PlaylistDetailListViewModel constructor(
                 )
             }
             mediaControllerManager.playFromPlaylist(playlistId, id, mediaControlDataList)
+                .onFailure { appLog.sendErrorLog(ErrorLog("PlaylistDetailList", "재생 시작 실패: playlistId=$playlistId mediaId=$id", it)) }
         }
     }
 

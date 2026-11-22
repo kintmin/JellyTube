@@ -22,6 +22,8 @@ import com.kintmin.jellytube.push_notification.notifications.DataMigrationReceiv
 import com.kintmin.jellytube.push_notification.notifications.DataMigrationSendNotification
 import com.kintmin.jellytube.push_notification.notifications.FileShareServerNotification
 import com.kintmin.jellytube.push_notification.notifications.PushNotification
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,6 +43,7 @@ class FileShareForegroundService : Service(), KoinComponent {
     private val fetchMigrationSendStatusUseCase: FetchMigrationSendStatusUseCase by inject()
     private val stopPcFileShareServerUseCase: StopPcFileShareServerUseCase by inject()
     private val closeMigrationSendUseCase: CloseMigrationSendUseCase by inject()
+    private val appLog: AppLog by inject()
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var isForeground = false
@@ -77,6 +80,7 @@ class FileShareForegroundService : Service(), KoinComponent {
             isForeground = true
             holdLocksWhileMigrating()
         }.onFailure {
+            appLog.sendErrorLog(ErrorLog("FileShareForegroundService", "포그라운드 시작 실패", it))
             stopSelf()
             return START_NOT_STICKY
         }

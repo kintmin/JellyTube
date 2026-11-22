@@ -22,6 +22,7 @@ import com.kintmin.domain.youtube.model.YoutubePlaylist
 import com.kintmin.domain.youtube.model.YoutubePlaylistEntry
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -47,6 +48,7 @@ class DownloadYoutubePlaylistUseCase(
         onProgress: (PlaylistDownloadProgress) -> Unit,
     ): Result<PlaylistDownloadSummary> = runCatching {
         val entries = playlist.entries.distinctBy { it.videoId }
+        log("재생목록 받기 시작: ${playlist.title} (${entries.size}곡)")
         val owned = ownedIdByKey()
         val (onDevice, notOnDevice) = entries.partition { SourceKey.of(it.url) in owned }
         val (toDownload, unavailable) = notOnDevice.partition { it.isAvailable }
@@ -85,7 +87,7 @@ class DownloadYoutubePlaylistUseCase(
         } catch (e: Throwable) {
             withContext(NonCancellable) {
                 runCatching { addInOrder(playlist.title, idsInOrder(), onProgress) }
-                    .onFailure { log("멈춘 뒤 재생목록에 담지 못함: $it") }
+                    .onFailure { logError("멈춘 뒤 재생목록에 담지 못함", it) }
             }
             throw e
         }
@@ -109,10 +111,10 @@ class DownloadYoutubePlaylistUseCase(
                     }
                     PlaylistDownloadFailure(it.title, reason)
                 },
-        )
+        ).also { log("재생목록 받기 완료: $it") }
     }.onFailure {
         if (it is CancellationException) throw it
-        log("재생목록 받기 중단: $it")
+        logError("재생목록 받기 중단", it)
     }
 
     private suspend fun ownedIdByKey(): Map<String, Int> =
@@ -158,5 +160,9 @@ class DownloadYoutubePlaylistUseCase(
 
     private fun log(message: String) {
         appLog.sendDebugLog(DebugLog("DownloadYoutubePlaylistUseCase", message))
+    }
+
+    private fun logError(message: String, error: Throwable) {
+        appLog.sendErrorLog(ErrorLog("DownloadYoutubePlaylistUseCase", message, error))
     }
 }

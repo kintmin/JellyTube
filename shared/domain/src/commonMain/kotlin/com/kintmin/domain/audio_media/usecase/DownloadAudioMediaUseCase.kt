@@ -31,6 +31,7 @@ class DownloadAudioMediaUseCase constructor(
         downloadUrl: String,
         intoUncategorized: Boolean = false,
     ): Result<DownloadedAudioMediaResult> = runCatching {
+        appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "받기 시작: $downloadUrl"))
         if (!audioMediaRepository.reserveDownload(downloadUrl)) throw AlreadyDownloadingMedia()
         try {
             download(downloadUrl, intoUncategorized)
@@ -40,6 +41,10 @@ class DownloadAudioMediaUseCase constructor(
     }.onFailure { exception ->
         // 멈추기·나가기로 끊긴 것은 받기 실패가 아니다.
         if (exception is CancellationException) return@onFailure
+        if (exception is AlreadyDownloadedMedia || exception is AlreadyDownloadingMedia) {
+            appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "이미 있거나 받는 중이라 받지 않음: $downloadUrl"))
+            return@onFailure
+        }
         val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()
         val connectionStatus = deviceStatusRepository.getConnectionStatus().getOrNull()
 
@@ -89,7 +94,15 @@ class DownloadAudioMediaUseCase constructor(
             audioMediaRepository.deleteDownloadedFile(downloadedAudioMedia)
         }.getOrThrow()
 
-        appLog.sendSentryEvent(SentryEvent.AddAudioMedia(downloadUrl, added.totalPlaylistMediaCount))
+        appLog.sendSentryEvent(
+            SentryEvent.AddAudioMedia(
+                source = downloadUrl,
+                audioMediaCount = added.totalPlaylistMediaCount,
+                audioMediaId = added.audioMedia.id,
+                audioMediaName = added.audioMedia.name,
+                playlistId = added.resolvedPlaylistIdOnDownload,
+            ),
+        )
         return DownloadedAudioMediaResult(
             audioMedia = added.audioMedia,
             playlistIdOnDownload = added.resolvedPlaylistIdOnDownload,
