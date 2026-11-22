@@ -71,6 +71,7 @@ iOS 는 macOS 와 Xcode 가 필요합니다.
 ```
 
 - 릴리스 서명 키는 저장소에 없습니다. 없으면 release 빌드는 서명 없이 나오고, 나머지 빌드는 그대로 됩니다.
+- 릴리스 진행은 `JELLY_TUBE_MAIL_RECIPIENTS` 시크릿의 받는 사람에게 메일로 갑니다. 받는 사람마다 받을 알림을 고르는 형식은 [`.github/scripts/send-mail.sh`](.github/scripts/send-mail.sh) 맨 위에 있습니다.
 - 브랜치는 `develop` 에서 따서 PR 을 엽니다. 브랜치 이름과 릴리스 규칙은 AGENTS.md 의 "브랜치와 릴리스" 절을 보세요.
 
 ## 라이선스
