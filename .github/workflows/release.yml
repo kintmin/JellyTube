@@ -1,0 +1,94 @@
+name: Release
+
+# main 으로 가는 PR 에서는 버전만 대조하고, main 에 들어오면 태그를 붙이고 develop 에 반영한다.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  versions:
+    runs-on: ubuntu-latest
+    outputs:
+      mobile: ${{ steps.read.outputs.mobile }}
+      desktop: ${{ steps.read.outputs.desktop }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        name: Read and cross-check versions
+        run: |
+          set -euo pipefail
+          config=buildSrc/src/main/java/com/kintmin/buildSrc/AppConfiguration.kt
+          pbxproj=ios/app/JellyTubeIos.xcodeproj/project.pbxproj
+          value() { sed -n "s/^ *const val $1 = \"\{0,1\}\([^\"]*\)\"\{0,1\}\$/\1/p" "$config"; }
+          name=$(value VERSION_NAME); code=$(value VERSION_CODE); desktop=$(value DESKTOP_VERSION_NAME)
+          ios_names=$(sed -n 's/.*MARKETING_VERSION = \(.*\);/\1/p' "$pbxproj" | sort -u)
+          ios_codes=$(sed -n 's/.*CURRENT_PROJECT_VERSION = \(.*\);/\1/p' "$pbxproj" | sort -u)
+          echo "android=$name($code) ios=$ios_names($ios_codes) desktop=$desktop"
+          [[ -n "$name" && -n "$code" && -n "$desktop" ]] || { echo "::error::버전을 읽지 못했다"; exit 1; }
+          [[ "$ios_names" == "$name" ]] || { echo "::error::iOS MARKETING_VERSION($ios_names) 이 VERSION_NAME($name) 과 다르다"; exit 1; }
+          [[ "$ios_codes" == "$code" ]] || { echo "::error::iOS CURRENT_PROJECT_VERSION($ios_codes) 이 VERSION_CODE($code) 와 다르다"; exit 1; }
+          echo "mobile=$name" >> "$GITHUB_OUTPUT"
+          echo "desktop=$desktop" >> "$GITHUB_OUTPUT"
+
+  tag:
+    if: github.event_name == 'push'
+    needs: versions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tag versions that are not tagged yet
+        env:
+          MOBILE: ${{ needs.versions.outputs.mobile }}
+          DESKTOP: ${{ needs.versions.outputs.desktop }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for tag in "mobile/v$MOBILE" "desktop/v$DESKTOP"; do
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              echo "$tag 은 이미 있다"
+            else
+              git tag -a "$tag" -m "$tag" "$GITHUB_SHA"
+              git push origin "refs/tags/$tag"
+            fi
+          done
+
+  sync-develop:
+    if: github.event_name == 'push'
+    needs: tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the develop push key
+        env:
+          KEY: ${{ secrets.DEVELOP_SYNC_DEPLOY_KEY }}
+        run: |
+          [[ -n "$KEY" ]] || { echo "::error::DEVELOP_SYNC_DEPLOY_KEY 시크릿이 없다. develop ruleset 은 배포 키만 직접 push 를 허용한다."; exit 1; }
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+          ssh-key: ${{ secrets.DEVELOP_SYNC_DEPLOY_KEY }}
+      - name: Merge main into develop
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          if git merge --no-ff --no-edit -m "merge/main 의 릴리스를 develop 에 반영한다" origin/main; then
+            git push origin HEAD:develop
+          else
+            git merge --abort
+            echo "::error::main 과 develop 이 충돌한다. 로컬에서 develop 에 origin/main 을 merge 해 충돌을 풀고, 그 PR 을 merge commit 으로 병합한다(관리자 bypass)."
+            exit 1
+          fi

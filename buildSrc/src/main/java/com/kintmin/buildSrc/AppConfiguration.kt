@@ -11,6 +11,8 @@ object AppConfiguration {
     const val MIN_SDK = 26
     const val VERSION_CODE = 19
     const val VERSION_NAME = "1.2.2"
+    // MSI 는 숫자 세 마디만 받고 앞 두 마디는 255 이하다. 올리지 않으면 업그레이드 설치가 안 된다.
+    const val DESKTOP_VERSION_NAME = "1.0.1"
     /**
      * Python 3.12 이상은 armeabi-v7a (구버전 기기) 대응이 안 됨
      * Chaquopy version 15.0.1 news 참고: https://chaquo.com/chaquopy/news/
