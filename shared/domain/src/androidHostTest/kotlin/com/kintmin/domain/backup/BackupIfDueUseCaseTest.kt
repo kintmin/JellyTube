@@ -16,7 +16,9 @@ import com.kintmin.domain.data_migration.repository.DataMigrationRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import com.kintmin.log.AppLog
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.TimeZone
@@ -44,7 +46,8 @@ class BackupIfDueUseCaseTest {
     private val backupNow = mockk<BackupNowUseCase> {
         coEvery { this@mockk(any()) } returns Result.success(BackupOutcome.WRITTEN)
     }
-    private val useCase = BackupIfDueUseCase(backupRepository, dataMigrationRepository, backupNow)
+    private val appLog = mockk<AppLog>(relaxed = true)
+    private val useCase = BackupIfDueUseCase(backupRepository, dataMigrationRepository, backupNow, appLog)
 
     private fun status(
         folder: BackupFolder? = this.folder,
@@ -81,6 +84,7 @@ class BackupIfDueUseCaseTest {
 
         assertNull(run())
         coVerify(exactly = 0) { backupNow(any()) }
+        verify { appLog.sendErrorLog(match { it.message.startsWith("폴더 백업 읽기 실패") }) }
     }
 
     @Test
@@ -140,10 +144,11 @@ class BackupIfDueUseCaseTest {
         status()
         coEvery { backupRepository.readFolderCopy() } returns Result.failure(Exception("provider unavailable"))
 
-        val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow, mockk(relaxed = true))(folder, now).getOrThrow()
+        val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow, appLog)(folder, now).getOrThrow()
 
-        assertEquals(BackupOutcome.KEPT_EXISTING, outcome)
+        assertEquals(BackupOutcome.KEPT_UNREADABLE, outcome)
         coVerify(exactly = 0) { backupNow(any()) }
+        verify { appLog.sendErrorLog(match { it.message.startsWith("고른 폴더의 백업 읽기 실패") }) }
     }
 
     @Test

@@ -5,6 +5,8 @@ import com.kintmin.domain.backup.model.BackupOutcome
 import com.kintmin.domain.backup.model.BackupStatus
 import com.kintmin.domain.backup.repository.BackupRepository
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
 
@@ -16,6 +18,7 @@ class BackupIfDueUseCase(
     private val backupRepository: BackupRepository,
     private val dataMigrationRepository: DataMigrationRepository,
     private val backupNowUseCase: BackupNowUseCase,
+    private val appLog: AppLog,
 ) {
     suspend operator fun invoke(
         nowMillis: Long,
@@ -32,8 +35,17 @@ class BackupIfDueUseCase(
 
     /** 이전·복원이 임시 공간에 받아 둔 것이 있거나, 이 설치가 아직 백업한 적 없이 남은 백업을 찾았다. */
     private suspend fun isRestorePending(status: BackupStatus): Boolean {
-        if (dataMigrationRepository.fetchStagedFiles().getOrNull()?.isEmpty() != true) return true
+        val staged = dataMigrationRepository.fetchStagedFiles()
+            .onFailure { logSkip("받아 둔 이전 파일 읽기 실패", it) }
+        if (staged.getOrNull()?.isEmpty() != true) return true
         if (status.lastSuccessMillis != null) return false
-        return backupRepository.hasLocalCopy() || backupRepository.readFolderCopy().let { it.isFailure || it.getOrNull() != null }
+        if (backupRepository.hasLocalCopy()) return true
+        val folderCopy = backupRepository.readFolderCopy()
+            .onFailure { logSkip("폴더 백업 읽기 실패", it) }
+        return folderCopy.isFailure || folderCopy.getOrNull() != null
+    }
+
+    private fun logSkip(message: String, error: Throwable) {
+        appLog.sendErrorLog(ErrorLog("BackupIfDueUseCase", "$message — 남은 백업을 덮지 않으려 자동 백업을 쉼", error))
     }
 }

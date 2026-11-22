@@ -3,6 +3,7 @@ package com.kintmin.domain.backup.usecase
 import com.kintmin.domain.backup.model.BackupFolder
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
+import com.kintmin.log.model.ErrorLog
 import com.kintmin.domain.backup.model.BackupOutcome
 import com.kintmin.domain.backup.repository.BackupRepository
 import kotlinx.coroutines.flow.first
@@ -20,8 +21,13 @@ class RegisterBackupFolderUseCase(
         backupRepository.registerFolder(folder).onFailure { return Result.failure(it) }
         appLog.sendDebugLog(DebugLog("RegisterBackupFolderUseCase", "백업 폴더 등록: $folder"))
         val hasNeverBackedUp = backupRepository.getStatusFlow().first().lastSuccessMillis == null
-        if (hasNeverBackedUp && backupRepository.readFolderCopy().let { it.isFailure || it.getOrNull() != null }) {
-            return Result.success(BackupOutcome.KEPT_EXISTING)
+        if (hasNeverBackedUp) {
+            val folderCopy = backupRepository.readFolderCopy()
+            folderCopy.onFailure {
+                appLog.sendErrorLog(ErrorLog("RegisterBackupFolderUseCase", "고른 폴더의 백업 읽기 실패: $folder", it))
+                return Result.success(BackupOutcome.KEPT_UNREADABLE)
+            }
+            if (folderCopy.getOrNull() != null) return Result.success(BackupOutcome.KEPT_EXISTING)
         }
         return backupNowUseCase(nowMillis)
     }
