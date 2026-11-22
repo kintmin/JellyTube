@@ -11,7 +11,7 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * ML Kit 온디바이스 감지·번역 계측 테스트.
  * 실기기/에뮬레이터에서 실행해야 한다 (Play Services + 최초 모델 다운로드 네트워크 필요).
- * 실행: ./gradlew.bat :shared:data:connectedDebugAndroidTest
+ * 실행: ./gradlew.bat :shared:data:connectedAndroidDeviceTest
  */
 @RunWith(AndroidJUnit4::class)
 class MlKitLyricsTranslationEngineTest {
