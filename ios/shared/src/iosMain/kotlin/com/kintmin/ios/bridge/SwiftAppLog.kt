@@ -34,8 +34,8 @@ fun swiftErrorLog(tag: String, message: String) {
 /** HLS fallback 건수를 세는 이벤트와 같은 내용의 디버그 로그를 함께 남긴다. */
 fun swiftYoutubeDownloadFallbackLog(source: String, reason: String, formatId: String, transferProtocol: String) {
     val appLog = runCatching { KoinPlatform.getKoin().get<AppLog>() }.getOrNull() ?: return
-    appLog.sendSentryEvent(SentryEvent.YoutubeDownloadFallback(source, reason, formatId, transferProtocol))
+    appLog.sendSentryEvent(SentryEvent.YoutubeDownloadFallback(secret(source), reason, formatId, transferProtocol))
     appLog.sendDebugLog(
-        DebugLog("YoutubeHlsFallback", "reason=$reason format=$formatId protocol=$transferProtocol source=$source"),
+        DebugLog("YoutubeHlsFallback", "reason=$reason format=$formatId protocol=$transferProtocol source=${secret(source)}"),
     )
 }

@@ -31,7 +31,7 @@ class ImportSharedAudioMediaUseCase constructor(
         ).getOrThrow().audioMedia
     }
         .onSuccess { log("들여옴: id=${it.id} name=${secret(it.name)}") }
-        .onFailure { appLog.sendErrorLog(ErrorLog(LOG_TAG, "들여오기 실패: $contentUriString", it)) }
+        .onFailure { appLog.sendErrorLog(ErrorLog(LOG_TAG, "들여오기 실패: ${secret(contentUriString)}", it)) }
 
     private fun log(message: String) = appLog.sendDebugLog(DebugLog(LOG_TAG, message))
 }
