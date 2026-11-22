@@ -68,6 +68,68 @@ class LyricsTranslatorTest {
     }
 
     @Test
+    fun `곡 안에 일본어 줄이 있으면 중국어로 감지된 한자 줄도 일본어로 번역한다`() = runTest {
+        val engine = FakeEngine(mapOf("永遠" to "zh", "君の名は" to "ja", "東京" to "zh-Hans"))
+
+        val result = LyricsTranslator(engine).translateToKorean("永遠\n君の名は\n東京")
+
+        assertEquals(listOf(listOf("永遠", "君の名は", "東京") to "ja"), engine.translateRequests)
+        assertEquals("ja:永遠\nja:君の名は\nja:東京", result.getOrThrow())
+    }
+
+    @Test
+    fun `제목처럼 앞쪽이 한자 줄뿐이고 일본어 줄이 뒤에야 나와도 일본어로 번역한다`() = runTest {
+        val engine = FakeEngine(mapOf("桜吹雪" to "zh", "東京" to "zh-Hant", "hello" to "en", "さよなら" to "ja"))
+
+        val result = LyricsTranslator(engine).translateToKorean("桜吹雪\n東京\nhello\nさよなら")
+
+        assertEquals(
+            listOf(listOf("桜吹雪", "東京", "さよなら") to "ja", listOf("hello") to "en"),
+            engine.translateRequests,
+        )
+        assertEquals("ja:桜吹雪\nja:東京\nen:hello\nja:さよなら", result.getOrThrow())
+    }
+
+    @Test
+    fun `일본어 줄이 없으면 중국어 줄은 중국어로 번역한다`() = runTest {
+        val engine = FakeEngine(mapOf("永遠" to "zh", "hello" to "en"))
+
+        val result = LyricsTranslator(engine).translateToKorean("永遠\nhello")
+
+        assertEquals("zh:永遠\nen:hello", result.getOrThrow())
+    }
+
+    @Test
+    fun `병음은 일본어 곡이어도 일본어로 돌리지 않는다`() = runTest {
+        val engine = FakeEngine(mapOf("ni hao" to "zh-Latn", "君の名は" to "ja"))
+
+        val result = LyricsTranslator(engine).translateToKorean("ni hao\n君の名は")
+
+        assertEquals("zh-Latn:ni hao\nja:君の名は", result.getOrThrow())
+    }
+
+    @Test
+    fun `한 언어의 번역이 실패하면 그 줄만 원문으로 두고 나머지는 번역한다`() = runTest {
+        val engine = FakeEngine(mapOf("love" to "en", "oh oh" to "de")) { lines, language ->
+            if (language == "de") error("모델 다운로드 실패")
+            lines.map { "$language:$it" }
+        }
+
+        val result = LyricsTranslator(engine).translateToKorean("love\noh oh")
+
+        assertEquals("en:love\noh oh", result.getOrThrow())
+    }
+
+    @Test
+    fun `모든 언어의 번역이 실패하면 실패한다`() = runTest {
+        val engine = FakeEngine(mapOf("love" to "en", "oh oh" to "de")) { _, _ -> error("앱이 백그라운드에 있음") }
+
+        val result = LyricsTranslator(engine).translateToKorean("love\noh oh")
+
+        assertTrue(result.isFailure)
+    }
+
+    @Test
     fun `번역 결과 줄 수가 다르면 실패한다`() = runTest {
         val engine = FakeEngine(mapOf("a" to "en", "b" to "en")) { lines, _ -> lines.drop(1) }
 
