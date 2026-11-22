@@ -30,10 +30,7 @@ class BackupIfDueUseCase(
         return backupNowUseCase(nowMillis)
     }
 
-    /**
-     * 이전·복원이 임시 공간에 받아 둔 것이 있거나, 이 설치가 아직 백업한 적 없이 남은 백업을 찾았다.
-     * 읽지 못하면 있는 것으로 본다 — 없다고 보면 남은 백업을 덮는다.
-     */
+    /** 이전·복원이 임시 공간에 받아 둔 것이 있거나, 이 설치가 아직 백업한 적 없이 남은 백업을 찾았다. */
     private suspend fun isRestorePending(status: BackupStatus): Boolean {
         if (dataMigrationRepository.fetchStagedFiles().getOrNull()?.isEmpty() != true) return true
         if (status.lastSuccessMillis != null) return false
