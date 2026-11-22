@@ -22,7 +22,6 @@ import com.kintmin.presentation.port.StartAnomalyDataCheck
 import com.kintmin.presentation.port.StepMeasurementController
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 import com.kintmin.presentation.ui.setting.backup_restore.toDescription
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,12 +51,11 @@ class SettingViewModel constructor(
     private val checkAppUpdateUseCase: CheckAppUpdateUseCase,
 ) : ViewModel() {
 
-    private var appUpdateCheckJob: Job? = null
-
     private val isPlaylistIdOnDownloadBottomSheetVisible = MutableStateFlow(false)
     private val isImportPlaylistBottomSheetVisible = MutableStateFlow(false)
     private val isImporting = MutableStateFlow(false)
     private val deviceId = MutableStateFlow<String?>(null)
+    private val isCheckingAppUpdate = MutableStateFlow(false)
     private val eventChannel = Channel<SettingEvent>(Channel.BUFFERED)
     val eventFlow: Flow<SettingEvent> = eventChannel.receiveAsFlow()
 
@@ -95,6 +93,8 @@ class SettingViewModel constructor(
         state.copy(deviceId = id)
     }.combine(fetchBackupStatusFlowUseCase()) { state, backupStatus ->
         state.copy(backupDescription = backupStatus.toDescription())
+    }.combine(isCheckingAppUpdate) { state, isChecking ->
+        state.copy(isCheckingAppUpdate = isChecking)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
@@ -295,14 +295,16 @@ class SettingViewModel constructor(
     }
 
     private fun checkAppUpdate(currentVersionName: String) {
-        if (appUpdateCheckJob?.isActive == true) return
-        appUpdateCheckJob = viewModelScope.launch {
+        if (isCheckingAppUpdate.value) return
+        isCheckingAppUpdate.value = true
+        viewModelScope.launch {
             val event = checkAppUpdateUseCase(currentVersionName).fold(
                 onSuccess = { release ->
                     if (release == null) SettingEvent.ShowToast("최신 버전입니다.") else SettingEvent.ShowAppUpdateDialog(release)
                 },
                 onFailure = { SettingEvent.ShowToast("새 버전을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.") },
             )
+            isCheckingAppUpdate.value = false
             eventChannel.send(event)
         }
     }

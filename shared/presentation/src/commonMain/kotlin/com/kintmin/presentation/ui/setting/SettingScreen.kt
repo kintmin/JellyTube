@@ -333,7 +333,7 @@ fun SettingScreen(
                 SettingItemView(
                     title = "버전",
                     icon = Icons.Rounded.Info,
-                    description = appVersion,
+                    description = if (uiState.isCheckingAppUpdate) "새 버전 확인 중…" else appVersion,
                     onClick = if (checksAppUpdate) {
                         { sendIntent(SettingIntent.OnClickVersionTile(appVersion)) }
                     } else {

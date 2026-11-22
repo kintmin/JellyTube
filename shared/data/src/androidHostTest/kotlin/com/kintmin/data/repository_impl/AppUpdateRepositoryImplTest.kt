@@ -54,6 +54,18 @@ class AppUpdateRepositoryImplTest {
     }
 
     @Test
+    fun `나중에 낸 이전 라인 핫픽스보다 버전이 높은 릴리스를 고른다`() = runTest {
+        val json = """
+            [
+              {"tag_name": "mobile/v1.9.1", "html_url": "https://github.com/r/hotfix"},
+              {"tag_name": "mobile/v2.0.0", "html_url": "https://github.com/r/new"}
+            ]
+        """
+
+        assertEquals("2.0.0", repository(json).fetchLatestRelease().getOrThrow()?.versionName)
+    }
+
+    @Test
     fun `프리릴리스는 고르지 않는다`() = runTest {
         val json = """[{"tag_name": "mobile/v2.1.0", "html_url": "https://github.com/r/mobile", "prerelease": true}]"""
 
