@@ -381,7 +381,7 @@ private fun UploadListItem(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = item.errorMessage ?: statusLabel(item.status),
+                    text = item.errorMessage ?: statusLabel(item),
                     style = MaterialTheme.typography.bodySmall,
                     color = statusColor(item.status),
                     maxLines = 1,
@@ -411,12 +411,12 @@ private fun UploadListItem(
 @Composable
 private fun StatusIcon(status: UploadStatus) {
     when (status) {
-        UploadStatus.IDLE -> Icon(
+        UploadStatus.QUEUED, UploadStatus.STAGED -> Icon(
             imageVector = Icons.Rounded.AudioFile,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        UploadStatus.UPLOADING -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+        UploadStatus.UPLOADING, UploadStatus.SAVING -> CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
         UploadStatus.SUCCESS -> Icon(
             imageVector = Icons.Rounded.CheckCircle,
             contentDescription = "업로드 완료",
@@ -431,17 +431,19 @@ private fun StatusIcon(status: UploadStatus) {
 }
 
 @Composable
-private fun statusLabel(status: UploadStatus): String = when (status) {
-    UploadStatus.IDLE -> "업로드 대기 중"
-    UploadStatus.UPLOADING -> "업로드 중..."
+private fun statusLabel(item: UploadFileItem): String = when (item.status) {
+    UploadStatus.QUEUED -> "업로드 대기 중"
+    UploadStatus.UPLOADING -> "업로드 중 ${(item.progress * 100).toInt()}%"
+    UploadStatus.STAGED -> "함께 보낸 곡을 기다리는 중"
+    UploadStatus.SAVING -> "앱에 저장 중..."
     UploadStatus.SUCCESS -> "업로드 완료"
     UploadStatus.FAILURE -> "업로드 실패"
 }
 
 @Composable
 private fun statusColor(status: UploadStatus) = when (status) {
-    UploadStatus.IDLE -> MaterialTheme.colorScheme.onSurfaceVariant
-    UploadStatus.UPLOADING -> MaterialTheme.colorScheme.secondary
+    UploadStatus.QUEUED, UploadStatus.STAGED -> MaterialTheme.colorScheme.onSurfaceVariant
+    UploadStatus.UPLOADING, UploadStatus.SAVING -> MaterialTheme.colorScheme.secondary
     UploadStatus.SUCCESS -> MaterialTheme.colorScheme.primary
     UploadStatus.FAILURE -> MaterialTheme.colorScheme.error
 }
