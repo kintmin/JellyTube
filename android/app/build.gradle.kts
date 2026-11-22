@@ -16,6 +16,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.chaquopy)
     alias(libs.plugins.sentry.android)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 android {
@@ -194,6 +195,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.splashscreen)
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":android:benchmark"))
     // androidx compose BOM 을 같이 두면 androidx.compose.ui 버전이 CMP 포크와 충돌한다.
     // compose·navigation 은 선언하지 않는다.
 

@@ -171,6 +171,7 @@ Kotlin Multiplatform 앱. 하나의 공유 코어를 Android / iOS / Desktop 이
 | `shared/log` | 로깅 API 만. 구현은 `shared:data` |
 | `shared/file-share` | 파일 공유 프로토콜 상수·DTO. 의존성 그래프의 잎 |
 | `android/app` | Android 진입점·조립과 **모든 OS 기능** |
+| `android/benchmark` | 기기에서 도는 시작 시간 측정과 Baseline Profile 생성. 앱 코드를 담지 않는다 |
 | `ios/shared` + `ios/app` | iOS 진입점·조립(Kotlin)과 Xcode 앱·Swift 브릿지 |
 | `desktop` | Compose Desktop. 파일 공유의 보내는 쪽 |
 
