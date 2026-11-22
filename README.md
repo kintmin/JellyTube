@@ -14,11 +14,14 @@ Android 와 iOS 에서 같은 화면으로 동작하고, PC 의 음악 파일은
 
 ## 설치
 
-| 플랫폼 | 방법 |
-|---|---|
-| Android | 릴리스 APK 를 직접 설치합니다. |
-| iOS | [SideStore](https://sidestore.io/) 로 설치합니다. 무료 Apple ID 로 서명하므로 7일마다 SideStore 에서 갱신해야 합니다. |
-| Windows | 데스크톱 앱 설치 파일(MSI·EXE)로 설치합니다. |
+| 플랫폼 | 받는 곳 | 방법 |
+|---|---|---|
+| Android | [최신 모바일 릴리스](https://github.com/kintmin/JellyTube/releases/latest) | APK 를 받아 설치합니다. 앱이 새 버전을 알려 줍니다. |
+| iOS | [최신 모바일 릴리스](https://github.com/kintmin/JellyTube/releases/latest) | [SideStore](https://sidestore.io/) 로 IPA 를 설치합니다. 아래 소스를 추가하면 새 버전이 SideStore 에 뜹니다. 무료 Apple ID 로 서명하므로 7일마다 SideStore 에서 갱신해야 합니다. |
+| Windows | [릴리스 목록](https://github.com/kintmin/JellyTube/releases) | `desktop/v…` 릴리스 중 가장 위의 MSI 나 EXE 로 설치합니다. |
+| macOS | [릴리스 목록](https://github.com/kintmin/JellyTube/releases) | `desktop/v…` 릴리스 중 가장 위의 DMG 로 설치합니다. Apple Silicon 전용입니다. 서명하지 않아 처음 열 때 막히면 시스템 설정 > 개인정보 보호 및 보안에서 "그래도 열기" 를 누릅니다. |
+
+SideStore 소스: `https://github.com/kintmin/JellyTube/releases/latest/download/source.json`
 
 앱 스토어에는 배포하지 않습니다.
 
@@ -47,7 +50,7 @@ Kotlin Multiplatform 으로, 화면을 포함한 코드 대부분을 Android 와
 |---|---|---|
 | android/app | `android/app` | Android 앱 |
 | ios | `ios/shared`, `ios/app` | iOS 앱 (Kotlin 조립과 Xcode 프로젝트) |
-| desktop | `desktop` | Windows 앱 |
+| desktop | `desktop` | Windows·macOS 앱 |
 | presentation | `shared/presentation` | 화면 (Compose Multiplatform) |
 | data | `shared/data` | 로컬 DB, 네트워크, 파일, 기기 간 파일 공유 |
 | domain | `shared/domain` | 앱의 규칙과 동작 |

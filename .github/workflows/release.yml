@@ -1,7 +1,7 @@
 name: Release
 
 # PR 마다 브랜치 규칙을 보고, main 으로 가는 PR 에서는 버전을 대조한다.
-# main 에 들어오면 태그를 붙이고 develop 에 반영하고, 새 mobile 버전이면 APK·IPA 를 GitHub Release 에 올린다.
+# main 에 들어오면 태그를 붙이고 develop 에 반영하고, 새 버전이면 mobile(APK·IPA)과 desktop(MSI·EXE·DMG)을 각각 GitHub Release 에 올린다.
 on:
   pull_request:
   push:
@@ -99,8 +99,12 @@ jobs:
         env:
           TAG: mobile/v${{ needs.versions.outputs.mobile }}
           GH_TOKEN: ${{ github.token }}
+        # 태그가 이번 커밋을 가리킬 때만 만든다. 릴리스 없이 남은 옛 태그를 지금 코드로 빌드하면 태그와 내용이 어긋난다.
         run: |
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          tagged=$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" "refs/tags/$TAG^{}" | cut -f1)
+          if [[ "$tagged" != "$GITHUB_SHA" ]]; then
+            echo "$TAG 는 이번 커밋이 아니다($tagged)"
+          elif gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "$TAG 릴리스는 이미 있다"
           else
             echo "needed=true" >> "$GITHUB_OUTPUT"
@@ -147,10 +151,15 @@ jobs:
             export ORG_GRADLE_PROJECT_JELLY_TUBE_SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN"
           fi
           ./gradlew :android:app:assembleRelease
+          # 로컬 산출물 이름 끝의 빌드 시각은 릴리스 파일 이름에서 뺀다.
+          apk=$(ls android/app/build/outputs/apk/release/*.apk)
+          name=$(basename "$apk")
+          mkdir -p dist
+          cp "$apk" "dist/${name%%_release_*}_release.apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: apk
-          path: android/app/build/outputs/apk/release/*.apk
+          name: mobile-apk
+          path: dist/*.apk
           if-no-files-found: error
 
   # 서명하지 않은 IPA 다. SideStore 가 설치할 때 사용자 Apple ID 로 서명한다.
@@ -192,13 +201,16 @@ jobs:
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP"
-          mkdir Payload
-          cp -R JellyTube.xcarchive/Products/Applications/JellyTubeIos.app Payload/
-          zip -qry "$GITHUB_WORKSPACE/JellyTube.ipa" Payload
+          app=JellyTube.xcarchive/Products/Applications/JellyTubeIos.app
+          version=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$app/Info.plist")
+          build=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$app/Info.plist")
+          mkdir Payload "$GITHUB_WORKSPACE/dist"
+          cp -R "$app" Payload/
+          zip -qry "$GITHUB_WORKSPACE/dist/JellyTube_${version}(${build})_release.ipa" Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: ipa
-          path: JellyTube.ipa
+          name: mobile-ipa
+          path: dist/*.ipa
           if-no-files-found: error
 
   mobile-release:
@@ -214,16 +226,17 @@ jobs:
           fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
+          pattern: mobile-*
           path: dist
           merge-multiple: true
+      # "Latest" 는 늘 mobile 릴리스다. SideStore 소스와 README 가 releases/latest 로 그것을 찾는다.
       - name: Create the release
         run: |
           set -euo pipefail
           # 지정하지 않으면 직전 릴리스부터 모으는데, desktop 릴리스가 끼면 범위가 어긋난다.
           previous=$(git tag -l 'mobile/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
-          gh release create "$TAG" dist/* --verify-tag --title "JellyTube $VERSION" \
+          gh release create "$TAG" dist/* --verify-tag --latest --title "JellyTube $VERSION" \
             --generate-notes ${previous:+--notes-start-tag "$previous"}
-      # SideStore 소스는 releases/latest/download/source.json 으로 구독한다. 최신 릴리스가 늘 이 파일을 갖는다.
       - name: Attach the SideStore source
         run: |
           set -euo pipefail
@@ -239,7 +252,7 @@ jobs:
             --arg repo "$GITHUB_REPOSITORY" --arg sha "$GITHUB_SHA" \
             --arg version "$VERSION" --arg code "$code" \
             --arg bundle_id "$bundle_id" --arg min_os "$min_os" '
-            ($release.assets[] | select(.name == "JellyTube.ipa")) as $ipa | {
+            ($release.assets[] | select(.name | endswith(".ipa"))) as $ipa | {
               name: "JellyTube",
               identifier: "com.kintmin.jellytube.source",
               sourceURL: "https://github.com/\($repo)/releases/latest/download/source.json",
@@ -263,6 +276,99 @@ jobs:
               news: []
             }' > source.json
           gh release upload "$TAG" source.json
+
+  desktop-release-needed:
+    if: github.event_name == 'push'
+    needs: [versions, tag]
+    runs-on: ubuntu-latest
+    outputs:
+      needed: ${{ steps.check.outputs.needed }}
+    steps:
+      - id: check
+        env:
+          TAG: desktop/v${{ needs.versions.outputs.desktop }}
+          GH_TOKEN: ${{ github.token }}
+        # 태그가 이번 커밋을 가리킬 때만 만든다. 릴리스 없이 남은 옛 태그를 지금 코드로 빌드하면 태그와 내용이 어긋난다.
+        run: |
+          tagged=$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" "refs/tags/$TAG^{}" | cut -f1)
+          if [[ "$tagged" != "$GITHUB_SHA" ]]; then
+            echo "$TAG 는 이번 커밋이 아니다($tagged)"
+          elif gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$TAG 릴리스는 이미 있다"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # 서명하지 않은 설치 파일이다. Windows 는 SmartScreen, macOS 는 Gatekeeper 가 처음 실행을 한 번 막는다.
+  desktop-package:
+    needs: desktop-release-needed
+    # 수동 실행에서는 앞 job 이 건너뛰어지므로, 건너뛴 의존을 막지 않게 !cancelled() 로 연다.
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.desktop-release-needed.outputs.needed == 'true') }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            tasks: :desktop:packageMsi :desktop:packageExe
+            formats: msi exe
+          - os: macos-26
+            tasks: :desktop:packageDmg
+            formats: dmg
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Package
+        env:
+          TASKS: ${{ matrix.tasks }}
+          FORMATS: ${{ matrix.formats }}
+        run: |
+          set -euo pipefail
+          ./gradlew $TASKS
+          config=buildSrc/src/main/java/com/kintmin/buildSrc/AppConfiguration.kt
+          version=$(grep -oE 'DESKTOP_VERSION_NAME = "[^"]+"' "$config" | cut -d'"' -f2)
+          [[ -n "$version" ]] || { echo "::error::DESKTOP_VERSION_NAME 을 읽지 못했다"; exit 1; }
+          mkdir -p dist
+          for format in $FORMATS; do
+            file=$(ls desktop/build/compose/binaries/main/$format/*.$format)
+            cp "$file" "dist/JellyTube_FileShare_$version.$format"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ runner.os }}
+          path: dist/*
+          if-no-files-found: error
+
+  desktop-release:
+    needs: [versions, desktop-package]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.versions.outputs.desktop }}
+      TAG: desktop/v${{ needs.versions.outputs.desktop }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          path: dist
+          merge-multiple: true
+      # Latest 는 mobile 몫이다. desktop 이 가져가면 SideStore 소스 주소가 desktop 릴리스를 가리킨다.
+      - name: Create the release
+        run: |
+          set -euo pipefail
+          previous=$(git tag -l 'desktop/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
+          gh release create "$TAG" dist/* --verify-tag --latest=false --title "JellyTube File Share $VERSION" \
+            --generate-notes ${previous:+--notes-start-tag "$previous"}
 
   sync-develop:
     if: github.event_name == 'push'
