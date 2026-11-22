@@ -1,7 +1,7 @@
 name: Release
 
 # PR 마다 브랜치 규칙을 보고, main 으로 가는 PR 에서는 버전을 대조한다.
-# main 에 들어오면 태그를 붙이고 develop 에 반영한다.
+# main 에 들어오면 태그를 붙이고 develop 에 반영하고, 새 mobile 버전이면 APK 를 GitHub Release 에 올린다.
 on:
   pull_request:
   push:
@@ -85,6 +85,69 @@ jobs:
               git push origin "refs/tags/$tag"
             fi
           done
+
+  android-release:
+    if: github.event_name == 'push'
+    needs: [versions, tag]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TAG: mobile/v${{ needs.versions.outputs.mobile }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - id: check
+        name: Skip when the release already exists
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$TAG 릴리스는 이미 있다"; echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.check.outputs.skip != 'true'
+        uses: actions/checkout@v4
+      - if: steps.check.outputs.skip != 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      # Chaquopy 가 빌드 때 pip 로 패키지를 받으려면 앱과 같은 버전의 Python 이 PATH 에 있어야 한다.
+      - if: steps.check.outputs.skip != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - if: steps.check.outputs.skip != 'true'
+        uses: gradle/actions/setup-gradle@v4
+      - if: steps.check.outputs.skip != 'true'
+        name: Build the signed release APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          # 키가 없어도 release 는 서명 없이 빌드되므로, 여기서 막지 않으면 설치할 수 없는 APK 가 올라간다.
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            [[ -n "${!name}" ]] || { echo "::error::ANDROID_$name 시크릿이 없다"; exit 1; }
+          done
+          keystore="$RUNNER_TEMP/release.keystore"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$keystore"
+          export ORG_GRADLE_PROJECT_JELLY_TUBE_KEYSTORE_FILE="$keystore"
+          export ORG_GRADLE_PROJECT_JELLY_TUBE_KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD"
+          export ORG_GRADLE_PROJECT_JELLY_TUBE_KEY_ALIAS="$KEY_ALIAS"
+          export ORG_GRADLE_PROJECT_JELLY_TUBE_KEY_PASSWORD="$KEY_PASSWORD"
+          # 빈 문자열도 속성으로 잡혀 mapping 업로드를 켜므로, 토큰이 있을 때만 넘긴다.
+          if [[ -n "$SENTRY_AUTH_TOKEN" ]]; then
+            export ORG_GRADLE_PROJECT_JELLY_TUBE_SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN"
+          fi
+          ./gradlew :android:app:assembleRelease
+      - if: steps.check.outputs.skip != 'true'
+        name: Publish the APK to GitHub Release
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          apks=(android/app/build/outputs/apk/release/*.apk)
+          [[ ${#apks[@]} -eq 1 ]] || { echo "::error::release APK 가 하나가 아니다: ${apks[*]}"; exit 1; }
+          gh release create "$TAG" "${apks[0]}" --verify-tag --title "JellyTube ${TAG#mobile/v}" --generate-notes
 
   sync-develop:
     if: github.event_name == 'push'
