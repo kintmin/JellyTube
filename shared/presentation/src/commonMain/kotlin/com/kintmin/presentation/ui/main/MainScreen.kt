@@ -34,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.animation.FloatingFieldVisibility
 import com.kintmin.presentation.platform.AppPermission
+import com.kintmin.presentation.platform.checksAppUpdate
+import com.kintmin.presentation.platform.rememberAppVersionName
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.platform.rememberWebViewHandle
@@ -52,6 +55,7 @@ import com.kintmin.presentation.theme.topAppBarHeight
 import com.kintmin.presentation.theme.topAppBarIconSize
 import com.kintmin.presentation.theme.topAppBarRootTitleFontSize
 import com.kintmin.presentation.theme.topAppBarRootTitleLineHeight
+import com.kintmin.presentation.ui.common.AppUpdateDialog
 import com.kintmin.presentation.ui.common.floatingField
 import com.kintmin.presentation.ui.custom_ui.data_table.AgeColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.DataTableView
@@ -103,6 +107,12 @@ fun MainScreen(
     val mainUiState by mainViewModel.uiState.collectAsState()
     val youtubeDownloadUiState by downloadViewModel.uiState.collectAsState()
     val currentMediaItem by playerBarViewModel.uiState.collectAsState()
+
+    val appVersion = rememberAppVersionName()
+    val uriHandler = LocalUriHandler.current
+    LaunchedEffect(Unit) {
+        if (checksAppUpdate) mainViewModel.sendIntent(MainIntent.CheckAppUpdate(appVersion))
+    }
 
     val permissionController = rememberPermissionController()
     LaunchedEffect(Unit) {
@@ -159,6 +169,13 @@ fun MainScreen(
             },
         )
     }
+
+    AppUpdateDialog(
+        versionName = mainUiState.availableUpdate?.versionName,
+        onDownload = { mainUiState.availableUpdate?.let { uriHandler.openUri(it.downloadUrl) } },
+        onDismiss = { mainViewModel.sendIntent(MainIntent.DismissAppUpdate) },
+        onIgnore = { mainViewModel.sendIntent(MainIntent.IgnoreAppUpdate) },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

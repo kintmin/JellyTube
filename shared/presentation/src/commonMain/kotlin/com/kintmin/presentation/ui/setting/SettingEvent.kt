@@ -1,5 +1,7 @@
 package com.kintmin.presentation.ui.setting
 
+import com.kintmin.domain.app_update.model.AppRelease
+
 sealed interface SettingEvent {
     data object NavigateToStepScreen : SettingEvent
     data object NavigateToAppLogScreen : SettingEvent
@@ -14,4 +16,5 @@ sealed interface SettingEvent {
     data object RequestActivityRecognitionPermission : SettingEvent
     data class ShowToast(val message: String) : SettingEvent
     data class CopyDeviceId(val deviceId: String) : SettingEvent
+    data class ShowAppUpdateDialog(val release: AppRelease) : SettingEvent
 }

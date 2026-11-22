@@ -35,10 +35,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.domain.app_update.model.AppRelease
 import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.SystemSettingsTarget
+import com.kintmin.presentation.platform.checksAppUpdate
 import com.kintmin.presentation.platform.rememberAppVersionName
 import com.kintmin.presentation.platform.rememberAudioFilePicker
 import com.kintmin.presentation.platform.rememberBackupFolderPicker
@@ -48,6 +51,7 @@ import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.platform.textClipEntry
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
+import com.kintmin.presentation.ui.common.AppUpdateDialog
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.DownloadPlaylistSelectorBottomSheet
 import com.kintmin.presentation.ui.setting.dialog.MotionPermissionDialog
@@ -78,6 +82,8 @@ fun SettingScreen(
     val permissionController = rememberPermissionController()
     val systemSettingsOpener = rememberSystemSettingsOpener()
     var isMotionPermissionDialogVisible by remember { mutableStateOf(false) }
+    var availableUpdate by remember { mutableStateOf<AppRelease?>(null) }
+    val uriHandler = LocalUriHandler.current
     // 음원 가져오기는 선택기를 "오디오" 루트에서 연다.
     val audioFilePicker = rememberAudioFilePicker(startAtAudioRoot = true) { fileIdentifiers ->
         viewModel.sendIntent(SettingIntent.OnAudioFilesSelected(fileIdentifiers))
@@ -104,6 +110,7 @@ fun SettingScreen(
                 SettingEvent.LaunchBackupFolderPicker -> backupFolderPicker.launch()
                 is SettingEvent.ShowToast ->
                     toaster.show(event.message)
+                is SettingEvent.ShowAppUpdateDialog -> availableUpdate = event.release
                 is SettingEvent.CopyDeviceId -> {
                     clipboard.setClipEntry(textClipEntry(event.deviceId))
                     toaster.show("기기 식별자를 복사했습니다.")
@@ -138,6 +145,12 @@ fun SettingScreen(
             }
         },
         onDismiss = { isMotionPermissionDialogVisible = false },
+    )
+
+    AppUpdateDialog(
+        versionName = availableUpdate?.versionName,
+        onDownload = { availableUpdate?.let { uriHandler.openUri(it.downloadUrl) } },
+        onDismiss = { availableUpdate = null },
     )
 
     SettingScreen(
@@ -320,8 +333,12 @@ fun SettingScreen(
                 SettingItemView(
                     title = "버전",
                     icon = Icons.Rounded.Info,
-                    description = appVersion,
-                    onClick = null,
+                    description = if (uiState.isCheckingAppUpdate) "새 버전 확인 중…" else appVersion,
+                    onClick = if (checksAppUpdate) {
+                        { sendIntent(SettingIntent.OnClickVersionTile(appVersion)) }
+                    } else {
+                        null
+                    },
                 )
                 SettingItemView(
                     title = "기기 식별자",
