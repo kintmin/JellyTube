@@ -33,7 +33,6 @@ class MainViewModelTest {
     private val dir = createTempDirectory("upload-test").toFile()
     private val commits: MutableList<List<String>> = Collections.synchronizedList(mutableListOf())
 
-    /** 파일 이름으로 받기 응답을 정한다. 기본은 바로 받기 성공이다. */
     private var onStage: suspend (fileName: String) -> UploadStageResponse = { name ->
         UploadStageResponse(success = true, message = "", stageId = name)
     }

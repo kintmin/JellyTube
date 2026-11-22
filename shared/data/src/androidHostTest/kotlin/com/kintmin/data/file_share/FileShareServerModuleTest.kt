@@ -45,7 +45,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 
-/** PC → 휴대폰 엔드포인트의 동작. 토큰 없이 받지만 이전 세션 동안은 거절한다. */
 class FileShareServerModuleTest {
 
     @get:Rule

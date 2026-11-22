@@ -6,7 +6,7 @@ import kotlinx.atomicfu.locks.synchronized
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 
-/** 받기만 하고 아직 목록에 넣지 않은 임시 파일. 반영되지 못한 채 서버가 멈추면 [clear] 가 지운다. */
+/** 받기만 하고 아직 목록에 넣지 않은 임시 파일. */
 internal class StagedUploads {
     private val lock = SynchronizedObject()
     private val uploads = mutableMapOf<String, UploadedAudioFile>()
