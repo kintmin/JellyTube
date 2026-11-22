@@ -4,6 +4,8 @@ import com.kintmin.desktop.discovery.DiscoveredDevice
 import com.kintmin.desktop.discovery.discoverDevice
 import com.kintmin.desktop.upload.FileUploader
 import com.kintmin.desktop.upload.naturalFileNameOrder
+import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.fileshare.FileShareResponse
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +48,9 @@ class MainViewModel(
     }
 
     fun startDiscovery() {
-        _uiState.update { it.copy(discoveryState = DiscoveryState.DISCOVERING) }
+        // 업로더를 닫으면 보내던 곡이 실패하고, 받아 둔 곡은 반영하지 못한다.
+        if (_uiState.value.isUploading) return
+        _uiState.update { it.copy(discoveryState = DiscoveryState.DISCOVERING, dropMessage = null) }
         scope.launch {
             val device = discover()
             uploader?.close()
@@ -57,29 +61,29 @@ class MainViewModel(
         }
     }
 
-    fun onAudioFilesDrop(files: List<File>) {
-        val currentUploader = uploader ?: run {
-            _uiState.update { it.copy(bulkMessage = "연결된 기기가 없습니다.") }
-            return
+    /** 드롭과 파일 선택이 같이 쓴다. 음원이 있으면 음원을 보내고, 이미지 1장만 있으면 썸네일로 적용한다. */
+    fun onFilesDrop(files: List<File>) {
+        val audioFiles = files.filter { it.extension.lowercase() in FileShareConstants.UPLOAD_AUDIO_EXTENSIONS }
+        val imageFiles = files.filter { it.extension.lowercase() in THUMBNAIL_IMAGE_EXTENSIONS }
+        when {
+            audioFiles.isNotEmpty() -> {
+                val skipped = files.size - audioFiles.size
+                sendAudioFiles(audioFiles, skippedMessage = if (skipped > 0) "음원이 아닌 파일 ${skipped}개는 건너뛰었습니다." else null)
+            }
+            imageFiles.size == 1 -> applyThumbnail(imageFiles.single())
+            imageFiles.size > 1 -> _uiState.update { it.copy(dropMessage = "썸네일 이미지는 1장만 놓을 수 있습니다.") }
+            else -> _uiState.update { it.copy(dropMessage = UNSUPPORTED_FILES_MESSAGE) }
         }
-        val newItems = files.sortedWith(naturalFileNameOrder).map { UploadFileItem(file = it) }
-        _uiState.update {
-            it.copy(
-                uploadItems = it.uploadItems + newItems,
-                bulkMessage = null,
-            )
-        }
-        uploadBatch(newItems.map { it.id }, currentUploader)
     }
 
     fun onRetry(itemId: String) {
-        val item = _uiState.value.uploadItems.firstOrNull { it.id == itemId } ?: return
-        val currentUploader = uploader ?: return
+        val item = itemOf(itemId) ?: return
         if (item.status != UploadStatus.FAILURE) return
-        _uiState.updateItem(itemId) {
-            it.copy(status = UploadStatus.QUEUED, progress = 0f, stageId = null, errorMessage = null)
-        }
-        uploadBatch(listOf(itemId), currentUploader)
+        retry(listOf(itemId))
+    }
+
+    fun onRetryAllFailed() {
+        retry(_uiState.value.uploadItems.filter { it.status == UploadStatus.FAILURE }.map { it.id })
     }
 
     fun onRemoveItem(itemId: String) {
@@ -90,9 +94,8 @@ class MainViewModel(
     }
 
     fun onClearAll() {
-        stageJobs.values.forEach { it.cancel() }
-        stageJobs.clear()
-        _uiState.update { it.copy(uploadItems = emptyList(), bulkMessage = null) }
+        if (!_uiState.value.canClearList) return
+        _uiState.update { it.copy(uploadItems = emptyList(), bulkMessage = null, dropMessage = null) }
     }
 
     fun onBulkArtistChange(value: String) {
@@ -100,54 +103,68 @@ class MainViewModel(
     }
 
     fun onApplyBulkArtist() {
-        val artist = _uiState.value.bulkArtist.trim()
-        if (artist.isEmpty()) {
-            _uiState.update { it.copy(bulkMessage = "아티스트를 입력해주세요.") }
-            return
-        }
-        val ids = successAudioMediaIds()
-        if (ids.isEmpty()) {
-            _uiState.update { it.copy(bulkMessage = "업로드 완료된 음원이 없습니다.") }
-            return
-        }
-        val currentUploader = uploader ?: return
-        _uiState.update { it.copy(bulkMessage = "아티스트 적용 중...") }
-        scope.launch {
-            currentUploader.updateArtist(ids, artist)
-                .onSuccess { response ->
-                    _uiState.update {
-                        it.copy(bulkMessage = if (response.success) "아티스트 적용 완료" else response.message)
-                    }
-                }
-                .onFailure { error ->
-                    _uiState.update { it.copy(bulkMessage = error.message ?: "아티스트 적용 실패") }
-                }
+        val state = _uiState.value
+        if (!state.canApplyArtist) return
+        val artist = state.bulkArtist.trim()
+        applyBulk(progressMessage = "아티스트 적용 중...", doneMessage = "아티스트 적용 완료", failMessage = "아티스트 적용 실패") { uploader, ids ->
+            uploader.updateArtist(ids, artist)
         }
     }
 
-    fun onImageDrop(imageFile: File) {
-        val ids = successAudioMediaIds()
-        if (ids.isEmpty()) {
-            _uiState.update { it.copy(bulkMessage = "업로드 완료된 음원이 없습니다.") }
+    private fun applyThumbnail(imageFile: File) {
+        if (_uiState.value.isApplyingBulk) return
+        if (_uiState.value.successCount == 0) {
+            _uiState.update { it.copy(bulkMessage = "업로드 완료된 음원이 없어 썸네일을 적용할 곳이 없습니다.") }
             return
         }
-        val currentUploader = uploader ?: return
-        _uiState.update { it.copy(bulkMessage = "썸네일 적용 중...") }
-        scope.launch {
-            currentUploader.updateThumbnail(ids, imageFile)
-                .onSuccess { response ->
-                    _uiState.update {
-                        it.copy(bulkMessage = if (response.success) "썸네일 적용 완료" else response.message)
-                    }
-                }
-                .onFailure { error ->
-                    _uiState.update { it.copy(bulkMessage = error.message ?: "썸네일 적용 실패") }
-                }
+        applyBulk(progressMessage = "썸네일 적용 중...", doneMessage = "썸네일 적용 완료", failMessage = "썸네일 적용 실패") { uploader, ids ->
+            uploader.updateThumbnail(ids, imageFile)
         }
     }
 
-    fun onUnsupportedImageDrop() {
-        _uiState.update { it.copy(bulkMessage = "이미지는 1장만 적용할 수 있습니다.") }
+    private fun applyBulk(
+        progressMessage: String,
+        doneMessage: String,
+        failMessage: String,
+        request: suspend (FileUploader, List<Int>) -> Result<FileShareResponse>,
+    ) {
+        val currentUploader = uploader ?: return
+        val ids = successAudioMediaIds()
+        _uiState.update { it.copy(isApplyingBulk = true, bulkMessage = progressMessage) }
+        scope.launch {
+            val message = request(currentUploader, ids).fold(
+                onSuccess = { response -> if (response.success) doneMessage else response.message },
+                onFailure = { error -> error.message ?: failMessage },
+            )
+            _uiState.update { it.copy(isApplyingBulk = false, bulkMessage = message) }
+        }
+    }
+
+    private fun sendAudioFiles(files: List<File>, skippedMessage: String?) {
+        val currentUploader = uploader ?: run {
+            _uiState.update { it.copy(dropMessage = NOT_CONNECTED_MESSAGE) }
+            return
+        }
+        val newItems = files.sortedWith(naturalFileNameOrder).map { UploadFileItem(file = it) }
+        _uiState.update {
+            it.copy(uploadItems = it.uploadItems + newItems, dropMessage = skippedMessage)
+        }
+        uploadBatch(newItems.map { it.id }, currentUploader)
+    }
+
+    /** 다시 보내는 곡은 새 묶음이 되어 목록에서의 순서대로 맨 뒤에 반영된다. */
+    private fun retry(itemIds: List<String>) {
+        if (itemIds.isEmpty()) return
+        val currentUploader = uploader ?: run {
+            _uiState.update { it.copy(dropMessage = NOT_CONNECTED_MESSAGE) }
+            return
+        }
+        itemIds.forEach { id ->
+            _uiState.updateItem(id) {
+                it.copy(status = UploadStatus.QUEUED, progress = 0f, stageId = null, errorMessage = null)
+            }
+        }
+        uploadBatch(itemIds, currentUploader)
     }
 
     /** 곡은 병렬로 보내고, 묶음 전체가 받아진 뒤 [itemIds] 순서 그대로 한 번에 반영한다. */
@@ -234,6 +251,11 @@ class MainViewModel(
 }
 
 private const val MAX_PARALLEL_STAGES = 3
+
+internal val THUMBNAIL_IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
+
+private const val NOT_CONNECTED_MESSAGE = "기기가 연결되지 않아 업로드할 수 없습니다. 휴대폰에서 받기를 켠 뒤 새로고침해 주세요."
+private const val UNSUPPORTED_FILES_MESSAGE = "음원(mp3·flac 등)이나 썸네일 이미지(jpg·png·webp)만 놓을 수 있습니다."
 
 private fun MutableStateFlow<MainUiState>.updateItem(
     itemId: String,
