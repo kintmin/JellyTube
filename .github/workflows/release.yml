@@ -99,8 +99,12 @@ jobs:
         env:
           TAG: mobile/v${{ needs.versions.outputs.mobile }}
           GH_TOKEN: ${{ github.token }}
+        # 태그가 이번 커밋을 가리킬 때만 만든다. 릴리스 없이 남은 옛 태그를 지금 코드로 빌드하면 태그와 내용이 어긋난다.
         run: |
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          tagged=$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" "refs/tags/$TAG^{}" | cut -f1)
+          if [[ "$tagged" != "$GITHUB_SHA" ]]; then
+            echo "$TAG 는 이번 커밋이 아니다($tagged)"
+          elif gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "$TAG 릴리스는 이미 있다"
           else
             echo "needed=true" >> "$GITHUB_OUTPUT"
@@ -147,10 +151,15 @@ jobs:
             export ORG_GRADLE_PROJECT_JELLY_TUBE_SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN"
           fi
           ./gradlew :android:app:assembleRelease
+          # 로컬 산출물 이름 끝의 빌드 시각은 릴리스 파일 이름에서 뺀다.
+          apk=$(ls android/app/build/outputs/apk/release/*.apk)
+          name=$(basename "$apk")
+          mkdir -p dist
+          cp "$apk" "dist/${name%%_release_*}_release.apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: apk
-          path: android/app/build/outputs/apk/release/*.apk
+          name: mobile-apk
+          path: dist/*.apk
           if-no-files-found: error
 
   # 서명하지 않은 IPA 다. SideStore 가 설치할 때 사용자 Apple ID 로 서명한다.
@@ -192,13 +201,16 @@ jobs:
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP"
-          mkdir Payload
-          cp -R JellyTube.xcarchive/Products/Applications/JellyTubeIos.app Payload/
-          zip -qry "$GITHUB_WORKSPACE/JellyTube.ipa" Payload
+          app=JellyTube.xcarchive/Products/Applications/JellyTubeIos.app
+          version=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$app/Info.plist")
+          build=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$app/Info.plist")
+          mkdir Payload "$GITHUB_WORKSPACE/dist"
+          cp -R "$app" Payload/
+          zip -qry "$GITHUB_WORKSPACE/dist/JellyTube_${version}(${build})_release.ipa" Payload
       - uses: actions/upload-artifact@v4
         with:
-          name: ipa
-          path: JellyTube.ipa
+          name: mobile-ipa
+          path: dist/*.ipa
           if-no-files-found: error
 
   mobile-release:
@@ -214,16 +226,17 @@ jobs:
           fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
+          pattern: mobile-*
           path: dist
           merge-multiple: true
+      # "Latest" 는 늘 mobile 릴리스다. SideStore 소스와 README 가 releases/latest 로 그것을 찾는다.
       - name: Create the release
         run: |
           set -euo pipefail
           # 지정하지 않으면 직전 릴리스부터 모으는데, desktop 릴리스가 끼면 범위가 어긋난다.
           previous=$(git tag -l 'mobile/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
-          gh release create "$TAG" dist/* --verify-tag --title "JellyTube $VERSION" \
+          gh release create "$TAG" dist/* --verify-tag --latest --title "JellyTube $VERSION" \
             --generate-notes ${previous:+--notes-start-tag "$previous"}
-      # SideStore 소스는 releases/latest/download/source.json 으로 구독한다. 최신 릴리스가 늘 이 파일을 갖는다.
       - name: Attach the SideStore source
         run: |
           set -euo pipefail
@@ -239,7 +252,7 @@ jobs:
             --arg repo "$GITHUB_REPOSITORY" --arg sha "$GITHUB_SHA" \
             --arg version "$VERSION" --arg code "$code" \
             --arg bundle_id "$bundle_id" --arg min_os "$min_os" '
-            ($release.assets[] | select(.name == "JellyTube.ipa")) as $ipa | {
+            ($release.assets[] | select(.name | endswith(".ipa"))) as $ipa | {
               name: "JellyTube",
               identifier: "com.kintmin.jellytube.source",
               sourceURL: "https://github.com/\($repo)/releases/latest/download/source.json",
