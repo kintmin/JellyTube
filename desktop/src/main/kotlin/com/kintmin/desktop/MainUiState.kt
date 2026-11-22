@@ -1,5 +1,6 @@
 package com.kintmin.desktop
 
+import com.kintmin.desktop.update.DesktopRelease
 import java.io.File
 import java.util.UUID
 
@@ -10,6 +11,7 @@ data class MainUiState(
     val bulkMessage: String? = null,
     val dropMessage: String? = null,
     val isApplyingBulk: Boolean = false,
+    val availableUpdate: DesktopRelease? = null,
 ) {
     val isUploading: Boolean get() = uploadItems.any { it.status in IN_PROGRESS }
     val successCount: Int get() = uploadItems.count { it.status == UploadStatus.SUCCESS }
