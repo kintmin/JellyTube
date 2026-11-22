@@ -18,7 +18,6 @@ class CreateLyricsVariantUseCase(
     suspend operator fun invoke(
         lyricFileFullPath: String,
         variant: LyricsVariant,
-        sourceLanguage: String,
     ): Result<Unit> = runCatching {
         val rawLyrics = audioMediaRepository.getLyrics(lyricFileFullPath).getOrThrow()
         val parsedLines = parseLyricsUseCase(rawLyrics)
@@ -27,7 +26,7 @@ class CreateLyricsVariantUseCase(
         val sourceText = parsedLines.joinToString("\n") { it.text }
         val convertedText = when (variant) {
             LyricsVariant.TRANSLATION ->
-                lyricsTranslationRepository.translate(sourceText, sourceLanguage).getOrThrow()
+                lyricsTranslationRepository.translate(sourceText).getOrThrow()
 
             LyricsVariant.TRANSLITERATION ->
                 lyricsTranslationRepository.transliterate(sourceText).getOrThrow()

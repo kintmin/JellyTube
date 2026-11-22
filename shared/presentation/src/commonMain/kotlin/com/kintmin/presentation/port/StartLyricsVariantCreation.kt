@@ -9,6 +9,5 @@ interface StartLyricsVariantCreation {
         audioMediaId: Int,
         lyricFileFullPath: String,
         variant: LyricsVariant,
-        sourceLanguage: String,
     )
 }

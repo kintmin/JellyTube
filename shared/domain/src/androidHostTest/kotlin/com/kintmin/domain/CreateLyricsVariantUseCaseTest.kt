@@ -32,19 +32,19 @@ class CreateLyricsVariantUseCaseTest {
         coEvery { audioMediaRepository.getLyrics(path) } returns
             Result.success("[00:01.00]hello\n[00:03.00]world")
         // 번역 엔진은 줄 구조를 보존해 반환한다고 가정한다.
-        coEvery { translationRepository.translate(any(), "en") } returns
+        coEvery { translationRepository.translate(any()) } returns
             Result.success("안녕\n세계")
         val savedText = slot<String>()
         coEvery {
             audioMediaRepository.saveVariantLyrics(path, LyricsVariant.TRANSLATION, capture(savedText))
         } returns Result.success(Unit)
 
-        val result = useCase(path, LyricsVariant.TRANSLATION, "en")
+        val result = useCase(path, LyricsVariant.TRANSLATION)
 
         assertTrue(result.isSuccess)
         assertEquals("[00:01.00]안녕\n[00:03.00]세계", savedText.captured)
         // 엔진에는 타임태그를 뗀 텍스트만 넘긴다.
-        coVerify(exactly = 1) { translationRepository.translate("hello\nworld", "en") }
+        coVerify(exactly = 1) { translationRepository.translate("hello\nworld") }
     }
 
     @Test
@@ -56,7 +56,7 @@ class CreateLyricsVariantUseCaseTest {
             audioMediaRepository.saveVariantLyrics(path, LyricsVariant.TRANSLITERATION, any())
         } returns Result.success(Unit)
 
-        val result = useCase(path, LyricsVariant.TRANSLITERATION, "ja")
+        val result = useCase(path, LyricsVariant.TRANSLITERATION)
 
         assertTrue(result.isSuccess)
         coVerify(exactly = 1) { translationRepository.transliterate("君") }
@@ -67,7 +67,7 @@ class CreateLyricsVariantUseCaseTest {
         val path = "/lyrics/empty.lrc"
         coEvery { audioMediaRepository.getLyrics(path) } returns Result.success("")
 
-        val result = useCase(path, LyricsVariant.TRANSLATION, "en")
+        val result = useCase(path, LyricsVariant.TRANSLATION)
 
         assertTrue(result.isFailure)
     }
