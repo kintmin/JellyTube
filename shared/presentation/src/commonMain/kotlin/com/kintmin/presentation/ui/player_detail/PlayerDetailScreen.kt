@@ -1,6 +1,10 @@
 package com.kintmin.presentation.ui.player_detail
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
@@ -55,15 +59,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.animation.PlaybackPollingEffect
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
-import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.artworkBackdropFallback
@@ -71,8 +76,10 @@ import com.kintmin.presentation.theme.overlayContent
 import com.kintmin.presentation.theme.overlayContentMuted
 import com.kintmin.presentation.theme.overlayContentSecondary
 import com.kintmin.presentation.theme.overlayScrimSoft
-import com.kintmin.presentation.ui.common.AudioArtwork
 import com.kintmin.presentation.ui.common.PlaybackToggleButton
+import com.kintmin.presentation.ui.player_detail.artwork.ARTWORK_TRANSITION_MILLIS
+import com.kintmin.presentation.ui.player_detail.artwork.PlayerArtworkView
+import com.kintmin.presentation.ui.player_detail.artwork.rememberPlayerArtwork
 import com.kintmin.presentation.ui.player_detail.control.PLAYBACK_VALUE_WIDTH
 import com.kintmin.presentation.ui.player_detail.control.PlaybackSliderView
 import com.kintmin.presentation.ui.player_detail.control.PlaybackValueView
@@ -141,9 +148,12 @@ fun PlayerDetailScreen(
 
     val playbackSeconds = max(1L, data.playbackDuration.inWholeSeconds)
     val currentSeconds = min(data.currentDuration.inWholeSeconds, playbackSeconds)
-    var gradientColors by remember { mutableStateOf(artworkBackdropFallback) }
-    LaunchedEffect(data.imageFileFullPath) {
-        gradientColors = extractGradientFromArtwork(data.imageFileFullPath) ?: artworkBackdropFallback
+    var artworkSize by remember { mutableStateOf(IntSize.Zero) }
+    val artworkTransition = updateTransition(rememberPlayerArtwork(data.imageFileFullPath, artworkSize))
+    val gradientColors = artworkBackdropFallback.indices.map { index ->
+        artworkTransition.animateColor(
+            transitionSpec = { if (initialState == null) snap() else tween(ARTWORK_TRANSITION_MILLIS) },
+        ) { it?.gradientColors?.get(index) ?: artworkBackdropFallback[index] }.value
     }
 
     Scaffold(
@@ -225,7 +235,8 @@ fun PlayerDetailScreen(
                 Crossfade(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .weight(1f)
+                        .onSizeChanged { artworkSize = it },
                     targetState = data.showsLyricsPanel,
                 ) { showsLyrics ->
                     // 가사 없는 곡이면 찾으러 보낸다 — 그 안내를 화면에 상시로 띄우지 않고 눌렀을 때만 꺼낸다.
@@ -261,11 +272,9 @@ fun PlayerDetailScreen(
                             }
                         }
                     } else {
-                        AudioArtwork(
-                            imageFileFullPath = data.imageFileFullPath,
+                        PlayerArtworkView(
+                            transition = artworkTransition,
                             modifier = artworkModifier,
-                            placeholderIconSize = 100.dp,
-                            placeholderTint = overlayContentMuted,
                         ) {
                             CurrentLyricOverlayView(
                                 line = data.currentLyricLine,
@@ -522,39 +531,6 @@ fun PlayerDetailScreen(
             )
         }
     }
-}
-
-private suspend fun extractGradientFromArtwork(path: String?): List<Color>? {
-    if (path.isNullOrBlank()) return null
-    val seed = Color(extractDominantColor(path) ?: return null)
-
-    return listOf(
-        seed.lighten(0.2f),
-        seed.darken(0.55f),
-        seed.darken(0.82f),
-    )
-}
-
-
-private fun Color.lighten(factor: Float): Color {
-    val safe = factor.coerceIn(0f, 1f)
-    return Color(
-        red = red + (1f - red) * safe,
-        green = green + (1f - green) * safe,
-        blue = blue + (1f - blue) * safe,
-        alpha = 1f,
-    )
-}
-
-private fun Color.darken(factor: Float): Color {
-    val safe = factor.coerceIn(0f, 1f)
-    val mul = 1f - safe
-    return Color(
-        red = red * mul,
-        green = green * mul,
-        blue = blue * mul,
-        alpha = 1f,
-    )
 }
 
 @Preview
