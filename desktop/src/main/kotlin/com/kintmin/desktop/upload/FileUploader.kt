@@ -36,7 +36,7 @@ class FileUploader(
         }
     }
 
-    /** 받는 기기가 임시로 받아 두기만 한다. 목록에는 [commit] 이 넣는다. [onProgress] 는 0..1 이다. */
+    /** [onProgress] 는 0..1 이다. */
     suspend fun stage(file: File, onProgress: (Float) -> Unit): Result<UploadStageResponse> = catching {
         val response = client.post("http://$hostAddress:$port${FileShareConstants.HTTP_UPLOAD_STAGE_PATH}") {
             header(FileShareConstants.HEADER_FILE_NAME, file.name)
@@ -46,7 +46,6 @@ class FileUploader(
         response.body<UploadStageResponse>()
     }
 
-    /** 결과는 [stageIds] 와 같은 순서다. */
     suspend fun commit(stageIds: List<String>): Result<UploadCommitResponse> = catching {
         val response = client.post("http://$hostAddress:$port${FileShareConstants.HTTP_UPLOAD_COMMIT_PATH}") {
             contentType(ContentType.Application.Json)

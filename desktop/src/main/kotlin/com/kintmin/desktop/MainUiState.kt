@@ -7,13 +7,10 @@ data class MainUiState(
     val discoveryState: DiscoveryState = DiscoveryState.DISCOVERING,
     val uploadItems: List<UploadFileItem> = emptyList(),
     val bulkArtist: String = "",
-    /** 아티스트·썸네일 일괄 적용의 결과. */
     val bulkMessage: String? = null,
-    /** 연결과 드롭에 관한 안내. */
     val dropMessage: String? = null,
     val isApplyingBulk: Boolean = false,
 ) {
-    /** 보내거나 저장 중인 곡이 있으면 연결을 바꾸거나 목록을 비우지 않는다. */
     val isUploading: Boolean get() = uploadItems.any { it.status in IN_PROGRESS }
     val successCount: Int get() = uploadItems.count { it.status == UploadStatus.SUCCESS }
     val failureCount: Int get() = uploadItems.count { it.status == UploadStatus.FAILURE }
@@ -37,7 +34,6 @@ data class UploadFileItem(
 )
 
 enum class UploadStatus {
-    /** 동시 전송 수가 차서 차례를 기다린다. */
     QUEUED,
     UPLOADING,
 

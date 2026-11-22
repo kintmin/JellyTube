@@ -106,7 +106,7 @@ fun MainScreen() {
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-internal fun MainScreenContent(
+private fun MainScreenContent(
     uiState: MainUiState,
     onRefresh: () -> Unit,
     onFilesDrop: (List<File>) -> Unit,
@@ -600,7 +600,6 @@ private fun statusColor(status: UploadStatus) = when (status) {
     UploadStatus.FAILURE -> MaterialTheme.colorScheme.error
 }
 
-/** 아이콘만 있는 버튼은 마우스를 올리면 하는 일을 글로 보여 준다. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun IconAction(
@@ -695,5 +694,5 @@ private fun MainScreenExpandedPreview() {
 private val EXPANDED_MIN_WIDTH = 840.dp
 private val SIDE_PANE_WIDTH = 360.dp
 
-/** 넓은 모니터에서 목록 줄이 끝없이 늘어나지 않게 묶는 폭. */
+/** MD3 가 넓은 창에 권하는 본문 최대 폭(840–1040dp)의 상한. */
 private val MAX_CONTENT_WIDTH = 1040.dp

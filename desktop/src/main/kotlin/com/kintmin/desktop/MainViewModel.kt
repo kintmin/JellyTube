@@ -40,7 +40,6 @@ class MainViewModel(
     private val stageSlots = Semaphore(MAX_PARALLEL_STAGES)
     private val stageJobs = ConcurrentHashMap<String, Job>()
 
-    /** 묶음은 드롭한 차례대로 반영한다. 뒤 묶음이 먼저 다 받아져도 앞 묶음의 반영을 기다린다. */
     private var lastCommit: Job? = null
 
     init {
@@ -48,7 +47,6 @@ class MainViewModel(
     }
 
     fun startDiscovery() {
-        // 업로더를 닫으면 보내던 곡이 실패하고, 받아 둔 곡은 반영하지 못한다.
         if (_uiState.value.isUploading) return
         _uiState.update { it.copy(discoveryState = DiscoveryState.DISCOVERING, dropMessage = null) }
         scope.launch {
@@ -61,7 +59,6 @@ class MainViewModel(
         }
     }
 
-    /** 드롭과 파일 선택이 같이 쓴다. 음원이 있으면 음원을 보내고, 이미지 1장만 있으면 썸네일로 적용한다. */
     fun onFilesDrop(files: List<File>) {
         val audioFiles = files.filter { it.extension.lowercase() in FileShareConstants.UPLOAD_AUDIO_EXTENSIONS }
         val imageFiles = files.filter { it.extension.lowercase() in THUMBNAIL_IMAGE_EXTENSIONS }
@@ -152,7 +149,6 @@ class MainViewModel(
         uploadBatch(newItems.map { it.id }, currentUploader)
     }
 
-    /** 다시 보내는 곡은 새 묶음이 되어 목록에서의 순서대로 맨 뒤에 반영된다. */
     private fun retry(itemIds: List<String>) {
         if (itemIds.isEmpty()) return
         val currentUploader = uploader ?: run {
@@ -167,7 +163,6 @@ class MainViewModel(
         uploadBatch(itemIds, currentUploader)
     }
 
-    /** 곡은 병렬로 보내고, 묶음 전체가 받아진 뒤 [itemIds] 순서 그대로 한 번에 반영한다. */
     private fun uploadBatch(itemIds: List<String>, currentUploader: FileUploader) {
         val stages = itemIds.associateWith { itemId -> stage(itemId, currentUploader) }
         stageJobs.putAll(stages)

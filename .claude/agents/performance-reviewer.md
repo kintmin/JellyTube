@@ -41,7 +41,7 @@ You are a performance reviewer for the **JellyTube** Kotlin Multiplatform projec
 - Mapping entity→domain allocating per row in hot paths.
 
 ### Network / file transfer (Ktor)
-- **File upload/download streaming**: stream via channels — do NOT read an entire audio file into memory (`ByteArray`) (OOM on large files); use `copyTo`/`respondBytesWriter` with backpressure. Applies to the Android server (`/upload`) and the `desktop` `FileUploader`.
+- **File upload/download streaming**: stream via channels — do NOT read an entire audio file into memory (`ByteArray`) (OOM on large files); use `copyTo`/`respondBytesWriter` with backpressure. Applies to the Android server (`/upload/stage`) and the `desktop` `FileUploader`.
 - Connection reuse (single `HttpClient`, not per-request); timeouts; avoid re-encoding/serializing large payloads needlessly.
 
 ### iOS (`ios/shared` + `ios/app`, Compose Multiplatform + SKIE)

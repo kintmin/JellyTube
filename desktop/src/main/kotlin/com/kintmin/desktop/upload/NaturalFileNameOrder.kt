@@ -2,7 +2,6 @@ package com.kintmin.desktop.upload
 
 import java.io.File
 
-/** 탐색기처럼 숫자 구간은 수로 비교하고(2 < 10) 대소문자는 가리지 않는다. */
 val naturalFileNameOrder: Comparator<File> = Comparator { a, b -> compareNatural(a.name, b.name) }
 
 internal fun compareNatural(a: String, b: String): Int {
