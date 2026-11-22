@@ -1,9 +1,10 @@
-package com.kintmin.log
+package com.kintmin.data.log
 
+import com.kintmin.log.secret
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class SecretTextTest {
+class RevealSecretsTest {
 
     private val text = "들여옴: id=1 name=${secret("곡 이름")} url=${secret("https://y/1")}"
 

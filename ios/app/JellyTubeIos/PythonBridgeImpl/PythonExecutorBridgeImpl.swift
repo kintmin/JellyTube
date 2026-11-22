@@ -95,7 +95,6 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                 let formatId = result[safe: 9] ?? ""
                 let transferProtocol = result[safe: 10] ?? ""
                 let isHls = transferProtocol.contains("m3u8")
-                // 병렬로 받을 때 어느 곡의 경로인지 맞추고, 실패하면 무엇을 받던 중이었는지 본다.
                 let routeDetail = "format=\(formatId) ext=\(result[safe: 2] ?? "") filesize=\(result[safe: 8] ?? "") " +
                     "duration=\(result[safe: 5] ?? "") source=\(SwiftAppLogKt.swiftSecret(value: youtubeUrl))"
 
