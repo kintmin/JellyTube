@@ -122,16 +122,16 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Build the signed release APK
         env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          KEYSTORE_BASE64: ${{ secrets.JELLY_TUBE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.JELLY_TUBE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.JELLY_TUBE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.JELLY_TUBE_KEY_PASSWORD }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.JELLY_TUBE_SENTRY_AUTH_TOKEN }}
         run: |
           set -euo pipefail
           # 키가 없어도 release 는 서명 없이 빌드되므로, 여기서 막지 않으면 설치할 수 없는 APK 가 올라간다.
           for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
-            [[ -n "${!name}" ]] || { echo "::error::ANDROID_$name 시크릿이 없다"; exit 1; }
+            [[ -n "${!name}" ]] || { echo "::error::JELLY_TUBE_$name 시크릿이 없다"; exit 1; }
           done
           keystore="$RUNNER_TEMP/release.keystore"
           echo "$KEYSTORE_BASE64" | base64 -d > "$keystore"
