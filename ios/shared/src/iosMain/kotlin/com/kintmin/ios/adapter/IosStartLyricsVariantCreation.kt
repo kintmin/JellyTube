@@ -28,11 +28,10 @@ internal class IosStartLyricsVariantCreation(
         audioMediaId: Int,
         lyricFileFullPath: String,
         variant: LyricsVariant,
-        sourceLanguage: String,
     ) {
         scope.launch {
             IosRunningTaskTracker.track(RunningTask.LYRICS_VARIANT) {
-                createLyricsVariantUseCase(lyricFileFullPath, variant, sourceLanguage)
+                createLyricsVariantUseCase(lyricFileFullPath, variant)
             }
                 .onSuccess {
                     IosLocalNotification.show(WorkResultNotice.LyricsVariantCreation.Success(variant, audioMediaId))

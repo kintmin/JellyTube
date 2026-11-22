@@ -9,8 +9,8 @@ object AppConfiguration {
     const val COMPILE_SDK = 37
     const val TARGET_SDK = 36
     const val MIN_SDK = 26
-    const val VERSION_CODE = 19
-    const val VERSION_NAME = "1.2.2"
+    const val VERSION_CODE = 30
+    const val VERSION_NAME = "2.0.0"
     // MSI 는 숫자 세 마디만 받고 앞 두 마디는 255 이하다. 올리지 않으면 업그레이드 설치가 안 된다.
     const val DESKTOP_VERSION_NAME = "1.0.1"
     /**

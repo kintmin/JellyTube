@@ -25,7 +25,7 @@ import org.junit.runner.RunWith
  * 한 번 틀어지면 복구되지 않는다. 그래서 delta 보정이 이 기능의 유일한 영구 손상 지점이다.
  *
  * 실기기/에뮬레이터에서 실행해야 한다(Room + BundledSQLiteDriver).
- * 실행: ./gradlew.bat :shared:data:connectedDebugAndroidTest
+ * 실행: ./gradlew.bat :shared:data:connectedAndroidDeviceTest
  */
 @RunWith(AndroidJUnit4::class)
 class AudioMediaFacadeEditedAudioTest {

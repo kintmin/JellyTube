@@ -26,7 +26,6 @@ class LyricsVariantWorker(
         val audioMediaId = inputData.getInt(INPUT_DATA_AUDIO_MEDIA_ID, -1)
         val lyricFileFullPath = inputData.getString(INPUT_DATA_LYRIC_FILE_FULL_PATH)
         val variantName = inputData.getString(INPUT_DATA_VARIANT)
-        val sourceLanguage = inputData.getString(INPUT_DATA_SOURCE_LANGUAGE) ?: "en"
 
         if (audioMediaId == -1 || lyricFileFullPath == null || variantName == null) {
             return Result.failure()
@@ -34,7 +33,7 @@ class LyricsVariantWorker(
         val variant = runCatching { LyricsVariant.valueOf(variantName) }.getOrNull()
             ?: return Result.failure()
 
-        return createLyricsVariantUseCase(lyricFileFullPath, variant, sourceLanguage).fold(
+        return createLyricsVariantUseCase(lyricFileFullPath, variant).fold(
             onSuccess = {
                 pushNotificationManager.sendNotification(
                     LyricsVariantResultNotification(
@@ -57,6 +56,5 @@ class LyricsVariantWorker(
         const val INPUT_DATA_AUDIO_MEDIA_ID = "audio_media_id"
         const val INPUT_DATA_LYRIC_FILE_FULL_PATH = "lyric_file_full_path"
         const val INPUT_DATA_VARIANT = "variant"
-        const val INPUT_DATA_SOURCE_LANGUAGE = "source_language"
     }
 }

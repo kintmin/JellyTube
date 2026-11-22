@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.model.AudioMediaEntity
+import com.kintmin.domain.playlist.model.PlaylistType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -66,7 +67,7 @@ class AudioMediaFacadeReorderTracksTest {
     @Test
     fun 곡_순서를_한_번에_다시_매기고_표지를_첫_곡으로_맞춘다() = runTest {
         val (a, b, c) = listOf(addAudioMedia("a"), addAudioMedia("b"), addAudioMedia("c"))
-        val playlistId = facade.addPlaylist("목록")
+        val playlistId = facade.addPlaylist(title = "목록", type = PlaylistType.USER)
         facade.addTrack(playlistId, listOf(a, b, c))
 
         facade.reorderTracks(playlistId, listOf(c, a, b))

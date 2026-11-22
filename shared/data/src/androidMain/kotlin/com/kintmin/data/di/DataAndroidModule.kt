@@ -20,7 +20,7 @@ import com.kintmin.data.network.createLocalNetworkHttpClient
 import com.kintmin.data.network.data_source.MigrationDataSource
 import com.kintmin.data.network.data_source_impl.MigrationDataSourceImpl
 import com.kintmin.data.translation.LyricsTranslator
-import com.kintmin.data.translation.MlKitLyricsTranslator
+import com.kintmin.data.translation.MlKitLyricsTranslationEngine
 import com.kintmin.domain.data_migration.repository.MigrationSendServerRepository
 import com.kintmin.domain.file_share.repository.PcFileShareServerRepository
 import com.kintmin.domain.user.repository.UserRepository
@@ -38,7 +38,7 @@ val dataAndroidModule: Module = module {
     single<DeviceStatus> { DeviceStatusImpl(androidContext()) }
     single<FileManager> { FileManagerImpl(androidContext()) }
     single<BackupFolderAccess> { DownloadsBackupFolderAccess(androidContext()) }
-    single<LyricsTranslator> { MlKitLyricsTranslator() }
+    single { LyricsTranslator(MlKitLyricsTranslationEngine()) }
     single<AudioEditor> { AudioEditorImpl(androidContext()) }
     single<MigrationDataSource> {
         val context = androidContext()

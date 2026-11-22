@@ -1,6 +1,8 @@
 package com.kintmin.presentation.ui.karaoke_search
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,7 +27,9 @@ import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.EmptyStateView
+import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
 import com.kintmin.presentation.ui.common.SearchField
+import com.kintmin.presentation.ui.common.floatingField
 import com.kintmin.presentation.ui.karaoke_search.list_item.KaraokeSearchItemView
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -67,67 +71,70 @@ fun KaraokeSearchScreen(
             )
         },
     ) { innerPadding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize(),
         ) {
-            item(key = "search_bar") {
-                SearchField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    value = data.query,
-                    placeholder = "노래 제목으로 검색",
-                    onValueChange = { sendIntent(KaraokeSearchIntent.OnChangeQuery(it)) },
-                    onSearch = { sendIntent(KaraokeSearchIntent.OnClickSearch) },
-                )
-            }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = FloatingSearchFieldHeight),
+            ) {
+                when {
+                    data.isLoading -> {
+                        item(key = "loading") {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 48.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                CircularProgressIndicator()
+                                Text(
+                                    modifier = Modifier.padding(top = 12.dp),
+                                    text = "검색 중…",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
 
-            when {
-                data.isLoading -> {
-                    item(key = "loading") {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 48.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            CircularProgressIndicator()
-                            Text(
-                                modifier = Modifier.padding(top = 12.dp),
-                                text = "검색 중…",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    data.isEmptyResult -> {
+                        item(key = "empty") {
+                            EmptyStateView(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 48.dp),
+                                icon = Icons.Rounded.SearchOff,
+                                title = "검색 결과가 없습니다",
+                            )
+                        }
+                    }
+
+                    else -> {
+                        items(
+                            items = data.results,
+                            key = { item -> item.id },
+                        ) { item ->
+                            KaraokeSearchItemView(
+                                item = item,
+                                onClick = { sendIntent(KaraokeSearchIntent.OnClickResult(item)) },
                             )
                         }
                     }
                 }
-
-                data.isEmptyResult -> {
-                    item(key = "empty") {
-                        EmptyStateView(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 48.dp),
-                            icon = Icons.Rounded.SearchOff,
-                            title = "검색 결과가 없습니다",
-                        )
-                    }
-                }
-
-                else -> {
-                    items(
-                        items = data.results,
-                        key = { item -> item.id },
-                    ) { item ->
-                        KaraokeSearchItemView(
-                            item = item,
-                            onClick = { sendIntent(KaraokeSearchIntent.OnClickResult(item)) },
-                        )
-                    }
-                }
             }
+            SearchField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .floatingField(),
+                value = data.query,
+                placeholder = "노래 제목으로 검색",
+                onValueChange = { sendIntent(KaraokeSearchIntent.OnChangeQuery(it)) },
+                onSearch = { sendIntent(KaraokeSearchIntent.OnClickSearch) },
+            )
         }
     }
 }

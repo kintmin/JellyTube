@@ -7,7 +7,6 @@ import com.kintmin.domain.lyrics.model.LyricsLine
  * 가사 줄 목록에서 한국어/일본어 포함 여부를 판별한다.
  * - 한글: 음절(가-힣), 한글 자모, 한글 호환 자모
  * - 일본어: 히라가나/가타카나 (한자는 중국어와 공유되므로 신호로 쓰지 않는다)
- * - sourceLanguage: 일본어가 있으면 "ja", 그 외에는 "en" (휴리스틱)
  */
 class DetectLyricsLanguageUseCase {
 
@@ -33,7 +32,6 @@ class DetectLyricsLanguageUseCase {
         return LyricsLanguage(
             hasKorean = hasKorean,
             hasJapanese = hasJapanese,
-            sourceLanguage = if (hasJapanese) "ja" else "en",
         )
     }
 }

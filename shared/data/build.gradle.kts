@@ -70,6 +70,7 @@ kotlin {
             implementation(libs.androidx.datastore.preferences)
             implementation(libs.koin.android)
             implementation(libs.mlkit.translate)
+            implementation(libs.mlkit.language.id)
             implementation(libs.androidx.media3.transformer)
         }
 

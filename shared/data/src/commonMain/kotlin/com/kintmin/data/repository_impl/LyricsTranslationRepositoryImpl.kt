@@ -9,8 +9,8 @@ internal class LyricsTranslationRepositoryImpl(
     private val lyricsTransliterator: LyricsTransliterator,
 ) : LyricsTranslationRepository {
 
-    override suspend fun translate(text: String, sourceLanguage: String): Result<String> =
-        lyricsTranslator.translateToKorean(text, sourceLanguage)
+    override suspend fun translate(text: String): Result<String> =
+        lyricsTranslator.translateToKorean(text)
 
     override suspend fun transliterate(text: String): Result<String> =
         lyricsTransliterator.transliterateToKorean(text)
