@@ -25,6 +25,18 @@ SideStore 소스: `https://github.com/kintmin/JellyTube/releases/latest/download
 
 앱 스토어에는 배포하지 않습니다.
 
+## 업데이트 소식 받기
+
+새 버전이 나오면 메일로 알려 드립니다. **kintmin.ci@gmail.com** 으로 받고 싶은 쪽을 적어 보내 주세요.
+
+- **모바일** — Android·iOS 앱
+- **PC** — Windows·macOS 데스크톱 앱
+- 둘 다 받으셔도 됩니다
+
+그만 받으려면 같은 주소로 "해지" 라고 보내 주세요.
+
+메일이 오지 않으면 스팸함을 확인해 주세요. Gmail 이라면 검색창 오른쪽의 검색 옵션에서 보낸사람에 `kintmin.ci@gmail.com` 을 넣고 **필터 만들기 → 스팸으로 분류하지 않음** 을 고르면 다음부터는 받은편지함으로 옵니다.
+
 ## 구조
 
 Kotlin Multiplatform 으로, 화면을 포함한 코드 대부분을 Android 와 iOS 가 함께 씁니다.
