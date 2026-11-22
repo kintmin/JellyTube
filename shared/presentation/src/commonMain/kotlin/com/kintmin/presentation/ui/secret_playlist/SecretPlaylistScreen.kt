@@ -1,9 +1,7 @@
 package com.kintmin.presentation.ui.secret_playlist
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,7 +35,7 @@ import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
-import com.kintmin.presentation.ui.player_detail.dialog.PlaybackOptionChip
+import com.kintmin.presentation.ui.player_detail.dialog.PlaybackOptionChipRow
 import com.kintmin.presentation.ui.setting.section.SettingItemView
 import com.kintmin.presentation.ui.setting.section.SettingSwitchView
 import org.koin.compose.viewmodel.koinViewModel
@@ -128,19 +126,12 @@ fun SecretPlaylistScreen(
             if (!uiState.isEnabled) {
                 item(key = "minutes", span = { GridItemSpan(maxLineSpan) }) {
                     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            SecretModeMinuteOptions.forEach { option ->
-                                PlaybackOptionChip(
-                                    modifier = Modifier.weight(1f),
-                                    label = "${option}분",
-                                    isSelected = uiState.minutes == option,
-                                    onClick = { sendIntent(SecretPlaylistIntent.OnSelectMinutes(option)) },
-                                )
-                            }
-                        }
+                        PlaybackOptionChipRow(
+                            options = SecretModeMinuteOptions,
+                            selected = uiState.minutes,
+                            label = { option -> "${option}분" },
+                            onSelect = { option -> sendIntent(SecretPlaylistIntent.OnSelectMinutes(option)) },
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         NumberWheelPicker(
                             values = SecretModeMinuteRange,

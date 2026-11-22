@@ -72,19 +72,12 @@ fun PlaybackPitchDialog(
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                PlaybackPitchOptions.forEach { semitone ->
-                    PlaybackOptionChip(
-                        modifier = Modifier.weight(1f),
-                        label = semitone.toPitchSemitoneText(),
-                        isSelected = selectedSemitone == semitone,
-                        onClick = { onSelectSemitone(semitone) },
-                    )
-                }
-            }
+            PlaybackOptionChipRow(
+                options = PlaybackPitchOptions,
+                selected = selectedSemitone,
+                label = { semitone -> semitone.toPitchSemitoneText() },
+                onSelect = onSelectSemitone,
+            )
         }
     }
 }
