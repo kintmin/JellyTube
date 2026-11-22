@@ -39,11 +39,22 @@ android {
     }
 
     signingConfigs {
-        create(SigningConfigName.RELEASE) {
-            storeFile = file(property(PropertyName.STORE_FILE).toString())
-            storePassword = property(PropertyName.STORE_PASSWORD).toString()
-            keyAlias = property(PropertyName.KEY_ALIAS).toString()
-            keyPassword = property(PropertyName.KEY_PASSWORD).toString()
+        // 어느 PC 에서 빌드해도 개발용 앱을 지우지 않고 덮어 설치할 수 있게 debug 키를 저장소에 둔다.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+        // 릴리스 키는 저장소 밖에 있다. 없는 클론에서도 나머지 빌드는 되고 release 는 서명 없이 나온다.
+        val releaseStoreFile = findProperty(PropertyName.STORE_FILE)?.toString()
+        if (releaseStoreFile != null) {
+            create(SigningConfigName.RELEASE) {
+                storeFile = file(releaseStoreFile)
+                storePassword = findProperty(PropertyName.STORE_PASSWORD).toString()
+                keyAlias = findProperty(PropertyName.KEY_ALIAS).toString()
+                keyPassword = findProperty(PropertyName.KEY_PASSWORD).toString()
+            }
         }
     }
 
@@ -56,7 +67,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName(SigningConfigName.RELEASE)
+            signingConfig = signingConfigs.findByName(SigningConfigName.RELEASE)
         }
         debug {
             ndk { abiFilters += listOf("x86_64") }
