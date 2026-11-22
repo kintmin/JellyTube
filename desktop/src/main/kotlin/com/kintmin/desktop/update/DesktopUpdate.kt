@@ -25,6 +25,20 @@ internal suspend fun findDesktopUpdate(
     return latest
 }
 
+/** 최근에 만든 릴리스부터 한 쪽씩 받아, desktop 릴리스가 처음 나오는 쪽에서 고른다. */
+internal suspend fun findOnReleasePages(
+    installerExtension: String?,
+    fetchPage: suspend (page: Int) -> List<GitHubReleaseDto>,
+): DesktopRelease? {
+    var page = 1
+    while (true) {
+        val releases = fetchPage(page)
+        releases.latestDesktopRelease(installerExtension)?.let { return it }
+        if (releases.size < RELEASES_PER_PAGE) return null
+        page++
+    }
+}
+
 object DesktopUpdate {
 
     suspend fun find(): DesktopRelease? = findDesktopUpdate(
@@ -41,11 +55,13 @@ object DesktopUpdate {
         HttpClient(CIO) {
             install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
         }.use { client ->
-            client.get(RELEASES_URL) {
-                header(HttpHeaders.Accept, "application/vnd.github+json")
-                // mobile 과 desktop 릴리스가 섞여 있어, 최신 desktop 릴리스가 첫 쪽에 들어올 만큼 받는다.
-                parameter("per_page", 30)
-            }.body<List<GitHubReleaseDto>>().latestDesktopRelease(installerExtension())
+            findOnReleasePages(installerExtension()) { page ->
+                client.get(RELEASES_URL) {
+                    header(HttpHeaders.Accept, "application/vnd.github+json")
+                    parameter("per_page", RELEASES_PER_PAGE)
+                    parameter("page", page)
+                }.body()
+            }
         }
     }.getOrNull()
 
@@ -65,3 +81,5 @@ object DesktopUpdate {
 private const val VERSION_PROPERTY = "jpackage.app-version"
 private const val IGNORED_VERSION_KEY = "ignoredUpdateVersion"
 private const val RELEASES_URL = "https://api.github.com/repos/kintmin/JellyTube/releases"
+// GitHub API 가 한 쪽에 주는 최대 개수다.
+internal const val RELEASES_PER_PAGE = 100
