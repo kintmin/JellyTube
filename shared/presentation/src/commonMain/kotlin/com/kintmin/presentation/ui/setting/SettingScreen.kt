@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.domain.app_update.model.AppRelease
 import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.SystemSettingsTarget
-import com.kintmin.presentation.platform.checksAppUpdate
+import com.kintmin.presentation.platform.appUpdateInstaller
 import com.kintmin.presentation.platform.rememberAppVersionName
 import com.kintmin.presentation.platform.rememberAudioFilePicker
 import com.kintmin.presentation.platform.rememberBackupFolderPicker
@@ -149,7 +149,7 @@ fun SettingScreen(
 
     AppUpdateDialog(
         versionName = availableUpdate?.versionName,
-        onDownload = { availableUpdate?.let { uriHandler.openUri(it.downloadUrl) } },
+        onDownload = { availableUpdate?.let { uriHandler.openUri(appUpdateInstaller.installUri(it.downloadUrl)) } },
         onDismiss = { availableUpdate = null },
     )
 
@@ -334,11 +334,7 @@ fun SettingScreen(
                     title = "버전",
                     icon = Icons.Rounded.Info,
                     description = if (uiState.isCheckingAppUpdate) "새 버전 확인 중…" else appVersion,
-                    onClick = if (checksAppUpdate) {
-                        { sendIntent(SettingIntent.OnClickVersionTile(appVersion)) }
-                    } else {
-                        null
-                    },
+                    onClick = { sendIntent(SettingIntent.OnClickVersionTile(appVersion)) },
                 )
                 SettingItemView(
                     title = "기기 식별자",

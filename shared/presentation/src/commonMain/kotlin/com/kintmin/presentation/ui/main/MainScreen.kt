@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.animation.FloatingFieldVisibility
 import com.kintmin.presentation.platform.AppPermission
-import com.kintmin.presentation.platform.checksAppUpdate
+import com.kintmin.presentation.platform.appUpdateInstaller
 import com.kintmin.presentation.platform.rememberAppVersionName
 import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
@@ -111,7 +111,7 @@ fun MainScreen(
     val appVersion = rememberAppVersionName()
     val uriHandler = LocalUriHandler.current
     LaunchedEffect(Unit) {
-        if (checksAppUpdate) mainViewModel.sendIntent(MainIntent.CheckAppUpdate(appVersion))
+        mainViewModel.sendIntent(MainIntent.CheckAppUpdate(appVersion))
     }
 
     val permissionController = rememberPermissionController()
@@ -172,7 +172,7 @@ fun MainScreen(
 
     AppUpdateDialog(
         versionName = mainUiState.availableUpdate?.versionName,
-        onDownload = { mainUiState.availableUpdate?.let { uriHandler.openUri(it.downloadUrl) } },
+        onDownload = { mainUiState.availableUpdate?.let { uriHandler.openUri(appUpdateInstaller.installUri(it.downloadUrl)) } },
         onDismiss = { mainViewModel.sendIntent(MainIntent.DismissAppUpdate) },
         onIgnore = { mainViewModel.sendIntent(MainIntent.IgnoreAppUpdate) },
     )
