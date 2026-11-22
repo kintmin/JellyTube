@@ -13,6 +13,7 @@ import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.SentryEvent
+import com.kintmin.log.secret
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -31,7 +32,7 @@ class DownloadAudioMediaUseCase constructor(
         downloadUrl: String,
         intoUncategorized: Boolean = false,
     ): Result<DownloadedAudioMediaResult> = runCatching {
-        appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "받기 시작: $downloadUrl"))
+        appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "받기 시작: ${secret(downloadUrl)}"))
         if (!audioMediaRepository.reserveDownload(downloadUrl)) throw AlreadyDownloadingMedia()
         try {
             download(downloadUrl, intoUncategorized)
@@ -42,7 +43,7 @@ class DownloadAudioMediaUseCase constructor(
         // 멈추기·나가기로 끊긴 것은 받기 실패가 아니다.
         if (exception is CancellationException) return@onFailure
         if (exception is AlreadyDownloadedMedia || exception is AlreadyDownloadingMedia) {
-            appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "이미 있거나 받는 중이라 받지 않음: $downloadUrl"))
+            appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "이미 있거나 받는 중이라 받지 않음: ${secret(downloadUrl)}"))
             return@onFailure
         }
         val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()
@@ -96,10 +97,10 @@ class DownloadAudioMediaUseCase constructor(
 
         appLog.sendSentryEvent(
             SentryEvent.AddAudioMedia(
-                source = downloadUrl,
+                source = secret(downloadUrl),
                 audioMediaCount = added.totalPlaylistMediaCount,
                 audioMediaId = added.audioMedia.id,
-                audioMediaName = added.audioMedia.name,
+                audioMediaName = secret(added.audioMedia.name),
                 playlistId = added.resolvedPlaylistIdOnDownload,
             ),
         )

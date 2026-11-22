@@ -11,6 +11,7 @@ import com.kintmin.domain.file_share.PcUploadHandler
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
+import com.kintmin.log.secret
 
 class CreatePcUploadHandlerUseCase(
     private val importUploadedAudioMedia: ImportUploadedAudioMediaUseCase,
@@ -26,7 +27,7 @@ class CreatePcUploadHandlerUseCase(
             importUploadedAudioMedia(uploads).also { results ->
                 uploads.zip(results).forEach { (upload, result) ->
                     result
-                        .onSuccess { log("들여옴: id=${it.audioMedia.id} name=${it.audioMedia.name}") }
+                        .onSuccess { log("들여옴: id=${it.audioMedia.id} name=${secret(it.audioMedia.name)}") }
                         .onSuccess(onUploadImported)
                         .onFailure {
                             if (it is AlreadyDownloadedMedia) log("이미 있는 파일이라 들여오지 않음: ${upload.originalFileName}")
