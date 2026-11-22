@@ -169,7 +169,7 @@ class MainViewModel(
         val previousCommit = lastCommit
         lastCommit = scope.launch {
             stages.values.joinAll()
-            stageJobs.keys.removeAll(stages.keys)
+            stages.forEach { (itemId, job) -> stageJobs.remove(itemId, job) }
             previousCommit?.join()
             commit(itemIds, currentUploader)
         }

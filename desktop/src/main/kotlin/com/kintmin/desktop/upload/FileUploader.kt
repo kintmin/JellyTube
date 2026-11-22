@@ -28,7 +28,7 @@ import java.io.File
 class FileUploader(
     private val hostAddress: String,
     private val port: Int,
-    engine: HttpClientEngine = CIO.create { requestTimeout = 0 },
+    private val engine: HttpClientEngine = CIO.create { requestTimeout = 0 },
 ) {
     private val client = HttpClient(engine) {
         install(ContentNegotiation) {
@@ -81,6 +81,8 @@ class FileUploader(
 
     fun close() {
         client.close()
+        // 만들어진 엔진을 넘겨받은 클라이언트는 그 엔진을 닫지 않는다.
+        engine.close()
     }
 }
 

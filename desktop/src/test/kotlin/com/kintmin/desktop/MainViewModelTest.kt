@@ -15,9 +15,11 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.headersOf
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.util.Collections
@@ -99,6 +101,33 @@ class MainViewModelTest {
         val bad = state.uploadItems.single { it.file.name == "bad.mp3" }
         assertEquals(UploadStatus.FAILURE, bad.status)
         assertEquals("빈 파일은 저장할 수 없습니다.", bad.errorMessage)
+    }
+
+    @Test
+    fun `앞 묶음이 끝난 뒤에도 다시 보내는 곡을 지우면 전송이 취소된다`() = runTest {
+        val attempts = mutableMapOf<String, Int>()
+        val completed: MutableList<String> = Collections.synchronizedList(mutableListOf())
+        onStage = { name ->
+            val attempt = synchronized(attempts) { attempts.merge(name, 1, Int::plus)!! }
+            when {
+                name == "a.mp3" && attempt == 1 -> UploadStageResponse(success = false, message = "실패")
+                else -> {
+                    delay(if (name == "a.mp3") 600 else 200)
+                    completed += name
+                    UploadStageResponse(success = true, message = "", stageId = name)
+                }
+            }
+        }
+        drop("a.mp3", "b.mp3")
+        val a = viewModel.uiState.first { s -> s.uploadItems.any { it.file.name == "a.mp3" && it.status == UploadStatus.FAILURE } }
+            .uploadItems.single { it.file.name == "a.mp3" }
+        viewModel.onRetry(a.id)
+        viewModel.uiState.first { s -> s.uploadItems.any { it.file.name == "b.mp3" && it.status == UploadStatus.SUCCESS } }
+
+        viewModel.onRemoveItem(a.id)
+        withContext(Dispatchers.Default) { delay(800) }
+
+        assertEquals(listOf("b.mp3"), completed)
     }
 
     @Test
