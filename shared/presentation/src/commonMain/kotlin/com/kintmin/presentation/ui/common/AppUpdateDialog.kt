@@ -1,7 +1,6 @@
 package com.kintmin.presentation.ui.common
 
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -11,9 +10,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.dialogActionsSpacing
@@ -65,33 +66,60 @@ private fun AppUpdateDialogContent(
                 onConfirm = onDownload,
             )
         } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = dialogActionsSpacing),
-                verticalAlignment = Alignment.CenterVertically,
+            AppUpdateButtonBar(onIgnore = onIgnore, onDismiss = onDismiss, onDownload = onDownload)
+        }
+    }
+}
+
+/** "이번 버전 무시" 는 한 줄에 다 들어가면 시작 쪽에, 아니면 닫기·다운로드 아랫줄 끝에 둔다. */
+@Composable
+private fun AppUpdateButtonBar(
+    onIgnore: () -> Unit,
+    onDismiss: () -> Unit,
+    onDownload: () -> Unit,
+) {
+    Layout(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = dialogActionsSpacing),
+        content = {
+            TextButton(onClick = onIgnore) {
+                Text(text = "이번 버전 무시")
+            }
+            OutlinedButton(
+                contentPadding = dialogDismissButtonPadding,
+                colors = JellyTubeButtonColors.secondary(),
+                onClick = onDismiss,
             ) {
-                TextButton(onClick = onIgnore) {
-                    Text(text = "이번 버전 무시")
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                OutlinedButton(
-                    contentPadding = dialogDismissButtonPadding,
-                    colors = JellyTubeButtonColors.secondary(),
-                    onClick = onDismiss,
-                ) {
-                    Text(text = "닫기")
-                }
-                Spacer(modifier = Modifier.width(dialogButtonSpacing))
-                Button(
-                    contentPadding = dialogConfirmButtonPadding,
-                    onClick = {
-                        onDownload()
-                        onDismiss()
-                    },
-                ) {
-                    Text(text = "다운로드")
-                }
+                Text(text = "닫기")
+            }
+            Button(
+                contentPadding = dialogConfirmButtonPadding,
+                onClick = {
+                    onDownload()
+                    onDismiss()
+                },
+            ) {
+                Text(text = "다운로드")
+            }
+        },
+    ) { measurables, constraints ->
+        val gap = dialogButtonSpacing.roundToPx()
+        val looseConstraints = Constraints(maxWidth = constraints.maxWidth)
+        val (ignore, dismiss, download) = measurables.map { it.measure(looseConstraints) }
+        val width = constraints.maxWidth
+        val actionsWidth = dismiss.width + gap + download.width
+        val actionsHeight = maxOf(dismiss.height, download.height)
+        val fitsOneRow = ignore.width + gap + actionsWidth <= width
+        val height = if (fitsOneRow) maxOf(ignore.height, actionsHeight) else actionsHeight + gap + ignore.height
+        layout(width, height) {
+            val rowHeight = if (fitsOneRow) height else actionsHeight
+            dismiss.placeRelative(width - actionsWidth, (rowHeight - dismiss.height) / 2)
+            download.placeRelative(width - download.width, (rowHeight - download.height) / 2)
+            if (fitsOneRow) {
+                ignore.placeRelative(0, (height - ignore.height) / 2)
+            } else {
+                ignore.placeRelative(width - ignore.width, actionsHeight + gap)
             }
         }
     }
@@ -110,5 +138,15 @@ private fun AppUpdateDialogContentPreview() {
 private fun AppUpdateDialogContentWithIgnorePreview() {
     JellyTubeTheme {
         AppUpdateDialogContent(versionName = "2.1.0", onDownload = {}, onDismiss = {}, onIgnore = {})
+    }
+}
+
+@Preview
+@Composable
+private fun AppUpdateDialogContentWithIgnoreNarrowPreview() {
+    JellyTubeTheme {
+        Box(modifier = Modifier.width(312.dp)) {
+            AppUpdateDialogContent(versionName = "2.1.0", onDownload = {}, onDismiss = {}, onIgnore = {})
+        }
     }
 }
