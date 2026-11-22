@@ -54,11 +54,14 @@ install_packages() {
     python3 -m pip install \
         --target "$APP_PACKAGES_DIR" \
         --no-compile \
+        --python-version "$PYTHON_MINOR" \
+        --only-binary=:all: \
         "${PACKAGES[@]}"
 
-    # pip 는 **호스트(macOS)** 용 휠을 고른다. 섞여 들어온 네이티브 확장은 iOS 에서 못 쓰므로
-    # 지운다 — 여기 쓰는 패키지는 전부 순수 파이썬 폴백이 있다.
-    # 네이티브 확장이 꼭 필요한 패키지가 생기면 iOS 휠을 따로 받아야 한다.
+    # 호스트 파이썬이 번들보다 새로우면 pip 이 번들 버전에서 import 안 되는 패키지를 고른다.
+    # 그래서 버전을 번들에 맞춰 해석하고, 그러려면 휠만 받아야 한다(sdist 는 호스트 기준으로 빌드된다).
+    # 휠에 네이티브 확장이 섞여 들어오면 iOS 에서 못 쓰므로 지운다 — 여기 쓰는 패키지는 전부
+    # 순수 파이썬 폴백이 있다. 네이티브 확장이 꼭 필요한 패키지가 생기면 iOS 휠을 따로 받아야 한다.
     find "$APP_PACKAGES_DIR" \( -name "*.so" -o -name "*.dylib" -o -name "*.pyd" \) -delete
 
     # 앱 번들에 들어갈 필요가 없는 것들.
