@@ -6,16 +6,16 @@
 #   ./scripts/update-mail-recipients.sh
 #
 # 파일 형식 — 한 줄에 한 사람, # 뒤는 주석:
-#   me@gmail.com=*              # 모든 알림
-#   friend@gmail.com=ios,release
-# 알림 종류는 start·android·ios·desktop·release, * 는 전부다.
+#   me@gmail.com=dev          # 개발용 진행 알림과 모든 새 버전 소식
+#   friend@gmail.com=mobile   # 모바일 새 버전 소식만
+# 알림 종류는 .github/scripts/send-mail.sh 맨 위에 있다.
 # 시크릿에는 한 줄("a=*; b=ios")로 합쳐 올린다. 여러 줄 시크릿은 로그에서 줄마다 가려진다는 보장이 없다.
 
 set -euo pipefail
 
 readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly FILE="$REPO_ROOT/mail-recipients.txt"
-readonly EVENTS="start android ios desktop release *"
+readonly EVENTS="dev mobile desktop *"
 
 [[ -f "$FILE" ]] || { echo "$FILE 이 없다. 위 형식으로 만든 뒤 다시 실행한다." >&2; exit 1; }
 

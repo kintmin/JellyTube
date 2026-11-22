@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# 릴리스 알림을 MAIL_RECIPIENTS 에서 이 알림 종류를 받기로 한 사람에게 한 명씩 보낸다.
+# 릴리스 메일을 MAIL_RECIPIENTS 에서 이 종류를 받기로 한 사람에게 한 명씩 보낸다.
 # 쓰는 법: send-mail.sh <알림 종류> <제목> <본문>
-# MAIL_RECIPIENTS 형식: "a@gmail.com=*; b@gmail.com=ios,release" — 종류는 start·android·ios·desktop·release, * 는 전부.
+# MAIL_RECIPIENTS 형식: "a@gmail.com=dev; b@gmail.com=mobile"
+#   dev     전부 — 개발용 진행 알림(시작, 빌드마다의 결과, 릴리스 생성)과 아래 새 버전 소식
+#   mobile  Android·iOS 새 버전 소식
+#   desktop Windows·macOS 새 버전 소식
+#   *       mobile 과 desktop
 set -euo pipefail
 
 readonly FROM="kintmin.ci@gmail.com"
@@ -42,7 +46,7 @@ for entry in "${entries[@]}"; do
   [[ "$entry" == *=* ]] || continue
   to=${entry%%=*}
   events=",${entry#*=},"
-  if [[ "$events" == *",*,"* || "$events" == *",$event,"* ]]; then
+  if [[ "$events" == *",dev,"* || "$events" == *",$event,"* || ( "$event" != dev && "$events" == *",*,"* ) ]]; then
     send "$to"
   fi
 done
