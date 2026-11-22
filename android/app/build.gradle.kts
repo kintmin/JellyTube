@@ -16,6 +16,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.chaquopy)
     alias(libs.plugins.sentry.android)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 android {
@@ -142,6 +143,13 @@ androidComponents {
             .toTransformMany(SingleArtifact.APK)
         renameApk.configure { transformationRequest.set(request) }
     }
+    // baselineprofile 플러그인이 release 를 본떠 만드는 빌드 타입이다.
+    onVariants { variant ->
+        if (variant.buildType in setOf("benchmarkRelease", "nonMinifiedRelease")) {
+            variant.applicationId.set(AppConfiguration.APPLICATION_ID + AppConfiguration.PERF_APPLICATION_ID_SUFFIX)
+            variant.manifestPlaceholders.put(ManifestPlaceholdersKey.APP_LABEL, AppConfiguration.PERF_APP_NAME)
+        }
+    }
 }
 
 sentry {
@@ -194,6 +202,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.splashscreen)
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":android:benchmark"))
     // androidx compose BOM 을 같이 두면 androidx.compose.ui 버전이 CMP 포크와 충돌한다.
     // compose·navigation 은 선언하지 않는다.
 
