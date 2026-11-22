@@ -12,6 +12,7 @@ import com.kintmin.jellytube.intent.mediaSessionPendingIntent
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
+import com.kintmin.log.secret
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -49,7 +50,7 @@ class PlaybackService : MediaSessionService(), KoinComponent {
                             Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED -> "재생목록 바뀜"
                             else -> "reason=$reason"
                         }
-                        log("곡 바뀜($why): mediaId=${mediaItem?.mediaId} ${mediaItem?.mediaMetadata?.title}")
+                        log("곡 바뀜($why): mediaId=${mediaItem?.mediaId} ${secret(mediaItem?.mediaMetadata?.title)}")
                     }
 
                     override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {

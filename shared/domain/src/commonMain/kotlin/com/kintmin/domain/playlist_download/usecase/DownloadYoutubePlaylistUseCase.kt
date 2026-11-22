@@ -23,6 +23,7 @@ import com.kintmin.domain.youtube.model.YoutubePlaylistEntry
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
+import com.kintmin.log.secret
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -48,7 +49,7 @@ class DownloadYoutubePlaylistUseCase(
         onProgress: (PlaylistDownloadProgress) -> Unit,
     ): Result<PlaylistDownloadSummary> = runCatching {
         val entries = playlist.entries.distinctBy { it.videoId }
-        log("재생목록 받기 시작: ${playlist.title} (${entries.size}곡)")
+        log("재생목록 받기 시작: ${secret(playlist.title)} (${entries.size}곡)")
         val owned = ownedIdByKey()
         val (onDevice, notOnDevice) = entries.partition { SourceKey.of(it.url) in owned }
         val (toDownload, unavailable) = notOnDevice.partition { it.isAvailable }
@@ -92,7 +93,7 @@ class DownloadYoutubePlaylistUseCase(
             throw e
         }
         toDownload.zip(results).forEach { (entry, result) ->
-            result.onFailure { log("받기 실패: ${entry.title} (${entry.videoId}) $it") }
+            result.onFailure { log("받기 실패: ${secret(entry.title)} (${entry.videoId}) $it") }
         }
 
         val playlistId = withContext(NonCancellable) { addInOrder(playlist.title, idsInOrder(), onProgress) }
@@ -111,7 +112,13 @@ class DownloadYoutubePlaylistUseCase(
                     }
                     PlaylistDownloadFailure(it.title, reason)
                 },
-        ).also { log("재생목록 받기 완료: $it") }
+        ).also { summary ->
+            val failureCounts = summary.failures.groupingBy { it.reason }.eachCount()
+            log(
+                "재생목록 받기 완료: ${secret(summary.playlistName)} playlistId=${summary.playlistId} " +
+                    "받음=${summary.downloadedCount} 이미 있음=${summary.alreadyOnDeviceCount} 실패=$failureCounts",
+            )
+        }
     }.onFailure {
         if (it is CancellationException) throw it
         logError("재생목록 받기 중단", it)

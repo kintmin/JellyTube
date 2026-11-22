@@ -13,6 +13,7 @@ import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.SentryEvent
+import com.kintmin.log.secret
 import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.coEvery
@@ -257,7 +258,7 @@ class DownloadAudioMediaUseCaseTest {
         verify(inverse = inverse, exactly = exactly) {
             appLog.sendSentryEvent(
                 match {
-                    it is SentryEvent.AddAudioMedia && it.source == downloadUrl
+                    it is SentryEvent.AddAudioMedia && it.source == secret(downloadUrl)
                 }
             )
         }

@@ -17,7 +17,31 @@ def test_extract(url, audio_path):
     description = info_dict.get("description") or None
     return title, thumbnail_url, duration, uploader, description
 
+def _failure_meta_hook():
+    """받는 도중 실패해도 원인을 볼 수 있게 고른 포맷을 담아 둔다. 제목은 담지 않는다 — 앱이 비밀모드에서 가릴 수 없다."""
+    meta = {}
+
+    def hook(d):
+        # 훅에서 예외가 나면 다운로드가 깨진다.
+        try:
+            info = d.get("info_dict") or {}
+            meta["format"] = info.get("format_id")
+            meta["ext"] = info.get("ext")
+            meta["filesize"] = d.get("total_bytes") or info.get("filesize") or d.get("total_bytes_estimate")
+            meta["duration"] = info.get("duration")
+        except Exception:
+            pass
+
+    return meta, hook
+
+
+def _failure(prefix, e, meta):
+    detail = " ".join(f"{k}={v}" for k, v in meta.items())
+    return Exception(f"{prefix}: {e}" + (f" [{detail}]" if detail else ""))
+
+
 def download_audio(url, audio_path):
+    meta, hook = _failure_meta_hook()
     try:
         # audio_path 는 확장자 없는 base 경로. 실제 컨테이너 확장자는 yt-dlp 가 %(ext)s 로 채운다.
         ydl_opts = {
@@ -32,6 +56,7 @@ def download_audio(url, audio_path):
             "quiet": True,
             'noplaylist': True,
             'playlist_items': '1',
+            'progress_hooks': [hook],
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.cache.remove()
@@ -52,7 +77,7 @@ def download_audio(url, audio_path):
 
             return title, thumbnail_url, duration, uploader, description, audio_file_name_with_ext
     except Exception as e:
-        raise Exception(f"Download failed: {e}")
+        raise _failure("Download failed", e, meta)
 
 # 전송을 바깥으로 넘길 때 쓰는 포맷 선택자. iOS 만 이 경로를 쓴다.
 #
@@ -87,6 +112,7 @@ def _starts_with_adts(path):
 
 def download_hls_audio(url, audio_path, format_id):
     """앱이 조각을 직접 받지 못하는 HLS 를 앱 프로세스 안에서 받는다. 받은 파일 이름(확장자 포함)을 돌려준다."""
+    meta, hook = _failure_meta_hook()
     try:
         ydl_opts = {
             'format': format_id,
@@ -96,6 +122,7 @@ def download_hls_audio(url, audio_path, format_id):
             'noprogress': True,
             'noplaylist': True,
             'playlist_items': '1',
+            'progress_hooks': [hook],
             **_IN_PROCESS_RETRY_OPTS,
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -112,7 +139,7 @@ def download_hls_audio(url, audio_path, format_id):
             filepath = adts_path
         return os.path.basename(filepath)
     except Exception as e:
-        raise Exception(f"Download hls audio failed: {e}")
+        raise _failure("Download hls audio failed", e, meta)
 
 
 # AVAudioFile 이 여는 형식만 고르되 전송 방식은 가리지 않는다. yt-dlp 가 https 는 10MiB 청크로,
@@ -130,6 +157,7 @@ def download_playable_audio(url, audio_path):
     돌려주는 순서: (audio_file_name_with_ext, duration)
     HLS 결과는 내용이 ADTS(AAC)인데 `.mp4` 로 저장된다. 확장자는 호출자가 내용에 맞춘다.
     """
+    meta, hook = _failure_meta_hook()
     try:
         ydl_opts = {
             'format': _PLAYABLE_AUDIO_FORMAT,
@@ -139,6 +167,7 @@ def download_playable_audio(url, audio_path):
             'noprogress': True,
             'noplaylist': True,
             'playlist_items': '1',
+            'progress_hooks': [hook],
             **_IN_PROCESS_RETRY_OPTS,
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -151,7 +180,7 @@ def download_playable_audio(url, audio_path):
             filepath = (requested[0].get("filepath") if requested else None) or ydl.prepare_filename(info_dict)
             return os.path.basename(filepath), info_dict.get("duration") or None
     except Exception as e:
-        raise Exception(f"Download playable audio failed: {e}")
+        raise _failure("Download playable audio failed", e, meta)
 
 
 def extract_audio_source(url, prefer_hls="0"):

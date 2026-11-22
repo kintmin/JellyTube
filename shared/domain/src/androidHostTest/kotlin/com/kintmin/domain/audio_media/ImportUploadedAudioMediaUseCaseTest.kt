@@ -39,7 +39,7 @@ class ImportUploadedAudioMediaUseCaseTest {
         },
     )
 
-    private val uploads = listOf("a.mp3", FAILING, "c.mp3").map { UploadedAudioFile("/tmp/$it", it) }
+    private val uploads = listOf("a.mp3", FAILING, "c.mp3").map { UploadedAudioFile("/tmp/$it", it, sizeBytes = 1) }
 
     @Test
     fun `맨 아래에 넣을 때는 요청 순서대로 넣는다`() = runTest {

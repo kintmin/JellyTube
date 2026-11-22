@@ -6,6 +6,7 @@ import com.kintmin.domain.audio_media.model.AddedAudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
 import com.kintmin.log.AppLog
+import com.kintmin.log.secret
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -32,7 +33,7 @@ class ImportSharedAudioMediaUseCaseTest {
 
         useCase("content://a")
 
-        verify { appLog.sendDebugLog(match { it.tag == "ImportSharedAudio" && it.message == "들여옴: id=7 name=song" }) }
+        verify { appLog.sendDebugLog(match { it.tag == "ImportSharedAudio" && it.message == "들여옴: id=7 name=${secret("song")}" }) }
     }
 
     @Test
@@ -41,6 +42,6 @@ class ImportSharedAudioMediaUseCaseTest {
 
         useCase("content://a")
 
-        verify { appLog.sendErrorLog(match { it.message == "들여오기 실패: content://a" && it.throwable?.message == "boom" }) }
+        verify { appLog.sendErrorLog(match { it.message == "들여오기 실패: ${secret("content://a")}" && it.throwable?.message == "boom" }) }
     }
 }

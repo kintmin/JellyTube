@@ -46,6 +46,7 @@ class LocalNetworkHttpClientTest {
         val server = embeddedServer(CIO, port = 0) {
             fileShareModule(
                 pcUploadHandler = mockk(),
+                appLog = mockk(relaxed = true),
                 uploadTempDir = tempFolder.root.path,
                 receiveKeepAlive = KeepAliveByForegroundService,
                 currentMigrationSession = { session },

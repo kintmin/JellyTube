@@ -6,6 +6,7 @@ import com.kintmin.domain.data_migration.MigrationSendHandler
 import com.kintmin.domain.file_share.PcUploadHandler
 import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.fileshare.FileShareResponse
+import com.kintmin.log.AppLog
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopped
@@ -20,6 +21,7 @@ import io.ktor.server.routing.routing
 
 internal fun Application.fileShareModule(
     pcUploadHandler: PcUploadHandler,
+    appLog: AppLog,
     uploadTempDir: String,
     receiveKeepAlive: ReceiveKeepAlive,
     currentMigrationSession: () -> MigrationSession?,
@@ -34,6 +36,7 @@ internal fun Application.fileShareModule(
         pcUploadRoutes(currentMigrationSession) {
             pcUploadEndpoints(
                 handler = pcUploadHandler,
+                appLog = appLog,
                 uploadTempDir = uploadTempDir,
                 receiveKeepAlive = receiveKeepAlive,
                 stagedUploads = stagedUploads,
