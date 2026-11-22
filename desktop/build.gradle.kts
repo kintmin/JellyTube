@@ -1,3 +1,4 @@
+import com.kintmin.buildSrc.AppConfiguration
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -52,7 +53,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "JellyTube File Share"
-            packageVersion = "1.0.1"
+            packageVersion = AppConfiguration.DESKTOP_VERSION_NAME
             vendor = "kintmin"
             description = "Desktop file sharing client for JellyTube"
 
