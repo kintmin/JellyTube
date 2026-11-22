@@ -39,7 +39,7 @@ fun SettingDeviceSaveRingtoneScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             DetailTopAppBar(
-                title = "벨소리·알람음으로 쓰기",
+                title = "알람음 및 벨소리로 쓰기",
                 onClickBack = navigateToBack,
             )
         },
