@@ -2,7 +2,6 @@ package com.kintmin.presentation.ui.player_detail.dialog
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -60,19 +59,12 @@ fun SleepTimerDialog(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                SleepTimerMinuteOptions.forEach { option ->
-                    PlaybackOptionChip(
-                        modifier = Modifier.weight(1f),
-                        label = "${option}분",
-                        isSelected = minutes == option,
-                        onClick = { onSelectMinutes(option) },
-                    )
-                }
-            }
+            PlaybackOptionChipRow(
+                options = SleepTimerMinuteOptions,
+                selected = minutes,
+                label = { option -> "${option}분" },
+                onSelect = onSelectMinutes,
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
             NumberWheelPicker(

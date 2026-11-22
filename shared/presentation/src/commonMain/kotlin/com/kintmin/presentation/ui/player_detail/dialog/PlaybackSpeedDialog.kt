@@ -71,19 +71,12 @@ fun PlaybackSpeedDialog(
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                PlaybackSpeedOptions.forEach { speed ->
-                    PlaybackOptionChip(
-                        modifier = Modifier.weight(1f),
-                        label = speed.formatPlaybackSpeed(),
-                        isSelected = selectedSpeed == speed,
-                        onClick = { onSelectSpeed(speed) },
-                    )
-                }
-            }
+            PlaybackOptionChipRow(
+                options = PlaybackSpeedOptions,
+                selected = selectedSpeed,
+                label = { speed -> speed.formatPlaybackSpeed() },
+                onSelect = onSelectSpeed,
+            )
         }
     }
 }
