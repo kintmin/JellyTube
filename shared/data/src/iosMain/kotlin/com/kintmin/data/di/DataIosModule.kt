@@ -22,7 +22,7 @@ import com.kintmin.data.python_bridge.IosPythonExecutorAdapter
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.data.python_bridge.LyricsTransliterator
 import com.kintmin.data.python_bridge.PythonExecutor
-import com.kintmin.data.translation.IosLyricsTranslator
+import com.kintmin.data.translation.IosLyricsTranslationEngine
 import com.kintmin.data.translation.IosLyricsTranslatorBridge
 import com.kintmin.data.translation.LyricsTranslator
 import com.kintmin.domain.data_migration.repository.MigrationSendServerRepository
@@ -49,7 +49,7 @@ fun dataIosModule(
     single<PythonExecutor> { IosPythonExecutorAdapter(pythonExecutorBridge) }
     // 브릿지 자체도 꺼낼 수 있어야 한다 — 끝난 전송 목록처럼 PythonExecutor 밖의 일이 있다.
     single<IosPythonExecutorBridge> { pythonExecutorBridge }
-    single<LyricsTranslator> { IosLyricsTranslator(lyricsTranslatorBridge) }
+    single { LyricsTranslator(IosLyricsTranslationEngine(lyricsTranslatorBridge)) }
     single<LyricsTransliterator> { IosLyricsTransliterator(pythonExecutorBridge) }
 
     // PC 수신과 데이터 보내기가 한 서버를 같이 쓴다.

@@ -24,6 +24,14 @@ final class LyricsTranslatorBridgeImpl: IosLyricsTranslatorBridge {
         completionHandler: @escaping @Sendable ([String]?, Error?) -> Void
     ) {
         Task { @MainActor in
+            let availability = await LanguageAvailability().status(
+                from: Locale.Language(identifier: sourceLanguage),
+                to: Locale.Language(identifier: "ko")
+            )
+            guard availability != .unsupported else {
+                completionHandler(lines, nil)
+                return
+            }
             LyricsTranslationHost.shared.enqueue(lines: lines, sourceLanguage: sourceLanguage) { result in
                 switch result {
                 case .success(let translated): completionHandler(translated, nil)

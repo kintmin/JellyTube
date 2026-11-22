@@ -149,7 +149,6 @@ class LyricsViewerViewModelTest {
                 audioMediaId = audioMediaId,
                 lyricFileFullPath = any(),
                 variant = LyricsVariant.TRANSLATION,
-                sourceLanguage = any(),
             )
         }
     }

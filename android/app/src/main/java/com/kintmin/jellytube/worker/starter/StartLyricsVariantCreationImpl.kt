@@ -16,7 +16,6 @@ class StartLyricsVariantCreationImpl(
         audioMediaId: Int,
         lyricFileFullPath: String,
         variant: LyricsVariant,
-        sourceLanguage: String,
     ) {
         val request = OneTimeWorkRequestBuilder<LyricsVariantWorker>()
             .setInputData(
@@ -24,7 +23,6 @@ class StartLyricsVariantCreationImpl(
                     LyricsVariantWorker.INPUT_DATA_AUDIO_MEDIA_ID to audioMediaId,
                     LyricsVariantWorker.INPUT_DATA_LYRIC_FILE_FULL_PATH to lyricFileFullPath,
                     LyricsVariantWorker.INPUT_DATA_VARIANT to variant.name,
-                    LyricsVariantWorker.INPUT_DATA_SOURCE_LANGUAGE to sourceLanguage,
                 )
             )
             .addTag(TAG)

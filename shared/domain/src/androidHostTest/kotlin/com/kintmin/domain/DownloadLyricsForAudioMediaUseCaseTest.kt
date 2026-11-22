@@ -57,7 +57,7 @@ class DownloadLyricsForAudioMediaUseCaseTest {
 
     private fun stubApplyAndVariant() {
         coEvery { applyLyrics(any(), any(), any(), any(), any(), any()) } returns Result.success(lyricPath)
-        coEvery { createVariant(any(), any(), any()) } returns Result.success(Unit)
+        coEvery { createVariant(any(), any()) } returns Result.success(Unit)
     }
 
     @Test
@@ -71,7 +71,7 @@ class DownloadLyricsForAudioMediaUseCaseTest {
 
         assertTrue(r.isSuccess)
         coVerify(exactly = 1) { applyLyrics(any(), any(), any(), any(), any(), any()) }
-        coVerify(exactly = 0) { createVariant(any(), any(), any()) }
+        coVerify(exactly = 0) { createVariant(any(), any()) }
     }
 
     @Test
@@ -97,8 +97,8 @@ class DownloadLyricsForAudioMediaUseCaseTest {
         val r = useCase(audioMediaId = 1, title = "곡", targetDurationSeconds = 200.0)
 
         assertTrue(r.isSuccess)
-        coVerify(exactly = 1) { createVariant(lyricPath, LyricsVariant.TRANSLATION, "en") }
-        coVerify(exactly = 0) { createVariant(any(), LyricsVariant.TRANSLITERATION, any()) }
+        coVerify(exactly = 1) { createVariant(lyricPath, LyricsVariant.TRANSLATION) }
+        coVerify(exactly = 0) { createVariant(any(), LyricsVariant.TRANSLITERATION) }
     }
 
     @Test
@@ -111,8 +111,8 @@ class DownloadLyricsForAudioMediaUseCaseTest {
         val r = useCase(audioMediaId = 1, title = "곡", targetDurationSeconds = 200.0)
 
         assertTrue(r.isSuccess)
-        coVerify(exactly = 1) { createVariant(lyricPath, LyricsVariant.TRANSLATION, "ja") }
-        coVerify(exactly = 1) { createVariant(lyricPath, LyricsVariant.TRANSLITERATION, "ja") }
+        coVerify(exactly = 1) { createVariant(lyricPath, LyricsVariant.TRANSLATION) }
+        coVerify(exactly = 1) { createVariant(lyricPath, LyricsVariant.TRANSLITERATION) }
     }
 
     @Test

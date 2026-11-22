@@ -42,7 +42,6 @@ class LyricsViewerViewModel constructor(
 
     private var parsedLines: List<LyricsLine> = emptyList()
     private var lyricFileFullPath: String? = null
-    private var sourceLanguage: String = "en"
 
     private val eventChannel = Channel<LyricsViewerEvent>(Channel.BUFFERED)
     val eventFlow: Flow<LyricsViewerEvent> = eventChannel.receiveAsFlow()
@@ -86,7 +85,6 @@ class LyricsViewerViewModel constructor(
                         parsedLines = getParsedLyricsUseCase(path)
 
                         val language = detectLyricsLanguageUseCase(parsedLines)
-                        sourceLanguage = language.sourceLanguage
 
                         val translationLines = getLyricsVariantUseCase(path, LyricsVariant.TRANSLATION)
                             .getOrNull()?.map { line -> line.text }
@@ -150,7 +148,6 @@ class LyricsViewerViewModel constructor(
             audioMediaId = audioMediaId,
             lyricFileFullPath = path,
             variant = variant,
-            sourceLanguage = sourceLanguage,
         )
         val message = when (variant) {
             LyricsVariant.TRANSLATION -> "번역을 시작했어요. 완료되면 알림으로 알려드릴게요."
