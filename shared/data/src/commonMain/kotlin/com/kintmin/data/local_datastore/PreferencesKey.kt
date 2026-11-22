@@ -89,4 +89,12 @@ sealed interface PreferencesKey<T> {
     data object BackupLastFailureReason : PreferencesKey<String> {
         override val key = stringPreferencesKey("backupLastFailureReason")
     }
+
+    data object AppUpdateLastCheckMillis : PreferencesKey<Long> {
+        override val key = longPreferencesKey("appUpdateLastCheckMillis")
+    }
+
+    data object AppUpdateIgnoredVersionName : PreferencesKey<String> {
+        override val key = stringPreferencesKey("appUpdateIgnoredVersionName")
+    }
 }
