@@ -57,6 +57,7 @@ class SettingViewModelBackupTileTest {
         executeAnomalyDataCheck = mockk(relaxed = true),
         importSharedAudioMediaUseCase = mockk(relaxed = true),
         stepMeasurementController = mockk(relaxed = true),
+        checkAppUpdateUseCase = mockk(relaxed = true),
     )
 
     @Test

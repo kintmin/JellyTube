@@ -22,6 +22,7 @@ sealed interface SettingIntent {
     data object OnClickDataMigrationSendTile : SettingIntent
     data object OnClickDataMigrationReceiveTile : SettingIntent
     data object OnClickDeviceIdTile : SettingIntent
+    data class OnClickVersionTile(val currentVersionName: String) : SettingIntent
     data class OnToggleIsStepEnabled(val value: Boolean) : SettingIntent
     data object OnActivityRecognitionGranted : SettingIntent
     data object OnActivityRecognitionDenied : SettingIntent
