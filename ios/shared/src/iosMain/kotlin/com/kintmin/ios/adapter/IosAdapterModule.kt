@@ -3,6 +3,7 @@ package com.kintmin.ios.adapter
 import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.ios.bridge.IosMediaControllerBridge
 import com.kintmin.ios.bridge.IosMigrationSourceBrowserBridge
+import com.kintmin.ios.download.IosDownloadTargetStore
 import com.kintmin.presentation.port.AudioPreviewPlayer
 import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.StartAnomalyDataCheck
@@ -30,7 +31,8 @@ internal fun iosAdapterModule(
     single<StepMeasurementController> { IosStepMeasurementController(get(), get(), get(), get()) }
     single<FileShareServerController> { IosFileShareServerController(get(), get(), get()) }
     single<ReceiveKeepAlive> { IosReceiveKeepAlive() }
-    single<StartYoutubeDownload> { IosStartYoutubeDownload(get(), get(), get(), get()) }
+    single { IosDownloadTargetStore() }
+    single<StartYoutubeDownload> { IosStartYoutubeDownload(get(), get(), get(), get(), get()) }
     single<StartAnomalyDataCheck> { IosStartAnomalyDataCheck(get(), get()) }
     single<StartLyricsVariantCreation> { IosStartLyricsVariantCreation(get(), get()) }
     single<StartAudioEditSave> { IosStartAudioEditSave(get(), get(), get(), get()) }

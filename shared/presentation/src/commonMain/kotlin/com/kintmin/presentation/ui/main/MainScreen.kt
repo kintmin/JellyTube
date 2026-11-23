@@ -287,8 +287,8 @@ fun MainScreen(
             if (selectedTab == MainTabItem.Search) {
                 MainFloatingActionButton(
                     currentUrl = currentUrl,
-                    onClickDownload = { url ->
-                        sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnClickDownload(url))
+                    onClickDownload = { url, playlistId ->
+                        sendYoutubeDownloadIntent(YoutubeDownloadIntent.OnClickDownload(url, playlistId))
                     },
                     navigateToPlaylistDownload = navigateToPlaylistDownload,
                 )
