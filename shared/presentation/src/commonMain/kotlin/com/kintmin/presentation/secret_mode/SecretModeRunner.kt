@@ -38,16 +38,46 @@ class SecretModeRunner(
     private var endsAt: Instant? = null
     private var job: Job? = null
 
+    // 멈춰 둔 남은 시간. 멈춘 동안에도 화면은 이 값을 보여 준다 — null 로 두면 꺼진 것처럼 읽힌다.
+    private var pausedRemaining: Duration? = null
+
     /** 꺼져 있으면 null. */
     val remaining: Duration?
-        get() = endsAt?.let { (it - clock.now()).coerceAtLeast(Duration.ZERO) }
+        get() = pausedRemaining ?: endsAt?.let { (it - clock.now()).coerceAtLeast(Duration.ZERO) }
 
     fun start(total: Duration) {
+        pausedRemaining = null
         job?.cancel()
         endsAt = clock.now() + total
         job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             startSecretModeUseCase()
             delay(total)
+            finish()
+        }
+    }
+
+    /**
+     * 끊기면 안 되는 일이 도는 동안 시계를 멈춘다. 비밀모드가 꺼지면 화면 스택이 메인까지 걷히므로,
+     * 그 일을 하던 화면도 함께 닫혀 버린다.
+     *
+     * **멈춘 채로 두면 비밀모드가 영영 켜져 있다.** 부르는 쪽은 성공·실패·취소 어느 쪽으로 끝나든
+     * [resume] 해야 한다.
+     */
+    fun pause() {
+        if (pausedRemaining != null) return
+        val left = remaining ?: return
+        job?.cancel()
+        job = null
+        endsAt = null
+        pausedRemaining = left
+    }
+
+    fun resume() {
+        val left = pausedRemaining ?: return
+        pausedRemaining = null
+        endsAt = clock.now() + left
+        job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            delay(left)
             finish()
         }
     }
@@ -65,6 +95,7 @@ class SecretModeRunner(
 
     private suspend fun finish() {
         endsAt = null
+        pausedRemaining = null
         endSecretModeUseCase()
         removeSecretTracksFromQueue()
     }

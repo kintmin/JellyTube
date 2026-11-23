@@ -18,8 +18,10 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
@@ -116,6 +118,53 @@ class SecretModeRunnerTest {
 
         coVerify { endSecretModeUseCase() }
         verify(exactly = 0) { playbackController.tryDeleteMediaItem(any(), any()) }
+    }
+
+    @Test
+    fun `멈춘 동안에는 시간이 지나도 꺼지지 않고 남은 시간이 그대로 보인다`() = runTest {
+        val clock = MutableClock()
+        val runner = runner(clock)
+        runner.start(10.minutes)
+
+        clock.now += 4.minutes
+        advanceTimeBy(4.minutes)
+        runner.pause()
+
+        clock.now += 1.hours
+        advanceTimeBy(1.hours)
+        coVerify(exactly = 0) { endSecretModeUseCase() }
+        assertEquals(6.minutes, runner.remaining)
+    }
+
+    @Test
+    fun `재개하면 멈춘 자리의 남은 시간부터 다시 센다`() = runTest {
+        val clock = MutableClock()
+        val runner = runner(clock)
+        runner.start(10.minutes)
+
+        clock.now += 4.minutes
+        advanceTimeBy(4.minutes)
+        runner.pause()
+        runner.resume()
+
+        advanceTimeBy(6.minutes - 1.seconds)
+        coVerify(exactly = 0) { endSecretModeUseCase() }
+
+        advanceTimeBy(2.seconds)
+        coVerify { endSecretModeUseCase() }
+    }
+
+    @Test
+    fun `꺼져 있으면 멈추고 재개해도 켜지지 않는다`() = runTest {
+        val runner = runner()
+
+        runner.pause()
+        runner.resume()
+        runCurrent()
+
+        coVerify(exactly = 0) { startSecretModeUseCase() }
+        coVerify(exactly = 0) { endSecretModeUseCase() }
+        assertNull(runner.remaining)
     }
 
     private class MutableClock : Clock {

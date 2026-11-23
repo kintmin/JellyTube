@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.RunningTaskMonitor
+import com.kintmin.presentation.secret_mode.SecretModeRunner
 import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 class SettingDataMigrationSendViewModel constructor(
     private val dataMigrationSendController: DataMigrationSendController,
     private val runningWorkMonitor: RunningTaskMonitor,
+    private val secretModeRunner: SecretModeRunner,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingDataMigrationSendUiState())
@@ -27,6 +29,8 @@ class SettingDataMigrationSendViewModel constructor(
         viewModelScope.launch {
             dataMigrationSendController.status.collect { status ->
                 if (hasStarted) _uiState.update { it.copy(step = status.toStep()) }
+                // 보내는 중에 비밀모드가 꺼지면 이 화면까지 닫혀 받는 기기의 전송이 실패한다.
+                if (status is DataMigrationSendStatus.Paired) secretModeRunner.pause() else secretModeRunner.resume()
             }
         }
     }
@@ -65,6 +69,8 @@ class SettingDataMigrationSendViewModel constructor(
     }
 
     override fun onCleared() {
+        // 화면이 사라지는 길이 어디든 — 끝났든 중단했든 — 멈춰 둔 시계를 되돌린다.
+        secretModeRunner.resume()
         if (hasStarted) dataMigrationSendController.stop()
     }
 }
