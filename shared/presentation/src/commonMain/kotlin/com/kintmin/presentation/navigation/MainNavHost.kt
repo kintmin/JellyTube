@@ -49,6 +49,13 @@ import com.kintmin.presentation.ui.setting.data_migration_receive.navigation.nav
 import com.kintmin.presentation.ui.setting.data_migration_receive.navigation.settingDataMigrationReceiveScreen
 import com.kintmin.presentation.ui.setting.data_migration_send.navigation.navigateToSettingDataMigrationSendScreen
 import com.kintmin.presentation.ui.setting.data_migration_send.navigation.settingDataMigrationSendScreen
+import com.kintmin.presentation.ui.setting.data_migration_share.MigrationShareKind
+import com.kintmin.presentation.ui.setting.data_migration_share.navigation.navigateToSettingDataMigrationShareScreen
+import com.kintmin.presentation.ui.setting.data_migration_share.navigation.settingDataMigrationShareScreen
+import com.kintmin.presentation.ui.setting.data_migration_share_audio.navigation.navigateToSettingDataMigrationShareAudioScreen
+import com.kintmin.presentation.ui.setting.data_migration_share_audio.navigation.settingDataMigrationShareAudioScreen
+import com.kintmin.presentation.ui.setting.data_migration_share_playlist.navigation.navigateToSettingDataMigrationSharePlaylistScreen
+import com.kintmin.presentation.ui.setting.data_migration_share_playlist.navigation.settingDataMigrationSharePlaylistScreen
 import com.kintmin.presentation.ui.setting.device_save.navigation.navigateToSettingDeviceSaveScreen
 import com.kintmin.presentation.ui.setting.device_save.navigation.settingDeviceSaveScreen
 import com.kintmin.presentation.ui.setting.device_save_select.navigation.navigateToSettingDeviceSaveSelectScreen
@@ -253,7 +260,7 @@ fun MainNavHost(
                 navController.navigateToSettingFileShareReceiveScreen(navOptions)
             },
             navigateToDataMigrationSend = {
-                navController.navigateToSettingDataMigrationSendScreen(navOptions)
+                navController.navigateToSettingDataMigrationShareScreen(navOptions)
             },
             navigateToDataMigrationReceive = {
                 navController.navigateToSettingDataMigrationReceiveScreen(navOptions)
@@ -278,6 +285,41 @@ fun MainNavHost(
 
             settingFileShareReceiveScreen(
                 navigateToBack = { navController.popBackStack() },
+            )
+
+            settingDataMigrationShareScreen(
+                navigateToBack = { navController.popBackStack() },
+                navigateToSync = {
+                    navController.navigateToSettingDataMigrationSendScreen(MigrationShareKind.SYNC, navOptions)
+                },
+                navigateToPlaylistSelect = {
+                    navController.navigateToSettingDataMigrationSharePlaylistScreen(navOptions)
+                },
+                navigateToAudioMediaSelect = {
+                    navController.navigateToSettingDataMigrationShareAudioScreen(navOptions)
+                },
+            )
+
+            settingDataMigrationSharePlaylistScreen(
+                navigateToBack = { navController.popBackStack() },
+                navigateToSend = { playlistIdList ->
+                    navController.navigateToSettingDataMigrationSendScreen(
+                        kind = MigrationShareKind.PLAYLIST,
+                        navOptions = navOptions,
+                        idList = playlistIdList,
+                    )
+                },
+            )
+
+            settingDataMigrationShareAudioScreen(
+                navigateToBack = { navController.popBackStack() },
+                navigateToSend = { audioMediaIdList ->
+                    navController.navigateToSettingDataMigrationSendScreen(
+                        kind = MigrationShareKind.AUDIO_MEDIA,
+                        navOptions = navOptions,
+                        idList = audioMediaIdList,
+                    )
+                },
             )
 
             settingDataMigrationSendScreen(

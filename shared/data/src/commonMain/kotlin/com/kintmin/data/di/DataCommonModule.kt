@@ -132,6 +132,8 @@ val dataCommonModule: Module = module {
     factoryOf(::CloseMigrationSendUseCase)
     factoryOf(::FetchMigrationSendStatusUseCase)
     factoryOf(::ExportMigrationDataUseCase)
+    factoryOf(::FetchShareablePlaylistListFlowUseCase)
+    factoryOf(::FetchShareableAudioMediaListFlowUseCase)
     factoryOf(::ResolveMigrationFilePathUseCase)
     factoryOf(::PairMigrationSourceUseCase)
     factoryOf(::ImportMigrationDataUseCase)

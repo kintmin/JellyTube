@@ -44,6 +44,10 @@ object MigrationScopes {
         return snapshot.tracks.filter { it.playlistId in secretPlaylistIds }.map { it.audioMediaId }.toSet()
     }
 
+    /** 이 플레이리스트가 받는 기기에서 가질 이름. 고르는 화면이 미리 보여 주는 이름도 이것이다. */
+    fun sharedNameOf(type: PlaylistType, name: String): String =
+        if (type == PlaylistType.USER || type == PlaylistType.SECRET) name else SHARED_NAME_PREFIX + type.defaultName
+
     /**
      * 받는 기기에 하나씩만 있는 시스템 플레이리스트로는 받을 수 없다 — 받는 사람의 즐겨찾기가
      * 보내는 사람 것으로 불어난다. 이름을 붙여 내 플레이리스트로 보낸다.
@@ -51,9 +55,9 @@ object MigrationScopes {
     private fun MigrationPlaylist.asSharedPlaylist(): MigrationPlaylist = when (type) {
         PlaylistType.USER, PlaylistType.SECRET -> this
         PlaylistType.TOTAL, PlaylistType.UNCATEGORIZED, PlaylistType.FAVORITE ->
-            copy(type = PlaylistType.USER, name = SHARED_NAME_PREFIX + type.defaultName)
+            copy(type = PlaylistType.USER, name = sharedNameOf(type, name))
         // 비밀 곡이 비밀모드 밖으로 나가지 않게 종류는 비밀로 남는다.
         PlaylistType.SECRET_FAVORITE ->
-            copy(type = PlaylistType.SECRET, name = SHARED_NAME_PREFIX + type.defaultName)
+            copy(type = PlaylistType.SECRET, name = sharedNameOf(type, name))
     }
 }
