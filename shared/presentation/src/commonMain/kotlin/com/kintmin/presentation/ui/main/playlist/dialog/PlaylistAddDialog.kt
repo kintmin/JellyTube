@@ -1,6 +1,7 @@
 package com.kintmin.presentation.ui.main.playlist.dialog
 
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -11,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
@@ -52,13 +54,15 @@ fun PlaylistAddDialog(
                 value = newPlaylistTitle,
                 onValueChange = { newText ->
                     hasEdited = true
-                    newPlaylistTitle = newText
+                    newPlaylistTitle = PlaylistTextLimit.flattenTitle(newText)
                 },
                 textStyle = MaterialTheme.typography.titleMedium,
                 placeholder = "제목 입력",
-                singleLine = true,
+                // 긴 제목을 다 보이게 줄은 넘기되, 엔터는 개행이 아니라 완료다.
+                singleLine = false,
                 maxLength = PlaylistTextLimit.MAX_TITLE_LENGTH,
                 errorMessage = errorMessage.takeIf { hasEdited },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
                     onDone = {
                         hasEdited = true

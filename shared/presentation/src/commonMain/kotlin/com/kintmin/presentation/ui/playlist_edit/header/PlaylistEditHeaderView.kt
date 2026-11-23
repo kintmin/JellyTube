@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -15,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.playlist.PlaylistTextLimit
@@ -56,7 +58,8 @@ fun PlaylistEditHeaderView(
             UnderlineTextField(
                 label = "제목",
                 value = titleText,
-                onValueChange = { newText ->
+                onValueChange = { input ->
+                    val newText = PlaylistTextLimit.flattenTitle(input)
                     titleText = newText
                     hasEditedTitle = true
                     if (newText.isNotEmpty()) {
@@ -66,7 +69,9 @@ fun PlaylistEditHeaderView(
                 textStyle = MaterialTheme.typography.titleMedium,
                 placeholder = "제목 입력",
                 maxLength = PlaylistTextLimit.MAX_TITLE_LENGTH,
-                singleLine = true,
+                // 긴 제목을 다 보이게 줄은 넘기되, 엔터는 개행이 아니라 완료다.
+                singleLine = false,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 errorMessage = if (isTitleError) "제목을 입력해 주세요. 비워 두면 이전 제목이 남습니다." else null,
             )
             Spacer(modifier = Modifier.height(8.dp))

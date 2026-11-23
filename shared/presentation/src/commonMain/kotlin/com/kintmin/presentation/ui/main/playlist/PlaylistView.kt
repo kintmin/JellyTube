@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.SectionHeader
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
@@ -36,7 +37,8 @@ fun PlaylistView(
     PlaylistAddDialog(
         showDialog = showAddDialog,
         onDismiss = { showAddDialog = false },
-        existingNames = data.map { it.name },
+        // 상한을 넘겨 저장된 이름이 있어 양쪽을 같은 상한에 통과시킨다. 그러지 않으면 겹침 경고가 틀린 답을 낸다.
+        existingNames = data.map { PlaylistTextLimit.clampTitle(it.name) },
         makePlaylist = { title -> sendIntent(PlaylistIntent.MakeNewPlaylist(title)) },
     )
 

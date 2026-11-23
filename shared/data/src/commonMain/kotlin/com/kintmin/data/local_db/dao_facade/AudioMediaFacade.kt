@@ -86,7 +86,7 @@ class AudioMediaFacade constructor(
                             isCustomImage = playlist.customImageFileName != null,
                             sequence = nextSequence++,
                             type = playlist.type.name,
-                        )
+                        ).clampText()
                     ).toInt()
                 }
 
@@ -303,7 +303,7 @@ class AudioMediaFacade constructor(
                         isCustomImage = false,
                         sequence = nextSequence,
                         type = type.name,
-                    )
+                    ).clampText()
                 ).toInt()
             }
         }
@@ -452,7 +452,7 @@ class AudioMediaFacade constructor(
                 isCustomImage = false,
                 sequence = 0,
                 type = type.name,
-            )
+            ).clampText()
         )
     }
 
