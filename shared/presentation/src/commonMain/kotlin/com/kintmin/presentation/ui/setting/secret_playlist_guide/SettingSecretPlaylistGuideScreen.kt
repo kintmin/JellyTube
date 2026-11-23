@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.MobileScreenShare
 import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material.icons.rounded.VisibilityOff
@@ -117,6 +118,13 @@ fun SettingSecretPlaylistGuideScreen(
                 text = "비밀 플레이리스트에 담은 곡은 다른 플레이리스트에서 모두 빠지고 찜도 풀립니다. 비밀에서 " +
                     "다시 빼도 원래 플레이리스트로 돌아가지 않고 미분류로 갑니다. 비밀 곡을 찜하면 일반 " +
                     "즐겨찾기가 아니라 비밀 플레이리스트 화면의 '찜한 비밀 곡'에 담깁니다.",
+            )
+            SettingNoticeCardView(
+                icon = Icons.Rounded.MobileScreenShare,
+                title = "다른 기기로 보낼 때",
+                text = "비밀 플레이리스트는 비밀모드를 켠 동안에만 함께 갑니다. 꺼져 있으면 보내는 것에서 빠지므로, " +
+                    "기기를 옮기는 중이라면 켜고 보내세요. 보내는 동안에는 켜 둔 시간이 멈추고, 받은 기기에서도 " +
+                    "비밀모드를 켜야 보입니다.",
             )
             SettingNoticeCardView(
                 icon = Icons.Rounded.Info,
