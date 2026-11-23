@@ -41,8 +41,9 @@ jobs:
 
   # R8 로만 드러나는 회귀는 릴리스 빌드를 해야 보인다. main 으로 가는 PR 에서만 돌려, 걸리면
   # release 브랜치에 커밋해 고칠 수 있게 한다 — main 에 들어간 뒤면 hotfix 를 따야 한다.
+  # 수동 실행에서도 열어 둔다. 릴리스 PR 을 올리기 전에 미리 확인하는 용도다.
   r8-keep-rules:
-    if: github.base_ref == 'main'
+    if: github.base_ref == 'main' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
