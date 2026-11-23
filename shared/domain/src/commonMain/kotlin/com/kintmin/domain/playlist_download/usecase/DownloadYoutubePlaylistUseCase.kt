@@ -31,7 +31,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * 유튜브 재생목록을 같은 이름의 재생목록에 받는다. 받은 곡은 미분류에 두었다가 끝에 유튜브 순서대로 한 번에 담는다.
@@ -122,7 +121,6 @@ class DownloadYoutubePlaylistUseCase(
             )
         }
     }.onFailure {
-        if (it is CancellationException) throw it
         logError("재생목록 받기 중단", it)
     }
 

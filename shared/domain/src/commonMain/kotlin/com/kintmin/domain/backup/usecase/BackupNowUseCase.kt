@@ -17,7 +17,6 @@ import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.flow.first
-import kotlin.coroutines.cancellation.CancellationException
 
 class BackupNowUseCase(
     private val backupRepository: BackupRepository,
@@ -62,7 +61,6 @@ class BackupNowUseCase(
         log("백업 완료: ${written.sizeBytes}B")
         BackupOutcome.WRITTEN
     }.onFailure {
-        if (it is CancellationException) throw it
         logError("백업 실패", it)
     }
 

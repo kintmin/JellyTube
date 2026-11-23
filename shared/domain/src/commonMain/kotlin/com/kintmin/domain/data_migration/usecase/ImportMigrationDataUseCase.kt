@@ -33,7 +33,6 @@ import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * 보내는 기기의 데이터를 받아 이 기기에 합친다. 곡 하나의 실패는 그 곡을 빼고 계속하고
@@ -142,7 +141,7 @@ class ImportMigrationDataUseCase constructor(
         // 반영이 끝났다. 다시 받은 파일은 이미 행이 가리키므로 여기부터는 실패해도 기록만 한다.
         dataMigrationRepository.clearStaging().onFailure { logError("임시 공간 정리 실패", it) }
         export.downloadSettings?.let { settings ->
-            runCatching { appSettingRepository.applyMigratedDownloadSettings(settings, applyPlan, applied, target) }
+            suspendRunCatching { appSettingRepository.applyMigratedDownloadSettings(settings, applyPlan, applied, target) }
                 .onFailure { logError("다운로드 설정 반영 실패", it) }
         }
         MigrationSummary(
@@ -156,7 +155,6 @@ class ImportMigrationDataUseCase constructor(
                 .onFailure { logError("완료 알림 실패", it) }
         }
     }.onFailure {
-        if (it is CancellationException) throw it
         if (it is MigrationDeclinedException) return@onFailure log("받는 사람이 확인 화면에서 받지 않기로 함")
         logError("이전 중단", it)
     }
@@ -179,15 +177,20 @@ class ImportMigrationDataUseCase constructor(
         onProgress: (MigrationProgress) -> Unit,
     ): Map<Int, DownloadedAudioFile> {
         val result = mutableMapOf<Int, DownloadedAudioFile>()
-        audioMedias.forEachIndexed { index, audio ->
-            onProgress(MigrationProgress(MigrationStage.REDOWNLOAD, doneCount = index, totalCount = audioMedias.size))
-            audioMediaRepository.downloadAudioFile(audio.source)
-                .onSuccess { result[audio.id] = it }
-                .onFailure {
-                    if (it is CancellationException) throw it
-                    logError("다시 받기 실패: ${audio.logText()}", it)
-                    failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
-                }
+        try {
+            audioMedias.forEachIndexed { index, audio ->
+                onProgress(MigrationProgress(MigrationStage.REDOWNLOAD, doneCount = index, totalCount = audioMedias.size))
+                audioMediaRepository.downloadAudioFile(audio.source)
+                    .onSuccess { result[audio.id] = it }
+                    .onFailure {
+                        logError("다시 받기 실패: ${audio.logText()}", it)
+                        failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
+                    }
+            }
+        } catch (e: Throwable) {
+            // 돌려주기 전에 멈추면 호출자가 지울 목록을 받지 못한다.
+            withContext(NonCancellable) { deleteRedownloaded(result) }
+            throw e
         }
         onProgress(MigrationProgress(MigrationStage.REDOWNLOAD, audioMedias.size, audioMedias.size))
         return result
