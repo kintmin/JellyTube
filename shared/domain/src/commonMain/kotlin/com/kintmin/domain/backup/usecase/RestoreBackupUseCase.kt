@@ -86,7 +86,7 @@ class RestoreBackupUseCase(
             // 반영이 끝났다. 여기부터는 실패해도 기록만 한다.
             dataMigrationRepository.clearStaging().onFailure { logError("임시 공간 정리 실패", it) }
             backup.downloadSettings?.let { settings ->
-                runCatching { appSettingRepository.applyMigratedDownloadSettings(settings, plan, applied, target) }
+                suspendRunCatching { appSettingRepository.applyMigratedDownloadSettings(settings, plan, applied, target) }
                     .onFailure { logError("다운로드 설정 반영 실패", it) }
             }
         }

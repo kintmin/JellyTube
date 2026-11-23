@@ -105,7 +105,7 @@ internal fun Route.pcUploadEndpoints(
     }
 
     post(FileShareConstants.HTTP_UPLOAD_COMMIT_PATH) {
-        val request = runCatching { call.receive<UploadCommitRequest>() }
+        val request = suspendRunCatching { call.receive<UploadCommitRequest>() }
             .getOrElse {
                 call.respond(HttpStatusCode.BadRequest, FileShareResponse(success = false, message = "요청을 읽을 수 없습니다."))
                 return@post
@@ -116,7 +116,7 @@ internal fun Route.pcUploadEndpoints(
             val staged = request.stageIds.map(stagedUploads::take)
             val found = staged.filterNotNull()
             val imported = try {
-                runCatching { handler.importUploadedAudios(found) }
+                suspendRunCatching { handler.importUploadedAudios(found) }
                     .getOrElse { error -> found.map { Result.failure(error) } }
             } finally {
                 found.forEach { deleteTempFile(it.fileFullPath) }
@@ -135,7 +135,7 @@ internal fun Route.pcUploadEndpoints(
     }
 
     post(FileShareConstants.HTTP_BULK_ARTIST_PATH) {
-        val request = runCatching { call.receive<BulkArtistUpdateRequest>() }
+        val request = suspendRunCatching { call.receive<BulkArtistUpdateRequest>() }
             .getOrElse {
                 call.respond(
                     HttpStatusCode.BadRequest,
@@ -179,7 +179,7 @@ internal fun Route.pcUploadEndpoints(
         }
 
         receiveKeepAlive.keepAlive {
-            val bytes = runCatching { call.receive<ByteArray>() }
+            val bytes = suspendRunCatching { call.receive<ByteArray>() }
                 .getOrElse {
                     call.respond(
                         HttpStatusCode.BadRequest,

@@ -2,6 +2,7 @@ package com.kintmin.data.repository_impl
 
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.app_log.repository.AppLogRepository
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -24,7 +25,7 @@ class AppLogRepositoryImpl constructor(
     override fun appendAppLog(type: String, message: String, tag: String?) {
         logScope.launch {
             logMutex.withLock {
-                runCatching {
+                suspendRunCatching {
                     val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
                     val fileDate = "${now.year}-${now.month.number.toString().padStart(2, '0')}-${now.day.toString().padStart(2, '0')}"
                     val time = "${now.hour.toString().padStart(2, '0')}:${now.minute.toString().padStart(2, '0')}:${now.second.toString().padStart(2, '0')}.${(now.nanosecond / 1_000_000).toString().padStart(3, '0')}"

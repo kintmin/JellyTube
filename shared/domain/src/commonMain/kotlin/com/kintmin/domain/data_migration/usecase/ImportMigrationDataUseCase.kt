@@ -131,7 +131,7 @@ class ImportMigrationDataUseCase constructor(
         // 반영이 끝났다. 다시 받은 파일은 이미 행이 가리키므로 여기부터는 실패해도 기록만 한다.
         dataMigrationRepository.clearStaging().onFailure { logError("임시 공간 정리 실패", it) }
         export.downloadSettings?.let { settings ->
-            runCatching { appSettingRepository.applyMigratedDownloadSettings(settings, applyPlan, applied, target) }
+            suspendRunCatching { appSettingRepository.applyMigratedDownloadSettings(settings, applyPlan, applied, target) }
                 .onFailure { logError("다운로드 설정 반영 실패", it) }
         }
         MigrationSummary(
