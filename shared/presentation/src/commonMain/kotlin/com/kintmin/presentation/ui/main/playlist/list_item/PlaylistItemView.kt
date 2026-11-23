@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.destructiveContent
@@ -38,7 +39,6 @@ import com.kintmin.presentation.ui.common.AudioArtwork
 import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
-import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistDeleteDialog
 import com.kintmin.presentation.ui.main.playlist.dialog.SecretPlaylistDeleteDialog
 

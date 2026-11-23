@@ -368,13 +368,20 @@ class AudioMediaFacade constructor(
      *
      * 돌려주는 값은 한 군데라도 빠진 곡의 수다.
      */
-    private suspend fun unlinkFromOpenPlaylists(audioMediaIdList: List<Int>): Int =
-        audioMediaIdList.count { audioMediaId ->
-            val openPlaylistIds = playlistTrackDao.getLinkedPlaylistIdList(audioMediaId)
-                .filter { playlistTypeOf(it)?.let { type -> !type.isAutoManaged && !type.isSecret } == true }
-            openPlaylistIds.forEach { deleteTrackWithSyncPlaylist(it, listOf(audioMediaId)) }
-            openPlaylistIds.isNotEmpty()
+    private suspend fun unlinkFromOpenPlaylists(audioMediaIdList: List<Int>): Int {
+        // 플레이리스트별로 묶어 한 번에 뺀다. 곡마다 빼면 그 플레이리스트의 집계 동기화가 곡 수만큼 돈다.
+        val audioMediaIdsByPlaylist = mutableMapOf<Int, MutableList<Int>>()
+        val typeByPlaylist = mutableMapOf<Int, PlaylistType?>()
+        audioMediaIdList.forEach { audioMediaId ->
+            playlistTrackDao.getLinkedPlaylistIdList(audioMediaId).forEach { playlistId ->
+                val type = typeByPlaylist.getOrPut(playlistId) { playlistTypeOf(playlistId) } ?: return@forEach
+                if (type.isAutoManaged || type.isSecret) return@forEach
+                audioMediaIdsByPlaylist.getOrPut(playlistId) { mutableListOf() }.add(audioMediaId)
+            }
         }
+        audioMediaIdsByPlaylist.forEach { (playlistId, ids) -> deleteTrackWithSyncPlaylist(playlistId, ids) }
+        return audioMediaIdsByPlaylist.values.flatten().distinct().size
+    }
 
     suspend fun deleteTrack(playlistId: Int, audioMediaIdList: List<Int>) {
         if (isAutoManagedPlaylist(playlistId)) {

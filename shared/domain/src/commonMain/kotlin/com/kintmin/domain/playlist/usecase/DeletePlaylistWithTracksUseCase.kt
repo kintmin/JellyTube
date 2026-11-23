@@ -17,9 +17,12 @@ class DeletePlaylistWithTracksUseCase constructor(
 ) {
     suspend operator fun invoke(playlistId: Int): Result<Unit> {
         val tracks = fetchAudioMediaListFlowUseCase(playlistId).first()
-        return deleteAudioMediaListUseCase(
+        // 곡 삭제는 일부만 성공할 수 있다. 그때도 플레이리스트는 지운다 — 남기면 지운 곡만 빠진
+        // 반쪽이 비밀 화면에 남는다. 실패는 그대로 올려 사용자가 다시 시도할 수 있게 한다.
+        val deleteTracksResult = deleteAudioMediaListUseCase(
             idList = tracks.map { it.audioMedia.id },
             sourceList = tracks.map { it.audioMedia.source },
-        ).mapCatching { deletePlaylistUseCase(playlistId).getOrThrow() }
+        )
+        return deletePlaylistUseCase(playlistId).mapCatching { deleteTracksResult.getOrThrow() }
     }
 }

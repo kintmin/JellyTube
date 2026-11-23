@@ -95,10 +95,11 @@ class PlaylistAddViewModel constructor(
 
         viewModelScope.launch {
             addAudioMediaListToPlaylistUseCase(playlistId, checkedIdList)
-                .onSuccess { unlinkedCount ->
+                .onSuccess { added ->
                     val message = buildString {
                         append("${checkedIdList.size}곡을 추가했습니다.")
-                        if (unlinkedCount > 0) append(" ${unlinkedCount}곡이 다른 플레이리스트에서 빠졌습니다.")
+                        added.unlinkedAudioMediaCount.takeIf { it > 0 }
+                            ?.let { append(" ${it}곡이 다른 플레이리스트에서 빠졌습니다.") }
                     }
                     _eventChannel.send(PlaylistAddEvent.ShowToast(message))
                     _eventChannel.send(PlaylistAddEvent.NavigateToBack)
