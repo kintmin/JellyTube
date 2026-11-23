@@ -17,7 +17,6 @@ data class PlaylistDetailScreenRoute(
     /** 비밀 화면의 '찜' 입구. 즐겨찾기를 열되 비밀 플레이리스트의 곡만 보여준다. */
     val secretOnly: Boolean = false,
 ) {
-    /** 머리말과 목록이 같은 곡을 세도록 둘 다 이것으로 읽는다. */
     val secretTrackFilter: SecretTrackFilter
         get() = if (secretOnly) SecretTrackFilter.ONLY else SecretTrackFilter.EXCLUDE
 }

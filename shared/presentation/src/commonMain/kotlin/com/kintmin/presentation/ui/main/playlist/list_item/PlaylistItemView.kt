@@ -51,7 +51,6 @@ fun PlaylistItemView(
     var isDropDownExpanded by remember { mutableStateOf(false) }
     var isShowDialog by remember { mutableStateOf(false) }
 
-    // 비밀 플레이리스트는 곡을 남길지 함께 지울지가 갈려 다른 다이얼로그를 쓴다.
     if (data.type == PlaylistType.SECRET) {
         SecretPlaylistDeleteDialog(
             showDialog = isShowDialog,

@@ -71,7 +71,7 @@ class PlaylistDetailHeaderViewModel constructor(
                 imageFileFullPath = playlist.imageFileFullPath,
                 name = playlist.name,
                 description = playlist.description,
-                // 어느 범위를 보고 있는지 머리말이 말한다. 같은 즐겨찾기라도 담긴 곡이 다르다.
+                // 같은 즐겨찾기라도 '찜' 입구로 들어오면 담긴 곡이 다르다.
                 playlistSubtitle = "${if (route.secretOnly) "비밀 플레이리스트의 곡" else "플레이리스트"}" +
                     " · 음원수 $audioMediaCount · 재생시간 ${playTimeDuration.to_hh_colon_mm_colon_ss()}",
                 isRepeating = isRepeating,

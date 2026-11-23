@@ -20,10 +20,8 @@ import com.kintmin.presentation.ui.common.DialogColumn
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 
 /**
- * 비밀 플레이리스트를 지울 때 곡을 어떻게 할지 고르게 한다. 남기면 미분류로 돌아가 "전체" 에도
- * 나타나므로, 비밀로 담아 둔 것이 한 번에 드러난다. 그래서 묻지 않고 지우지 않는다.
- *
- * 버튼을 세로로 쌓고 지우는 쪽을 아래에 둔다 — 둘 다 결과가 다르고, 더 위험한 쪽이 손에서 멀다.
+ * 곡을 남기면 미분류로 돌아가 "전체" 에도 나타난다 — 비밀로 담아 둔 것이 한 번에 드러나므로
+ * 묻지 않고 지우지 않는다. 더 위험한 "곡까지" 를 아래에 둬 손에서 멀게 한다.
  */
 @Composable
 fun SecretPlaylistDeleteDialog(

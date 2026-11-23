@@ -96,7 +96,6 @@ class PlaylistAddViewModel constructor(
         viewModelScope.launch {
             addAudioMediaListToPlaylistUseCase(playlistId, checkedIdList)
                 .onSuccess { unlinkedCount ->
-                    // 되돌릴 수 없는 일이라 몇 곡이 빠졌는지까지 말한다.
                     val message = buildString {
                         append("${checkedIdList.size}곡을 추가했습니다.")
                         if (unlinkedCount > 0) append(" ${unlinkedCount}곡이 다른 플레이리스트에서 빠졌습니다.")
