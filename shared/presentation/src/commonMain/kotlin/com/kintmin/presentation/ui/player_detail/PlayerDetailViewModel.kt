@@ -208,6 +208,7 @@ class PlayerDetailViewModel constructor(
                                 audioMediaId = mediaId,
                                 query = uiState.value.title,
                                 durationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
+                                playbackDurationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
                             )
                         )
                     }

@@ -15,19 +15,24 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.topAppBarDetailTitleFontSize
+import com.kintmin.presentation.theme.topAppBarDetailTitleLineHeight
+import com.kintmin.presentation.theme.topAppBarHeight
+import com.kintmin.presentation.ui.common.BackNavigationIconButton
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
-import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.EmptyStateView
 import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
 import com.kintmin.presentation.ui.common.SearchField
@@ -83,9 +88,45 @@ fun LyricsSearchScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            DetailTopAppBar(
-                title = "가사 검색",
-                onClickBack = { navigateToBack() },
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "가사 검색",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = data.audioMediaName,
+                            fontSize = topAppBarDetailTitleFontSize,
+                            lineHeight = topAppBarDetailTitleLineHeight,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                },
+                expandedHeight = topAppBarHeight,
+                navigationIcon = {
+                    BackNavigationIconButton(onClick = navigateToBack)
+                },
+                actions = {
+                    if (data.playbackDurationText.isNotEmpty()) {
+                        Column(
+                            modifier = Modifier.padding(end = 16.dp),
+                            horizontalAlignment = Alignment.End,
+                        ) {
+                            Text(
+                                text = "재생 시간",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = data.playbackDurationText,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
+                },
             )
         },
         bottomBar = {

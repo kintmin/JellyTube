@@ -17,6 +17,7 @@ data class AudioMediaDetailUiState(
     val audioMediaName: String,
     val artist: String,
     val playTime: String,
+    val playbackDurationSeconds: Double?,
     val audioDurationSeconds: Double?,
     val audioMediaCreationTime: String,
     val source: String,
@@ -50,6 +51,7 @@ data class AudioMediaDetailUiState(
             audioMediaName = "새로운 미디어 새로운 미디어 새로운 미디어 새로운 미디어 새로운 미디어",
             artist = "아티스트",
             playTime = "999:99",
+            playbackDurationSeconds = 222.0,
             audioDurationSeconds = 222.0,
             audioMediaCreationTime = "2026년 11월 20일 14시 30분",
             source = "https://preview.com",
@@ -81,6 +83,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
             artist = audioMedia.artist,
             // 화면에 보여주는 길이는 편집본 기준
             playTime = (audioMedia.playbackDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),
+            playbackDurationSeconds = audioMedia.playbackDuration?.toDouble(DurationUnit.SECONDS),
             // 가사 검색은 음원 길이로 후보를 매칭하므로 편집본이 아니라 원본 길이를 넘긴다
             audioDurationSeconds = audioMedia.audioDuration?.toDouble(DurationUnit.SECONDS),
             audioMediaCreationTime = audioMedia.createdTime.toKoreanDateTimeStringWithoutSecond(),
@@ -104,6 +107,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
         audioMediaName = "삭제된 음원",
         artist = "",
         playTime = 0.seconds.to_hh_colon_mm_colon_ss(),
+        playbackDurationSeconds = null,
         audioDurationSeconds = null,
         audioMediaCreationTime = Clock.System.now()
             .toLocalDateTime(TimeZone.currentSystemDefault())

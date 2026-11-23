@@ -1,6 +1,8 @@
 package com.kintmin.presentation.ui.lyrics_search
 
 data class LyricsSearchUiState(
+    val audioMediaName: String,
+    val playbackDurationText: String,
     val query: String,
     val isLoading: Boolean,
     val results: List<LyricsSearchItem>,
@@ -21,6 +23,8 @@ data class LyricsSearchUiState(
     companion object {
 
         fun getMock() = LyricsSearchUiState(
+            audioMediaName = "밤편지",
+            playbackDurationText = "00:03:34",
             query = "아이유 밤편지",
             isLoading = false,
             results = List(3) { index ->

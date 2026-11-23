@@ -104,7 +104,7 @@ fun PlayerDetailScreen(
     navigateToAudioMediaDetail: (audioMediaId: Int) -> Unit,
     navigateToAudioMediaInformationEdit: (audioMediaId: Int) -> Unit,
     navigateToPlayingPlaylist: (playlistId: Int, audioMediaId: Int?) -> Unit,
-    navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
+    navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?, playbackDurationSeconds: Double?) -> Unit,
     navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
 ) {
     val viewModel = koinViewModel<PlayerDetailViewModel>()
@@ -126,6 +126,7 @@ fun PlayerDetailScreen(
                     event.audioMediaId,
                     event.query,
                     event.durationSeconds,
+                    event.playbackDurationSeconds,
                 )
                 is PlayerDetailEvent.NavigateToLyricsViewer -> navigateToLyricsViewer(event.audioMediaId)
                 is PlayerDetailEvent.NavigateToPlayingPlaylist -> navigateToPlayingPlaylist(

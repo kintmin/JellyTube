@@ -289,6 +289,7 @@ class PlayerDetailViewModelTest {
                     audioMediaId = 1,
                     query = "제목1",
                     durationSeconds = 51.0,
+                    playbackDurationSeconds = 51.0,
                 )
             ),
             events,

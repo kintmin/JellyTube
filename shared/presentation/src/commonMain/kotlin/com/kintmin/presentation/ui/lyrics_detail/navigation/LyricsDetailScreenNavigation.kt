@@ -30,10 +30,12 @@ fun NavController.navigateToLyricsDetailScreen(
 
 fun NavGraphBuilder.lyricsDetailScreen(
     navigateToBack: () -> Unit,
+    navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
 ) {
     composable<LyricsDetailScreenRoute> {
         LyricsDetailScreen(
             navigateToBack = navigateToBack,
+            navigateToLyricsViewer = navigateToLyricsViewer,
         )
     }
 }
