@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
@@ -100,7 +101,7 @@ fun PlaylistItemView(
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -183,5 +184,25 @@ fun PlaylistItemPreview() {
             PlaylistItemUiState.getMock().copy(isDownloadTarget = true),
             sendIntent = {},
         )
+    }
+}
+
+/** 상한까지 쓴 제목이 두 줄로 다 보여야 한다. 짧은 제목 칸과는 높이가 다르다. */
+@Preview
+@Composable
+fun PlaylistItemLongNamePreview() {
+    JellyTubeTheme {
+        Row {
+            PlaylistItemView(
+                modifier = Modifier.width(180.dp),
+                PlaylistItemUiState.getMock().copy(name = "가".repeat(PlaylistTextLimit.MAX_TITLE_LENGTH)),
+                sendIntent = {},
+            )
+            PlaylistItemView(
+                modifier = Modifier.width(180.dp),
+                PlaylistItemUiState.getMock().copy(name = "드라이브"),
+                sendIntent = {},
+            )
+        }
     }
 }
