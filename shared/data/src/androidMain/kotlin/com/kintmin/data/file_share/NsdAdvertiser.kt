@@ -69,7 +69,7 @@ internal class NsdAdvertiser(
             runCatching { manager.registerService(serviceInfo(serviceType), NsdManager.PROTOCOL_DNS_SD, listener) }
                 .onSuccess { registrations[serviceType] = listener }
                 .onFailure {
-                    appLog.sendDebugLog(DebugLog(NSD_LOG_TAG, "NSD 광고 등록 실패($serviceType, $retryCount): $it"))
+                    appLog.sendDebugLog(DebugLog(NSD_LOG_TAG, "NSD 광고 등록 실패($serviceType, $retryCount): ${it.message}"))
                     retry(serviceType)
                 }
         }
