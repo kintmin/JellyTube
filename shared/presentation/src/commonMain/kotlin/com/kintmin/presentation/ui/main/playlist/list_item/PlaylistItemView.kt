@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.theme.JellyTubeTheme
@@ -93,7 +95,7 @@ fun PlaylistItemView(
         )
         Row(
             modifier = Modifier.padding(top = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -101,6 +103,7 @@ fun PlaylistItemView(
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onBackground,
+                    lineHeight = 20.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -124,7 +127,8 @@ fun PlaylistItemView(
                     )
                 }
             }
-            Box {
+            // 48dp 터치 영역은 두고, 아이콘만 제목 첫 줄(줄높이 20sp)과 아트워크 오른쪽 끝에 맞춘다.
+            Box(modifier = Modifier.offset(x = 12.dp, y = (-14).dp)) {
                 IconButton(onClick = { isDropDownExpanded = true }) {
                     Icon(
                         imageVector = Icons.Rounded.MoreVert,
