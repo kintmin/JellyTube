@@ -128,6 +128,7 @@ fun PlaylistItemView(
                 Box(modifier = Modifier.requiredSize(48.dp)) {
                     IconButton(onClick = { isDropDownExpanded = true }) {
                         Icon(
+                            modifier = Modifier.size(20.dp),
                             imageVector = Icons.Rounded.MoreVert,
                             contentDescription = "더보기",
                             tint = contentMuted,
