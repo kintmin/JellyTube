@@ -153,6 +153,9 @@ class ImportMigrationDataUseCaseTest {
         }
         override suspend fun notifyFinished(endpoint: MigrationEndpoint, token: String, summary: MigrationSummary) =
             Result.success(Unit).also { calls += "finish" }
+
+        override suspend fun notifyDeclined(endpoint: MigrationEndpoint, token: String) =
+            Result.success(Unit).also { calls += "decline" }
     }
 
     @Test
@@ -200,7 +203,7 @@ class ImportMigrationDataUseCaseTest {
         }
 
         assertTrue(result.exceptionOrNull() is MigrationDeclinedException)
-        assertEquals(listOf("fetchRemoteExport", "fetchSnapshot"), repository.calls)
+        assertEquals(listOf("fetchRemoteExport", "fetchSnapshot", "decline"), repository.calls)
         assertTrue(repository.staged.isEmpty())
         assertEquals(1, seen?.newAudioMediaCount)
         assertEquals(listOf("운동할 때"), seen?.playlists?.map { it.name })

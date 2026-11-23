@@ -19,6 +19,7 @@ class MigrationSession(
     private val onClosed: () -> Unit = {},
     private val onPaired: (deviceName: String) -> Unit = {},
     private val onFinished: (MigrationFinishRequest) -> Unit = {},
+    private val onUnpaired: () -> Unit = {},
 ) {
     private val lock = SynchronizedObject()
     private var token: String? = null
@@ -68,6 +69,17 @@ class MigrationSession(
     fun finish(report: MigrationFinishRequest) {
         if (isClosed) return
         onFinished(report)
+    }
+
+    /** 받는 기기가 받지 않기로 했다. 토큰을 거둬 같은 코드로 다시 페어링할 수 있게 한다. */
+    fun unpair() {
+        val hasUnpaired = synchronized(lock) {
+            if (closed || token == null) return@synchronized false
+            token = null
+            allowedFiles = emptySet()
+            true
+        }
+        if (hasUnpaired) onUnpaired()
     }
 
     // 콜백은 잠금 밖에서 부른다. 받는 쪽이 자기 잠금을 쥔 채 close() 를 부르면 교착된다.

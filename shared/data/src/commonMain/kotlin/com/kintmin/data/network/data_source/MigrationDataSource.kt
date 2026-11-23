@@ -11,6 +11,8 @@ interface MigrationDataSource {
 
     suspend fun finish(host: String, port: Int, token: String, newAudioMediaCount: Int, failedCount: Int): Result<Unit>
 
+    suspend fun decline(host: String, port: Int, token: String): Result<Unit>
+
     /** 본문을 [onChunk] 로 흘려보낸다. 파일 하나를 메모리에 다 올리지 않는다. */
     suspend fun downloadFile(
         host: String,

@@ -202,6 +202,9 @@ class DataMigrationRepositoryImpl constructor(
         failedCount = summary.failures.size,
     )
 
+    override suspend fun notifyDeclined(endpoint: MigrationEndpoint, token: String): Result<Unit> =
+        migrationDataSource.decline(host = endpoint.host, port = endpoint.port, token = token)
+
     /** 401 은 토큰이 바뀐 것, 404 는 세션이 닫힌 것이다. */
     private fun Throwable.asSessionExpiredOrSelf(): Throwable {
         val status = (this as? ClientRequestException)?.response?.status

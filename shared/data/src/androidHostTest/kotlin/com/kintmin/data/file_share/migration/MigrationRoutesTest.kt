@@ -241,6 +241,19 @@ class MigrationRoutesTest {
         assertEquals(MigrationFinishRequest(newAudioMediaCount = 3, failedCount = 1), finished)
     }
 
+    @Test
+    fun `받지 않기 알림은 토큰이 있어야 하고 같은 코드로 다시 페어링하게 한다`() = serverTest {
+        pair(CODE)
+
+        val unauthorized = client.post(FileShareConstants.MIGRATION_DECLINE_PATH)
+        val response = client.post(FileShareConstants.MIGRATION_DECLINE_PATH) { bearerAuth(TOKEN) }
+
+        assertEquals(HttpStatusCode.Unauthorized, unauthorized.status)
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(HttpStatusCode.Unauthorized, manifest(TOKEN).status)
+        assertEquals(HttpStatusCode.OK, pair(CODE).status)
+    }
+
     private companion object {
         const val CODE = "123456"
         const val TOKEN = "issued-token"

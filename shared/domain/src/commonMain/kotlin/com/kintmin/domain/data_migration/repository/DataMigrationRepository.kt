@@ -53,4 +53,7 @@ interface DataMigrationRepository {
 
     /** 보내는 기기에 끝났다고 알린다. 보내는 기기는 이걸 받아야 화면을 떠나도 된다고 안내한다. */
     suspend fun notifyFinished(endpoint: MigrationEndpoint, token: String, summary: MigrationSummary): Result<Unit>
+
+    /** 보내는 기기에 받지 않기로 했다고 알린다. 보내는 기기는 같은 코드로 다시 페어링을 기다린다. */
+    suspend fun notifyDeclined(endpoint: MigrationEndpoint, token: String): Result<Unit>
 }

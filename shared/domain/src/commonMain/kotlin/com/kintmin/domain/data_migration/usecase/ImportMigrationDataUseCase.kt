@@ -62,7 +62,10 @@ class ImportMigrationDataUseCase constructor(
         val target = dataMigrationRepository.fetchSnapshot().getOrThrow()
 
         // 목록은 이미 손에 있고 파일은 아직 받지 않았다. 묻기에 돈이 들지 않는 유일한 자리다.
-        val choice = confirm(MigrationPlanner.preview(available, target)) ?: throw MigrationDeclinedException()
+        val choice = confirm(MigrationPlanner.preview(available, target)) ?: run {
+            dataMigrationRepository.notifyDeclined(endpoint, token).onFailure { logError("받지 않기 알림 실패", it) }
+            throw MigrationDeclinedException()
+        }
 
         // 보내는 기기에 음원 파일이 없는 곡은 계획 전에 빠진다. 같은 곡의 다른 행으로 들어오거나 이미 이 기기에
         // 있으면 실패가 아니다.

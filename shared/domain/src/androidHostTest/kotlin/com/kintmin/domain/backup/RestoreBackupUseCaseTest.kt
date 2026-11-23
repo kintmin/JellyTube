@@ -139,6 +139,9 @@ class RestoreBackupUseCaseTest {
 
         override suspend fun notifyFinished(endpoint: MigrationEndpoint, token: String, summary: MigrationSummary) =
             error("복원에서 부르지 않는다")
+
+        override suspend fun notifyDeclined(endpoint: MigrationEndpoint, token: String) =
+            error("복원에서 부르지 않는다")
     }
 
     private fun useCase(repository: DataMigrationRepository) =

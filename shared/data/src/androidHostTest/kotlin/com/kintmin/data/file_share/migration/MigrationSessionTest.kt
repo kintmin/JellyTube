@@ -43,6 +43,20 @@ class MigrationSessionTest {
     }
 
     @Test
+    fun `받는 기기가 받지 않기로 하면 토큰을 거두고 같은 코드로 다시 페어링할 수 있다`() {
+        var tokens = 0
+        val session = MigrationSession(code = "123456", generateToken = { "token${++tokens}" })
+        session.pair("123456", DEVICE)
+        session.allowFiles(setOf("AUDIO" to "a.m4a"))
+
+        session.unpair()
+
+        assertFalse(session.isAuthorized("token1"))
+        assertFalse(session.isFileAllowed("AUDIO", "a.m4a"))
+        assertEquals(PairResult.Issued("token2"), session.pair("123456", DEVICE))
+    }
+
+    @Test
     fun `페어링한 뒤 틀린 코드는 코드 틀림으로 답하되 잠금으로 세지 않아 받는 기기가 끊기지 않는다`() {
         val session = session()
         session.pair("123456", DEVICE)

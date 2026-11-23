@@ -66,6 +66,12 @@ internal fun Route.migrationRoutes(
         call.respond(HttpStatusCode.OK)
     }
 
+    post(FileShareConstants.MIGRATION_DECLINE_PATH) {
+        val session = call.authorizedSession(currentSession) ?: return@post
+        session.unpair()
+        call.respond(HttpStatusCode.OK)
+    }
+
     get("${FileShareConstants.MIGRATION_FILES_PATH}/{kind}/{name}") {
         val session = call.authorizedSession(currentSession) ?: return@get
         val kind = call.parameters["kind"].orEmpty()
