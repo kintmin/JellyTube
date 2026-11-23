@@ -205,7 +205,7 @@ class ImportMigrationDataUseCase constructor(
                 .onFailure { error ->
                     if (error !is MigrationFileUnavailableException) throw error
                     val owner = plan.newAudioMedias.firstOrNull { MigrationFile(MigrationFileKind.AUDIO, it.audioFileName) == entry.file }
-                    log("파일 받기 실패: ${entry.file} size=${entry.size} ${owner?.logText().orEmpty()} $error")
+                    log("파일 받기 실패: ${entry.file} size=${entry.size} ${owner?.logText().orEmpty()} ${error.message ?: error::class.simpleName}")
                     unavailable += entry.file
                 }
             receivedBytes = before + entry.size

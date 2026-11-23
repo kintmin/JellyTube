@@ -7,6 +7,7 @@ import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
+import com.kintmin.log.secret
 import kotlinx.coroutines.flow.first
 
 class CleanupAnomalousDataUseCase constructor(
@@ -21,7 +22,7 @@ class CleanupAnomalousDataUseCase constructor(
 
         val orphanMediaList = audioMediaRepository.deleteOrphanAudioMedia().getOrThrow()
         orphanMediaList.forEach {
-            appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "음원 row 삭제 완료: $it"))
+            appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "음원 row 삭제 완료: id=${it.id} name=${secret(it.name)}"))
         }
 
         // 커밋 후 orphan row가 참조하던 파일 삭제

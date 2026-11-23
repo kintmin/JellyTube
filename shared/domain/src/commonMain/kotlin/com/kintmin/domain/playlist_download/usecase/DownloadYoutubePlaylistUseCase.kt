@@ -94,7 +94,7 @@ class DownloadYoutubePlaylistUseCase(
             throw e
         }
         toDownload.zip(results).forEach { (entry, result) ->
-            result.onFailure { log("받기 실패: ${secret(entry.title)} (${entry.videoId}) $it") }
+            result.onFailure { log("받기 실패: ${secret(entry.title)} (${entry.videoId}) ${it.message ?: it::class.simpleName}") }
         }
 
         val playlistId = withContext(NonCancellable) { addInOrder(playlist.title, idsInOrder(), onProgress) }
