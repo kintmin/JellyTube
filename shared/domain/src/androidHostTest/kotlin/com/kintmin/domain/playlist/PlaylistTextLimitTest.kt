@@ -26,6 +26,11 @@ class PlaylistTextLimitTest {
     }
 
     @Test
+    fun `입력 중에는 개행만 공백으로 바꾸고 앞뒤 여백은 남긴다`() {
+        assertEquals("드라이브 음악 ", PlaylistTextLimit.flattenTitle("드라이브\n음악 "))
+    }
+
+    @Test
     fun `자른 끝의 공백을 지워 두 번 적용해도 결과가 같다`() {
         val head = "가".repeat(PlaylistTextLimit.MAX_TITLE_LENGTH - 1)
         val once = PlaylistTextLimit.clampTitle("$head 나다라")
