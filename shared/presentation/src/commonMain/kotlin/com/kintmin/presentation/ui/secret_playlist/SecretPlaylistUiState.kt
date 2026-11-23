@@ -9,4 +9,5 @@ data class SecretPlaylistUiState(
     val minutes: Int = SecretModeRepository.DEFAULT_MINUTES,
     val remaining: Duration? = null,
     val playlists: List<PlaylistItemUiState> = emptyList(),
+    val isReorderBottomSheetVisible: Boolean = false,
 )

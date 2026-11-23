@@ -77,7 +77,7 @@ class PlaylistViewModel constructor(
             updatePlaylistSequenceUseCase(orderedIds).onFailure {
                 // 쓰기가 실패하면 DB 가 그대로라 Flow 가 재방출되지 않는다. 말해 주지 않으면
                 // 시트는 새 순서를, 격자는 옛 순서를 동시에 보여준다.
-                eventChannel.send(PlaylistEvent.ShowToast("순서를 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요."))
+                eventChannel.send(PlaylistEvent.ShowToast(PlaylistEvent.REORDER_FAILED_MESSAGE))
             }
         }
     }

@@ -37,6 +37,7 @@ fun PlaylistReorderBottomSheet(
     playlists: List<PlaylistItemUiState>,
     onReorder: (orderedIds: List<Int>) -> Unit,
     onDismissRequest: () -> Unit,
+    title: String = "내 플레이리스트 순서",
 ) {
     val listState = rememberLazyListState()
     val reorderState = rememberReorderState(
@@ -58,11 +59,11 @@ fun PlaylistReorderBottomSheet(
             state = listState,
         ) {
             item(key = "header") {
-                // 범위는 제목이 말한다. 이 시트는 내 플레이리스트 머리말에서만 열리고
-                // 라이브러리는 목록에 아예 없으므로 따로 설명할 것이 없다.
+                // 범위는 제목이 말한다. 이 시트는 섹션 머리말에서만 열리고 그 섹션의 항목만
+                // 담으므로 따로 설명할 것이 없다.
                 Text(
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
-                    text = "내 플레이리스트 순서",
+                    text = title,
                     // titleMedium 은 항목의 bodyLarge 와 같은 16sp 라 제목으로 안 읽힌다.
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
