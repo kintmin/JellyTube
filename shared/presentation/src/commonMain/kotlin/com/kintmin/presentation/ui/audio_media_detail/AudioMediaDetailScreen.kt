@@ -59,6 +59,7 @@ import com.kintmin.presentation.ui.audio_media_detail.dialog.KaraokeUnlinkDialog
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionProgressIndicator
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionRowView
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionUnlinkButton
+import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaDescriptionView
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaDetailInfoView
 import com.kintmin.presentation.ui.common.AudioArtwork
 import com.kintmin.presentation.ui.common.BottomActionBar
@@ -390,6 +391,24 @@ fun AudioMediaDetailScreen(
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+
+            // 설명은 5000자까지라 펼쳐도 뒤로 밀릴 것이 없는 맨 끝에 둔다.
+            if (data.audioMediaDescription.isNotBlank()) {
+                item(key = -3) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(bottom = 24.dp),
+                    ) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                        )
+                        AudioMediaDescriptionView(description = data.audioMediaDescription)
+                    }
                 }
             }
         }
