@@ -92,7 +92,9 @@ fun LyricsSearchScreen(
                 title = {
                     Column {
                         Text(
-                            text = "가사 검색",
+                            text = listOf("가사 검색", data.playbackDurationText)
+                                .filter { it.isNotEmpty() }
+                                .joinToString(" · "),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -108,24 +110,6 @@ fun LyricsSearchScreen(
                 expandedHeight = topAppBarHeight,
                 navigationIcon = {
                     BackNavigationIconButton(onClick = navigateToBack)
-                },
-                actions = {
-                    if (data.playbackDurationText.isNotEmpty()) {
-                        Column(
-                            modifier = Modifier.padding(end = 16.dp),
-                            horizontalAlignment = Alignment.End,
-                        ) {
-                            Text(
-                                text = "재생 시간",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Text(
-                                text = data.playbackDurationText,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                    }
                 },
             )
         },

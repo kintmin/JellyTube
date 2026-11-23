@@ -283,7 +283,7 @@ fun AudioMediaDetailScreen(
 
                         AudioMediaActionRowView(
                             icon = Icons.Rounded.Lyrics,
-                            title = if (data.hasLyrics) "가사" else "가사 찾기",
+                            title = if (data.hasLyrics) "가사" else "가사 검색",
                             description = if (data.hasLyrics) "저장됨" else null,
                             onClick = {
                                 if (data.hasLyrics) {

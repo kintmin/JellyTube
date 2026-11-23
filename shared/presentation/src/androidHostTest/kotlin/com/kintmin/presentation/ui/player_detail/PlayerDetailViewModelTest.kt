@@ -274,7 +274,7 @@ class PlayerDetailViewModelTest {
     }
 
     @Test
-    fun `가사가 없으면 가사 입구가 가사 찾기로 보낸다`() = runTest {
+    fun `가사가 없으면 가사 입구가 가사 검색으로 보낸다`() = runTest {
         val viewModel = viewModel()
         val events = mutableListOf<PlayerDetailEvent>()
         val collector = launch(UnconfinedTestDispatcher(testScheduler)) {
