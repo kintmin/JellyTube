@@ -8,12 +8,21 @@ WHERE SP.type = 'SECRET'
 """
 
 /**
- * "전체" 의 곡 수·길이·썸네일은 저장된 값이라 비밀 곡이 들어 있다. 그만큼 빼서 읽는다.
+ * 비밀 곡을 숨기는 시스템 플레이리스트. 앱이 알아서 채우는 "전체" 와, 하트 한 번으로 들어가
+ * 사용자가 들어간 줄 모르기 쉬운 "즐겨찾기" 다. "미분류" 는 비밀에 담기는 순간 빠지므로 없다.
+ * 값은 PlaylistType 의 이름이다.
+ */
+internal const val SECRET_HIDING_PLAYLIST_TYPES = "('TOTAL', 'FAVORITE')"
+
+/**
+ * 위 플레이리스트의 곡 수·길이·썸네일은 저장된 값이라 비밀 곡이 들어 있다. 그만큼 빼서 읽는다.
+ * 비밀 곡 전체가 아니라 **그 플레이리스트에 실제로 든** 비밀 곡만 뺀다 — 전체는 모든 곡을 담아
+ * 두 값이 같지만 즐겨찾기는 일부만 담는다.
  * 편집본이 있으면 편집본 길이가 재생 길이다. 썸네일은 비밀이 아닌 첫 곡의 것이다.
  */
 internal const val VISIBLE_PLAYLIST_COLUMNS = """
 id, name, description, rawCreatedTime, isCustomImage, sequence, type,
-CASE WHEN type = 'TOTAL' AND NOT isCustomImage
+CASE WHEN type IN $SECRET_HIDING_PLAYLIST_TYPES AND NOT isCustomImage
     THEN (
         SELECT AM.imageFileNameWithExt FROM PLAYLIST_TRACK PT
         JOIN AUDIO_MEDIA AM ON AM.id = PT.audioMediaId
@@ -21,13 +30,18 @@ CASE WHEN type = 'TOTAL' AND NOT isCustomImage
         ORDER BY PT.sequence LIMIT 1
     )
     ELSE imageFileNameWithExt END AS imageFileNameWithExt,
-CASE WHEN type = 'TOTAL'
-    THEN audioMediaCount - (SELECT COUNT(*) FROM AUDIO_MEDIA WHERE id IN ($SECRET_AUDIO_MEDIA_IDS))
+CASE WHEN type IN $SECRET_HIDING_PLAYLIST_TYPES
+    THEN audioMediaCount - (
+        SELECT COUNT(*) FROM PLAYLIST_TRACK PT
+        WHERE PT.playlistId = PLAYLIST.id AND PT.audioMediaId IN ($SECRET_AUDIO_MEDIA_IDS)
+    )
     ELSE audioMediaCount END AS audioMediaCount,
-CASE WHEN type = 'TOTAL'
+CASE WHEN type IN $SECRET_HIDING_PLAYLIST_TYPES
     THEN rawPlayTimeDuration - (
-        SELECT COALESCE(SUM(COALESCE(editedAudioDurationSeconds, rawAudioDurationSeconds, 0)), 0)
-        FROM AUDIO_MEDIA WHERE id IN ($SECRET_AUDIO_MEDIA_IDS)
+        SELECT COALESCE(SUM(COALESCE(AM.editedAudioDurationSeconds, AM.rawAudioDurationSeconds, 0)), 0)
+        FROM PLAYLIST_TRACK PT
+        JOIN AUDIO_MEDIA AM ON AM.id = PT.audioMediaId
+        WHERE PT.playlistId = PLAYLIST.id AND PT.audioMediaId IN ($SECRET_AUDIO_MEDIA_IDS)
     )
     ELSE rawPlayTimeDuration END AS rawPlayTimeDuration
 """

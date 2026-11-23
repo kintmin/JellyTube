@@ -5,6 +5,7 @@ import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
+import com.kintmin.domain.audio_track.model.SecretTrackFilter
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -45,8 +46,11 @@ class AudioTrackRepositoryImpl constructor(
             .map { it.toDomain(fileManager).getOrThrow() }
     }
 
-    override fun getPlaylistTrackAggregateListFlow(playlistId: Int, showSecretInTotal: Boolean): Flow<List<PlaylistTrackAggregate>> {
-        return playlistTrackDao.getPlaylistTrackFullListFlow(playlistId, showSecretInTotal).map { list ->
+    override fun getPlaylistTrackAggregateListFlow(
+        playlistId: Int,
+        secretFilter: SecretTrackFilter,
+    ): Flow<List<PlaylistTrackAggregate>> {
+        return playlistTrackDao.getPlaylistTrackFullListFlow(playlistId, secretFilter.name).map { list ->
             list.map {
                 it.toDomain(fileManager).getOrThrow()
             }

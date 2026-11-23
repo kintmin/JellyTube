@@ -16,7 +16,7 @@ fun NavController.navigateToSecretPlaylistScreen(
 
 fun NavGraphBuilder.secretPlaylistScreen(
     navigateToBack: () -> Unit,
-    navigateToPlaylistDetail: (playlistId: Int) -> Unit,
+    navigateToPlaylistDetail: (playlistId: Int, secretOnly: Boolean) -> Unit,
     navigateToPlaylistEdit: (playlistId: Int) -> Unit,
     navigateToPlaylistAdd: (playlistId: Int, playlistName: String) -> Unit,
     navigateToPlayerDetail: () -> Unit,

@@ -42,6 +42,7 @@ import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
+import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistLibraryBlockView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistReorderActionView
 import com.kintmin.presentation.ui.player_bar.PlayerBar
 import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
@@ -60,7 +61,7 @@ private val SecretModeMinuteRange = (1..120).toList()
 @Composable
 fun SecretPlaylistScreen(
     navigateToBack: () -> Unit,
-    navigateToPlaylistDetail: (playlistId: Int) -> Unit,
+    navigateToPlaylistDetail: (playlistId: Int, secretOnly: Boolean) -> Unit,
     navigateToPlaylistEdit: (playlistId: Int) -> Unit,
     navigateToPlaylistAdd: (playlistId: Int, playlistName: String) -> Unit,
     navigateToPlayerDetail: () -> Unit,
@@ -74,7 +75,8 @@ fun SecretPlaylistScreen(
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
-                is SecretPlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistId)
+                is SecretPlaylistEvent.NavigateToPlaylistDetailScreen ->
+                    navigateToPlaylistDetail(event.playlistId, event.secretOnly)
                 is SecretPlaylistEvent.NavigateToPlaylistEditScreen -> navigateToPlaylistEdit(event.playlistId)
                 is SecretPlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId, event.playlistName)
                 is SecretPlaylistEvent.ShowToast -> toaster.show(event.message)
@@ -192,6 +194,16 @@ fun SecretPlaylistScreen(
                     }
                 }
                 return@LazyVerticalGrid
+            }
+
+            uiState.secretFavorite?.let { secretFavorite ->
+                item(key = "secret-favorite", span = { GridItemSpan(maxLineSpan) }) {
+                    PlaylistLibraryBlockView(
+                        modifier = Modifier.fillMaxWidth(),
+                        data = listOf(secretFavorite),
+                        sendIntent = { sendIntent(SecretPlaylistIntent.OnPlaylistIntent(it)) },
+                    )
+                }
             }
 
             item(key = "secret-header", span = { GridItemSpan(maxLineSpan) }) {

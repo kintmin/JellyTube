@@ -143,11 +143,13 @@ fun MainNavHost(
         )
         secretPlaylistScreen(
             navigateToBack = { navController.popBackStack() },
-            navigateToPlaylistDetail = { playlistId ->
+            navigateToPlaylistDetail = { playlistId, secretOnly ->
                 navController.navigateToPlaylistDetailScreen(
                     playlistId = playlistId,
                     navOptions = navOptions,
-                    isBasePlaylist = false,
+                    // '찜' 입구만 시스템 플레이리스트(즐겨찾기)로 간다. 나머지는 비밀 플레이리스트다.
+                    isBasePlaylist = secretOnly,
+                    secretOnly = secretOnly,
                 )
             },
             navigateToPlaylistEdit = { playlistId ->

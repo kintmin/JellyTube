@@ -5,6 +5,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.kintmin.domain.audio_track.model.SecretTrackFilter
 import com.kintmin.presentation.ui.playlist_detail.PlaylistDetailScreen
 import kotlinx.serialization.Serializable
 
@@ -13,14 +14,21 @@ data class PlaylistDetailScreenRoute(
     val playlistId: Int,
     val focusAudioMediaId: Int? = null,
     val isBasePlaylist: Boolean = false,
-)
+    /** 비밀 화면의 '찜' 입구. 즐겨찾기를 열되 비밀 플레이리스트의 곡만 보여준다. */
+    val secretOnly: Boolean = false,
+) {
+    /** 머리말과 목록이 같은 곡을 세도록 둘 다 이것으로 읽는다. */
+    val secretTrackFilter: SecretTrackFilter
+        get() = if (secretOnly) SecretTrackFilter.ONLY else SecretTrackFilter.EXCLUDE
+}
 
 fun NavController.navigateToPlaylistDetailScreen(
     playlistId: Int,
     focusAudioMediaId: Int? = null,
     navOptions: NavOptions,
     isBasePlaylist: Boolean = false,
-) = navigate(PlaylistDetailScreenRoute(playlistId, focusAudioMediaId, isBasePlaylist), navOptions)
+    secretOnly: Boolean = false,
+) = navigate(PlaylistDetailScreenRoute(playlistId, focusAudioMediaId, isBasePlaylist, secretOnly), navOptions)
 
 fun NavGraphBuilder.playlistDetail(
     navigateToBack: () -> Unit,

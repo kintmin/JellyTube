@@ -1,6 +1,7 @@
 package com.kintmin.domain.audio_track.usecase
 
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
+import com.kintmin.domain.audio_track.model.SecretTrackFilter
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -10,7 +11,10 @@ import kotlinx.coroutines.flow.flowOn
 class FetchAudioMediaListFlowUseCase constructor(
     private val audioTrackRepository: AudioTrackRepository,
 ) {
-    operator fun invoke(playlistId: Int): Flow<List<PlaylistTrackAggregate>> {
-        return audioTrackRepository.getPlaylistTrackAggregateListFlow(playlistId).flowOn(Dispatchers.IO)
+    operator fun invoke(
+        playlistId: Int,
+        secretFilter: SecretTrackFilter = SecretTrackFilter.EXCLUDE,
+    ): Flow<List<PlaylistTrackAggregate>> {
+        return audioTrackRepository.getPlaylistTrackAggregateListFlow(playlistId, secretFilter).flowOn(Dispatchers.IO)
     }
 }

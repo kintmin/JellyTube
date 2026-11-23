@@ -1,6 +1,7 @@
 package com.kintmin.domain.audio_track.repository
 
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
+import com.kintmin.domain.audio_track.model.SecretTrackFilter
 import kotlinx.coroutines.flow.Flow
 
 interface AudioTrackRepository {
@@ -10,8 +11,10 @@ interface AudioTrackRepository {
     suspend fun deleteCustomAudioTrack(playlistId: Int, audioMediaIdList: List<Int>): Result<Unit>
 
     fun getPlaylistTrackAggregateFlow(playlistId: Int, audioMediaId: Int): Flow<PlaylistTrackAggregate>
-    /** [showSecretInTotal] 가 false 면 "전체" 에서 비밀 플레이리스트에 속한 곡을 뺀다. */
-    fun getPlaylistTrackAggregateListFlow(playlistId: Int, showSecretInTotal: Boolean = false): Flow<List<PlaylistTrackAggregate>>
+    fun getPlaylistTrackAggregateListFlow(
+        playlistId: Int,
+        secretFilter: SecretTrackFilter = SecretTrackFilter.EXCLUDE,
+    ): Flow<List<PlaylistTrackAggregate>>
 
     fun getPlaylistIdListFlow(audioMediaId: Int): Flow<List<Int>>
 
