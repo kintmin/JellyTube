@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
@@ -40,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.AudioArtwork
@@ -91,14 +91,18 @@ fun PlaylistDetailHeaderView(
                         .padding(bottom = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // 제목이 weight 를 가져야 한다. 없으면 Row 가 weight 없는 이 Column 을 maxWidth
+                    // 전부로 먼저 재서 긴 제목이 폭을 다 먹고, 아래 토글 둘이 폭 0 으로 사라진다.
                     Column(
-                        modifier = Modifier.wrapContentHeight(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .wrapContentHeight(),
                     ) {
                         Text(
                             modifier = Modifier.padding(bottom = 4.dp),
                             text = headerData.name,
                             fontSize = 20.sp,
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -111,9 +115,6 @@ fun PlaylistDetailHeaderView(
                         )
                     }
                     PlaybackToggleButton(
-                        modifier = Modifier
-                            .wrapContentWidth(Alignment.End)
-                            .weight(1f),
                         imageVector = Icons.Rounded.Shuffle,
                         label = "셔플",
                         isOn = headerData.isShuffling,
@@ -122,7 +123,6 @@ fun PlaylistDetailHeaderView(
                         },
                     )
                     PlaybackToggleButton(
-                        modifier = Modifier.wrapContentWidth(),
                         imageVector = Icons.Rounded.Repeat,
                         label = "반복",
                         isOn = headerData.isRepeating,
@@ -218,6 +218,21 @@ fun MusicControlsPlaybackTogglesOnPreview() {
             isBasePlaylist = false,
             headerData = PlaylistDetailHeaderUiState.getMock()
                 .copy(isShuffling = true, isRepeating = true),
+        )
+    }
+}
+
+/** 상한까지 쓴 제목에도 토글 둘이 남아야 한다. */
+@Preview
+@Composable
+fun MusicControlsLongNamePreview() {
+    JellyTubeTheme {
+        PlaylistDetailHeaderView(
+            innerPaddingValues = PaddingValues(top = 24.dp),
+            sendIntent = {},
+            isBasePlaylist = false,
+            headerData = PlaylistDetailHeaderUiState.getMock()
+                .copy(name = "가".repeat(PlaylistTextLimit.MAX_TITLE_LENGTH)),
         )
     }
 }
