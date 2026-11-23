@@ -17,6 +17,7 @@ import com.kintmin.domain.audio_edit.model.EditedAudioSource
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_edit.model.AudioEditAlreadySaving
 import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -67,7 +68,7 @@ internal class AudioEditRepositoryImpl constructor(
 
     override suspend fun fetchEditTimeline(audioMediaId: Int): Result<AudioEditTimeline?> =
         withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 audioEditProjectDao.getByAudioMediaId(audioMediaId)?.timelineJson
                     ?.let { it.toAudioEditTimelineOrNull() ?: error("편집 상태를 읽을 수 없습니다.") }
             }
@@ -82,7 +83,7 @@ internal class AudioEditRepositoryImpl constructor(
         audioMediaId: Int,
         timeline: AudioEditTimeline,
     ): Result<AudioMedia> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             val entity = audioMediaDao.getDataById(audioMediaId)
             val sourceFileFullPath = fileManager
                 .getAudioFileFullPath(fileNameWithExt = entity.audioFileNameWithExt)
@@ -128,7 +129,7 @@ internal class AudioEditRepositoryImpl constructor(
 
     private suspend fun revertEditedAudioInternal(audioMediaId: Int): Result<AudioMedia> =
         withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val editedFileNameWithExt = audioMediaDao
                     .getDataById(audioMediaId)
                     .editedAudioFileNameWithExt
@@ -163,7 +164,7 @@ internal class AudioEditRepositoryImpl constructor(
         playlistIdOnDownload: Int?,
         shouldInsertAtTopOnDownload: Boolean,
     ): Result<AudioMedia> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             val originEntity = audioMediaDao.getDataById(audioMediaId)
             val sourceFileFullPath = fileManager
                 .getAudioFileFullPath(fileNameWithExt = originEntity.audioFileNameWithExt)

@@ -4,6 +4,7 @@ import com.kintmin.data.local_datastore.DatastoreUtil
 import com.kintmin.data.local_datastore.PreferencesKey
 import com.kintmin.data.local_db.dao.StepDao
 import com.kintmin.data.local_db.model.StepEntity
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.extension.parseBasicIsoDate
 import com.kintmin.domain.extension.startOfDayMillis
 import com.kintmin.domain.step.model.StepData
@@ -49,7 +50,7 @@ class StepRepositoryImpl constructor(
 
     override suspend fun insertStepSensor(rawCreatedTime: Long, stepSensor: Long): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 stepDao.insert(
                     StepEntity(
                         rawCreatedTime = rawCreatedTime,
@@ -66,7 +67,7 @@ class StepRepositoryImpl constructor(
         stepDataList: List<StepData>,
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 stepDao.replaceBetween(
                     startUtc = startMillis,
                     endUtc = endMillis,
@@ -80,7 +81,7 @@ class StepRepositoryImpl constructor(
 
     override suspend fun getStepDataListByDate(date: String): Result<List<StepData>> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val (start, end) = dateToRangeMillis(date)
                 stepDao.getEntitiesBetween(
                     startUtc = start,

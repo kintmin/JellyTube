@@ -98,7 +98,7 @@ class BackupRepositoryImpl(
     }
 
     override suspend fun hasLocalCopy(): Boolean = withContext(Dispatchers.IO) {
-        runCatching { fileSystem.exists(localCopyPath()) }.getOrDefault(false)
+        suspendRunCatching { fileSystem.exists(localCopyPath()) }.getOrDefault(false)
     }
 
     override suspend fun recordSuccess(atMillis: Long): Result<Unit> =

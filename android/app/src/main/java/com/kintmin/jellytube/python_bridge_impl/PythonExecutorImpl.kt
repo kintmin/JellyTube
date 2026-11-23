@@ -45,7 +45,7 @@ class PythonExecutorImpl(
         youtubeUrl: String,
         audioDownloadPath: String,
     ): Result<PlayableAudioDownloadDto> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             ensurePythonStarted()
 
             val module = Python.getInstance().getModule(FILE_NAME)
@@ -58,7 +58,7 @@ class PythonExecutorImpl(
     }
 
     override suspend fun extractYoutubePlaylist(playlistUrl: String): Result<String> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             ensurePythonStarted()
 
             val module = Python.getInstance().getModule(FILE_NAME)

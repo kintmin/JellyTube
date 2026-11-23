@@ -23,13 +23,13 @@ class PlaylistRepositoryImpl constructor(
 ) : PlaylistRepository {
 
     override suspend fun ensureSystemPlaylists(): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             audioMediaFacade.ensureSystemPlaylists()
         }
     }
 
     override suspend fun addPlaylist(title: String, type: PlaylistType): Result<Int> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             audioMediaFacade.addPlaylist(title, type)
         }
     }
@@ -67,7 +67,7 @@ class PlaylistRepositoryImpl constructor(
         rawTotalDuration: Long?,
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching<Unit> {
+            suspendRunCatching<Unit> {
                 playlistDao.updatePlaylist(
                     id = id,
                     name = name,
@@ -84,7 +84,7 @@ class PlaylistRepositoryImpl constructor(
 
     override suspend fun setCustomPlaylistImage(id: Int, imageData: ByteArray): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching<Unit> {
+            suspendRunCatching<Unit> {
                 val previous = playlistDao.getPlaylistById(id)
                 // 같은 이름을 덮어쓰면 이미지 캐시가 경로를 키로 써서 옛 사진이 남는다.
                 val fileName = "playlist_${id}_${Clock.System.now().toEpochMilliseconds()}"
@@ -98,7 +98,7 @@ class PlaylistRepositoryImpl constructor(
 
     override suspend fun resetPlaylistImage(id: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching<Unit> {
+            suspendRunCatching<Unit> {
                 deleteImageFile(audioMediaFacade.resetPlaylistImage(id))
             }
         }
@@ -106,7 +106,7 @@ class PlaylistRepositoryImpl constructor(
 
     override suspend fun deletePlaylist(id: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching<Unit> {
+            suspendRunCatching<Unit> {
                 val playlist = playlistDao.getPlaylistById(id)
                 audioMediaFacade.deletePlaylist(id)
                 if (playlist.isCustomImage) deleteImageFile(playlist.imageFileNameWithExt)
@@ -123,7 +123,7 @@ class PlaylistRepositoryImpl constructor(
 
     override suspend fun updatePlaylistSequences(orderedPlaylistIds: List<Int>): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching<Unit> {
+            suspendRunCatching<Unit> {
                 audioMediaFacade.updatePlaylistSequences(orderedPlaylistIds)
             }
         }

@@ -56,7 +56,7 @@ internal class AudioEditorImpl constructor(
     }
 
     override suspend fun measureDurationMs(audioFileFullPath: String): Result<Long> =
-        withContext(Dispatchers.IO) { runCatching { readDurationMs(audioFileFullPath) } }
+        withContext(Dispatchers.IO) { suspendRunCatching { readDurationMs(audioFileFullPath) } }
 
     override fun extractWaveform(
         audioFileFullPath: String,

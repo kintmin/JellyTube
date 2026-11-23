@@ -17,6 +17,7 @@ class SuspendRunCatchingTest {
     fun 성공하면_값을_담아_돌려준다() = runTest {
         val result = suspendRunCatching { 7 }
 
+        assertTrue(result.isSuccess)
         assertEquals(7, result.getOrNull())
     }
 
