@@ -189,7 +189,7 @@ fun PlaylistItemPreview() {
     }
 }
 
-/** 상한까지 쓴 제목이 두 줄로 다 보여야 한다. 짧은 제목 칸과는 높이가 다르다. */
+/** 상한까지 쓴 한글 제목은 두 줄에서 말줄임된다. 전부 보이는 자리는 상세 화면이다. 짧은 제목 칸과는 높이가 다르다. */
 @Preview
 @Composable
 fun PlaylistItemLongNamePreview() {

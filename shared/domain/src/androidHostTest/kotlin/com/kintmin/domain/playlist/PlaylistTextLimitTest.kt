@@ -27,14 +27,16 @@ class PlaylistTextLimitTest {
 
     @Test
     fun `자른 끝의 공백을 지워 두 번 적용해도 결과가 같다`() {
-        val once = PlaylistTextLimit.clampTitle("가".repeat(19) + " 나다라")
+        val head = "가".repeat(PlaylistTextLimit.MAX_TITLE_LENGTH - 1)
+        val once = PlaylistTextLimit.clampTitle("$head 나다라")
 
-        assertEquals("가".repeat(19), once)
+        assertEquals(head, once)
         assertEquals(once, PlaylistTextLimit.clampTitle(once))
     }
 
     @Test
     fun `상한에 걸친 서로게이트 쌍은 쪼개지 않고 앞에서 자른다`() {
-        assertEquals("a".repeat(19), PlaylistTextLimit.clampTitle("a".repeat(19) + "😀"))
+        val head = "a".repeat(PlaylistTextLimit.MAX_TITLE_LENGTH - 1)
+        assertEquals(head, PlaylistTextLimit.clampTitle(head + "😀"))
     }
 }

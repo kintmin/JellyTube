@@ -102,7 +102,7 @@ fun PlaylistDetailHeaderView(
                             modifier = Modifier.padding(bottom = 4.dp),
                             text = headerData.name,
                             fontSize = 20.sp,
-                            maxLines = 2,
+                            maxLines = 3,
                             overflow = TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -222,7 +222,7 @@ fun MusicControlsPlaybackTogglesOnPreview() {
     }
 }
 
-/** 상한까지 쓴 제목에도 토글 둘이 남아야 한다. */
+/** 상한까지 쓴 제목이 세 줄로 다 보이고 토글 둘도 남아야 한다. */
 @Preview
 @Composable
 fun MusicControlsLongNamePreview() {
