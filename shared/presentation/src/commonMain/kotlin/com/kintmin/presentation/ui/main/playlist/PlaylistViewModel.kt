@@ -53,6 +53,8 @@ class PlaylistViewModel constructor(
             is PlaylistIntent.OnClickPlaylistItem -> navigateToPlaylistDetailScreen(intent.playlistInfo)
             is PlaylistIntent.MakeNewPlaylist -> makeNewPlaylist(intent.title)
             is PlaylistIntent.OnClickDeletePlaylist -> deletePlaylist(intent.data.id)
+            // 비밀 플레이리스트는 이 목록에 없어 곡까지 지우는 선택지가 뜨지 않는다.
+            is PlaylistIntent.OnClickDeletePlaylistWithTracks -> Unit
             is PlaylistIntent.OnClickModifyPlaylist -> navigateToPlaylistEditScreen(intent.data)
             is PlaylistIntent.OnClickAddPlaylist -> navigateToAddPlaylistScreen(intent.data)
             is PlaylistIntent.OnClickShowReorderBottomSheet -> isReorderBottomSheetVisible.value = true

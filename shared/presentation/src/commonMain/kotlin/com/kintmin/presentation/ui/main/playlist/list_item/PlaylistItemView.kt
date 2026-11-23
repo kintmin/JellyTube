@@ -38,7 +38,9 @@ import com.kintmin.presentation.ui.common.AudioArtwork
 import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistDeleteDialog
+import com.kintmin.presentation.ui.main.playlist.dialog.SecretPlaylistDeleteDialog
 
 @Composable
 fun PlaylistItemView(
@@ -49,13 +51,25 @@ fun PlaylistItemView(
     var isDropDownExpanded by remember { mutableStateOf(false) }
     var isShowDialog by remember { mutableStateOf(false) }
 
-    PlaylistDeleteDialog(
-        showDialog = isShowDialog,
-        onDismiss = { isShowDialog = false },
-        playlistName = data.name,
-        audioMediaCount = data.audioMediaCount,
-        deletePlaylist = { sendIntent(PlaylistIntent.OnClickDeletePlaylist(data)) },
-    )
+    // 비밀 플레이리스트는 곡을 남길지 함께 지울지가 갈려 다른 다이얼로그를 쓴다.
+    if (data.type == PlaylistType.SECRET) {
+        SecretPlaylistDeleteDialog(
+            showDialog = isShowDialog,
+            onDismiss = { isShowDialog = false },
+            playlistName = data.name,
+            audioMediaCount = data.audioMediaCount,
+            deletePlaylist = { sendIntent(PlaylistIntent.OnClickDeletePlaylist(data)) },
+            deletePlaylistWithTracks = { sendIntent(PlaylistIntent.OnClickDeletePlaylistWithTracks(data)) },
+        )
+    } else {
+        PlaylistDeleteDialog(
+            showDialog = isShowDialog,
+            onDismiss = { isShowDialog = false },
+            playlistName = data.name,
+            audioMediaCount = data.audioMediaCount,
+            deletePlaylist = { sendIntent(PlaylistIntent.OnClickDeletePlaylist(data)) },
+        )
+    }
 
     // 카드 틀을 두르지 않는다. 설정 화면처럼 배경 위에 그대로 올린다.
     // 안쪽 패딩은 남긴다 — 셀을 꽉 채우면 ink 가 가장자리까지 번져 옆 칸과 붙어 보인다.

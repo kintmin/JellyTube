@@ -8,6 +8,7 @@ import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist.usecase.DeletePlaylistUseCase
+import com.kintmin.domain.playlist.usecase.DeletePlaylistWithTracksUseCase
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistSequenceUseCase
@@ -48,6 +49,7 @@ class SecretPlaylistViewModel(
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
     private val addNewPlaylistUseCase: AddNewPlaylistUseCase,
     private val deletePlaylistUseCase: DeletePlaylistUseCase,
+    private val deletePlaylistWithTracksUseCase: DeletePlaylistWithTracksUseCase,
     private val updatePlaylistSequenceUseCase: UpdatePlaylistSequenceUseCase,
 ) : ViewModel() {
 
@@ -137,6 +139,10 @@ class SecretPlaylistViewModel(
                 is PlaylistIntent.OnClickDeletePlaylist -> deletePlaylistUseCase(intent.data.id).onFailure {
                     eventChannel.send(SecretPlaylistEvent.ShowToast(PlaylistEvent.DELETE_FAILED_MESSAGE))
                 }
+                is PlaylistIntent.OnClickDeletePlaylistWithTracks ->
+                    deletePlaylistWithTracksUseCase(intent.data.id).onFailure {
+                        eventChannel.send(SecretPlaylistEvent.ShowToast(PlaylistEvent.DELETE_FAILED_MESSAGE))
+                    }
                 is PlaylistIntent.OnClickSetDownloadTarget -> {
                     val message = updatePlaylistIdOnDownloadUseCase(intent.data.id).fold(
                         onSuccess = { "비밀모드가 끝날 때까지 다운로드한 곡은 '${intent.data.name}'에 담깁니다." },

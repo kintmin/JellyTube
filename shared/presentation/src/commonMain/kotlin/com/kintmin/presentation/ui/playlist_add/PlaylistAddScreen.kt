@@ -32,8 +32,10 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.CollapsibleSearchField
+import com.kintmin.presentation.ui.common.ConfirmStyle
 import com.kintmin.presentation.ui.common.EmptyStateView
 import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
+import com.kintmin.presentation.ui.common.JellyTubeConfirmDialog
 import com.kintmin.presentation.ui.common.SearchToggleButton
 import com.kintmin.presentation.ui.common.SelectionTopAppBar
 import com.kintmin.presentation.ui.common.dragToSelect
@@ -64,6 +66,7 @@ fun PlaylistAddScreen(
         playlistName = uiState.playlistName,
         dataList = uiState.audioList,
         checkedItemCount = uiState.checkedItemCount,
+        isSecretTarget = uiState.isSecretTarget,
         sendIntent = mainViewModel::sendIntent,
     )
 }
@@ -75,8 +78,22 @@ fun PlaylistAddScreen(
     playlistName: String,
     dataList: List<PlaylistAddListItemUiState>?,
     checkedItemCount: Int,
+    isSecretTarget: Boolean,
     sendIntent: (PlaylistAddIntent) -> Unit,
 ) {
+    var showSecretConfirmDialog by rememberSaveable { mutableStateOf(false) }
+
+    JellyTubeConfirmDialog(
+        showDialog = showSecretConfirmDialog,
+        title = "비밀 플레이리스트에 담기",
+        message = "담은 곡은 다른 플레이리스트에서 모두 빠집니다.\n" +
+            "비밀에서 다시 빼도 원래 플레이리스트로 돌아가지 않습니다.",
+        confirmText = "담기",
+        confirmStyle = ConfirmStyle.Destructive,
+        onConfirm = { sendIntent(PlaylistAddIntent.OnClickAdd) },
+        onDismiss = { showSecretConfirmDialog = false },
+    )
+
     var isSearchFieldVisible by rememberSaveable { mutableStateOf(false) }
     var searchText by rememberSaveable { mutableStateOf("") }
     fun changeSearchText(text: String) {
@@ -115,7 +132,10 @@ fun PlaylistAddScreen(
                 BottomActionBar(modifier = Modifier.imePadding()) {
                     BottomActionButton(
                         text = "${checkedItemCount}곡 추가",
-                        onClick = { sendIntent(PlaylistAddIntent.OnClickAdd) },
+                        onClick = {
+                            if (isSecretTarget) showSecretConfirmDialog = true
+                            else sendIntent(PlaylistAddIntent.OnClickAdd)
+                        },
                     )
                 }
             }
@@ -191,6 +211,7 @@ fun PlaylistAddScreenPreview() {
             playlistName = "드라이브할 때",
             dataList = PlaylistAddListItemUiState.getMockList(),
             checkedItemCount = PlaylistAddListItemUiState.getMockList().count { it.isChecked },
+            isSecretTarget = false,
             sendIntent = {},
         )
     }

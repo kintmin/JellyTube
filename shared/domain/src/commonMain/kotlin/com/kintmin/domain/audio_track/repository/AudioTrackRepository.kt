@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface AudioTrackRepository {
 
+    /** 돌려주는 값은 비밀 플레이리스트에 담느라 다른 플레이리스트에서 빠진 곡 수다. */
     suspend fun addCustomAudioTrack(playlistId: Int, audioMediaIdList: List<Int>): Result<Int>
 
     suspend fun deleteCustomAudioTrack(playlistId: Int, audioMediaIdList: List<Int>): Result<Unit>

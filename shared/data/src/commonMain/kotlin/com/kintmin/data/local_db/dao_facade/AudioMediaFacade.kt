@@ -343,7 +343,8 @@ class AudioMediaFacade constructor(
         }
     }
 
-    suspend fun addTrack(playlistId: Int, audioMediaIdList: List<Int>): PlaylistEntity {
+    /** 돌려주는 값은 비밀 플레이리스트에 담느라 다른 플레이리스트에서 빠진 곡 수다. */
+    suspend fun addTrack(playlistId: Int, audioMediaIdList: List<Int>): Int {
         if (isAutoManagedPlaylist(playlistId)) {
             error("전체와 미분류는 추가할 수 없다.")
         }
@@ -351,12 +352,31 @@ class AudioMediaFacade constructor(
         return db.useWriterConnection { transactor ->
             transactor.immediateTransaction {
                 // shouldInsertAtTop은 다운로드 시에만 사용하기 때문에 false 고정
-                val result = addTrackWithSyncPlaylist(playlistId, audioMediaIdList, shouldInsertAtTop = false)
+                addTrackWithSyncPlaylist(playlistId, audioMediaIdList, shouldInsertAtTop = false)
                 syncUncategorizedPlaylistWhenAddTrack(audioMediaIdList)
-                result
+                if (playlistDao.getTypeById(playlistId) == PlaylistType.SECRET.name) {
+                    unlinkUserPlaylists(audioMediaIdList)
+                } else {
+                    0
+                }
             }
         }
     }
+
+    /**
+     * 비밀 플레이리스트에 담은 곡은 비밀모드 밖에 남지 않아야 한다. 사용자가 만든 플레이리스트의
+     * 연결을 끊는다. 즐겨찾기는 비밀 화면이 제 입구로 보여주므로 그대로 둔다. 미분류는 비밀에
+     * 담긴 순간 이미 빠졌고, 여기서 끊어도 비밀에 남아 있어 다시 들어가지 않는다.
+     *
+     * 돌려주는 값은 한 군데라도 빠진 곡의 수다.
+     */
+    private suspend fun unlinkUserPlaylists(audioMediaIdList: List<Int>): Int =
+        audioMediaIdList.count { audioMediaId ->
+            val userPlaylistIds = playlistTrackDao.getLinkedPlaylistIdList(audioMediaId)
+                .filter { playlistDao.getTypeById(it) == PlaylistType.USER.name }
+            userPlaylistIds.forEach { deleteTrackWithSyncPlaylist(it, listOf(audioMediaId)) }
+            userPlaylistIds.isNotEmpty()
+        }
 
     suspend fun deleteTrack(playlistId: Int, audioMediaIdList: List<Int>) {
         if (isAutoManagedPlaylist(playlistId)) {

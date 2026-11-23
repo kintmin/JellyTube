@@ -25,7 +25,7 @@ class AudioTrackRepositoryImpl constructor(
         audioMediaIdList: List<Int>
     ): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
-            audioMediaFacade.addTrack(playlistId, audioMediaIdList).audioMediaCount
+            audioMediaFacade.addTrack(playlistId, audioMediaIdList)
         }
     }
 
