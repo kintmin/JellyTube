@@ -67,7 +67,7 @@ class LyricsSearchViewModelTest {
         val state = viewModel.uiState.value
 
         assertEquals("음원 제목", state.audioMediaName)
-        assertEquals("00:03:00", state.playbackDurationText)
+        assertEquals("3:00", state.playbackDurationText)
         assertEquals("정리된 검색어", state.query)
         verify { sortResults.invoke(emptyList(), "정리된 검색어", 200.0) }
     }
