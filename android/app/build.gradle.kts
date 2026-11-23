@@ -156,7 +156,9 @@ androidComponents {
         val minifyTask = "minify${suffix}WithR8"
         val mergedManifest = variant.artifacts.get(SingleArtifact.MERGED_MANIFEST)
         // R8 산출물. AGP 의 공개 artifact 가 아니라 관례적 경로라, 없으면 통과가 아니라 실패다.
-        val mappingDir = layout.buildDirectory.dir("outputs/mapping/${variant.name}")
+        // 같은 폴더에 다른 태스크도 쓰므로 폴더가 아니라 파일만 잡는다.
+        val usageFile = layout.buildDirectory.file("outputs/mapping/${variant.name}/usage.txt")
+        val configurationFile = layout.buildDirectory.file("outputs/mapping/${variant.name}/configuration.txt")
         val reviewedKeeps = layout.projectDirectory.file("r8-wildcard-keeps.txt")
         val reportDir = layout.buildDirectory.dir("reports/r8-keep-rules/${variant.name}")
 
@@ -166,17 +168,16 @@ androidComponents {
             dependsOn(minifyTask)
             inputs.file(mergedManifest)
             inputs.file(reviewedKeeps)
-            inputs.dir(mappingDir)
+            inputs.files(usageFile, configurationFile)
             outputs.dir(reportDir)
             doLast {
-                val mapping = mappingDir.get().asFile
                 verifyManifestClassesSurvived(
                     manifest = mergedManifest.get().asFile,
-                    usage = File(mapping, "usage.txt"),
+                    usage = usageFile.get().asFile,
                     report = File(reportDir.get().asFile, "manifest-classes.txt"),
                 )
                 verifyWildcardKeepsAreReviewed(
-                    configuration = File(mapping, "configuration.txt"),
+                    configuration = configurationFile.get().asFile,
                     reviewed = reviewedKeeps.asFile,
                     report = File(reportDir.get().asFile, "wildcard-keeps.txt"),
                 )
