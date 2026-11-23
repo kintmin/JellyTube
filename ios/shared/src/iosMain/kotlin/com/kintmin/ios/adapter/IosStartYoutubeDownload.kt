@@ -34,7 +34,7 @@ internal class IosStartYoutubeDownload(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    override fun invoke(url: String, playlistId: Int?) {
+    override fun invoke(url: String, playlistId: Int) {
         downloadTargetStore.save(url, playlistId)
         scope.launch {
             IosRunningTaskTracker.track(RunningTask.YOUTUBE_DOWNLOAD) {

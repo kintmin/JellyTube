@@ -37,7 +37,7 @@ import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 @Composable
 fun MainFloatingActionButton(
     currentUrl: String,
-    onClickDownload: (url: String, playlistId: Int?) -> Unit,
+    onClickDownload: (url: String, playlistId: Int) -> Unit,
     navigateToPlaylistDownload: (url: String) -> Unit,
 ) {
     val viewModel = koinViewModel<MainFloatingActionViewModel>()
@@ -68,6 +68,8 @@ fun MainFloatingActionButton(
     currentUrl: String,
     sendIntent: (MainFloatingActionIntent) -> Unit,
 ) {
+    val playlistId = uiState.playlistIdOnDownload
+
     if (uiState.isPlaylistBottomSheetVisible) {
         DownloadPlaylistSelectorBottomSheet(
             playlistList = uiState.selectablePlaylistList,
@@ -110,10 +112,10 @@ fun MainFloatingActionButton(
                 modifier = Modifier
                     .fillMaxHeight()
                     .clickable(
-                        enabled = uiState.isDownloadTargetLoaded,
+                        enabled = uiState.isDownloadTargetReady,
                         role = Role.Button,
                     ) {
-                        sendIntent(MainFloatingActionIntent.OnClickDownload(currentUrl, uiState.playlistIdOnDownload))
+                        playlistId?.let { sendIntent(MainFloatingActionIntent.OnClickDownload(currentUrl, it)) }
                     }
                     .padding(start = 16.dp, end = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -160,7 +162,7 @@ fun MainFloatingActionButtonPreview() {
         MainFloatingActionButton(
             uiState = MainFloatingActionUiState(
                 playlistIdOnDownloadName = "미분류",
-                isDownloadTargetLoaded = true,
+                isDownloadTargetReady = true,
             ),
             currentUrl = "https://m.youtube.com/watch?v=test",
             sendIntent = {},

@@ -66,11 +66,15 @@ class MainFloatingActionViewModelTest {
         val viewModel = viewModel(downloadTargets)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
 
-        assertFalse(viewModel.uiState.value.isDownloadTargetLoaded)
+        assertFalse(viewModel.uiState.value.isDownloadTargetReady)
+
+        downloadTargets.emit(DownloadTargetPlaylists(targetId = null, selectable = emptyList()))
+
+        assertFalse(viewModel.uiState.value.isDownloadTargetReady)
 
         downloadTargets.emit(DownloadTargetPlaylists(targetId = 7, selectable = emptyList()))
 
-        assertTrue(viewModel.uiState.value.isDownloadTargetLoaded)
+        assertTrue(viewModel.uiState.value.isDownloadTargetReady)
         assertEquals(7, viewModel.uiState.value.playlistIdOnDownload)
     }
 

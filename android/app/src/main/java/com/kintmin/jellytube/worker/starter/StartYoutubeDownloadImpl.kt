@@ -12,13 +12,13 @@ class StartYoutubeDownloadImpl(
     private val appContext: Context,
 ) : StartYoutubeDownload {
 
-    override operator fun invoke(url: String, playlistId: Int?) {
+    override operator fun invoke(url: String, playlistId: Int) {
         val request = OneTimeWorkRequestBuilder<YoutubeDownloadWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setInputData(
                 workDataOf(
                     YoutubeDownloadWorker.INPUT_DATA_URL to url,
-                    YoutubeDownloadWorker.INPUT_DATA_PLAYLIST_ID to (playlistId ?: YoutubeDownloadWorker.NO_PLAYLIST_ID),
+                    YoutubeDownloadWorker.INPUT_DATA_PLAYLIST_ID to playlistId,
                 ),
             )
             .addTag(TAG)

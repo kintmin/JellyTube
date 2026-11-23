@@ -42,7 +42,7 @@ class YoutubeDownloadViewModel constructor(
         }
     }
 
-    private fun startDownload(youtubeUrl: String, playlistId: Int?) {
+    private fun startDownload(youtubeUrl: String, playlistId: Int) {
         if (_clickedUrlSet.contains(youtubeUrl)) {
             viewModelScope.launch {
                 eventChannel.send(YoutubeDownloadEvent.ShowToast("저장중이거나 저장완료된 영상입니다."))

@@ -59,7 +59,7 @@ class YoutubeDownloadWorker(
         }
 
         val url = inputData.getString(INPUT_DATA_URL) ?: return Result.failure()
-        val playlistId = inputData.getInt(INPUT_DATA_PLAYLIST_ID, NO_PLAYLIST_ID).takeUnless { it == NO_PLAYLIST_ID }
+        val playlistId = inputData.keyValueMap[INPUT_DATA_PLAYLIST_ID] as? Int ?: return Result.failure()
         val downloadNotification = DownloadNotification(1, 0)
         pushNotificationManager.sendNotification(downloadNotification)
 
@@ -102,6 +102,5 @@ class YoutubeDownloadWorker(
     companion object {
         const val INPUT_DATA_URL = "youtube_url"
         const val INPUT_DATA_PLAYLIST_ID = "playlist_id"
-        const val NO_PLAYLIST_ID = -1
     }
 }

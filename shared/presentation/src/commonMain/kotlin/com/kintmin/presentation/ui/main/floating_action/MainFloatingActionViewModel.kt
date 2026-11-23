@@ -47,8 +47,9 @@ class MainFloatingActionViewModel constructor(
 
         MainFloatingActionUiState(
             playlistIdOnDownload = downloadTarget.targetId,
-            playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.isSelected }?.name ?: PlaylistType.UNCATEGORIZED.defaultName,
-            isDownloadTargetLoaded = true,
+            playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.isSelected }?.name
+                ?: if (downloadTarget.targetId == null) "불러오는 중" else PlaylistType.UNCATEGORIZED.defaultName,
+            isDownloadTargetReady = downloadTarget.targetId != null,
             selectablePlaylistList = selectablePlaylistList,
             isPlaylistBottomSheetVisible = isBottomSheetVisible,
             isCreatePlaylistDialogVisible = isCreateDialogVisible,
@@ -122,7 +123,7 @@ class MainFloatingActionViewModel constructor(
         }
     }
 
-    private fun handleClickDownload(url: String, playlistId: Int?) {
+    private fun handleClickDownload(url: String, playlistId: Int) {
         when (YoutubeUrl.kindOf(url)) {
             YoutubeUrlKind.VIDEO -> send(MainFloatingActionEvent.Download(url, playlistId))
             YoutubeUrlKind.PLAYLIST -> send(MainFloatingActionEvent.NavigateToPlaylistDownload(url))
@@ -135,6 +136,6 @@ class MainFloatingActionViewModel constructor(
         viewModelScope.launch { eventChannel.send(event) }
     }
 
-    private data class PendingDownloadChoice(val url: String, val playlistId: Int?)
+    private data class PendingDownloadChoice(val url: String, val playlistId: Int)
 }
 

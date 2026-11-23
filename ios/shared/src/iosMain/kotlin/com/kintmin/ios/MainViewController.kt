@@ -41,7 +41,10 @@ private fun resumeFinishedDownloads() {
 
         val execute = koin.get<StartYoutubeDownload>()
         val downloadTargetStore = koin.get<IosDownloadTargetStore>()
-        finishedUrls.forEach { url -> execute(url, downloadTargetStore.get(url)) }
+        finishedUrls.forEach { url ->
+            val playlistId = downloadTargetStore.get(url) ?: return@forEach
+            execute(url, playlistId)
+        }
     }
 }
 
