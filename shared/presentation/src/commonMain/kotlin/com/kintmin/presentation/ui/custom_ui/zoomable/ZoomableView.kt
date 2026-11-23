@@ -58,7 +58,7 @@ fun ZoomableView(
     contentAlignment: ZoomContentAlignment = ZoomContentAlignment.Start,
     minScale: Float = 1f,
     maxScale: Float = minScale * 4f,
-    doubleTapScale: Float = minScale * 2f,
+    doubleTapScale: Float = 2f,
     onTap: () -> Unit = {},
     content: @Composable BoxScope.() -> Unit,
 ) {
