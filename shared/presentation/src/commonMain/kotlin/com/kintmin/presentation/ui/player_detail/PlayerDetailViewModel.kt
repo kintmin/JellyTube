@@ -446,7 +446,10 @@ class PlayerDetailViewModel constructor(
                     }
                 }
                 .collect { aggregates ->
-                    val isFavorite = aggregates?.any { it.playlist.type == PlaylistType.FAVORITE } ?: false
+                    // 비밀 곡의 찜은 다른 플레이리스트로 가므로 둘 다 본다.
+                    val isFavorite = aggregates?.any {
+                        it.playlist.type == PlaylistType.FAVORITE || it.playlist.type == PlaylistType.SECRET_FAVORITE
+                    } ?: false
                     val audioMedia = aggregates?.firstOrNull()?.audioMedia
                     val lyricFileFullPath = audioMedia?.lyricFileFullPath
                     _uiState.update {

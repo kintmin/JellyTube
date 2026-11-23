@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.destructiveContent
@@ -39,6 +40,7 @@ import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistDeleteDialog
+import com.kintmin.presentation.ui.main.playlist.dialog.SecretPlaylistDeleteDialog
 
 @Composable
 fun PlaylistItemView(
@@ -49,13 +51,24 @@ fun PlaylistItemView(
     var isDropDownExpanded by remember { mutableStateOf(false) }
     var isShowDialog by remember { mutableStateOf(false) }
 
-    PlaylistDeleteDialog(
-        showDialog = isShowDialog,
-        onDismiss = { isShowDialog = false },
-        playlistName = data.name,
-        audioMediaCount = data.audioMediaCount,
-        deletePlaylist = { sendIntent(PlaylistIntent.OnClickDeletePlaylist(data)) },
-    )
+    if (data.type == PlaylistType.SECRET) {
+        SecretPlaylistDeleteDialog(
+            showDialog = isShowDialog,
+            onDismiss = { isShowDialog = false },
+            playlistName = data.name,
+            audioMediaCount = data.audioMediaCount,
+            deletePlaylist = { sendIntent(PlaylistIntent.OnClickDeletePlaylist(data)) },
+            deletePlaylistWithTracks = { sendIntent(PlaylistIntent.OnClickDeletePlaylistWithTracks(data)) },
+        )
+    } else {
+        PlaylistDeleteDialog(
+            showDialog = isShowDialog,
+            onDismiss = { isShowDialog = false },
+            playlistName = data.name,
+            audioMediaCount = data.audioMediaCount,
+            deletePlaylist = { sendIntent(PlaylistIntent.OnClickDeletePlaylist(data)) },
+        )
+    }
 
     // 카드 틀을 두르지 않는다. 설정 화면처럼 배경 위에 그대로 올린다.
     // 안쪽 패딩은 남긴다 — 셀을 꽉 채우면 ink 가 가장자리까지 번져 옆 칸과 붙어 보인다.

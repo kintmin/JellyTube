@@ -156,6 +156,9 @@ fun MainNavHost(
             navigateToPlaylistAdd = { playlistId, playlistName ->
                 navController.navigateToPlaylistAddScreen(playlistId, navOptions, playlistName)
             },
+            navigateToPlayerDetail = {
+                navController.navigateToPlayerDetailScreen(navOptions)
+            },
         )
         playlistDetail(
             navigateToBack = { navController.popBackStack() },

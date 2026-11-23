@@ -4,6 +4,7 @@ import com.kintmin.data.local_db.dao.PlaylistTrackDao
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_file.FileManager
+import com.kintmin.domain.audio_track.model.AddedAudioTrack
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.common.suspendRunCatching
@@ -23,9 +24,9 @@ class AudioTrackRepositoryImpl constructor(
     override suspend fun addCustomAudioTrack(
         playlistId: Int,
         audioMediaIdList: List<Int>
-    ): Result<Int> = withContext(Dispatchers.IO) {
+    ): Result<AddedAudioTrack> = withContext(Dispatchers.IO) {
         suspendRunCatching {
-            audioMediaFacade.addTrack(playlistId, audioMediaIdList).audioMediaCount
+            AddedAudioTrack(unlinkedAudioMediaCount = audioMediaFacade.addTrack(playlistId, audioMediaIdList))
         }
     }
 

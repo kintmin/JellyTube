@@ -220,6 +220,7 @@ val dataCommonModule: Module = module {
     factoryOf(::FetchPlaylistsByTypeUseCase)
     factoryOf(::AddNewPlaylistUseCase)
     factoryOf(::DeletePlaylistUseCase)
+    factoryOf(::DeletePlaylistWithTracksUseCase)
     factoryOf(::FetchAllPlaylistFlowUseCase)
     factoryOf(::FetchPlaylistFlowUseCase)
     factoryOf(::GetPlaylistUseCase)
