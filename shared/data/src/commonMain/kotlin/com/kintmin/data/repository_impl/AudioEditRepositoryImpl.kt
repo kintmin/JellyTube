@@ -100,7 +100,7 @@ internal class AudioEditRepositoryImpl constructor(
                 outputFileFullPath = editedFileFullPath,
             ).getOrThrow()
 
-            runCatching {
+            suspendRunCatching {
                 audioMediaFacade.applyEditedAudio(
                     audioMediaId = audioMediaId,
                     editedAudioFileNameWithExt = editedFileNameWithExt,
@@ -206,7 +206,7 @@ internal class AudioEditRepositoryImpl constructor(
                 tjKaraokeNumber = originEntity.tjKaraokeNumber,
             ).clampText()
 
-            val added = runCatching {
+            val added = suspendRunCatching {
                 audioMediaFacade.addNewAudioMedia(
                     newAudioMedia = entity,
                     requestedPlaylistId = playlistIdOnDownload,
