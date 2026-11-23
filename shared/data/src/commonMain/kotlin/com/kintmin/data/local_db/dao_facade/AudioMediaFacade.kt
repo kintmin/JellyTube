@@ -310,9 +310,7 @@ class AudioMediaFacade constructor(
 
     suspend fun deletePlaylist(playlistId: Int) {
         // 즐겨찾기를 포함한 시스템 플레이리스트는 지울 수 없다.
-        val type = playlistDao.getTypeById(playlistId)
-            ?.let { runCatching { PlaylistType.valueOf(it) }.getOrNull() }
-        if (type?.isSystem == true) {
+        if (playlistTypeOf(playlistId)?.isSystem == true) {
             error("시스템 플레이리스트는 지울 수 없다.")
         }
 
@@ -322,6 +320,7 @@ class AudioMediaFacade constructor(
                 playlistTrackDao.deletePlaylistTrackByPlaylistId(playlistId)
                 syncUncategorizedPlaylistWhenDeleteTrack(linkedAudioMediaIdList)
                 playlistDao.deleteById(playlistId)
+                unlinkSecretFavoriteWhenNoLongerSecret(linkedAudioMediaIdList)
             }
         }
     }
@@ -343,7 +342,8 @@ class AudioMediaFacade constructor(
         }
     }
 
-    suspend fun addTrack(playlistId: Int, audioMediaIdList: List<Int>): PlaylistEntity {
+    /** 돌려주는 값은 비밀 플레이리스트에 담느라 다른 플레이리스트에서 빠진 곡 수다. */
+    suspend fun addTrack(playlistId: Int, audioMediaIdList: List<Int>): Int {
         if (isAutoManagedPlaylist(playlistId)) {
             error("전체와 미분류는 추가할 수 없다.")
         }
@@ -351,11 +351,36 @@ class AudioMediaFacade constructor(
         return db.useWriterConnection { transactor ->
             transactor.immediateTransaction {
                 // shouldInsertAtTop은 다운로드 시에만 사용하기 때문에 false 고정
-                val result = addTrackWithSyncPlaylist(playlistId, audioMediaIdList, shouldInsertAtTop = false)
+                addTrackWithSyncPlaylist(playlistId, audioMediaIdList, shouldInsertAtTop = false)
                 syncUncategorizedPlaylistWhenAddTrack(audioMediaIdList)
-                result
+                if (playlistTypeOf(playlistId) == PlaylistType.SECRET) {
+                    unlinkFromOpenPlaylists(audioMediaIdList)
+                } else {
+                    0
+                }
             }
         }
+    }
+
+    /**
+     * 자동으로 채워지는 곳(전체·미분류)은 건드리지 않고, 비밀 계열은 그대로 두고, 그 사이의
+     * 드러난 플레이리스트만 끊는다. 미분류는 비밀에 담긴 순간 이미 빠졌다.
+     *
+     * 돌려주는 값은 한 군데라도 빠진 곡의 수다.
+     */
+    private suspend fun unlinkFromOpenPlaylists(audioMediaIdList: List<Int>): Int {
+        // 플레이리스트별로 묶어 한 번에 뺀다. 곡마다 빼면 그 플레이리스트의 집계 동기화가 곡 수만큼 돈다.
+        val audioMediaIdsByPlaylist = mutableMapOf<Int, MutableList<Int>>()
+        val typeByPlaylist = mutableMapOf<Int, PlaylistType?>()
+        audioMediaIdList.forEach { audioMediaId ->
+            playlistTrackDao.getLinkedPlaylistIdList(audioMediaId).forEach { playlistId ->
+                val type = typeByPlaylist.getOrPut(playlistId) { playlistTypeOf(playlistId) } ?: return@forEach
+                if (type.isAutoManaged || type.isSecret) return@forEach
+                audioMediaIdsByPlaylist.getOrPut(playlistId) { mutableListOf() }.add(audioMediaId)
+            }
+        }
+        audioMediaIdsByPlaylist.forEach { (playlistId, ids) -> deleteTrackWithSyncPlaylist(playlistId, ids) }
+        return audioMediaIdsByPlaylist.values.flatten().distinct().size
     }
 
     suspend fun deleteTrack(playlistId: Int, audioMediaIdList: List<Int>) {
@@ -366,15 +391,32 @@ class AudioMediaFacade constructor(
             transactor.immediateTransaction {
                 deleteTrackWithSyncPlaylist(playlistId, audioMediaIdList)
                 syncUncategorizedPlaylistWhenDeleteTrack(audioMediaIdList)
+                unlinkSecretFavoriteWhenNoLongerSecret(audioMediaIdList)
             }
         }
     }
+
+    /** 비밀 플레이리스트에서 빠져 더 이상 비밀이 아닌 곡은 비밀 찜에도 남을 수 없다. */
+    private suspend fun unlinkSecretFavoriteWhenNoLongerSecret(audioMediaIdList: List<Int>) {
+        val secretFavoriteId = playlistDao.getPlaylistIdByType(PlaylistType.SECRET_FAVORITE.name) ?: return
+        val linked = playlistTrackDao.getLinkedAudioMediaIdList(secretFavoriteId).toSet()
+        // 실제로 담긴 것만 넘긴다 — 집계는 넘긴 개수만큼 빼므로 없는 곡을 섞으면 어긋난다.
+        val toUnlink = audioMediaIdList.filter { it in linked && !isSecretAudioMedia(it) }
+        if (toUnlink.isNotEmpty()) deleteTrackWithSyncPlaylist(secretFavoriteId, toUnlink)
+    }
+
+    private suspend fun isSecretAudioMedia(audioMediaId: Int): Boolean =
+        playlistTrackDao.getLinkedPlaylistIdList(audioMediaId)
+            .any { playlistTypeOf(it) == PlaylistType.SECRET }
 
     // 즐겨찾기 on/off. 미분류 동기화를 하지 않는 전용 경로(즐겨찾기는 분류와 직교).
     suspend fun setFavorite(audioMediaId: Int, isFavorite: Boolean) {
         db.useWriterConnection { transactor ->
             transactor.immediateTransaction {
-                val favoriteId = requireSystemPlaylistId(PlaylistType.FAVORITE)
+                // 비밀 곡의 찜은 일반 즐겨찾기와 섞이지 않게 다른 플레이리스트로 간다.
+                val favoriteType =
+                    if (isSecretAudioMedia(audioMediaId)) PlaylistType.SECRET_FAVORITE else PlaylistType.FAVORITE
+                val favoriteId = requireSystemPlaylistId(favoriteType)
                 val already = favoriteId in playlistTrackDao.getLinkedPlaylistIdList(audioMediaId)
                 when {
                     isFavorite && !already ->
@@ -387,13 +429,13 @@ class AudioMediaFacade constructor(
         }
     }
 
-    // 시스템 플레이리스트(전체/미분류/즐겨찾기)가 없으면 만든다. 앱 시작 시 멱등 호출.
+    // 시스템 플레이리스트가 없으면 만든다. 앱 시작 시 멱등 호출.
     suspend fun ensureSystemPlaylists() {
         db.useWriterConnection { transactor ->
             transactor.immediateTransaction {
-                ensureSystemPlaylist(PlaylistType.TOTAL)
-                ensureSystemPlaylist(PlaylistType.UNCATEGORIZED)
-                ensureSystemPlaylist(PlaylistType.FAVORITE)
+                // 하나라도 빠지면 이전·복원이 통째로 실패한다 — 받는 쪽 계획이 시스템
+                // 플레이리스트는 이미 있다고 보고 id 를 찾기 때문이다.
+                PlaylistType.entries.filter { it.isSystem }.forEach { ensureSystemPlaylist(it) }
             }
         }
     }
@@ -413,11 +455,10 @@ class AudioMediaFacade constructor(
         )
     }
 
-    private suspend fun isAutoManagedPlaylist(playlistId: Int): Boolean {
-        val type = playlistDao.getTypeById(playlistId)
-            ?.let { runCatching { PlaylistType.valueOf(it) }.getOrNull() }
-        return type?.isAutoManaged == true
-    }
+    private suspend fun isAutoManagedPlaylist(playlistId: Int): Boolean = playlistTypeOf(playlistId)?.isAutoManaged == true
+
+    private suspend fun playlistTypeOf(playlistId: Int): PlaylistType? =
+        playlistDao.getTypeById(playlistId)?.let { runCatching { PlaylistType.valueOf(it) }.getOrNull() }
 
     private suspend fun requireSystemPlaylistId(type: PlaylistType): Int {
         playlistDao.getPlaylistIdByType(type.name)?.let { return it }

@@ -6,8 +6,10 @@ import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist.usecase.DeletePlaylistUseCase
+import com.kintmin.domain.playlist.usecase.DeletePlaylistWithTracksUseCase
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
+import com.kintmin.domain.playlist.usecase.UpdatePlaylistSequenceUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeMinutesFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.UpdateSecretModeMinutesUseCase
@@ -18,12 +20,14 @@ import com.kintmin.presentation.ui.main.playlist.toUiModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -42,10 +46,14 @@ class SecretPlaylistViewModel(
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
     private val addNewPlaylistUseCase: AddNewPlaylistUseCase,
     private val deletePlaylistUseCase: DeletePlaylistUseCase,
+    private val deletePlaylistWithTracksUseCase: DeletePlaylistWithTracksUseCase,
+    private val updatePlaylistSequenceUseCase: UpdatePlaylistSequenceUseCase,
 ) : ViewModel() {
 
     private val eventChannel = Channel<SecretPlaylistEvent>(Channel.BUFFERED)
     val eventFlow = eventChannel.receiveAsFlow()
+
+    private val isReorderBottomSheetVisible = MutableStateFlow(false)
 
     private val isEnabledFlow = fetchSecretModeEnabledFlowUseCase()
 
@@ -65,18 +73,25 @@ class SecretPlaylistViewModel(
         fetchSecretModeMinutesFlowUseCase(),
         fetchPlaylistsByTypeUseCase(PlaylistType.SECRET),
         fetchDownloadTargetPlaylistsFlowUseCase(),
-    ) { isEnabled, minutes, playlists, downloadTarget ->
+        isReorderBottomSheetVisible,
+    ) { isEnabled, minutes, playlists, downloadTarget, isReorderVisible ->
         SecretPlaylistUiState(
             isEnabled = isEnabled,
             minutes = minutes,
             playlists = playlists.map { it.toUiModel(isDownloadTarget = it.id == downloadTarget.targetId) },
+            isReorderBottomSheetVisible = isReorderVisible,
         )
     }
 
-    val uiState: StateFlow<SecretPlaylistUiState> = combine(baseUiStateFlow, remainingFlow) { base, remaining ->
-        base.copy(remaining = remaining)
-    }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SecretPlaylistUiState())
+    // 비밀 곡을 한 번도 찜하지 않았으면 플레이리스트가 아직 없다. 그때는 입구를 두지 않는다.
+    private val secretFavoriteFlow = fetchPlaylistsByTypeUseCase(PlaylistType.SECRET_FAVORITE)
+        .map { favorites -> favorites.firstOrNull()?.toUiModel() }
+
+    val uiState: StateFlow<SecretPlaylistUiState> =
+        combine(baseUiStateFlow, remainingFlow, secretFavoriteFlow) { base, remaining, secretFavorite ->
+            base.copy(remaining = remaining, secretFavorite = secretFavorite)
+        }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SecretPlaylistUiState())
 
     fun sendIntent(intent: SecretPlaylistIntent) {
         when (intent) {
@@ -105,6 +120,10 @@ class SecretPlaylistViewModel(
                 is PlaylistIntent.OnClickDeletePlaylist -> deletePlaylistUseCase(intent.data.id).onFailure {
                     eventChannel.send(SecretPlaylistEvent.ShowToast(PlaylistEvent.DELETE_FAILED_MESSAGE))
                 }
+                is PlaylistIntent.OnClickDeletePlaylistWithTracks ->
+                    deletePlaylistWithTracksUseCase(intent.data.id).onFailure {
+                        eventChannel.send(SecretPlaylistEvent.ShowToast(PlaylistEvent.DELETE_FAILED_MESSAGE))
+                    }
                 is PlaylistIntent.OnClickSetDownloadTarget -> {
                     val message = updatePlaylistIdOnDownloadUseCase(intent.data.id).fold(
                         onSuccess = { "비밀모드가 끝날 때까지 다운로드한 곡은 '${intent.data.name}'에 담깁니다." },
@@ -112,10 +131,13 @@ class SecretPlaylistViewModel(
                     )
                     eventChannel.send(SecretPlaylistEvent.ShowToast(message))
                 }
-                // 이 화면에는 순서 바꾸기가 없다.
-                PlaylistIntent.OnClickShowReorderBottomSheet,
-                PlaylistIntent.OnDismissReorderBottomSheet,
-                is PlaylistIntent.OnReorderPlaylist -> Unit
+                PlaylistIntent.OnClickShowReorderBottomSheet -> isReorderBottomSheetVisible.value = true
+                PlaylistIntent.OnDismissReorderBottomSheet -> isReorderBottomSheetVisible.value = false
+                is PlaylistIntent.OnReorderPlaylist -> updatePlaylistSequenceUseCase(intent.orderedIds).onFailure {
+                    // 쓰기가 실패하면 DB 가 그대로라 Flow 가 재방출되지 않는다. 말해 주지 않으면
+                    // 시트는 새 순서를, 격자는 옛 순서를 동시에 보여준다.
+                    eventChannel.send(SecretPlaylistEvent.ShowToast(PlaylistEvent.REORDER_FAILED_MESSAGE))
+                }
             }
         }
     }

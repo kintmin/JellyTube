@@ -10,5 +10,8 @@ sealed interface PlaylistDetailListIntent {
     ) : PlaylistDetailListIntent
     data class OnClickEditAudioMedia(val data: PlaylistDetailListItemUiState) : PlaylistDetailListIntent
     data class OnClickRemoveFromPlaylist(val data: PlaylistDetailListItemUiState) : PlaylistDetailListIntent
+
+    /** 음원 파일까지 지운다. 모든 플레이리스트에서 사라진다. */
+    data class OnClickDeleteAudioMedia(val data: PlaylistDetailListItemUiState) : PlaylistDetailListIntent
     data class OnChangeSearchText(val searchText: String) : PlaylistDetailListIntent
 }

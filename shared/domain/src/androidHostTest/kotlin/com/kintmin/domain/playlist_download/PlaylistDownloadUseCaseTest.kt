@@ -5,6 +5,7 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.DownloadedAudioMediaResult
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
+import com.kintmin.domain.audio_track.model.AddedAudioTrack
 import com.kintmin.domain.audio_track.model.AudioTrack
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
@@ -85,7 +86,7 @@ class PlaylistDownloadUseCaseTest {
         }
         coEvery { addCustomAudioTrack(any(), any()) } answers {
             tracks += secondArg<List<Int>>()
-            Result.success(tracks.size)
+            Result.success(AddedAudioTrack(unlinkedAudioMediaCount = 0))
         }
         coEvery { reorderTracks(any(), any()) } answers {
             tracks.clear()

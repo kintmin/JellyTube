@@ -73,7 +73,7 @@ class SecretModeRunner(
     // 같이 든 곡은 거기서 보이는 곡이라 건드리지 않는다.
     private suspend fun removeSecretTracksFromQueue() {
         val playlistId = playbackController.currentPlaylistId ?: return
-        if (isPlaylistOf(PlaylistType.SECRET, playlistId)) {
+        if (isSecretPlaylist(playlistId)) {
             playbackController.clearQueue()
         } else if (isPlaylistOf(PlaylistType.TOTAL, playlistId)) {
             val secretIds = fetchSecretAudioMediaIdListFlowUseCase().first().toSet()
@@ -85,6 +85,10 @@ class SecretModeRunner(
             }
         }
     }
+
+    // 비밀 플레이리스트와 비밀 찜 둘 다. 어느 쪽에서 틀어도 큐에 비밀 곡만 들어 있다.
+    private suspend fun isSecretPlaylist(playlistId: Int): Boolean =
+        PlaylistType.entries.filter { it.isSecret }.any { isPlaylistOf(it, playlistId) }
 
     // 목록에서 찾는다. 재생 중인 플레이리스트가 지워졌으면 단건 조회는 값을 내지 않는다.
     private suspend fun isPlaylistOf(type: PlaylistType, playlistId: Int): Boolean =

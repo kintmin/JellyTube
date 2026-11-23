@@ -41,7 +41,7 @@ class PlaylistViewModel constructor(
     ) { playlistList, downloadTarget, isReorderVisible ->
         PlaylistUiState(
             playlists = playlistList
-                .filterNot { it.type == PlaylistType.SECRET }
+                .filterNot { it.type.isSecret }
                 .map { it.toUiModel(isDownloadTarget = it.id == downloadTarget.targetId) },
             isReorderBottomSheetVisible = isReorderVisible,
         )
@@ -53,6 +53,8 @@ class PlaylistViewModel constructor(
             is PlaylistIntent.OnClickPlaylistItem -> navigateToPlaylistDetailScreen(intent.playlistInfo)
             is PlaylistIntent.MakeNewPlaylist -> makeNewPlaylist(intent.title)
             is PlaylistIntent.OnClickDeletePlaylist -> deletePlaylist(intent.data.id)
+            // 비밀 플레이리스트는 이 목록에 없어 곡까지 지우는 선택지가 뜨지 않는다.
+            is PlaylistIntent.OnClickDeletePlaylistWithTracks -> Unit
             is PlaylistIntent.OnClickModifyPlaylist -> navigateToPlaylistEditScreen(intent.data)
             is PlaylistIntent.OnClickAddPlaylist -> navigateToAddPlaylistScreen(intent.data)
             is PlaylistIntent.OnClickShowReorderBottomSheet -> isReorderBottomSheetVisible.value = true
@@ -77,7 +79,7 @@ class PlaylistViewModel constructor(
             updatePlaylistSequenceUseCase(orderedIds).onFailure {
                 // 쓰기가 실패하면 DB 가 그대로라 Flow 가 재방출되지 않는다. 말해 주지 않으면
                 // 시트는 새 순서를, 격자는 옛 순서를 동시에 보여준다.
-                eventChannel.send(PlaylistEvent.ShowToast("순서를 저장하지 못했습니다. 잠시 뒤 다시 시도해 주세요."))
+                eventChannel.send(PlaylistEvent.ShowToast(PlaylistEvent.REORDER_FAILED_MESSAGE))
             }
         }
     }

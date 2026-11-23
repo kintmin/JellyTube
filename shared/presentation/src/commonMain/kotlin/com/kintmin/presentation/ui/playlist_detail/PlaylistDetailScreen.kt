@@ -269,6 +269,7 @@ fun PlaylistDetailScreen(
                                 data = item,
                                 modifier = Modifier.matchParentSize(),
                                 canRemoveTrack = headerData.canRemoveTrack,
+                                isSecretPlaylist = headerData.isSecretPlaylist,
                                 isNowPlaying = item.id == nowPlayingAudioMediaId,
                                 isPlaying = isPlaybackPlaying,
                                 isDragging = false,
@@ -308,6 +309,7 @@ fun PlaylistDetailScreen(
                                     .fillMaxSize()
                                     .then(dragHandleModifier),
                                 canRemoveTrack = headerData.canRemoveTrack,
+                                isSecretPlaylist = headerData.isSecretPlaylist,
                                 isNowPlaying = item.id == nowPlayingAudioMediaId,
                                 isPlaying = isPlaybackPlaying,
                                 isDragging = reorderState.draggingItemId == item.id,

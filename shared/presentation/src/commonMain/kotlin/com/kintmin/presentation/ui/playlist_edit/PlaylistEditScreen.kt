@@ -39,6 +39,7 @@ import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.ReorderableItem
 import com.kintmin.presentation.ui.common.SelectionTopAppBar
 import com.kintmin.presentation.ui.common.dragToSelect
+import com.kintmin.presentation.ui.playlist_detail.dialog.RemoveAudioMediaFromPlaylistDialog
 import com.kintmin.presentation.ui.playlist_edit.dialog.DeleteFullAudioMediaListDialog
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderUiState
 import com.kintmin.presentation.ui.playlist_edit.header.PlaylistEditHeaderView
@@ -109,12 +110,22 @@ fun PlaylistEditScreen(
     )
 
     var isShowDialog by remember { mutableStateOf(false) }
+    var isShowRemoveDialog by remember { mutableStateOf(false) }
 
     DeleteFullAudioMediaListDialog(
         isShow = isShowDialog,
         onDismiss = { isShowDialog = false },
         selectedMediaCount = checkedItemCount,
         deleteAudioMediaList = { sendIntent(PlaylistEditListIntent.OnClickFullDeleteAudioMediaList) },
+    )
+
+    RemoveAudioMediaFromPlaylistDialog(
+        showDialog = isShowRemoveDialog,
+        onDismiss = { isShowRemoveDialog = false },
+        removeFromPlaylist = { sendIntent(PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist) },
+        deleteAudioMedia = { sendIntent(PlaylistEditListIntent.OnClickFullDeleteAudioMediaList) },
+        selectedMediaCount = checkedItemCount,
+        isSecretPlaylist = headerData.isSecretPlaylist,
     )
 
     Scaffold(
@@ -152,7 +163,7 @@ fun PlaylistEditScreen(
                 BottomActionBar {
                     BottomActionButton(
                         text = "${checkedItemCount}곡 플레이리스트에서 빼기",
-                        onClick = { sendIntent(PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist) },
+                        onClick = { isShowRemoveDialog = true },
                     )
                 }
             }
