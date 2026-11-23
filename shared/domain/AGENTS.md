@@ -52,8 +52,7 @@
 `withContext(Dispatchers.IO) { ... }` 는 동기가 아니다 — 그 안에서 suspend 를 부르면 취소가 난다.
 
 `Error` 도 잡지 않는다. OutOfMemoryError 나 NoClassDefFoundError 를 `Result.failure` 로 바꾸면 앱이
-망가진 상태로 계속 가고 수집기에도 평범한 실패로 올라간다. **도메인 예외는 `Exception` 을 상속한다** —
-`Throwable` 을 바로 상속하면 이 구분이 무너진다.
+망가진 상태로 계속 가고 수집기에도 평범한 실패로 올라간다. 우리 예외는 잡고, 그런 것은 전파한다.
 
 ---
 
@@ -76,3 +75,5 @@
 - UseCase 하나에만 쓰이는 결과 타입은 그 UseCase 파일에 둘 수 있다. 다만 Repository 인터페이스가
   그것을 돌려주게 되는 순간 `model/` 로 옮긴다.
 - 데이터 계층의 DTO(DB entity, facade 래퍼, 네트워크 DTO)는 여기 오지 않는다 — `shared:data` 다.
+- **도메인 예외도 `model/` 에 두고 `Exception` 을 상속한다.** `Throwable` 을 바로 상속하면 우리 예외와
+  `Error` 가 한 덩어리가 되어, 잡는 쪽이 둘을 가를 수 없다.
