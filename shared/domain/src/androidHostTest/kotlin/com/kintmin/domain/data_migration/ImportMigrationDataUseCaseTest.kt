@@ -348,6 +348,7 @@ class ImportMigrationDataUseCaseTest {
 
         assertTrue(thrown is CancellationException)
         assertTrue("apply" !in repository.calls)
+        coVerify { audioMediaRepository.deleteFileAtFullPath("/audios/re.m4a") }
     }
 
     @Test
