@@ -30,7 +30,6 @@ import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * 보내는 기기의 데이터를 받아 이 기기에 합친다. 곡 하나의 실패는 그 곡을 빼고 계속하고
@@ -145,7 +144,6 @@ class ImportMigrationDataUseCase constructor(
                 .onFailure { logError("완료 알림 실패", it) }
         }
     }.onFailure {
-        if (it is CancellationException) throw it
         logError("이전 중단", it)
     }
 
@@ -168,7 +166,6 @@ class ImportMigrationDataUseCase constructor(
             audioMediaRepository.downloadAudioFile(audio.source)
                 .onSuccess { result[audio.id] = it }
                 .onFailure {
-                    if (it is CancellationException) throw it
                     logError("다시 받기 실패: ${audio.logText()}", it)
                     failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
                 }

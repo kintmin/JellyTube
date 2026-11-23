@@ -27,7 +27,6 @@ import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.cancellation.CancellationException
 
 /** 곡마다 반영하지 않고 끝에 한 번에 반영한다 — 여러 재생목록의 순서를 계획 그대로 맞추려면 그래야 한다. */
 class RestoreBackupUseCase(
@@ -97,7 +96,6 @@ class RestoreBackupUseCase(
             failures = failures,
         ).also { log("복원 완료: ${it.logText()}") }
     }.onFailure {
-        if (it is CancellationException) throw it
         logError("복원 중단", it)
     }
 
@@ -157,7 +155,6 @@ class RestoreBackupUseCase(
     }
 
     private fun skip(error: Throwable, message: String): String? {
-        if (error is CancellationException) throw error
         logError(message, error)
         return null
     }

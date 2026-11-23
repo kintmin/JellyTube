@@ -335,8 +335,7 @@ class ImportMigrationDataUseCaseTest {
     fun `취소는 실패로 기록하지 않고 그대로 올리며 다시 받은 파일은 지운다`() = runTest {
         coEvery { audioMediaRepository.downloadAudioFile("https://youtu.be/a") } returns
             Result.success(DownloadedAudioFile("re.m4a", "/audios/re.m4a", durationSeconds = 42))
-        coEvery { audioMediaRepository.downloadAudioFile("https://youtu.be/b") } returns
-            Result.failure(CancellationException("나가기"))
+        coEvery { audioMediaRepository.downloadAudioFile("https://youtu.be/b") } throws CancellationException("나가기")
         val repository = FakeRepository(
             export = export(
                 listOf(audio(101, "https://youtu.be/a", "a.webm"), audio(102, "https://youtu.be/b", "b.webm")),
