@@ -15,22 +15,18 @@ interface PlaylistTrackDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylistTrackList(entities: List<PlaylistTrackEntity>)
 
-    /** [secretFilter] 는 SecretTrackFilter 의 이름이다. */
     @Transaction
     @Query(
         """
 SELECT * FROM PLAYLIST_TRACK
 WHERE playlistId = :playlistId
-    AND (CASE :secretFilter
-        WHEN 'INCLUDE' THEN 1
-        WHEN 'ONLY' THEN audioMediaId IN ($SECRET_AUDIO_MEDIA_IDS)
-        ELSE (playlistId NOT IN (SELECT id FROM PLAYLIST WHERE type IN $SECRET_HIDING_PLAYLIST_TYPES)
-            OR audioMediaId NOT IN ($SECRET_AUDIO_MEDIA_IDS))
-        END)
+    AND (:showSecretInTotal
+        OR playlistId NOT IN (SELECT id FROM PLAYLIST WHERE type = 'TOTAL')
+        OR audioMediaId NOT IN ($SECRET_AUDIO_MEDIA_IDS))
 ORDER BY sequence
 """
     )
-    fun getPlaylistTrackFullListFlow(playlistId: Int, secretFilter: String): Flow<List<PlaylistTrackFullDto>>
+    fun getPlaylistTrackFullListFlow(playlistId: Int, showSecretInTotal: Boolean): Flow<List<PlaylistTrackFullDto>>
 
     @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")

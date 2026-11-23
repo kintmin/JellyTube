@@ -48,6 +48,8 @@ class AppViewModelTest {
     private val endSecretModeUseCase = mockk<EndSecretModeUseCase>(relaxed = true)
     private val fetchPlaylistsByTypeUseCase = mockk<FetchPlaylistsByTypeUseCase> {
         every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(testPlaylist(SECRET_PLAYLIST_ID, PlaylistType.SECRET)))
+        every { this@mockk(PlaylistType.SECRET_FAVORITE) } returns
+            flowOf(listOf(testPlaylist(SECRET_FAVORITE_PLAYLIST_ID, PlaylistType.SECRET_FAVORITE)))
     }
     private val fetchSecretAudioMediaIdListFlowUseCase = mockk<FetchSecretAudioMediaIdListFlowUseCase> {
         every { this@mockk() } returns flowOf(listOf(SECRET_AUDIO_MEDIA_ID))
@@ -233,6 +235,7 @@ class AppViewModelTest {
 
     private companion object {
         const val SECRET_PLAYLIST_ID = 5
+        const val SECRET_FAVORITE_PLAYLIST_ID = 6
         const val SECRET_AUDIO_MEDIA_ID = 9
     }
 }

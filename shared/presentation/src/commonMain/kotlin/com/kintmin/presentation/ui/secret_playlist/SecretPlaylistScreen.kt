@@ -61,7 +61,7 @@ private val SecretModeMinuteRange = (1..120).toList()
 @Composable
 fun SecretPlaylistScreen(
     navigateToBack: () -> Unit,
-    navigateToPlaylistDetail: (playlistId: Int, secretOnly: Boolean) -> Unit,
+    navigateToPlaylistDetail: (playlistId: Int) -> Unit,
     navigateToPlaylistEdit: (playlistId: Int) -> Unit,
     navigateToPlaylistAdd: (playlistId: Int, playlistName: String) -> Unit,
     navigateToPlayerDetail: () -> Unit,
@@ -75,8 +75,7 @@ fun SecretPlaylistScreen(
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
-                is SecretPlaylistEvent.NavigateToPlaylistDetailScreen ->
-                    navigateToPlaylistDetail(event.playlistId, event.secretOnly)
+                is SecretPlaylistEvent.NavigateToPlaylistDetailScreen -> navigateToPlaylistDetail(event.playlistId)
                 is SecretPlaylistEvent.NavigateToPlaylistEditScreen -> navigateToPlaylistEdit(event.playlistId)
                 is SecretPlaylistEvent.NavigateToPlaylistAddScreen -> navigateToPlaylistAdd(event.playlistId, event.playlistName)
                 is SecretPlaylistEvent.ShowToast -> toaster.show(event.message)

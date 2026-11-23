@@ -36,9 +36,7 @@ class PlaylistDetailListViewModel constructor(
     private val appLog: AppLog,
 ) : ViewModel() {
 
-    private val route = savedStateHandle.toRoute<PlaylistDetailScreenRoute>()
-    private val playlistId = route.playlistId
-    private val secretFilter = route.secretTrackFilter
+    private val playlistId = savedStateHandle.toRoute<PlaylistDetailScreenRoute>().playlistId
 
     private val eventChannel = Channel<PlaylistDetailListEvent>(Channel.BUFFERED)
     val eventFlow: Flow<PlaylistDetailListEvent> = eventChannel.receiveAsFlow()
@@ -51,7 +49,7 @@ class PlaylistDetailListViewModel constructor(
     // 재생 큐 소스 — 필터링과 무관하게 항상 플레이리스트 전체 데이터
     // null 은 아직 DB 에서 읽지 않았다는 뜻이다.
     private val fullAudioListFlow: StateFlow<List<PlaylistDetailListItemUiState>?> =
-        fetchAudioMediaListFlowUseCase(playlistId, secretFilter).map { list -> list.map { it.toPlaylistDetailListItemUiState() } }
+        fetchAudioMediaListFlowUseCase(playlistId).map { list -> list.map { it.toPlaylistDetailListItemUiState() } }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     // 화면 표시용 — 검색어로 실시간 필터링

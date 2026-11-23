@@ -71,7 +71,8 @@ class AppViewModel(
     }
 
     private suspend fun secretPlaylistIds(): Set<Int> =
-        fetchPlaylistsByTypeUseCase(PlaylistType.SECRET).first().mapTo(HashSet()) { it.id }
+        PlaylistType.entries.filter { it.isSecret }
+            .flatMapTo(HashSet()) { type -> fetchPlaylistsByTypeUseCase(type).first().map { it.id } }
 
     private fun applyPlaybackSettings() {
         fetchIsPlaybackRepeatingFlowUseCase().onEach(mediaControllerManager::setRepeatMode).launchIn(viewModelScope)

@@ -3,8 +3,6 @@ package com.kintmin.presentation.ui.secret_playlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
-import com.kintmin.domain.audio_track.model.SecretTrackFilter
-import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist.usecase.DeletePlaylistUseCase
@@ -44,7 +42,6 @@ class SecretPlaylistViewModel(
     fetchSecretModeMinutesFlowUseCase: FetchSecretModeMinutesFlowUseCase,
     fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase,
     fetchDownloadTargetPlaylistsFlowUseCase: FetchDownloadTargetPlaylistsFlowUseCase,
-    fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
     private val updateSecretModeMinutesUseCase: UpdateSecretModeMinutesUseCase,
     private val updatePlaylistIdOnDownloadUseCase: UpdatePlaylistIdOnDownloadUseCase,
     private val addNewPlaylistUseCase: AddNewPlaylistUseCase,
@@ -86,20 +83,9 @@ class SecretPlaylistViewModel(
         )
     }
 
-    // 즐겨찾기 카드의 곡 수는 비밀 곡을 뺀 값이라 쓸 수 없다. 걸러 낸 목록으로 직접 센다.
-    private val secretFavoriteFlow = fetchPlaylistsByTypeUseCase(PlaylistType.FAVORITE).flatMapLatest { favorites ->
-        val favorite = favorites.firstOrNull() ?: return@flatMapLatest flowOf(null)
-        fetchAudioMediaListFlowUseCase(favorite.id, SecretTrackFilter.ONLY).map { tracks ->
-            favorite.toUiModel().copy(
-                // 메인의 "즐겨찾기" 와 담긴 곡이 다르다. 같은 이름을 쓰면 같은 목록으로 읽힌다.
-                name = "찜한 비밀 곡",
-                audioMediaCount = tracks.size,
-                playlistDuration = tracks.fold(Duration.ZERO) { sum, track ->
-                    sum + (track.audioMedia.playbackDuration ?: Duration.ZERO)
-                },
-            )
-        }
-    }
+    // 비밀 곡을 한 번도 찜하지 않았으면 플레이리스트가 아직 없다. 그때는 입구를 두지 않는다.
+    private val secretFavoriteFlow = fetchPlaylistsByTypeUseCase(PlaylistType.SECRET_FAVORITE)
+        .map { favorites -> favorites.firstOrNull()?.toUiModel() }
 
     val uiState: StateFlow<SecretPlaylistUiState> =
         combine(baseUiStateFlow, remainingFlow, secretFavoriteFlow) { base, remaining, secretFavorite ->
@@ -123,12 +109,7 @@ class SecretPlaylistViewModel(
         viewModelScope.launch {
             when (intent) {
                 is PlaylistIntent.OnClickPlaylistItem ->
-                    eventChannel.send(
-                        SecretPlaylistEvent.NavigateToPlaylistDetailScreen(
-                            playlistId = intent.playlistInfo.id,
-                            secretOnly = intent.playlistInfo.type == PlaylistType.FAVORITE,
-                        )
-                    )
+                    eventChannel.send(SecretPlaylistEvent.NavigateToPlaylistDetailScreen(intent.playlistInfo.id))
                 is PlaylistIntent.OnClickModifyPlaylist ->
                     eventChannel.send(SecretPlaylistEvent.NavigateToPlaylistEditScreen(intent.data.id))
                 is PlaylistIntent.OnClickAddPlaylist ->

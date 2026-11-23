@@ -1,7 +1,6 @@
 package com.kintmin.domain.audio_track.usecase
 
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
-import com.kintmin.domain.audio_track.model.SecretTrackFilter
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
@@ -32,10 +31,7 @@ class FetchAudioMediaListToAddTrackFlowUseCase constructor(
             .flatMapLatest { (totalId, isSecretTarget) ->
                 if (totalId == null) return@flatMapLatest flowOf(emptyList())
                 combine(
-                    audioTrackRepository.getPlaylistTrackAggregateListFlow(
-                        playlistId = totalId,
-                        secretFilter = if (isSecretTarget) SecretTrackFilter.INCLUDE else SecretTrackFilter.EXCLUDE,
-                    ),
+                    audioTrackRepository.getPlaylistTrackAggregateListFlow(totalId, showSecretInTotal = isSecretTarget),
                     audioTrackRepository.getPlaylistTrackAggregateListFlow(playlistId),
                 ) { totalList, currentList ->
                     totalList.filter { total -> currentList.firstOrNull { it.audioMedia.id == total.audioMedia.id } == null }

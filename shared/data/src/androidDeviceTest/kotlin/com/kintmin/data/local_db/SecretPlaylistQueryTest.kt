@@ -7,7 +7,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.model.AudioMediaEntity
-import com.kintmin.domain.audio_track.model.SecretTrackFilter
 import com.kintmin.domain.playlist.model.PlaylistType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -68,8 +67,10 @@ class SecretPlaylistQueryTest {
 
     private suspend fun favoriteId(): Int = db.playlistDao().getPlaylistIdByType(PlaylistType.FAVORITE.name)!!
 
-    private suspend fun trackIds(playlistId: Int, filter: SecretTrackFilter): List<Int> =
-        db.playlistTrackDao().getPlaylistTrackFullListFlow(playlistId, filter.name)
+    private suspend fun secretFavoriteId(): Int? = db.playlistDao().getPlaylistIdByType(PlaylistType.SECRET_FAVORITE.name)
+
+    private suspend fun trackIds(playlistId: Int, showSecretInTotal: Boolean = false): List<Int> =
+        db.playlistTrackDao().getPlaylistTrackFullListFlow(playlistId, showSecretInTotal)
             .first().map { it.audioMediaEntity.id }
 
     @Test
@@ -80,7 +81,7 @@ class SecretPlaylistQueryTest {
         val secretPlaylistId = facade.addPlaylist(title = "비밀", type = PlaylistType.SECRET)
         facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(secret))
 
-        assertEquals(listOf(visible), trackIds(totalId(), SecretTrackFilter.EXCLUDE))
+        assertEquals(listOf(visible), trackIds(totalId()))
 
         val total = db.playlistDao().getPlaylistFlow(totalId()).first()!!
         assertEquals(1, total.audioMediaCount)
@@ -111,9 +112,9 @@ class SecretPlaylistQueryTest {
         val secretPlaylistId = facade.addPlaylist(title = "비밀", type = PlaylistType.SECRET)
         facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(secret))
 
-        assertEquals(listOf(secret), trackIds(totalId(), SecretTrackFilter.INCLUDE))
+        assertEquals(listOf(secret), trackIds(totalId(), showSecretInTotal = true))
 
-        assertEquals(listOf(secret), trackIds(secretPlaylistId, SecretTrackFilter.EXCLUDE))
+        assertEquals(listOf(secret), trackIds(secretPlaylistId))
         assertEquals(1, db.playlistDao().getPlaylistFlow(secretPlaylistId).first()!!.audioMediaCount)
 
         assertEquals(1, db.playlistDao().getPlaylistById(totalId()).audioMediaCount)
@@ -121,26 +122,7 @@ class SecretPlaylistQueryTest {
     }
 
     @Test
-    fun 즐겨찾기도_비밀_곡을_빼되_거기_담긴_것만_뺀다() = runTest {
-        facade.ensureSystemPlaylists()
-        val visible = addAudioMedia("visible", 100)
-        val secretFavorite = addAudioMedia("secretFavorite", 40)
-        val secretElsewhere = addAudioMedia("secretElsewhere", 30)
-        val secretPlaylistId = facade.addPlaylist(title = "비밀", type = PlaylistType.SECRET)
-        facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(secretFavorite, secretElsewhere))
-        facade.setFavorite(visible, isFavorite = true)
-        facade.setFavorite(secretFavorite, isFavorite = true)
-
-        assertEquals(listOf(visible), trackIds(favoriteId(), SecretTrackFilter.EXCLUDE))
-
-        // 비밀 곡 전체를 빼면 즐겨찾기에 없는 secretElsewhere 까지 빠져 곡 수가 음수로 내려간다.
-        val favorite = db.playlistDao().getPlaylistFlow(favoriteId()).first()!!
-        assertEquals(1, favorite.audioMediaCount)
-        assertEquals(100L, favorite.rawPlayTimeDuration)
-    }
-
-    @Test
-    fun 비밀에_담으면_사용자_플레이리스트_연결은_끊고_찜은_남긴다() = runTest {
+    fun 비밀에_담으면_드러난_플레이리스트_연결을_모두_끊는다() = runTest {
         facade.ensureSystemPlaylists()
         val song = addAudioMedia("song")
         val userPlaylistId = facade.addPlaylist(title = "드림", type = PlaylistType.USER)
@@ -151,12 +133,12 @@ class SecretPlaylistQueryTest {
         val unlinkedCount = facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(song))
 
         assertEquals(1, unlinkedCount)
-        assertEquals(emptyList<Int>(), trackIds(userPlaylistId, SecretTrackFilter.EXCLUDE))
+        assertEquals(emptyList<Int>(), trackIds(userPlaylistId))
         assertEquals(0, db.playlistDao().getPlaylistFlow(userPlaylistId).first()!!.audioMediaCount)
-        assertEquals(emptyList<Int>(), trackIds(totalId(), SecretTrackFilter.EXCLUDE))
-        assertEquals(listOf(song), trackIds(secretPlaylistId, SecretTrackFilter.EXCLUDE))
-        // 찜은 비밀 화면이 제 입구로 보여주므로 끊지 않는다.
-        assertEquals(listOf(song), trackIds(favoriteId(), SecretTrackFilter.ONLY))
+        assertEquals(emptyList<Int>(), trackIds(favoriteId()))
+        assertEquals(0, db.playlistDao().getPlaylistFlow(favoriteId()).first()!!.audioMediaCount)
+        assertEquals(emptyList<Int>(), trackIds(totalId()))
+        assertEquals(listOf(song), trackIds(secretPlaylistId))
     }
 
     @Test
@@ -170,21 +152,54 @@ class SecretPlaylistQueryTest {
         val unlinkedCount = facade.addTrack(playlistId = second, audioMediaIdList = listOf(song))
 
         assertEquals(0, unlinkedCount)
-        assertEquals(listOf(song), trackIds(first, SecretTrackFilter.EXCLUDE))
-        assertEquals(listOf(song), trackIds(second, SecretTrackFilter.EXCLUDE))
+        assertEquals(listOf(song), trackIds(first))
+        assertEquals(listOf(song), trackIds(second))
     }
 
     @Test
-    fun 비밀만_보기는_그_플레이리스트에_담긴_비밀_곡만_돌려준다() = runTest {
+    fun 비밀_곡의_찜은_일반_즐겨찾기가_아니라_비밀_찜으로_간다() = runTest {
         facade.ensureSystemPlaylists()
-        val visible = addAudioMedia("visible")
-        val secretFavorite = addAudioMedia("secretFavorite")
-        val secretElsewhere = addAudioMedia("secretElsewhere")
+        val open = addAudioMedia("open")
+        val secret = addAudioMedia("secret")
         val secretPlaylistId = facade.addPlaylist(title = "비밀", type = PlaylistType.SECRET)
-        facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(secretFavorite, secretElsewhere))
-        facade.setFavorite(visible, isFavorite = true)
-        facade.setFavorite(secretFavorite, isFavorite = true)
+        facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(secret))
 
-        assertEquals(listOf(secretFavorite), trackIds(favoriteId(), SecretTrackFilter.ONLY))
+        facade.setFavorite(open, isFavorite = true)
+        facade.setFavorite(secret, isFavorite = true)
+
+        assertEquals(listOf(open), trackIds(favoriteId()))
+        assertEquals(listOf(secret), trackIds(secretFavoriteId()!!))
+    }
+
+    @Test
+    fun 비밀에서_빼면_비밀_찜에서도_빠진다() = runTest {
+        facade.ensureSystemPlaylists()
+        val stays = addAudioMedia("stays")
+        val leaves = addAudioMedia("leaves")
+        val secretPlaylistId = facade.addPlaylist(title = "비밀", type = PlaylistType.SECRET)
+        facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(stays, leaves))
+        facade.setFavorite(stays, isFavorite = true)
+        facade.setFavorite(leaves, isFavorite = true)
+
+        facade.deleteTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(leaves))
+
+        assertEquals(listOf(stays), trackIds(secretFavoriteId()!!))
+        assertEquals(1, db.playlistDao().getPlaylistFlow(secretFavoriteId()!!).first()!!.audioMediaCount)
+        // 비밀에서 나온 곡은 일반 즐겨찾기로 옮겨 가지 않는다. 다시 찜하면 그때 들어간다.
+        assertEquals(emptyList<Int>(), trackIds(favoriteId()))
+    }
+
+    @Test
+    fun 비밀_플레이리스트를_지우면_남은_곡의_비밀_찜도_정리된다() = runTest {
+        facade.ensureSystemPlaylists()
+        val song = addAudioMedia("song")
+        val secretPlaylistId = facade.addPlaylist(title = "비밀", type = PlaylistType.SECRET)
+        facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(song))
+        facade.setFavorite(song, isFavorite = true)
+
+        facade.deletePlaylist(secretPlaylistId)
+
+        assertEquals(emptyList<Int>(), trackIds(secretFavoriteId()!!))
+        assertEquals(listOf(song), trackIds(totalId()))
     }
 }

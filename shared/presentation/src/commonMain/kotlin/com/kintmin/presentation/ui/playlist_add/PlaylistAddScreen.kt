@@ -86,7 +86,7 @@ fun PlaylistAddScreen(
     JellyTubeConfirmDialog(
         showDialog = showSecretConfirmDialog,
         title = "비밀 플레이리스트에 담기",
-        message = "담은 곡은 다른 플레이리스트에서 모두 빠집니다.\n" +
+        message = "담은 곡은 다른 플레이리스트에서 모두 빠지고 찜도 풀립니다.\n" +
             "비밀에서 다시 빼도 원래 플레이리스트로 돌아가지 않습니다.",
         confirmText = "담기",
         confirmStyle = ConfirmStyle.Destructive,

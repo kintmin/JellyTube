@@ -41,7 +41,7 @@ class PlaylistViewModel constructor(
     ) { playlistList, downloadTarget, isReorderVisible ->
         PlaylistUiState(
             playlists = playlistList
-                .filterNot { it.type == PlaylistType.SECRET }
+                .filterNot { it.type.isSecret }
                 .map { it.toUiModel(isDownloadTarget = it.id == downloadTarget.targetId) },
             isReorderBottomSheetVisible = isReorderVisible,
         )

@@ -110,7 +110,7 @@ private fun PlaylistLibraryRowView(
 
 private fun PlaylistType.libraryIcon(): ImageVector = when (this) {
     PlaylistType.TOTAL -> Icons.Rounded.LibraryMusic
-    PlaylistType.FAVORITE -> Icons.Rounded.Favorite
+    PlaylistType.FAVORITE, PlaylistType.SECRET_FAVORITE -> Icons.Rounded.Favorite
     PlaylistType.UNCATEGORIZED -> Icons.Rounded.Folder
     PlaylistType.USER, PlaylistType.SECRET -> Icons.Rounded.LibraryMusic
 }
