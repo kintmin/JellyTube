@@ -21,6 +21,7 @@ import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.lyrics.LyricsFile
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.youtube.model.YoutubePlaylist
@@ -407,13 +408,13 @@ internal class AudioMediaRepositoryImpl constructor(
     }
 
     override suspend fun deleteDownloadedFile(downloadedAudioMedia: DownloadedMedia): Result<Unit> {
-       return runCatching {
+       return suspendRunCatching {
            deleteAudioFile(downloadedAudioMedia.audioFileNameWithExt).getOrThrow()
            downloadedAudioMedia.imageFileNameWithExt?.let { deleteImageFile(it).getOrThrow() }
        }
     }
 
-    override suspend fun deleteAudioMedia(id: Int): Result<Unit> = runCatching {
+    override suspend fun deleteAudioMedia(id: Int): Result<Unit> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             val data = audioMediaDao.getDataById(id)
             audioMediaFacade.deleteAudioMedia(id)
@@ -436,7 +437,7 @@ internal class AudioMediaRepositoryImpl constructor(
         }
     }
 
-    override suspend fun deleteOrphanAudioMedia(): Result<List<AudioMedia>> = runCatching {
+    override suspend fun deleteOrphanAudioMedia(): Result<List<AudioMedia>> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             audioMediaFacade.deleteOrphanAudioMedia()
                 .mapNotNull { entity -> entity.toDomain(fileManager).getOrNull() }

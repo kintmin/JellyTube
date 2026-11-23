@@ -1,6 +1,7 @@
 package com.kintmin.domain.playlist.usecase
 
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.SentryEvent
@@ -16,7 +17,7 @@ class DeletePlaylistUseCase constructor(
 ) {
 
     suspend operator fun invoke(playlistId: Int): Result<Unit> {
-        return runCatching {
+        return suspendRunCatching {
             val playlistToDelete = playlistRepository.getPlaylistFlow(playlistId)
                 .flowOn(Dispatchers.IO)
                 .first()

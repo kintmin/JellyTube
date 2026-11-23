@@ -3,6 +3,7 @@ package com.kintmin.data.file_share
 import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.model.UploadedAudioFile
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.file_share.PcUploadHandler
 import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.fileshare.BulkArtistUpdateRequest
@@ -83,7 +84,7 @@ internal fun Route.pcUploadEndpoints(
                 call.respond(HttpStatusCode.BadRequest, UploadStageResponse(success = false, message = reason))
             }
 
-            val receivedBytes = runCatching {
+            val receivedBytes = suspendRunCatching {
                 SystemFileSystem.sink(tempPath).use { sink -> call.receiveChannel().readTo(sink) }
             }.getOrElse { error ->
                 reject("파일을 읽을 수 없습니다.", receivedBytes = null, error)

@@ -3,6 +3,7 @@ package com.kintmin.domain.data_migration.usecase
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.MigrationFiles
 import com.kintmin.domain.data_migration.MigrationPlanner
 import com.kintmin.domain.data_migration.SourceKey
@@ -47,7 +48,7 @@ class ImportMigrationDataUseCase constructor(
         endpoint: MigrationEndpoint,
         token: String,
         onProgress: (MigrationProgress) -> Unit,
-    ): Result<MigrationSummary> = runCatching {
+    ): Result<MigrationSummary> = suspendRunCatching {
         onProgress(MigrationProgress(MigrationStage.PLANNING))
         // 계획은 받는 쪽 시스템 플레이리스트가 다 있어야 세울 수 있다.
         playlistRepository.ensureSystemPlaylists().getOrThrow()

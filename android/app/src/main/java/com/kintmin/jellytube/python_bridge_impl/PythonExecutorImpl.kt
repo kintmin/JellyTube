@@ -8,6 +8,7 @@ import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.data.python_bridge.model.PlayableAudioDownloadDto
 import com.kintmin.data.python_bridge.model.YoutubeDownloadDto
 import com.kintmin.data.python_bridge.model.withDefaults
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -18,7 +19,7 @@ class PythonExecutorImpl(
     override suspend fun downloadYoutubeMedia(
         youtubeUrl: String,
         audioDownloadPath: String,
-    ) = runCatching {
+    ) = suspendRunCatching {
         withContext(Dispatchers.IO) {
             ensurePythonStarted()
 

@@ -20,6 +20,7 @@ import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.Transformer
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.model.AudioWaveform
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -220,7 +221,7 @@ internal class AudioEditorImpl constructor(
         sourceFileFullPath: String,
         parts: List<AudioEditPart>,
         outputFileFullPath: String,
-    ): Result<Long> = runCatching {
+    ): Result<Long> = suspendRunCatching {
         require(parts.any { it is AudioEditPart.Audio }) { "소리가 남은 조각이 없습니다." }
         require(parts.all { it.durationMs > 0 }) { "길이가 0인 조각은 편집할 수 없습니다." }
 

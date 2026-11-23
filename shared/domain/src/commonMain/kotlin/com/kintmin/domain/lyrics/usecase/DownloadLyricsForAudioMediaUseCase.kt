@@ -1,5 +1,6 @@
 package com.kintmin.domain.lyrics.usecase
 
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
@@ -31,18 +32,18 @@ class DownloadLyricsForAudioMediaUseCase(
         audioMediaId: Int,
         title: String,
         targetDurationSeconds: Double?,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = suspendRunCatching {
         val query = buildSongSearchQuery(title)
         val results = searchLyrics(query).getOrNull().orEmpty()
 
-        if (targetDurationSeconds == null) return@runCatching
+        if (targetDurationSeconds == null) return@suspendRunCatching
         // 길이만으로는 아티스트명으로 걸린 비슷한 길이의 다른 곡을 거르지 못한다.
         val picked = sortLyricsSearchResults(results, title, targetDurationSeconds)
             .firstOrNull {
                 !(it.plainLyrics.isNullOrBlank() && it.syncedLyrics.isNullOrBlank()) &&
                     it.duration != null && abs(it.duration - targetDurationSeconds) <= 1.0 &&
                     matchLyricsTrackName(title, it.trackName)
-            } ?: return@runCatching log("맞는 가사 없음: id=$audioMediaId (검색 ${results.size}건)")
+            } ?: return@suspendRunCatching log("맞는 가사 없음: id=$audioMediaId (검색 ${results.size}건)")
 
         val lyricFileFullPath = applyLyricsToAudioMedia(
             audioMediaId = audioMediaId,

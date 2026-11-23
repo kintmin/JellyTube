@@ -4,6 +4,7 @@ import android.content.Context
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import com.kintmin.data.python_bridge.LyricsTransliterator
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -11,7 +12,7 @@ class LyricsTransliteratorImpl(
     private val context: Context,
 ) : LyricsTransliterator {
 
-    override suspend fun transliterateToKorean(text: String): Result<String> = runCatching {
+    override suspend fun transliterateToKorean(text: String): Result<String> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             if (!Python.isStarted()) {
                 Python.start(AndroidPlatform(context))

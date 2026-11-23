@@ -2,6 +2,7 @@ package com.kintmin.data.network.data_source_impl
 
 import com.kintmin.data.network.data_source.KaraokeDataSource
 import com.kintmin.data.network.model.KaraokeSongDto
+import com.kintmin.domain.common.suspendRunCatching
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -14,7 +15,7 @@ internal class KaraokeDataSourceImpl(
     private val client: HttpClient,
 ) : KaraokeDataSource {
 
-    override suspend fun searchBySongTitle(title: String): Result<List<KaraokeSongDto>> = runCatching {
+    override suspend fun searchBySongTitle(title: String): Result<List<KaraokeSongDto>> = suspendRunCatching {
         client.get {
             url {
                 takeFrom(MANANA_BASE_URL)

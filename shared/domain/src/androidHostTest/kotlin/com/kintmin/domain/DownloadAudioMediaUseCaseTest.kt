@@ -31,6 +31,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import kotlin.coroutines.cancellation.CancellationException
@@ -167,11 +168,17 @@ class DownloadAudioMediaUseCaseTest {
     }
 
     @Test
-    fun `멈춰서 끊긴 받기는 실패로 기록하지 않는다`() = runTest {
+    fun `멈춰서 끊긴 받기는 실패로 기록하지 않고 취소를 그대로 던진다`() = runTest {
         coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } throws CancellationException("stop")
 
-        useCase(downloadUrl)
+        var caught: Throwable? = null
+        try {
+            useCase(downloadUrl)
+        } catch (e: CancellationException) {
+            caught = e
+        }
 
+        assertEquals("stop", caught?.message)
         verifyFailedDownloadAudioMediaLog(exception = CancellationException("stop"), exactly = 0)
     }
 

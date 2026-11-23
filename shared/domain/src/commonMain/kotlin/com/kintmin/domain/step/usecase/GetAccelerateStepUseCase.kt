@@ -1,5 +1,6 @@
 package com.kintmin.domain.step.usecase
 
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.step.repository.StepRepository
 import kotlinx.coroutines.flow.first
 
@@ -8,7 +9,7 @@ class GetAccelerateStepUseCase constructor(
 ) {
 
     suspend operator fun invoke(): Result<Int> {
-        return runCatching {
+        return suspendRunCatching {
             stepRepository.getAccelerateStep().first()!!
         }
     }

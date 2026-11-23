@@ -3,6 +3,7 @@ package com.kintmin.data.file_share
 import com.kintmin.data.file_share.migration.MigrationSessionHolder
 import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.model.UploadedAudioFile
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.MigrationSendHandler
 import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
 import com.kintmin.domain.data_migration.model.MigrationExport
@@ -103,7 +104,7 @@ internal class FileShareServerRepository(
         }
     }
 
-    private suspend fun isListening(): Boolean = runCatching {
+    private suspend fun isListening(): Boolean = suspendRunCatching {
         SelectorManager(Dispatchers.IO).use { selector ->
             withTimeout(PROBE_TIMEOUT_MS) {
                 aSocket(selector).tcp().connect(LOOPBACK_HOST, FileShareConstants.DEFAULT_PORT).close()

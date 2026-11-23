@@ -1,6 +1,7 @@
 package com.kintmin.domain.data_migration.usecase
 
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.model.MigrationDownloadSettings
 import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
@@ -10,7 +11,7 @@ class ExportMigrationDataUseCase constructor(
     private val dataMigrationRepository: DataMigrationRepository,
     private val appSettingRepository: AppSettingRepository,
 ) {
-    suspend operator fun invoke(): Result<MigrationExport> = runCatching {
+    suspend operator fun invoke(): Result<MigrationExport> = suspendRunCatching {
         val export = dataMigrationRepository.exportData().getOrThrow()
         export.copy(
             downloadSettings = MigrationDownloadSettings(

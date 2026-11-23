@@ -4,6 +4,7 @@ import com.kintmin.data.backup.BackupFiles
 import com.kintmin.data.local_file.model.CopiedAudioInfo
 import com.kintmin.data.local_file.model.ExportedAudioInfo
 import com.kintmin.domain.audio_media.model.AudioExportTarget
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.UByteVar
@@ -71,7 +72,7 @@ internal class FileManagerImpl : FileManager {
 
     override fun getBackupDirPath() = core.getBackupDirPath()
 
-    override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<String> = runCatching {
+    override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<String> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             val image = UIImage(data = imageData.toNSData()) ?: error("이미지를 해석할 수 없습니다.")
             val compressed = UIImageJPEGRepresentation(image, IMAGE_COMPRESSION_QUALITY)
@@ -93,7 +94,7 @@ internal class FileManagerImpl : FileManager {
      * 파라미터 이름은 Android SAF 개념이지만 문자열이라 iOS 는 `file://` 주소를 그대로 받는다.
      * 선택기를 `asCopy` 로 열어서 들어오는 것은 이미 복사본이고, 보안 스코프를 열 필요가 없다.
      */
-    override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = runCatching {
+    override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             val sourcePath = contentUriString.toLocalFilePath()
                 ?: error("파일 주소를 해석할 수 없습니다.")
@@ -123,7 +124,7 @@ internal class FileManagerImpl : FileManager {
         }
     }
 
-    override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = runCatching {
+    override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             val uploadedName = UploadedAudioFileName(originalFileName)
             val fileName = NSUUID().UUIDString()

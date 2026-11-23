@@ -9,6 +9,7 @@ import com.kintmin.domain.audio_media.model.DownloadedAudioMediaResult
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
@@ -17,7 +18,6 @@ import com.kintmin.log.secret
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.measureTimedValue
 
 class DownloadAudioMediaUseCase constructor(
@@ -31,7 +31,7 @@ class DownloadAudioMediaUseCase constructor(
     suspend operator fun invoke(
         downloadUrl: String,
         intoUncategorized: Boolean = false,
-    ): Result<DownloadedAudioMediaResult> = runCatching {
+    ): Result<DownloadedAudioMediaResult> = suspendRunCatching {
         appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "받기 시작: ${secret(downloadUrl)}"))
         if (!audioMediaRepository.reserveDownload(downloadUrl)) throw AlreadyDownloadingMedia()
         try {
@@ -40,8 +40,6 @@ class DownloadAudioMediaUseCase constructor(
             audioMediaRepository.releaseDownload(downloadUrl)
         }
     }.onFailure { exception ->
-        // 멈추기·나가기로 끊긴 것은 받기 실패가 아니다.
-        if (exception is CancellationException) return@onFailure
         if (exception is AlreadyDownloadedMedia || exception is AlreadyDownloadingMedia) {
             appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "이미 있거나 받는 중이라 받지 않음: ${secret(downloadUrl)}"))
             return@onFailure

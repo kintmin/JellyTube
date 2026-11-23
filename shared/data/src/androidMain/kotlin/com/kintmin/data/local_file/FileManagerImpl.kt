@@ -14,6 +14,7 @@ import com.kintmin.data.backup.BackupFiles
 import com.kintmin.data.local_file.model.CopiedAudioInfo
 import com.kintmin.data.local_file.model.ExportedAudioInfo
 import com.kintmin.domain.audio_media.model.AudioExportTarget
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -103,7 +104,7 @@ internal class FileManagerImpl(
     override suspend fun copyImageFile(
         sourceFileNameWithExt: String,
         targetFileName: String,
-    ): Result<String> = runCatching {
+    ): Result<String> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             val sourceFile = imageDir().resolve(sourceFileNameWithExt)
             if (!sourceFile.exists()) throw Exception("원본 이미지 파일을 찾을 수 없습니다.")
@@ -118,7 +119,7 @@ internal class FileManagerImpl(
 
     override suspend fun fetchLyrics(fileNameWithExt: String) = core.fetchLyrics(fileNameWithExt)
 
-    override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = runCatching {
+    override suspend fun copyAudioFromContentUri(contentUriString: String): Result<CopiedAudioInfo> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             val uri = contentUriString.toUri()
             val contentResolver = appContext.contentResolver
@@ -169,7 +170,7 @@ internal class FileManagerImpl(
         }
     }
 
-    override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = runCatching {
+    override suspend fun saveUploadedAudio(sourceFileFullPath: String, originalFileName: String): Result<CopiedAudioInfo> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             val uploadedName = UploadedAudioFileName(originalFileName)
             val fileName = UUID.randomUUID().toString()
@@ -205,7 +206,7 @@ internal class FileManagerImpl(
 
     private suspend fun extractAudioMetadata(file: File, imageFileName: String): AudioMetadata {
         val retriever = MediaMetadataRetriever()
-        return runCatching {
+        return suspendRunCatching {
             retriever.setDataSource(file.absolutePath)
             val title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
             val artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
@@ -271,7 +272,7 @@ internal class FileManagerImpl(
         title: String,
         artist: String?,
         targetList: List<AudioExportTarget>,
-    ): Result<ExportedAudioInfo> = runCatching {
+    ): Result<ExportedAudioInfo> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             val distinctTargetList = targetList.distinct()
             if (distinctTargetList.isEmpty()) throw Exception("내보낼 용도를 하나 이상 선택해야 합니다.")

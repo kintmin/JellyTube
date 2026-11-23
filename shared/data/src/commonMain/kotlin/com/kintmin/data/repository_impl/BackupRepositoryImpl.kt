@@ -13,6 +13,7 @@ import com.kintmin.domain.backup.model.BackupFolderNotRegisteredException
 import com.kintmin.domain.backup.model.BackupStatus
 import com.kintmin.domain.backup.model.BackupWriteResult
 import com.kintmin.domain.backup.repository.BackupRepository
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -52,7 +53,7 @@ class BackupRepositoryImpl(
         )
     }
 
-    override suspend fun registerFolder(folder: BackupFolder): Result<Unit> = runCatching {
+    override suspend fun registerFolder(folder: BackupFolder): Result<Unit> = suspendRunCatching {
         datastoreUtil.updateData(PreferencesKey.BackupFolderId, folder.id).getOrThrow()
         datastoreUtil.updateData(PreferencesKey.BackupFolderLabel, folder.label).getOrThrow()
     }
@@ -77,22 +78,22 @@ class BackupRepositoryImpl(
         }
     }
 
-    override suspend fun read(fileId: String): Result<BackupContent> = runCatching {
+    override suspend fun read(fileId: String): Result<BackupContent> = suspendRunCatching {
         val bytes = backupFolderAccess.readPicked(fileId)
         withContext(Dispatchers.Default) { BackupCodec.decode(bytes) }
     }
 
-    override suspend fun readLocalCopy(): Result<BackupContent?> = runCatching {
+    override suspend fun readLocalCopy(): Result<BackupContent?> = suspendRunCatching {
         val path = localCopyPath()
         val bytes = withContext(Dispatchers.IO) {
             if (fileSystem.exists(path)) fileSystem.read(path) { readByteArray() } else null
-        } ?: return@runCatching null
+        } ?: return@suspendRunCatching null
         withContext(Dispatchers.Default) { BackupCodec.decode(bytes) }
     }
 
-    override suspend fun readFolderCopy(): Result<BackupContent?> = runCatching {
-        val folderId = folderId() ?: return@runCatching null
-        val bytes = backupFolderAccess.read(folderId, BackupFiles.FILE_NAME) ?: return@runCatching null
+    override suspend fun readFolderCopy(): Result<BackupContent?> = suspendRunCatching {
+        val folderId = folderId() ?: return@suspendRunCatching null
+        val bytes = backupFolderAccess.read(folderId, BackupFiles.FILE_NAME) ?: return@suspendRunCatching null
         withContext(Dispatchers.Default) { BackupCodec.decode(bytes) }
     }
 
@@ -103,7 +104,7 @@ class BackupRepositoryImpl(
     override suspend fun recordSuccess(atMillis: Long): Result<Unit> =
         datastoreUtil.updateData(PreferencesKey.BackupLastSuccessMillis, atMillis)
 
-    override suspend fun recordFailure(atMillis: Long, reason: BackupFailureReason): Result<Unit> = runCatching {
+    override suspend fun recordFailure(atMillis: Long, reason: BackupFailureReason): Result<Unit> = suspendRunCatching {
         datastoreUtil.updateData(PreferencesKey.BackupLastFailureReason, reason.name).getOrThrow()
         datastoreUtil.updateData(PreferencesKey.BackupLastFailureMillis, atMillis).getOrThrow()
     }
