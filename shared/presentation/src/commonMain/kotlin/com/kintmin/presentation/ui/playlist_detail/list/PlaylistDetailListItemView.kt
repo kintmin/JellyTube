@@ -79,6 +79,9 @@ fun PlaylistDetailListItemView(
             removeFromPlaylist = {
                 sendIntent(PlaylistDetailListIntent.OnClickRemoveFromPlaylist(data))
             },
+            deleteAudioMedia = {
+                sendIntent(PlaylistDetailListIntent.OnClickDeleteAudioMedia(data))
+            },
         )
 
         Box(

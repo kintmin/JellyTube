@@ -123,8 +123,9 @@ fun PlaylistEditScreen(
         showDialog = isShowRemoveDialog,
         onDismiss = { isShowRemoveDialog = false },
         removeFromPlaylist = { sendIntent(PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist) },
+        deleteAudioMedia = { sendIntent(PlaylistEditListIntent.OnClickFullDeleteAudioMediaList) },
         selectedMediaCount = checkedItemCount,
-        isSecretPlaylist = true,
+        isSecretPlaylist = headerData.isSecretPlaylist,
     )
 
     Scaffold(
@@ -162,11 +163,7 @@ fun PlaylistEditScreen(
                 BottomActionBar {
                     BottomActionButton(
                         text = "${checkedItemCount}곡 플레이리스트에서 빼기",
-                        // 비밀에서 빼면 곡이 드러나는 곳으로 간다. 그때만 묻는다.
-                        onClick = {
-                            if (headerData.isSecretPlaylist) isShowRemoveDialog = true
-                            else sendIntent(PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist)
-                        },
+                        onClick = { isShowRemoveDialog = true },
                     )
                 }
             }

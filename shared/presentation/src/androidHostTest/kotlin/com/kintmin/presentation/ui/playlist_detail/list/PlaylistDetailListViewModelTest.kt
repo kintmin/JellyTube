@@ -51,6 +51,7 @@ class PlaylistDetailListViewModelTest {
             every { this@mockk(any()) } returns audioListFlow
         },
         deleteAudioTrackListUseCase = mockk(relaxed = true),
+        deleteAudioMediaListUseCase = mockk(relaxed = true),
         updateTrackSequenceUseCase = mockk(relaxed = true),
         mediaControllerManager = mockk(relaxed = true),
         appLog = mockk(relaxed = true),
