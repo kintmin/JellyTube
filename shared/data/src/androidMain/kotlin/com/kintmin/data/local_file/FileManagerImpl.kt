@@ -71,7 +71,7 @@ internal class FileManagerImpl(
     override fun getBackupDirPath() = core.getBackupDirPath()
 
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String) =
-        runCatching {
+        suspendRunCatching {
             withContext(Dispatchers.IO) {
                 // 카메라 원본을 그대로 펴면 수십~수백 MB 라 OOM 이 난다. 긴 변이 상한 아래로 올 때까지 2배씩 줄여 편다.
                 val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }

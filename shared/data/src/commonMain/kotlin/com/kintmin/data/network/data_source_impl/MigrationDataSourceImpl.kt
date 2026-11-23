@@ -41,7 +41,7 @@ internal class MigrationDataSourceImpl(
     }
 
     override suspend fun fetchManifest(host: String, port: Int, token: String): Result<MigrationManifestDto> =
-        runCatching {
+        suspendRunCatching {
             client.get {
                 migrationUrl(host, port, FileShareConstants.MIGRATION_MANIFEST_PATH)
                 bearerAuth(token)

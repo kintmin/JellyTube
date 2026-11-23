@@ -204,7 +204,7 @@ internal fun Route.pcUploadEndpoints(
  * 거절 사유를 보여 주지 못한다.
  */
 suspend fun ApplicationCall.discardBody() {
-    runCatching { receiveChannel().discard() }
+    suspendRunCatching { receiveChannel().discard() }
 }
 
 private fun Result<ImportedAudioMediaResult>.toUploadResponse(): UploadResponse = fold(

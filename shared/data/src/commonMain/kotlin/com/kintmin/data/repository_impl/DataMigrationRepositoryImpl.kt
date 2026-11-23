@@ -75,7 +75,7 @@ class DataMigrationRepositoryImpl constructor(
         migrationDataSource.pair(endpoint.host, endpoint.port, code).recoverCatching { throw it.asPairFailure() }
 
     override suspend fun fetchRemoteExport(endpoint: MigrationEndpoint, token: String): Result<MigrationExport> =
-        runCatching {
+        suspendRunCatching {
             val manifest = migrationDataSource.fetchManifest(endpoint.host, endpoint.port, token)
                 .getOrElse { error ->
                     if (error is ServerResponseException && error.response.status == HttpStatusCode.ServiceUnavailable) {

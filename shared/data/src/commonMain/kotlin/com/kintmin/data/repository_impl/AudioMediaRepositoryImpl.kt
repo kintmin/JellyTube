@@ -339,7 +339,7 @@ internal class AudioMediaRepositoryImpl constructor(
                 val source = "quickShare://sha256/${copiedInfo.sha256Hex}"
 
                 // 중복 파일 확인: 같은 SHA-256이 이미 저장된 경우 복사본을 삭제하고 에러 반환
-                runCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
+                suspendRunCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
                     deleteAudioFile(copiedInfo.fileNameWithExt)
                     throw AlreadyDownloadedMedia()
                 }
@@ -374,7 +374,7 @@ internal class AudioMediaRepositoryImpl constructor(
                 val copiedInfo = fileManager.saveUploadedAudio(uploadedFileFullPath, originalFileName).getOrThrow()
                 val source = "fileShare://sha256/${copiedInfo.sha256Hex}"
 
-                runCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
+                suspendRunCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
                     deleteAudioFile(copiedInfo.fileNameWithExt)
                     throw AlreadyDownloadedMedia()
                 }

@@ -59,7 +59,7 @@ class BackupRepositoryImpl(
     }
 
     override suspend fun write(content: BackupContent): Result<BackupWriteResult> = writeLock.withLock {
-        runCatching {
+        suspendRunCatching {
             val folderId = folderId() ?: throw BackupFolderNotRegisteredException()
             val bytes = withContext(Dispatchers.Default) { BackupCodec.encode(content) }
             val localCopySkipped = bytes.size > BackupFiles.LOCAL_COPY_MAX_BYTES
