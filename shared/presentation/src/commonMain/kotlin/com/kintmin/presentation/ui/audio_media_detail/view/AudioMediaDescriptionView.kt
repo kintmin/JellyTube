@@ -31,9 +31,6 @@ import com.kintmin.presentation.theme.contentMuted
 
 private const val COLLAPSED_LINE_COUNT = 4
 
-/**
- * 음원 설명. 길이 제한이 5000자라 접어서 보여주고 [COLLAPSED_LINE_COUNT] 줄을 넘을 때만 펼칠 수 있다.
- */
 @Composable
 fun AudioMediaDescriptionView(
     description: String,
@@ -52,7 +49,6 @@ fun AudioMediaDescriptionView(
         )
         // 선택 핸들을 끄는 제스처가 클릭으로 읽히지 않도록 펼치기 버튼은 이 컨테이너 밖에 둔다.
         SelectionContainer {
-            // 여러 줄 단락이라 라벨과 줄 간격을 한 줄 메타 값보다 넉넉하게 둔다.
             Text(
                 modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp),
                 text = description,

@@ -394,7 +394,6 @@ fun AudioMediaDetailScreen(
                 }
             }
 
-            // 설명은 5000자까지라 펼쳐도 뒤로 밀릴 것이 없는 맨 끝에 둔다.
             if (data.audioMediaDescription.isNotBlank()) {
                 item(key = -3) {
                     Column(
