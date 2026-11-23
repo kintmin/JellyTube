@@ -4,6 +4,7 @@ import com.kintmin.data.local_db.dao.PlaylistDao
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_file.FileManager
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
@@ -30,6 +31,12 @@ class PlaylistRepositoryImpl constructor(
     override suspend fun addPlaylist(title: String, type: PlaylistType): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
             audioMediaFacade.addPlaylist(title, type)
+        }
+    }
+
+    override suspend fun getPlaylist(playlistId: Int): Result<Playlist> = withContext(Dispatchers.IO) {
+        suspendRunCatching {
+            playlistDao.getPlaylistById(playlistId).toDomain(fileManager).getOrThrow()
         }
     }
 
