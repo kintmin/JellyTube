@@ -54,6 +54,7 @@ fun PlaylistDetailListItemView(
     modifier: Modifier,
     data: PlaylistDetailListItemUiState,
     canRemoveTrack: Boolean,
+    isSecretPlaylist: Boolean,
     isNowPlaying: Boolean,
     isPlaying: Boolean,
     isDragging: Boolean,
@@ -74,6 +75,7 @@ fun PlaylistDetailListItemView(
             showDialog = isShowRemoveDialog,
             onDismiss = { isShowRemoveDialog = false },
             mediaName = data.mediaName,
+            isSecretPlaylist = isSecretPlaylist,
             removeFromPlaylist = {
                 sendIntent(PlaylistDetailListIntent.OnClickRemoveFromPlaylist(data))
             },
@@ -222,6 +224,7 @@ fun PlaylistDetailListItemPreview() {
             data = PlaylistDetailListItemUiState.getMock(),
             modifier = Modifier.height(80.dp),
             canRemoveTrack = true,
+            isSecretPlaylist = false,
             isNowPlaying = false,
             isPlaying = false,
             isDragging = false,
@@ -238,6 +241,7 @@ fun PlaylistDetailListItemNowPlayingPreview() {
             data = PlaylistDetailListItemUiState.getMock(),
             modifier = Modifier.height(80.dp),
             canRemoveTrack = true,
+            isSecretPlaylist = false,
             isNowPlaying = true,
             isPlaying = true,
             isDragging = false,

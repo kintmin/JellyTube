@@ -1,13 +1,14 @@
 package com.kintmin.presentation.ui.main.playlist.dialog
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,7 +22,7 @@ import com.kintmin.presentation.ui.common.JellyTubeDialog
 
 /**
  * 곡을 남기면 미분류로 돌아가 "전체" 에도 나타난다 — 비밀로 담아 둔 것이 한 번에 드러나므로
- * 묻지 않고 지우지 않는다. 더 위험한 "곡까지" 를 아래에 둬 손에서 멀게 한다.
+ * 묻지 않고 지우지 않는다.
  */
 @Composable
 fun SecretPlaylistDeleteDialog(
@@ -48,13 +49,13 @@ fun SecretPlaylistDeleteDialog(
                 },
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Column(
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .align(Alignment.End)
                     .padding(top = dialogActionsSpacing),
-                verticalArrangement = Arrangement.spacedBy(dialogButtonSpacing),
-                horizontalAlignment = Alignment.End,
             ) {
+                TextButton(onClick = onDismiss) { Text("취소") }
+                Spacer(modifier = Modifier.width(dialogButtonSpacing))
                 OutlinedButton(
                     colors = JellyTubeButtonColors.removal(),
                     onClick = {
@@ -62,9 +63,10 @@ fun SecretPlaylistDeleteDialog(
                         onDismiss()
                     },
                 ) {
-                    Text(text = if (audioMediaCount > 0) "곡은 남기고 삭제" else "삭제")
+                    Text(text = if (audioMediaCount > 0) "곡은 남기기" else "삭제")
                 }
                 if (audioMediaCount > 0) {
+                    Spacer(modifier = Modifier.width(dialogButtonSpacing))
                     Button(
                         colors = JellyTubeButtonColors.destructive(),
                         onClick = {
@@ -72,14 +74,8 @@ fun SecretPlaylistDeleteDialog(
                             onDismiss()
                         },
                     ) {
-                        Text(text = "곡까지 모두 삭제")
+                        Text(text = "곡까지 삭제")
                     }
-                }
-                OutlinedButton(
-                    colors = JellyTubeButtonColors.secondary(),
-                    onClick = onDismiss,
-                ) {
-                    Text(text = "취소")
                 }
             }
         }
