@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Timer
@@ -106,14 +107,22 @@ fun SettingSecretPlaylistGuideScreen(
             SettingNoticeCardView(
                 icon = Icons.Rounded.VisibilityOff,
                 title = "숨겨지는 곳",
-                text = "비밀 플레이리스트는 홈 목록에 나오지 않고, 그 안의 곡은 '전체'에서도 보이지 않습니다. " +
+                text = "비밀 플레이리스트는 홈 목록에 나오지 않고, 그 안의 곡은 '전체'·'미분류'·'즐겨찾기'에서 " +
+                    "빠집니다. 비밀모드를 켜도 '전체'에는 나오지 않습니다 — 곡은 비밀 플레이리스트 안에서 봅니다. " +
                     "다운로드 시 재생목록으로는 비밀모드가 켜져 있을 때만 고를 수 있고, 꺼지면 미분류로 돌아갑니다.",
+            )
+            SettingNoticeCardView(
+                icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                title = "담으면 일어나는 일",
+                text = "비밀 플레이리스트에 담은 곡은 다른 플레이리스트에서 모두 빠집니다. 비밀에서 다시 빼도 " +
+                    "원래 플레이리스트로 돌아가지 않고 미분류로 갑니다. 찜은 그대로 남아 비밀 플레이리스트 화면의 " +
+                    "'찜한 비밀 곡'에서 볼 수 있습니다.",
             )
             SettingNoticeCardView(
                 icon = Icons.Rounded.Info,
                 title = "알아 두세요",
-                text = "화면에서 숨길 뿐 파일을 암호화하지는 않습니다. 같은 곡이 즐겨찾기나 다른 플레이리스트에도 " +
-                    "들어 있으면 그곳에서는 보입니다.",
+                text = "화면에서 숨길 뿐 파일을 암호화하지는 않습니다. 듣는 동안에는 잠금화면과 알림의 재생 " +
+                    "컨트롤에 곡 제목이 나오고, 백업 파일에도 그대로 들어갑니다.",
             )
             Spacer(Modifier.height(8.dp))
         }
