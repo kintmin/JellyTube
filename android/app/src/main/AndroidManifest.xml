@@ -87,10 +87,12 @@
                 android:resource="@xml/log_file_paths" />
         </provider>
 
+        <!-- 없으면 시스템이 pan 을 골라 창을 통째로 민다. Compose 는 뷰 계층에 스크롤을 보여주지 않는다. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.JellyTube.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

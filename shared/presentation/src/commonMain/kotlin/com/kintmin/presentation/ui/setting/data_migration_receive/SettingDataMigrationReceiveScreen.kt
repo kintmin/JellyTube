@@ -26,6 +26,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.ConfirmStyle
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.JellyTubeConfirmDialog
+import com.kintmin.presentation.ui.common.imeAwareContentWindowInsets
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationConnectView
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationResultView
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationStageListView
@@ -87,6 +88,7 @@ fun SettingDataMigrationReceiveScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = imeAwareContentWindowInsets,
         topBar = {
             DetailTopAppBar(
                 title = "다른 기기에서 데이터 가져오기",

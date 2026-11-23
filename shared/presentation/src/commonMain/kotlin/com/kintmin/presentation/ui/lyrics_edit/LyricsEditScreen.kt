@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -39,6 +40,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.DetailTopAppBar
+import com.kintmin.presentation.ui.common.imeAwareContentWindowInsets
 import com.kintmin.presentation.ui.common.wheel_picker.TimePickerBottomSheet
 import com.kintmin.presentation.ui.lyrics_edit.dialog.LyricsEditExitDialog
 import com.kintmin.presentation.ui.lyrics_edit.list_item.LyricsEditItemView
@@ -141,6 +143,7 @@ fun LyricsEditScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = imeAwareContentWindowInsets,
         topBar = {
             DetailTopAppBar(
                 title = data.title.ifBlank { "가사 편집" },
@@ -150,7 +153,7 @@ fun LyricsEditScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (data.isDirty || data.isSaving) {
-                BottomActionBar {
+                BottomActionBar(modifier = Modifier.imePadding()) {
                     BottomActionButton(
                         text = if (data.isSaving) "저장 중…" else "저장",
                         enabled = !data.isSaving,

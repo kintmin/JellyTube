@@ -5,14 +5,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,8 +18,8 @@ import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +43,7 @@ import com.kintmin.presentation.ui.common.AudioArtwork
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import com.kintmin.presentation.ui.common.SectionHeader
+import com.kintmin.presentation.ui.common.imeAwareContentWindowInsets
 import com.kintmin.presentation.ui.common.UnderlineTextField
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import org.koin.compose.viewmodel.koinViewModel
@@ -111,8 +109,7 @@ fun AudioMediaInformationEditScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        // union 이라 아래 여백이 max(네비바, 키보드) 다. imePadding 을 덧대면 네비바 높이가 두 번 들어간다.
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(WindowInsets.ime),
+        contentWindowInsets = imeAwareContentWindowInsets,
         topBar = {
             DetailTopAppBar(
                 title = "음원 정보 수정",
@@ -206,6 +203,10 @@ fun AudioMediaInformationEditScreen(
                 )
             }
             item {
+                HorizontalDivider(
+                    modifier = Modifier.padding(top = 24.dp, start = 16.dp, end = 16.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
                 UnderlineTextField(
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 24.dp),
                     label = "설명",
