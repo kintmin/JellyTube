@@ -168,7 +168,7 @@ fun ZoomableView(
                 detectTapGestures(
                     onTap = { onTap() },
                     onDoubleTap = { offset ->
-                        val targetScale = if (scale > effectiveMinScale) effectiveMinScale else doubleTapScale
+                        val targetScale = if (scale > effectiveMinScale) effectiveMinScale else effectiveMinScale * doubleTapScale
                         applyScale(targetScale = targetScale, focus = offset)
                     }
                 )
