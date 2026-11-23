@@ -170,19 +170,6 @@ fun AudioMediaInformationEditScreen(
                         maxLength = AudioMediaTextLimit.MAX_ARTIST_LENGTH,
                         singleLine = true,
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    UnderlineTextField(
-                        label = "설명",
-                        value = audioMediaDescription,
-                        onValueChange = { newText ->
-                            audioMediaDescription = newText
-                            sendIntent(AudioMediaInformationEditIntent.OnAudioMediaDescriptionChanged(newText))
-                        },
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        placeholder = "설명 추가",
-                        maxLength = AudioMediaTextLimit.MAX_DESCRIPTION_LENGTH,
-                        singleLine = false,
-                    )
                 }
             }
             item {
@@ -216,6 +203,21 @@ fun AudioMediaInformationEditScreen(
                             )
                         }
                     },
+                )
+            }
+            item {
+                UnderlineTextField(
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 24.dp),
+                    label = "설명",
+                    value = audioMediaDescription,
+                    onValueChange = { newText ->
+                        audioMediaDescription = newText
+                        sendIntent(AudioMediaInformationEditIntent.OnAudioMediaDescriptionChanged(newText))
+                    },
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    placeholder = "설명 추가",
+                    maxLength = AudioMediaTextLimit.MAX_DESCRIPTION_LENGTH,
+                    singleLine = false,
                 )
             }
         }
