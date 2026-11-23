@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,6 +73,16 @@ class SecretPlaylistQueryTest {
     private suspend fun trackIds(playlistId: Int, showSecretInTotal: Boolean = false): List<Int> =
         db.playlistTrackDao().getPlaylistTrackFullListFlow(playlistId, showSecretInTotal)
             .first().map { it.audioMediaEntity.id }
+
+    @Test
+    fun 시스템_플레이리스트는_하나도_빠짐없이_만들어진다() = runTest {
+        facade.ensureSystemPlaylists()
+
+        // 하나라도 없으면 받는 쪽 계획이 id 를 못 찾아 이전·복원이 통째로 실패한다.
+        PlaylistType.entries.filter { it.isSystem }.forEach {
+            assertNotNull("${it.name} 플레이리스트가 없다", db.playlistDao().getPlaylistIdByType(it.name))
+        }
+    }
 
     @Test
     fun 전체의_곡_목록과_곡_수_길이에서_비밀_곡을_뺀다() = runTest {

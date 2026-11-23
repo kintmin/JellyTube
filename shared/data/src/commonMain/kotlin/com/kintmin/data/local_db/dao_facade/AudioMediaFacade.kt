@@ -429,13 +429,13 @@ class AudioMediaFacade constructor(
         }
     }
 
-    // 시스템 플레이리스트(전체/미분류/즐겨찾기)가 없으면 만든다. 앱 시작 시 멱등 호출.
+    // 시스템 플레이리스트가 없으면 만든다. 앱 시작 시 멱등 호출.
     suspend fun ensureSystemPlaylists() {
         db.useWriterConnection { transactor ->
             transactor.immediateTransaction {
-                ensureSystemPlaylist(PlaylistType.TOTAL)
-                ensureSystemPlaylist(PlaylistType.UNCATEGORIZED)
-                ensureSystemPlaylist(PlaylistType.FAVORITE)
+                // 하나라도 빠지면 이전·복원이 통째로 실패한다 — 받는 쪽 계획이 시스템
+                // 플레이리스트는 이미 있다고 보고 id 를 찾기 때문이다.
+                PlaylistType.entries.filter { it.isSystem }.forEach { ensureSystemPlaylist(it) }
             }
         }
     }
