@@ -274,7 +274,7 @@ class PlayerDetailViewModelTest {
     }
 
     @Test
-    fun `가사가 없으면 가사 입구가 가사 찾기로 보낸다`() = runTest {
+    fun `가사가 없으면 가사 입구가 가사 검색으로 보낸다`() = runTest {
         val viewModel = viewModel()
         val events = mutableListOf<PlayerDetailEvent>()
         val collector = launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -289,6 +289,7 @@ class PlayerDetailViewModelTest {
                     audioMediaId = 1,
                     query = "제목1",
                     durationSeconds = 51.0,
+                    playbackDurationSeconds = 51.0,
                 )
             ),
             events,
@@ -352,7 +353,8 @@ class PlayerDetailViewModelTest {
         updateSleepTimerAnnouncementMediaIdUseCase = mockk(relaxed = true),
         fetchSleepTimerMinutesFlowUseCase = mockk(relaxed = true),
         fetchSleepTimerAnnouncementOptionsFlowUseCase = mockk(relaxed = true),
-        fetchPlaylistFlowUseCase = mockk(relaxed = true),
+        // Result 는 value class 라 relaxed mock 이 Object 를 담은 Result 를 만들어 캐스팅이 터진다.
+        getPlaylistUseCase = mockk { coEvery { this@mockk(any()) } returns Result.failure(IllegalStateException()) },
         fetchAudioMediaDetailFlowUseCase = fetchAudioMediaDetail,
         toggleFavoriteUseCase = mockk(relaxed = true),
         getParsedLyricsUseCase = getParsedLyrics,

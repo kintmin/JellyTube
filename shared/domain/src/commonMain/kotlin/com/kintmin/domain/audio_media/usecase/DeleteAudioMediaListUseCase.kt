@@ -1,6 +1,7 @@
 package com.kintmin.domain.audio_media.usecase
 
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.ErrorLog
 import com.kintmin.log.model.SentryEvent
@@ -13,7 +14,7 @@ class DeleteAudioMediaListUseCase constructor(
     private val appLog: AppLog,
 ) {
 
-    suspend operator fun invoke(idList: List<Int>, sourceList: List<String>): Result<Unit> = runCatching {
+    suspend operator fun invoke(idList: List<Int>, sourceList: List<String>): Result<Unit> = suspendRunCatching {
         idList.mapIndexed { index, id ->
             audioMediaRepository.deleteAudioMedia(id).getOrThrow()
             appLog.sendSentryEvent(SentryEvent.DeleteAudioMedia(sourceList[index], id))

@@ -4,6 +4,7 @@ import com.kintmin.domain.audio_edit.model.AudioEditFrameSpan
 import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_edit.model.AudioWaveform
 import com.kintmin.domain.audio_edit.model.toFrameSpans
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -64,7 +65,7 @@ internal class AudioEditorImpl : AudioEditor {
 
     /** 메인 재생 엔진과 같은 방식으로 잰다. 그래야 탐색바 길이와 어긋나지 않는다. */
     override suspend fun measureDurationMs(audioFileFullPath: String): Result<Long> =
-        withContext(Dispatchers.IO) { runCatching { readDurationMs(audioFileFullPath) } }
+        withContext(Dispatchers.IO) { suspendRunCatching { readDurationMs(audioFileFullPath) } }
 
     override fun extractWaveform(
         audioFileFullPath: String,

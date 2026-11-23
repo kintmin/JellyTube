@@ -1,15 +1,16 @@
 package com.kintmin.data.translation
 
+import com.kintmin.domain.common.suspendRunCatching
 import kotlin.coroutines.cancellation.CancellationException
 
 internal class LyricsTranslator(
     private val engine: LyricsTranslationEngine,
 ) {
 
-    suspend fun translateToKorean(text: String): Result<String> = runCatching {
+    suspend fun translateToKorean(text: String): Result<String> = suspendRunCatching {
         val lines = text.split("\n")
         val targets = lines.withIndex().filter { it.value.isNotBlank() }
-        if (targets.isEmpty()) return@runCatching text
+        if (targets.isEmpty()) return@suspendRunCatching text
 
         val languages = engine.detectLanguages(targets.map { it.value })
         check(languages.size == targets.size) {

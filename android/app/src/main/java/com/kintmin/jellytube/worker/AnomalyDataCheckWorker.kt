@@ -30,7 +30,7 @@ class AnomalyDataCheckWorker(
                 return Result.success()
             }
             .onFailure {
-                appLog.sendDebugLog(DebugLog("AnomalyDataCheckWorker", "이상 데이터 점검 실패: $it"))
+                appLog.sendDebugLog(DebugLog("AnomalyDataCheckWorker", "이상 데이터 점검 실패"))
                 pushNotificationManager.sendNotification(
                     AnomalyCheckResultNotification(WorkResultNotice.AnomalyCheck.Failure),
                 )

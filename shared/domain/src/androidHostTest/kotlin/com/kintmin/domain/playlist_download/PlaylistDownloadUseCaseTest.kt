@@ -10,6 +10,7 @@ import com.kintmin.domain.audio_track.model.AudioTrack
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
+import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
@@ -217,6 +218,23 @@ class PlaylistDownloadUseCaseTest {
         val summary = downloadUseCase()(YoutubePlaylist("목록", listOf(entry("x", available = false)))) {}.getOrThrow()
 
         assertNull(summary.playlistId)
+        coVerify(exactly = 0) { addNewPlaylist(any()) }
+    }
+
+    @Test
+    fun `상한을 넘는 유튜브 제목은 잘린 이름으로 재생목록을 만든다`() = runTest {
+        downloadUseCase()(YoutubePlaylist("가".repeat(150), listOf(entry("a")))) {}.getOrThrow()
+
+        coVerify { addNewPlaylist("가".repeat(PlaylistTextLimit.MAX_TITLE_LENGTH)) }
+    }
+
+    @Test
+    fun `상한까지 같은 이름이면 유튜브 원제가 달라도 그 재생목록에 합친다`() = runTest {
+        playlists = listOf(userPlaylist(9, "가".repeat(PlaylistTextLimit.MAX_TITLE_LENGTH)))
+
+        val summary = downloadUseCase()(YoutubePlaylist("가".repeat(150), listOf(entry("a")))) {}.getOrThrow()
+
+        assertEquals(9, summary.playlistId)
         coVerify(exactly = 0) { addNewPlaylist(any()) }
     }
 

@@ -121,7 +121,7 @@ internal class BonjourRegistration(
         if (sender !== service) return
         appLog.sendDebugLog(DebugLog(BONJOUR_LOG_TAG, "Bonjour 광고 등록 실패($serviceType, $retryCount): $didNotPublish"))
         if (retryCount >= BONJOUR_MAX_RETRIES) {
-            appLog.sendErrorLog(ErrorLog(BONJOUR_LOG_TAG, "Bonjour 광고 등록을 $BONJOUR_MAX_RETRIES 번 다시 시도했지만 실패: $serviceType"))
+            appLog.sendErrorLog(ErrorLog(BONJOUR_LOG_TAG, "Bonjour 광고 등록을 $BONJOUR_MAX_RETRIES 번 다시 시도했지만 실패: $serviceType ($didNotPublish)"))
             return
         }
         retryCount++

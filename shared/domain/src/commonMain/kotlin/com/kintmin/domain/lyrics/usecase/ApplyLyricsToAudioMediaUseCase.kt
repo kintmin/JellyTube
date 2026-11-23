@@ -1,6 +1,7 @@
 package com.kintmin.domain.lyrics.usecase
 
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
@@ -28,7 +29,7 @@ class ApplyLyricsToAudioMediaUseCase(
         translationLyrics: String? = null,
         transliterationLyrics: String? = null,
         previousLyricFileFullPath: String? = null,
-    ): Result<String> = runCatching {
+    ): Result<String> = suspendRunCatching {
         val text = when {
             !syncedLyrics.isNullOrBlank() -> syncedLyrics
             !plainLyrics.isNullOrBlank() -> plainLyrics.lines().joinToString("\n") { "[00:00.00]$it" }

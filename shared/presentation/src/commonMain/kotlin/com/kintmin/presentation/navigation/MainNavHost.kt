@@ -23,6 +23,7 @@ import com.kintmin.presentation.ui.lyrics_edit.navigation.lyricsEditScreen
 import com.kintmin.presentation.ui.lyrics_edit.navigation.navigateToLyricsEditScreen
 import com.kintmin.presentation.ui.lyrics_search.navigation.lyricsSearchScreen
 import com.kintmin.presentation.ui.lyrics_search.navigation.navigateToLyricsSearchScreen
+import com.kintmin.presentation.ui.lyrics_search.navigation.LyricsSearchScreenRoute
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.lyricsViewerScreen
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.navigateToLyricsViewerScreen
 import com.kintmin.presentation.ui.main.MainTabItem
@@ -206,8 +207,14 @@ fun MainNavHost(
             navigateToPlaylistDetailScreen = { playlistId, audioMediaId ->
                 onDeepLink(DeepLinkConstants.UrlBuilder.playlistContentScreen(playlistId, audioMediaId))
             },
-            navigateToLyricsSearch = { audioMediaId, query, durationSeconds ->
-                navController.navigateToLyricsSearchScreen(audioMediaId, query, durationSeconds, navOptions)
+            navigateToLyricsSearch = { audioMediaId, query, durationSeconds, playbackDurationSeconds ->
+                navController.navigateToLyricsSearchScreen(
+                    audioMediaId,
+                    query,
+                    durationSeconds,
+                    navOptions,
+                    playbackDurationSeconds,
+                )
             },
             navigateToLyricsViewer = { audioMediaId ->
                 navController.navigateToLyricsViewerScreen(audioMediaId, navOptions)
@@ -243,6 +250,10 @@ fun MainNavHost(
         )
         lyricsDetailScreen(
             navigateToBack = { navController.popBackStack() },
+            navigateToLyricsViewer = { audioMediaId ->
+                navController.popBackStack<LyricsSearchScreenRoute>(inclusive = true)
+                navController.navigateToLyricsViewerScreen(audioMediaId, navOptions)
+            },
         )
         karaokeSearchScreen(
             navigateToBack = { navController.popBackStack() },
@@ -367,8 +378,14 @@ fun MainNavHost(
             navigateToPlayingPlaylist = { playlistId, audioMediaId ->
                 onDeepLink(DeepLinkConstants.UrlBuilder.playlistContentScreen(playlistId, audioMediaId))
             },
-            navigateToLyricsSearch = { audioMediaId, query, durationSeconds ->
-                navController.navigateToLyricsSearchScreen(audioMediaId, query, durationSeconds, navOptions)
+            navigateToLyricsSearch = { audioMediaId, query, durationSeconds, playbackDurationSeconds ->
+                navController.navigateToLyricsSearchScreen(
+                    audioMediaId,
+                    query,
+                    durationSeconds,
+                    navOptions,
+                    playbackDurationSeconds,
+                )
             },
             navigateToLyricsViewer = { audioMediaId ->
                 navController.navigateToLyricsViewerScreen(audioMediaId, navOptions)

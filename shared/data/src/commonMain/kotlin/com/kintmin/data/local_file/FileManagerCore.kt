@@ -1,5 +1,6 @@
 package com.kintmin.data.local_file
 
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.lyrics.LyricsFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -99,7 +100,7 @@ internal class FileManagerCore(
 
     private fun Path.ensured(): Path = also { fileSystem.createDirectories(it) }
 
-    private suspend fun <T> io(block: () -> T): Result<T> = runCatching { withContext(Dispatchers.IO) { block() } }
+    private suspend fun <T> io(block: () -> T): Result<T> = suspendRunCatching { withContext(Dispatchers.IO) { block() } }
 
     companion object {
         const val LOG_EXT = "log"

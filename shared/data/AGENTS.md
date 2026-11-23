@@ -68,6 +68,16 @@
   직접 주입하지 않는다.
 - 스트림은 `Flow`, 변경은 `suspend fun`.
 
+### 취소를 삼키지 않는다
+
+이 모듈의 구현은 거의 다 `withContext(Dispatchers.IO) { ... }` 안에서 suspend DAO·facade·DataSource 를
+부른다. 그 블록을 `Result` 로 감쌀 때는 **`suspendRunCatching`** 이다. `runCatching` 은
+`CancellationException` 까지 `Result.failure` 로 감싸서, 취소된 뒤에도 다음 줄이 이어서 실행된다.
+
+**`withContext(Dispatchers.IO)` 안은 동기가 아니다.** 블록이 정말 동기일 때(enum 파싱, C 인터옵 콜백)와
+`withContext(NonCancellable)` 안의 정리 코드일 때만 `runCatching` 이 맞다. 판단 기준은
+`shared/domain/AGENTS.md` 의 취소 규율이다.
+
 ### Repository 의 범위는 순수 데이터 로직뿐이다
 
 - **Repository 가 다른 Repository 를 주입받지 않는다.** 규약 위반이다.

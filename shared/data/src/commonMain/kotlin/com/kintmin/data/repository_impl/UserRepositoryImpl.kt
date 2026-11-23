@@ -2,6 +2,7 @@ package com.kintmin.data.repository_impl
 
 import com.kintmin.data.local_datastore.DatastoreUtil
 import com.kintmin.data.local_datastore.PreferencesKey
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.user.repository.UserRepository
 import kotlinx.coroutines.flow.firstOrNull
 
@@ -14,7 +15,7 @@ class UserRepositoryImpl constructor(
     }
 
     override suspend fun getUserId(): Result<String?> {
-        return runCatching {
+        return suspendRunCatching {
             datastoreUtil.getData(PreferencesKey.UserId).firstOrNull()
         }
     }

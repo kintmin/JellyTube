@@ -42,4 +42,4 @@ class StartAudioEditSaveImpl(
 
 class AudioEditTooManyClips(
     override val message: String = "조각이 너무 많아 저장할 수 없습니다. 조각을 병합하거나 지운 뒤 다시 시도해주세요."
-) : Throwable()
+) : Exception()

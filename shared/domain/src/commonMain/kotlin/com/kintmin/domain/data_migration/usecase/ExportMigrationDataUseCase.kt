@@ -1,6 +1,7 @@
 package com.kintmin.domain.data_migration.usecase
 
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.model.MigrationDownloadSettings
 import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationScope
@@ -11,10 +12,10 @@ class ExportMigrationDataUseCase constructor(
     private val dataMigrationRepository: DataMigrationRepository,
     private val appSettingRepository: AppSettingRepository,
 ) {
-    suspend operator fun invoke(scope: MigrationScope): Result<MigrationExport> = runCatching {
+    suspend operator fun invoke(scope: MigrationScope): Result<MigrationExport> = suspendRunCatching {
         val export = dataMigrationRepository.exportData(scope).getOrThrow()
         // 설정은 기기를 옮길 때만 따라간다. 곡 몇 개를 주면서 받는 기기의 기본 다운로드 자리를 바꾸지 않는다.
-        if (scope !is MigrationScope.Everything) return@runCatching export
+        if (scope !is MigrationScope.Everything) return@suspendRunCatching export
         export.copy(
             downloadSettings = MigrationDownloadSettings(
                 shouldInsertAtTop = appSettingRepository.getShouldInsertAtTopOnDownloadFlow().first(),

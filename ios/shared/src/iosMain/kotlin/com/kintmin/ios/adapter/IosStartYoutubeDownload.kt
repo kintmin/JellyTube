@@ -2,6 +2,7 @@ package com.kintmin.ios.adapter
 
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
+import com.kintmin.ios.download.IosDownloadTargetStore
 import com.kintmin.ios.notification.IosLocalNotification
 import com.kintmin.ios.task.IosRunningTaskTracker
 import com.kintmin.log.AppLog
@@ -28,16 +29,19 @@ internal class IosStartYoutubeDownload(
     private val downloadLyricsForAudioMediaUseCase: DownloadLyricsForAudioMediaUseCase,
     private val mediaControllerManager: PlaybackController,
     private val appLog: AppLog,
+    private val downloadTargetStore: IosDownloadTargetStore,
 ) : StartYoutubeDownload {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    override fun invoke(url: String) {
+    override fun invoke(url: String, playlistId: Int) {
+        downloadTargetStore.save(url, playlistId)
         scope.launch {
             IosRunningTaskTracker.track(RunningTask.YOUTUBE_DOWNLOAD) {
-                continueInBackgroundWhile { downloadAudioMediaUseCase(url) }
+                continueInBackgroundWhile { downloadAudioMediaUseCase(url, playlistIdOnDownload = playlistId) }
             }
                 .onSuccess { result ->
+                    downloadTargetStore.remove(url)
                     // 가사는 실패해도 음원 등록을 되돌리지 않는다. 등록이 끝난 뒤라 고아가 생기지 않는다.
                     scope.launch {
                         continueInBackgroundWhile {
@@ -62,6 +66,7 @@ internal class IosStartYoutubeDownload(
                     mediaControllerManager.addDownloadedMedia(result)
                 }
                 .onFailure { throwable ->
+                    downloadTargetStore.remove(url)
                     appLog.sendDebugLog(
                         DebugLog("IosStartYoutubeDownload", throwable.message.orEmpty()),
                     )

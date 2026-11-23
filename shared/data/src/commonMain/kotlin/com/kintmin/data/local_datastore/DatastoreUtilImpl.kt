@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -20,7 +21,7 @@ class DatastoreUtilImpl(
         newData: T
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching<Unit> {
+            suspendRunCatching<Unit> {
                 dataStore.edit { settings ->
                     settings[preferencesKey.key] = newData
                 }

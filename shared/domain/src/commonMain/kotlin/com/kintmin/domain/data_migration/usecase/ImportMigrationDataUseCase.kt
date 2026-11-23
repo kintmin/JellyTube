@@ -3,6 +3,7 @@ package com.kintmin.domain.data_migration.usecase
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.MigrationFiles
 import com.kintmin.domain.data_migration.MigrationPlanner
 import com.kintmin.domain.data_migration.SourceKey
@@ -51,7 +52,7 @@ class ImportMigrationDataUseCase constructor(
         token: String,
         onProgress: (MigrationProgress) -> Unit,
         confirm: suspend (MigrationPreview) -> MigrationChoice?,
-    ): Result<MigrationSummary> = runCatching {
+    ): Result<MigrationSummary> = suspendRunCatching {
         onProgress(MigrationProgress(MigrationStage.PLANNING))
         // 계획은 받는 쪽 시스템 플레이리스트가 다 있어야 세울 수 있다.
         playlistRepository.ensureSystemPlaylists().getOrThrow()
@@ -217,7 +218,7 @@ class ImportMigrationDataUseCase constructor(
                 .onFailure { error ->
                     if (error !is MigrationFileUnavailableException) throw error
                     val owner = plan.newAudioMedias.firstOrNull { MigrationFile(MigrationFileKind.AUDIO, it.audioFileName) == entry.file }
-                    log("파일 받기 실패: ${entry.file} size=${entry.size} ${owner?.logText().orEmpty()} $error")
+                    log("파일 받기 실패: ${entry.file} size=${entry.size} ${owner?.logText().orEmpty()} ${error.message ?: error::class.simpleName}")
                     unavailable += entry.file
                 }
             receivedBytes = before + entry.size

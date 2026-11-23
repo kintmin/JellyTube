@@ -17,6 +17,7 @@ import com.kintmin.data.local_db.model.clampText
 import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_db.model.PlaylistTrackEntity
 import com.kintmin.data.local_db.model.StepEntity
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationRef
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
@@ -85,7 +86,7 @@ class AudioMediaFacade constructor(
                             isCustomImage = playlist.customImageFileName != null,
                             sequence = nextSequence++,
                             type = playlist.type.name,
-                        )
+                        ).clampText()
                     ).toInt()
                 }
 
@@ -302,7 +303,7 @@ class AudioMediaFacade constructor(
                         isCustomImage = false,
                         sequence = nextSequence,
                         type = type.name,
-                    )
+                    ).clampText()
                 ).toInt()
             }
         }
@@ -332,7 +333,7 @@ class AudioMediaFacade constructor(
                 val playlist = playlistDao.getPlaylistById(playlistId)
                 if (!playlist.isCustomImage) return@immediateTransaction null
 
-                val firstTrackImage = runCatching {
+                val firstTrackImage = suspendRunCatching {
                     playlistTrackDao.getFirstAudioMediaWithNoLock(playlistId)
                 }.getOrNull()?.audioMediaEntity?.imageFileNameWithExt
 
@@ -451,7 +452,7 @@ class AudioMediaFacade constructor(
                 isCustomImage = false,
                 sequence = 0,
                 type = type.name,
-            )
+            ).clampText()
         )
     }
 
@@ -581,7 +582,7 @@ class AudioMediaFacade constructor(
         playlistId: Int,
         audioMediaIdList: List<Int>,
     ): PlaylistEntity {
-        val firstAudioTrack = runCatching {
+        val firstAudioTrack = suspendRunCatching {
             playlistTrackDao.getFirstAudioMediaWithNoLock(playlistId)
         }.getOrNull()
 

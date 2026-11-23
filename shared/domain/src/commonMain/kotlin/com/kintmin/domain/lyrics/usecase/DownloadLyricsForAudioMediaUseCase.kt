@@ -1,10 +1,10 @@
 package com.kintmin.domain.lyrics.usecase
 
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.domain.lyrics.model.LyricsVariant
-import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 
 /**
@@ -31,18 +31,18 @@ class DownloadLyricsForAudioMediaUseCase(
         audioMediaId: Int,
         title: String,
         targetDurationSeconds: Double?,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = suspendRunCatching {
         val query = buildSongSearchQuery(title)
         val results = searchLyrics(query).getOrNull().orEmpty()
 
-        if (targetDurationSeconds == null) return@runCatching
+        if (targetDurationSeconds == null) return@suspendRunCatching
         // 길이만으로는 아티스트명으로 걸린 비슷한 길이의 다른 곡을 거르지 못한다.
         val picked = sortLyricsSearchResults(results, title, targetDurationSeconds)
             .firstOrNull {
                 !(it.plainLyrics.isNullOrBlank() && it.syncedLyrics.isNullOrBlank()) &&
                     it.duration != null && abs(it.duration - targetDurationSeconds) <= 1.0 &&
                     matchLyricsTrackName(title, it.trackName)
-            } ?: return@runCatching log("맞는 가사 없음: id=$audioMediaId (검색 ${results.size}건)")
+            } ?: return@suspendRunCatching log("맞는 가사 없음: id=$audioMediaId (검색 ${results.size}건)")
 
         val lyricFileFullPath = applyLyricsToAudioMedia(
             audioMediaId = audioMediaId,
@@ -56,14 +56,14 @@ class DownloadLyricsForAudioMediaUseCase(
 
         if (!language.hasKorean) {
             createLyricsVariant(lyricFileFullPath, LyricsVariant.TRANSLATION)
-                .onFailure { log("번역 만들기 실패: id=$audioMediaId $it") }
+                .onFailure { log("번역 만들기 실패: id=$audioMediaId ${it.message ?: it::class.simpleName}") }
         }
         if (language.hasJapanese) {
             createLyricsVariant(lyricFileFullPath, LyricsVariant.TRANSLITERATION)
-                .onFailure { log("음차 만들기 실패: id=$audioMediaId $it") }
+                .onFailure { log("음차 만들기 실패: id=$audioMediaId ${it.message ?: it::class.simpleName}") }
         }
     }.onFailure {
-        if (it !is CancellationException) log("가사 자동 적용 실패: id=$audioMediaId $it")
+        log("가사 자동 적용 실패: id=$audioMediaId ${it.message ?: it::class.simpleName}")
     }
 
     private fun log(message: String) = appLog.sendDebugLog(DebugLog(LOG_TAG, message))

@@ -21,6 +21,7 @@ import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.lyrics.LyricsFile
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.youtube.model.YoutubePlaylist
@@ -67,7 +68,7 @@ internal class AudioMediaRepositoryImpl constructor(
 
     private suspend fun downloadYoutubeAudio(downloadUrl: String, fileName: String): Result<DownloadedYoutubeAudio> =
         withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val downloadDto = pythonExecutor.downloadYoutubeMedia(
                     youtubeUrl = downloadUrl,
                     audioDownloadPath = fileManager.getAudioDownloadBasePath(fileName = fileName).getOrThrow(),
@@ -88,12 +89,12 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun fetchYoutubePlaylist(playlistUrl: String): Result<YoutubePlaylist> =
         withContext(Dispatchers.IO) {
-            runCatching { parseYoutubePlaylist(pythonExecutor.extractYoutubePlaylist(playlistUrl).getOrThrow()) }
+            suspendRunCatching { parseYoutubePlaylist(pythonExecutor.extractYoutubePlaylist(playlistUrl).getOrThrow()) }
         }
 
     override suspend fun saveThumbnail(thumbnailUrl: String, fileName: String): Result<String> =
         withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val image = httpDataSource.downloadImage(imageUrl = thumbnailUrl).getOrThrow()
                 val ext = fileManager.saveImageWithCompression(imageData = image, fileName = fileName).getOrThrow()
                 "$fileName.$ext"
@@ -102,7 +103,7 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun downloadAudioFile(downloadUrl: String): Result<DownloadedAudioFile> =
         withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val audioDownloadBasePath = fileManager.getAudioDownloadBasePath(
                     fileName = Uuid.random().toString(),
                 ).getOrThrow()
@@ -130,7 +131,7 @@ internal class AudioMediaRepositoryImpl constructor(
         shouldInsertAtTopOnDownload: Boolean,
     ): Result<AddedAudioMedia> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val audioMediaEntityToSave = AudioMediaEntity(
                     source = downloadedAudioMedia.downloadUrl,
                     name = downloadedAudioMedia.title,
@@ -160,7 +161,7 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun getAudioMediaBySource(source: String): Result<AudioMedia> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 audioMediaDao.getDataBySource(source).toDomain(fileManager).getOrThrow()
             }
         }
@@ -176,7 +177,7 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun saveImage(imageData: ByteArray): Result<String> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val fileName = Uuid.random().toString()
                 val ext = fileManager.saveImageWithCompression(imageData, fileName).getOrThrow()
                 fileManager.getImageFileFullPath(fileNameWithExt = "$fileName.$ext").getOrThrow()
@@ -186,7 +187,7 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun updateKaraokeNumber(id: Int, tjKaraokeNumber: String): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 audioMediaDao.updateKaraokeNumber(id, tjKaraokeNumber)
             }
         }
@@ -194,7 +195,7 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun clearKaraokeNumber(id: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 audioMediaDao.clearKaraokeNumber(id)
             }
         }
@@ -202,7 +203,7 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun saveLyrics(text: String, synced: Boolean): Result<String> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val fileName = Uuid.random().toString()
                 val ext = fileManager.saveLyrics(text, fileName, synced).getOrThrow()
                 fileManager.getLyricFileFullPath(fileNameWithExt = "$fileName.$ext").getOrThrow()
@@ -212,7 +213,7 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun getLyrics(lyricFileFullPath: String): Result<String> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val fileNameWithExt = fileManager.getFileNameWithExt(lyricFileFullPath).getOrThrow()
                 fileManager.fetchLyrics(fileNameWithExt).getOrThrow()
             }
@@ -225,7 +226,7 @@ internal class AudioMediaRepositoryImpl constructor(
         text: String,
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val (baseName, extName) = splitLyricFileName(baseLyricFileFullPath)
                 val synced = extName.equals(LyricsFile.SYNCED_EXT, ignoreCase = true)
                 fileManager.saveLyrics(text, "$baseName.${variant.infix()}", synced).getOrThrow()
@@ -239,7 +240,7 @@ internal class AudioMediaRepositoryImpl constructor(
         variant: LyricsVariant,
     ): Result<String?> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val (baseName, extName) = splitLyricFileName(baseLyricFileFullPath)
                 val variantFileNameWithExt = "$baseName.${variant.infix()}.$extName"
                 fileManager.fetchLyrics(variantFileNameWithExt).getOrNull()
@@ -252,7 +253,7 @@ internal class AudioMediaRepositoryImpl constructor(
         variant: LyricsVariant,
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val (baseName, extName) = splitLyricFileName(baseLyricFileFullPath)
                 val variantFileNameWithExt = "$baseName.${variant.infix()}.$extName"
                 deleteLyricFile(variantFileNameWithExt).getOrThrow()
@@ -275,7 +276,7 @@ internal class AudioMediaRepositoryImpl constructor(
 
     override suspend fun deleteLyrics(id: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val oldLyricFileNameWithExt = audioMediaDao.getDataById(id).lyricFileNameWithExt
                 audioMediaDao.clearLyricFile(id)
                 oldLyricFileNameWithExt?.let { deleteLyricFile(it) }
@@ -293,7 +294,7 @@ internal class AudioMediaRepositoryImpl constructor(
         lyricFileFullPath: String?,
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val newImageFileNameWithExt = imageFileFullPath?.let {
                     fileManager.getFileNameWithExt(it).getOrThrow()
                 }
@@ -333,12 +334,12 @@ internal class AudioMediaRepositoryImpl constructor(
         shouldInsertAtTopOnDownload: Boolean,
     ): Result<AddedAudioMedia> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val copiedInfo = fileManager.copyAudioFromContentUri(contentUriString).getOrThrow()
                 val source = "quickShare://sha256/${copiedInfo.sha256Hex}"
 
                 // 중복 파일 확인: 같은 SHA-256이 이미 저장된 경우 복사본을 삭제하고 에러 반환
-                runCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
+                suspendRunCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
                     deleteAudioFile(copiedInfo.fileNameWithExt)
                     throw AlreadyDownloadedMedia()
                 }
@@ -369,11 +370,11 @@ internal class AudioMediaRepositoryImpl constructor(
         shouldInsertAtTopOnDownload: Boolean,
     ): Result<AddedAudioMedia> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 val copiedInfo = fileManager.saveUploadedAudio(uploadedFileFullPath, originalFileName).getOrThrow()
                 val source = "fileShare://sha256/${copiedInfo.sha256Hex}"
 
-                runCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
+                suspendRunCatching { audioMediaDao.getDataBySource(source) }.onSuccess {
                     deleteAudioFile(copiedInfo.fileNameWithExt)
                     throw AlreadyDownloadedMedia()
                 }
@@ -407,13 +408,13 @@ internal class AudioMediaRepositoryImpl constructor(
     }
 
     override suspend fun deleteDownloadedFile(downloadedAudioMedia: DownloadedMedia): Result<Unit> {
-       return runCatching {
+       return suspendRunCatching {
            deleteAudioFile(downloadedAudioMedia.audioFileNameWithExt).getOrThrow()
            downloadedAudioMedia.imageFileNameWithExt?.let { deleteImageFile(it).getOrThrow() }
        }
     }
 
-    override suspend fun deleteAudioMedia(id: Int): Result<Unit> = runCatching {
+    override suspend fun deleteAudioMedia(id: Int): Result<Unit> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             val data = audioMediaDao.getDataById(id)
             audioMediaFacade.deleteAudioMedia(id)
@@ -436,7 +437,7 @@ internal class AudioMediaRepositoryImpl constructor(
         }
     }
 
-    override suspend fun deleteOrphanAudioMedia(): Result<List<AudioMedia>> = runCatching {
+    override suspend fun deleteOrphanAudioMedia(): Result<List<AudioMedia>> = suspendRunCatching {
         withContext(Dispatchers.IO) {
             audioMediaFacade.deleteOrphanAudioMedia()
                 .mapNotNull { entity -> entity.toDomain(fileManager).getOrNull() }
@@ -450,7 +451,7 @@ internal class AudioMediaRepositoryImpl constructor(
         fileManager.listAudioAndImageFileFullPaths()
 
     override suspend fun correctAudioFileExtensions(): Result<Int> = withContext(Dispatchers.IO) {
-        runCatching { AudioFileExtensionCorrector(audioMediaDao, fileManager).correctAll() }
+        suspendRunCatching { AudioFileExtensionCorrector(audioMediaDao, fileManager).correctAll() }
     }
 
     override suspend fun exportAudioMediaToDevice(

@@ -1,5 +1,6 @@
 package com.kintmin.domain.user.usecase
 
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.user.repository.UserRepository
 import com.kintmin.log.AppLog
@@ -15,14 +16,14 @@ class RegisterUserUseCase constructor(
     private val appLog: AppLog,
 ) {
 
-    suspend operator fun invoke() = runCatching {
+    suspend operator fun invoke() = suspendRunCatching {
         deviceStatusRepository.getAppEnvironment().onSuccess {
             appLog.sendDebugLog(
                 DebugLog("AppStart", "version=${it.appVersion} os=${it.osVersion} device=${it.deviceModel}"),
             )
         }
         val savedUserId = userRepository.getUserId().getOrThrow()
-        if (savedUserId != null) return@runCatching savedUserId
+        if (savedUserId != null) return@suspendRunCatching savedUserId
 
         val newUserId = Uuid.random().toString()
         userRepository.setUserId(newUserId).onSuccess {

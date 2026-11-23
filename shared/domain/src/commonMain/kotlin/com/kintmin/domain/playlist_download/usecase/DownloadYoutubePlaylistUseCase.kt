@@ -7,12 +7,14 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.SourceKey
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
-import com.kintmin.domain.playlist.model.PlaylistType
+import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist_download.PlaylistMergeOrder
+import com.kintmin.domain.playlist_download.findYoutubeMergeTarget
 import com.kintmin.domain.playlist_download.model.PlaylistDownloadFailure
 import com.kintmin.domain.playlist_download.model.PlaylistDownloadFailureReason
 import com.kintmin.domain.playlist_download.model.PlaylistDownloadProgress
@@ -47,7 +49,7 @@ class DownloadYoutubePlaylistUseCase(
     suspend operator fun invoke(
         playlist: YoutubePlaylist,
         onProgress: (PlaylistDownloadProgress) -> Unit,
-    ): Result<PlaylistDownloadSummary> = runCatching {
+    ): Result<PlaylistDownloadSummary> = suspendRunCatching {
         val entries = playlist.entries.distinctBy { it.videoId }
         log("재생목록 받기 시작: ${secret(playlist.title)} (${entries.size}곡)")
         val owned = ownedIdByKey()
@@ -93,14 +95,14 @@ class DownloadYoutubePlaylistUseCase(
             throw e
         }
         toDownload.zip(results).forEach { (entry, result) ->
-            result.onFailure { log("받기 실패: ${secret(entry.title)} (${entry.videoId}) $it") }
+            result.onFailure { log("받기 실패: ${secret(entry.title)} (${entry.videoId}) ${it.message ?: it::class.simpleName}") }
         }
 
         val playlistId = withContext(NonCancellable) { addInOrder(playlist.title, idsInOrder(), onProgress) }
 
         PlaylistDownloadSummary(
             playlistId = playlistId,
-            playlistName = playlist.title.trim(),
+            playlistName = PlaylistTextLimit.clampTitle(playlist.title),
             downloadedCount = downloaded.size,
             alreadyOnDeviceCount = onDevice.size,
             failures = unavailable.map { PlaylistDownloadFailure(it.title, PlaylistDownloadFailureReason.UNAVAILABLE) } +
@@ -142,9 +144,8 @@ class DownloadYoutubePlaylistUseCase(
         audioMediaIds: List<Int>,
         onProgress: (PlaylistDownloadProgress) -> Unit,
     ): Int? {
-        val name = title.trim()
-        val existing = playlistRepository.getAllPlaylistFlow().first()
-            .firstOrNull { it.type == PlaylistType.USER && it.name.trim() == name }
+        val name = PlaylistTextLimit.clampTitle(title)
+        val existing = playlistRepository.getAllPlaylistFlow().first().findYoutubeMergeTarget(title)
         if (existing == null && audioMediaIds.isEmpty()) return null
         val playlistId = existing?.id ?: addNewPlaylistUseCase(name).getOrThrow()
         val youtubeOrder = audioMediaIds.distinct()

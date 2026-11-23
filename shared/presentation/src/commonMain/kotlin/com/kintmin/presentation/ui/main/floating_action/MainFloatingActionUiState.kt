@@ -1,11 +1,11 @@
 package com.kintmin.presentation.ui.main.floating_action
 
-import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 
 data class MainFloatingActionUiState(
     val playlistIdOnDownload: Int? = null,
-    val playlistIdOnDownloadName: String = PlaylistType.UNCATEGORIZED.defaultName,
+    val playlistIdOnDownloadName: String = "불러오는 중",
+    val isDownloadTargetReady: Boolean = false,
     val selectablePlaylistList: List<DownloadPlaylistUiState> = emptyList(),
     val isPlaylistBottomSheetVisible: Boolean = false,
     val isCreatePlaylistDialogVisible: Boolean = false,

@@ -5,6 +5,7 @@ import com.kintmin.data.data_migration.toExport
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.data_source.MigrationDataSource
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.MigrationFiles
 import com.kintmin.domain.data_migration.MigrationScopes
 import com.kintmin.domain.data_migration.model.MigrationApplyResult
@@ -47,7 +48,7 @@ class DataMigrationRepositoryImpl constructor(
     private val fileSystem = FileSystem.SYSTEM
 
     override suspend fun exportData(scope: MigrationScope): Result<MigrationExport> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             val snapshot = MigrationScopes.narrow(audioMediaFacade.fetchMigrationSnapshot(), scope)
             val files = MigrationFiles.referencedBy(snapshot.audioMedias, snapshot.playlists)
                 .mapNotNull { file ->
@@ -66,7 +67,7 @@ class DataMigrationRepositoryImpl constructor(
     }
 
     override suspend fun fetchSnapshot(): Result<MigrationSnapshot> = withContext(Dispatchers.IO) {
-        runCatching { audioMediaFacade.fetchMigrationSnapshot() }
+        suspendRunCatching { audioMediaFacade.fetchMigrationSnapshot() }
     }
 
     override fun isPlayableAudioFile(fileName: String): Boolean =
@@ -76,7 +77,7 @@ class DataMigrationRepositoryImpl constructor(
         migrationDataSource.pair(endpoint.host, endpoint.port, code).recoverCatching { throw it.asPairFailure() }
 
     override suspend fun fetchRemoteExport(endpoint: MigrationEndpoint, token: String): Result<MigrationExport> =
-        runCatching {
+        suspendRunCatching {
             val manifest = migrationDataSource.fetchManifest(endpoint.host, endpoint.port, token)
                 .getOrElse { error ->
                     if (error is ServerResponseException && error.response.status == HttpStatusCode.ServiceUnavailable) {
@@ -96,9 +97,9 @@ class DataMigrationRepositoryImpl constructor(
         entry: MigrationFileEntry,
         onReceived: (Long) -> Unit,
     ): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             val staged = stagedPath(entry.file)
-            if (fileSystem.metadataOrNull(staged)?.size == entry.size) return@runCatching
+            if (fileSystem.metadataOrNull(staged)?.size == entry.size) return@suspendRunCatching
 
             // 받다 끊긴 파일이 받아 둔 파일로 보이지 않도록 다 받은 뒤에 이름을 바꾼다.
             val part = "$staged.part".toPath()
@@ -134,7 +135,7 @@ class DataMigrationRepositoryImpl constructor(
     }
 
     override suspend fun applyPlan(plan: MigrationPlan): Result<MigrationApplyResult> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             val moved = mutableListOf<Path>()
             try {
                 plan.requiredFiles.forEach { file ->
@@ -153,7 +154,7 @@ class DataMigrationRepositoryImpl constructor(
     }
 
     override suspend fun stageLocalFile(fileFullPath: String, file: MigrationFile): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             val staged = stagedPath(file)
             fileSystem.createDirectories(staged.parent!!)
             fileSystem.moveFile(fileFullPath.toPath(), staged)
@@ -161,7 +162,7 @@ class DataMigrationRepositoryImpl constructor(
     }
 
     override suspend fun stageText(file: MigrationFile, text: String): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             val staged = stagedPath(file)
             val part = "$staged.part".toPath()
             fileSystem.createDirectories(staged.parent!!)
@@ -171,7 +172,7 @@ class DataMigrationRepositoryImpl constructor(
     }
 
     override suspend fun fetchStagedFiles(): Result<Set<MigrationFile>> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             val root = fileManager.getMigrationStagingDirPath().getOrThrow().toPath()
             MigrationFileKind.entries.flatMap { kind ->
                 val dir = root / kind.name
@@ -184,7 +185,7 @@ class DataMigrationRepositoryImpl constructor(
     }
 
     override suspend fun clearStaging(): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             fileSystem.deleteRecursively(fileManager.getMigrationStagingDirPath().getOrThrow().toPath(), mustExist = false)
         }
     }

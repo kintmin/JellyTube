@@ -26,7 +26,7 @@ class MainFloatingActionViewModel constructor(
 
     private val isPlaylistBottomSheetVisible = MutableStateFlow(false)
     private val isCreatePlaylistDialogVisible = MutableStateFlow(false)
-    private val downloadChoiceUrl = MutableStateFlow<String?>(null)
+    private val pendingDownloadChoice = MutableStateFlow<PendingDownloadChoice?>(null)
 
     private val eventChannel = Channel<MainFloatingActionEvent>(Channel.BUFFERED)
     val eventFlow = eventChannel.receiveAsFlow()
@@ -35,8 +35,8 @@ class MainFloatingActionViewModel constructor(
         fetchDownloadTargetPlaylistsFlowUseCase(),
         isPlaylistBottomSheetVisible,
         isCreatePlaylistDialogVisible,
-        downloadChoiceUrl,
-    ) { downloadTarget, isBottomSheetVisible, isCreateDialogVisible, choiceUrl ->
+        pendingDownloadChoice,
+    ) { downloadTarget, isBottomSheetVisible, isCreateDialogVisible, pendingChoice ->
         val selectablePlaylistList = downloadTarget.selectable.map { playlist ->
             DownloadPlaylistUiState(
                 id = playlist.id,
@@ -47,11 +47,13 @@ class MainFloatingActionViewModel constructor(
 
         MainFloatingActionUiState(
             playlistIdOnDownload = downloadTarget.targetId,
-            playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.isSelected }?.name ?: PlaylistType.UNCATEGORIZED.defaultName,
+            playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.isSelected }?.name
+                ?: if (downloadTarget.targetId == null) "불러오는 중" else PlaylistType.UNCATEGORIZED.defaultName,
+            isDownloadTargetReady = downloadTarget.targetId != null,
             selectablePlaylistList = selectablePlaylistList,
             isPlaylistBottomSheetVisible = isBottomSheetVisible,
             isCreatePlaylistDialogVisible = isCreateDialogVisible,
-            downloadChoiceUrl = choiceUrl,
+            downloadChoiceUrl = pendingChoice?.url,
         )
     }.stateIn(
         viewModelScope,
@@ -62,7 +64,7 @@ class MainFloatingActionViewModel constructor(
     fun sendIntent(intent: MainFloatingActionIntent) {
         when (intent) {
             is MainFloatingActionIntent.OnClickDownload -> {
-                handleClickDownload(intent.url)
+                handleClickDownload(intent.url, intent.playlistId)
             }
             MainFloatingActionIntent.OnClickPlaylistButton -> {
                 isPlaylistBottomSheetVisible.value = true
@@ -89,15 +91,15 @@ class MainFloatingActionViewModel constructor(
                 createPlaylistAsDownloadTarget(intent.title)
             }
             MainFloatingActionIntent.OnChooseSingleDownload -> {
-                downloadChoiceUrl.value?.let { send(MainFloatingActionEvent.Download(it)) }
-                downloadChoiceUrl.value = null
+                pendingDownloadChoice.value?.let { send(MainFloatingActionEvent.Download(it.url, it.playlistId)) }
+                pendingDownloadChoice.value = null
             }
             MainFloatingActionIntent.OnChoosePlaylistDownload -> {
-                downloadChoiceUrl.value?.let { send(MainFloatingActionEvent.NavigateToPlaylistDownload(it)) }
-                downloadChoiceUrl.value = null
+                pendingDownloadChoice.value?.let { send(MainFloatingActionEvent.NavigateToPlaylistDownload(it.url)) }
+                pendingDownloadChoice.value = null
             }
             MainFloatingActionIntent.OnDismissDownloadChoice -> {
-                downloadChoiceUrl.value = null
+                pendingDownloadChoice.value = null
             }
         }
     }
@@ -121,11 +123,11 @@ class MainFloatingActionViewModel constructor(
         }
     }
 
-    private fun handleClickDownload(url: String) {
+    private fun handleClickDownload(url: String, playlistId: Int) {
         when (YoutubeUrl.kindOf(url)) {
-            YoutubeUrlKind.VIDEO -> send(MainFloatingActionEvent.Download(url))
+            YoutubeUrlKind.VIDEO -> send(MainFloatingActionEvent.Download(url, playlistId))
             YoutubeUrlKind.PLAYLIST -> send(MainFloatingActionEvent.NavigateToPlaylistDownload(url))
-            YoutubeUrlKind.VIDEO_IN_PLAYLIST -> downloadChoiceUrl.value = url
+            YoutubeUrlKind.VIDEO_IN_PLAYLIST -> pendingDownloadChoice.value = PendingDownloadChoice(url, playlistId)
             YoutubeUrlKind.NOT_DOWNLOADABLE -> send(MainFloatingActionEvent.ShowToast("다운받을 영상이나 재생목록을 골라주세요."))
         }
     }
@@ -133,5 +135,7 @@ class MainFloatingActionViewModel constructor(
     private fun send(event: MainFloatingActionEvent) {
         viewModelScope.launch { eventChannel.send(event) }
     }
+
+    private data class PendingDownloadChoice(val url: String, val playlistId: Int)
 }
 

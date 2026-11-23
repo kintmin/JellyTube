@@ -114,6 +114,10 @@ OS 런타임 기능은 이 모듈이 **인터페이스만** 선언하고 구현�
 - `eventFlow` 는 `Flow` 로 노출한다(내부는 `Channel`).
 - 모든 사용자 액션은 `sendIntent(intent)` **하나**로 받는다.
 - 플랫폼 컨텍스트·뷰를 참조하지 않는다.
+- **suspend 호출을 `Result` 로 감싸지 않는다.** `suspendRunCatching` 이 이 모듈에 보이면 경계가
+  틀어진 신호다 — 실패는 도메인이 `Result` 로 드러내고 UseCase 가 남긴다. ViewModel 은
+  `onFailure` 로 갈라 화면 상태를 정하거나 값만 고른다. (플랫폼 탈출구의 **동기** 코드를
+  `runCatching` 으로 감싸는 것은 이와 무관하다.)
 
 **Screen rules**:
 - stateful 오버로드가 DI 로 ViewModel 을 얻는다.

@@ -41,6 +41,16 @@ enum class ZoomContentAlignment {
     End,
 }
 
+internal fun effectiveMinScale(
+    zoomLimitMode: ZoomLimitMode,
+    horizontalFitMinScale: Float,
+    verticalFitMinScale: Float,
+): Float = when (zoomLimitMode) {
+    ZoomLimitMode.Horizontal -> horizontalFitMinScale
+    ZoomLimitMode.Vertical -> verticalFitMinScale
+    ZoomLimitMode.Auto -> minOf(horizontalFitMinScale, verticalFitMinScale)
+}
+
 @Composable
 fun ZoomableView(
     modifier: Modifier = Modifier,
@@ -48,7 +58,7 @@ fun ZoomableView(
     contentAlignment: ZoomContentAlignment = ZoomContentAlignment.Start,
     minScale: Float = 1f,
     maxScale: Float = minScale * 4f,
-    doubleTapScale: Float = minScale * 2f,
+    doubleTapScale: Float = 2f,
     onTap: () -> Unit = {},
     content: @Composable BoxScope.() -> Unit,
 ) {
@@ -70,19 +80,11 @@ fun ZoomableView(
         minScale
     }
 
-    val resolvedLimitMode = when (zoomLimitMode) {
-        ZoomLimitMode.Auto -> {
-            if (contentSize.width >= contentSize.height) ZoomLimitMode.Horizontal
-            else ZoomLimitMode.Vertical
-        }
-        else -> zoomLimitMode
-    }
-
-    val effectiveMinScale = if (resolvedLimitMode == ZoomLimitMode.Horizontal) {
-        horizontalFitMinScale
-    } else {
-        verticalFitMinScale
-    }
+    val effectiveMinScale = effectiveMinScale(
+        zoomLimitMode = zoomLimitMode,
+        horizontalFitMinScale = horizontalFitMinScale,
+        verticalFitMinScale = verticalFitMinScale,
+    )
     val effectiveMaxScale = max(maxScale, effectiveMinScale)
 
     fun alignedOffset(remainingSpace: Float): Float {
@@ -117,20 +119,18 @@ fun ZoomableView(
         return rawTranslation.coerceIn(-overflow, 0f)
     }
 
-    if (resolvedLimitMode == ZoomLimitMode.Horizontal || resolvedLimitMode == ZoomLimitMode.Vertical) {
-        val hasLayoutInfo = containerSize.width > 0 &&
-            containerSize.height > 0 &&
-            contentSize.width > 0 &&
-            contentSize.height > 0
-        if (hasLayoutInfo) {
-            val layoutKey = "${resolvedLimitMode.name}|${containerSize.width}x${containerSize.height}|${contentSize.width}x${contentSize.height}"
-            if (initializedLayoutKey != layoutKey) {
-                SideEffect {
-                    initializedLayoutKey = layoutKey
-                    scale = effectiveMinScale
-                    offsetX = clampOffsetX(rawTranslation = 0f, currentScale = effectiveMinScale)
-                    offsetY = clampOffsetY(rawTranslation = 0f, currentScale = effectiveMinScale)
-                }
+    val hasLayoutInfo = containerSize.width > 0 &&
+        containerSize.height > 0 &&
+        contentSize.width > 0 &&
+        contentSize.height > 0
+    if (hasLayoutInfo) {
+        val layoutKey = "${zoomLimitMode.name}|${containerSize.width}x${containerSize.height}|${contentSize.width}x${contentSize.height}"
+        if (initializedLayoutKey != layoutKey) {
+            SideEffect {
+                initializedLayoutKey = layoutKey
+                scale = effectiveMinScale
+                offsetX = clampOffsetX(rawTranslation = 0f, currentScale = effectiveMinScale)
+                offsetY = clampOffsetY(rawTranslation = 0f, currentScale = effectiveMinScale)
             }
         }
     }
@@ -168,7 +168,7 @@ fun ZoomableView(
                 detectTapGestures(
                     onTap = { onTap() },
                     onDoubleTap = { offset ->
-                        val targetScale = if (scale > effectiveMinScale) effectiveMinScale else doubleTapScale
+                        val targetScale = if (scale > effectiveMinScale) effectiveMinScale else effectiveMinScale * doubleTapScale
                         applyScale(targetScale = targetScale, focus = offset)
                     }
                 )

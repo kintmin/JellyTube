@@ -225,6 +225,7 @@ val dataCommonModule: Module = module {
     factoryOf(::DeletePlaylistWithTracksUseCase)
     factoryOf(::FetchAllPlaylistFlowUseCase)
     factoryOf(::FetchPlaylistFlowUseCase)
+    factoryOf(::GetPlaylistUseCase)
     factoryOf(::UpdatePlaylistDescriptionUseCase)
     factoryOf(::UpdatePlaylistTitleUseCase)
     factoryOf(::UpdatePlaylistImageUseCase)
