@@ -2,9 +2,12 @@ package com.kintmin.presentation.ui.setting.data_migration_receive
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kintmin.domain.data_migration.model.MigrationChoice
+import com.kintmin.domain.data_migration.model.MigrationDeclinedException
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
+import com.kintmin.domain.data_migration.model.MigrationPreview
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationSenderCleanupFailedException
 import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
@@ -16,10 +19,13 @@ import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
 import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
+import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
+import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 import com.kintmin.presentation.port.MigrationReceiveKeepAlive
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.model.MigrationSource
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
@@ -29,6 +35,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -40,6 +47,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     private val clearMigrationStagingUseCase: ClearMigrationStagingUseCase,
     private val runningWorkMonitor: RunningTaskMonitor,
     private val migrationReceiveKeepAlive: MigrationReceiveKeepAlive,
+    private val fetchDownloadTargetPlaylistsFlowUseCase: FetchDownloadTargetPlaylistsFlowUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingDataMigrationReceiveUiState())
@@ -57,6 +65,9 @@ class SettingDataMigrationReceiveViewModel constructor(
     /** 찾기와 고르기는 화면을 덮어쓰므로 마지막 하나만 남긴다. */
     private var discoveryJob: Job? = null
 
+    /** 확인 화면이 떠 있는 동안 받기가 여기서 멈춰 기다린다. */
+    private var pendingChoice: CompletableDeferred<MigrationChoice?>? = null
+
     fun sendIntent(intent: SettingDataMigrationReceiveIntent) {
         when (intent) {
             SettingDataMigrationReceiveIntent.OnClickSearch -> search()
@@ -68,6 +79,29 @@ class SettingDataMigrationReceiveViewModel constructor(
             }
             SettingDataMigrationReceiveIntent.OnClickConnect -> connect()
             SettingDataMigrationReceiveIntent.OnClickRetry -> if (token != null) run() else search()
+            is SettingDataMigrationReceiveIntent.OnToggleMergePlaylist -> updateConfirming { confirming ->
+                confirming.copy(
+                    playlists = confirming.playlists.map {
+                        if (it.sourceId == intent.sourceId) it.copy(isMerging = !it.isMerging) else it
+                    },
+                )
+            }
+            is SettingDataMigrationReceiveIntent.OnClickMergeAll -> updateConfirming { confirming ->
+                confirming.copy(
+                    playlists = confirming.playlists.map {
+                        if (it.isConflicting) it.copy(isMerging = intent.isMerging) else it
+                    },
+                )
+            }
+            is SettingDataMigrationReceiveIntent.OnSelectDestinationPlaylist -> updateConfirming { confirming ->
+                confirming.copy(
+                    destinationCandidates = confirming.destinationCandidates.map {
+                        it.copy(isSelected = it.id == intent.playlistId)
+                    },
+                )
+            }
+            SettingDataMigrationReceiveIntent.OnClickStartReceive -> startReceive()
+            SettingDataMigrationReceiveIntent.OnDeclineReceive -> decline()
             SettingDataMigrationReceiveIntent.OnConfirmExit -> exit()
         }
     }
@@ -140,11 +174,68 @@ class SettingDataMigrationReceiveViewModel constructor(
                 return@launch
             }
             migrationReceiveKeepAlive.keepAlive {
-                receiveMigrationDataUseCase(endpoint, token) { progress -> updateStage(progress.toStageItem()) }
+                receiveMigrationDataUseCase(
+                    endpoint = endpoint,
+                    token = token,
+                    onProgress = { progress -> updateStage(progress.toStageItem()) },
+                    confirm = ::askChoice,
+                )
             }
                 .onSuccess { summary -> finish(summary) }
                 .onFailure { error -> interrupt(error) }
         }
+    }
+
+    /** 받는 사람의 답을 기다린다. 화면을 떠나면 이 코루틴이 취소돼 함께 끝난다. */
+    private suspend fun askChoice(preview: MigrationPreview): MigrationChoice? {
+        val targets = if (preview.needsAudioMediaDestination) {
+            fetchDownloadTargetPlaylistsFlowUseCase().first()
+        } else {
+            null
+        }
+        val deferred = CompletableDeferred<MigrationChoice?>()
+        pendingChoice = deferred
+        updatePhase(
+            DataMigrationReceivePhase.Confirming(
+                newAudioMediaCount = preview.newAudioMediaCount,
+                playlists = preview.playlists.map { playlist ->
+                    DataMigrationConfirmPlaylistItem(
+                        sourceId = playlist.sourceId,
+                        name = playlist.name,
+                        audioMediaCount = playlist.audioMediaCount,
+                        isSecret = playlist.isSecret,
+                        isConflicting = playlist.isConflicting,
+                        // 기본은 따로 만들기다. 남의 플레이리스트가 내 것에 섞이는 쪽이 되돌리기 어렵다.
+                        isMerging = false,
+                    )
+                },
+                secretPlaylistCount = preview.secretPlaylistCount,
+                destinationCandidates = targets?.selectable.orEmpty().map {
+                    DownloadPlaylistUiState(id = it.id, name = it.name, isSelected = it.id == targets?.targetId)
+                },
+            ),
+        )
+        return deferred.await().also { pendingChoice = null }
+    }
+
+    private fun startReceive() {
+        val confirming = _uiState.value.phase as? DataMigrationReceivePhase.Confirming ?: return
+        updatePhase(DataMigrationReceivePhase.Running)
+        pendingChoice?.complete(
+            MigrationChoice(
+                mergingPlaylistSourceIds = confirming.mergingSourceIds,
+                audioMediaDestinationPlaylistId = confirming.destinationPlaylistId,
+            ),
+        )
+    }
+
+    private fun decline() {
+        pendingChoice?.complete(null)
+    }
+
+    private fun updateConfirming(transform: (DataMigrationReceivePhase.Confirming) -> DataMigrationReceivePhase.Confirming) {
+        val confirming = _uiState.value.phase as? DataMigrationReceivePhase.Confirming ?: return
+        updatePhase(transform(confirming))
     }
 
     private fun finish(summary: MigrationSummary) {
@@ -162,6 +253,11 @@ class SettingDataMigrationReceiveViewModel constructor(
     }
 
     private fun interrupt(error: Throwable) {
+        // 받지 않기로 한 것은 실패가 아니다. 받은 파일도 없으므로 코드 입력으로만 돌아간다.
+        if (error is MigrationDeclinedException) {
+            _uiState.update { it.copy(code = "", stages = emptyList(), phase = DataMigrationReceivePhase.CodeInput()) }
+            return
+        }
         if (error is MigrationSessionExpiredException) {
             token = null
             _uiState.update {

@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.setting.data_migration_receive
 
 import com.kintmin.presentation.port.model.MigrationSource
 import com.kintmin.presentation.port.model.RunningTask
+import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 
 data class SettingDataMigrationReceiveUiState(
     val phase: DataMigrationReceivePhase = DataMigrationReceivePhase.Idle,
@@ -54,6 +55,20 @@ sealed interface DataMigrationReceivePhase {
     data class SelectSource(val sources: List<MigrationSource>) : DataMigrationReceivePhase
     data class CodeInput(val errorMessage: String? = null) : DataMigrationReceivePhase
     data object Pairing : DataMigrationReceivePhase
+
+    /** 목록은 받았고 파일은 아직 받지 않았다. 받는 사람이 어떻게 받을지 정한다. */
+    data class Confirming(
+        val newAudioMediaCount: Int,
+        val playlists: List<DataMigrationConfirmPlaylistItem>,
+        val secretPlaylistCount: Int,
+        /** 곡만 왔을 때 담을 곳 후보. 비어 있으면 고를 것이 없다. */
+        val destinationCandidates: List<DownloadPlaylistUiState> = emptyList(),
+    ) : DataMigrationReceivePhase {
+        val conflictingPlaylists: List<DataMigrationConfirmPlaylistItem> get() = playlists.filter { it.isConflicting }
+        val mergingSourceIds: Set<Int> get() = playlists.filter { it.isMerging }.map { it.sourceId }.toSet()
+        val destinationPlaylistId: Int? get() = destinationCandidates.firstOrNull { it.isSelected }?.id
+    }
+
     data object Running : DataMigrationReceivePhase
 
     /** 연결이 끊기는 등으로 멈췄다. 다시 시도하면 받아 둔 파일은 건너뛴다. */
@@ -83,6 +98,18 @@ data class DataMigrationStageItem(
     val totalCount: Int = 0,
     val receivedBytes: Long = 0,
     val totalBytes: Long = 0,
+)
+
+data class DataMigrationConfirmPlaylistItem(
+    /** 보내는 기기의 플레이리스트 id. 합칠 것을 가리킬 때 쓴다. */
+    val sourceId: Int,
+    val name: String,
+    val audioMediaCount: Int,
+    val isSecret: Boolean,
+    /** 이 기기에 같은 이름이 이미 있다. */
+    val isConflicting: Boolean,
+    /** 그 플레이리스트에 합친다. 기본은 따로 만들기다. */
+    val isMerging: Boolean,
 )
 
 data class DataMigrationFailureItem(

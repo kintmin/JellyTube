@@ -9,6 +9,8 @@ import com.kintmin.domain.data_migration.SourceKey
 import com.kintmin.domain.data_migration.applyMigratedDownloadSettings
 import com.kintmin.domain.data_migration.logText
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
+import com.kintmin.domain.data_migration.model.MigrationChoice
+import com.kintmin.domain.data_migration.model.MigrationDeclinedException
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationFailure
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
@@ -17,6 +19,7 @@ import com.kintmin.domain.data_migration.model.MigrationFileEntry
 import com.kintmin.domain.data_migration.model.MigrationFileKind
 import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
 import com.kintmin.domain.data_migration.model.MigrationPlan
+import com.kintmin.domain.data_migration.model.MigrationPreview
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationStage
@@ -47,6 +50,7 @@ class ImportMigrationDataUseCase constructor(
         endpoint: MigrationEndpoint,
         token: String,
         onProgress: (MigrationProgress) -> Unit,
+        confirm: suspend (MigrationPreview) -> MigrationChoice?,
     ): Result<MigrationSummary> = runCatching {
         onProgress(MigrationProgress(MigrationStage.PLANNING))
         // 계획은 받는 쪽 시스템 플레이리스트가 다 있어야 세울 수 있다.
@@ -55,6 +59,9 @@ class ImportMigrationDataUseCase constructor(
         val availableEntries = export.files.filter { MigrationFiles.isSafeName(it.file.name) }
         val available = MigrationFiles.keepAvailable(export.snapshot, availableEntries.map { it.file }.toSet())
         val target = dataMigrationRepository.fetchSnapshot().getOrThrow()
+
+        // 목록은 이미 손에 있고 파일은 아직 받지 않았다. 묻기에 돈이 들지 않는 유일한 자리다.
+        val choice = confirm(MigrationPlanner.preview(available, target)) ?: throw MigrationDeclinedException()
 
         // 보내는 기기에 음원 파일이 없는 곡은 계획 전에 빠진다. 같은 곡의 다른 행으로 들어오거나 이미 이 기기에
         // 있으면 실패가 아니다.
@@ -66,7 +73,7 @@ class ImportMigrationDataUseCase constructor(
             .distinctBy { SourceKey.of(it.source) }
         missingOnSender.forEach { log("보내는 기기에 음원 파일이 없음: ${it.logText()}") }
 
-        val unplayable = MigrationPlanner.plan(available, target).newAudioMedias
+        val unplayable = MigrationPlanner.plan(available, target, choice).newAudioMedias
             .filterNot { dataMigrationRepository.isPlayableAudioFile(it.audioFileName) }
         val (redownloadable, unsupported) = unplayable.partition { YoutubeUrl.videoIdOf(it.source) != null }
         val sizeByFile = availableEntries.associate { it.file to it.size }
@@ -93,7 +100,7 @@ class ImportMigrationDataUseCase constructor(
             val localFiles = redownloaded.values
                 .map { MigrationFile(MigrationFileKind.AUDIO, it.fileNameWithExt) }
                 .toSet()
-            val transferPlan = planWithout(source, target, localFiles)
+            val transferPlan = planWithout(source, target, choice, localFiles)
 
             val unavailableFiles = transfer(endpoint, token, availableEntries, transferPlan, onProgress)
 
@@ -111,6 +118,7 @@ class ImportMigrationDataUseCase constructor(
                     receivedFiles,
                 ),
                 target,
+                choice,
                 localFiles,
             )
 
@@ -145,6 +153,7 @@ class ImportMigrationDataUseCase constructor(
         }
     }.onFailure {
         if (it is CancellationException) throw it
+        if (it is MigrationDeclinedException) return@onFailure log("받는 사람이 확인 화면에서 받지 않기로 함")
         logError("이전 중단", it)
     }
 
@@ -152,8 +161,12 @@ class ImportMigrationDataUseCase constructor(
         redownloaded.values.forEach { audioMediaRepository.deleteFileAtFullPath(it.fileFullPath) }
     }
 
-    private fun planWithout(source: MigrationSnapshot, target: MigrationSnapshot, localFiles: Set<MigrationFile>) =
-        MigrationPlanner.plan(source, target).let { it.copy(requiredFiles = it.requiredFiles - localFiles) }
+    private fun planWithout(
+        source: MigrationSnapshot,
+        target: MigrationSnapshot,
+        choice: MigrationChoice,
+        localFiles: Set<MigrationFile>,
+    ) = MigrationPlanner.plan(source, target, choice).let { it.copy(requiredFiles = it.requiredFiles - localFiles) }
 
     /** 보내는 쪽 곡 id → 다시 받은 파일. 실패한 곡은 [failures] 에 더한다. */
     private suspend fun redownload(

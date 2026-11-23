@@ -1,8 +1,11 @@
 package com.kintmin.domain.data_migration
 
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
+import com.kintmin.domain.data_migration.model.MigrationChoice
 import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationPlaylist
+import com.kintmin.domain.data_migration.model.MigrationPreview
+import com.kintmin.domain.data_migration.model.MigrationPreviewPlaylist
 import com.kintmin.domain.data_migration.model.MigrationRef
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationStep
@@ -20,9 +23,38 @@ object MigrationPlanner {
     private val creationOrder = compareBy<MigrationAudioMedia>({ it.createdTimeMillis }, { it.id })
     private val playlistOrder = compareBy<MigrationPlaylist>({ it.sequence }, { it.id })
 
+    // 사용자가 만든 플레이리스트는 종류와 이름이 같을 때만 합칠 수 있다. 비밀과 일반이 섞이면 안 된다.
+    private fun MigrationPlaylist.mergeKey() = type to name.trim()
+
+    /** 받는 기기가 무엇을 받게 되는지. 파일을 받기 전에 물어볼 것을 모아 준다. */
+    fun preview(source: MigrationSnapshot, target: MigrationSnapshot): MigrationPreview {
+        val targetAudioKeys = target.audioMedias.map { SourceKey.of(it.source) }.toSet()
+        val targetUserKeys = target.playlists.filterNot { it.type.isSystem }.map { it.mergeKey() }.toSet()
+        val trackCountBySourcePlaylist = source.tracks.groupingBy { it.playlistId }.eachCount()
+        return MigrationPreview(
+            newAudioMediaCount = source.audioMedias.map { SourceKey.of(it.source) }.toSet()
+                .count { it !in targetAudioKeys },
+            playlists = source.playlists.filterNot { it.type.isSystem }
+                .sortedWith(playlistOrder)
+                .distinctBy { it.mergeKey() }
+                .map { playlist ->
+                    MigrationPreviewPlaylist(
+                        sourceId = playlist.id,
+                        name = playlist.name,
+                        audioMediaCount = trackCountBySourcePlaylist[playlist.id] ?: 0,
+                        isSecret = playlist.type.isSecret,
+                        isConflicting = playlist.mergeKey() in targetUserKeys,
+                    )
+                },
+            // 플레이리스트가 하나도 없는 전송은 곡 단위 공유다.
+            needsAudioMediaDestination = source.playlists.isEmpty() && source.audioMedias.isNotEmpty(),
+        )
+    }
+
     fun plan(
         source: MigrationSnapshot,
         target: MigrationSnapshot,
+        choice: MigrationChoice = MigrationChoice(),
         timeZone: TimeZone = TimeZone.currentSystemDefault(),
         today: LocalDate = Clock.System.now().toLocalDateTime(timeZone).date,
     ): MigrationPlan {
@@ -46,22 +78,24 @@ object MigrationPlanner {
         fun systemId(type: PlaylistType) =
             targetSystemIdByType[type] ?: error("받는 기기에 ${type.name} 플레이리스트가 없습니다.")
 
-        // 사용자가 만든 플레이리스트는 종류와 이름이 같을 때만 합친다. 비밀과 일반이 섞이면 안 된다.
-        fun MigrationPlaylist.mergeKey() = type to name.trim()
         val targetUserPlaylists = target.playlists.filterNot { it.type.isSystem }
         val targetUserIdByKey = targetUserPlaylists.sortedWith(playlistOrder)
             .distinctBy { it.mergeKey() }
             .associate { it.mergeKey() to it.id }
+        // 받는 사람이 고르지 않은 것은 이름이 겹쳐도 새로 만든다 — 남의 플레이리스트가 내 것에 섞이면 안 된다.
+        val mergingIds = choice.mergingPlaylistSourceIds
+        fun MigrationPlaylist.mergeTargetId(): Int? =
+            if (mergingIds == null || id in mergingIds) targetUserIdByKey[mergeKey()] else null
         val sourceUserPlaylists = source.playlists.filterNot { it.type.isSystem }.sortedWith(playlistOrder)
         val newPlaylists = sourceUserPlaylists
-            .filter { it.mergeKey() !in targetUserIdByKey }
+            .filter { it.mergeTargetId() == null }
             .distinctBy { it.mergeKey() }
         val newPlaylistIdByKey = newPlaylists.associate { it.mergeKey() to it.id }
         val playlistRefBySourceId = source.playlists.associate { playlist ->
             playlist.id to if (playlist.type.isSystem) {
                 MigrationRef.Existing(systemId(playlist.type))
             } else {
-                targetUserIdByKey[playlist.mergeKey()]?.let { MigrationRef.Existing(it) }
+                playlist.mergeTargetId()?.let { MigrationRef.Existing(it) }
                     ?: MigrationRef.Incoming(newPlaylistIdByKey.getValue(playlist.mergeKey()))
             }
         }
@@ -82,6 +116,14 @@ object MigrationPlanner {
                     additions.getOrPut(playlist) { LinkedHashSet() } += audio
                 }
             }
+
+        // 곡만 온 전송은 담을 자리가 없다. 받는 사람이 고른 플레이리스트로 보낸다.
+        choice.audioMediaDestinationPlaylistId?.let { destinationId ->
+            val destination = MigrationRef.Existing(destinationId)
+            source.audioMedias.mapNotNull { audioRefBySourceId[it.id] }
+                .filter { destination to it !in existingPairs }
+                .forEach { additions.getOrPut(destination) { LinkedHashSet() } += it }
+        }
 
         // 보내는 쪽 전체 목록이 어긋나 있어도 새 곡은 반드시 전체에 들어가야 한다.
         additions.getOrPut(MigrationRef.Existing(systemId(PlaylistType.TOTAL))) { LinkedHashSet() } +=

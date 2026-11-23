@@ -1,6 +1,7 @@
 package com.kintmin.domain.data_migration
 
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
+import com.kintmin.domain.data_migration.model.MigrationChoice
 import com.kintmin.domain.data_migration.model.MigrationEditProject
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileKind
@@ -272,7 +273,7 @@ class MigrationPlannerTest {
         )
         val target = snapshot(playlists = targetSystem, steps = listOf(step("2026-11-20T12:00:00+09:00", 30)))
 
-        val plan = MigrationPlanner.plan(source, target, seoul, today)
+        val plan = MigrationPlanner.plan(source, target, timeZone = seoul, today = today)
 
         assertEquals(source.steps.take(2), plan.steps)
     }
@@ -284,7 +285,7 @@ class MigrationPlannerTest {
             steps = listOf(step("2026-11-20T09:00:00+09:00", 100), step("2026-11-21T08:00:00+09:00", 300)),
         )
 
-        val plan = MigrationPlanner.plan(source, snapshot(playlists = targetSystem), seoul, today)
+        val plan = MigrationPlanner.plan(source, snapshot(playlists = targetSystem), timeZone = seoul, today = today)
 
         assertEquals(source.steps.take(1), plan.steps)
     }
@@ -295,8 +296,42 @@ class MigrationPlannerTest {
         val source = snapshot(playlists = sourceSystem, steps = listOf(step("2026-11-20T08:00:00+09:00", 100)))
         val target = snapshot(playlists = targetSystem, steps = listOf(step("2026-11-20T20:00:00+09:00", 30)))
 
-        assertTrue(MigrationPlanner.plan(source, target, seoul, today).steps.isEmpty())
-        assertEquals(source.steps, MigrationPlanner.plan(source, target, TimeZone.UTC, today).steps)
+        assertTrue(MigrationPlanner.plan(source, target, timeZone = seoul, today = today).steps.isEmpty())
+        assertEquals(source.steps, MigrationPlanner.plan(source, target, timeZone = TimeZone.UTC, today = today).steps)
+    }
+
+    @Test
+    fun `고르지 않은 플레이리스트는 이름이 겹쳐도 따로 만든다`() {
+        val source = snapshot(
+            audios = listOf(audio(101, "https://youtu.be/a")),
+            playlists = sourceSystem + playlist(14, PlaylistType.USER, name = "운동"),
+            tracks = listOf(track(11, 101, 1), track(14, 101, 1)),
+        )
+        val target = snapshot(playlists = targetSystem + playlist(7, PlaylistType.USER, name = "운동"))
+
+        val separated = MigrationPlanner.plan(source, target, MigrationChoice(mergingPlaylistSourceIds = emptySet()))
+        val merged = MigrationPlanner.plan(source, target, MigrationChoice(mergingPlaylistSourceIds = setOf(14)))
+
+        assertEquals(listOf(14), separated.newPlaylists.map { it.id })
+        assertTrue(MigrationTrackAddition(Incoming(14), listOf(Incoming(101))) in separated.trackAdditions)
+        assertTrue(merged.newPlaylists.isEmpty())
+        assertTrue(MigrationTrackAddition(Existing(7), listOf(Incoming(101))) in merged.trackAdditions)
+    }
+
+    @Test
+    fun `곡만 왔으면 받는 쪽이 고른 플레이리스트에 담고 미분류로 보내지 않는다`() {
+        val source = snapshot(audios = listOf(audio(101, "https://youtu.be/a")))
+        val target = snapshot(playlists = targetSystem + playlist(7, PlaylistType.USER, name = "받은 곡"))
+
+        val plan = MigrationPlanner.plan(source, target, MigrationChoice(audioMediaDestinationPlaylistId = 7))
+
+        assertEquals(
+            listOf(
+                MigrationTrackAddition(Existing(7), listOf(Incoming(101))),
+                MigrationTrackAddition(Existing(1), listOf(Incoming(101))),
+            ),
+            plan.trackAdditions,
+        )
     }
 
     private fun snapshot(

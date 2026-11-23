@@ -26,6 +26,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.ConfirmStyle
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.JellyTubeConfirmDialog
+import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationConfirmView
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationConnectView
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationResultView
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationStageListView
@@ -110,6 +111,10 @@ fun SettingDataMigrationReceiveScreen(
             }
 
             when (val phase = uiState.phase) {
+                is DataMigrationReceivePhase.Confirming -> {
+                    DataMigrationStageListView(stages = uiState.stages)
+                    DataMigrationConfirmView(phase = phase, sendIntent = sendIntent)
+                }
                 DataMigrationReceivePhase.Running,
                 is DataMigrationReceivePhase.Interrupted,
                 is DataMigrationReceivePhase.Finished,
@@ -137,8 +142,8 @@ fun SettingDataMigrationReceiveScreen(
                     )
                     SettingStepCardView(
                         stepNumber = 3,
-                        title = "코드 입력 후 기다리기",
-                        description = "이미 있는 곡은 이 기기의 정보를 그대로 두고, 같은 이름의 재생목록은 하나로 합칩니다.",
+                        title = "코드 입력 후 받을 방식 정하기",
+                        description = "연결되면 무엇이 들어오는지 보여 줍니다. 이름이 겹치는 재생목록은 합칠지 따로 만들지 그때 고릅니다.",
                     )
                 }
             }
