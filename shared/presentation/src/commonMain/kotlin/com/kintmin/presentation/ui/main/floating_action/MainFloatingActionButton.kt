@@ -109,7 +109,10 @@ fun MainFloatingActionButton(
             Row(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .clickable(role = Role.Button) {
+                    .clickable(
+                        enabled = uiState.isDownloadTargetLoaded,
+                        role = Role.Button,
+                    ) {
                         sendIntent(MainFloatingActionIntent.OnClickDownload(currentUrl, uiState.playlistIdOnDownload))
                     }
                     .padding(start = 16.dp, end = 12.dp),
@@ -157,6 +160,7 @@ fun MainFloatingActionButtonPreview() {
         MainFloatingActionButton(
             uiState = MainFloatingActionUiState(
                 playlistIdOnDownloadName = "미분류",
+                isDownloadTargetLoaded = true,
             ),
             currentUrl = "https://m.youtube.com/watch?v=test",
             sendIntent = {},

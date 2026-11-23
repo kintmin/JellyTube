@@ -1,4 +1,4 @@
-package com.kintmin.ios.adapter
+package com.kintmin.ios.download
 
 import platform.Foundation.NSUserDefaults
 

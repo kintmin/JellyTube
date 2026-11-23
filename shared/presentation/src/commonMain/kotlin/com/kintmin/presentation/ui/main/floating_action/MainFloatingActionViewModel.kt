@@ -48,6 +48,7 @@ class MainFloatingActionViewModel constructor(
         MainFloatingActionUiState(
             playlistIdOnDownload = downloadTarget.targetId,
             playlistIdOnDownloadName = selectablePlaylistList.firstOrNull { it.isSelected }?.name ?: PlaylistType.UNCATEGORIZED.defaultName,
+            isDownloadTargetLoaded = true,
             selectablePlaylistList = selectablePlaylistList,
             isPlaylistBottomSheetVisible = isBottomSheetVisible,
             isCreatePlaylistDialogVisible = isCreateDialogVisible,

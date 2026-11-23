@@ -4,7 +4,7 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
-import com.kintmin.ios.adapter.IosDownloadTargetStore
+import com.kintmin.ios.download.IosDownloadTargetStore
 import com.kintmin.ios.notification.localNotificationDeepLinkOf
 import com.kintmin.presentation.navigation.AppIntent
 import com.kintmin.presentation.navigation.AppViewModel

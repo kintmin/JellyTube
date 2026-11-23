@@ -10,6 +10,8 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -36,9 +38,13 @@ class MainFloatingActionViewModelTest {
         coEvery { this@mockk.invoke(any()) } returns Result.success(42)
     }
 
-    private fun viewModel() = MainFloatingActionViewModel(
+    private fun viewModel(
+        downloadTargets: Flow<DownloadTargetPlaylists> = flowOf(
+            DownloadTargetPlaylists(targetId = null, selectable = emptyList()),
+        ),
+    ) = MainFloatingActionViewModel(
         fetchDownloadTargetPlaylistsFlowUseCase = mockk<FetchDownloadTargetPlaylistsFlowUseCase> {
-            every { this@mockk.invoke() } returns flowOf(DownloadTargetPlaylists(targetId = null, selectable = emptyList()))
+            every { this@mockk.invoke() } returns downloadTargets
         },
         updatePlaylistIdOnDownloadUseCase = updatePlaylistIdOnDownload,
         addNewPlaylistUseCase = addNewPlaylist,
@@ -52,6 +58,20 @@ class MainFloatingActionViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `대상 재생목록을 불러오기 전에는 다운로드할 수 없다`() = runTest {
+        val downloadTargets = MutableSharedFlow<DownloadTargetPlaylists>()
+        val viewModel = viewModel(downloadTargets)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
+
+        assertFalse(viewModel.uiState.value.isDownloadTargetLoaded)
+
+        downloadTargets.emit(DownloadTargetPlaylists(targetId = 7, selectable = emptyList()))
+
+        assertTrue(viewModel.uiState.value.isDownloadTargetLoaded)
+        assertEquals(7, viewModel.uiState.value.playlistIdOnDownload)
     }
 
     @Test

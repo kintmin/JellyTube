@@ -3,6 +3,7 @@ package com.kintmin.ios.adapter
 import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.ios.bridge.IosMediaControllerBridge
 import com.kintmin.ios.bridge.IosMigrationSourceBrowserBridge
+import com.kintmin.ios.download.IosDownloadTargetStore
 import com.kintmin.presentation.port.AudioPreviewPlayer
 import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.StartAnomalyDataCheck

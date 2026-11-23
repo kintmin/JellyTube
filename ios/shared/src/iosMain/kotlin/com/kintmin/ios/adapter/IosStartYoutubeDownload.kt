@@ -2,6 +2,7 @@ package com.kintmin.ios.adapter
 
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
+import com.kintmin.ios.download.IosDownloadTargetStore
 import com.kintmin.ios.notification.IosLocalNotification
 import com.kintmin.ios.task.IosRunningTaskTracker
 import com.kintmin.log.AppLog
