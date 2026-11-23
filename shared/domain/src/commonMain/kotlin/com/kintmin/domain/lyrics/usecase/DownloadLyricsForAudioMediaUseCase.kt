@@ -5,7 +5,6 @@ import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.domain.lyrics.model.LyricsVariant
-import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 
 /**
@@ -57,14 +56,14 @@ class DownloadLyricsForAudioMediaUseCase(
 
         if (!language.hasKorean) {
             createLyricsVariant(lyricFileFullPath, LyricsVariant.TRANSLATION)
-                .onFailure { log("번역 만들기 실패: id=$audioMediaId $it") }
+                .onFailure { log("번역 만들기 실패: id=$audioMediaId ${it.message ?: it::class.simpleName}") }
         }
         if (language.hasJapanese) {
             createLyricsVariant(lyricFileFullPath, LyricsVariant.TRANSLITERATION)
-                .onFailure { log("음차 만들기 실패: id=$audioMediaId $it") }
+                .onFailure { log("음차 만들기 실패: id=$audioMediaId ${it.message ?: it::class.simpleName}") }
         }
     }.onFailure {
-        if (it !is CancellationException) log("가사 자동 적용 실패: id=$audioMediaId $it")
+        log("가사 자동 적용 실패: id=$audioMediaId ${it.message ?: it::class.simpleName}")
     }
 
     private fun log(message: String) = appLog.sendDebugLog(DebugLog(LOG_TAG, message))

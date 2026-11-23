@@ -69,8 +69,8 @@ internal class NsdAdvertiser(
             runCatching { manager.registerService(serviceInfo(serviceType), NsdManager.PROTOCOL_DNS_SD, listener) }
                 .onSuccess { registrations[serviceType] = listener }
                 .onFailure {
-                    appLog.sendDebugLog(DebugLog(NSD_LOG_TAG, "NSD 광고 등록 실패($serviceType, $retryCount): ${it.message}"))
-                    retry(serviceType, it)
+                    appLog.sendDebugLog(DebugLog(NSD_LOG_TAG, "NSD 광고 등록 실패($serviceType, $retryCount): ${it.message ?: it::class.simpleName}"))
+                    retry(serviceType, reason = "${it.message ?: it::class.simpleName}", cause = it)
                 }
         }
     }
@@ -81,15 +81,15 @@ internal class NsdAdvertiser(
         if (registrations[serviceType] !== listener) return
         registrations.remove(serviceType)
         appLog.sendDebugLog(DebugLog(NSD_LOG_TAG, "NSD 광고 등록 실패($serviceType, $retryCount): errorCode=$errorCode"))
-        // 콜백으로 온 실패는 예외가 없다. errorCode 는 바로 위 디버그 로그에 남는다.
-        retry(serviceType, cause = null)
+        // 콜백으로 온 실패는 예외가 없다. 유일한 단서인 errorCode 를 사유로 들고 간다.
+        retry(serviceType, reason = "errorCode=$errorCode", cause = null)
     }
 
     // 광고 대상이 그대로면 다시 맞출 계기가 없다. 직접 다시 맞춘다.
     @Synchronized
-    private fun retry(serviceType: String, cause: Throwable?) {
+    private fun retry(serviceType: String, reason: String, cause: Throwable?) {
         if (retryCount >= MAX_RETRIES) {
-            appLog.sendErrorLog(ErrorLog(NSD_LOG_TAG, "NSD 광고 등록을 $MAX_RETRIES 번 다시 시도했지만 실패: $serviceType", cause))
+            appLog.sendErrorLog(ErrorLog(NSD_LOG_TAG, "NSD 광고 등록을 $MAX_RETRIES 번 다시 시도했지만 실패: $serviceType ($reason)", cause))
             return
         }
         retryCount++
