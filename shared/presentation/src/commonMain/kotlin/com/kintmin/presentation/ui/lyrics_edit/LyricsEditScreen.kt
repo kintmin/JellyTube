@@ -40,7 +40,6 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.DetailTopAppBar
-import com.kintmin.presentation.ui.common.imeAwareContentWindowInsets
 import com.kintmin.presentation.ui.common.wheel_picker.TimePickerBottomSheet
 import com.kintmin.presentation.ui.lyrics_edit.dialog.LyricsEditExitDialog
 import com.kintmin.presentation.ui.lyrics_edit.list_item.LyricsEditItemView
@@ -143,7 +142,6 @@ fun LyricsEditScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        contentWindowInsets = imeAwareContentWindowInsets,
         topBar = {
             DetailTopAppBar(
                 title = data.title.ifBlank { "가사 편집" },
@@ -153,7 +151,7 @@ fun LyricsEditScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (data.isDirty || data.isSaving) {
-                BottomActionBar(modifier = Modifier.imePadding()) {
+                BottomActionBar {
                     BottomActionButton(
                         text = if (data.isSaving) "저장 중…" else "저장",
                         enabled = !data.isSaving,
@@ -192,8 +190,11 @@ fun LyricsEditScreen(
                 }
             }
 
+            // 입력 칸이 가렸는지는 뷰포트 기준으로 판정된다. contentPadding 만으로는 따라 올라오지 않는다.
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .imePadding(),
                 state = listState,
                 contentPadding = PaddingValues(top = 8.dp, bottom = innerPadding.calculateBottomPadding() + 8.dp),
             ) {
