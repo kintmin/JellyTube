@@ -3,8 +3,8 @@ package com.kintmin.domain.playlist_download.usecase
 import com.kintmin.domain.audio_media.DownloadSizeEstimate
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.data_migration.SourceKey
-import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.playlist_download.findYoutubeMergeTarget
 import com.kintmin.domain.playlist_download.model.PlaylistDownloadPreview
 import com.kintmin.domain.youtube.YoutubeUrl
 import kotlinx.coroutines.flow.first
@@ -29,7 +29,7 @@ class PreviewPlaylistDownloadUseCase(
             unavailableCount = unavailable.size,
             estimatedDownloadBytes = toDownload.sumOf { DownloadSizeEstimate.bytesFor(it.durationSeconds) },
             mergesIntoExistingPlaylist = playlistRepository.getAllPlaylistFlow().first()
-                .any { it.type == PlaylistType.USER && it.name.trim() == playlist.title.trim() },
+                .findYoutubeMergeTarget(playlist.title) != null,
         )
     }
 }
