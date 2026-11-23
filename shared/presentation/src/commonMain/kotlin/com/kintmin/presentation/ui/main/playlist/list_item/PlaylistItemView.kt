@@ -7,8 +7,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -93,86 +94,83 @@ fun PlaylistItemView(
             modifier = artworkModifier,
             placeholderIconSize = 36.dp,
         )
-        Row(
+        Text(
             modifier = Modifier.padding(top = 8.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = data.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    lineHeight = 20.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+            text = data.name,
+            style = MaterialTheme.typography.titleSmall,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (data.isDownloadTarget) {
+                Icon(
+                    modifier = Modifier
+                        .padding(end = 2.dp)
+                        .size(14.dp),
+                    imageVector = Icons.Rounded.Download,
+                    contentDescription = "기본 다운로드 플레이리스트",
+                    tint = contentMuted,
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (data.isDownloadTarget) {
+            }
+            Text(
+                modifier = Modifier.weight(1f),
+                text = data.summaryString,
+                style = MaterialTheme.typography.bodySmall,
+                color = contentMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            // 줄 높이를 차지하지 않고 48dp 터치 영역은 그 밖으로 넘친다. 높이를 잡으면 요약 줄이 부풀어 제목과 벌어진다.
+            Box(modifier = Modifier.width(24.dp).height(0.dp)) {
+                Box(modifier = Modifier.requiredSize(48.dp)) {
+                    IconButton(onClick = { isDropDownExpanded = true }) {
                         Icon(
-                            modifier = Modifier
-                                .padding(end = 2.dp)
-                                .size(14.dp),
-                            imageVector = Icons.Rounded.Download,
-                            contentDescription = "기본 다운로드 플레이리스트",
+                            imageVector = Icons.Rounded.MoreVert,
+                            contentDescription = "더보기",
                             tint = contentMuted,
                         )
                     }
-                    Text(
-                        text = data.summaryString,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = contentMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            // 48dp 터치 영역은 두고, 아이콘만 제목 첫 줄(줄높이 20sp)과 아트워크 오른쪽 끝에 맞춘다.
-            Box(modifier = Modifier.offset(x = 12.dp, y = (-14).dp)) {
-                IconButton(onClick = { isDropDownExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = "더보기",
-                        tint = contentMuted,
-                    )
-                }
 
-                JellyTubeDropdownMenu(
-                    expanded = isDropDownExpanded,
-                    onDismissRequest = { isDropDownExpanded = false },
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("편집하기") },
-                        onClick = {
-                            isDropDownExpanded = false
-                            sendIntent(PlaylistIntent.OnClickModifyPlaylist(data))
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("곡 추가하기") },
-                        onClick = {
-                            isDropDownExpanded = false
-                            sendIntent(PlaylistIntent.OnClickAddPlaylist(data))
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Text(if (data.isDownloadTarget) "기본 다운로드 플레이리스트" else "기본 다운로드로 지정")
-                        },
-                        enabled = !data.isDownloadTarget,
-                        onClick = {
-                            isDropDownExpanded = false
-                            sendIntent(PlaylistIntent.OnClickSetDownloadTarget(data))
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("삭제하기") },
-                        colors = MenuDefaults.itemColors(textColor = destructiveContent),
-                        onClick = {
-                            isDropDownExpanded = false
-                            isShowDialog = true
-                        }
-                    )
+                    JellyTubeDropdownMenu(
+                        expanded = isDropDownExpanded,
+                        onDismissRequest = { isDropDownExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("편집하기") },
+                            onClick = {
+                                isDropDownExpanded = false
+                                sendIntent(PlaylistIntent.OnClickModifyPlaylist(data))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("곡 추가하기") },
+                            onClick = {
+                                isDropDownExpanded = false
+                                sendIntent(PlaylistIntent.OnClickAddPlaylist(data))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(if (data.isDownloadTarget) "기본 다운로드 플레이리스트" else "기본 다운로드로 지정")
+                            },
+                            enabled = !data.isDownloadTarget,
+                            onClick = {
+                                isDropDownExpanded = false
+                                sendIntent(PlaylistIntent.OnClickSetDownloadTarget(data))
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("삭제하기") },
+                            colors = MenuDefaults.itemColors(textColor = destructiveContent),
+                            onClick = {
+                                isDropDownExpanded = false
+                                isShowDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }
