@@ -141,7 +141,7 @@ fun AudioMediaActionRowViewPreview() {
     JellyTubeTheme {
         AudioMediaActionRowView(
             icon = Icons.Rounded.Lyrics,
-            title = "가사 찾기",
+            title = "가사 검색",
             onClick = {},
         )
     }

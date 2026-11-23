@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -20,11 +21,13 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.DetailTopAppBar
+import com.kintmin.presentation.ui.lyrics_detail.list_item.LyricsDetailLineView
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun LyricsDetailScreen(
     navigateToBack: () -> Unit,
+    navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
 ) {
     val viewModel = koinViewModel<LyricsDetailViewModel>()
     val data by viewModel.uiState.collectAsState()
@@ -36,7 +39,8 @@ fun LyricsDetailScreen(
                 is LyricsDetailEvent.ShowToast ->
                     toaster.show(event.message)
 
-                LyricsDetailEvent.NavigateToBack -> navigateToBack()
+                is LyricsDetailEvent.NavigateToLyricsViewer ->
+                    navigateToLyricsViewer(event.audioMediaId)
             }
         }
     }
@@ -87,12 +91,29 @@ fun LyricsDetailScreen(
                 bottom = 16.dp + innerPadding.calculateBottomPadding(),
             ),
         ) {
-            item(key = "lyrics") {
-                Text(
-                    text = data.displayLyrics.ifBlank { "표시할 가사가 없습니다." },
-                    fontSize = 16.sp,
-                    lineHeight = 24.sp,
-                )
+            when {
+                data.isSynced && data.syncedLines.isNotEmpty() -> itemsIndexed(
+                    items = data.syncedLines,
+                    key = { index, _ -> index },
+                ) { _, line ->
+                    LyricsDetailLineView(line)
+                }
+
+                data.isSynced -> item(key = "empty-synced-lyrics") {
+                    Text(
+                        text = "표시할 가사가 없습니다.",
+                        fontSize = 16.sp,
+                        lineHeight = 24.sp,
+                    )
+                }
+
+                else -> item(key = "lyrics") {
+                    Text(
+                        text = data.plainLyrics.ifBlank { "표시할 가사가 없습니다." },
+                        fontSize = 16.sp,
+                        lineHeight = 24.sp,
+                    )
+                }
             }
         }
     }

@@ -77,7 +77,7 @@ fun AudioMediaDetailScreen(
     navigationToAudioMediaInformationEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
-    navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
+    navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?, playbackDurationSeconds: Double?) -> Unit,
     navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
     navigateToKaraokeSearch: (audioMediaId: Int, query: String) -> Unit,
     navigateToAudioEdit: (audioMediaId: Int) -> Unit,
@@ -118,7 +118,7 @@ fun AudioMediaDetailScreen(
     navigationToAudioMediaInformationEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
-    navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
+    navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?, playbackDurationSeconds: Double?) -> Unit,
     navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
     navigateToKaraokeSearch: (audioMediaId: Int, query: String) -> Unit,
     navigateToAudioEdit: (audioMediaId: Int) -> Unit,
@@ -283,13 +283,18 @@ fun AudioMediaDetailScreen(
 
                         AudioMediaActionRowView(
                             icon = Icons.Rounded.Lyrics,
-                            title = if (data.hasLyrics) "가사" else "가사 찾기",
+                            title = if (data.hasLyrics) "가사" else "가사 검색",
                             description = if (data.hasLyrics) "저장됨" else null,
                             onClick = {
                                 if (data.hasLyrics) {
                                     navigateToLyricsViewer(data.audioMediaId)
                                 } else {
-                                    navigateToLyricsSearch(data.audioMediaId, data.audioMediaName, data.audioDurationSeconds)
+                                    navigateToLyricsSearch(
+                                        data.audioMediaId,
+                                        data.audioMediaName,
+                                        data.audioDurationSeconds,
+                                        data.playbackDurationSeconds,
+                                    )
                                 }
                             },
                         )
@@ -424,7 +429,7 @@ fun AudioMediaDetailScreenPreview() {
             navigationToAudioMediaInformationEditScreen = {},
             navigateToMainSearchTab = {},
             navigateToPlaylistDetailScreen = { _, _ -> },
-            navigateToLyricsSearch = { _, _, _ -> },
+            navigateToLyricsSearch = { _, _, _, _ -> },
             navigateToLyricsViewer = {},
             navigateToKaraokeSearch = { _, _ -> },
             navigateToAudioEdit = {},
@@ -443,7 +448,7 @@ fun AudioMediaDetailScreenDeletingPreview() {
             navigationToAudioMediaInformationEditScreen = {},
             navigateToMainSearchTab = {},
             navigateToPlaylistDetailScreen = { _, _ -> },
-            navigateToLyricsSearch = { _, _, _ -> },
+            navigateToLyricsSearch = { _, _, _, _ -> },
             navigateToLyricsViewer = {},
             navigateToKaraokeSearch = { _, _ -> },
             navigateToAudioEdit = {},
@@ -462,7 +467,7 @@ fun AudioMediaDetailScreenDeletedPreview() {
             navigationToAudioMediaInformationEditScreen = {},
             navigateToMainSearchTab = {},
             navigateToPlaylistDetailScreen = { _, _ -> },
-            navigateToLyricsSearch = { _, _, _ -> },
+            navigateToLyricsSearch = { _, _, _, _ -> },
             navigateToLyricsViewer = {},
             navigateToKaraokeSearch = { _, _ -> },
             navigateToAudioEdit = {},

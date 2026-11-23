@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.lyrics.usecase.ApplyLyricsToAudioMediaUseCase
+import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
 import com.kintmin.presentation.ui.lyrics_detail.navigation.LyricsDetailScreenRoute
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -18,16 +19,26 @@ import kotlinx.coroutines.launch
 class LyricsDetailViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val applyLyricsToAudioMediaUseCase: ApplyLyricsToAudioMediaUseCase,
+    parseLyricsUseCase: ParseLyricsUseCase,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<LyricsDetailScreenRoute>()
+
+    private val syncedLines = route.syncedLyrics
+        .takeIf { it.isNotBlank() }
+        ?.let(parseLyricsUseCase::invoke)
+        .orEmpty()
+        .mapNotNull { line ->
+            line.timeMs?.let { timeMs -> LyricsDetailUiState.SyncedLine(timeMs, line.text) }
+        }
 
     private val _uiState = MutableStateFlow(
         LyricsDetailUiState(
             trackName = route.trackName,
             artistName = route.artistName,
             plainLyrics = route.plainLyrics,
-            syncedLyrics = route.syncedLyrics,
+            isSynced = route.syncedLyrics.isNotBlank(),
+            syncedLines = syncedLines,
             isApplying = false,
         )
     )
@@ -54,7 +65,7 @@ class LyricsDetailViewModel constructor(
             _uiState.update { it.copy(isApplying = false) }
             if (result.isSuccess) {
                 eventChannel.send(LyricsDetailEvent.ShowToast("가사를 적용했습니다."))
-                eventChannel.send(LyricsDetailEvent.NavigateToBack)
+                eventChannel.send(LyricsDetailEvent.NavigateToLyricsViewer(route.audioMediaId))
             } else {
                 eventChannel.send(LyricsDetailEvent.ShowToast("가사 적용에 실패했습니다."))
             }
