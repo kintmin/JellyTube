@@ -161,14 +161,20 @@ class ImportMigrationDataUseCase constructor(
         onProgress: (MigrationProgress) -> Unit,
     ): Map<Int, DownloadedAudioFile> {
         val result = mutableMapOf<Int, DownloadedAudioFile>()
-        audioMedias.forEachIndexed { index, audio ->
-            onProgress(MigrationProgress(MigrationStage.REDOWNLOAD, doneCount = index, totalCount = audioMedias.size))
-            audioMediaRepository.downloadAudioFile(audio.source)
-                .onSuccess { result[audio.id] = it }
-                .onFailure {
-                    logError("다시 받기 실패: ${audio.logText()}", it)
-                    failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
-                }
+        try {
+            audioMedias.forEachIndexed { index, audio ->
+                onProgress(MigrationProgress(MigrationStage.REDOWNLOAD, doneCount = index, totalCount = audioMedias.size))
+                audioMediaRepository.downloadAudioFile(audio.source)
+                    .onSuccess { result[audio.id] = it }
+                    .onFailure {
+                        logError("다시 받기 실패: ${audio.logText()}", it)
+                        failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
+                    }
+            }
+        } catch (e: Throwable) {
+            // 돌려주기 전에 멈추면 호출자가 지울 목록을 받지 못한다.
+            withContext(NonCancellable) { deleteRedownloaded(result) }
+            throw e
         }
         onProgress(MigrationProgress(MigrationStage.REDOWNLOAD, audioMedias.size, audioMedias.size))
         return result
