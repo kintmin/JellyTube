@@ -3,6 +3,7 @@ package com.kintmin.ios
 import androidx.compose.ui.window.ComposeUIViewController
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
+import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
 import com.kintmin.ios.download.IosDownloadTargetStore
 import com.kintmin.ios.notification.localNotificationDeepLinkOf
@@ -15,6 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import org.koin.mp.KoinPlatform
 import platform.UIKit.UIViewController
@@ -42,7 +44,10 @@ private fun resumeFinishedDownloads() {
         val execute = koin.get<StartYoutubeDownload>()
         val downloadTargetStore = koin.get<IosDownloadTargetStore>()
         finishedUrls.forEach { url ->
-            val playlistId = downloadTargetStore.get(url) ?: return@forEach
+            // 업데이트 전에 시작한 전송은 대상이 저장돼 있지 않다. 건너뛰면 completed 기록이 남아 매번 다시 나온다.
+            // 미분류가 아직 없으면 AppViewModel 이 만들 때까지 기다린다.
+            val playlistId = downloadTargetStore.get(url)
+                ?: koin.get<FetchDownloadTargetPlaylistsFlowUseCase>()().mapNotNull { it.targetId }.first()
             execute(url, playlistId)
         }
     }

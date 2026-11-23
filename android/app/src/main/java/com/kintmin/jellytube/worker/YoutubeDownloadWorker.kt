@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
@@ -20,6 +21,7 @@ import com.kintmin.presentation.port.addDownloadedMedia
 import com.kintmin.presentation.port.model.WorkResultNotice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
@@ -33,6 +35,7 @@ class YoutubeDownloadWorker(
 
     private val downloadAudioMediaUseCase: DownloadAudioMediaUseCase by inject()
     private val downloadLyricsForAudioMediaUseCase: DownloadLyricsForAudioMediaUseCase by inject()
+    private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase by inject()
     private val mediaControllerManager: PlaybackController by inject()
     private val pushNotificationManager: PushNotificationManager by inject()
     private val appLog: AppLog by inject()
@@ -59,7 +62,9 @@ class YoutubeDownloadWorker(
         }
 
         val url = inputData.getString(INPUT_DATA_URL) ?: return Result.failure()
-        val playlistId = inputData.keyValueMap[INPUT_DATA_PLAYLIST_ID] as? Int ?: return Result.failure()
+        // 업데이트 전에 enqueue 된 작업에는 키가 없다. 그때는 현재 다운로드 설정을 따른다.
+        val playlistId = inputData.keyValueMap[INPUT_DATA_PLAYLIST_ID] as? Int
+            ?: fetchPlaylistIdOnDownloadFlowUseCase().first()
         val downloadNotification = DownloadNotification(1, 0)
         pushNotificationManager.sendNotification(downloadNotification)
 
