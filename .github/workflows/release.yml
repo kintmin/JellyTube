@@ -9,6 +9,12 @@ on:
     branches: [main]
   # 릴리스 없이 APK·IPA 만 빌드해 artifact 로 남긴다. 서명 시크릿을 릴리스 전에 확인하는 용도다.
   workflow_dispatch:
+    inputs:
+      scope:
+        description: 무엇을 돌릴지
+        type: choice
+        options: [all, r8-only]
+        default: all
 
 permissions:
   contents: write
@@ -139,7 +145,7 @@ jobs:
   android-apk:
     needs: mobile-release-needed
     # 수동 실행에서는 앞 job 이 건너뛰어지므로, 건너뛴 의존을 막지 않게 !cancelled() 로 연다.
-    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.mobile-release-needed.outputs.needed == 'true') }}
+    if: ${{ !cancelled() && ((github.event_name == 'workflow_dispatch' && inputs.scope != 'r8-only') || needs.mobile-release-needed.outputs.needed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -200,7 +206,7 @@ jobs:
   ios-ipa:
     needs: mobile-release-needed
     # 수동 실행에서는 앞 job 이 건너뛰어지므로, 건너뛴 의존을 막지 않게 !cancelled() 로 연다.
-    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.mobile-release-needed.outputs.needed == 'true') }}
+    if: ${{ !cancelled() && ((github.event_name == 'workflow_dispatch' && inputs.scope != 'r8-only') || needs.mobile-release-needed.outputs.needed == 'true') }}
     runs-on: macos-26
     timeout-minutes: 90
     steps:
@@ -373,7 +379,7 @@ jobs:
   desktop-package:
     needs: desktop-release-needed
     # 수동 실행에서는 앞 job 이 건너뛰어지므로, 건너뛴 의존을 막지 않게 !cancelled() 로 연다.
-    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.desktop-release-needed.outputs.needed == 'true') }}
+    if: ${{ !cancelled() && ((github.event_name == 'workflow_dispatch' && inputs.scope != 'r8-only') || needs.desktop-release-needed.outputs.needed == 'true') }}
     strategy:
       matrix:
         include:
