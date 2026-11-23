@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -109,28 +108,6 @@ fun AudioMediaDetailInfoView(
                 value = data.source,
             )
         }
-
-        if (data.audioMediaDescription.isNotBlank()) {
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
-            // 설명은 길이가 정해지지 않아 MetaField 로 묶지 않는다. 그쪽은 값을 두 줄로 자른다.
-            Text(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                text = "설명",
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                color = contentMuted,
-            )
-            // 여러 줄 단락이라 라벨과 줄 간격을 MetaField 의 한 줄 값보다 넉넉하게 둔다.
-            Text(
-                modifier = Modifier.padding(top = 8.dp, start = 16.dp, end = 16.dp),
-                text = data.audioMediaDescription,
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-            )
-        }
     }
 }
 
@@ -192,17 +169,6 @@ fun AudioMediaDetailInfoViewLongSourcePreview() {
             data = AudioMediaDetailUiState.getMock().copy(
                 webViewUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLabcdefghijklmnop&index=12",
             ),
-            onClickSource = {},
-        )
-    }
-}
-
-@Preview
-@Composable
-fun AudioMediaDetailInfoViewNoDescriptionPreview() {
-    JellyTubeTheme {
-        AudioMediaDetailInfoView(
-            data = AudioMediaDetailUiState.getMock().copy(audioMediaDescription = ""),
             onClickSource = {},
         )
     }

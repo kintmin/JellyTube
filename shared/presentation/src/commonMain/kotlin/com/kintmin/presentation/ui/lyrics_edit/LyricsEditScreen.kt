@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -189,8 +190,11 @@ fun LyricsEditScreen(
                 }
             }
 
+            // 입력 칸이 가렸는지는 뷰포트 기준으로 판정된다. contentPadding 만으로는 따라 올라오지 않는다.
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .imePadding(),
                 state = listState,
                 contentPadding = PaddingValues(top = 8.dp, bottom = innerPadding.calculateBottomPadding() + 8.dp),
             ) {
