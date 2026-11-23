@@ -1,22 +1,11 @@
 package com.kintmin.presentation.ui.playlist_detail.dialog
 
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.dialogActionsSpacing
-import com.kintmin.presentation.theme.dialogButtonSpacing
+import com.kintmin.presentation.ui.common.DialogChoiceButtonRow
 import com.kintmin.presentation.ui.common.DialogColumn
 import com.kintmin.presentation.ui.common.JellyTubeDialog
 
@@ -52,33 +41,13 @@ fun RemoveAudioMediaFromPlaylistDialog(
                 },
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Row(
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(top = dialogActionsSpacing),
-            ) {
-                TextButton(onClick = onDismiss) { Text("취소") }
-                Spacer(modifier = Modifier.width(dialogButtonSpacing))
-                OutlinedButton(
-                    colors = JellyTubeButtonColors.removal(),
-                    onClick = {
-                        removeFromPlaylist()
-                        onDismiss()
-                    },
-                ) {
-                    Text(text = "곡은 남기기")
-                }
-                Spacer(modifier = Modifier.width(dialogButtonSpacing))
-                Button(
-                    colors = JellyTubeButtonColors.destructive(),
-                    onClick = {
-                        deleteAudioMedia()
-                        onDismiss()
-                    },
-                ) {
-                    Text(text = "곡까지 삭제")
-                }
-            }
+            DialogChoiceButtonRow(
+                onDismiss = onDismiss,
+                removalText = "곡은 남기기",
+                onRemoval = removeFromPlaylist,
+                destructiveText = "곡까지 삭제",
+                onDestructive = deleteAudioMedia,
+            )
         }
     }
 }

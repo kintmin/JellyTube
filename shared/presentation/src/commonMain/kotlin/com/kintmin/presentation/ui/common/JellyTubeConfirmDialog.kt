@@ -1,7 +1,10 @@
 package com.kintmin.presentation.ui.common
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -10,6 +13,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,6 +83,53 @@ fun DialogColumn(
             style = MaterialTheme.typography.titleLarge,
         )
         content()
+    }
+}
+
+/**
+ * 고르는 버튼이 둘이라 취소를 따로 둔다. 약한 것부터 오른쪽으로 간다.
+ * 한 줄에 다 들어가지 않으면 **버튼 단위로** 다음 줄에 떨어진다 — 글자가 접히면 버튼 높이가
+ * 제각각이 되어 줄이 어긋나 보인다. [destructiveText] 가 null 이면 그 선택지를 두지 않는다.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ColumnScope.DialogChoiceButtonRow(
+    onDismiss: () -> Unit,
+    removalText: String,
+    onRemoval: () -> Unit,
+    destructiveText: String?,
+    onDestructive: () -> Unit,
+    dismissText: String = "취소",
+) {
+    FlowRow(
+        modifier = Modifier
+            .align(Alignment.End)
+            .padding(top = dialogActionsSpacing),
+        horizontalArrangement = Arrangement.spacedBy(dialogButtonSpacing, Alignment.End),
+        verticalArrangement = Arrangement.spacedBy(dialogButtonSpacing),
+    ) {
+        TextButton(onClick = onDismiss) { Text(text = dismissText, maxLines = 1) }
+        OutlinedButton(
+            contentPadding = dialogConfirmButtonPadding,
+            colors = JellyTubeButtonColors.removal(),
+            onClick = {
+                onRemoval()
+                onDismiss()
+            },
+        ) {
+            Text(text = removalText, maxLines = 1)
+        }
+        if (destructiveText == null) return@FlowRow
+        Button(
+            contentPadding = dialogConfirmButtonPadding,
+            colors = JellyTubeButtonColors.destructive(),
+            onClick = {
+                onDestructive()
+                onDismiss()
+            },
+        ) {
+            Text(text = destructiveText, maxLines = 1)
+        }
     }
 }
 
