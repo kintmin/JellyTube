@@ -38,6 +38,21 @@
 
 ---
 
+## 취소 규율 — `runCatching` 은 취소를 삼킨다
+
+`runCatching` 은 `CancellationException` 까지 `Result.failure` 로 감싼다. 그래서 코루틴을 취소해도
+실패로 기록되고, 바깥 코루틴은 자기가 취소된 줄 모른 채 다음 줄을 이어서 실행한다.
+
+**suspend 하는 블록을 `Result` 로 감쌀 때는 `suspendRunCatching` 이다.** `runCatching` 이 맞는 자리는
+둘뿐이다.
+
+- **블록이 동기일 때.** 블록 안에서 취소가 날 수 없다 — enum 파싱, C 인터옵 콜백 같은 것.
+- **`withContext(NonCancellable)` 안의 정리 코드일 때.** 취소를 다시 던지면 정리 경로 밖으로 샌다.
+
+`withContext(Dispatchers.IO) { ... }` 는 동기가 아니다 — 그 안에서 suspend 를 부르면 취소가 난다.
+
+---
+
 ## Repository 인터페이스 규약
 
 - 도메인 개념 하나당 인터페이스 하나.

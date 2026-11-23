@@ -67,6 +67,7 @@
 - DAO facade·네트워크 데이터소스·설정 저장소를 주입받는다. 피할 수 있으면 플랫폼 컨텍스트를
   직접 주입하지 않는다.
 - 스트림은 `Flow`, 변경은 `suspend fun`.
+- suspend 블록을 `Result` 로 감쌀 때는 `suspendRunCatching` 이다. `runCatching` 은 취소를 삼킨다.
 
 ### Repository 의 범위는 순수 데이터 로직뿐이다
 
