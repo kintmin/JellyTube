@@ -8,7 +8,8 @@
 # 규칙의 출처는 R8 설정에서 그 줄 위의 `# ... section is <라이브러리>` 주석으로 본다:
 #   android/app/build/outputs/mapping/release/configuration.txt
 #
-# `-keepnames` 는 "살아남으면 이름만 지킨다" 는 다른 관용구라 여기 범위가 아니다.
+# `-keepnames` 와 `allowshrinking` 이 붙은 규칙은 "살아남으면" 을 전제로 한 다른 관용구라
+# 여기 범위가 아니다.
 
 # 출처: androidx.versionedparcelable:versionedparcelable:1.1.1
 # 판정: 무해. 리플렉션으로 찾아지는 당사자는 구현체가 아니라 `<클래스명>Parcelizer` 이고, 같은
@@ -23,3 +24,11 @@
 #   `{ void <init>(); }` 를 더해 고쳤지만 여기 해석되는 버전은 16.1.0 이라, proguard-rules.pro
 #   에서 멤버를 지키는 같은 규칙으로 덮어 두었다. 전이 버전이 올라가도 우리 규칙이 남는다.
 -keep class * implements com.google.firebase.components.ComponentRegistrar
+
+# 출처: io.ktor:ktor-utils-jvm:3.6.1
+# 판정: 위험하지만 지금은 닿지 않는다. Ktor 는 엔진을 안 고르면 ServiceLoader 로
+#   HttpClientEngineContainer 구현을 찾는데, 이 규칙이 멤버를 안 지켜 AndroidEngineContainer 와
+#   CIOEngineContainer 의 기본 생성자가 실제로 지워져 있다. HttpClientFactory 가
+#   `HttpClient(Android)`·`HttpClient(CIO)` 로 엔진을 명시해 그 경로를 타지 않을 뿐이다.
+#   엔진 없이 `HttpClient { }` 를 쓰는 순간 깨진다.
+-keep class io.ktor.client.engine.** implements io.ktor.client.HttpClientEngineContainer

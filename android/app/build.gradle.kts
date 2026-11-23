@@ -161,6 +161,7 @@ androidComponents {
         val configurationFile = layout.buildDirectory.file("outputs/mapping/${variant.name}/configuration.txt")
         val reviewedKeeps = layout.projectDirectory.file("r8-wildcard-keeps.txt")
         val reportDir = layout.buildDirectory.dir("reports/r8-keep-rules/${variant.name}")
+        val appNamespace = android.namespace.toString()
 
         val verify = tasks.register("verify${suffix}KeepRules") {
             group = "verification"
@@ -175,6 +176,7 @@ androidComponents {
                     manifest = mergedManifest.get().asFile,
                     usage = usageFile.get().asFile,
                     report = File(reportDir.get().asFile, "manifest-classes.txt"),
+                    appNamespace = appNamespace,
                 )
                 verifyWildcardKeepsAreReviewed(
                     configuration = configurationFile.get().asFile,
@@ -183,7 +185,9 @@ androidComponents {
                 )
             }
         }
-        tasks.matching { it.name == minifyTask }.configureEach { finalizedBy(verify) }
+        // matching 으로 걸면 AGP 가 태스크 이름을 바꾸는 날 finalizer 가 조용히 사라져, 릴리스 빌드가
+        // 검사 없이 지나간다. named 는 그때 설정 단계에서 바로 터진다.
+        afterEvaluate { tasks.named(minifyTask) { finalizedBy(verify) } }
     }
 }
 
@@ -262,7 +266,7 @@ dependencies {
  * 터진다(ML Kit 의 ComponentRegistrar, androidx.startup 의 Initializer 가 이 모양이다).
  * 대조할 이름은 런타임이 읽는 그 매니페스트에서 그대로 긁는다 — 목록을 따로 적어 두면 어긋난다.
  */
-fun verifyManifestClassesSurvived(manifest: File, usage: File, report: File) {
+fun verifyManifestClassesSurvived(manifest: File, usage: File, report: File, appNamespace: String) {
     check(usage.exists()) {
         "R8 의 usage.txt 가 없어 검사할 수 없다: $usage\n" +
             "AGP 가 경로를 옮겼거나 R8 이 돌지 않았다. 둘 다 검사가 꺼진 것이므로 실패로 둔다."
@@ -274,11 +278,17 @@ fun verifyManifestClassesSurvived(manifest: File, usage: File, report: File) {
     // 거르다가 진짜 클래스를 놓치는 쪽이 더 위험해서 느슨하게 둔다.
     val dollar = "$"
     val attribute = Regex("android:(?:name|value)=\"([^\"]+)\"")
-    val looksLikeClass = Regex("^[a-z][\\w.]*(?:\\.[A-Z]\\w*)+(?:$dollar\\w+)*$")
+    val looksLikeClass = Regex("^[a-z][\\w.]*(?:\\.[A-Z]\\w*)+(?:\\$dollar\\w+)*$")
     val named = attribute.findAll(manifest.readText())
         .map { it.groupValues[1].substringAfterLast(':') }
         .filter(looksLikeClass::matches)
         .toSortedSet()
+
+    // 앱 자신의 클래스가 하나도 없으면 읽는 쪽이 깨진 것이다. 여기서 멈추지 않으면
+    // 아무것도 못 읽은 검사가 조용히 통과한다 — usage.txt 쪽과 같은 이유로 실패로 둔다.
+    check(named.any { it.startsWith(appNamespace) }) {
+        "매니페스트에서 $appNamespace 의 클래스를 하나도 읽지 못했다. 읽는 규칙이 깨졌다: $manifest"
+    }
 
     val removed = readRemovedByR8(usage)
     val broken = named.mapNotNull { name ->
@@ -314,9 +324,17 @@ fun verifyWildcardKeepsAreReviewed(configuration: File, reviewed: File, report: 
     }
 
     // 라이브러리가 준 규칙이 통째로 합쳐져 있다. 멤버 명세(`{`)가 붙은 줄은 함정이 아니다.
-    // `-keepnames` 는 "살아남으면 이름만 지킨다" 는 다른 관용구라 여기 범위가 아니다.
-    val wildcardKeep = Regex("^-keep\\s+class\\s+\\*\\s+(?:implements|extends)\\s+[\\w.]+\\s*\$")
-    val found = configuration.readLines().map { it.trim() }.filter { wildcardKeep.matches(it) }.toSortedSet()
+    // 클래스 쪽 와일드카드는 `*` 말고 `io.ktor.client.engine.**` 처럼도 쓰고 `public` 같은 수식어가
+    // 붙기도 한다. `-keepnames` 와 `allowshrinking` 은 "살아남으면" 을 전제로 한 다른 관용구라
+    // 여기 범위가 아니다.
+    val wildcardKeep = Regex(
+        "^-keep(?:,[a-z,]+)?\\s+(?:(?:public|final|abstract)\\s+)*(?:class|interface)\\s+" +
+            "[\\w.*]*\\*[\\w.*]*\\s+(?:implements|extends)\\s+[\\w.*]+\\s*\$"
+    )
+    val found = configuration.readLines()
+        .map { it.trim() }
+        .filter { wildcardKeep.matches(it) && "allowshrinking" !in it }
+        .toSortedSet()
 
     val entries = readReviewedKeeps(reviewed)
     val unjudged = entries.filterValues { notes -> notes.none { it.startsWith(VERDICT_PREFIX) } }.keys

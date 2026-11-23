@@ -7,7 +7,8 @@ on:
   pull_request:
   push:
     branches: [main]
-  # 릴리스 없이 APK·IPA 만 빌드해 artifact 로 남긴다. 서명 시크릿을 릴리스 전에 확인하는 용도다.
+  # 릴리스 없이 artifact 만 남긴다. scope=all 은 서명 시크릿을 릴리스 전에 확인하는 용도고,
+  # r8-only 는 R8 검사만 돌린다.
   workflow_dispatch:
     inputs:
       scope:
