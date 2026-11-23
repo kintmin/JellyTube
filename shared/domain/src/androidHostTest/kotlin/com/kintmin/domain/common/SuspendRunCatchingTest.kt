@@ -29,13 +29,18 @@ class SuspendRunCatchingTest {
         assertEquals("터짐", result.exceptionOrNull()?.message)
     }
 
-    /** 도메인 예외가 Throwable 을 바로 상속한다. Exception 만 잡으면 실패로 잡히지 않는다. */
+    /** runCatching 은 Error 까지 Result 로 바꿔 버린다. OOM 을 삼키면 앱이 망가진 채로 계속 간다. */
     @Test
-    fun Exception_이_아닌_Throwable_도_실패로_감싼다() = runTest {
-        val result = suspendRunCatching { throw object : Throwable("예외가 아닌 것") {} }
+    fun Error_는_감싸지_않고_다시_던진다() = runTest {
+        var caught: Throwable? = null
 
-        assertTrue(result.isFailure)
-        assertEquals("예외가 아닌 것", result.exceptionOrNull()?.message)
+        try {
+            suspendRunCatching { throw OutOfMemoryError("메모리 고갈") }
+        } catch (e: OutOfMemoryError) {
+            caught = e
+        }
+
+        assertEquals("메모리 고갈", caught?.message)
     }
 
     @Test

@@ -51,6 +51,10 @@
 
 `withContext(Dispatchers.IO) { ... }` 는 동기가 아니다 — 그 안에서 suspend 를 부르면 취소가 난다.
 
+`Error` 도 잡지 않는다. OutOfMemoryError 나 NoClassDefFoundError 를 `Result.failure` 로 바꾸면 앱이
+망가진 상태로 계속 가고 수집기에도 평범한 실패로 올라간다. **도메인 예외는 `Exception` 을 상속한다** —
+`Throwable` 을 바로 상속하면 이 구분이 무너진다.
+
 ---
 
 ## Repository 인터페이스 규약
