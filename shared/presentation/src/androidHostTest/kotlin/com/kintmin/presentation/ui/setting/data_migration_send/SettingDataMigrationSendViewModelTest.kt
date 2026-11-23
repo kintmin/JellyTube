@@ -3,8 +3,10 @@ package com.kintmin.presentation.ui.setting.data_migration_send
 import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.model.RunningTask
+import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.presentation.secret_mode.SecretModeRunner
 import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
+import com.kintmin.domain.data_migration.model.MigrationScope
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -28,7 +30,7 @@ class SettingDataMigrationSendViewModelTest {
     private val statusFlow = MutableStateFlow<DataMigrationSendStatus>(DataMigrationSendStatus.Idle)
     private val controller = mockk<DataMigrationSendController>(relaxUnitFun = true) {
         every { status } returns statusFlow
-        every { start() } answers { statusFlow.value = DataMigrationSendStatus.WaitingForPair("123456") }
+        every { start(any()) } answers { statusFlow.value = DataMigrationSendStatus.WaitingForPair("123456") }
     }
 
     private val monitor = mockk<RunningTaskMonitor> {
@@ -36,6 +38,11 @@ class SettingDataMigrationSendViewModelTest {
     }
 
     private val secretModeRunner = mockk<SecretModeRunner>(relaxUnitFun = true)
+
+    private val isSecretModeEnabled = MutableStateFlow(false)
+    private val fetchSecretModeEnabled = mockk<FetchSecretModeEnabledFlowUseCase> {
+        every { this@mockk() } returns isSecretModeEnabled
+    }
 
     @Before
     fun setUp() {
@@ -49,10 +56,10 @@ class SettingDataMigrationSendViewModelTest {
 
     @Test
     fun `화면에 들어오면 바로 연결 코드를 연다`() {
-        val viewModel = SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner)
+        val viewModel = SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner, fetchSecretModeEnabled)
 
         assertEquals(DataMigrationSendStep.WaitingForPair("123456"), viewModel.uiState.value.step)
-        verify(exactly = 1) { controller.start() }
+        verify(exactly = 1) { controller.start(any()) }
     }
 
     @Test
@@ -60,10 +67,10 @@ class SettingDataMigrationSendViewModelTest {
         val running = mapOf(RunningTask.YOUTUBE_DOWNLOAD to 2, RunningTask.PC_FILE_SHARE to 1)
         coEvery { monitor.runningTasks() } returns running
 
-        val viewModel = SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner)
+        val viewModel = SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner, fetchSecretModeEnabled)
 
         assertEquals(DataMigrationSendStep.Blocked(running), viewModel.uiState.value.step)
-        verify(exactly = 0) { controller.start() }
+        verify(exactly = 0) { controller.start(any()) }
 
         coEvery { monitor.runningTasks() } returns emptyMap()
         viewModel.sendIntent(SettingDataMigrationSendIntent.OnClickRecheck)
@@ -73,7 +80,7 @@ class SettingDataMigrationSendViewModelTest {
 
     @Test
     fun `받는 기기가 받는 동안만 뒤로가기를 막고 화면은 코드 대기부터 켜 둔다`() {
-        val viewModel = SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner)
+        val viewModel = SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner, fetchSecretModeEnabled)
         assertTrue(viewModel.uiState.value.keepsScreenOn)
         assertFalse(viewModel.uiState.value.isSending)
 
@@ -89,8 +96,18 @@ class SettingDataMigrationSendViewModelTest {
     }
 
     @Test
+    fun `비밀모드가 켜져 있을 때만 비밀 플레이리스트를 함께 보낸다`() {
+        SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner, fetchSecretModeEnabled)
+        verify { controller.start(MigrationScope.Everything(includesSecret = false)) }
+
+        isSecretModeEnabled.value = true
+        SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner, fetchSecretModeEnabled)
+        verify { controller.start(MigrationScope.Everything(includesSecret = true)) }
+    }
+
+    @Test
     fun `보내는 동안만 비밀모드 시계를 멈춘다`() {
-        SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner)
+        SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner, fetchSecretModeEnabled)
 
         statusFlow.value = DataMigrationSendStatus.Paired("iPhone")
         verify { secretModeRunner.pause() }
@@ -101,7 +118,7 @@ class SettingDataMigrationSendViewModelTest {
 
     @Test
     fun `코드를 여러 번 틀려 잠기면 새 코드로 다시 연다`() {
-        val viewModel = SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner)
+        val viewModel = SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner, fetchSecretModeEnabled)
 
         statusFlow.value = DataMigrationSendStatus.Locked
         assertEquals(DataMigrationSendStep.Locked, viewModel.uiState.value.step)
@@ -112,7 +129,7 @@ class SettingDataMigrationSendViewModelTest {
 
     @Test
     fun `화면을 떠나지 않았는데 서버가 내려가면 끊김을 보여 주고 새 코드로 다시 연다`() {
-        val viewModel = SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner)
+        val viewModel = SettingDataMigrationSendViewModel(controller, monitor, secretModeRunner, fetchSecretModeEnabled)
 
         statusFlow.value = DataMigrationSendStatus.Idle
         assertEquals(DataMigrationSendStep.Disconnected, viewModel.uiState.value.step)

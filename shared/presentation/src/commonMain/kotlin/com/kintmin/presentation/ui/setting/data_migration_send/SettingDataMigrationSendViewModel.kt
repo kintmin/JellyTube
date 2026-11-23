@@ -6,6 +6,8 @@ import com.kintmin.presentation.port.DataMigrationSendController
 import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.secret_mode.SecretModeRunner
 import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
+import com.kintmin.domain.data_migration.model.MigrationScope
+import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,6 +19,7 @@ class SettingDataMigrationSendViewModel constructor(
     private val dataMigrationSendController: DataMigrationSendController,
     private val runningWorkMonitor: RunningTaskMonitor,
     private val secretModeRunner: SecretModeRunner,
+    private val fetchSecretModeEnabledFlowUseCase: FetchSecretModeEnabledFlowUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingDataMigrationSendUiState())
@@ -55,7 +58,10 @@ class SettingDataMigrationSendViewModel constructor(
     }
 
     private fun startSession() {
-        dataMigrationSendController.start()
+        // 비밀 플레이리스트는 비밀모드가 켜져 있을 때만 함께 간다.
+        dataMigrationSendController.start(
+            MigrationScope.Everything(includesSecret = fetchSecretModeEnabledFlowUseCase().value),
+        )
         hasStarted = true
         _uiState.update { it.copy(step = dataMigrationSendController.status.value.toStep()) }
     }

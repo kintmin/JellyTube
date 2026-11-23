@@ -9,6 +9,7 @@ import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileEntry
 import com.kintmin.domain.data_migration.model.MigrationFileKind
+import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.repository.MigrationSendServerRepository
 import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
@@ -58,7 +59,9 @@ class MigrationRoutesTest {
     private fun migrationSendHandler(): MigrationSendHandler {
         val handler = slot<MigrationSendHandler>()
         val repository = mockk<MigrationSendServerRepository> { every { open(capture(handler)) } just Runs }
-        OpenMigrationSendUseCase(repository, cleanupUseCase, exportUseCase, resolvePathUseCase, mockk(relaxed = true))()
+        OpenMigrationSendUseCase(repository, cleanupUseCase, exportUseCase, resolvePathUseCase, mockk(relaxed = true))(
+            MigrationScope.Everything(includesSecret = false),
+        )
         return handler.captured
     }
     private var session: MigrationSession? = MigrationSession(code = CODE, generateToken = { TOKEN })
@@ -67,7 +70,7 @@ class MigrationRoutesTest {
 
     private fun serverTest(block: suspend ApplicationTestBuilder.() -> Unit) = testApplication {
         val audioPath = tempFolder.newFile("a.m4a").apply { writeBytes(byteArrayOf(1, 2, 3)) }.absolutePath
-        coEvery { exportUseCase() } returns Result.success(
+        coEvery { exportUseCase(any()) } returns Result.success(
             MigrationExport(
                 snapshot = MigrationSnapshot(emptyList(), emptyList(), emptyList(), emptyList(), emptyList()),
                 files = listOf(MigrationFileEntry(audioFile, size = 3)),
@@ -163,7 +166,7 @@ class MigrationRoutesTest {
 
         coVerifyOrder {
             cleanupUseCase()
-            exportUseCase()
+            exportUseCase(any())
         }
 
         val response = file("AUDIO", "a.m4a", TOKEN)

@@ -17,6 +17,7 @@ import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
 import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationPlaylist
 import com.kintmin.domain.data_migration.model.MigrationProgress
+import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
@@ -100,7 +101,7 @@ class ImportMigrationDataUseCaseTest {
         val staged = mutableListOf<String>()
         var appliedPlan: MigrationPlan? = null
 
-        override suspend fun exportData() = error("받는 쪽에서 부르지 않는다")
+        override suspend fun exportData(scope: MigrationScope) = error("받는 쪽에서 부르지 않는다")
         override fun resolveFilePath(file: MigrationFile) = error("받는 쪽에서 부르지 않는다")
         override suspend fun fetchSnapshot() = Result.success(target).also { calls += "fetchSnapshot" }
         override fun isPlayableAudioFile(fileName: String) = !fileName.endsWith(".webm")

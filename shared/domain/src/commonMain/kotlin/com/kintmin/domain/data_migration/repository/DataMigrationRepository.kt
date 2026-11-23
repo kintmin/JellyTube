@@ -6,6 +6,7 @@ import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileEntry
 import com.kintmin.domain.data_migration.model.MigrationPlan
+import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationSummary
 
@@ -13,7 +14,7 @@ interface DataMigrationRepository {
 
     // 보내는 기기
 
-    suspend fun exportData(): Result<MigrationExport>
+    suspend fun exportData(scope: MigrationScope): Result<MigrationExport>
 
     fun resolveFilePath(file: MigrationFile): Result<String>
 

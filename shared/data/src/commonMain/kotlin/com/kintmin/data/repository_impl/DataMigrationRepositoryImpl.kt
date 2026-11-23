@@ -6,6 +6,7 @@ import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.data.network.data_source.MigrationDataSource
 import com.kintmin.domain.data_migration.MigrationFiles
+import com.kintmin.domain.data_migration.MigrationScopes
 import com.kintmin.domain.data_migration.model.MigrationApplyResult
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationExport
@@ -17,6 +18,7 @@ import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
 import com.kintmin.domain.data_migration.model.MigrationSourceBusyException
 import com.kintmin.domain.data_migration.model.MigrationSourceClosedException
 import com.kintmin.domain.data_migration.model.MigrationPlan
+import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.model.MigrationSenderCleanupFailedException
 import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
@@ -44,9 +46,9 @@ class DataMigrationRepositoryImpl constructor(
 
     private val fileSystem = FileSystem.SYSTEM
 
-    override suspend fun exportData(): Result<MigrationExport> = withContext(Dispatchers.IO) {
+    override suspend fun exportData(scope: MigrationScope): Result<MigrationExport> = withContext(Dispatchers.IO) {
         runCatching {
-            val snapshot = audioMediaFacade.fetchMigrationSnapshot()
+            val snapshot = MigrationScopes.narrow(audioMediaFacade.fetchMigrationSnapshot(), scope)
             val files = MigrationFiles.referencedBy(snapshot.audioMedias, snapshot.playlists)
                 .mapNotNull { file ->
                     val path = resolveFilePath(file).getOrNull() ?: return@mapNotNull null

@@ -18,6 +18,7 @@ import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationPlaylist
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationRef
+import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationStep
@@ -97,7 +98,7 @@ class RestoreBackupUseCaseTest {
         val stagedTexts = mutableMapOf<String, String>()
         var appliedPlan: MigrationPlan? = null
 
-        override suspend fun exportData() = error("복원에서 부르지 않는다")
+        override suspend fun exportData(scope: MigrationScope) = error("복원에서 부르지 않는다")
         override fun resolveFilePath(file: MigrationFile) = Result.success("/${file.kind}/${file.name}")
         override suspend fun fetchSnapshot() = Result.success(target)
         override fun isPlayableAudioFile(fileName: String) = error("복원에서 부르지 않는다")

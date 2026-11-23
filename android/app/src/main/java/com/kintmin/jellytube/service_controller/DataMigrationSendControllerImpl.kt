@@ -2,6 +2,7 @@ package com.kintmin.jellytube.service_controller
 
 import android.content.Context
 import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
+import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.usecase.CloseMigrationSendUseCase
 import com.kintmin.domain.data_migration.usecase.FetchMigrationSendStatusUseCase
 import com.kintmin.domain.data_migration.usecase.OpenMigrationSendUseCase
@@ -19,8 +20,8 @@ class DataMigrationSendControllerImpl(
 
     override val status: StateFlow<DataMigrationSendStatus> = fetchMigrationSendStatus()
 
-    override fun start() {
-        openMigrationSend()
+    override fun start(scope: MigrationScope) {
+        openMigrationSend(scope)
         FileShareForegroundService.startService(appContext, FileShareForegroundService.Owner.DATA_MIGRATION)
             .onFailure { closeMigrationSend() }
     }
