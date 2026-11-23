@@ -37,7 +37,7 @@ import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 @Composable
 fun MainFloatingActionButton(
     currentUrl: String,
-    onClickDownload: (String) -> Unit,
+    onClickDownload: (url: String, playlistId: Int?) -> Unit,
     navigateToPlaylistDownload: (url: String) -> Unit,
 ) {
     val viewModel = koinViewModel<MainFloatingActionViewModel>()
@@ -47,7 +47,7 @@ fun MainFloatingActionButton(
     LaunchedEffect(viewModel) {
         viewModel.eventFlow.collect { event ->
             when (event) {
-                is MainFloatingActionEvent.Download -> onClickDownload(event.url)
+                is MainFloatingActionEvent.Download -> onClickDownload(event.url, event.playlistId)
                 is MainFloatingActionEvent.NavigateToPlaylistDownload -> navigateToPlaylistDownload(event.url)
                 is MainFloatingActionEvent.ShowToast -> toaster.show(event.message)
             }
@@ -110,7 +110,7 @@ fun MainFloatingActionButton(
                 modifier = Modifier
                     .fillMaxHeight()
                     .clickable(role = Role.Button) {
-                        sendIntent(MainFloatingActionIntent.OnClickDownload(currentUrl))
+                        sendIntent(MainFloatingActionIntent.OnClickDownload(currentUrl, uiState.playlistIdOnDownload))
                     }
                     .padding(start = 16.dp, end = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,

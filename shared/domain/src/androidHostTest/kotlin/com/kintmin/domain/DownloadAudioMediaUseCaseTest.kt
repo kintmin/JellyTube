@@ -1,6 +1,5 @@
 package com.kintmin.domain
 
-import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCase
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
 import com.kintmin.domain.audio_media.model.AddedAudioMedia
 import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
@@ -43,7 +42,6 @@ class DownloadAudioMediaUseCaseTest {
     private val audioMediaRepository: AudioMediaRepository = mockk()
     private val deviceStatusRepository: DeviceStatusRepository = mockk()
     private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase = mockk()
-    private val fetchPlaylistIdOnDownloadFlowUseCase: FetchPlaylistIdOnDownloadFlowUseCase = mockk()
     private val appLog: AppLog = mockk()
 
     private lateinit var useCase: DownloadAudioMediaUseCase
@@ -56,7 +54,6 @@ class DownloadAudioMediaUseCaseTest {
     @Before
     fun setup() {
         coEvery { fetchShouldInsertAtTopOnDownloadFlowUseCase() } returns flowOf(false)
-        coEvery { fetchPlaylistIdOnDownloadFlowUseCase() } returns flowOf(UNCATEGORIZED_ID)
         coEvery { audioMediaRepository.getAudioMediaBySource(any()) } returns Result.failure(Exception())
         every { audioMediaRepository.reserveDownload(any()) } returns true
         every { audioMediaRepository.releaseDownload(any()) } just Runs
@@ -65,7 +62,6 @@ class DownloadAudioMediaUseCaseTest {
         useCase = DownloadAudioMediaUseCase(
             audioMediaRepository = audioMediaRepository,
             fetchShouldInsertAtTopOnDownloadFlowUseCase = fetchShouldInsertAtTopOnDownloadFlowUseCase,
-            fetchPlaylistIdOnDownloadFlowUseCase = fetchPlaylistIdOnDownloadFlowUseCase,
             appLog = appLog,
             deviceStatusRepository = deviceStatusRepository,
         )
@@ -112,7 +108,6 @@ class DownloadAudioMediaUseCaseTest {
             audioMediaRepository,
             deviceStatusRepository,
             fetchShouldInsertAtTopOnDownloadFlowUseCase,
-            fetchPlaylistIdOnDownloadFlowUseCase,
             appLog,
         )
     }
@@ -121,7 +116,7 @@ class DownloadAudioMediaUseCaseTest {
     fun `같은 출처를 받는 중이면 받지 않고 남의 예약도 풀지 않는다`() = runTest {
         every { audioMediaRepository.reserveDownload(downloadUrl) } returns false
 
-        val result = useCase(downloadUrl)
+        val result = useCase(downloadUrl, playlistIdOnDownload = UNCATEGORIZED_ID)
 
         assert(result.exceptionOrNull() is AlreadyDownloadingMedia)
         coVerify(inverse = true) { audioMediaRepository.downloadYoutubeAudio(any()) }
@@ -132,7 +127,7 @@ class DownloadAudioMediaUseCaseTest {
     fun `받기가 끝나면 실패해도 예약을 푼다`() = runTest {
         coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.failure(IllegalStateException())
 
-        useCase(downloadUrl)
+        useCase(downloadUrl, playlistIdOnDownload = UNCATEGORIZED_ID)
 
         verify(exactly = 1) { audioMediaRepository.releaseDownload(downloadUrl) }
     }
@@ -145,7 +140,7 @@ class DownloadAudioMediaUseCaseTest {
         coEvery { audioMediaRepository.addAudioMedia(withImage, UNCATEGORIZED_ID, false) } returns
             Result.success(addedResult(resolvedPlaylistId = UNCATEGORIZED_ID))
 
-        assert(useCase(downloadUrl).isSuccess)
+        assert(useCase(downloadUrl, playlistIdOnDownload = UNCATEGORIZED_ID).isSuccess)
     }
 
     @Test
@@ -160,7 +155,7 @@ class DownloadAudioMediaUseCaseTest {
         coEvery { audioMediaRepository.addAudioMedia(mockDownloadedMedia, UNCATEGORIZED_ID, false) } returns
             Result.success(addedResult(resolvedPlaylistId = UNCATEGORIZED_ID))
 
-        val job = launch { useCase(downloadUrl) }
+        val job = launch { useCase(downloadUrl, playlistIdOnDownload = UNCATEGORIZED_ID) }
         started.await()
         job.cancelAndJoin()
 
@@ -173,7 +168,7 @@ class DownloadAudioMediaUseCaseTest {
 
         var caught: Throwable? = null
         try {
-            useCase(downloadUrl)
+            useCase(downloadUrl, playlistIdOnDownload = UNCATEGORIZED_ID)
         } catch (e: CancellationException) {
             caught = e
         }
@@ -186,7 +181,7 @@ class DownloadAudioMediaUseCaseTest {
     fun `기존 다운로드가 있으면 실패를 돌려주되 받기 실패로 올리지 않는다`() = runTest {
         coEvery { audioMediaRepository.getAudioMediaBySource(downloadUrl) } returns Result.success(mockAudioMedia)
 
-        val result = useCase(downloadUrl)
+        val result = useCase(downloadUrl, playlistIdOnDownload = UNCATEGORIZED_ID)
 
         assert(result.isFailure)
         assert(result.exceptionOrNull() is AlreadyDownloadedMedia)
@@ -196,9 +191,8 @@ class DownloadAudioMediaUseCaseTest {
     }
 
     @Test
-    fun `다운로드 성공 시 설정값으로 저장 테스트`() = runTest {
+    fun `다운로드 성공 시 전달받은 재생목록으로 저장 테스트`() = runTest {
         coEvery { fetchShouldInsertAtTopOnDownloadFlowUseCase() } returns flowOf(true)
-        coEvery { fetchPlaylistIdOnDownloadFlowUseCase() } returns flowOf(3)
         coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
         coEvery {
             audioMediaRepository.addAudioMedia(
@@ -208,7 +202,7 @@ class DownloadAudioMediaUseCaseTest {
             )
         } returns Result.success(addedResult(resolvedPlaylistId = 3))
 
-        val result = useCase(downloadUrl)
+        val result = useCase(downloadUrl, playlistIdOnDownload = 3)
 
         assert(result.isSuccess)
         assert(result.getOrThrow().playlistIdOnDownload == 3)
@@ -218,10 +212,9 @@ class DownloadAudioMediaUseCaseTest {
     }
 
     @Test
-    fun `설정 재생목록이 유효하지 않으면 데이터 계층이 해석한 미분류 id를 그대로 반환 테스트`() = runTest {
+    fun `전달받은 재생목록이 유효하지 않으면 데이터 계층이 해석한 미분류 id를 그대로 반환 테스트`() = runTest {
         // 대상 유효성 검사·미분류 fallback은 데이터 계층(facade) 책임이다.
-        // UseCase는 설정값을 그대로 넘기고, 데이터 계층이 해석해 돌려준 id를 surfacing만 한다.
-        coEvery { fetchPlaylistIdOnDownloadFlowUseCase() } returns flowOf(999)
+        // UseCase는 요청값을 그대로 넘기고, 데이터 계층이 해석해 돌려준 id를 surfacing만 한다.
         coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
         coEvery {
             audioMediaRepository.addAudioMedia(
@@ -231,7 +224,7 @@ class DownloadAudioMediaUseCaseTest {
             )
         } returns Result.success(addedResult(resolvedPlaylistId = UNCATEGORIZED_ID))
 
-        val result = useCase(downloadUrl)
+        val result = useCase(downloadUrl, playlistIdOnDownload = 999)
 
         assert(result.isSuccess)
         assert(result.getOrThrow().playlistIdOnDownload == UNCATEGORIZED_ID)
@@ -250,7 +243,7 @@ class DownloadAudioMediaUseCaseTest {
         } returns Result.failure(exception)
         coEvery { audioMediaRepository.deleteDownloadedFile(mockDownloadedMedia) } returns Result.success(Unit)
 
-        val result = useCase(downloadUrl)
+        val result = useCase(downloadUrl, playlistIdOnDownload = UNCATEGORIZED_ID)
 
         assert(result.exceptionOrNull()!!.message == exception.message)
         coVerify(exactly = 1) { audioMediaRepository.deleteDownloadedFile(mockDownloadedMedia) }

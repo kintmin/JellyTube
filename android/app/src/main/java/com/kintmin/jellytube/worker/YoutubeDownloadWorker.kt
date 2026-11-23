@@ -59,10 +59,11 @@ class YoutubeDownloadWorker(
         }
 
         val url = inputData.getString(INPUT_DATA_URL) ?: return Result.failure()
+        val playlistId = inputData.getInt(INPUT_DATA_PLAYLIST_ID, NO_PLAYLIST_ID).takeUnless { it == NO_PLAYLIST_ID }
         val downloadNotification = DownloadNotification(1, 0)
         pushNotificationManager.sendNotification(downloadNotification)
 
-        downloadAudioMediaUseCase(url).onSuccess { result ->
+        downloadAudioMediaUseCase(url, playlistIdOnDownload = playlistId).onSuccess { result ->
             pushNotificationManager.cancelNotification(downloadNotification.id)
             coroutineScope {
                 // 음원 등록이 이미 성공한 시점에만 시작하므로 orphan 가사/취소 시나리오는 발생하지 않는다.
@@ -100,5 +101,7 @@ class YoutubeDownloadWorker(
 
     companion object {
         const val INPUT_DATA_URL = "youtube_url"
+        const val INPUT_DATA_PLAYLIST_ID = "playlist_id"
+        const val NO_PLAYLIST_ID = -1
     }
 }

@@ -34,7 +34,7 @@ class YoutubeDownloadViewModel constructor(
 
     fun sendIntent(intent: YoutubeDownloadIntent) {
         when(intent) {
-            is YoutubeDownloadIntent.OnClickDownload -> startDownload(intent.url)
+            is YoutubeDownloadIntent.OnClickDownload -> startDownload(intent.url, intent.playlistId)
             is YoutubeDownloadIntent.OnChangeUrl -> _uiState.update { it.copy(currentUrl = intent.url) }
             is YoutubeDownloadIntent.OnShowToast -> viewModelScope.launch {
                 eventChannel.send(YoutubeDownloadEvent.ShowToast(intent.message))
@@ -42,7 +42,7 @@ class YoutubeDownloadViewModel constructor(
         }
     }
 
-    private fun startDownload(youtubeUrl: String) {
+    private fun startDownload(youtubeUrl: String, playlistId: Int?) {
         if (_clickedUrlSet.contains(youtubeUrl)) {
             viewModelScope.launch {
                 eventChannel.send(YoutubeDownloadEvent.ShowToast("저장중이거나 저장완료된 영상입니다."))
@@ -51,6 +51,6 @@ class YoutubeDownloadViewModel constructor(
         }
 
         _clickedUrlSet.add(youtubeUrl)
-        executeYoutubeDownload(youtubeUrl)
+        executeYoutubeDownload(youtubeUrl, playlistId)
     }
 }
