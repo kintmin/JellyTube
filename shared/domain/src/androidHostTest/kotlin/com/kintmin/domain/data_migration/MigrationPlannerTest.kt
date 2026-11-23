@@ -319,6 +319,24 @@ class MigrationPlannerTest {
     }
 
     @Test
+    fun `보내는 쪽에 이름이 같은 플레이리스트가 여럿이면 미리보기에 뜬 하나를 고르는 것으로 함께 합친다`() {
+        val source = snapshot(
+            audios = listOf(audio(101, "https://youtu.be/a"), audio(102, "https://youtu.be/b")),
+            playlists = sourceSystem +
+                playlist(14, PlaylistType.USER, name = "운동", sequence = 1) +
+                playlist(15, PlaylistType.USER, name = "운동", sequence = 2),
+            tracks = listOf(track(11, 101, 1), track(11, 102, 2), track(14, 101, 1), track(15, 102, 1)),
+        )
+        val target = snapshot(playlists = targetSystem + playlist(7, PlaylistType.USER, name = "운동"))
+        val shown = MigrationPlanner.preview(source, target).playlists.map { it.sourceId }.toSet()
+
+        val plan = MigrationPlanner.plan(source, target, MigrationChoice(mergingPlaylistSourceIds = shown))
+
+        assertTrue(plan.newPlaylists.isEmpty())
+        assertTrue(MigrationTrackAddition(Existing(7), listOf(Incoming(101), Incoming(102))) in plan.trackAdditions)
+    }
+
+    @Test
     fun `곡만 왔으면 받는 쪽이 고른 플레이리스트에 담고 미분류로 보내지 않는다`() {
         val source = snapshot(audios = listOf(audio(101, "https://youtu.be/a")))
         val target = snapshot(playlists = targetSystem + playlist(7, PlaylistType.USER, name = "받은 곡"))

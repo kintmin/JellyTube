@@ -83,9 +83,12 @@ object MigrationPlanner {
             .distinctBy { it.mergeKey() }
             .associate { it.mergeKey() to it.id }
         // 받는 사람이 고르지 않은 것은 이름이 겹쳐도 새로 만든다 — 남의 플레이리스트가 내 것에 섞이면 안 된다.
-        val mergingIds = choice.mergingPlaylistSourceIds
+        // 미리보기는 같은 키의 플레이리스트를 하나로 보여 주므로, 고른 것은 키 단위로 따른다.
+        val mergingKeys = choice.mergingPlaylistSourceIds?.let { ids ->
+            source.playlists.filter { it.id in ids }.map { it.mergeKey() }.toSet()
+        }
         fun MigrationPlaylist.mergeTargetId(): Int? =
-            if (mergingIds == null || id in mergingIds) targetUserIdByKey[mergeKey()] else null
+            if (mergingKeys == null || mergeKey() in mergingKeys) targetUserIdByKey[mergeKey()] else null
         val sourceUserPlaylists = source.playlists.filterNot { it.type.isSystem }.sortedWith(playlistOrder)
         val newPlaylists = sourceUserPlaylists
             .filter { it.mergeTargetId() == null }
