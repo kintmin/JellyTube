@@ -163,7 +163,11 @@ fun PlaylistEditScreen(
                 BottomActionBar {
                     BottomActionButton(
                         text = "${checkedItemCount}곡 플레이리스트에서 빼기",
-                        onClick = { isShowRemoveDialog = true },
+                        // 비밀에서 빠진 곡은 드러나는 곳으로 간다. 그때만 묻는다.
+                        onClick = {
+                            if (headerData.isSecretPlaylist) isShowRemoveDialog = true
+                            else sendIntent(PlaylistEditListIntent.OnClickDeleteAudioMediaListInPlaylist)
+                        },
                     )
                 }
             }
