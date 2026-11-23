@@ -38,6 +38,24 @@
 
 ---
 
+## 취소 규율 — `runCatching` 은 취소를 삼킨다
+
+`runCatching` 은 `CancellationException` 까지 `Result.failure` 로 감싼다. 그래서 코루틴을 취소해도
+실패로 기록되고, 바깥 코루틴은 자기가 취소된 줄 모른 채 다음 줄을 이어서 실행한다.
+
+**suspend 하는 블록을 `Result` 로 감쌀 때는 `suspendRunCatching` 이다.** `runCatching` 이 맞는 자리는
+둘뿐이다.
+
+- **블록이 동기일 때.** 블록 안에서 취소가 날 수 없다 — enum 파싱, C 인터옵 콜백 같은 것.
+- **`withContext(NonCancellable)` 안의 정리 코드일 때.** 취소를 다시 던지면 정리 경로 밖으로 샌다.
+
+`withContext(Dispatchers.IO) { ... }` 는 동기가 아니다 — 그 안에서 suspend 를 부르면 취소가 난다.
+
+`Error` 도 잡지 않는다. OutOfMemoryError 나 NoClassDefFoundError 를 `Result.failure` 로 바꾸면 앱이
+망가진 상태로 계속 가고 수집기에도 평범한 실패로 올라간다. 우리 예외는 잡고, 그런 것은 전파한다.
+
+---
+
 ## Repository 인터페이스 규약
 
 - 도메인 개념 하나당 인터페이스 하나.
@@ -57,3 +75,5 @@
 - UseCase 하나에만 쓰이는 결과 타입은 그 UseCase 파일에 둘 수 있다. 다만 Repository 인터페이스가
   그것을 돌려주게 되는 순간 `model/` 로 옮긴다.
 - 데이터 계층의 DTO(DB entity, facade 래퍼, 네트워크 DTO)는 여기 오지 않는다 — `shared:data` 다.
+- **도메인 예외도 `model/` 에 두고 `Exception` 을 상속한다.** `Throwable` 을 바로 상속하면 우리 예외와
+  `Error` 가 한 덩어리가 되어, 잡는 쪽이 둘을 가를 수 없다.

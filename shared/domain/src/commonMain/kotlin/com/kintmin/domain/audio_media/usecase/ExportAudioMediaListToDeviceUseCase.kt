@@ -5,6 +5,7 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.model.AudioMediaExportStatus
 import com.kintmin.domain.audio_media.model.AudioMediaExportSummary
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.ErrorLog
 
@@ -15,7 +16,7 @@ class ExportAudioMediaListToDeviceUseCase constructor(
     suspend operator fun invoke(
         audioMediaList: List<AudioMedia>,
         targetList: List<AudioExportTarget>,
-    ): Result<AudioMediaExportSummary> = runCatching {
+    ): Result<AudioMediaExportSummary> = suspendRunCatching {
         if (targetList.isEmpty()) throw Exception("저장할 용도를 하나 이상 선택해주세요.")
 
         var exportedCount = 0

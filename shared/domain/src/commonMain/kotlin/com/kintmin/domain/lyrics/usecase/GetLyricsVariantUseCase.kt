@@ -1,6 +1,7 @@
 package com.kintmin.domain.lyrics.usecase
 
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.lyrics.model.LyricsLine
 import com.kintmin.domain.lyrics.model.LyricsVariant
 
@@ -14,9 +15,9 @@ class GetLyricsVariantUseCase(
     suspend operator fun invoke(
         lyricFileFullPath: String,
         variant: LyricsVariant,
-    ): Result<List<LyricsLine>?> = runCatching {
+    ): Result<List<LyricsLine>?> = suspendRunCatching {
         val raw = audioMediaRepository.getVariantLyrics(lyricFileFullPath, variant).getOrThrow()
-            ?: return@runCatching null
+            ?: return@suspendRunCatching null
         parseLyricsUseCase(raw)
     }
 }

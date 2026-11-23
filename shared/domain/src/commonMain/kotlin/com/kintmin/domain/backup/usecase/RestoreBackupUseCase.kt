@@ -4,6 +4,7 @@ import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.audio_media.ParallelDownloader
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.backup.model.BackupContent
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.MigrationFiles
 import com.kintmin.domain.data_migration.MigrationPlanner
 import com.kintmin.domain.data_migration.SourceKey
@@ -39,7 +40,7 @@ class RestoreBackupUseCase(
     suspend operator fun invoke(
         backup: BackupContent,
         onProgress: (MigrationProgress) -> Unit,
-    ): Result<MigrationSummary> = runCatching {
+    ): Result<MigrationSummary> = suspendRunCatching {
         onProgress(MigrationProgress(MigrationStage.PLANNING))
         // 계획은 이 기기에 시스템 플레이리스트가 다 있어야 세울 수 있다.
         playlistRepository.ensureSystemPlaylists().getOrThrow()

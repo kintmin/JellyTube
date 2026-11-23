@@ -4,6 +4,7 @@ import com.kintmin.domain.app_setting.usecase.FetchPlaylistIdOnDownloadFlowUseCa
 import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFlowUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
@@ -20,7 +21,7 @@ class ImportSharedAudioMediaUseCase constructor(
     suspend operator fun invoke(
         contentUriString: String,
         playlistIdOverride: Int? = null,
-    ): Result<AudioMedia> = runCatching {
+    ): Result<AudioMedia> = suspendRunCatching {
         val shouldInsertAtTop = fetchShouldInsertAtTopOnDownloadFlowUseCase().first()
         val playlistId = playlistIdOverride ?: fetchPlaylistIdOnDownloadFlowUseCase().first()
 

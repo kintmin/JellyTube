@@ -13,6 +13,7 @@ import com.kintmin.domain.audio_edit.model.AudioEditTimeline
 import com.kintmin.domain.audio_edit.model.SavedAudioEdit
 import com.kintmin.domain.audio_edit.usecase.ReleaseAudioEditSaveUseCase
 import com.kintmin.domain.audio_edit.usecase.SaveAudioEditUseCase
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.ErrorLog
 import com.kintmin.jellytube.push_notification.PushNotificationIdGenerator
@@ -56,7 +57,7 @@ class AudioEditSaveWorker(
 
         // 저장을 시작하기 전에 끝나면 화면이 걸어 둔 저장 중 예약을 직접 푼다.
         // 저장을 시작하면 끝날 때 저장하는 쪽이 푼다.
-        val foregroundResult = runCatching { setForegroundAsync(getForegroundInfo()) }
+        val foregroundResult = suspendRunCatching { setForegroundAsync(getForegroundInfo()) }
         if (foregroundResult.isFailure) {
             releaseAudioEditSaveUseCase(audioMediaId)
             notifyFailure("포그라운드 서비스 시작 실패", foregroundResult.exceptionOrNull())

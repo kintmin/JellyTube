@@ -7,6 +7,7 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.SourceKey
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
@@ -47,7 +48,7 @@ class DownloadYoutubePlaylistUseCase(
     suspend operator fun invoke(
         playlist: YoutubePlaylist,
         onProgress: (PlaylistDownloadProgress) -> Unit,
-    ): Result<PlaylistDownloadSummary> = runCatching {
+    ): Result<PlaylistDownloadSummary> = suspendRunCatching {
         val entries = playlist.entries.distinctBy { it.videoId }
         log("재생목록 받기 시작: ${secret(playlist.title)} (${entries.size}곡)")
         val owned = ownedIdByKey()

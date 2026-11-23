@@ -7,6 +7,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
@@ -47,7 +48,7 @@ class YoutubeDownloadWorker(
     }
 
     override suspend fun doWork(): Result {
-        val foregroundResult = runCatching {
+        val foregroundResult = suspendRunCatching {
             setForegroundAsync(getForegroundInfo())
         }
 

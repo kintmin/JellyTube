@@ -3,6 +3,7 @@ package com.kintmin.jellytube.worker
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.CreateLyricsVariantUseCase
 import com.kintmin.log.AppLog
@@ -30,7 +31,7 @@ class LyricsVariantWorker(
         if (audioMediaId == -1 || lyricFileFullPath == null || variantName == null) {
             return Result.failure()
         }
-        val variant = runCatching { LyricsVariant.valueOf(variantName) }.getOrNull()
+        val variant = suspendRunCatching { LyricsVariant.valueOf(variantName) }.getOrNull()
             ?: return Result.failure()
 
         return createLyricsVariantUseCase(lyricFileFullPath, variant).fold(

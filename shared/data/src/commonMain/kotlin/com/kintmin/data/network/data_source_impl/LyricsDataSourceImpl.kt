@@ -2,6 +2,7 @@ package com.kintmin.data.network.data_source_impl
 
 import com.kintmin.data.network.data_source.LyricsDataSource
 import com.kintmin.data.network.model.LyricsSearchResultDto
+import com.kintmin.domain.common.suspendRunCatching
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -14,7 +15,7 @@ internal class LyricsDataSourceImpl(
     private val client: HttpClient,
 ) : LyricsDataSource {
 
-    override suspend fun search(query: String): Result<List<LyricsSearchResultDto>> = runCatching {
+    override suspend fun search(query: String): Result<List<LyricsSearchResultDto>> = suspendRunCatching {
         client.get(LRCLIB_SEARCH_URL) {
             parameter("q", query)
             header(HttpHeaders.UserAgent, USER_AGENT)

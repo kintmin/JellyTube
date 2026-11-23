@@ -352,7 +352,8 @@ class PlayerDetailViewModelTest {
         updateSleepTimerAnnouncementMediaIdUseCase = mockk(relaxed = true),
         fetchSleepTimerMinutesFlowUseCase = mockk(relaxed = true),
         fetchSleepTimerAnnouncementOptionsFlowUseCase = mockk(relaxed = true),
-        fetchPlaylistFlowUseCase = mockk(relaxed = true),
+        // Result 는 value class 라 relaxed mock 이 Object 를 담은 Result 를 만들어 캐스팅이 터진다.
+        getPlaylistUseCase = mockk { coEvery { this@mockk(any()) } returns Result.failure(IllegalStateException()) },
         fetchAudioMediaDetailFlowUseCase = fetchAudioMediaDetail,
         toggleFavoriteUseCase = mockk(relaxed = true),
         getParsedLyricsUseCase = getParsedLyrics,

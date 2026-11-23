@@ -1,6 +1,7 @@
 package com.kintmin.domain.lyrics.usecase
 
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.repository.LyricsTranslationRepository
 
@@ -18,7 +19,7 @@ class CreateLyricsVariantUseCase(
     suspend operator fun invoke(
         lyricFileFullPath: String,
         variant: LyricsVariant,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = suspendRunCatching {
         val rawLyrics = audioMediaRepository.getLyrics(lyricFileFullPath).getOrThrow()
         val parsedLines = parseLyricsUseCase(rawLyrics)
         if (parsedLines.all { it.text.isBlank() }) error("변환할 가사가 없습니다.")

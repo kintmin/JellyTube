@@ -22,7 +22,7 @@ import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
 import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.domain.playlist.model.PlaylistType
-import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
+import com.kintmin.domain.playlist.usecase.GetPlaylistUseCase
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.sleep_timer.SleepTimerRunner
 import kotlin.time.Duration.Companion.milliseconds
@@ -37,7 +37,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -60,7 +59,7 @@ class PlayerDetailViewModel constructor(
     private val updateSleepTimerAnnouncementMediaIdUseCase: UpdateSleepTimerAnnouncementMediaIdUseCase,
     fetchSleepTimerMinutesFlowUseCase: FetchSleepTimerMinutesFlowUseCase,
     fetchSleepTimerAnnouncementOptionsFlowUseCase: FetchSleepTimerAnnouncementOptionsFlowUseCase,
-    private val fetchPlaylistFlowUseCase: FetchPlaylistFlowUseCase,
+    private val getPlaylistUseCase: GetPlaylistUseCase,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
     private val getParsedLyricsUseCase: GetParsedLyricsUseCase,
@@ -526,9 +525,7 @@ class PlayerDetailViewModel constructor(
             return
         }
         viewModelScope.launch {
-            val name = runCatching {
-                fetchPlaylistFlowUseCase(playlistId).first().name
-            }.getOrDefault("")
+            val name = getPlaylistUseCase(playlistId).getOrNull()?.name.orEmpty()
             _uiState.update { it.copy(playlistName = name) }
         }
     }
