@@ -62,7 +62,6 @@ object MigrationScopes {
     }
 }
 
-/** 비밀 플레이리스트에 담긴 곡의 id. */
 internal fun MigrationSnapshot.secretAudioMediaIds(): Set<Int> {
     val secretPlaylistIds = playlists.filter { it.type.isSecret }.map { it.id }.toSet()
     return tracks.filter { it.playlistId in secretPlaylistIds }.map { it.audioMediaId }.toSet()

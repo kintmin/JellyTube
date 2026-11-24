@@ -21,7 +21,6 @@ fun swiftDebugLog(tag: String, message: String) {
         ?.sendDebugLog(DebugLog(tag, message))
 }
 
-/** Swift 가 메시지에 넣을 값을 가린다. 비밀 여부는 Kotlin 이 정해 넘긴 값을 그대로 쓴다. */
 fun swiftSecret(value: String, isSecret: Boolean): String = secret(value, isSecret)
 
 /** Swift 의 오류는 Kotlin 예외가 아니라 메시지로만 Issue 에 올라간다. */
