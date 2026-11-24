@@ -1,5 +1,6 @@
 package com.kintmin.presentation.ui.setting.data_migration_receive
 
+import androidx.lifecycle.ViewModelStore
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
 import com.kintmin.domain.data_migration.model.MigrationChoice
 import com.kintmin.domain.data_migration.model.MigrationDeclinedException
@@ -22,6 +23,8 @@ import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
 import com.kintmin.domain.playlist.model.DownloadTargetPlaylists
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
+import com.kintmin.domain.secret_mode.model.SecretModeEndReason
+import com.kintmin.domain.secret_mode.model.SecretModeStartReason
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeMinutesFlowUseCase
 import com.kintmin.presentation.secret_mode.SecretModeRunner
 import com.kintmin.presentation.port.MigrationReceiveKeepAlive
@@ -187,7 +190,7 @@ class SettingDataMigrationReceiveViewModelTest {
         viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
 
         assertEquals(false, choice()?.includesSecret)
-        verify(exactly = 0) { secretModeRunner.start(any()) }
+        verify(exactly = 0) { secretModeRunner.start(any(), any()) }
     }
 
     @Test
@@ -199,7 +202,7 @@ class SettingDataMigrationReceiveViewModelTest {
 
         assertEquals(true, choice()?.includesSecret)
         // 받는 중에 비밀모드가 꺼지면 이 화면이 메인까지 걷힌다.
-        verify { secretModeRunner.start(30.minutes) }
+        verify { secretModeRunner.start(30.minutes, SecretModeStartReason.MIGRATION_RECEIVE) }
         verify { secretModeRunner.pause() }
     }
 
@@ -213,6 +216,18 @@ class SettingDataMigrationReceiveViewModelTest {
         assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Finished)
         // 멈춘 채로 두면 결과 화면에서 홈으로 나간 사람의 비밀모드가 만료 없이 켜져 있다.
         verify { secretModeRunner.resume() }
+    }
+
+    @Test
+    fun `받으려고 켠 비밀모드는 화면이 닫힐 때 시계를 되돌리지 않고 끈다`() {
+        val (viewModel, _) = confirmSecretTransfer()
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(true))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
+
+        ViewModelStore().apply { put("receive", viewModel) }.clear()
+
+        verify(exactly = 1) { secretModeRunner.resume() }
+        verify { secretModeRunner.end(SecretModeEndReason.MIGRATION_RECEIVE_END) }
     }
 
     @Test
@@ -268,7 +283,7 @@ class SettingDataMigrationReceiveViewModelTest {
 
         viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(true))
 
-        verify(exactly = 0) { secretModeRunner.start(any()) }
+        verify(exactly = 0) { secretModeRunner.start(any(), any()) }
         verify { secretModeRunner.pause() }
     }
 

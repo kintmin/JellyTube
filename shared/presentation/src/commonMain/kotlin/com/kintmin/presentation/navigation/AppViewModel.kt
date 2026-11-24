@@ -1,5 +1,6 @@
 package com.kintmin.presentation.navigation
 
+import com.kintmin.domain.secret_mode.model.SecretModeEndReason
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
@@ -57,7 +58,7 @@ class AppViewModel(
                 .onFailure { appLog.sendErrorLog(ErrorLog("AppViewModel", "시스템 플레이리스트 보장 실패", it)) }
             // 비밀모드 중에 앱이 죽으면 다운로드 대상이 비밀 플레이리스트로 남는다. 켜져 있으면
             // 재생이 프로세스를 살려 둔 채 화면만 다시 뜬 것이라 끄지 않는다.
-            if (!fetchSecretModeEnabledFlowUseCase().value) endSecretModeUseCase()
+            if (!fetchSecretModeEnabledFlowUseCase().value) endSecretModeUseCase(SecretModeEndReason.APP_LAUNCH)
         }
         applyPlaybackSettings()
         leaveSecretScreensWhenSecretModeEnds()

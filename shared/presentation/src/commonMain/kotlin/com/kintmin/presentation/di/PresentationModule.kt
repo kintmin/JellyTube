@@ -39,8 +39,8 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val presentationModule: Module = module {
-    single { SleepTimerRunner(get(), get()) }
-    single { SecretModeRunner(get(), get(), get(), get(), get()) }
+    single { SleepTimerRunner(get(), get(), get()) }
+    single { SecretModeRunner(get(), get(), get(), get(), get(), get()) }
 
     viewModelOf(::AppViewModel)
     viewModelOf(::StepViewModel)

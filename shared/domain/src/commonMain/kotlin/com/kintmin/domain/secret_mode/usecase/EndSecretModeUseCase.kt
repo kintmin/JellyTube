@@ -3,6 +3,7 @@ package com.kintmin.domain.secret_mode.usecase
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.secret_mode.model.SecretModeEndReason
 import com.kintmin.domain.secret_mode.repository.SecretModeRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
@@ -16,8 +17,8 @@ class EndSecretModeUseCase constructor(
     private val playlistRepository: PlaylistRepository,
     private val appLog: AppLog,
 ) {
-    suspend operator fun invoke(): Result<Unit> {
-        if (secretModeRepository.isEnabledFlow.value) log("비밀모드 끔")
+    suspend operator fun invoke(reason: SecretModeEndReason): Result<Unit> {
+        if (secretModeRepository.isEnabledFlow.value) log("비밀모드 끔: ${reason.name}")
         secretModeRepository.setEnabled(false)
         val savedId = appSettingRepository.getPlaylistIdOnDownloadFlow().first()
         val playlists = playlistRepository.getAllPlaylistFlow().first()

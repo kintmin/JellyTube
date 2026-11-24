@@ -2,6 +2,8 @@ package com.kintmin.presentation.sleep_timer
 
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_play_setting.SleepTimerFadeOut
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.port.AudioPreviewPlayer
 import com.kintmin.presentation.port.PlaybackController
 import io.mockk.every
@@ -39,6 +41,11 @@ class SleepTimerRunnerTest {
     private val announcementPlayer: AudioPreviewPlayer = mockk(relaxed = true)
 
     private val timeSource = TestTimeSource()
+
+    private val logs = mutableListOf<String>()
+    private val appLog: AppLog = mockk(relaxed = true) {
+        every { sendDebugLog(any()) } answers { logs += firstArg<DebugLog>().message }
+    }
 
     private val announcement = AudioMedia(
         id = 7,
@@ -223,9 +230,37 @@ class SleepTimerRunnerTest {
         assertNull(runner.remaining)
     }
 
+    @Test
+    fun `시간이 다 돼 멈추면 켬부터 안내 음성까지 남긴다`() = runTest {
+        val runner = runner()
+        runner.announcement = announcement
+
+        runner.start(total = 30.minutes)
+        advanceTimeBy(30.minutes + 1.seconds)
+        runCurrent()
+
+        assertEquals(
+            listOf("잠들기 타이머 켬: 30분", "잠들기 타이머 끝 3초 전 페이드아웃 시작: 재생 중=false", "잠들기 타이머가 재생을 멈춤", "안내 음성 재생: id=7"),
+            logs,
+        )
+    }
+
+    @Test
+    fun `끔은 켜져 있을 때 사용자가 끈 것만 남는다`() = runTest {
+        val runner = runner()
+
+        runner.start(total = 30.minutes)
+        runner.start(total = 10.minutes)
+        runner.cancel()
+        runner.cancel()
+
+        assertEquals(listOf("잠들기 타이머 켬: 30분", "잠들기 타이머 켬: 10분", "잠들기 타이머 끔: 사용자"), logs)
+    }
+
     private fun TestScope.runner() = SleepTimerRunner(
         playbackController = mediaControllerManager,
         announcementPlayer = announcementPlayer,
+        appLog = appLog,
         timeSource = timeSource,
         scope = backgroundScope,
     )

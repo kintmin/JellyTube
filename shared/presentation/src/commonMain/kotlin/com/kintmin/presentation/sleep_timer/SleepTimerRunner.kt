@@ -4,6 +4,8 @@ import com.kintmin.domain.audio_edit.model.AudioEditPart
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_play_setting.SleepTimerFadeOut
 import com.kintmin.domain.audio_play_setting.SleepTimerSchedule
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.port.AudioPreviewPlayer
 import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +28,7 @@ import kotlin.time.TimeSource
 class SleepTimerRunner(
     private val playbackController: PlaybackController,
     private val announcementPlayer: AudioPreviewPlayer,
+    private val appLog: AppLog,
     private val timeSource: TimeSource = TimeSource.Monotonic,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
@@ -41,14 +44,17 @@ class SleepTimerRunner(
     var announcement: AudioMedia? = null
 
     fun start(total: Duration) {
-        cancel()
+        job?.cancel()
+        log("잠들기 타이머 켬: ${total.inWholeMinutes}분")
 
         val started = SleepTimerSchedule(timeSource.markNow(), total)
         schedule = started
         job = scope.launch {
             try {
                 delay(started.delayUntilFadeOut())
+                log("잠들기 타이머 끝 ${SleepTimerFadeOut.DURATION.inWholeSeconds}초 전 페이드아웃 시작: 재생 중=${playbackController.isPlaying}")
                 fadeOutAndPause()
+                log("잠들기 타이머가 재생을 멈춤")
                 clearSchedule(started)
                 announcement?.let { playAnnouncement(it) }
             } finally {
@@ -63,6 +69,7 @@ class SleepTimerRunner(
     }
 
     fun cancel() {
+        if (schedule != null) log("잠들기 타이머 끔: 사용자")
         job?.cancel()
         job = null
         schedule = null
@@ -85,7 +92,9 @@ class SleepTimerRunner(
      * 메인 재생을 멈춘 **뒤에** 부른다. 그래야 아래 폴링이 "메인 재생이 다시 시작됐다" 를 볼 수 있다.
      */
     private suspend fun playAnnouncement(announcement: AudioMedia) {
-        val duration = announcement.playbackDuration ?: return
+        val duration = announcement.playbackDuration
+            ?: return log("안내 음성 길이를 몰라 건너뜀: id=${announcement.id}")
+        log("안내 음성 재생: id=${announcement.id}")
 
         announcementPlayer.play(
             audioFileFullPath = announcement.playbackFileFullPath,
@@ -102,6 +111,8 @@ class SleepTimerRunner(
             announcementPlayer.release()
         }
     }
+
+    private fun log(message: String) = appLog.sendDebugLog(DebugLog("SleepTimer", message))
 
     private companion object {
 

@@ -20,6 +20,8 @@ import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
+import com.kintmin.domain.secret_mode.model.SecretModeEndReason
+import com.kintmin.domain.secret_mode.model.SecretModeStartReason
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeMinutesFlowUseCase
 import com.kintmin.presentation.secret_mode.SecretModeRunner
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
@@ -243,7 +245,7 @@ class SettingDataMigrationReceiveViewModel constructor(
         if (!accepts) return
         // 쓰던 비밀모드가 이미 켜져 있으면 그 시간을 전송이 먹지 않게 멈추기만 한다.
         if (secretModeRunner.remaining == null) {
-            secretModeRunner.start(secretModeMinutes.minutes)
+            secretModeRunner.start(secretModeMinutes.minutes, SecretModeStartReason.MIGRATION_RECEIVE)
             turnedOnSecretMode = true
         }
         secretModeRunner.pause()
@@ -372,10 +374,9 @@ class SettingDataMigrationReceiveViewModel constructor(
     )
 
     override fun onCleared() {
-        // 화면이 사라지는 길이 어디든 — 다 받았든 중단했든 — 멈춰 둔 시계를 되돌리고, 받으려고
-        // 켠 것이면 끈다. 전송이 끝날 때 끄면 그 순간 화면이 걷혀 결과를 볼 수 없다.
-        secretModeRunner.resume()
-        if (turnedOnSecretMode) secretModeRunner.end()
+        // 화면이 사라지는 길이 어디든 — 다 받았든 중단했든 — 받으려고 켠 것이면 끄고, 아니면 멈춰 둔
+        // 시계를 되돌린다. 전송이 끝날 때 끄면 그 순간 화면이 걷혀 결과를 볼 수 없다.
+        if (turnedOnSecretMode) secretModeRunner.end(SecretModeEndReason.MIGRATION_RECEIVE_END) else secretModeRunner.resume()
     }
 
     private fun MigrationFailureReason.toText(): String = when (this) {
