@@ -22,7 +22,10 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentDisabled
 import com.kintmin.presentation.theme.floatingElevation
 
-/** 목록을 이 자리 밑까지 그려야 한다 — innerPadding 은 목록의 contentPadding 으로 준다. */
+/**
+ * 내용을 이 자리 밑까지 그려야 한다 — innerPadding 의 위쪽만 레이아웃에 주고, 아래쪽은 목록의
+ * contentPadding 으로, 스크롤이면 끝의 Spacer 로 비운다.
+ */
 @Composable
 fun BottomActionBar(
     modifier: Modifier = Modifier,

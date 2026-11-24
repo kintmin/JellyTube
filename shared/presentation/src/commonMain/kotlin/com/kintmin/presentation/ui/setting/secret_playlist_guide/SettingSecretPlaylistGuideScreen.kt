@@ -132,7 +132,6 @@ fun SettingSecretPlaylistGuideScreen(
                 text = "화면에서 숨길 뿐 파일을 암호화하지는 않습니다. 듣는 동안에는 잠금화면과 알림의 재생 " +
                     "컨트롤에 곡 제목이 나오고, 백업 파일에도 그대로 들어갑니다.",
             )
-            // 버튼이 떠 있으므로 그 밑까지 그린다 — contentPadding 이 없는 스크롤이라 끝을 비워 준다.
             Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
         }
     }
