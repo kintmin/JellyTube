@@ -109,8 +109,8 @@ fun ColumnScope.DialogChoiceButtonRow(
         verticalArrangement = Arrangement.spacedBy(dialogButtonSpacing),
     ) {
         TextButton(onClick = onDismiss) { Text(text = dismissText, maxLines = 1) }
+        // 확인 버튼 여백(32dp)을 쓰면 보통 폭의 폰에서도 세 버튼이 한 줄에 들어가지 않는다.
         OutlinedButton(
-            contentPadding = dialogConfirmButtonPadding,
             colors = JellyTubeButtonColors.removal(),
             onClick = {
                 onRemoval()
@@ -121,7 +121,6 @@ fun ColumnScope.DialogChoiceButtonRow(
         }
         if (destructiveText == null) return@FlowRow
         Button(
-            contentPadding = dialogConfirmButtonPadding,
             colors = JellyTubeButtonColors.destructive(),
             onClick = {
                 onDestructive()

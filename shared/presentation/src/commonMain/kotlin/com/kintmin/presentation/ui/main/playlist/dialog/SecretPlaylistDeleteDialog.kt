@@ -42,7 +42,7 @@ fun SecretPlaylistDeleteDialog(
                 onDismiss = onDismiss,
                 removalText = if (audioMediaCount > 0) "곡은 남기기" else "삭제",
                 onRemoval = deletePlaylist,
-                destructiveText = "곡까지 삭제".takeIf { audioMediaCount > 0 },
+                destructiveText = "모두 삭제".takeIf { audioMediaCount > 0 },
                 onDestructive = deletePlaylistWithTracks,
             )
         }

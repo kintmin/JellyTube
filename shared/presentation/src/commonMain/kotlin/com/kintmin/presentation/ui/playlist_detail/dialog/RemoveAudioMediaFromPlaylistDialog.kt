@@ -58,7 +58,7 @@ fun RemoveAudioMediaFromPlaylistDialog(
                 onDismiss = onDismiss,
                 removalText = "곡은 남기기",
                 onRemoval = removeFromPlaylist,
-                destructiveText = "곡까지 삭제",
+                destructiveText = if (mediaName != null) "삭제" else "모두 삭제",
                 onDestructive = deleteAudioMedia,
             )
         }
