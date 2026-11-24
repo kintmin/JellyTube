@@ -16,7 +16,6 @@ class SettingDataMigrationShareViewModel constructor(
 ) : ViewModel() {
 
     val uiState: StateFlow<SettingDataMigrationShareUiState> = combine(
-        // 비밀모드가 꺼져 있어도 세어야 한다 — 빠진다는 사실을 알려야 할지 이 수로 판단한다.
         fetchPlaylistsByTypeUseCase(PlaylistType.SECRET),
         fetchSecretModeEnabledFlowUseCase(),
     ) { secretPlaylists, isSecretModeEnabled ->

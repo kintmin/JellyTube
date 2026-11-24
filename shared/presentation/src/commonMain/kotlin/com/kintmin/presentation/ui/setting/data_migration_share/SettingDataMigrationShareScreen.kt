@@ -86,23 +86,14 @@ fun SettingDataMigrationShareScreen(
                 trailing = { SettingNavigateIcon(contentDescription = "곡 선택 화면으로 이동") },
             )
 
-            if (!uiState.hasSecretPlaylist) return@Column
+            if (!uiState.showsSecretNotice) return@Column
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                if (uiState.isSecretModeEnabled) {
-                    SettingNoticeCardView(
-                        icon = Icons.Rounded.Lock,
-                        title = "비밀 플레이리스트도 함께 갑니다",
-                        text = "비밀모드가 켜져 있어 비밀 플레이리스트 ${uiState.secretPlaylistCount}개가 보낼 것에 들어갑니다. " +
-                            "받는 기기에서도 비밀모드를 켜야 보입니다.",
-                    )
-                } else {
-                    SettingNoticeCardView(
-                        icon = Icons.Rounded.Lock,
-                        title = "비밀 플레이리스트는 보내지 않습니다",
-                        text = "기기를 옮기는 중이라면 비밀모드를 켠 뒤에 다시 들어오세요. " +
-                            "켜지 않고 보내면 비밀 플레이리스트는 이 기기에만 남습니다.",
-                    )
-                }
+                SettingNoticeCardView(
+                    icon = Icons.Rounded.Lock,
+                    title = "비밀 플레이리스트도 함께 갑니다",
+                    text = "비밀모드가 켜져 있어 비밀 플레이리스트 ${uiState.secretPlaylistCount}개가 보낼 것에 들어갑니다. " +
+                        "받는 기기에서도 비밀모드를 켜야 보입니다.",
+                )
             }
         }
     }
@@ -114,20 +105,6 @@ private fun SettingDataMigrationShareScreenPreview() {
     JellyTubeTheme {
         SettingDataMigrationShareScreen(
             uiState = SettingDataMigrationShareUiState.getMock(),
-            navigateToBack = {},
-            navigateToSync = {},
-            navigateToPlaylistSelect = {},
-            navigateToAudioMediaSelect = {},
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun SettingDataMigrationShareScreenSecretOffPreview() {
-    JellyTubeTheme {
-        SettingDataMigrationShareScreen(
-            uiState = SettingDataMigrationShareUiState(isSecretModeEnabled = false, secretPlaylistCount = 1),
             navigateToBack = {},
             navigateToSync = {},
             navigateToPlaylistSelect = {},
