@@ -230,9 +230,14 @@ internal fun FileSystem.moveFile(source: Path, destination: Path) {
     try {
         atomicMove(source, destination)
     } catch (e: IOException) {
-        // 반쯤 복사된 파일을 남기면 다음 시도가 이미 있는 같은 파일로 보고 건너뛴다.
-        runCatching { copy(source, destination) }.onFailure {
-            delete(destination, mustExist = false)
+        // 목적지에 직접 복사하면 끊긴 반쪽 파일이 이미 있는 같은 파일로 보여 행이 그것을 가리킨다.
+        // 예외로 끝나지 않는 중단도 있으니, 목적지가 생기는 것은 바꿔 끼우는 한 걸음이어야 한다.
+        val part = "$destination.part".toPath()
+        runCatching {
+            copy(source, part)
+            atomicMove(part, destination)
+        }.onFailure {
+            delete(part, mustExist = false)
             throw it
         }
         delete(source)
