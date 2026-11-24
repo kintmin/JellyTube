@@ -155,23 +155,29 @@ fun SettingDataMigrationReceiveScreen(
 
 private fun DataMigrationExitConfirmation.title(): String = when (this) {
     DataMigrationExitConfirmation.StopRunning -> "가져오기를 중단할까요?"
+    DataMigrationExitConfirmation.StopConfirming -> "받지 않고 나갈까요?"
     DataMigrationExitConfirmation.StopInterrupted -> "가져오기를 그만둘까요?"
     is DataMigrationExitConfirmation.LeaveFailures -> "가져오지 못한 곡이 있습니다"
 }
 
 private fun DataMigrationExitConfirmation.dismissText(): String = when (this) {
     DataMigrationExitConfirmation.StopRunning -> "계속 받기"
+    DataMigrationExitConfirmation.StopConfirming -> "계속 고르기"
     DataMigrationExitConfirmation.StopInterrupted, is DataMigrationExitConfirmation.LeaveFailures -> "취소"
 }
 
 private fun DataMigrationExitConfirmation.confirmStyle(): ConfirmStyle = when (this) {
-    DataMigrationExitConfirmation.StopRunning, DataMigrationExitConfirmation.StopInterrupted -> ConfirmStyle.Destructive
+    DataMigrationExitConfirmation.StopRunning,
+    DataMigrationExitConfirmation.StopConfirming,
+    DataMigrationExitConfirmation.StopInterrupted -> ConfirmStyle.Destructive
     is DataMigrationExitConfirmation.LeaveFailures -> ConfirmStyle.Primary
 }
 
 private fun DataMigrationExitConfirmation.message(): String = when (this) {
     DataMigrationExitConfirmation.StopRunning ->
         "아직 받는 중입니다. 나가면 받던 파일을 지우고, 이번 가져오기는 이 기기에 반영되지 않습니다."
+    DataMigrationExitConfirmation.StopConfirming ->
+        "아직 받기 전입니다. 나가면 보내는 기기에 알려 연결을 풉니다. 다시 받으려면 새 코드를 받아 주세요."
     DataMigrationExitConfirmation.StopInterrupted ->
         "나가면 받아 둔 임시 파일을 지웁니다. 나중에 다시 가져오면 처음부터 받습니다."
     is DataMigrationExitConfirmation.LeaveFailures ->

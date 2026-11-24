@@ -234,6 +234,9 @@ class SettingDataMigrationReceiveViewModel constructor(
     /**
      * 비밀을 함께 받기로 하면 받는 동안 이 기기의 비밀모드를 켠다. 받는 중에 비밀모드가 꺼지면
      * 화면 스택이 메인까지 걷혀 받기가 끊기므로 켠 시계는 바로 멈춘다.
+     *
+     * **끌 때는 되돌리지 않는다** — 그 자리에서 끄면 같은 이유로 화면이 걷혀 받기가 통째로
+     * 취소된다. 정리는 [endOfTransfer] 와 [onCleared] 가 한다.
      */
     private fun acceptSecret(accepts: Boolean) {
         updateConfirming { it.copy(acceptsSecret = accepts) }
@@ -244,6 +247,14 @@ class SettingDataMigrationReceiveViewModel constructor(
             turnedOnSecretMode = true
         }
         secretModeRunner.pause()
+    }
+
+    /**
+     * 전송이 끝나면 멈춰 둔 시계를 다시 흐르게 한다. 멈춘 채로 두면 결과 화면에서 홈으로 나간
+     * 사람의 비밀모드가 만료 없이 켜져 있다 — [SecretModeRunner.endIfExpired] 도 멈춘 시계는 보지 못한다.
+     */
+    private fun endOfTransfer() {
+        secretModeRunner.resume()
     }
 
     private fun startReceive() {
@@ -268,6 +279,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     }
 
     private fun finish(summary: MigrationSummary) {
+        endOfTransfer()
         _uiState.update { state ->
             state.copy(
                 phase = DataMigrationReceivePhase.Finished(
@@ -282,6 +294,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     }
 
     private fun interrupt(error: Throwable) {
+        endOfTransfer()
         // 받지 않기로 한 것은 실패가 아니다. 받은 파일도 없으므로 코드 입력으로만 돌아간다.
         if (error is MigrationDeclinedException) {
             _uiState.update { it.copy(code = "", stages = emptyList(), phase = DataMigrationReceivePhase.CodeInput()) }
@@ -307,8 +320,15 @@ class SettingDataMigrationReceiveViewModel constructor(
     private fun exit() {
         val phase = _uiState.value.phase
         viewModelScope.launch {
-            // 받던 파일을 지우기 전에 받기를 먼저 멈춘다. 반영 중이었다면 트랜잭션째 되돌아간다.
-            runJob?.cancelAndJoin()
+            if (phase is DataMigrationReceivePhase.Confirming) {
+                // 확인 화면에서 나가는 것은 받지 않기와 같다. 취소로 끊으면 보내는 기기에 알리지
+                // 못해, 그쪽은 토큰을 쥔 채 남고 새 코드를 받기 전에는 다시 연결되지 않는다.
+                pendingChoice?.complete(null)
+                runJob?.join()
+            } else {
+                // 받던 파일을 지우기 전에 받기를 먼저 멈춘다. 반영 중이었다면 트랜잭션째 되돌아간다.
+                runJob?.cancelAndJoin()
+            }
             // 다시 시도하지 않고 나가면 받아 둔 임시 파일은 쓸 데가 없다. 끝났으면 이미 지웠다.
             if (phase !is DataMigrationReceivePhase.Finished) {
                 clearMigrationStagingUseCase()

@@ -13,13 +13,16 @@ data class SettingDataMigrationReceiveUiState(
 ) {
     val canConnect: Boolean get() = code.length == CODE_LENGTH && phase is DataMigrationReceivePhase.CodeInput
 
+    /** 연결이 살아 있어 화면이 꺼지면 안 되는 동안. 받는 사람이 고르는 확인 화면도 그렇다. */
     val isRunning: Boolean
-        get() = phase == DataMigrationReceivePhase.Pairing || phase == DataMigrationReceivePhase.Running
+        get() = phase == DataMigrationReceivePhase.Pairing || phase == DataMigrationReceivePhase.Running ||
+            phase is DataMigrationReceivePhase.Confirming
 
     /** 나가기 전에 물어볼 내용. null 이면 그냥 나간다. */
     val exitConfirmation: DataMigrationExitConfirmation?
         get() = when (val phase = phase) {
             DataMigrationReceivePhase.Pairing, DataMigrationReceivePhase.Running -> DataMigrationExitConfirmation.StopRunning
+            is DataMigrationReceivePhase.Confirming -> DataMigrationExitConfirmation.StopConfirming
             is DataMigrationReceivePhase.Interrupted -> DataMigrationExitConfirmation.StopInterrupted
             is DataMigrationReceivePhase.Finished ->
                 phase.failures.size.takeIf { it > 0 }?.let { DataMigrationExitConfirmation.LeaveFailures(it) }
@@ -121,6 +124,9 @@ data class DataMigrationFailureItem(
 
 sealed interface DataMigrationExitConfirmation {
     data object StopRunning : DataMigrationExitConfirmation
+
+    /** 확인 화면에서 나간다. 받지 않기와 같아서 보내는 기기에도 알려야 한다. */
+    data object StopConfirming : DataMigrationExitConfirmation
     data object StopInterrupted : DataMigrationExitConfirmation
     data class LeaveFailures(val failedCount: Int) : DataMigrationExitConfirmation
 }

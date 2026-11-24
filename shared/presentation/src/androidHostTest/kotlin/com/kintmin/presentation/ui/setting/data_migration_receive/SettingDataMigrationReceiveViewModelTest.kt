@@ -168,8 +168,9 @@ class SettingDataMigrationReceiveViewModelTest {
     private fun confirmSecretTransfer(): Pair<SettingDataMigrationReceiveViewModel, () -> MigrationChoice?> {
         var choice: MigrationChoice? = null
         coEvery { import(endpoint, "token", any(), any()) } coAnswers {
-            choice = arg<suspend (MigrationPreview) -> MigrationChoice?>(3)(secretPreview)
-            Result.success(summary())
+            val answer = arg<suspend (MigrationPreview) -> MigrationChoice?>(3)(secretPreview)
+            choice = answer
+            if (answer == null) Result.failure(MigrationDeclinedException()) else Result.success(summary())
         }
         val viewModel = viewModel()
         viewModel.connect()
@@ -200,6 +201,64 @@ class SettingDataMigrationReceiveViewModelTest {
         // 받는 중에 비밀모드가 꺼지면 이 화면이 메인까지 걷힌다.
         verify { secretModeRunner.start(30.minutes) }
         verify { secretModeRunner.pause() }
+    }
+
+    @Test
+    fun `받기가 끝나면 멈춰 둔 비밀모드 시계를 다시 흐르게 한다`() {
+        val (viewModel, _) = confirmSecretTransfer()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(true))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
+
+        assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Finished)
+        // 멈춘 채로 두면 결과 화면에서 홈으로 나간 사람의 비밀모드가 만료 없이 켜져 있다.
+        verify { secretModeRunner.resume() }
+    }
+
+    @Test
+    fun `받기가 멈춰도 비밀모드 시계를 다시 흐르게 한다`() {
+        coEvery { import(endpoint, "token", any(), any()) } coAnswers {
+            arg<suspend (MigrationPreview) -> MigrationChoice?>(3)(secretPreview)
+            Result.failure(IllegalStateException("끊김"))
+        }
+        val viewModel = viewModel()
+
+        viewModel.connect()
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(true))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
+
+        assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Interrupted)
+        verify { secretModeRunner.resume() }
+    }
+
+    @Test
+    fun `확인 화면에서는 화면을 켜 두고 나갈 때 묻는다`() {
+        val (viewModel, _) = confirmSecretTransfer()
+
+        val state = viewModel.uiState.value
+        // 사람이 고르는 동안 화면이 꺼지면 연결이 끊긴다.
+        assertTrue(state.isRunning)
+        assertEquals(DataMigrationExitConfirmation.StopConfirming, state.exitConfirmation)
+    }
+
+    @Test
+    fun `확인 화면에서 나가면 받지 않기로 알리고 임시 파일을 지운다`() = runTest {
+        // 취소로 끊으면 confirm 이 답을 돌려주지 못해 보내는 기기에 알릴 수 없다 — 그쪽은 토큰을
+        // 쥔 채 남고 새 코드를 받기 전에는 다시 연결되지 않는다.
+        var declined = false
+        coEvery { import(endpoint, "token", any(), any()) } coAnswers {
+            val answer = arg<suspend (MigrationPreview) -> MigrationChoice?>(3)(secretPreview)
+            declined = answer == null
+            if (answer == null) Result.failure(MigrationDeclinedException()) else Result.success(summary())
+        }
+        val viewModel = viewModel()
+        viewModel.connect()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnConfirmExit)
+
+        assertTrue(declined)
+        assertEquals(SettingDataMigrationReceiveEvent.NavigateToBack, viewModel.eventFlow.first())
+        coVerify(exactly = 1) { clearStaging() }
     }
 
     @Test
