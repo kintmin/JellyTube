@@ -15,6 +15,8 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.platform.AppUpdateInstaller
+import com.kintmin.presentation.platform.appUpdateInstaller
 import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.dialogActionsSpacing
@@ -24,7 +26,7 @@ import com.kintmin.presentation.theme.dialogDismissButtonPadding
 
 /**
  * [versionName] 이 null 이면 닫혀 있다. [onIgnore] 를 주면 "이번 버전 무시" 버튼이 생긴다.
- * 다운로드를 누르면 [onDownload] 뒤에 [onDismiss] 까지 부른다.
+ * 업데이트를 누르면 [onDownload] 뒤에 [onDismiss] 까지 부른다.
  */
 @Composable
 fun AppUpdateDialog(
@@ -32,6 +34,7 @@ fun AppUpdateDialog(
     onDownload: () -> Unit,
     onDismiss: () -> Unit,
     onIgnore: (() -> Unit)? = null,
+    installer: AppUpdateInstaller = appUpdateInstaller,
 ) {
     JellyTubeDialog(
         showDialog = versionName != null,
@@ -42,6 +45,7 @@ fun AppUpdateDialog(
             onDownload = onDownload,
             onDismiss = onDismiss,
             onIgnore = onIgnore,
+            installer = installer,
         )
     }
 }
@@ -52,17 +56,22 @@ private fun AppUpdateDialogContent(
     onDownload: () -> Unit,
     onDismiss: () -> Unit,
     onIgnore: (() -> Unit)?,
+    installer: AppUpdateInstaller,
 ) {
+    val guide = when (installer) {
+        AppUpdateInstaller.Browser -> "다운로드한 파일을 열어 설치해 주세요."
+        AppUpdateInstaller.SideStore -> "SideStore 가 받아서 설치합니다."
+    }
     DialogColumn(title = "새 버전이 있습니다") {
         Text(
-            text = "JellyTube $versionName 이 나왔습니다.\n다운로드한 파일을 열어 설치해 주세요.",
+            text = "JellyTube $versionName 이 나왔습니다.\n$guide",
             style = MaterialTheme.typography.bodyMedium,
         )
         if (onIgnore == null) {
             DialogButtonRow(
                 dismissText = "닫기",
                 onDismiss = onDismiss,
-                confirmText = "다운로드",
+                confirmText = "업데이트",
                 onConfirm = onDownload,
             )
         } else {
@@ -71,7 +80,7 @@ private fun AppUpdateDialogContent(
     }
 }
 
-/** "이번 버전 무시" 는 한 줄에 다 들어가면 시작 쪽에, 아니면 닫기·다운로드 아랫줄 끝에 둔다. */
+/** "이번 버전 무시" 는 한 줄에 다 들어가면 시작 쪽에, 아니면 닫기·업데이트 아랫줄 끝에 둔다. */
 @Composable
 private fun AppUpdateButtonBar(
     onIgnore: () -> Unit,
@@ -100,7 +109,7 @@ private fun AppUpdateButtonBar(
                     onDismiss()
                 },
             ) {
-                Text(text = "다운로드")
+                Text(text = "업데이트")
             }
         },
     ) { measurables, constraints ->
@@ -129,7 +138,7 @@ private fun AppUpdateButtonBar(
 @Composable
 private fun AppUpdateDialogContentPreview() {
     JellyTubeTheme {
-        AppUpdateDialogContent(versionName = "2.1.0", onDownload = {}, onDismiss = {}, onIgnore = null)
+        AppUpdateDialogContent(versionName = "2.1.0", onDownload = {}, onDismiss = {}, onIgnore = null, installer = AppUpdateInstaller.Browser)
     }
 }
 
@@ -137,7 +146,15 @@ private fun AppUpdateDialogContentPreview() {
 @Composable
 private fun AppUpdateDialogContentWithIgnorePreview() {
     JellyTubeTheme {
-        AppUpdateDialogContent(versionName = "2.1.0", onDownload = {}, onDismiss = {}, onIgnore = {})
+        AppUpdateDialogContent(versionName = "2.1.0", onDownload = {}, onDismiss = {}, onIgnore = {}, installer = AppUpdateInstaller.Browser)
+    }
+}
+
+@Preview
+@Composable
+private fun AppUpdateDialogContentSideStorePreview() {
+    JellyTubeTheme {
+        AppUpdateDialogContent(versionName = "2.1.0", onDownload = {}, onDismiss = {}, onIgnore = {}, installer = AppUpdateInstaller.SideStore)
     }
 }
 
@@ -146,7 +163,7 @@ private fun AppUpdateDialogContentWithIgnorePreview() {
 private fun AppUpdateDialogContentWithIgnoreNarrowPreview() {
     JellyTubeTheme {
         Box(modifier = Modifier.width(312.dp)) {
-            AppUpdateDialogContent(versionName = "2.1.0", onDownload = {}, onDismiss = {}, onIgnore = {})
+            AppUpdateDialogContent(versionName = "2.1.0", onDownload = {}, onDismiss = {}, onIgnore = {}, installer = AppUpdateInstaller.Browser)
         }
     }
 }
