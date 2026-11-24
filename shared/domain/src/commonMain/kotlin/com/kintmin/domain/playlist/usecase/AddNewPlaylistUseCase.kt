@@ -12,7 +12,7 @@ class AddNewPlaylistUseCase constructor(
 ) {
     suspend operator fun invoke(title: String, type: PlaylistType = PlaylistType.USER): Result<Int> {
         return playlistRepository.addPlaylist(title, type).onSuccess { id ->
-            appLog.sendSentryEvent(SentryEvent.AddPlaylist(id, secret(title)))
+            appLog.sendSentryEvent(SentryEvent.AddPlaylist(id, secret(title, type.isSecret)))
         }
     }
 }

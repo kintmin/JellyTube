@@ -10,9 +10,11 @@ import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.device.repository.DeviceStatusRepository
+import com.kintmin.domain.playlist.model.PlaylistType
+import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.SentryEvent
-import com.kintmin.log.secret
+import com.kintmin.log.HIDDEN_TEXT
 import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.coEvery
@@ -40,6 +42,7 @@ import kotlin.time.Duration.Companion.seconds
 class DownloadAudioMediaUseCaseTest {
 
     private val audioMediaRepository: AudioMediaRepository = mockk()
+    private val playlistRepository: PlaylistRepository = mockk()
     private val deviceStatusRepository: DeviceStatusRepository = mockk()
     private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase = mockk()
     private val appLog: AppLog = mockk()
@@ -57,10 +60,12 @@ class DownloadAudioMediaUseCaseTest {
         coEvery { audioMediaRepository.getAudioMediaBySource(any()) } returns Result.failure(Exception())
         every { audioMediaRepository.reserveDownload(any()) } returns true
         every { audioMediaRepository.releaseDownload(any()) } just Runs
+        coEvery { playlistRepository.getPlaylist(any()) } returns Result.success(testPlaylist(UNCATEGORIZED_ID, PlaylistType.USER))
         everyLogDefaults()
 
         useCase = DownloadAudioMediaUseCase(
             audioMediaRepository = audioMediaRepository,
+            playlistRepository = playlistRepository,
             fetchShouldInsertAtTopOnDownloadFlowUseCase = fetchShouldInsertAtTopOnDownloadFlowUseCase,
             appLog = appLog,
             deviceStatusRepository = deviceStatusRepository,
@@ -251,6 +256,32 @@ class DownloadAudioMediaUseCaseTest {
         verifyFailedDownloadAudioMediaLog(exactly = 1, exception = exception)
     }
 
+    @Test
+    fun `비밀 플레이리스트로 받으면 주소와 이름을 가린다`() = runTest {
+        coEvery { playlistRepository.getPlaylist(SECRET_ID) } returns Result.success(testPlaylist(SECRET_ID, PlaylistType.SECRET))
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
+        coEvery { audioMediaRepository.addAudioMedia(any(), SECRET_ID, any()) } returns Result.success(addedResult(SECRET_ID))
+
+        useCase(downloadUrl, playlistIdOnDownload = SECRET_ID)
+
+        verify { appLog.sendDebugLog(match { it.message == "받기 시작: $HIDDEN_TEXT" }) }
+        verify {
+            appLog.sendSentryEvent(
+                match { it is SentryEvent.AddAudioMedia && it.source == HIDDEN_TEXT && it.audioMediaName == HIDDEN_TEXT },
+            )
+        }
+    }
+
+    @Test
+    fun `담을 플레이리스트를 확인하지 못하면 비밀로 보고 가린다`() = runTest {
+        coEvery { playlistRepository.getPlaylist(SECRET_ID) } returns Result.failure(Exception())
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.failure(Exception("boom"))
+
+        useCase(downloadUrl, playlistIdOnDownload = SECRET_ID)
+
+        verify { appLog.sendSentryEvent(match { it is SentryEvent.FailedDownloadAudioMedia && it.source == HIDDEN_TEXT }) }
+    }
+
     private fun verifySuccessDownloadAudioMediaLog(
         inverse: Boolean = false,
         exactly: Int = -1,
@@ -258,7 +289,7 @@ class DownloadAudioMediaUseCaseTest {
         verify(inverse = inverse, exactly = exactly) {
             appLog.sendSentryEvent(
                 match {
-                    it is SentryEvent.AddAudioMedia && it.source == secret(downloadUrl)
+                    it is SentryEvent.AddAudioMedia && it.source == downloadUrl
                 }
             )
         }
@@ -299,5 +330,6 @@ class DownloadAudioMediaUseCaseTest {
         // 시스템 플레이리스트는 고정 id가 없지만, 테스트에서는 편의상 관례적 id를 쓴다.
         const val TOTAL_ID = 1
         const val UNCATEGORIZED_ID = 2
+        const val SECRET_ID = 5
     }
 }

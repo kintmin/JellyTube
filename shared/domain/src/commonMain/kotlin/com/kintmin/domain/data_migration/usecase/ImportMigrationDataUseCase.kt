@@ -10,6 +10,7 @@ import com.kintmin.domain.data_migration.MigrationScopes
 import com.kintmin.domain.data_migration.SourceKey
 import com.kintmin.domain.data_migration.applyMigratedDownloadSettings
 import com.kintmin.domain.data_migration.logText
+import com.kintmin.domain.data_migration.secretAudioMediaIds
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
 import com.kintmin.domain.data_migration.model.MigrationChoice
 import com.kintmin.domain.data_migration.model.MigrationDeclinedException
@@ -61,6 +62,7 @@ class ImportMigrationDataUseCase constructor(
         val availableEntries = export.files.filter { MigrationFiles.isSafeName(it.file.name) }
         val available = MigrationFiles.keepAvailable(export.snapshot, availableEntries.map { it.file }.toSet())
         val target = dataMigrationRepository.fetchSnapshot().getOrThrow()
+        val secretIds = export.snapshot.secretAudioMediaIds()
 
         // 목록은 이미 손에 있고 파일은 아직 받지 않았다. 묻기에 돈이 들지 않는 유일한 자리다.
         val choice = confirm(MigrationPlanner.preview(available, target)) ?: run {
@@ -82,7 +84,7 @@ class ImportMigrationDataUseCase constructor(
             .filter { SourceKey.of(it.source) !in availableKeys }
             .filter { SourceKey.of(it.source) !in targetKeys }
             .distinctBy { SourceKey.of(it.source) }
-        missingOnSender.forEach { log("보내는 기기에 음원 파일이 없음: ${it.logText()}") }
+        missingOnSender.forEach { log("보내는 기기에 음원 파일이 없음: ${it.logText(secretIds)}") }
 
         val unplayable = MigrationPlanner.plan(accepted, target, choice).newAudioMedias
             .filterNot { dataMigrationRepository.isPlayableAudioFile(it.audioFileName) }
@@ -90,13 +92,13 @@ class ImportMigrationDataUseCase constructor(
         val sizeByFile = availableEntries.associate { it.file to it.size }
         unsupported.forEach {
             val size = sizeByFile[MigrationFile(MigrationFileKind.AUDIO, it.audioFileName)]
-            log("재생할 수 없는 형식이라 들여오지 않음: ${it.logText(size)}")
+            log("재생할 수 없는 형식이라 들여오지 않음: ${it.logText(secretIds, size)}")
         }
         val failures = (
             missingOnSender.map { MigrationFailure(it.name, MigrationFailureReason.TRANSFER_FAILED) } +
                 unsupported.map { MigrationFailure(it.name, MigrationFailureReason.UNSUPPORTED_FORMAT) }
             ).toMutableList()
-        val redownloaded = redownload(redownloadable, failures, onProgress)
+        val redownloaded = redownload(redownloadable, secretIds, failures, onProgress)
 
         val applyPlan = try {
             // 같은 곡의 다른 행이 대표로 올라와 빠진 곡의 파일을 가져오지 않도록 키로 뺀다.
@@ -113,7 +115,7 @@ class ImportMigrationDataUseCase constructor(
                 .toSet()
             val transferPlan = planWithout(source, target, choice, localFiles)
 
-            val unavailableFiles = transfer(endpoint, token, availableEntries, transferPlan, onProgress)
+            val unavailableFiles = transfer(endpoint, token, availableEntries, transferPlan, secretIds, onProgress)
 
             // 받지 못한 파일이 음원이면 그 곡을 빼고, 썸네일·가사·편집본이면 그 값만 비운다.
             transferPlan.newAudioMedias
@@ -181,6 +183,7 @@ class ImportMigrationDataUseCase constructor(
     /** 보내는 쪽 곡 id → 다시 받은 파일. 실패한 곡은 [failures] 에 더한다. */
     private suspend fun redownload(
         audioMedias: List<MigrationAudioMedia>,
+        secretIds: Set<Int>,
         failures: MutableList<MigrationFailure>,
         onProgress: (MigrationProgress) -> Unit,
     ): Map<Int, DownloadedAudioFile> {
@@ -191,7 +194,7 @@ class ImportMigrationDataUseCase constructor(
                 audioMediaRepository.downloadAudioFile(audio.source)
                     .onSuccess { result[audio.id] = it }
                     .onFailure {
-                        logError("다시 받기 실패: ${audio.logText()}", it)
+                        logError("다시 받기 실패: ${audio.logText(secretIds)}", it)
                         failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
                     }
             }
@@ -210,6 +213,7 @@ class ImportMigrationDataUseCase constructor(
         token: String,
         availableEntries: List<MigrationFileEntry>,
         plan: MigrationPlan,
+        secretIds: Set<Int>,
         onProgress: (MigrationProgress) -> Unit,
     ): Set<MigrationFile> {
         val entries = availableEntries.filter { it.file in plan.requiredFiles }
@@ -232,7 +236,7 @@ class ImportMigrationDataUseCase constructor(
                 .onFailure { error ->
                     if (error !is MigrationFileUnavailableException) throw error
                     val owner = plan.newAudioMedias.firstOrNull { MigrationFile(MigrationFileKind.AUDIO, it.audioFileName) == entry.file }
-                    log("파일 받기 실패: ${entry.file} size=${entry.size} ${owner?.logText().orEmpty()} ${error.message ?: error::class.simpleName}")
+                    log("파일 받기 실패: ${entry.file} size=${entry.size} ${owner?.logText(secretIds).orEmpty()} ${error.message ?: error::class.simpleName}")
                     unavailable += entry.file
                 }
             receivedBytes = before + entry.size

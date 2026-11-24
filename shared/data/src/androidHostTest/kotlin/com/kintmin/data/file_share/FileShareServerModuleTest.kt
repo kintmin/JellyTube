@@ -13,7 +13,6 @@ import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.UploadCommitRequest
 import com.kintmin.log.AppLog
-import com.kintmin.log.secret
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -31,9 +30,11 @@ import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.writeFully
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.boolean
@@ -73,6 +74,8 @@ class FileShareServerModuleTest {
             validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
             updateAudioMedia = updateUseCase,
             saveAudioMediaImage = saveImageUseCase,
+            fetchPlaylistIdOnDownloadFlowUseCase = mockk { every { this@mockk() } returns flowOf(null) },
+            playlistRepository = mockk(),
             appLog = mockk(relaxed = true),
         ).invoke { imported += it },
         appLog = routeAppLog,
@@ -192,7 +195,7 @@ class FileShareServerModuleTest {
         verify {
             routeAppLog.sendDebugLog(
                 match {
-                    it.message == "받기 거절: 빈 파일은 저장할 수 없습니다. name=${secret("song.mp3")} ext=mp3 length=0 received=0"
+                    it.message == "받기 거절: 빈 파일은 저장할 수 없습니다. ext=mp3 length=0 received=0"
                 },
             )
         }

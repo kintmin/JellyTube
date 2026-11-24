@@ -27,7 +27,7 @@ object MigrationScopes {
         val audioMediaIds = when (scope) {
             is MigrationScope.Everything -> {
                 val ids = snapshot.audioMedias.map { it.id }.toSet()
-                if (scope.includesSecret) ids else ids - secretAudioMediaIds(snapshot)
+                if (scope.includesSecret) ids else ids - snapshot.secretAudioMediaIds()
             }
             is MigrationScope.Playlists ->
                 snapshot.tracks.filter { it.playlistId in playlistIds }.map { it.audioMediaId }.toSet()
@@ -42,11 +42,6 @@ object MigrationScopes {
             // 걸음 기록은 기기를 옮길 때만 따라간다.
             steps = if (scope is MigrationScope.Everything) snapshot.steps else emptyList(),
         )
-    }
-
-    private fun secretAudioMediaIds(snapshot: MigrationSnapshot): Set<Int> {
-        val secretPlaylistIds = snapshot.playlists.filter { it.type.isSecret }.map { it.id }.toSet()
-        return snapshot.tracks.filter { it.playlistId in secretPlaylistIds }.map { it.audioMediaId }.toSet()
     }
 
     /** 이 플레이리스트가 받는 기기에서 가질 이름. 고르는 화면이 미리 보여 주는 이름도 이것이다. */
@@ -65,4 +60,10 @@ object MigrationScopes {
         PlaylistType.SECRET_FAVORITE ->
             copy(type = PlaylistType.SECRET, name = sharedNameOf(type, name))
     }
+}
+
+/** 비밀 플레이리스트에 담긴 곡의 id. */
+internal fun MigrationSnapshot.secretAudioMediaIds(): Set<Int> {
+    val secretPlaylistIds = playlists.filter { it.type.isSecret }.map { it.id }.toSet()
+    return tracks.filter { it.playlistId in secretPlaylistIds }.map { it.audioMediaId }.toSet()
 }
