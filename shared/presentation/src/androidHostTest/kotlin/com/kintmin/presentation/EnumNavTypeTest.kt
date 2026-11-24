@@ -3,10 +3,13 @@ package com.kintmin.presentation
 import com.kintmin.presentation.navigation.EnumNavType
 import com.kintmin.presentation.ui.main.MainTabItem
 import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
+import com.kintmin.presentation.ui.setting.data_migration_send.navigation.SettingDataMigrationSendScreenRoute
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.reflect.KClass
+import kotlinx.serialization.Serializable
 
 class EnumNavTypeTest {
 
@@ -41,5 +44,16 @@ class EnumNavTypeTest {
             .filter { it.java.isEnum }
 
         assertEquals(listOf(MainTabItem::class), enumArguments)
+    }
+
+    @Test
+    fun `라우트의 enum 인자는 Serializable 이다`() {
+        // 없으면 JVM 은 리플렉션으로 넘어가지만 Kotlin/Native 는 KSerializer 를 못 찾아 그래프 생성이 터진다.
+        val enumArguments = listOf(MainScreenRoute::class, SettingDataMigrationSendScreenRoute::class)
+            .flatMap { route -> route.constructors.first().parameters.mapNotNull { it.type.classifier as? KClass<*> } }
+            .filter { it.java.isEnum }
+
+        assertTrue(enumArguments.isNotEmpty())
+        enumArguments.forEach { assertTrue("$it", it.java.isAnnotationPresent(Serializable::class.java)) }
     }
 }

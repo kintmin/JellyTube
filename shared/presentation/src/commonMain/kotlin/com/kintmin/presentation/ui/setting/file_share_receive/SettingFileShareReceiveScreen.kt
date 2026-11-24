@@ -95,7 +95,7 @@ fun SettingFileShareReceiveScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(top = innerPadding.calculateTopPadding())
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -180,7 +180,7 @@ fun SettingFileShareReceiveScreen(
                 description = "PC 앱에 음원 파일을 끌어다 놓으면 자동으로 이 기기의 라이브러리에 추가됩니다.",
             )
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
         }
     }
 }

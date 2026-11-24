@@ -61,6 +61,7 @@ fun SelectionTopAppBar(
     onClickBack: () -> Unit,
     onClearSelection: () -> Unit,
     subtitle: String? = null,
+    selectedUnit: String = "곡",
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     val isSelecting = selectedCount > 0
@@ -74,7 +75,7 @@ fun SelectionTopAppBar(
         expandedHeight = topAppBarHeight,
         title = {
             if (isSelecting) {
-                DetailTopAppBarTitle(text = "${selectedCount}곡 선택됨")
+                DetailTopAppBarTitle(text = "$selectedCount$selectedUnit 선택됨")
             } else {
                 Column {
                     DetailTopAppBarTitle(text = title)

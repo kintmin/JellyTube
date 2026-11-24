@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Outbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -26,6 +28,7 @@ import com.kintmin.presentation.ui.common.ConfirmStyle
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.JellyTubeConfirmDialog
 import com.kintmin.presentation.ui.setting.data_migration_send.view.DataMigrationSendStatusView
+import com.kintmin.presentation.ui.setting.section.SettingNoticeCardView
 import com.kintmin.presentation.ui.setting.section.SettingRunningTaskView
 import com.kintmin.presentation.ui.setting.section.SettingStepCardView
 import com.kintmin.presentation.ui.setting.section.SettingWarningBannerView
@@ -76,7 +79,7 @@ fun SettingDataMigrationSendScreen(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             DetailTopAppBar(
-                title = "다른 기기로 데이터 보내기",
+                title = uiState.title,
                 onClickBack = { if (uiState.isSending) isStopDialogVisible = true else navigateToBack() },
             )
         },
@@ -103,6 +106,12 @@ fun SettingDataMigrationSendScreen(
                 )
                 else -> DataMigrationSendStatusView(step = step, sendIntent = sendIntent)
             }
+
+            SettingNoticeCardView(
+                icon = Icons.Rounded.Outbox,
+                title = "보낼 것",
+                text = uiState.summary,
+            )
 
             SettingStepCardView(
                 stepNumber = 1,

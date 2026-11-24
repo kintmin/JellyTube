@@ -1,10 +1,14 @@
 package com.kintmin.presentation.ui.setting.data_migration_receive
 
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
+import com.kintmin.domain.data_migration.model.MigrationChoice
+import com.kintmin.domain.data_migration.model.MigrationDeclinedException
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationFailure
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
+import com.kintmin.domain.data_migration.model.MigrationPreview
+import com.kintmin.domain.data_migration.model.MigrationPreviewPlaylist
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
 import com.kintmin.domain.data_migration.model.MigrationSourceBusyException
@@ -15,6 +19,11 @@ import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
 import com.kintmin.domain.data_migration.usecase.ImportMigrationDataUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
+import com.kintmin.domain.playlist.model.DownloadTargetPlaylists
+import com.kintmin.domain.playlist.model.Playlist
+import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretModeMinutesFlowUseCase
+import com.kintmin.presentation.secret_mode.SecretModeRunner
 import com.kintmin.presentation.port.MigrationReceiveKeepAlive
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningTaskMonitor
@@ -23,12 +32,15 @@ import com.kintmin.presentation.port.model.RunningTask
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -36,10 +48,12 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingDataMigrationReceiveViewModelTest {
@@ -75,8 +89,28 @@ class SettingDataMigrationReceiveViewModelTest {
         coEvery { runningTasks() } returns emptyMap()
     }
 
+    private val downloadTargets = mockk<FetchDownloadTargetPlaylistsFlowUseCase> {
+        every { this@mockk() } returns flowOf(DownloadTargetPlaylists(targetId = null, selectable = emptyList()))
+    }
+
+    private val secretModeRunner = mockk<SecretModeRunner>(relaxUnitFun = true) {
+        every { remaining } returns null
+    }
+
+    private val secretModeMinutes = mockk<FetchSecretModeMinutesFlowUseCase> {
+        every { this@mockk() } returns flowOf(30)
+    }
+
     private fun viewModel() = SettingDataMigrationReceiveViewModel(
-        discovery, pair, ReceiveMigrationDataUseCase(cleanup, import), clearStaging, monitor, PassThroughKeepAlive,
+        discovery,
+        pair,
+        ReceiveMigrationDataUseCase(cleanup, import),
+        clearStaging,
+        monitor,
+        PassThroughKeepAlive,
+        downloadTargets,
+        secretModeMinutes,
+        secretModeRunner,
     )
 
     private fun SettingDataMigrationReceiveViewModel.connect(code: String = "123456") {
@@ -86,6 +120,178 @@ class SettingDataMigrationReceiveViewModelTest {
     }
 
     private fun summary(vararg failures: MigrationFailure) = MigrationSummary(3, 1, 0, failures.toList())
+
+    @Test
+    fun `확인 화면에서 고른 합치기와 담을 곳이 그대로 넘어간다`() {
+        val preview = MigrationPreview(
+            newAudioMediaCount = 5,
+            playlists = listOf(
+                MigrationPreviewPlaylist(14, "운동할 때", 3, isSecret = false, isConflicting = true),
+                MigrationPreviewPlaylist(15, "나만 듣는 곡", 2, isSecret = true, isConflicting = false),
+            ),
+            needsAudioMediaDestination = true,
+        )
+        every { downloadTargets() } returns flowOf(
+            DownloadTargetPlaylists(targetId = 2, selectable = listOf(playlist(2, "미분류"), playlist(9, "받은 곡"))),
+        )
+        var choice: MigrationChoice? = null
+        coEvery { import(endpoint, "token", any(), any()) } coAnswers {
+            choice = arg<suspend (MigrationPreview) -> MigrationChoice?>(3)(preview)
+            Result.success(summary())
+        }
+        val viewModel = viewModel()
+
+        viewModel.connect()
+
+        val phase = viewModel.uiState.value.phase as DataMigrationReceivePhase.Confirming
+        assertEquals(5, phase.newAudioMediaCount)
+        assertEquals(1, phase.secretPlaylistCount)
+        // 기본은 따로 만들기다.
+        assertTrue(phase.conflictingPlaylists.none { it.isMerging })
+        assertEquals(2, phase.destinationPlaylistId)
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnToggleMergePlaylist(14))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnSelectDestinationPlaylist(9))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
+
+        assertEquals(setOf(14), choice?.mergingPlaylistSourceIds)
+        assertEquals(9, choice?.audioMediaDestinationPlaylistId)
+    }
+
+    private val secretPreview = MigrationPreview(
+        newAudioMediaCount = 2,
+        playlists = listOf(MigrationPreviewPlaylist(15, "나만 듣는 곡", 2, isSecret = true, isConflicting = false)),
+        needsAudioMediaDestination = false,
+    )
+
+    /** 비밀이 든 전송을 확인 화면까지 끌고 와 받는 사람이 고른 것을 돌려준다. */
+    private fun confirmSecretTransfer(): Pair<SettingDataMigrationReceiveViewModel, () -> MigrationChoice?> {
+        var choice: MigrationChoice? = null
+        coEvery { import(endpoint, "token", any(), any()) } coAnswers {
+            val answer = arg<suspend (MigrationPreview) -> MigrationChoice?>(3)(secretPreview)
+            choice = answer
+            if (answer == null) Result.failure(MigrationDeclinedException()) else Result.success(summary())
+        }
+        val viewModel = viewModel()
+        viewModel.connect()
+        return viewModel to { choice }
+    }
+
+    @Test
+    fun `비밀은 기본으로 받지 않고 그 선택이 그대로 넘어간다`() {
+        val (viewModel, choice) = confirmSecretTransfer()
+
+        val phase = viewModel.uiState.value.phase as DataMigrationReceivePhase.Confirming
+        assertFalse(phase.acceptsSecret)
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
+
+        assertEquals(false, choice()?.includesSecret)
+        verify(exactly = 0) { secretModeRunner.start(any()) }
+    }
+
+    @Test
+    fun `비밀을 함께 받기로 하면 비밀모드를 켜고 시계를 멈춘다`() {
+        val (viewModel, choice) = confirmSecretTransfer()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(true))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
+
+        assertEquals(true, choice()?.includesSecret)
+        // 받는 중에 비밀모드가 꺼지면 이 화면이 메인까지 걷힌다.
+        verify { secretModeRunner.start(30.minutes) }
+        verify { secretModeRunner.pause() }
+    }
+
+    @Test
+    fun `받기가 끝나면 멈춰 둔 비밀모드 시계를 다시 흐르게 한다`() {
+        val (viewModel, _) = confirmSecretTransfer()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(true))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
+
+        assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Finished)
+        // 멈춘 채로 두면 결과 화면에서 홈으로 나간 사람의 비밀모드가 만료 없이 켜져 있다.
+        verify { secretModeRunner.resume() }
+    }
+
+    @Test
+    fun `받기가 멈춰도 비밀모드 시계를 다시 흐르게 한다`() {
+        coEvery { import(endpoint, "token", any(), any()) } coAnswers {
+            arg<suspend (MigrationPreview) -> MigrationChoice?>(3)(secretPreview)
+            Result.failure(IllegalStateException("끊김"))
+        }
+        val viewModel = viewModel()
+
+        viewModel.connect()
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(true))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
+
+        assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Interrupted)
+        verify { secretModeRunner.resume() }
+    }
+
+    @Test
+    fun `확인 화면에서는 화면을 켜 두고 나갈 때 묻는다`() {
+        val (viewModel, _) = confirmSecretTransfer()
+
+        val state = viewModel.uiState.value
+        // 사람이 고르는 동안 화면이 꺼지면 연결이 끊긴다.
+        assertTrue(state.isRunning)
+        assertEquals(DataMigrationExitConfirmation.StopConfirming, state.exitConfirmation)
+    }
+
+    @Test
+    fun `확인 화면에서 나가면 받지 않기로 알리고 임시 파일을 지운다`() = runTest {
+        // 취소로 끊으면 confirm 이 답을 돌려주지 못해 보내는 기기에 알릴 수 없다 — 그쪽은 토큰을
+        // 쥔 채 남고 새 코드를 받기 전에는 다시 연결되지 않는다.
+        var declined = false
+        coEvery { import(endpoint, "token", any(), any()) } coAnswers {
+            val answer = arg<suspend (MigrationPreview) -> MigrationChoice?>(3)(secretPreview)
+            declined = answer == null
+            if (answer == null) Result.failure(MigrationDeclinedException()) else Result.success(summary())
+        }
+        val viewModel = viewModel()
+        viewModel.connect()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnConfirmExit)
+
+        assertTrue(declined)
+        assertEquals(SettingDataMigrationReceiveEvent.NavigateToBack, viewModel.eventFlow.first())
+        coVerify(exactly = 1) { clearStaging() }
+    }
+
+    @Test
+    fun `쓰던 비밀모드가 켜져 있으면 다시 켜지 않고 시계만 멈춘다`() {
+        every { secretModeRunner.remaining } returns 10.minutes
+        val (viewModel, _) = confirmSecretTransfer()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(true))
+
+        verify(exactly = 0) { secretModeRunner.start(any()) }
+        verify { secretModeRunner.pause() }
+    }
+
+    @Test
+    fun `확인 화면에서 받지 않기를 고르면 코드 입력으로 돌아간다`() {
+        coEvery { import(endpoint, "token", any(), any()) } coAnswers {
+            val confirm = arg<suspend (MigrationPreview) -> MigrationChoice?>(3)
+            val answer = confirm(MigrationPreview(1, emptyList(), needsAudioMediaDestination = false))
+            if (answer == null) Result.failure(MigrationDeclinedException()) else Result.success(summary())
+        }
+        val viewModel = viewModel()
+
+        viewModel.connect()
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnDeclineReceive)
+
+        assertEquals(DataMigrationReceivePhase.CodeInput(), viewModel.uiState.value.phase)
+        assertTrue(viewModel.uiState.value.stages.isEmpty())
+    }
+
+    private fun playlist(id: Int, name: String) = mockk<Playlist> {
+        every { this@mockk.id } returns id
+        every { this@mockk.name } returns name
+    }
 
     @Test
     fun `다른 작업이 돌고 있으면 찾지 않고 남은 작업을 보여 준다`() {
@@ -244,7 +450,7 @@ class SettingDataMigrationReceiveViewModelTest {
 
     @Test
     fun `잔여물 정리 뒤 가져오고 실패한 곡을 사유와 함께 보여 준다`() {
-        coEvery { import(endpoint, "token", any()) } returns Result.success(
+        coEvery { import(endpoint, "token", any(), any()) } returns Result.success(
             summary(MigrationFailure("녹음", MigrationFailureReason.UNSUPPORTED_FORMAT)),
         )
         val viewModel = viewModel()
@@ -253,7 +459,7 @@ class SettingDataMigrationReceiveViewModelTest {
 
         coVerifyOrder {
             cleanup()
-            import(endpoint, "token", any())
+            import(endpoint, "token", any(), any())
         }
         val phase = viewModel.uiState.value.phase as DataMigrationReceivePhase.Finished
         assertEquals(listOf(DataMigrationFailureItem("녹음", "이 기기에서 재생할 수 없는 형식")), phase.failures)
@@ -263,7 +469,7 @@ class SettingDataMigrationReceiveViewModelTest {
 
     @Test
     fun `모두 가져오면 묻지 않고 나갈 수 있다`() {
-        coEvery { import(endpoint, "token", any()) } returns Result.success(summary())
+        coEvery { import(endpoint, "token", any(), any()) } returns Result.success(summary())
         val viewModel = viewModel()
 
         viewModel.connect()
@@ -274,7 +480,7 @@ class SettingDataMigrationReceiveViewModelTest {
     @Test
     fun `받는 동안은 단계를 보여 주고 나가려면 묻는다`() {
         val gate = CompletableDeferred<Result<MigrationSummary>>()
-        coEvery { import(endpoint, "token", any()) } coAnswers {
+        coEvery { import(endpoint, "token", any(), any()) } coAnswers {
             thirdArg<(MigrationProgress) -> Unit>()(MigrationProgress(MigrationStage.TRANSFER, 1, 3, 10, 30))
             gate.await()
         }
@@ -294,7 +500,7 @@ class SettingDataMigrationReceiveViewModelTest {
 
     @Test
     fun `멈추면 진행 중이던 단계를 실패로 두고 다시 시도는 코드 없이 이어 받는다`() {
-        coEvery { import(endpoint, "token", any()) } coAnswers {
+        coEvery { import(endpoint, "token", any(), any()) } coAnswers {
             thirdArg<(MigrationProgress) -> Unit>()(MigrationProgress(MigrationStage.TRANSFER, 1, 3))
             Result.failure(IllegalStateException("끊김"))
         } coAndThen { Result.success(summary()) }
@@ -315,7 +521,7 @@ class SettingDataMigrationReceiveViewModelTest {
 
     @Test
     fun `멈춘 사이 다른 작업이 켜졌으면 받지 않고 기다렸다가 끝나면 코드 없이 이어 받는다`() {
-        coEvery { import(endpoint, "token", any()) } returns Result.failure(IllegalStateException("끊김"))
+        coEvery { import(endpoint, "token", any(), any()) } returns Result.failure(IllegalStateException("끊김"))
         val viewModel = viewModel()
         viewModel.connect()
 
@@ -324,10 +530,10 @@ class SettingDataMigrationReceiveViewModelTest {
         viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickRetry)
 
         assertEquals(DataMigrationReceivePhase.Blocked(running), viewModel.uiState.value.phase)
-        coVerify(exactly = 1) { import(any(), any(), any()) }
+        coVerify(exactly = 1) { import(any(), any(), any(), any()) }
 
         coEvery { monitor.runningTasks() } returns emptyMap()
-        coEvery { import(endpoint, "token", any()) } returns Result.success(summary())
+        coEvery { import(endpoint, "token", any(), any()) } returns Result.success(summary())
         viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickRetry)
 
         assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Finished)
@@ -336,9 +542,9 @@ class SettingDataMigrationReceiveViewModelTest {
 
     @Test
     fun `세션이 끝났으면 다시 시도 대신 새 코드를 받는다`() {
-        coEvery { import(endpoint, "token", any()) } returns Result.failure(MigrationSessionExpiredException())
+        coEvery { import(endpoint, "token", any(), any()) } returns Result.failure(MigrationSessionExpiredException())
         coEvery { pair(endpoint, "654321") } returns Result.success("new-token")
-        coEvery { import(endpoint, "new-token", any()) } returns Result.success(summary())
+        coEvery { import(endpoint, "new-token", any(), any()) } returns Result.success(summary())
         val viewModel = viewModel()
         viewModel.connect()
 
@@ -354,7 +560,7 @@ class SettingDataMigrationReceiveViewModelTest {
 
     @Test
     fun `세션이 끝나 코드 입력으로 돌아간 뒤 나가도 임시 파일을 지운다`() = runTest {
-        coEvery { import(endpoint, "token", any()) } returns Result.failure(MigrationSessionExpiredException())
+        coEvery { import(endpoint, "token", any(), any()) } returns Result.failure(MigrationSessionExpiredException())
         val viewModel = viewModel()
         viewModel.connect()
 
@@ -366,7 +572,7 @@ class SettingDataMigrationReceiveViewModelTest {
 
     @Test
     fun `멈춘 상태에서 나가면 임시 파일을 지우고 끝난 뒤 나가면 지우지 않는다`() = runTest {
-        coEvery { import(endpoint, "token", any()) } returns Result.failure(IllegalStateException("끊김"))
+        coEvery { import(endpoint, "token", any(), any()) } returns Result.failure(IllegalStateException("끊김"))
         val interrupted = viewModel()
         interrupted.connect()
 
@@ -375,7 +581,7 @@ class SettingDataMigrationReceiveViewModelTest {
         assertEquals(SettingDataMigrationReceiveEvent.NavigateToBack, interrupted.eventFlow.first())
         coVerify(exactly = 1) { clearStaging() }
 
-        coEvery { import(endpoint, "token", any()) } returns Result.success(
+        coEvery { import(endpoint, "token", any(), any()) } returns Result.success(
             summary(MigrationFailure("곡", MigrationFailureReason.TRANSFER_FAILED)),
         )
         val finished = viewModel()

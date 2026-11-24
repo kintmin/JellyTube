@@ -68,6 +68,15 @@ internal class MigrationDataSourceImpl(
         Unit
     }
 
+    override suspend fun decline(host: String, port: Int, token: String): Result<Unit> = suspendRunCatching {
+        client.post {
+            migrationUrl(host, port, FileShareConstants.MIGRATION_DECLINE_PATH)
+            bearerAuth(token)
+            expectSuccess = true
+        }
+        Unit
+    }
+
     override suspend fun downloadFile(
         host: String,
         port: Int,
