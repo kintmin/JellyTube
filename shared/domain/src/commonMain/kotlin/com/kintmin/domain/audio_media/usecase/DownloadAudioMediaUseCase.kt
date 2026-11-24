@@ -8,10 +8,12 @@ import com.kintmin.domain.audio_media.model.DownloadedAudioMediaResult
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.device.repository.DeviceStatusRepository
-import com.kintmin.domain.playlist.isSecretTarget
 import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.secret_mode.isSecretTarget
+import com.kintmin.domain.secret_mode.secretAudioMediaJudge
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.SentryEvent
@@ -24,6 +26,7 @@ import kotlin.time.measureTimedValue
 class DownloadAudioMediaUseCase constructor(
     private val audioMediaRepository: AudioMediaRepository,
     private val playlistRepository: PlaylistRepository,
+    private val audioTrackRepository: AudioTrackRepository,
     private val deviceStatusRepository: DeviceStatusRepository,
     private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase,
     private val appLog: AppLog,
@@ -34,11 +37,12 @@ class DownloadAudioMediaUseCase constructor(
         intoUncategorized: Boolean = false,
         playlistIdOnDownload: Int? = null,
     ): Result<DownloadedAudioMediaResult> {
-        val isSecret = !intoUncategorized && playlistRepository.isSecretTarget(playlistIdOnDownload)
+        val isSecret = !intoUncategorized && playlistRepository.isSecretTarget(playlistIdOnDownload, appLog) ||
+            isOwnedSecret(downloadUrl)
         return suspendRunCatching {
-            appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "받기 시작: ${secret(downloadUrl, isSecret)}"))
             if (!audioMediaRepository.reserveDownload(downloadUrl)) throw AlreadyDownloadingMedia()
             try {
+                appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "받기 시작: ${secret(downloadUrl, isSecret)}"))
                 download(downloadUrl, playlistIdOnDownload, intoUncategorized, isSecret)
             } finally {
                 audioMediaRepository.releaseDownload(downloadUrl)
@@ -46,9 +50,20 @@ class DownloadAudioMediaUseCase constructor(
         }.onFailure { exception -> logFailure(downloadUrl, isSecret, exception) }
     }
 
+    // 같은 주소가 이미 비밀 곡이면 공개 대상으로 받으려 해도 그 주소는 비밀이다.
+    private suspend fun isOwnedSecret(downloadUrl: String): Boolean {
+        val owned = audioMediaRepository.getAudioMediaBySource(downloadUrl).getOrNull() ?: return false
+        return audioTrackRepository.secretAudioMediaJudge(appLog)(owned.id)
+    }
+
     private suspend fun logFailure(downloadUrl: String, isSecret: Boolean, exception: Throwable) {
-        if (exception is AlreadyDownloadedMedia || exception is AlreadyDownloadingMedia) {
-            appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "이미 있거나 받는 중이라 받지 않음: ${secret(downloadUrl, isSecret)}"))
+        if (exception is AlreadyDownloadingMedia) {
+            // 먼저 받는 요청이 비밀 대상일 수 있는데 그 대상을 알 수 없어 주소를 싣지 않는다.
+            appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "같은 주소를 받는 중이라 받지 않음"))
+            return
+        }
+        if (exception is AlreadyDownloadedMedia) {
+            appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "이미 있어 받지 않음: ${secret(downloadUrl, isSecret)}"))
             return
         }
         val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()

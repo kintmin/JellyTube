@@ -5,8 +5,8 @@ import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFl
 import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.common.suspendRunCatching
-import com.kintmin.domain.playlist.isSecretTarget
 import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.secret_mode.isSecretTarget
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
@@ -25,9 +25,11 @@ class ImportSharedAudioMediaUseCase constructor(
         contentUriString: String,
         playlistIdOverride: Int? = null,
     ): Result<AudioMedia> {
-        val playlistId = playlistIdOverride ?: fetchPlaylistIdOnDownloadFlowUseCase().first()
-        val isSecret = playlistRepository.isSecretTarget(playlistId)
+        // 담을 곳을 확인하기 전에 실패하면 비밀 곡일 수 있어 가린다.
+        var isSecret = true
         return suspendRunCatching {
+            val playlistId = playlistIdOverride ?: fetchPlaylistIdOnDownloadFlowUseCase().first()
+            isSecret = playlistRepository.isSecretTarget(playlistId, appLog)
             audioMediaRepository.importSharedAudio(
                 contentUriString = contentUriString,
                 playlistIdOnDownload = playlistId,

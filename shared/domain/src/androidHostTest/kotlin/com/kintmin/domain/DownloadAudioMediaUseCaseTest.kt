@@ -9,6 +9,7 @@ import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
+import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.device.repository.DeviceStatusRepository
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
@@ -43,6 +44,7 @@ class DownloadAudioMediaUseCaseTest {
 
     private val audioMediaRepository: AudioMediaRepository = mockk()
     private val playlistRepository: PlaylistRepository = mockk()
+    private val audioTrackRepository: AudioTrackRepository = mockk()
     private val deviceStatusRepository: DeviceStatusRepository = mockk()
     private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase = mockk()
     private val appLog: AppLog = mockk()
@@ -61,11 +63,13 @@ class DownloadAudioMediaUseCaseTest {
         every { audioMediaRepository.reserveDownload(any()) } returns true
         every { audioMediaRepository.releaseDownload(any()) } just Runs
         coEvery { playlistRepository.getPlaylist(any()) } returns Result.success(testPlaylist(UNCATEGORIZED_ID, PlaylistType.USER))
+        every { audioTrackRepository.getSecretAudioMediaIdListFlow() } returns flowOf(emptyList())
         everyLogDefaults()
 
         useCase = DownloadAudioMediaUseCase(
             audioMediaRepository = audioMediaRepository,
             playlistRepository = playlistRepository,
+            audioTrackRepository = audioTrackRepository,
             fetchShouldInsertAtTopOnDownloadFlowUseCase = fetchShouldInsertAtTopOnDownloadFlowUseCase,
             appLog = appLog,
             deviceStatusRepository = deviceStatusRepository,
@@ -271,6 +275,26 @@ class DownloadAudioMediaUseCaseTest {
                 match { it is SentryEvent.AddAudioMedia && it.source == HIDDEN_TEXT && it.audioMediaName == HIDDEN_TEXT },
             )
         }
+    }
+
+    @Test
+    fun `이미 비밀 곡인 주소를 공개 대상으로 받으려 하면 주소를 가린다`() = runTest {
+        coEvery { audioMediaRepository.getAudioMediaBySource(downloadUrl) } returns Result.success(mockAudioMedia)
+        every { audioTrackRepository.getSecretAudioMediaIdListFlow() } returns flowOf(listOf(mockAudioMedia.id))
+
+        useCase(downloadUrl, playlistIdOnDownload = UNCATEGORIZED_ID)
+
+        verify { appLog.sendDebugLog(match { it.message == "이미 있어 받지 않음: $HIDDEN_TEXT" }) }
+    }
+
+    @Test
+    fun `같은 주소를 받는 중이면 먼저 받는 쪽의 대상을 몰라 주소를 싣지 않는다`() = runTest {
+        every { audioMediaRepository.reserveDownload(downloadUrl) } returns false
+
+        useCase(downloadUrl, playlistIdOnDownload = UNCATEGORIZED_ID)
+
+        verify { appLog.sendDebugLog(match { it.message == "같은 주소를 받는 중이라 받지 않음" }) }
+        verify(inverse = true) { appLog.sendDebugLog(match { downloadUrl in it.message }) }
     }
 
     @Test
