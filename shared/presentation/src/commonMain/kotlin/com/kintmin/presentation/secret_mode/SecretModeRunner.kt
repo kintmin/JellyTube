@@ -2,9 +2,12 @@ package com.kintmin.presentation.secret_mode
 
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
+import com.kintmin.domain.secret_mode.model.SecretModeEndReason
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.StartSecretModeUseCase
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -29,6 +32,7 @@ class SecretModeRunner(
     private val endSecretModeUseCase: EndSecretModeUseCase,
     private val fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase,
     private val fetchSecretAudioMediaIdListFlowUseCase: FetchSecretAudioMediaIdListFlowUseCase,
+    private val appLog: AppLog,
     private val clock: Clock = Clock.System,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
@@ -50,9 +54,9 @@ class SecretModeRunner(
         job?.cancel()
         endsAt = clock.now() + total
         job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            startSecretModeUseCase()
+            startSecretModeUseCase(total)
             delay(total)
-            finish()
+            finish(SecretModeEndReason.TIMER)
         }
     }
 
@@ -70,33 +74,35 @@ class SecretModeRunner(
         job = null
         endsAt = null
         pausedRemaining = left
+        log("비밀모드 시계 멈춤: 남은 ${left.inWholeSeconds}초")
     }
 
     fun resume() {
         val left = pausedRemaining ?: return
         pausedRemaining = null
         endsAt = clock.now() + left
+        log("비밀모드 시계 다시 감: 남은 ${left.inWholeSeconds}초")
         job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             delay(left)
-            finish()
+            finish(SecretModeEndReason.TIMER)
         }
     }
 
     fun endIfExpired() {
         val deadline = endsAt ?: return
-        if (clock.now() >= deadline) end()
+        if (clock.now() >= deadline) end(SecretModeEndReason.EXPIRED_ON_RETURN)
     }
 
-    fun end() {
+    fun end(reason: SecretModeEndReason) {
         job?.cancel()
         // 끄는 것을 미루지 않는다. 다음 프레임에 비밀 화면이 그려지기 전에 꺼져 있어야 한다.
-        job = scope.launch(start = CoroutineStart.UNDISPATCHED) { finish() }
+        job = scope.launch(start = CoroutineStart.UNDISPATCHED) { finish(reason) }
     }
 
-    private suspend fun finish() {
+    private suspend fun finish(reason: SecretModeEndReason) {
         endsAt = null
         pausedRemaining = null
-        endSecretModeUseCase()
+        endSecretModeUseCase(reason)
         removeSecretTracksFromQueue()
     }
 
@@ -124,4 +130,6 @@ class SecretModeRunner(
     // 목록에서 찾는다. 재생 중인 플레이리스트가 지워졌으면 단건 조회는 값을 내지 않는다.
     private suspend fun isPlaylistOf(type: PlaylistType, playlistId: Int): Boolean =
         fetchPlaylistsByTypeUseCase(type).first().any { it.id == playlistId }
+
+    private fun log(message: String) = appLog.sendDebugLog(DebugLog("SecretMode", message))
 }

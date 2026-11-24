@@ -2,9 +2,12 @@ package com.kintmin.presentation.secret_mode
 
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
+import com.kintmin.domain.secret_mode.model.SecretModeEndReason
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.StartSecretModeUseCase
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.model.MediaControlData
 import com.kintmin.presentation.testPlaylist
@@ -43,17 +46,22 @@ class SecretModeRunnerTest {
         every { this@mockk() } returns flowOf(listOf(10, 11))
     }
 
+    private val logs = mutableListOf<String>()
+    private val appLog: AppLog = mockk(relaxed = true) {
+        every { sendDebugLog(any()) } answers { logs += firstArg<DebugLog>().message }
+    }
+
     @Test
     fun `정한 시간이 지나면 비밀모드를 끈다`() = runTest {
         val runner = runner()
 
         runner.start(10.minutes)
-        coVerify { startSecretModeUseCase() }
+        coVerify { startSecretModeUseCase(10.minutes) }
         advanceTimeBy(10.minutes - 1.seconds)
-        coVerify(exactly = 0) { endSecretModeUseCase() }
+        coVerify(exactly = 0) { endSecretModeUseCase(any()) }
 
         advanceTimeBy(2.seconds)
-        coVerify { endSecretModeUseCase() }
+        coVerify { endSecretModeUseCase(SecretModeEndReason.TIMER) }
         assertNull(runner.remaining)
     }
 
@@ -61,7 +69,7 @@ class SecretModeRunnerTest {
     fun `비밀 플레이리스트를 재생 중이면 큐를 통째로 비운다`() = runTest {
         every { playbackController.currentPlaylistId } returns 5
 
-        runner().end()
+        runner().end(SecretModeEndReason.USER)
         runCurrent()
 
         verify { playbackController.clearQueue() }
@@ -73,7 +81,7 @@ class SecretModeRunnerTest {
         every { playbackController.currentPlaylistId } returns 1
         every { playbackController.playingMediaItem } returns playing(3)
 
-        runner().end()
+        runner().end(SecretModeEndReason.USER)
         runCurrent()
 
         verify { playbackController.tryDeleteMediaItem(1, 10) }
@@ -86,7 +94,7 @@ class SecretModeRunnerTest {
         every { playbackController.currentPlaylistId } returns 1
         every { playbackController.playingMediaItem } returns playing(10)
 
-        runner().end()
+        runner().end(SecretModeEndReason.USER)
         runCurrent()
 
         verify { playbackController.clearQueue() }
@@ -101,11 +109,11 @@ class SecretModeRunnerTest {
 
         clock.now += 9.minutes
         runner.endIfExpired()
-        coVerify(exactly = 0) { endSecretModeUseCase() }
+        coVerify(exactly = 0) { endSecretModeUseCase(any()) }
 
         clock.now += 2.minutes
         runner.endIfExpired()
-        coVerify { endSecretModeUseCase() }
+        coVerify { endSecretModeUseCase(SecretModeEndReason.EXPIRED_ON_RETURN) }
         assertNull(runner.remaining)
     }
 
@@ -113,10 +121,10 @@ class SecretModeRunnerTest {
     fun `일반 플레이리스트를 재생 중이면 큐를 건드리지 않는다`() = runTest {
         every { playbackController.currentPlaylistId } returns 4
 
-        runner().end()
+        runner().end(SecretModeEndReason.USER)
         runCurrent()
 
-        coVerify { endSecretModeUseCase() }
+        coVerify { endSecretModeUseCase(SecretModeEndReason.USER) }
         verify(exactly = 0) { playbackController.tryDeleteMediaItem(any(), any()) }
     }
 
@@ -132,7 +140,7 @@ class SecretModeRunnerTest {
 
         clock.now += 1.hours
         advanceTimeBy(1.hours)
-        coVerify(exactly = 0) { endSecretModeUseCase() }
+        coVerify(exactly = 0) { endSecretModeUseCase(any()) }
         assertEquals(6.minutes, runner.remaining)
     }
 
@@ -148,10 +156,24 @@ class SecretModeRunnerTest {
         runner.resume()
 
         advanceTimeBy(6.minutes - 1.seconds)
-        coVerify(exactly = 0) { endSecretModeUseCase() }
+        coVerify(exactly = 0) { endSecretModeUseCase(any()) }
 
         advanceTimeBy(2.seconds)
-        coVerify { endSecretModeUseCase() }
+        coVerify { endSecretModeUseCase(SecretModeEndReason.TIMER) }
+    }
+
+    @Test
+    fun `멈추고 재개하면 그때의 남은 시간을 남긴다`() = runTest {
+        val clock = MutableClock()
+        val runner = runner(clock)
+        runner.start(10.minutes)
+
+        clock.now += 4.minutes
+        runner.pause()
+        clock.now += 1.hours
+        runner.resume()
+
+        assertEquals(listOf("비밀모드 시계 멈춤: 남은 360초", "비밀모드 시계 다시 감: 남은 360초"), logs)
     }
 
     @Test
@@ -162,8 +184,8 @@ class SecretModeRunnerTest {
         runner.resume()
         runCurrent()
 
-        coVerify(exactly = 0) { startSecretModeUseCase() }
-        coVerify(exactly = 0) { endSecretModeUseCase() }
+        coVerify(exactly = 0) { startSecretModeUseCase(any()) }
+        coVerify(exactly = 0) { endSecretModeUseCase(any()) }
         assertNull(runner.remaining)
     }
 
@@ -180,6 +202,7 @@ class SecretModeRunnerTest {
         endSecretModeUseCase = endSecretModeUseCase,
         fetchPlaylistsByTypeUseCase = fetchPlaylistsByTypeUseCase,
         fetchSecretAudioMediaIdListFlowUseCase = fetchSecretAudioMediaIdListFlowUseCase,
+        appLog = appLog,
         clock = clock,
         scope = backgroundScope,
     )
