@@ -6,6 +6,7 @@ import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.MigrationFiles
 import com.kintmin.domain.data_migration.MigrationPlanner
+import com.kintmin.domain.data_migration.MigrationScopes
 import com.kintmin.domain.data_migration.SourceKey
 import com.kintmin.domain.data_migration.applyMigratedDownloadSettings
 import com.kintmin.domain.data_migration.logText
@@ -22,6 +23,7 @@ import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
 import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationPreview
 import com.kintmin.domain.data_migration.model.MigrationProgress
+import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
@@ -65,6 +67,12 @@ class ImportMigrationDataUseCase constructor(
             dataMigrationRepository.notifyDeclined(endpoint, token).onFailure { logError("받지 않기 알림 실패", it) }
             throw MigrationDeclinedException()
         }
+        // 비밀을 받지 않기로 하면 여기서 뺀다 — 아래 계획과 전송 파일 목록이 모두 스냅샷에서 유도된다.
+        val accepted = if (choice.includesSecret) {
+            available
+        } else {
+            MigrationScopes.narrow(available, MigrationScope.Everything(includesSecret = false))
+        }
 
         // 보내는 기기에 음원 파일이 없는 곡은 계획 전에 빠진다. 같은 곡의 다른 행으로 들어오거나 이미 이 기기에
         // 있으면 실패가 아니다.
@@ -76,7 +84,7 @@ class ImportMigrationDataUseCase constructor(
             .distinctBy { SourceKey.of(it.source) }
         missingOnSender.forEach { log("보내는 기기에 음원 파일이 없음: ${it.logText()}") }
 
-        val unplayable = MigrationPlanner.plan(available, target, choice).newAudioMedias
+        val unplayable = MigrationPlanner.plan(accepted, target, choice).newAudioMedias
             .filterNot { dataMigrationRepository.isPlayableAudioFile(it.audioFileName) }
         val (redownloadable, unsupported) = unplayable.partition { YoutubeUrl.videoIdOf(it.source) != null }
         val sizeByFile = availableEntries.associate { it.file to it.size }
@@ -95,8 +103,8 @@ class ImportMigrationDataUseCase constructor(
             val excludedKeys = unplayable.filter { it.id !in redownloaded }
                 .map { SourceKey.of(it.source) }
                 .toMutableSet()
-            val source = available.copy(
-                audioMedias = available.audioMedias
+            val source = accepted.copy(
+                audioMedias = accepted.audioMedias
                     .filter { SourceKey.of(it.source) !in excludedKeys }
                     .map { audio -> redownloaded[audio.id]?.let { audio.withAudioFile(it) } ?: audio },
             )

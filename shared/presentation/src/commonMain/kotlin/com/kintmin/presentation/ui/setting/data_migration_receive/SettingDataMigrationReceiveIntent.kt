@@ -12,6 +12,9 @@ sealed interface SettingDataMigrationReceiveIntent {
     data class OnToggleMergePlaylist(val sourceId: Int) : SettingDataMigrationReceiveIntent
     data class OnClickMergeAll(val isMerging: Boolean) : SettingDataMigrationReceiveIntent
     data class OnSelectDestinationPlaylist(val playlistId: Int) : SettingDataMigrationReceiveIntent
+
+    /** 비밀 플레이리스트도 받을지 바꿨다. 켜면 받는 동안 이 기기의 비밀모드가 켜진다. */
+    data class OnToggleAcceptSecret(val accepts: Boolean) : SettingDataMigrationReceiveIntent
     data object OnClickStartReceive : SettingDataMigrationReceiveIntent
 
     /** 확인 화면에서 받지 않기로 했다. */

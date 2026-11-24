@@ -22,6 +22,8 @@ import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
 import com.kintmin.domain.playlist.model.DownloadTargetPlaylists
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
+import com.kintmin.domain.secret_mode.usecase.FetchSecretModeMinutesFlowUseCase
+import com.kintmin.presentation.secret_mode.SecretModeRunner
 import com.kintmin.presentation.port.MigrationReceiveKeepAlive
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningTaskMonitor
@@ -32,6 +34,7 @@ import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -45,10 +48,12 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingDataMigrationReceiveViewModelTest {
@@ -88,6 +93,14 @@ class SettingDataMigrationReceiveViewModelTest {
         every { this@mockk() } returns flowOf(DownloadTargetPlaylists(targetId = null, selectable = emptyList()))
     }
 
+    private val secretModeRunner = mockk<SecretModeRunner>(relaxUnitFun = true) {
+        every { remaining } returns null
+    }
+
+    private val secretModeMinutes = mockk<FetchSecretModeMinutesFlowUseCase> {
+        every { this@mockk() } returns flowOf(30)
+    }
+
     private fun viewModel() = SettingDataMigrationReceiveViewModel(
         discovery,
         pair,
@@ -96,6 +109,8 @@ class SettingDataMigrationReceiveViewModelTest {
         monitor,
         PassThroughKeepAlive,
         downloadTargets,
+        secretModeMinutes,
+        secretModeRunner,
     )
 
     private fun SettingDataMigrationReceiveViewModel.connect(code: String = "123456") {
@@ -141,6 +156,61 @@ class SettingDataMigrationReceiveViewModelTest {
 
         assertEquals(setOf(14), choice?.mergingPlaylistSourceIds)
         assertEquals(9, choice?.audioMediaDestinationPlaylistId)
+    }
+
+    private val secretPreview = MigrationPreview(
+        newAudioMediaCount = 2,
+        playlists = listOf(MigrationPreviewPlaylist(15, "나만 듣는 곡", 2, isSecret = true, isConflicting = false)),
+        needsAudioMediaDestination = false,
+    )
+
+    /** 비밀이 든 전송을 확인 화면까지 끌고 와 받는 사람이 고른 것을 돌려준다. */
+    private fun confirmSecretTransfer(): Pair<SettingDataMigrationReceiveViewModel, () -> MigrationChoice?> {
+        var choice: MigrationChoice? = null
+        coEvery { import(endpoint, "token", any(), any()) } coAnswers {
+            choice = arg<suspend (MigrationPreview) -> MigrationChoice?>(3)(secretPreview)
+            Result.success(summary())
+        }
+        val viewModel = viewModel()
+        viewModel.connect()
+        return viewModel to { choice }
+    }
+
+    @Test
+    fun `비밀은 기본으로 받지 않고 그 선택이 그대로 넘어간다`() {
+        val (viewModel, choice) = confirmSecretTransfer()
+
+        val phase = viewModel.uiState.value.phase as DataMigrationReceivePhase.Confirming
+        assertFalse(phase.acceptsSecret)
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
+
+        assertEquals(false, choice()?.includesSecret)
+        verify(exactly = 0) { secretModeRunner.start(any()) }
+    }
+
+    @Test
+    fun `비밀을 함께 받기로 하면 비밀모드를 켜고 시계를 멈춘다`() {
+        val (viewModel, choice) = confirmSecretTransfer()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(true))
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
+
+        assertEquals(true, choice()?.includesSecret)
+        // 받는 중에 비밀모드가 꺼지면 이 화면이 메인까지 걷힌다.
+        verify { secretModeRunner.start(30.minutes) }
+        verify { secretModeRunner.pause() }
+    }
+
+    @Test
+    fun `쓰던 비밀모드가 켜져 있으면 다시 켜지 않고 시계만 멈춘다`() {
+        every { secretModeRunner.remaining } returns 10.minutes
+        val (viewModel, _) = confirmSecretTransfer()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(true))
+
+        verify(exactly = 0) { secretModeRunner.start(any()) }
+        verify { secretModeRunner.pause() }
     }
 
     @Test

@@ -5,7 +5,12 @@ import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.playlist.model.PlaylistType
 
-/** 기기 전체 스냅샷에서 보낼 범위만 남긴다. 아래 계획·전송 파일 목록은 모두 이 결과에서 유도된다. */
+/**
+ * 스냅샷에서 주고받을 범위만 남긴다. 계획과 전송 파일 목록은 모두 이 결과에서 유도된다.
+ *
+ * 받는 쪽이 비밀을 받지 않기로 했을 때도 같은 연산이다 — [MigrationScope.Everything] 의
+ * `includesSecret = false` 로 부른다.
+ */
 object MigrationScopes {
 
     private const val SHARED_NAME_PREFIX = "공유받은 "

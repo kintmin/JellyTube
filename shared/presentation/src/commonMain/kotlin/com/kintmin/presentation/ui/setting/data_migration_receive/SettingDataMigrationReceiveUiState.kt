@@ -63,6 +63,8 @@ sealed interface DataMigrationReceivePhase {
         val secretPlaylistCount: Int,
         /** 곡만 왔을 때 담을 곳 후보. 비어 있으면 고를 것이 없다. */
         val destinationCandidates: List<DownloadPlaylistUiState> = emptyList(),
+        /** 비밀 플레이리스트도 받는다. 기본은 받지 않기다 — 켜지 않으면 나머지만 들어온다. */
+        val acceptsSecret: Boolean = false,
     ) : DataMigrationReceivePhase {
         val conflictingPlaylists: List<DataMigrationConfirmPlaylistItem> get() = playlists.filter { it.isConflicting }
         val mergingSourceIds: Set<Int> get() = playlists.filter { it.isMerging }.map { it.sourceId }.toSet()

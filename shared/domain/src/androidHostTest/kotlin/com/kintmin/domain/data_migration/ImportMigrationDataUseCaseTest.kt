@@ -22,6 +22,7 @@ import com.kintmin.domain.data_migration.model.MigrationPreview
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
+import com.kintmin.domain.data_migration.model.MigrationTrack
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
@@ -82,8 +83,9 @@ class ImportMigrationDataUseCaseTest {
         files: List<MigrationFileEntry>,
         playlists: List<MigrationPlaylist> = emptyList(),
         settings: MigrationDownloadSettings? = null,
+        tracks: List<MigrationTrack> = emptyList(),
     ) = MigrationExport(
-        snapshot = MigrationSnapshot(audios, playlists, emptyList(), emptyList(), emptyList()),
+        snapshot = MigrationSnapshot(audios, playlists, tracks, emptyList(), emptyList()),
         files = files,
         downloadSettings = settings,
     )
@@ -183,6 +185,29 @@ class ImportMigrationDataUseCaseTest {
         assertTrue(MigrationProgress(MigrationStage.TRANSFER, 0, 1, 50, 100) in progress)
         assertTrue(MigrationProgress(MigrationStage.TRANSFER, 1, 1, 100, 100) in progress)
         coVerify(exactly = 1) { playlistRepository.ensureSystemPlaylists() }
+    }
+
+    @Test
+    fun `비밀을 받지 않기로 하면 비밀 플레이리스트와 거기에만 담긴 곡은 파일도 받지 않는다`() = runTest {
+        val repository = FakeRepository(
+            export = export(
+                audios = listOf(audio(101, "https://youtu.be/a", "a.m4a"), audio(102, "https://youtu.be/b", "b.m4a")),
+                files = listOf(entry("a.m4a"), entry("b.m4a")),
+                playlists = listOf(
+                    MigrationPlaylist(14, "운동할 때", "", null, 1, PlaylistType.USER, 0),
+                    MigrationPlaylist(15, "나만 듣는 곡", "", null, 2, PlaylistType.SECRET, 0),
+                ),
+                tracks = listOf(MigrationTrack(14, 101, 1), MigrationTrack(15, 102, 1)),
+            ),
+            target = emptyTarget,
+        )
+
+        val result = useCase(repository)(endpoint, "t", {}) { MigrationChoice(includesSecret = false) }
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf("a.m4a"), repository.staged)
+        assertEquals(listOf(101), repository.appliedPlan?.newAudioMedias?.map { it.id })
+        assertEquals(listOf(14), repository.appliedPlan?.newPlaylists?.map { it.id })
     }
 
     @Test

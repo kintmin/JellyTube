@@ -32,6 +32,7 @@ import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationR
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveIntent
 import com.kintmin.presentation.ui.setting.section.SettingItemView
 import com.kintmin.presentation.ui.setting.section.SettingNoticeCardView
+import com.kintmin.presentation.ui.setting.section.SettingSwitchView
 
 /** 파일을 받기 전에 무엇이 들어오는지 보이고 받는 방식을 정한다. */
 @Composable
@@ -63,8 +64,28 @@ fun DataMigrationConfirmView(
         if (phase.secretPlaylistCount > 0) {
             SettingNoticeCardView(
                 icon = Icons.Rounded.Lock,
-                title = "비밀 플레이리스트 ${phase.secretPlaylistCount}개가 들어옵니다",
-                text = "받은 뒤에는 비밀모드를 켜야 보입니다. 보내는 기기에서 비밀모드를 켜고 보냈습니다.",
+                title = "비밀 플레이리스트 ${phase.secretPlaylistCount}개가 함께 왔습니다",
+                text = "보내는 기기에서 비밀모드를 켜고 보냈습니다. 함께 받으면 이 기기도 받는 동안 비밀모드가 " +
+                    "켜지고 끝나면 꺼집니다. 받지 않으면 비밀 플레이리스트는 빼고 나머지만 들어옵니다.",
+            )
+            SettingItemView(
+                title = "비밀 플레이리스트도 함께 받기",
+                description = if (phase.acceptsSecret) {
+                    "받는 동안 이 기기의 비밀모드가 켜집니다"
+                } else {
+                    "받지 않고 나머지만 받습니다"
+                },
+                onClick = {
+                    sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(!phase.acceptsSecret))
+                },
+                trailing = {
+                    SettingSwitchView(
+                        checked = phase.acceptsSecret,
+                        onCheckedChange = {
+                            sendIntent(SettingDataMigrationReceiveIntent.OnToggleAcceptSecret(it))
+                        },
+                    )
+                },
             )
         }
 
