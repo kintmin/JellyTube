@@ -23,6 +23,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+// 걸음 기록은 같은 날이면 이 기기 쪽만 남으므로, 더해지는 기록은 다른 날로 띄운다.
+private const val DAY_MILLIS = 86_400_000L
+
 class AudioMediaFacadeMigrationTest {
 
     private lateinit var db: JellyTubeDatabase
@@ -72,7 +75,7 @@ class AudioMediaFacadeMigrationTest {
             MigrationTrack(13, 102, 1),
         ),
         editProjects = listOf(MigrationEditProject(102, "{\"version\":1}")),
-        steps = listOf(MigrationStep(1, 999), MigrationStep(2, 5)),
+        steps = listOf(MigrationStep(1, 999), MigrationStep(2 * DAY_MILLIS, 5)),
     )
 
     @Test
@@ -115,7 +118,7 @@ class AudioMediaFacadeMigrationTest {
         assertEquals(listOf(existingId, newAudio.id), after.tracks.filter { it.playlistId == drive.id }.sortedBy { it.sequence }.map { it.audioMediaId })
 
         assertEquals(listOf(MigrationEditProject(newAudio.id, "{\"version\":1}")), after.editProjects)
-        assertEquals(listOf(MigrationStep(1, 100), MigrationStep(2, 5)), after.steps.sortedBy { it.createdTimeMillis })
+        assertEquals(listOf(MigrationStep(1, 100), MigrationStep(2 * DAY_MILLIS, 5)), after.steps.sortedBy { it.createdTimeMillis })
     }
 
     @Test
