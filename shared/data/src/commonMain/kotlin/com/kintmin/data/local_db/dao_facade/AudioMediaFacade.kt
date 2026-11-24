@@ -95,12 +95,15 @@ class AudioMediaFacade constructor(
                     is MigrationRef.Incoming -> idBySourceId.getValue(sourceId)
                 }
 
+                val addedAudioMediaIds = mutableSetOf<Int>()
                 plan.trackAdditions.forEach { addition ->
+                    val audioMediaIdList = addition.audioMedias.map { it.resolve(audioIdBySourceId) }
                     addTrackWithSyncPlaylist(
                         playlistId = addition.playlist.resolve(playlistIdBySourceId),
-                        audioMediaIdList = addition.audioMedias.map { it.resolve(audioIdBySourceId) },
+                        audioMediaIdList = audioMediaIdList,
                         shouldInsertAtTop = false,
                     )
+                    addedAudioMediaIds += audioMediaIdList
                 }
                 if (plan.uncategorizedRemovals.isNotEmpty()) {
                     deleteTrackWithSyncPlaylist(
@@ -108,6 +111,10 @@ class AudioMediaFacade constructor(
                         audioMediaIdList = plan.uncategorizedRemovals,
                     )
                 }
+                // 이전·복원은 addTrack 을 거치지 않으므로 비밀 곡의 격리를 여기서 지킨다. 드러난
+                // 플레이리스트에는 비밀 필터가 없어, 거기 남으면 비밀모드가 꺼져 있어도 보인다.
+                val secretAudioMediaIds = addedAudioMediaIds.filter { isSecretAudioMedia(it) }
+                if (secretAudioMediaIds.isNotEmpty()) unlinkFromOpenPlaylists(secretAudioMediaIds)
 
                 plan.editProjects.forEach { project ->
                     audioEditProjectDao.upsert(
