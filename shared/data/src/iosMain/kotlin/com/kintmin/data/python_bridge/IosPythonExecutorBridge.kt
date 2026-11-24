@@ -9,6 +9,7 @@ interface IosPythonExecutorBridge {
     suspend fun downloadYoutubeMedia(
         youtubeUrl: String,
         audioDownloadPath: String,
+        isSecret: Boolean,
     ): YoutubeDownloadDto
 
     /** `download_youtube_audio.py` 의 `download_playable_audio`. 앱 프로세스 안에서 받는다. */
@@ -41,10 +42,12 @@ internal class IosPythonExecutorAdapter(
     override suspend fun downloadYoutubeMedia(
         youtubeUrl: String,
         audioDownloadPath: String,
+        isSecret: Boolean,
     ): Result<YoutubeDownloadDto> = suspendRunCatching {
         bridge.downloadYoutubeMedia(
             youtubeUrl = youtubeUrl,
             audioDownloadPath = audioDownloadPath,
+            isSecret = isSecret,
         ).withDefaults()
     }
 

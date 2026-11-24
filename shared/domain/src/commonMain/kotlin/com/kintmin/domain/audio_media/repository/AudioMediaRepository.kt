@@ -12,7 +12,8 @@ import com.kintmin.domain.youtube.model.YoutubePlaylist
 import kotlinx.coroutines.flow.Flow
 
 interface AudioMediaRepository {
-    suspend fun downloadYoutubeAudio(downloadUrl: String): Result<DownloadedYoutubeAudio>
+    /** [isSecret] 이면 받는 쪽 로그가 주소를 가린다. 담을 플레이리스트를 아는 호출자가 정한다. */
+    suspend fun downloadYoutubeAudio(downloadUrl: String, isSecret: Boolean): Result<DownloadedYoutubeAudio>
 
     /** 영상은 받지 않고 재생목록 페이지만 읽는다. */
     suspend fun fetchYoutubePlaylist(playlistUrl: String): Result<YoutubePlaylist>

@@ -16,9 +16,11 @@ class PythonExecutorImpl(
     private val context: Context
 ) : PythonExecutor {
 
+    // 이 구현은 주소를 로그에 남기지 않아 isSecret 을 쓸 일이 없다.
     override suspend fun downloadYoutubeMedia(
         youtubeUrl: String,
         audioDownloadPath: String,
+        isSecret: Boolean,
     ) = suspendRunCatching {
         withContext(Dispatchers.IO) {
             ensurePythonStarted()

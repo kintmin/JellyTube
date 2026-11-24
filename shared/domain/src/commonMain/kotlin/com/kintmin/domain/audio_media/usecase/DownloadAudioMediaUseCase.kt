@@ -80,7 +80,7 @@ class DownloadAudioMediaUseCase constructor(
             throw AlreadyDownloadedMedia()
         }
 
-        val audioTimedValue = measureTimedValue { audioMediaRepository.downloadYoutubeAudio(downloadUrl).getOrThrow() }
+        val audioTimedValue = measureTimedValue { audioMediaRepository.downloadYoutubeAudio(downloadUrl, isSecret).getOrThrow() }
         appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "downloadAudioMedia: ${audioTimedValue.duration}"))
 
         // 음원을 받은 뒤에는 행을 만들 때까지 끊지 않는다. 끊으면 어디에도 연결되지 않은 파일만 남는다.

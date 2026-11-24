@@ -49,10 +49,10 @@ internal class AudioMediaRepositoryImpl constructor(
     private val pythonExecutor: PythonExecutor,
 ) : AudioMediaRepository {
 
-    override suspend fun downloadYoutubeAudio(downloadUrl: String): Result<DownloadedYoutubeAudio> {
+    override suspend fun downloadYoutubeAudio(downloadUrl: String, isSecret: Boolean): Result<DownloadedYoutubeAudio> {
         val fileName = Uuid.random().toString()
         return try {
-            downloadYoutubeAudio(downloadUrl, fileName)
+            downloadYoutubeAudio(downloadUrl, isSecret, fileName)
         } catch (e: CancellationException) {
             // 받기 호출은 도중에 끊기지 않아 파일은 생기고 결과만 버려진다. 이 이름으로 생긴 파일을 지운다.
             withContext(NonCancellable + Dispatchers.IO) { deleteFilesNamed(fileName) }
@@ -66,12 +66,13 @@ internal class AudioMediaRepositoryImpl constructor(
             .forEach { fileManager.deleteFileAtFullPath(it) }
     }
 
-    private suspend fun downloadYoutubeAudio(downloadUrl: String, fileName: String): Result<DownloadedYoutubeAudio> =
+    private suspend fun downloadYoutubeAudio(downloadUrl: String, isSecret: Boolean, fileName: String): Result<DownloadedYoutubeAudio> =
         withContext(Dispatchers.IO) {
             suspendRunCatching {
                 val downloadDto = pythonExecutor.downloadYoutubeMedia(
                     youtubeUrl = downloadUrl,
                     audioDownloadPath = fileManager.getAudioDownloadBasePath(fileName = fileName).getOrThrow(),
+                    isSecret = isSecret,
                 ).getOrElse { throw YtDlpError.classify(it) }
                 DownloadedYoutubeAudio(
                     fileName = fileName,

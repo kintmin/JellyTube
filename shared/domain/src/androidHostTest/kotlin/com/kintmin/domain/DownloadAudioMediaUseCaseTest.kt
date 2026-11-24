@@ -124,13 +124,13 @@ class DownloadAudioMediaUseCaseTest {
         val result = useCase(downloadUrl, playlistIdOnDownload = UNCATEGORIZED_ID)
 
         assert(result.exceptionOrNull() is AlreadyDownloadingMedia)
-        coVerify(inverse = true) { audioMediaRepository.downloadYoutubeAudio(any()) }
+        coVerify(inverse = true) { audioMediaRepository.downloadYoutubeAudio(any(), any()) }
         verify(inverse = true) { audioMediaRepository.releaseDownload(any()) }
     }
 
     @Test
     fun `받기가 끝나면 실패해도 예약을 푼다`() = runTest {
-        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.failure(IllegalStateException())
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl, any()) } returns Result.failure(IllegalStateException())
 
         useCase(downloadUrl, playlistIdOnDownload = UNCATEGORIZED_ID)
 
@@ -139,7 +139,7 @@ class DownloadAudioMediaUseCaseTest {
 
     @Test
     fun `썸네일을 받으면 그 이름을 곡과 함께 넘긴다`() = runTest {
-        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl, any()) } returns Result.success(mockYoutubeAudio)
         coEvery { audioMediaRepository.saveThumbnail(mockYoutubeAudio.thumbnailUrl, "a") } returns Result.success("a.webp")
         val withImage = mockDownloadedMedia.copy(imageFileNameWithExt = "a.webp")
         coEvery { audioMediaRepository.addAudioMedia(withImage, UNCATEGORIZED_ID, false) } returns
@@ -151,7 +151,7 @@ class DownloadAudioMediaUseCaseTest {
     @Test
     fun `음원을 받은 뒤에 취소돼도 행을 만들어 파일만 남지 않게 한다`() = runTest {
         val started = CompletableDeferred<Unit>()
-        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl, any()) } returns Result.success(mockYoutubeAudio)
         coEvery { audioMediaRepository.saveThumbnail(any(), any()) } coAnswers {
             started.complete(Unit)
             delay(1_000)
@@ -169,7 +169,7 @@ class DownloadAudioMediaUseCaseTest {
 
     @Test
     fun `멈춰서 끊긴 받기는 실패로 기록하지 않고 취소를 그대로 던진다`() = runTest {
-        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } throws CancellationException("stop")
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl, any()) } throws CancellationException("stop")
 
         var caught: Throwable? = null
         try {
@@ -190,7 +190,7 @@ class DownloadAudioMediaUseCaseTest {
 
         assert(result.isFailure)
         assert(result.exceptionOrNull() is AlreadyDownloadedMedia)
-        coVerify(inverse = true) { audioMediaRepository.downloadYoutubeAudio(any()) }
+        coVerify(inverse = true) { audioMediaRepository.downloadYoutubeAudio(any(), any()) }
         verifySuccessDownloadAudioMediaLog(inverse = true)
         verifyFailedDownloadAudioMediaLog(exception = AlreadyDownloadedMedia(), exactly = 0)
     }
@@ -198,7 +198,7 @@ class DownloadAudioMediaUseCaseTest {
     @Test
     fun `다운로드 성공 시 전달받은 재생목록으로 저장 테스트`() = runTest {
         coEvery { fetchShouldInsertAtTopOnDownloadFlowUseCase() } returns flowOf(true)
-        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl, any()) } returns Result.success(mockYoutubeAudio)
         coEvery {
             audioMediaRepository.addAudioMedia(
                 downloadedAudioMedia = mockDownloadedMedia,
@@ -220,7 +220,7 @@ class DownloadAudioMediaUseCaseTest {
     fun `전달받은 재생목록이 유효하지 않으면 데이터 계층이 해석한 미분류 id를 그대로 반환 테스트`() = runTest {
         // 대상 유효성 검사·미분류 fallback은 데이터 계층(facade) 책임이다.
         // UseCase는 요청값을 그대로 넘기고, 데이터 계층이 해석해 돌려준 id를 surfacing만 한다.
-        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl, any()) } returns Result.success(mockYoutubeAudio)
         coEvery {
             audioMediaRepository.addAudioMedia(
                 downloadedAudioMedia = mockDownloadedMedia,
@@ -238,7 +238,7 @@ class DownloadAudioMediaUseCaseTest {
     @Test
     fun `저장 실패 시 실패 로그 전송 테스트`() = runTest {
         val exception = Exception("test")
-        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl, any()) } returns Result.success(mockYoutubeAudio)
         coEvery {
             audioMediaRepository.addAudioMedia(
                 downloadedAudioMedia = mockDownloadedMedia,
@@ -259,11 +259,12 @@ class DownloadAudioMediaUseCaseTest {
     @Test
     fun `비밀 플레이리스트로 받으면 주소와 이름을 가린다`() = runTest {
         coEvery { playlistRepository.getPlaylist(SECRET_ID) } returns Result.success(testPlaylist(SECRET_ID, PlaylistType.SECRET))
-        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.success(mockYoutubeAudio)
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl, any()) } returns Result.success(mockYoutubeAudio)
         coEvery { audioMediaRepository.addAudioMedia(any(), SECRET_ID, any()) } returns Result.success(addedResult(SECRET_ID))
 
         useCase(downloadUrl, playlistIdOnDownload = SECRET_ID)
 
+        coVerify { audioMediaRepository.downloadYoutubeAudio(downloadUrl, isSecret = true) }
         verify { appLog.sendDebugLog(match { it.message == "받기 시작: $HIDDEN_TEXT" }) }
         verify {
             appLog.sendSentryEvent(
@@ -275,7 +276,7 @@ class DownloadAudioMediaUseCaseTest {
     @Test
     fun `담을 플레이리스트를 확인하지 못하면 비밀로 보고 가린다`() = runTest {
         coEvery { playlistRepository.getPlaylist(SECRET_ID) } returns Result.failure(Exception())
-        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl) } returns Result.failure(Exception("boom"))
+        coEvery { audioMediaRepository.downloadYoutubeAudio(downloadUrl, any()) } returns Result.failure(Exception("boom"))
 
         useCase(downloadUrl, playlistIdOnDownload = SECRET_ID)
 
