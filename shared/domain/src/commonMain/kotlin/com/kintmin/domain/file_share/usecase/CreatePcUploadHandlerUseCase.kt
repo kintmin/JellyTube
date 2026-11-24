@@ -7,8 +7,12 @@ import com.kintmin.domain.audio_media.model.UploadedAudioFile
 import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
+import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.file_share.PcUploadHandler
+import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.secret_mode.isSecretTarget
+import com.kintmin.domain.secret_mode.secretAudioMediaJudge
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
@@ -19,16 +23,24 @@ class CreatePcUploadHandlerUseCase(
     private val validateUploadedAudioFileName: ValidateUploadedAudioFileNameUseCase,
     private val updateAudioMedia: UpdateAudioMediaUseCase,
     private val saveAudioMediaImage: SaveAudioMediaImageUseCase,
+    private val playlistRepository: PlaylistRepository,
+    private val audioTrackRepository: AudioTrackRepository,
     private val appLog: AppLog,
 ) {
     operator fun invoke(onUploadImported: (ImportedAudioMediaResult) -> Unit): PcUploadHandler = object : PcUploadHandler {
         override fun validateFileName(rawFileName: String?): Result<String> = validateUploadedAudioFileName(rawFileName)
 
-        override suspend fun importUploadedAudios(uploads: List<UploadedAudioFile>) =
-            importUploadedAudioMedia(uploads).also { results ->
+        override suspend fun importUploadedAudios(uploads: List<UploadedAudioFile>): List<Result<ImportedAudioMediaResult>> {
+            val isSecretByPlaylistId = mutableMapOf<Int, Boolean>()
+            return importUploadedAudioMedia(uploads).also { results ->
                 uploads.zip(results).forEach { (upload, result) ->
                     result
-                        .onSuccess { log("들여옴: id=${it.audioMedia.id} name=${secret(it.audioMedia.name)}") }
+                        .onSuccess {
+                            val isSecret = isSecretByPlaylistId.getOrPut(it.playlistIdOnDownload) {
+                                playlistRepository.isSecretTarget(it.playlistIdOnDownload, appLog)
+                            }
+                            log("들여옴: id=${it.audioMedia.id} name=${secret(it.audioMedia.name, isSecret)}")
+                        }
                         .onSuccess(onUploadImported)
                         .onFailure {
                             if (it is AlreadyDownloadedMedia) log("이미 있는 파일이라 들여오지 않음: ${upload.describe()}")
@@ -36,11 +48,15 @@ class CreatePcUploadHandlerUseCase(
                         }
                 }
             }
+        }
 
         override suspend fun applyArtist(audioMediaIds: List<Int>, artist: String): Result<Unit> = suspendRunCatching {
             audioMediaIds.forEach { id -> updateAudioMedia(id = id, artist = artist).getOrThrow() }
         }
-            .onSuccess { log("아티스트 적용: ${audioMediaIds.size}곡 → $artist") }
+            .onSuccess {
+                val isSecret = audioTrackRepository.secretAudioMediaJudge(appLog)
+                log("아티스트 적용: ${audioMediaIds.size}곡 → ${secret(artist, audioMediaIds.any(isSecret))}")
+            }
             .onFailure { logError("아티스트 적용 실패: ${audioMediaIds.size}곡", it) }
 
         override suspend fun applyThumbnail(audioMediaIds: List<Int>, imageData: ByteArray): Result<Unit> = suspendRunCatching {
@@ -53,8 +69,8 @@ class CreatePcUploadHandlerUseCase(
             .onFailure { logError("썸네일 적용 실패: ${audioMediaIds.size}곡", it) }
     }
 
-    private fun UploadedAudioFile.describe() =
-        "name=${secret(originalFileName)} ext=${originalFileName.substringAfterLast('.')} size=$sizeBytes"
+    // 들이지 못한 파일은 어느 플레이리스트로 갈지 정해지지 않아 비밀인지 알 수 없다. 이름을 싣지 않는다.
+    private fun UploadedAudioFile.describe() = "ext=${originalFileName.substringAfterLast('.')} size=$sizeBytes"
 
     private fun log(message: String) = appLog.sendDebugLog(DebugLog(LOG_TAG, message))
 

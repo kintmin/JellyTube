@@ -4,14 +4,14 @@ import com.kintmin.domain.data_migration.model.MigrationAudioMedia
 import com.kintmin.domain.data_migration.model.MigrationFailure
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
 import com.kintmin.domain.data_migration.model.MigrationSummary
-import com.kintmin.log.secret
+import com.kintmin.log.HIDDEN_TEXT
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class MigrationLogTextTest {
 
     @Test
-    fun `곡은 가릴 이름과 원본 주소와 파일 정보를 싣는다`() {
+    fun `곡은 이름과 원본 주소와 파일 정보를 싣고 비밀 곡이면 이름과 주소를 가린다`() {
         val audio = MigrationAudioMedia(
             id = 1,
             source = "https://y/1",
@@ -28,7 +28,8 @@ class MigrationLogTextTest {
             createdTimeMillis = 0,
         )
 
-        assertEquals("name=${secret("곡")} source=https://y/1 ext=webm duration=200s size=10", audio.logText(sizeBytes = 10))
+        assertEquals("name=곡 source=https://y/1 ext=webm duration=200s size=10", audio.logText(emptySet(), sizeBytes = 10))
+        assertEquals("name=$HIDDEN_TEXT source=$HIDDEN_TEXT ext=webm duration=200s", audio.logText(setOf(1)))
     }
 
     @Test

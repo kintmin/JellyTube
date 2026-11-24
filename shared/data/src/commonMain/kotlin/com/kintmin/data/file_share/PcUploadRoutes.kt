@@ -15,7 +15,6 @@ import com.kintmin.fileshare.UploadResponse
 import com.kintmin.fileshare.UploadStageResponse
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
-import com.kintmin.log.secret
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -57,7 +56,7 @@ internal fun Route.pcUploadEndpoints(
         appLog.sendDebugLog(
             DebugLog(
                 LOG_TAG,
-                "받기 거절: $reason name=${secret(fileName)} ext=$ext length=$contentLength received=$receivedBytes" +
+                "받기 거절: $reason ext=$ext length=$contentLength received=$receivedBytes" +
                     (error?.let { " / $it" } ?: ""),
             ),
         )

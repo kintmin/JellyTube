@@ -10,6 +10,7 @@ import com.kintmin.domain.data_migration.MigrationPlanner
 import com.kintmin.domain.data_migration.SourceKey
 import com.kintmin.domain.data_migration.applyMigratedDownloadSettings
 import com.kintmin.domain.data_migration.logText
+import com.kintmin.domain.data_migration.secretAudioMediaIds
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
 import com.kintmin.domain.data_migration.model.MigrationFailure
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
@@ -45,10 +46,11 @@ class RestoreBackupUseCase(
         playlistRepository.ensureSystemPlaylists().getOrThrow()
         val target = dataMigrationRepository.fetchSnapshot().getOrThrow()
         val source = backup.snapshot.withoutUnrecoverableFiles()
+        val secretIds = source.secretAudioMediaIds()
         val newAudios = MigrationPlanner.plan(source, target).newAudioMedias
 
         val (redownloadable, notRestorable) = newAudios.partition { YoutubeUrl.videoIdOf(it.source) != null }
-        notRestorable.forEach { log("원본이 유튜브가 아니라 복원하지 않음: ${it.logText()}") }
+        notRestorable.forEach { log("원본이 유튜브가 아니라 복원하지 않음: ${it.logText(secretIds)}") }
         val failures = notRestorable.map { MigrationFailure(it.name, MigrationFailureReason.NOT_RESTORABLE) }.toMutableList()
 
         val staged = dataMigrationRepository.fetchStagedFiles().getOrThrow()
@@ -57,13 +59,13 @@ class RestoreBackupUseCase(
         val results = ParallelDownloader.run(
             items = redownloadable,
             onDone = { onProgress(MigrationProgress(MigrationStage.REDOWNLOAD, doneCount = it, totalCount = total)) },
-        ) { audio -> restore(audio, staged, backup.lyrics) }
+        ) { audio -> restore(audio, secretIds, staged, backup.lyrics) }
         val restored = mutableMapOf<Int, MigrationAudioMedia>()
         redownloadable.zip(results).forEach { (audio, result) ->
             result
                 .onSuccess { restored[audio.id] = it }
                 .onFailure {
-                    logError("다시 받기 실패: ${audio.logText()}", it)
+                    logError("다시 받기 실패: ${audio.logText(secretIds)}", it)
                     failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
                 }
         }
@@ -101,6 +103,7 @@ class RestoreBackupUseCase(
 
     private suspend fun restore(
         audio: MigrationAudioMedia,
+        secretIds: Set<Int>,
         staged: Set<MigrationFile>,
         lyrics: Map<String, String>,
     ): MigrationAudioMedia {
@@ -125,17 +128,17 @@ class RestoreBackupUseCase(
         return audio.copy(
             audioFileName = audioFileName,
             rawAudioDurationSeconds = duration,
-            imageFileName = audio.imageFileName?.let { stageThumbnail(audio, it, staged) },
+            imageFileName = audio.imageFileName?.let { stageThumbnail(audio, secretIds, it, staged) },
             lyricFileName = audio.lyricFileName?.let { stageLyric(it, lyrics, staged) },
         )
     }
 
-    private suspend fun stageThumbnail(audio: MigrationAudioMedia, imageFileName: String, staged: Set<MigrationFile>): String? {
+    private suspend fun stageThumbnail(audio: MigrationAudioMedia, secretIds: Set<Int>, imageFileName: String, staged: Set<MigrationFile>): String? {
         val base = baseNameOf(imageFileName) ?: return null
         staged.firstOrNull { it.kind == MigrationFileKind.IMAGE && it.baseName == base }?.let { return it.name }
         val videoId = YoutubeUrl.videoIdOf(audio.source) ?: return null
         val savedName = audioMediaRepository.saveThumbnail(thumbnailUrlOf(videoId), base)
-            .getOrElse { error -> return skip(error, "썸네일 받기 실패: ${audio.logText()}") }
+            .getOrElse { error -> return skip(error, "썸네일 받기 실패: ${audio.logText(secretIds)}") }
         val file = MigrationFile(MigrationFileKind.IMAGE, savedName)
         val path = dataMigrationRepository.resolveFilePath(file).getOrElse { error -> return skip(error, "썸네일 경로 실패: $savedName") }
         dataMigrationRepository.stageLocalFile(path, file).getOrElse { error ->

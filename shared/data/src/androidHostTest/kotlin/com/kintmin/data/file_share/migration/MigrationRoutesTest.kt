@@ -44,6 +44,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import kotlinx.coroutines.flow.flowOf
 
 class MigrationRoutesTest {
 
@@ -88,6 +89,8 @@ class MigrationRoutesTest {
                     validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
                     updateAudioMedia = mockk(),
                     saveAudioMediaImage = mockk(),
+                    playlistRepository = mockk { coEvery { getPlaylist(any()) } returns Result.failure(Exception()) },
+                    audioTrackRepository = mockk { every { getSecretAudioMediaIdListFlow() } returns flowOf(emptyList()) },
                     appLog = mockk(relaxed = true),
                 ).invoke {},
                 appLog = mockk(relaxed = true),

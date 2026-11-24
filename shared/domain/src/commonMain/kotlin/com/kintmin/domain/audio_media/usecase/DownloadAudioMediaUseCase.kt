@@ -8,8 +8,12 @@ import com.kintmin.domain.audio_media.model.DownloadedAudioMediaResult
 import com.kintmin.domain.audio_media.model.DownloadedMedia
 import com.kintmin.domain.audio_media.model.DownloadedYoutubeAudio
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.device.repository.DeviceStatusRepository
+import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.secret_mode.isSecretTarget
+import com.kintmin.domain.secret_mode.secretAudioMediaJudge
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.SentryEvent
@@ -21,6 +25,8 @@ import kotlin.time.measureTimedValue
 
 class DownloadAudioMediaUseCase constructor(
     private val audioMediaRepository: AudioMediaRepository,
+    private val playlistRepository: PlaylistRepository,
+    private val audioTrackRepository: AudioTrackRepository,
     private val deviceStatusRepository: DeviceStatusRepository,
     private val fetchShouldInsertAtTopOnDownloadFlowUseCase: FetchShouldInsertAtTopOnDownloadFlowUseCase,
     private val appLog: AppLog,
@@ -30,25 +36,42 @@ class DownloadAudioMediaUseCase constructor(
         downloadUrl: String,
         intoUncategorized: Boolean = false,
         playlistIdOnDownload: Int? = null,
-    ): Result<DownloadedAudioMediaResult> = suspendRunCatching {
-        appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "받기 시작: ${secret(downloadUrl)}"))
-        if (!audioMediaRepository.reserveDownload(downloadUrl)) throw AlreadyDownloadingMedia()
-        try {
-            download(downloadUrl, playlistIdOnDownload, intoUncategorized)
-        } finally {
-            audioMediaRepository.releaseDownload(downloadUrl)
+    ): Result<DownloadedAudioMediaResult> {
+        val isSecret = !intoUncategorized && playlistRepository.isSecretTarget(playlistIdOnDownload, appLog) ||
+            isOwnedSecret(downloadUrl)
+        return suspendRunCatching {
+            if (!audioMediaRepository.reserveDownload(downloadUrl)) throw AlreadyDownloadingMedia()
+            try {
+                appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "받기 시작: ${secret(downloadUrl, isSecret)}"))
+                download(downloadUrl, playlistIdOnDownload, intoUncategorized, isSecret)
+            } finally {
+                audioMediaRepository.releaseDownload(downloadUrl)
+            }
+        }.onFailure { exception -> logFailure(downloadUrl, isSecret, exception) }
+    }
+
+    // 같은 주소가 이미 비밀 곡이면 공개 대상으로 받으려 해도 그 주소는 비밀이다.
+    private suspend fun isOwnedSecret(downloadUrl: String): Boolean {
+        val owned = audioMediaRepository.getAudioMediaBySource(downloadUrl).getOrNull() ?: return false
+        return audioTrackRepository.secretAudioMediaJudge(appLog)(owned.id)
+    }
+
+    private suspend fun logFailure(downloadUrl: String, isSecret: Boolean, exception: Throwable) {
+        if (exception is AlreadyDownloadingMedia) {
+            // 먼저 받는 요청이 비밀 대상일 수 있는데 그 대상을 알 수 없어 주소를 싣지 않는다.
+            appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "같은 주소를 받는 중이라 받지 않음"))
+            return
         }
-    }.onFailure { exception ->
-        if (exception is AlreadyDownloadedMedia || exception is AlreadyDownloadingMedia) {
-            appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "이미 있거나 받는 중이라 받지 않음: ${secret(downloadUrl)}"))
-            return@onFailure
+        if (exception is AlreadyDownloadedMedia) {
+            appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "이미 있어 받지 않음: ${secret(downloadUrl, isSecret)}"))
+            return
         }
         val systemMemory = deviceStatusRepository.getSystemMemory().getOrNull()
         val connectionStatus = deviceStatusRepository.getConnectionStatus().getOrNull()
 
         appLog.sendSentryEvent(
             SentryEvent.FailedDownloadAudioMedia(
-                source = downloadUrl,
+                source = secret(downloadUrl, isSecret),
                 exception = exception,
                 availableRemMemory = systemMemory?.availableRemMemory,
                 isLowRemMemory = systemMemory?.isLowRemMemory,
@@ -66,17 +89,18 @@ class DownloadAudioMediaUseCase constructor(
         downloadUrl: String,
         playlistIdOnDownload: Int?,
         intoUncategorized: Boolean,
+        isSecret: Boolean,
     ): DownloadedAudioMediaResult {
         audioMediaRepository.getAudioMediaBySource(source = downloadUrl).onSuccess {
             throw AlreadyDownloadedMedia()
         }
 
-        val audioTimedValue = measureTimedValue { audioMediaRepository.downloadYoutubeAudio(downloadUrl).getOrThrow() }
+        val audioTimedValue = measureTimedValue { audioMediaRepository.downloadYoutubeAudio(downloadUrl, isSecret).getOrThrow() }
         appLog.sendDebugLog(DebugLog("DownloadAudioMediaUseCase", "downloadAudioMedia: ${audioTimedValue.duration}"))
 
         // 음원을 받은 뒤에는 행을 만들 때까지 끊지 않는다. 끊으면 어디에도 연결되지 않은 파일만 남는다.
         return withContext(NonCancellable) {
-            addDownloaded(downloadUrl, audioTimedValue.value, playlistIdOnDownload, intoUncategorized)
+            addDownloaded(downloadUrl, audioTimedValue.value, playlistIdOnDownload, intoUncategorized, isSecret)
         }
     }
 
@@ -85,6 +109,7 @@ class DownloadAudioMediaUseCase constructor(
         audio: DownloadedYoutubeAudio,
         playlistIdOnDownload: Int?,
         intoUncategorized: Boolean,
+        isSecret: Boolean,
     ): DownloadedAudioMediaResult {
         val downloadedAudioMedia = withThumbnail(downloadUrl, audio)
 
@@ -101,10 +126,10 @@ class DownloadAudioMediaUseCase constructor(
 
         appLog.sendSentryEvent(
             SentryEvent.AddAudioMedia(
-                source = secret(downloadUrl),
+                source = secret(downloadUrl, isSecret),
                 audioMediaCount = added.totalPlaylistMediaCount,
                 audioMediaId = added.audioMedia.id,
-                audioMediaName = secret(added.audioMedia.name),
+                audioMediaName = secret(added.audioMedia.name, isSecret),
                 playlistId = added.resolvedPlaylistIdOnDownload,
             ),
         )

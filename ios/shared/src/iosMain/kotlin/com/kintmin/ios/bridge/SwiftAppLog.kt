@@ -21,8 +21,7 @@ fun swiftDebugLog(tag: String, message: String) {
         ?.sendDebugLog(DebugLog(tag, message))
 }
 
-/** Swift 가 메시지에 넣을 값을 비밀모드에서 가리도록 표시한다. */
-fun swiftSecret(value: String): String = secret(value)
+fun swiftSecret(value: String, isSecret: Boolean): String = secret(value, isSecret)
 
 /** Swift 의 오류는 Kotlin 예외가 아니라 메시지로만 Issue 에 올라간다. */
 fun swiftErrorLog(tag: String, message: String) {
@@ -32,10 +31,11 @@ fun swiftErrorLog(tag: String, message: String) {
 }
 
 /** HLS fallback 건수를 세는 이벤트와 같은 내용의 디버그 로그를 함께 남긴다. */
-fun swiftYoutubeDownloadFallbackLog(source: String, reason: String, formatId: String, transferProtocol: String) {
+fun swiftYoutubeDownloadFallbackLog(source: String, isSecret: Boolean, reason: String, formatId: String, transferProtocol: String) {
     val appLog = runCatching { KoinPlatform.getKoin().get<AppLog>() }.getOrNull() ?: return
-    appLog.sendSentryEvent(SentryEvent.YoutubeDownloadFallback(secret(source), reason, formatId, transferProtocol))
+    val loggedSource = secret(source, isSecret)
+    appLog.sendSentryEvent(SentryEvent.YoutubeDownloadFallback(loggedSource, reason, formatId, transferProtocol))
     appLog.sendDebugLog(
-        DebugLog("YoutubeHlsFallback", "reason=$reason format=$formatId protocol=$transferProtocol source=${secret(source)}"),
+        DebugLog("YoutubeHlsFallback", "reason=$reason format=$formatId protocol=$transferProtocol source=$loggedSource"),
     )
 }
