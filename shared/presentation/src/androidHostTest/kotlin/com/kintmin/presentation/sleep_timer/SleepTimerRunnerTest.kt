@@ -240,7 +240,7 @@ class SleepTimerRunnerTest {
         runCurrent()
 
         assertEquals(
-            listOf("잠들기 타이머 켬: 30분", "잠들기 타이머 만료: 페이드아웃 시작", "잠들기 타이머가 재생을 멈춤", "안내 음성 재생: id=7"),
+            listOf("잠들기 타이머 켬: 30분", "잠들기 타이머 끝 3초 전 페이드아웃 시작: 재생 중=false", "잠들기 타이머가 재생을 멈춤", "안내 음성 재생: id=7"),
             logs,
         )
     }

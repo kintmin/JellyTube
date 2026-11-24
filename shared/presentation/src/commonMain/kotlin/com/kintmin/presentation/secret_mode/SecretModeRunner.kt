@@ -3,6 +3,7 @@ package com.kintmin.presentation.secret_mode
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.secret_mode.model.SecretModeEndReason
+import com.kintmin.domain.secret_mode.model.SecretModeStartReason
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.StartSecretModeUseCase
@@ -18,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -49,12 +51,12 @@ class SecretModeRunner(
     val remaining: Duration?
         get() = pausedRemaining ?: endsAt?.let { (it - clock.now()).coerceAtLeast(Duration.ZERO) }
 
-    fun start(total: Duration) {
+    fun start(total: Duration, reason: SecretModeStartReason) {
         pausedRemaining = null
         job?.cancel()
         endsAt = clock.now() + total
         job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            startSecretModeUseCase(total)
+            startSecretModeUseCase(total, reason)
             delay(total)
             finish(SecretModeEndReason.TIMER)
         }
@@ -100,6 +102,11 @@ class SecretModeRunner(
     }
 
     private suspend fun finish(reason: SecretModeEndReason) {
+        // 잠든 사이 늦게 깬 delay 는 앱이 다시 보이기 전에 TIMER 로 끝낼 수 있어 늦음을 따로 남긴다.
+        endsAt?.let { deadline ->
+            val late = clock.now() - deadline
+            if (late >= 1.seconds) log("비밀모드 종료가 예정보다 ${late.inWholeSeconds}초 늦음")
+        }
         endsAt = null
         pausedRemaining = null
         endSecretModeUseCase(reason)

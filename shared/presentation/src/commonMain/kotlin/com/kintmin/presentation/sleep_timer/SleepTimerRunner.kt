@@ -52,7 +52,7 @@ class SleepTimerRunner(
         job = scope.launch {
             try {
                 delay(started.delayUntilFadeOut())
-                log("잠들기 타이머 만료: 페이드아웃 시작")
+                log("잠들기 타이머 끝 ${SleepTimerFadeOut.DURATION.inWholeSeconds}초 전 페이드아웃 시작: 재생 중=${playbackController.isPlaying}")
                 fadeOutAndPause()
                 log("잠들기 타이머가 재생을 멈춤")
                 clearSchedule(started)

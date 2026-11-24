@@ -11,6 +11,7 @@ import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCa
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
 import com.kintmin.domain.playlist.usecase.UpdatePlaylistSequenceUseCase
 import com.kintmin.domain.secret_mode.model.SecretModeEndReason
+import com.kintmin.domain.secret_mode.model.SecretModeStartReason
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeMinutesFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.UpdateSecretModeMinutesUseCase
@@ -103,7 +104,7 @@ class SecretPlaylistViewModel(
     }
 
     private fun toggleSecretMode(isEnabled: Boolean) {
-        if (isEnabled) secretModeRunner.start(uiState.value.minutes.minutes) else secretModeRunner.end(SecretModeEndReason.USER)
+        if (isEnabled) secretModeRunner.start(uiState.value.minutes.minutes, SecretModeStartReason.USER) else secretModeRunner.end(SecretModeEndReason.USER)
     }
 
     private fun handlePlaylistIntent(intent: PlaylistIntent) {
