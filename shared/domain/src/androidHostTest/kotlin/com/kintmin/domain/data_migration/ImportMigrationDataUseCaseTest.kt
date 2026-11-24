@@ -5,6 +5,8 @@ import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.data_migration.model.MigrationApplyResult
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
+import com.kintmin.domain.data_migration.model.MigrationChoice
+import com.kintmin.domain.data_migration.model.MigrationDeclinedException
 import com.kintmin.domain.data_migration.model.MigrationDownloadSettings
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationExport
@@ -16,8 +18,11 @@ import com.kintmin.domain.data_migration.model.MigrationFileKind
 import com.kintmin.domain.data_migration.model.MigrationFileUnavailableException
 import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationPlaylist
+import com.kintmin.domain.data_migration.model.MigrationPreview
 import com.kintmin.domain.data_migration.model.MigrationProgress
+import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
+import com.kintmin.domain.data_migration.model.MigrationTrack
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
@@ -35,9 +40,13 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+
+/** 받는 사람이 기본값으로 받기를 눌렀다 — 이름이 같은 플레이리스트는 합친다. */
+private val ACCEPT: suspend (MigrationPreview) -> MigrationChoice? = { MigrationChoice() }
 
 class ImportMigrationDataUseCaseTest {
 
@@ -74,8 +83,9 @@ class ImportMigrationDataUseCaseTest {
         files: List<MigrationFileEntry>,
         playlists: List<MigrationPlaylist> = emptyList(),
         settings: MigrationDownloadSettings? = null,
+        tracks: List<MigrationTrack> = emptyList(),
     ) = MigrationExport(
-        snapshot = MigrationSnapshot(audios, playlists, emptyList(), emptyList(), emptyList()),
+        snapshot = MigrationSnapshot(audios, playlists, tracks, emptyList(), emptyList()),
         files = files,
         downloadSettings = settings,
     )
@@ -100,7 +110,7 @@ class ImportMigrationDataUseCaseTest {
         val staged = mutableListOf<String>()
         var appliedPlan: MigrationPlan? = null
 
-        override suspend fun exportData() = error("받는 쪽에서 부르지 않는다")
+        override suspend fun exportData(scope: MigrationScope) = error("받는 쪽에서 부르지 않는다")
         override fun resolveFilePath(file: MigrationFile) = error("받는 쪽에서 부르지 않는다")
         override suspend fun fetchSnapshot() = Result.success(target).also { calls += "fetchSnapshot" }
         override fun isPlayableAudioFile(fileName: String) = !fileName.endsWith(".webm")
@@ -145,6 +155,9 @@ class ImportMigrationDataUseCaseTest {
         }
         override suspend fun notifyFinished(endpoint: MigrationEndpoint, token: String, summary: MigrationSummary) =
             Result.success(Unit).also { calls += "finish" }
+
+        override suspend fun notifyDeclined(endpoint: MigrationEndpoint, token: String) =
+            Result.success(Unit).also { calls += "decline" }
     }
 
     @Test
@@ -158,7 +171,7 @@ class ImportMigrationDataUseCaseTest {
         )
         val progress = mutableListOf<MigrationProgress>()
 
-        val summary = useCase(repository)(endpoint, "t", progress::add).getOrThrow()
+        val summary = useCase(repository)(endpoint, "t", progress::add, ACCEPT).getOrThrow()
 
         assertEquals(listOf("new.m4a"), repository.staged)
         assertEquals(listOf("fetchRemoteExport", "fetchSnapshot", "stage", "apply", "clear", "finish"), repository.calls)
@@ -175,6 +188,54 @@ class ImportMigrationDataUseCaseTest {
     }
 
     @Test
+    fun `비밀을 받지 않기로 하면 비밀 플레이리스트와 거기에만 담긴 곡은 파일도 받지 않는다`() = runTest {
+        val repository = FakeRepository(
+            export = export(
+                audios = listOf(audio(101, "https://youtu.be/a", "a.m4a"), audio(102, "https://youtu.be/b", "b.m4a")),
+                files = listOf(entry("a.m4a"), entry("b.m4a")),
+                playlists = listOf(
+                    MigrationPlaylist(14, "운동할 때", "", null, 1, PlaylistType.USER, 0),
+                    MigrationPlaylist(15, "나만 듣는 곡", "", null, 2, PlaylistType.SECRET, 0),
+                ),
+                tracks = listOf(MigrationTrack(14, 101, 1), MigrationTrack(15, 102, 1)),
+            ),
+            target = emptyTarget,
+        )
+
+        val result = useCase(repository)(endpoint, "t", {}) { MigrationChoice(includesSecret = false) }
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf("a.m4a"), repository.staged)
+        assertEquals(listOf(101), repository.appliedPlan?.newAudioMedias?.map { it.id })
+        assertEquals(listOf(14), repository.appliedPlan?.newPlaylists?.map { it.id })
+    }
+
+    @Test
+    fun `확인 화면에서 받지 않기로 하면 파일을 받지 않고 끝낸다`() = runTest {
+        val repository = FakeRepository(
+            export = export(
+                audios = listOf(audio(101, "https://youtu.be/new", "new.m4a")),
+                files = listOf(entry("new.m4a", 100)),
+                playlists = listOf(MigrationPlaylist(14, "운동할 때", "", null, 1, PlaylistType.USER, 0)),
+            ),
+            target = emptyTarget,
+        )
+        var seen: MigrationPreview? = null
+
+        val result = useCase(repository)(endpoint, "t", {}) { preview ->
+            seen = preview
+            null
+        }
+
+        assertTrue(result.exceptionOrNull() is MigrationDeclinedException)
+        assertEquals(listOf("fetchRemoteExport", "fetchSnapshot", "decline"), repository.calls)
+        assertTrue(repository.staged.isEmpty())
+        assertEquals(1, seen?.newAudioMediaCount)
+        assertEquals(listOf("운동할 때"), seen?.playlists?.map { it.name })
+        assertFalse(seen?.playlists?.first()?.isConflicting ?: true)
+    }
+
+    @Test
     fun `파일 받기 진행은 청크마다가 아니라 1퍼센트 단위로 알린다`() = runTest {
         val repository = FakeRepository(
             export = export(listOf(audio(101, "s1", "a.m4a")), listOf(entry("a.m4a", size = 10_000))),
@@ -183,7 +244,7 @@ class ImportMigrationDataUseCaseTest {
         )
         val progress = mutableListOf<MigrationProgress>()
 
-        useCase(repository)(endpoint, "t", progress::add).getOrThrow()
+        useCase(repository)(endpoint, "t", progress::add, ACCEPT).getOrThrow()
 
         val transfer = progress.filter { it.stage == MigrationStage.TRANSFER }
         assertTrue("${transfer.size}", transfer.size <= 102)
@@ -204,7 +265,7 @@ class ImportMigrationDataUseCaseTest {
             target = emptyTarget.copy(audioMedias = listOf(audio(7, "https://youtu.be/mine", "mine.m4a"))),
         )
 
-        val summary = useCase(repository)(endpoint, "t") {}.getOrThrow()
+        val summary = useCase(repository)(endpoint, "t", {}, ACCEPT).getOrThrow()
 
         assertTrue(repository.staged.isEmpty())
         assertTrue(repository.appliedPlan!!.newAudioMedias.isEmpty())
@@ -237,7 +298,7 @@ class ImportMigrationDataUseCaseTest {
         )
         val progress = mutableListOf<MigrationProgress>()
 
-        val summary = useCase(repository)(endpoint, "t", progress::add).getOrThrow()
+        val summary = useCase(repository)(endpoint, "t", progress::add, ACCEPT).getOrThrow()
 
         assertEquals(listOf("ok.m4a"), repository.staged)
         val applied = repository.appliedPlan!!.newAudioMedias
@@ -266,7 +327,7 @@ class ImportMigrationDataUseCaseTest {
             unavailableFiles = setOf("a.m4a"),
         )
 
-        val summary = useCase(repository)(endpoint, "t") {}.getOrThrow()
+        val summary = useCase(repository)(endpoint, "t", {}, ACCEPT).getOrThrow()
 
         assertEquals(listOf(102), repository.appliedPlan!!.newAudioMedias.map { it.id })
         assertTrue(repository.appliedPlan!!.requiredFiles.none { it.name == "a.m4a" })
@@ -284,7 +345,7 @@ class ImportMigrationDataUseCaseTest {
             unavailableFiles = setOf("a-edit.m4a"),
         )
 
-        val summary = useCase(repository)(endpoint, "t") {}.getOrThrow()
+        val summary = useCase(repository)(endpoint, "t", {}, ACCEPT).getOrThrow()
 
         val applied = repository.appliedPlan!!.newAudioMedias.single()
         assertNull(applied.editedAudioFileName)
@@ -305,7 +366,7 @@ class ImportMigrationDataUseCaseTest {
             disconnectAt = "b.m4a",
         )
 
-        val result = useCase(repository)(endpoint, "t") {}
+        val result = useCase(repository)(endpoint, "t", {}, ACCEPT)
 
         assertTrue(result.isFailure)
         assertTrue("apply" !in repository.calls)
@@ -324,7 +385,7 @@ class ImportMigrationDataUseCaseTest {
             failClearStaging = true,
         )
 
-        val result = useCase(repository)(endpoint, "t") {}
+        val result = useCase(repository)(endpoint, "t", {}, ACCEPT)
 
         assertTrue(result.isSuccess)
         assertTrue("apply" in repository.calls)
@@ -335,8 +396,7 @@ class ImportMigrationDataUseCaseTest {
     fun `취소는 실패로 기록하지 않고 그대로 올리며 다시 받은 파일은 지운다`() = runTest {
         coEvery { audioMediaRepository.downloadAudioFile("https://youtu.be/a") } returns
             Result.success(DownloadedAudioFile("re.m4a", "/audios/re.m4a", durationSeconds = 42))
-        coEvery { audioMediaRepository.downloadAudioFile("https://youtu.be/b") } returns
-            Result.failure(CancellationException("나가기"))
+        coEvery { audioMediaRepository.downloadAudioFile("https://youtu.be/b") } throws CancellationException("나가기")
         val repository = FakeRepository(
             export = export(
                 listOf(audio(101, "https://youtu.be/a", "a.webm"), audio(102, "https://youtu.be/b", "b.webm")),
@@ -345,10 +405,11 @@ class ImportMigrationDataUseCaseTest {
             target = emptyTarget,
         )
 
-        val thrown = runCatching { useCase(repository)(endpoint, "t") {} }.exceptionOrNull()
+        val thrown = runCatching { useCase(repository)(endpoint, "t", {}, ACCEPT) }.exceptionOrNull()
 
         assertTrue(thrown is CancellationException)
         assertTrue("apply" !in repository.calls)
+        coVerify { audioMediaRepository.deleteFileAtFullPath("/audios/re.m4a") }
     }
 
     @Test
@@ -362,7 +423,7 @@ class ImportMigrationDataUseCaseTest {
             afterApplyCommitted = { job.cancel() },
         )
 
-        job = launch { useCase(repository)(endpoint, "t") {} }
+        job = launch { useCase(repository)(endpoint, "t", {}, ACCEPT) }
         job.join()
 
         assertTrue(job.isCancelled)
@@ -380,7 +441,7 @@ class ImportMigrationDataUseCaseTest {
             target = emptyTarget,
         )
 
-        val summary = useCase(repository)(endpoint, "t") {}.getOrThrow()
+        val summary = useCase(repository)(endpoint, "t", {}, ACCEPT).getOrThrow()
 
         assertTrue(summary.failures.isEmpty())
         assertEquals(1, summary.newAudioMediaCount)
@@ -400,7 +461,7 @@ class ImportMigrationDataUseCaseTest {
         )
         suspend fun runWith(settings: MigrationDownloadSettings) = useCase(
             FakeRepository(export(emptyList(), emptyList(), sourcePlaylists, settings), target),
-        )(endpoint, "t") {}.getOrThrow()
+        )(endpoint, "t", {}, ACCEPT).getOrThrow()
 
         runWith(MigrationDownloadSettings(shouldInsertAtTop = true, playlistId = 14))
         coVerify { appSettingRepository.updateShouldInsertAtTopOnDownload(true) }
@@ -427,7 +488,7 @@ class ImportMigrationDataUseCaseTest {
         )
         suspend fun runWith(playlistId: Int) = useCase(
             FakeRepository(export(emptyList(), emptyList(), sourcePlaylists, MigrationDownloadSettings(false, playlistId)), target),
-        )(endpoint, "t") {}.getOrThrow()
+        )(endpoint, "t", {}, ACCEPT).getOrThrow()
 
         runWith(16)
         runWith(17)
@@ -437,7 +498,7 @@ class ImportMigrationDataUseCaseTest {
 
     @Test
     fun `설정이 없는 manifest 면 받는 기기 설정을 건드리지 않는다`() = runTest {
-        useCase(FakeRepository(export(emptyList(), emptyList()), emptyTarget))(endpoint, "t") {}.getOrThrow()
+        useCase(FakeRepository(export(emptyList(), emptyList()), emptyTarget))(endpoint, "t", {}, ACCEPT).getOrThrow()
 
         coVerify(exactly = 0) { appSettingRepository.updateShouldInsertAtTopOnDownload(any()) }
         coVerify(exactly = 0) { appSettingRepository.updatePlaylistIdOnDownload(any()) }

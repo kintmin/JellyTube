@@ -2,11 +2,11 @@ package com.kintmin.domain.audio_media.usecase
 
 import com.kintmin.domain.audio_edit.repository.AudioEditRepository
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.first
 
 class CleanupAnomalousDataUseCase constructor(
@@ -16,12 +16,12 @@ class CleanupAnomalousDataUseCase constructor(
     private val appLog: AppLog,
 ) {
 
-    suspend operator fun invoke(): Result<Int> = runCatching {
+    suspend operator fun invoke(): Result<Int> = suspendRunCatching {
         appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "track 연결 없는 음원 정리 시작"))
 
         val orphanMediaList = audioMediaRepository.deleteOrphanAudioMedia().getOrThrow()
         orphanMediaList.forEach {
-            appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "음원 row 삭제 완료: $it"))
+            appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "음원 row 삭제 완료: id=${it.id}"))
         }
 
         // 커밋 후 orphan row가 참조하던 파일 삭제
@@ -37,7 +37,7 @@ class CleanupAnomalousDataUseCase constructor(
         // 렌더러가 연 원본의 이름을 바꿔도 안 되므로 확장자 보정도 함께 건너뛴다.
         if (audioEditRepository.observeSavingAudioMediaIds().first().isNotEmpty()) {
             appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "편집본 저장 중이라 확장자 보정과 DB 연결 없는 파일 정리 건너뜀"))
-            return@runCatching orphanMediaList.size
+            return@suspendRunCatching orphanMediaList.size
         }
 
         // iOS AVAudioFile 은 확장자가 내용과 다르면 열지 못한다.
@@ -68,7 +68,7 @@ class CleanupAnomalousDataUseCase constructor(
         val anomalyCount = orphanMediaList.size + correctedFileCount + orphanFileFullPaths.size
         anomalyCount
     }.onFailure {
-        if (it !is CancellationException) appLog.sendErrorLog(ErrorLog("CleanupAnomalousDataUseCase", "이상 데이터 정리 실패", it))
+        appLog.sendErrorLog(ErrorLog("CleanupAnomalousDataUseCase", "이상 데이터 정리 실패", it))
     }
 
     private suspend fun deleteFileSafely(fileFullPath: String) {

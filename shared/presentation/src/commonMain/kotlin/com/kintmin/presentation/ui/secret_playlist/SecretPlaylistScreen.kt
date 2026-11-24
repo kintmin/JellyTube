@@ -1,19 +1,23 @@
 package com.kintmin.presentation.ui.secret_playlist
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,13 +35,20 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.SectionHeader
 import com.kintmin.presentation.ui.common.wheel_picker.NumberWheelPicker
+import com.kintmin.presentation.ui.main.bottom_sheet.PlaylistReorderBottomSheet
 import com.kintmin.presentation.ui.main.playlist.PlaylistEmptyView
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
-import com.kintmin.presentation.ui.player_detail.dialog.PlaybackOptionChip
+import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistLibraryBlockView
+import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistReorderActionView
+import com.kintmin.presentation.ui.player_bar.PlayerBar
+import com.kintmin.presentation.ui.player_bar.PlayerBarIntent
+import com.kintmin.presentation.ui.player_bar.PlayerBarUiState
+import com.kintmin.presentation.ui.player_bar.PlayerBarViewModel
+import com.kintmin.presentation.ui.player_detail.dialog.PlaybackOptionChipRow
 import com.kintmin.presentation.ui.setting.section.SettingItemView
 import com.kintmin.presentation.ui.setting.section.SettingSwitchView
 import org.koin.compose.viewmodel.koinViewModel
@@ -53,10 +64,13 @@ fun SecretPlaylistScreen(
     navigateToPlaylistDetail: (playlistId: Int) -> Unit,
     navigateToPlaylistEdit: (playlistId: Int) -> Unit,
     navigateToPlaylistAdd: (playlistId: Int, playlistName: String) -> Unit,
+    navigateToPlayerDetail: () -> Unit,
 ) {
     val toaster = rememberToaster()
     val viewModel = koinViewModel<SecretPlaylistViewModel>()
+    val playerBarViewModel = koinViewModel<PlayerBarViewModel>()
     val uiState by viewModel.uiState.collectAsState()
+    val playerBar by playerBarViewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
@@ -71,16 +85,22 @@ fun SecretPlaylistScreen(
 
     SecretPlaylistScreen(
         uiState = uiState,
+        playerBar = playerBar,
         navigateToBack = navigateToBack,
+        navigateToPlayerDetail = navigateToPlayerDetail,
         sendIntent = viewModel::sendIntent,
+        sendPlayerBarIntent = playerBarViewModel::sendIntent,
     )
 }
 
 @Composable
 fun SecretPlaylistScreen(
     uiState: SecretPlaylistUiState,
+    playerBar: PlayerBarUiState,
     navigateToBack: () -> Unit,
+    navigateToPlayerDetail: () -> Unit,
     sendIntent: (SecretPlaylistIntent) -> Unit,
+    sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -93,6 +113,19 @@ fun SecretPlaylistScreen(
         },
     )
 
+    if (uiState.isReorderBottomSheetVisible) {
+        PlaylistReorderBottomSheet(
+            playlists = uiState.playlists,
+            title = "비밀 플레이리스트 순서",
+            onReorder = { orderedIds ->
+                sendIntent(SecretPlaylistIntent.OnPlaylistIntent(PlaylistIntent.OnReorderPlaylist(orderedIds)))
+            },
+            onDismissRequest = {
+                sendIntent(SecretPlaylistIntent.OnPlaylistIntent(PlaylistIntent.OnDismissReorderBottomSheet))
+            },
+        )
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -100,6 +133,20 @@ fun SecretPlaylistScreen(
                 title = "비밀 플레이리스트",
                 onClickBack = navigateToBack,
             )
+        },
+        bottomBar = {
+            Column {
+                PlayerBar(
+                    data = playerBar,
+                    sendIntent = sendPlayerBarIntent,
+                    onClickBar = navigateToPlayerDetail,
+                )
+                Box(
+                    modifier = Modifier
+                        .windowInsetsBottomHeight(WindowInsets.navigationBars)
+                        .background(MaterialTheme.colorScheme.surface),
+                )
+            }
         },
     ) { innerPadding ->
         LazyVerticalGrid(
@@ -128,19 +175,12 @@ fun SecretPlaylistScreen(
             if (!uiState.isEnabled) {
                 item(key = "minutes", span = { GridItemSpan(maxLineSpan) }) {
                     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            SecretModeMinuteOptions.forEach { option ->
-                                PlaybackOptionChip(
-                                    modifier = Modifier.weight(1f),
-                                    label = "${option}분",
-                                    isSelected = uiState.minutes == option,
-                                    onClick = { sendIntent(SecretPlaylistIntent.OnSelectMinutes(option)) },
-                                )
-                            }
-                        }
+                        PlaybackOptionChipRow(
+                            options = SecretModeMinuteOptions,
+                            selected = uiState.minutes,
+                            label = { option -> "${option}분" },
+                            onSelect = { option -> sendIntent(SecretPlaylistIntent.OnSelectMinutes(option)) },
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         NumberWheelPicker(
                             values = SecretModeMinuteRange,
@@ -155,6 +195,16 @@ fun SecretPlaylistScreen(
                 return@LazyVerticalGrid
             }
 
+            uiState.secretFavorite?.let { secretFavorite ->
+                item(key = "secret-favorite", span = { GridItemSpan(maxLineSpan) }) {
+                    PlaylistLibraryBlockView(
+                        modifier = Modifier.fillMaxWidth(),
+                        data = listOf(secretFavorite),
+                        sendIntent = { sendIntent(SecretPlaylistIntent.OnPlaylistIntent(it)) },
+                    )
+                }
+            }
+
             item(key = "secret-header", span = { GridItemSpan(maxLineSpan) }) {
                 SectionHeader(
                     text = "비밀 플레이리스트",
@@ -162,6 +212,15 @@ fun SecretPlaylistScreen(
                     action = {
                         // 빈 상태가 제 CTA 를 갖는다. 같은 명령으로 가는 버튼을 둘 보이지 않게 한다.
                         if (uiState.playlists.isEmpty()) return@SectionHeader
+                        // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
+                        PlaylistReorderActionView(
+                            enabled = uiState.playlists.size > 1,
+                            onClick = {
+                                sendIntent(
+                                    SecretPlaylistIntent.OnPlaylistIntent(PlaylistIntent.OnClickShowReorderBottomSheet)
+                                )
+                            },
+                        )
                         PlaylistAddButtonView(text = "새로 만들기", onClick = { showAddDialog = true })
                     },
                 )
@@ -193,8 +252,11 @@ fun SecretPlaylistScreenOffPreview() {
     JellyTubeTheme {
         SecretPlaylistScreen(
             uiState = SecretPlaylistUiState(isEnabled = false, minutes = 30),
+            playerBar = PlayerBarUiState.getMock(),
             navigateToBack = {},
+            navigateToPlayerDetail = {},
             sendIntent = {},
+            sendPlayerBarIntent = {},
         )
     }
 }
@@ -210,8 +272,11 @@ fun SecretPlaylistScreenOnPreview() {
                 remaining = 12.minutes,
                 playlists = listOf(PlaylistItemUiState.getMock(id = 10).copy(name = "나만 듣는 곡")),
             ),
+            playerBar = PlayerBarUiState.getMock(),
             navigateToBack = {},
+            navigateToPlayerDetail = {},
             sendIntent = {},
+            sendPlayerBarIntent = {},
         )
     }
 }

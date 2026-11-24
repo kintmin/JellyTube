@@ -47,6 +47,7 @@ class MainViewModelTest {
             DiscoveredDevice("phone", 1)
         },
         createUploader = { FileUploader(it.hostAddress, it.port, MockEngine { request -> handle(request) }) },
+        findUpdate = { null },
     )
 
     @AfterTest
@@ -149,7 +150,7 @@ class MainViewModelTest {
 
     @Test
     fun `기기가 없을 때 드롭하면 상태 카드에 이유를 보여 주고 목록에 넣지 않는다`() = runTest {
-        val offline = MainViewModel(discover = { null })
+        val offline = MainViewModel(discover = { null }, findUpdate = { null })
         try {
             offline.uiState.first { it.discoveryState == DiscoveryState.NOT_FOUND }
             offline.onFilesDrop(files("a.mp3"))

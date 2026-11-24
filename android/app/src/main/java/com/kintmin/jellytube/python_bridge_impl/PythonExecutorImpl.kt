@@ -8,6 +8,7 @@ import com.kintmin.data.python_bridge.PythonExecutor
 import com.kintmin.data.python_bridge.model.PlayableAudioDownloadDto
 import com.kintmin.data.python_bridge.model.YoutubeDownloadDto
 import com.kintmin.data.python_bridge.model.withDefaults
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -15,10 +16,12 @@ class PythonExecutorImpl(
     private val context: Context
 ) : PythonExecutor {
 
+    // 이 구현은 주소를 로그에 남기지 않아 isSecret 을 쓸 일이 없다.
     override suspend fun downloadYoutubeMedia(
         youtubeUrl: String,
         audioDownloadPath: String,
-    ) = runCatching {
+        isSecret: Boolean,
+    ) = suspendRunCatching {
         withContext(Dispatchers.IO) {
             ensurePythonStarted()
 
@@ -44,7 +47,7 @@ class PythonExecutorImpl(
         youtubeUrl: String,
         audioDownloadPath: String,
     ): Result<PlayableAudioDownloadDto> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             ensurePythonStarted()
 
             val module = Python.getInstance().getModule(FILE_NAME)
@@ -57,7 +60,7 @@ class PythonExecutorImpl(
     }
 
     override suspend fun extractYoutubePlaylist(playlistUrl: String): Result<String> = withContext(Dispatchers.IO) {
-        runCatching {
+        suspendRunCatching {
             ensurePythonStarted()
 
             val module = Python.getInstance().getModule(FILE_NAME)

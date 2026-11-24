@@ -1,13 +1,11 @@
 package com.kintmin.domain.playlist.usecase
 
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.SentryEvent
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOn
+import com.kintmin.log.secret
 
 class DeletePlaylistUseCase constructor(
     private val audioTrackRepository: AudioTrackRepository,
@@ -16,10 +14,8 @@ class DeletePlaylistUseCase constructor(
 ) {
 
     suspend operator fun invoke(playlistId: Int): Result<Unit> {
-        return runCatching {
-            val playlistToDelete = playlistRepository.getPlaylistFlow(playlistId)
-                .flowOn(Dispatchers.IO)
-                .first()
+        return suspendRunCatching {
+            val playlistToDelete = playlistRepository.getPlaylist(playlistId).getOrThrow()
 
             val trackCount = audioTrackRepository.getPlaylistTrackCount(playlistId).getOrThrow()
 
@@ -27,7 +23,7 @@ class DeletePlaylistUseCase constructor(
                 appLog.sendSentryEvent(
                     SentryEvent.DeletePlaylist(
                         playlistId = playlistToDelete.id,
-                        playlistTitle = playlistToDelete.name,
+                        playlistTitle = secret(playlistToDelete.name, playlistToDelete.type.isSecret),
                         audioMediaCount = trackCount,
                     )
                 )

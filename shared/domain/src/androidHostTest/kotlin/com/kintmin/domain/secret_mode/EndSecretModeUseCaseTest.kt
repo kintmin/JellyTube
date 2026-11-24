@@ -3,6 +3,7 @@ package com.kintmin.domain.secret_mode
 import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
+import com.kintmin.domain.secret_mode.model.SecretModeEndReason
 import com.kintmin.domain.secret_mode.repository.SecretModeRepository
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.testPlaylist
@@ -40,7 +41,7 @@ class EndSecretModeUseCaseTest {
     fun `다운로드 대상이 비밀 플레이리스트면 미분류로 되돌린다`() = runTest {
         every { appSettingRepository.getPlaylistIdOnDownloadFlow() } returns flowOf(5)
 
-        useCase()
+        useCase(SecretModeEndReason.USER)
 
         coVerify { secretModeRepository.setEnabled(false) }
         coVerify { appSettingRepository.updatePlaylistIdOnDownload(2) }
@@ -51,7 +52,7 @@ class EndSecretModeUseCaseTest {
         listOf(4, null).forEach { savedId ->
             every { appSettingRepository.getPlaylistIdOnDownloadFlow() } returns flowOf(savedId)
 
-            useCase()
+            useCase(SecretModeEndReason.USER)
         }
 
         coVerify(exactly = 2) { secretModeRepository.setEnabled(false) }
@@ -59,11 +60,20 @@ class EndSecretModeUseCaseTest {
     }
 
     @Test
+    fun `끔 로그에 끈 이유를 싣는다`() = runTest {
+        every { appSettingRepository.getPlaylistIdOnDownloadFlow() } returns flowOf(4)
+
+        useCase(SecretModeEndReason.EXPIRED_ON_RETURN)
+
+        verify { appLog.sendDebugLog(match { it.message == "비밀모드 끔: EXPIRED_ON_RETURN" }) }
+    }
+
+    @Test
     fun `이미 꺼져 있었으면 끔 로그를 남기지 않는다`() = runTest {
         every { secretModeRepository.isEnabledFlow } returns MutableStateFlow(false)
         every { appSettingRepository.getPlaylistIdOnDownloadFlow() } returns flowOf(4)
 
-        useCase()
+        useCase(SecretModeEndReason.USER)
 
         verify(exactly = 0) { appLog.sendDebugLog(any()) }
     }
@@ -73,7 +83,7 @@ class EndSecretModeUseCaseTest {
         every { appSettingRepository.getPlaylistIdOnDownloadFlow() } returns flowOf(5)
         coEvery { appSettingRepository.updatePlaylistIdOnDownload(any()) } returns Result.failure(Exception("boom"))
 
-        useCase()
+        useCase(SecretModeEndReason.USER)
 
         verify { appLog.sendErrorLog(match { it.message == "다운로드 대상을 미분류로 되돌리지 못함" && it.throwable?.message == "boom" }) }
     }

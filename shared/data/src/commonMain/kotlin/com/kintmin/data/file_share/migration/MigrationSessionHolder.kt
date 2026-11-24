@@ -31,6 +31,7 @@ object MigrationSessionHolder {
             onClosed = { onClosed(opened) },
             onPaired = { updateIfCurrent(opened, DataMigrationSendStatus.Paired(it)) },
             onFinished = { updateIfCurrent(opened, DataMigrationSendStatus.Finished(it.newAudioMediaCount, it.failedCount)) },
+            onUnpaired = { updateIfCurrent(opened, DataMigrationSendStatus.WaitingForPair(opened.code)) },
         )
         _session.value = opened
         _state.value = DataMigrationSendStatus.WaitingForPair(opened.code)

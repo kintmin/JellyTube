@@ -71,11 +71,13 @@ import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.awtTransferable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.kintmin.fileshare.FileShareConstants
+import com.kintmin.desktop.update.UpdateDialog
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import java.awt.FileDialog
 import java.awt.Frame
@@ -102,6 +104,19 @@ fun MainScreen() {
         onRetryAllFailed = viewModel::onRetryAllFailed,
         onRemoveItem = viewModel::onRemoveItem,
     )
+
+    val uriHandler = LocalUriHandler.current
+    uiState.availableUpdate?.let { update ->
+        UpdateDialog(
+            versionName = update.versionName,
+            onDownload = {
+                uriHandler.openUri(update.downloadUrl)
+                viewModel.onDismissUpdate()
+            },
+            onIgnore = viewModel::onIgnoreUpdate,
+            onDismiss = viewModel::onDismissUpdate,
+        )
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)

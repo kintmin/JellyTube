@@ -1,7 +1,9 @@
 package com.kintmin.domain.data_migration.usecase
 
 import com.kintmin.domain.audio_media.usecase.CleanupAnomalousDataUseCase
+import com.kintmin.domain.data_migration.model.MigrationChoice
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
+import com.kintmin.domain.data_migration.model.MigrationPreview
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationSummary
@@ -15,9 +17,10 @@ class ReceiveMigrationDataUseCase(
         endpoint: MigrationEndpoint,
         token: String,
         onProgress: (MigrationProgress) -> Unit,
+        confirm: suspend (MigrationPreview) -> MigrationChoice?,
     ): Result<MigrationSummary> {
         onProgress(MigrationProgress(MigrationStage.CLEANUP))
         cleanupAnomalousDataUseCase()
-        return importMigrationDataUseCase(endpoint, token, onProgress)
+        return importMigrationDataUseCase(endpoint, token, onProgress, confirm)
     }
 }

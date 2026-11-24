@@ -4,6 +4,7 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.kintmin.data.python_bridge.IosPythonExecutorBridge
 import com.kintmin.domain.app_setting.usecase.FetchIsStepEnabledFlowUseCase
 import com.kintmin.domain.user.usecase.RegisterUserUseCase
+import com.kintmin.ios.download.IosDownloadTargetStore
 import com.kintmin.ios.notification.localNotificationDeepLinkOf
 import com.kintmin.presentation.navigation.AppIntent
 import com.kintmin.presentation.navigation.AppViewModel
@@ -39,7 +40,11 @@ private fun resumeFinishedDownloads() {
         if (finishedUrls.isEmpty()) return@launch
 
         val execute = koin.get<StartYoutubeDownload>()
-        finishedUrls.forEach { execute(it) }
+        val downloadTargetStore = koin.get<IosDownloadTargetStore>()
+        finishedUrls.forEach { url ->
+            val playlistId = downloadTargetStore.get(url) ?: return@forEach
+            execute(url, playlistId)
+        }
     }
 }
 

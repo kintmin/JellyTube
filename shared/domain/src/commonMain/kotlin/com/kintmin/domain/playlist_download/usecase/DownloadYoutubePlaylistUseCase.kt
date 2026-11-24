@@ -7,12 +7,14 @@ import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.audio_media.usecase.DownloadAudioMediaUseCase
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.SourceKey
 import com.kintmin.domain.lyrics.usecase.DownloadLyricsForAudioMediaUseCase
-import com.kintmin.domain.playlist.model.PlaylistType
+import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.domain.playlist.usecase.AddNewPlaylistUseCase
 import com.kintmin.domain.playlist_download.PlaylistMergeOrder
+import com.kintmin.domain.playlist_download.findYoutubeMergeTarget
 import com.kintmin.domain.playlist_download.model.PlaylistDownloadFailure
 import com.kintmin.domain.playlist_download.model.PlaylistDownloadFailureReason
 import com.kintmin.domain.playlist_download.model.PlaylistDownloadProgress
@@ -23,13 +25,11 @@ import com.kintmin.domain.youtube.model.YoutubePlaylistEntry
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
-import com.kintmin.log.secret
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * 유튜브 재생목록을 같은 이름의 재생목록에 받는다. 받은 곡은 미분류에 두었다가 끝에 유튜브 순서대로 한 번에 담는다.
@@ -47,9 +47,9 @@ class DownloadYoutubePlaylistUseCase(
     suspend operator fun invoke(
         playlist: YoutubePlaylist,
         onProgress: (PlaylistDownloadProgress) -> Unit,
-    ): Result<PlaylistDownloadSummary> = runCatching {
+    ): Result<PlaylistDownloadSummary> = suspendRunCatching {
         val entries = playlist.entries.distinctBy { it.videoId }
-        log("재생목록 받기 시작: ${secret(playlist.title)} (${entries.size}곡)")
+        log("재생목록 받기 시작: ${playlist.title} (${entries.size}곡)")
         val owned = ownedIdByKey()
         val (onDevice, notOnDevice) = entries.partition { SourceKey.of(it.url) in owned }
         val (toDownload, unavailable) = notOnDevice.partition { it.isAvailable }
@@ -93,14 +93,14 @@ class DownloadYoutubePlaylistUseCase(
             throw e
         }
         toDownload.zip(results).forEach { (entry, result) ->
-            result.onFailure { log("받기 실패: ${secret(entry.title)} (${entry.videoId}) $it") }
+            result.onFailure { log("받기 실패: ${entry.title} (${entry.videoId}) ${it.message ?: it::class.simpleName}") }
         }
 
         val playlistId = withContext(NonCancellable) { addInOrder(playlist.title, idsInOrder(), onProgress) }
 
         PlaylistDownloadSummary(
             playlistId = playlistId,
-            playlistName = playlist.title.trim(),
+            playlistName = PlaylistTextLimit.clampTitle(playlist.title),
             downloadedCount = downloaded.size,
             alreadyOnDeviceCount = onDevice.size,
             failures = unavailable.map { PlaylistDownloadFailure(it.title, PlaylistDownloadFailureReason.UNAVAILABLE) } +
@@ -115,12 +115,11 @@ class DownloadYoutubePlaylistUseCase(
         ).also { summary ->
             val failureCounts = summary.failures.groupingBy { it.reason }.eachCount()
             log(
-                "재생목록 받기 완료: ${secret(summary.playlistName)} playlistId=${summary.playlistId} " +
+                "재생목록 받기 완료: ${summary.playlistName} playlistId=${summary.playlistId} " +
                     "받음=${summary.downloadedCount} 이미 있음=${summary.alreadyOnDeviceCount} 실패=$failureCounts",
             )
         }
     }.onFailure {
-        if (it is CancellationException) throw it
         logError("재생목록 받기 중단", it)
     }
 
@@ -142,9 +141,8 @@ class DownloadYoutubePlaylistUseCase(
         audioMediaIds: List<Int>,
         onProgress: (PlaylistDownloadProgress) -> Unit,
     ): Int? {
-        val name = title.trim()
-        val existing = playlistRepository.getAllPlaylistFlow().first()
-            .firstOrNull { it.type == PlaylistType.USER && it.name.trim() == name }
+        val name = PlaylistTextLimit.clampTitle(title)
+        val existing = playlistRepository.getAllPlaylistFlow().first().findYoutubeMergeTarget(title)
         if (existing == null && audioMediaIds.isEmpty()) return null
         val playlistId = existing?.id ?: addNewPlaylistUseCase(name).getOrThrow()
         val youtubeOrder = audioMediaIds.distinct()

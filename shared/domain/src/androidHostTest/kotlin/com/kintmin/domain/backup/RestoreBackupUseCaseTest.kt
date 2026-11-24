@@ -18,6 +18,7 @@ import com.kintmin.domain.data_migration.model.MigrationPlan
 import com.kintmin.domain.data_migration.model.MigrationPlaylist
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationRef
+import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.model.MigrationStage
 import com.kintmin.domain.data_migration.model.MigrationStep
@@ -28,9 +29,11 @@ import com.kintmin.domain.data_migration.repository.DataMigrationRepository
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.repository.PlaylistRepository
 import com.kintmin.log.AppLog
+import com.kintmin.log.HIDDEN_TEXT
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -97,7 +100,7 @@ class RestoreBackupUseCaseTest {
         val stagedTexts = mutableMapOf<String, String>()
         var appliedPlan: MigrationPlan? = null
 
-        override suspend fun exportData() = error("복원에서 부르지 않는다")
+        override suspend fun exportData(scope: MigrationScope) = error("복원에서 부르지 않는다")
         override fun resolveFilePath(file: MigrationFile) = Result.success("/${file.kind}/${file.name}")
         override suspend fun fetchSnapshot() = Result.success(target)
         override fun isPlayableAudioFile(fileName: String) = error("복원에서 부르지 않는다")
@@ -138,10 +141,34 @@ class RestoreBackupUseCaseTest {
 
         override suspend fun notifyFinished(endpoint: MigrationEndpoint, token: String, summary: MigrationSummary) =
             error("복원에서 부르지 않는다")
+
+        override suspend fun notifyDeclined(endpoint: MigrationEndpoint, token: String) =
+            error("복원에서 부르지 않는다")
     }
 
     private fun useCase(repository: DataMigrationRepository) =
         RestoreBackupUseCase(repository, playlistRepository, appSettingRepository, audioMediaRepository, appLog)
+
+    @Test
+    fun `비밀모드 없이 복원해도 비밀 곡의 이름과 주소는 로그에서 가리고 나머지는 남긴다`() = runTest {
+        coEvery { audioMediaRepository.downloadAudioFile(any()) } returns Result.failure(Exception("boom"))
+
+        useCase(FakeRepository(emptyTarget))(
+            backup(
+                audios = listOf(audio(201, "https://youtu.be/s", "s.webm"), audio(202, "https://youtu.be/p", "p.webm")),
+                playlists = listOf(MigrationPlaylist(60, "비밀", "", null, 0, PlaylistType.SECRET, 0)),
+                tracks = listOf(MigrationTrack(60, 201, 0)),
+            ),
+        ) {}
+
+        verify {
+            appLog.sendErrorLog(match { it.message.startsWith("다시 받기 실패: name=$HIDDEN_TEXT source=$HIDDEN_TEXT ") })
+            appLog.sendErrorLog(match { it.message.startsWith("다시 받기 실패: name=곡202 source=https://youtu.be/p ") })
+        }
+        verify(inverse = true) {
+            appLog.sendErrorLog(match { "곡201" in it.message || "youtu.be/s" in it.message })
+        }
+    }
 
     @Test
     fun `유튜브 곡은 다시 받아 백업의 이름으로 쌓고 한 번에 반영한다`() = runTest {

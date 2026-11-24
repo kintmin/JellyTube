@@ -14,4 +14,5 @@ data class SettingUiState(
     val isStepEnabled: Boolean = true,
     val deviceId: String? = null,
     val backupDescription: String = "",
+    val isCheckingAppUpdate: Boolean = false,
 )

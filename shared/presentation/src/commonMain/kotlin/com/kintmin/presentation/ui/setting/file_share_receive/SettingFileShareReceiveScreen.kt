@@ -1,6 +1,8 @@
 package com.kintmin.presentation.ui.setting.file_share_receive
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
@@ -23,12 +26,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -90,7 +95,7 @@ fun SettingFileShareReceiveScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(top = innerPadding.calculateTopPadding())
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -109,24 +114,29 @@ fun SettingFileShareReceiveScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
+                    ServerStatusLabel(serverStatus = uiState.serverStatus)
+                    // 라벨 너비가 제각각이라 간격을 나누면 가운데 노드가 중앙에서 밀린다.
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment = Alignment.Top,
                     ) {
-                        FlowNode(icon = Icons.Rounded.Computer, label = "PC JellyTube")
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        FlowNode(
+                            icon = Icons.Rounded.Computer,
+                            label = "PC JellyTube",
+                            modifier = Modifier.weight(1f),
                         )
-                        FlowNode(icon = Icons.Rounded.Wifi, label = "Wi-Fi")
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        FlowArrow()
+                        FlowNode(
+                            icon = Icons.Rounded.Wifi,
+                            label = "Wi-Fi",
+                            modifier = Modifier.weight(1f),
                         )
-                        FlowNode(icon = Icons.Rounded.MusicNote, label = "JellyTube")
+                        FlowArrow()
+                        FlowNode(
+                            icon = Icons.Rounded.MusicNote,
+                            label = "JellyTube",
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                     Text(
                         text = when (uiState.serverStatus) {
@@ -170,14 +180,57 @@ fun SettingFileShareReceiveScreen(
                 description = "PC 앱에 음원 파일을 끌어다 놓으면 자동으로 이 기기의 라이브러리에 추가됩니다.",
             )
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(innerPadding.calculateBottomPadding()))
         }
     }
 }
 
+/**
+ * 받는 중은 화면을 나가도 이어지는 모드다 — 색만으로 알리면 끊긴 줄 모른 채 나간다. 그래서
+ * 글자와 채움·테두리로 같이 말한다.
+ */
 @Composable
-private fun FlowNode(icon: ImageVector, label: String) {
+private fun ServerStatusLabel(serverStatus: ServerStatus) {
+    val isRunning = serverStatus == ServerStatus.RUNNING
+    Surface(
+        color = if (isRunning) MaterialTheme.colorScheme.tertiary else Color.Transparent,
+        contentColor = if (isRunning) {
+            MaterialTheme.colorScheme.onTertiary
+        } else {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        },
+        shape = CircleShape,
+        border = if (isRunning) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Text(
+            text = if (isRunning) "받는 중" else "꺼져 있음",
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        )
+    }
+}
+
+private val FlowNodeIconSize = 28.dp
+
+/** 화살표는 라벨이 없다 — 아이콘과 같은 높이 안에서 가운데로 둬야 아이콘 줄에 선다. */
+@Composable
+private fun FlowArrow() {
+    Box(
+        modifier = Modifier.height(FlowNodeIconSize),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+    }
+}
+
+@Composable
+private fun FlowNode(icon: ImageVector, label: String, modifier: Modifier = Modifier) {
     Column(
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -185,7 +238,7 @@ private fun FlowNode(icon: ImageVector, label: String) {
             imageVector = icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier.size(FlowNodeIconSize),
         )
         Text(
             text = label,

@@ -30,6 +30,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     func __downloadYoutubeMedia(
         youtubeUrl: String,
         audioDownloadPath: String,
+        isSecret: Bool,
         completionHandler: @escaping @Sendable (YoutubeDownloadDto?, Error?) -> Void,
     ) {
         // 지난 생애에 이미 끝난 전송이면 다시 받지 않는다.
@@ -41,6 +42,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
         attemptDownload(
             youtubeUrl: youtubeUrl,
             audioDownloadPath: audioDownloadPath,
+            isSecret: isSecret,
             remainingRetryCount: Self.extractRetryCount,
             completionHandler: completionHandler
         )
@@ -53,6 +55,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
     private func attemptDownload(
         youtubeUrl: String,
         audioDownloadPath: String,
+        isSecret: Bool,
         remainingRetryCount: Int,
         preferHls: Bool = false,
         completionHandler: @escaping @Sendable (YoutubeDownloadDto?, Error?) -> Void
@@ -87,7 +90,8 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                         thumbnailUrl: result[safe: 4] ?? "",
                         duration: result[safe: 5] ?? "",
                         uploader: result[safe: 6] ?? "",
-                        description: result[safe: 7] ?? ""
+                        description: result[safe: 7] ?? "",
+                        isSecret: isSecret
                     )
                 }
                 let source = makeSource(ext: result[safe: 2].flatMap { $0.isEmpty ? nil : $0 } ?? "m4a")
@@ -96,7 +100,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                 let transferProtocol = result[safe: 10] ?? ""
                 let isHls = transferProtocol.contains("m3u8")
                 let routeDetail = "format=\(formatId) ext=\(result[safe: 2] ?? "") filesize=\(result[safe: 8] ?? "") " +
-                    "duration=\(result[safe: 5] ?? "") source=\(SwiftAppLogKt.swiftSecret(value: youtubeUrl))"
+                    "duration=\(result[safe: 5] ?? "") source=\(SwiftAppLogKt.swiftSecret(value: youtubeUrl, isSecret: isSecret))"
 
                 let onTransferEnd: (Error?) -> Void = { error in
                     guard let error else {
@@ -109,6 +113,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
                         self.attemptDownload(
                             youtubeUrl: youtubeUrl,
                             audioDownloadPath: audioDownloadPath,
+                            isSecret: isSecret,
                             remainingRetryCount: remainingRetryCount - 1,
                             preferHls: true,
                             completionHandler: completionHandler
@@ -152,6 +157,7 @@ final class PythonExecutorBridgeImpl: IosPythonExecutorBridge {
 
                 SwiftAppLogKt.swiftYoutubeDownloadFallbackLog(
                     source: youtubeUrl,
+                    isSecret: isSecret,
                     reason: reason,
                     formatId: formatId,
                     transferProtocol: transferProtocol

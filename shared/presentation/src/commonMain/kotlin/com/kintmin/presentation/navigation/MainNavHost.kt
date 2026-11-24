@@ -23,6 +23,7 @@ import com.kintmin.presentation.ui.lyrics_edit.navigation.lyricsEditScreen
 import com.kintmin.presentation.ui.lyrics_edit.navigation.navigateToLyricsEditScreen
 import com.kintmin.presentation.ui.lyrics_search.navigation.lyricsSearchScreen
 import com.kintmin.presentation.ui.lyrics_search.navigation.navigateToLyricsSearchScreen
+import com.kintmin.presentation.ui.lyrics_search.navigation.LyricsSearchScreenRoute
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.lyricsViewerScreen
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.navigateToLyricsViewerScreen
 import com.kintmin.presentation.ui.main.MainTabItem
@@ -49,6 +50,13 @@ import com.kintmin.presentation.ui.setting.data_migration_receive.navigation.nav
 import com.kintmin.presentation.ui.setting.data_migration_receive.navigation.settingDataMigrationReceiveScreen
 import com.kintmin.presentation.ui.setting.data_migration_send.navigation.navigateToSettingDataMigrationSendScreen
 import com.kintmin.presentation.ui.setting.data_migration_send.navigation.settingDataMigrationSendScreen
+import com.kintmin.presentation.ui.setting.data_migration_share.MigrationShareKind
+import com.kintmin.presentation.ui.setting.data_migration_share.navigation.navigateToSettingDataMigrationShareScreen
+import com.kintmin.presentation.ui.setting.data_migration_share.navigation.settingDataMigrationShareScreen
+import com.kintmin.presentation.ui.setting.data_migration_share_audio.navigation.navigateToSettingDataMigrationShareAudioScreen
+import com.kintmin.presentation.ui.setting.data_migration_share_audio.navigation.settingDataMigrationShareAudioScreen
+import com.kintmin.presentation.ui.setting.data_migration_share_playlist.navigation.navigateToSettingDataMigrationSharePlaylistScreen
+import com.kintmin.presentation.ui.setting.data_migration_share_playlist.navigation.settingDataMigrationSharePlaylistScreen
 import com.kintmin.presentation.ui.setting.device_save.navigation.navigateToSettingDeviceSaveScreen
 import com.kintmin.presentation.ui.setting.device_save.navigation.settingDeviceSaveScreen
 import com.kintmin.presentation.ui.setting.device_save_select.navigation.navigateToSettingDeviceSaveSelectScreen
@@ -156,6 +164,9 @@ fun MainNavHost(
             navigateToPlaylistAdd = { playlistId, playlistName ->
                 navController.navigateToPlaylistAddScreen(playlistId, navOptions, playlistName)
             },
+            navigateToPlayerDetail = {
+                navController.navigateToPlayerDetailScreen(navOptions)
+            },
         )
         playlistDetail(
             navigateToBack = { navController.popBackStack() },
@@ -196,8 +207,14 @@ fun MainNavHost(
             navigateToPlaylistDetailScreen = { playlistId, audioMediaId ->
                 onDeepLink(DeepLinkConstants.UrlBuilder.playlistContentScreen(playlistId, audioMediaId))
             },
-            navigateToLyricsSearch = { audioMediaId, query, durationSeconds ->
-                navController.navigateToLyricsSearchScreen(audioMediaId, query, durationSeconds, navOptions)
+            navigateToLyricsSearch = { audioMediaId, query, durationSeconds, playbackDurationSeconds ->
+                navController.navigateToLyricsSearchScreen(
+                    audioMediaId,
+                    query,
+                    durationSeconds,
+                    navOptions,
+                    playbackDurationSeconds,
+                )
             },
             navigateToLyricsViewer = { audioMediaId ->
                 navController.navigateToLyricsViewerScreen(audioMediaId, navOptions)
@@ -233,6 +250,10 @@ fun MainNavHost(
         )
         lyricsDetailScreen(
             navigateToBack = { navController.popBackStack() },
+            navigateToLyricsViewer = { audioMediaId ->
+                navController.popBackStack<LyricsSearchScreenRoute>(inclusive = true)
+                navController.navigateToLyricsViewerScreen(audioMediaId, navOptions)
+            },
         )
         karaokeSearchScreen(
             navigateToBack = { navController.popBackStack() },
@@ -250,7 +271,7 @@ fun MainNavHost(
                 navController.navigateToSettingFileShareReceiveScreen(navOptions)
             },
             navigateToDataMigrationSend = {
-                navController.navigateToSettingDataMigrationSendScreen(navOptions)
+                navController.navigateToSettingDataMigrationShareScreen(navOptions)
             },
             navigateToDataMigrationReceive = {
                 navController.navigateToSettingDataMigrationReceiveScreen(navOptions)
@@ -275,6 +296,41 @@ fun MainNavHost(
 
             settingFileShareReceiveScreen(
                 navigateToBack = { navController.popBackStack() },
+            )
+
+            settingDataMigrationShareScreen(
+                navigateToBack = { navController.popBackStack() },
+                navigateToSync = {
+                    navController.navigateToSettingDataMigrationSendScreen(MigrationShareKind.SYNC, navOptions)
+                },
+                navigateToPlaylistSelect = {
+                    navController.navigateToSettingDataMigrationSharePlaylistScreen(navOptions)
+                },
+                navigateToAudioMediaSelect = {
+                    navController.navigateToSettingDataMigrationShareAudioScreen(navOptions)
+                },
+            )
+
+            settingDataMigrationSharePlaylistScreen(
+                navigateToBack = { navController.popBackStack() },
+                navigateToSend = { playlistIdList ->
+                    navController.navigateToSettingDataMigrationSendScreen(
+                        kind = MigrationShareKind.PLAYLIST,
+                        navOptions = navOptions,
+                        idList = playlistIdList,
+                    )
+                },
+            )
+
+            settingDataMigrationShareAudioScreen(
+                navigateToBack = { navController.popBackStack() },
+                navigateToSend = { audioMediaIdList ->
+                    navController.navigateToSettingDataMigrationSendScreen(
+                        kind = MigrationShareKind.AUDIO_MEDIA,
+                        navOptions = navOptions,
+                        idList = audioMediaIdList,
+                    )
+                },
             )
 
             settingDataMigrationSendScreen(
@@ -322,8 +378,14 @@ fun MainNavHost(
             navigateToPlayingPlaylist = { playlistId, audioMediaId ->
                 onDeepLink(DeepLinkConstants.UrlBuilder.playlistContentScreen(playlistId, audioMediaId))
             },
-            navigateToLyricsSearch = { audioMediaId, query, durationSeconds ->
-                navController.navigateToLyricsSearchScreen(audioMediaId, query, durationSeconds, navOptions)
+            navigateToLyricsSearch = { audioMediaId, query, durationSeconds, playbackDurationSeconds ->
+                navController.navigateToLyricsSearchScreen(
+                    audioMediaId,
+                    query,
+                    durationSeconds,
+                    navOptions,
+                    playbackDurationSeconds,
+                )
             },
             navigateToLyricsViewer = { audioMediaId ->
                 navController.navigateToLyricsViewerScreen(audioMediaId, navOptions)

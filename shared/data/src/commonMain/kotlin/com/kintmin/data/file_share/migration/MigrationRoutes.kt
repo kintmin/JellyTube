@@ -1,6 +1,7 @@
 package com.kintmin.data.file_share.migration
 
 import com.kintmin.data.data_migration.toManifestDto
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.MigrationSendHandler
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileKind
@@ -37,7 +38,7 @@ internal fun Route.migrationRoutes(
 ) {
     post(FileShareConstants.MIGRATION_PAIR_PATH) {
         val session = currentSession() ?: return@post call.respond(HttpStatusCode.NotFound)
-        val request = runCatching { call.receive<MigrationPairRequest>() }
+        val request = suspendRunCatching { call.receive<MigrationPairRequest>() }
             .getOrElse { return@post call.respond(HttpStatusCode.BadRequest) }
         when (val result = session.pair(request.code, request.deviceName)) {
             is PairResult.Issued -> call.respond(MigrationPairResponse(result.token))
@@ -60,9 +61,15 @@ internal fun Route.migrationRoutes(
 
     post(FileShareConstants.MIGRATION_FINISH_PATH) {
         val session = call.authorizedSession(currentSession) ?: return@post
-        val report = runCatching { call.receive<MigrationFinishRequest>() }
+        val report = suspendRunCatching { call.receive<MigrationFinishRequest>() }
             .getOrElse { return@post call.respond(HttpStatusCode.BadRequest) }
         session.finish(report)
+        call.respond(HttpStatusCode.OK)
+    }
+
+    post(FileShareConstants.MIGRATION_DECLINE_PATH) {
+        val session = call.authorizedSession(currentSession) ?: return@post
+        session.unpair()
         call.respond(HttpStatusCode.OK)
     }
 

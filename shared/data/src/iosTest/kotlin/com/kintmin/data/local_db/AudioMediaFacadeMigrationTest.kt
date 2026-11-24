@@ -23,6 +23,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+// 걸음 기록은 같은 날이면 이 기기 쪽만 남으므로, 더해지는 기록은 다른 날로 띄운다.
+private const val DAY_MILLIS = 86_400_000L
+
 class AudioMediaFacadeMigrationTest {
 
     private lateinit var db: JellyTubeDatabase
@@ -72,7 +75,7 @@ class AudioMediaFacadeMigrationTest {
             MigrationTrack(13, 102, 1),
         ),
         editProjects = listOf(MigrationEditProject(102, "{\"version\":1}")),
-        steps = listOf(MigrationStep(1, 999), MigrationStep(2, 5)),
+        steps = listOf(MigrationStep(1, 999), MigrationStep(2 * DAY_MILLIS, 5)),
     )
 
     @Test
@@ -115,7 +118,82 @@ class AudioMediaFacadeMigrationTest {
         assertEquals(listOf(existingId, newAudio.id), after.tracks.filter { it.playlistId == drive.id }.sortedBy { it.sequence }.map { it.audioMediaId })
 
         assertEquals(listOf(MigrationEditProject(newAudio.id, "{\"version\":1}")), after.editProjects)
-        assertEquals(listOf(MigrationStep(1, 100), MigrationStep(2, 5)), after.steps.sortedBy { it.createdTimeMillis })
+        assertEquals(listOf(MigrationStep(1, 100), MigrationStep(2 * DAY_MILLIS, 5)), after.steps.sortedBy { it.createdTimeMillis })
+    }
+
+    /** 이 기기에 곡 하나를 만들어 돌려준다. */
+    private suspend fun addMyAudio() = facade.addNewAudioMedia(
+        newAudioMedia = AudioMediaEntity(
+            source = "https://www.youtube.com/watch?v=a",
+            name = "내 곡",
+            artist = "",
+            description = "",
+            rawAudioDurationSeconds = 100,
+            audioFileNameWithExt = "mine.m4a",
+        ),
+        requestedPlaylistId = null,
+        shouldInsertAtTopOnDownload = false,
+    ).audioMediaId
+
+    private suspend fun playlistTypesOf(audioMediaId: Int): Set<PlaylistType> {
+        val after = facade.fetchMigrationSnapshot()
+        val typeById = after.playlists.associate { it.id to it.type }
+        return after.tracks.filter { it.audioMediaId == audioMediaId }.mapNotNull { typeById[it.playlistId] }.toSet()
+    }
+
+    @Test
+    fun `이전으로 비밀 플레이리스트에 담긴 곡은 드러난 플레이리스트와 일반 즐겨찾기에서 빠진다`() = runTest {
+        facade.ensureSystemPlaylists()
+        val mineId = addMyAudio()
+        val workoutId = facade.addPlaylist("운동", PlaylistType.USER)
+        facade.addTrack(workoutId, listOf(mineId))
+        facade.setFavorite(mineId, isFavorite = true)
+
+        // 보내는 쪽에서 같은 곡이 비밀 플레이리스트에 담겨 온다.
+        val source = MigrationSnapshot(
+            audioMedias = listOf(audio(101, "https://youtu.be/a")),
+            playlists = listOf(
+                MigrationPlaylist(11, "전체", "", null, 0, PlaylistType.TOTAL, 0),
+                MigrationPlaylist(15, "비밀", "", null, 1, PlaylistType.SECRET, 0),
+            ),
+            tracks = listOf(MigrationTrack(11, 101, 1), MigrationTrack(15, 101, 1)),
+            editProjects = emptyList(),
+            steps = emptyList(),
+        )
+
+        facade.applyMigrationPlan(MigrationPlanner.plan(source, facade.fetchMigrationSnapshot()))
+
+        assertEquals(setOf(PlaylistType.TOTAL, PlaylistType.SECRET), playlistTypesOf(mineId))
+        val playlists = db.playlistDao().getAll()
+        assertEquals(0, playlists.single { it.name == "운동" }.audioMediaCount)
+        assertEquals(0, playlists.single { it.type == PlaylistType.FAVORITE.name }.audioMediaCount)
+    }
+
+    @Test
+    fun `이미 비밀인 곡은 이전으로 드러난 플레이리스트나 일반 즐겨찾기에 담기지 않는다`() = runTest {
+        facade.ensureSystemPlaylists()
+        val mineId = addMyAudio()
+        facade.addTrack(facade.addPlaylist("비밀", PlaylistType.SECRET), listOf(mineId))
+
+        // 보내는 쪽에서 같은 곡은 비밀이 아니라 일반 즐겨찾기와 USER 플레이리스트에 있다.
+        val source = MigrationSnapshot(
+            audioMedias = listOf(audio(101, "https://youtu.be/a")),
+            playlists = listOf(
+                MigrationPlaylist(11, "전체", "", null, 0, PlaylistType.TOTAL, 0),
+                MigrationPlaylist(13, "즐겨찾기", "", null, 0, PlaylistType.FAVORITE, 0),
+                MigrationPlaylist(14, "운동", "", null, 1, PlaylistType.USER, 0),
+            ),
+            tracks = listOf(MigrationTrack(11, 101, 1), MigrationTrack(13, 101, 1), MigrationTrack(14, 101, 1)),
+            editProjects = emptyList(),
+            steps = emptyList(),
+        )
+
+        facade.applyMigrationPlan(MigrationPlanner.plan(source, facade.fetchMigrationSnapshot()))
+
+        assertEquals(setOf(PlaylistType.TOTAL, PlaylistType.SECRET), playlistTypesOf(mineId))
+        val playlists = db.playlistDao().getAll()
+        assertEquals(0, playlists.single { it.name == "운동" }.audioMediaCount)
+        assertEquals(0, playlists.single { it.type == PlaylistType.FAVORITE.name }.audioMediaCount)
     }
 
     @Test

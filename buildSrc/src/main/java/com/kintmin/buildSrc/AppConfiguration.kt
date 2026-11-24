@@ -4,13 +4,16 @@ object AppConfiguration {
     const val APPLICATION_ID = "com.kintmin.jellytube"
     const val RELEASE_APP_NAME = "JellyTube"
     const val DEBUG_APP_NAME = "JellyTube(개발)"
+    // 기기에 깔린 release 앱을 덮어쓰거나 테스트가 끝난 뒤 지우지 않게 측정용 빌드는 다른 앱으로 깐다.
+    const val PERF_APPLICATION_ID_SUFFIX = ".perf"
+    const val PERF_APP_NAME = "JellyTube(성능측정)"
     // CMP 1.12.2 가 끌어오는 androidx compose 1.12.1 이 compileSdk 37 이상을 요구한다.
     // compileSdk 는 컴파일 전용이라 런타임 동작(targetSdk)과 무관하다.
     const val COMPILE_SDK = 37
     const val TARGET_SDK = 36
     const val MIN_SDK = 26
-    const val VERSION_CODE = 30
-    const val VERSION_NAME = "2.0.0"
+    const val VERSION_CODE = 31
+    const val VERSION_NAME = "2.0.1"
     // MSI 는 숫자 세 마디만 받고 앞 두 마디는 255 이하다. 올리지 않으면 업그레이드 설치가 안 된다.
     const val DESKTOP_VERSION_NAME = "1.0.1"
     /**

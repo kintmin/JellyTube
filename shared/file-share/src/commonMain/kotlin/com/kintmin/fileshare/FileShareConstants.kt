@@ -27,6 +27,8 @@ object FileShareConstants {
     const val MIGRATION_FILES_PATH = "/migration/files"
     /** 데이터 이전 완료 알림 HTTP POST endpoint. 받는 기기가 끝나면 보내는 기기에 결과를 알린다 */
     const val MIGRATION_FINISH_PATH = "/migration/finish"
+    /** 데이터 이전 받지 않기 알림 HTTP POST endpoint. 보내는 기기는 같은 코드로 다시 페어링을 기다린다 */
+    const val MIGRATION_DECLINE_PATH = "/migration/decline"
     /** 이전 프로토콜 버전. 양쪽이 다르면 받는 쪽이 이전을 거부한다 */
     const val MIGRATION_FORMAT_VERSION = 3
     /**

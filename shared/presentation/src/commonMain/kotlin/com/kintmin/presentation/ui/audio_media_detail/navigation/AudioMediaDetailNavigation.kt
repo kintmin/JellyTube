@@ -20,7 +20,12 @@ fun NavGraphBuilder.audioMediaDetailScreen(
     navigationToAudioMediaInformationEditScreen: (audioMediaId: Int) -> Unit,
     navigateToMainSearchTab: (url: String) -> Unit,
     navigateToPlaylistDetailScreen: (playlistId: Int, audioMediaId: Int) -> Unit,
-    navigateToLyricsSearch: (audioMediaId: Int, query: String, durationSeconds: Double?) -> Unit,
+    navigateToLyricsSearch: (
+        audioMediaId: Int,
+        query: String,
+        durationSeconds: Double?,
+        playbackDurationSeconds: Double?,
+    ) -> Unit,
     navigateToLyricsViewer: (audioMediaId: Int) -> Unit,
     navigateToKaraokeSearch: (audioMediaId: Int, query: String) -> Unit,
     navigateToAudioEdit: (audioMediaId: Int) -> Unit,

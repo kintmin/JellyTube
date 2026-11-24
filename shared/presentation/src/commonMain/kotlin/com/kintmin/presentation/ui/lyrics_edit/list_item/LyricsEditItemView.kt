@@ -36,29 +36,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.presentation.extension.toLyricsTimeLabel
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
 import com.kintmin.presentation.ui.common.UnderlineTextField
 import com.kintmin.presentation.ui.lyrics_edit.LyricsEditUiState.EditRow
-
-/** timeMs 를 화면 표시용 문자열로 만든다. 1시간 이상이면 시를 포함한다. */
-fun formatTimeLabel(timeMs: Long): String {
-    val safe = if (timeMs < 0) 0 else timeMs
-    val hours = safe / 3_600_000L
-    val minutes = (safe % 3_600_000L) / 60_000L
-    val seconds = (safe % 60_000L) / 1_000L
-    val centiseconds = (safe % 1_000L) / 10L
-    val mm = minutes.toString().padStart(2, '0')
-    val ss = seconds.toString().padStart(2, '0')
-    val cc = centiseconds.toString().padStart(2, '0')
-    return if (hours > 0) {
-        "$hours:$mm:$ss.$cc"
-    } else {
-        "$mm:$ss.$cc"
-    }
-}
 
 @Composable
 fun LyricsEditItemView(
@@ -102,7 +86,7 @@ fun LyricsEditItemView(
             onClick = { onClickTime(row.id) },
             label = {
                 Text(
-                    text = formatTimeLabel(row.timeMs),
+                    text = row.timeMs.toLyricsTimeLabel(),
                     style = MaterialTheme.typography.labelLarge.copy(fontFamily = FontFamily.Monospace),
                 )
             },

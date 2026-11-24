@@ -32,7 +32,7 @@ class AudioMediaRepositoryDownloadCancelTest {
             coEvery { deleteFileAtFullPath(any()) } returns Result.success(Unit)
         }
         val pythonExecutor = mockk<PythonExecutor> {
-            coEvery { downloadYoutubeMedia(any(), any()) } coAnswers {
+            coEvery { downloadYoutubeMedia(any(), any(), any()) } coAnswers {
                 started.complete(Unit)
                 withContext(NonCancellable) { finish.await() }
                 Result.success(YoutubeDownloadDto("t", "", "1", "u", "", "$fileName.m4a"))
@@ -40,7 +40,7 @@ class AudioMediaRepositoryDownloadCancelTest {
         }
         val repository = AudioMediaRepositoryImpl(mockk(), mockk(), mockk(), fileManager, pythonExecutor)
 
-        val job = launch { repository.downloadYoutubeAudio("https://www.youtube.com/watch?v=a") }
+        val job = launch { repository.downloadYoutubeAudio("https://www.youtube.com/watch?v=a", isSecret = false) }
         started.await()
         val cancelling = launch { job.cancelAndJoin() }
         finish.complete(Unit)

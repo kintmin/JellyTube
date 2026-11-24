@@ -28,6 +28,9 @@ import com.kintmin.presentation.ui.playlist_download.PlaylistDownloadViewModel
 import com.kintmin.presentation.ui.setting.backup_restore.SettingBackupRestoreViewModel
 import com.kintmin.presentation.ui.setting.data_migration_receive.SettingDataMigrationReceiveViewModel
 import com.kintmin.presentation.ui.setting.data_migration_send.SettingDataMigrationSendViewModel
+import com.kintmin.presentation.ui.setting.data_migration_share.SettingDataMigrationShareViewModel
+import com.kintmin.presentation.ui.setting.data_migration_share_audio.SettingDataMigrationShareAudioViewModel
+import com.kintmin.presentation.ui.setting.data_migration_share_playlist.SettingDataMigrationSharePlaylistViewModel
 import com.kintmin.presentation.ui.setting.device_save_select.SettingDeviceSaveSelectViewModel
 import com.kintmin.presentation.ui.setting.file_share_receive.SettingFileShareReceiveViewModel
 import com.kintmin.presentation.ui.step.StepViewModel
@@ -36,8 +39,8 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 val presentationModule: Module = module {
-    single { SleepTimerRunner(get(), get()) }
-    single { SecretModeRunner(get(), get(), get(), get(), get()) }
+    single { SleepTimerRunner(get(), get(), get()) }
+    single { SecretModeRunner(get(), get(), get(), get(), get(), get()) }
 
     viewModelOf(::AppViewModel)
     viewModelOf(::StepViewModel)
@@ -45,6 +48,9 @@ val presentationModule: Module = module {
     viewModelOf(::PlayerBarViewModel)
     viewModelOf(::SettingFileShareReceiveViewModel)
     viewModelOf(::SettingDataMigrationSendViewModel)
+    viewModelOf(::SettingDataMigrationShareViewModel)
+    viewModelOf(::SettingDataMigrationSharePlaylistViewModel)
+    viewModelOf(::SettingDataMigrationShareAudioViewModel)
     viewModelOf(::SettingDataMigrationReceiveViewModel)
     viewModelOf(::SettingBackupRestoreViewModel)
     viewModelOf(::PlaylistDownloadViewModel)

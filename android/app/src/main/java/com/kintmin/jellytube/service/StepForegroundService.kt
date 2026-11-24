@@ -157,25 +157,15 @@ class StepForegroundService : Service(), KoinComponent {
     override fun onBind(p0: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        runCatching {
-            val notificationData = SensorStepNotification(currentStep.value)
-            ServiceCompat.startForeground(
-                this,
-                notificationData.id,
-                notificationData.createNotification(this),
-                @SuppressLint("InlinedApi") ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH,
-            )
-        }.onFailure {
-            appLog.sendErrorLog(ErrorLog("StepForegroundService", "포그라운드 시작 실패", it))
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
-        return START_STICKY
+        return if (startForegroundWithNotification()) START_STICKY else START_NOT_STICKY
     }
 
     override fun onCreate() {
         super.onCreate()
+
+        // startForeground 전에 stopSelf 하면 OS 가 앱을 죽인다. 설정을 읽어 둔 상태면 아래 launch 가
+        // onCreate 안에서 바로 stopSelf 까지 가므로, onStartCommand 를 기다리지 않고 여기서 먼저 올린다.
+        if (!startForegroundWithNotification()) return
 
         foregroundServiceScope.launch {
             val isStepEnabled = fetchIsStepEnabledFlowUseCase().first()
@@ -212,6 +202,19 @@ class StepForegroundService : Service(), KoinComponent {
 
         super.onDestroy()
     }
+
+    private fun startForegroundWithNotification(): Boolean = runCatching {
+        val notificationData = SensorStepNotification(currentStep.value)
+        ServiceCompat.startForeground(
+            this,
+            notificationData.id,
+            notificationData.createNotification(this),
+            @SuppressLint("InlinedApi") ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH,
+        )
+    }.onFailure {
+        appLog.sendErrorLog(ErrorLog("StepForegroundService", "포그라운드 시작 실패", it))
+        stopSelf()
+    }.isSuccess
 
     private fun registerStepSensor(): Result<Unit> = runCatching {
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager

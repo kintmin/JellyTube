@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.kintmin.domain.audio_track.usecase.AddAudioMediaListToPlaylistUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListToAddTrackFlowUseCase
+import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistFlowUseCase
 import com.kintmin.presentation.extension.matchKorean
 import com.kintmin.presentation.ui.playlist_add.list.PlaylistAddListItemUiState
@@ -49,8 +50,10 @@ class PlaylistAddViewModel constructor(
         fetchAudioMediaListFlowUseCase(playlistId),
         _checkedItemIdList,
         _searchText,
-        fetchPlaylistFlowUseCase(playlistId).map { it.name }.onStart { emit(route.playlistNameSeed) },
-    ) { mediaList, checkedIds, searchText, playlistName ->
+        fetchPlaylistFlowUseCase(playlistId)
+            .map { it.name to (it.type == PlaylistType.SECRET) }
+            .onStart { emit(route.playlistNameSeed to false) },
+    ) { mediaList, checkedIds, searchText, (playlistName, isSecretTarget) ->
         PlaylistAddUiState(
             audioList = mediaList.filter { it.audioMedia.name.matchKorean(searchText) }.map { data ->
                 data.toPlaylistAddListItemUiState(
@@ -59,6 +62,7 @@ class PlaylistAddViewModel constructor(
             },
             checkedItemCount = checkedIds.size,
             playlistName = playlistName,
+            isSecretTarget = isSecretTarget,
         )
     }.stateIn(
         viewModelScope,
@@ -91,8 +95,13 @@ class PlaylistAddViewModel constructor(
 
         viewModelScope.launch {
             addAudioMediaListToPlaylistUseCase(playlistId, checkedIdList)
-                .onSuccess {
-                    _eventChannel.send(PlaylistAddEvent.ShowToast("${checkedIdList.size}곡을 추가했습니다."))
+                .onSuccess { added ->
+                    val message = buildString {
+                        append("${checkedIdList.size}곡을 추가했습니다.")
+                        added.unlinkedAudioMediaCount.takeIf { it > 0 }
+                            ?.let { append(" ${it}곡이 다른 플레이리스트에서 빠졌습니다.") }
+                    }
+                    _eventChannel.send(PlaylistAddEvent.ShowToast(message))
                     _eventChannel.send(PlaylistAddEvent.NavigateToBack)
                 }
                 .onFailure {

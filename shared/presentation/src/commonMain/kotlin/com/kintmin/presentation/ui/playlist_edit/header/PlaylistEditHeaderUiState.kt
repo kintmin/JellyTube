@@ -13,6 +13,8 @@ data class PlaylistEditHeaderUiState(
     val audioMediaCount: Int,
     val playTimeDuration: String,
     val isBasePlaylist: Boolean = false,
+    /** 곡을 뺄 때 어디로 가는지 달라진다 — 비밀에서 빠지면 드러나는 곳으로 간다. */
+    val isSecretPlaylist: Boolean = false,
 ) {
     companion object {
         fun getMock() = PlaylistEditHeaderUiState(
@@ -35,4 +37,5 @@ internal fun Playlist.toPlaylistEditHeaderUiState() = PlaylistEditHeaderUiState(
     audioMediaCount = audioMediaCount,
     playTimeDuration = playTimeDuration.to_hh_colon_mm_colon_ss(),
     isBasePlaylist = isBasePlaylist,
+    isSecretPlaylist = type.isSecret,
 )

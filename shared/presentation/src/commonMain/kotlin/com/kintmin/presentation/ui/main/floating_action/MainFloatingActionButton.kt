@@ -37,7 +37,7 @@ import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 @Composable
 fun MainFloatingActionButton(
     currentUrl: String,
-    onClickDownload: (String) -> Unit,
+    onClickDownload: (url: String, playlistId: Int) -> Unit,
     navigateToPlaylistDownload: (url: String) -> Unit,
 ) {
     val viewModel = koinViewModel<MainFloatingActionViewModel>()
@@ -47,7 +47,7 @@ fun MainFloatingActionButton(
     LaunchedEffect(viewModel) {
         viewModel.eventFlow.collect { event ->
             when (event) {
-                is MainFloatingActionEvent.Download -> onClickDownload(event.url)
+                is MainFloatingActionEvent.Download -> onClickDownload(event.url, event.playlistId)
                 is MainFloatingActionEvent.NavigateToPlaylistDownload -> navigateToPlaylistDownload(event.url)
                 is MainFloatingActionEvent.ShowToast -> toaster.show(event.message)
             }
@@ -68,6 +68,8 @@ fun MainFloatingActionButton(
     currentUrl: String,
     sendIntent: (MainFloatingActionIntent) -> Unit,
 ) {
+    val playlistId = uiState.playlistIdOnDownload
+
     if (uiState.isPlaylistBottomSheetVisible) {
         DownloadPlaylistSelectorBottomSheet(
             playlistList = uiState.selectablePlaylistList,
@@ -109,8 +111,11 @@ fun MainFloatingActionButton(
             Row(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .clickable(role = Role.Button) {
-                        sendIntent(MainFloatingActionIntent.OnClickDownload(currentUrl))
+                    .clickable(
+                        enabled = uiState.isDownloadTargetReady,
+                        role = Role.Button,
+                    ) {
+                        playlistId?.let { sendIntent(MainFloatingActionIntent.OnClickDownload(currentUrl, it)) }
                     }
                     .padding(start = 16.dp, end = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -157,6 +162,7 @@ fun MainFloatingActionButtonPreview() {
         MainFloatingActionButton(
             uiState = MainFloatingActionUiState(
                 playlistIdOnDownloadName = "미분류",
+                isDownloadTargetReady = true,
             ),
             currentUrl = "https://m.youtube.com/watch?v=test",
             sendIntent = {},

@@ -1,6 +1,7 @@
 package com.kintmin.ios.adapter
 
 import com.kintmin.domain.data_migration.model.DataMigrationSendStatus
+import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.usecase.CloseMigrationSendUseCase
 import com.kintmin.domain.data_migration.usecase.FetchMigrationSendStatusUseCase
 import com.kintmin.domain.data_migration.usecase.OpenMigrationSendUseCase
@@ -16,7 +17,7 @@ internal class IosDataMigrationSendController(
 
     override val status: StateFlow<DataMigrationSendStatus> = fetchMigrationSendStatus()
 
-    override fun start() = openMigrationSend()
+    override fun start(scope: MigrationScope) = openMigrationSend(scope)
 
     override fun stop() = closeMigrationSend()
 }

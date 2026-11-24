@@ -51,7 +51,7 @@ compose.desktop {
     application {
         mainClass = "com.kintmin.desktop.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Msi, TargetFormat.Exe)
+            targetFormats(TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Dmg)
             packageName = "JellyTube File Share"
             packageVersion = AppConfiguration.DESKTOP_VERSION_NAME
             vendor = "kintmin"
@@ -64,6 +64,9 @@ compose.desktop {
                 dirChooser = true
                 upgradeUuid = "8ebf0665-d668-4ea7-92f1-cc8da8a3b9da"
                 iconFile.set(project.file("src/main/resources/icon.ico"))
+            }
+            macOS {
+                bundleID = "com.kintmin.jellytube.desktop"
             }
         }
     }

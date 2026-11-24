@@ -60,7 +60,10 @@ fun DataMigrationSendStatusView(
                 is DataMigrationSendStep.Sending -> {
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
                     SettingStatusTextView("연결된 기기: ${step.peerName}")
-                    SettingStatusTextView("받는 기기가 데이터를 받고 있습니다. 처음에는 보내기 전에 데이터를 점검합니다.")
+                    SettingStatusTextView(
+                        "받는 기기가 목록을 받아 무엇을 받을지 확인한 뒤 파일을 받습니다. " +
+                            "확인하는 동안에는 겉보기에 멈춘 것처럼 보일 수 있습니다.",
+                    )
                 }
                 is DataMigrationSendStep.Finished -> {
                     SettingStatusTextView("받는 기기가 받기를 마쳤습니다.")

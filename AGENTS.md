@@ -171,6 +171,7 @@ Kotlin Multiplatform 앱. 하나의 공유 코어를 Android / iOS / Desktop 이
 | `shared/log` | 로깅 API 만. 구현은 `shared:data` |
 | `shared/file-share` | 파일 공유 프로토콜 상수·DTO. 의존성 그래프의 잎 |
 | `android/app` | Android 진입점·조립과 **모든 OS 기능** |
+| `android/benchmark` | 기기에서 도는 시작 시간 측정과 Baseline Profile 생성. 앱 코드를 담지 않는다 |
 | `ios/shared` + `ios/app` | iOS 진입점·조립(Kotlin)과 Xcode 앱·Swift 브릿지 |
 | `desktop` | Compose Desktop. 파일 공유의 보내는 쪽 |
 
@@ -202,3 +203,6 @@ Kotlin Multiplatform 앱. 하나의 공유 코어를 Android / iOS / Desktop 이
 - main→develop 반영과 태그(`mobile/v<버전>`, `desktop/v<버전>`)는 CI 가 한다. 사람이 하지 않는다.
 - Android·iOS 는 버전과 빌드 번호가 하나다. 다르면 main 으로 가는 PR 의 CI 가 실패한다.
   desktop 버전은 따로 간다.
+- 릴리스의 진행(개발용)과 새 버전 소식(사용자용)은 `JELLY_TUBE_MAIL_RECIPIENTS` 시크릿의 받는 사람에게 메일로 간다.
+  시크릿은 다시 읽을 수 없으므로 **목록의 원본은 gitignore 된 로컬 `mail-recipients.txt`** 이고,
+  `scripts/update-mail-recipients.sh` 가 검사해 시크릿에 올린다. 공개 저장소라 주소를 커밋하지 않는다.

@@ -26,6 +26,8 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.ConfirmStyle
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.JellyTubeConfirmDialog
+import com.kintmin.presentation.ui.common.imeAwareContentWindowInsets
+import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationConfirmView
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationConnectView
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationResultView
 import com.kintmin.presentation.ui.setting.data_migration_receive.view.DataMigrationStageListView
@@ -87,6 +89,7 @@ fun SettingDataMigrationReceiveScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = imeAwareContentWindowInsets,
         topBar = {
             DetailTopAppBar(
                 title = "다른 기기에서 데이터 가져오기",
@@ -110,6 +113,10 @@ fun SettingDataMigrationReceiveScreen(
             }
 
             when (val phase = uiState.phase) {
+                is DataMigrationReceivePhase.Confirming -> {
+                    DataMigrationStageListView(stages = uiState.stages)
+                    DataMigrationConfirmView(phase = phase, sendIntent = sendIntent)
+                }
                 DataMigrationReceivePhase.Running,
                 is DataMigrationReceivePhase.Interrupted,
                 is DataMigrationReceivePhase.Finished,
@@ -137,8 +144,8 @@ fun SettingDataMigrationReceiveScreen(
                     )
                     SettingStepCardView(
                         stepNumber = 3,
-                        title = "코드 입력 후 기다리기",
-                        description = "이미 있는 곡은 이 기기의 정보를 그대로 두고, 같은 이름의 재생목록은 하나로 합칩니다.",
+                        title = "코드 입력 후 받을 방식 정하기",
+                        description = "연결되면 무엇이 들어오는지 보여 줍니다. 이름이 겹치는 재생목록은 합칠지 따로 만들지 그때 고릅니다.",
                     )
                 }
             }
@@ -148,23 +155,29 @@ fun SettingDataMigrationReceiveScreen(
 
 private fun DataMigrationExitConfirmation.title(): String = when (this) {
     DataMigrationExitConfirmation.StopRunning -> "가져오기를 중단할까요?"
+    DataMigrationExitConfirmation.StopConfirming -> "받지 않고 나갈까요?"
     DataMigrationExitConfirmation.StopInterrupted -> "가져오기를 그만둘까요?"
     is DataMigrationExitConfirmation.LeaveFailures -> "가져오지 못한 곡이 있습니다"
 }
 
 private fun DataMigrationExitConfirmation.dismissText(): String = when (this) {
     DataMigrationExitConfirmation.StopRunning -> "계속 받기"
+    DataMigrationExitConfirmation.StopConfirming -> "계속 고르기"
     DataMigrationExitConfirmation.StopInterrupted, is DataMigrationExitConfirmation.LeaveFailures -> "취소"
 }
 
 private fun DataMigrationExitConfirmation.confirmStyle(): ConfirmStyle = when (this) {
-    DataMigrationExitConfirmation.StopRunning, DataMigrationExitConfirmation.StopInterrupted -> ConfirmStyle.Destructive
+    DataMigrationExitConfirmation.StopRunning,
+    DataMigrationExitConfirmation.StopConfirming,
+    DataMigrationExitConfirmation.StopInterrupted -> ConfirmStyle.Destructive
     is DataMigrationExitConfirmation.LeaveFailures -> ConfirmStyle.Primary
 }
 
 private fun DataMigrationExitConfirmation.message(): String = when (this) {
     DataMigrationExitConfirmation.StopRunning ->
         "아직 받는 중입니다. 나가면 받던 파일을 지우고, 이번 가져오기는 이 기기에 반영되지 않습니다."
+    DataMigrationExitConfirmation.StopConfirming ->
+        "아직 받기 전입니다. 나가면 보내는 기기에 알려 연결을 풉니다. 보내는 화면이 열려 있으면 같은 코드로 다시 받을 수 있습니다."
     DataMigrationExitConfirmation.StopInterrupted ->
         "나가면 받아 둔 임시 파일을 지웁니다. 나중에 다시 가져오면 처음부터 받습니다."
     is DataMigrationExitConfirmation.LeaveFailures ->

@@ -4,8 +4,10 @@ import com.kintmin.data.local_db.dao.PlaylistTrackDao
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_file.FileManager
+import com.kintmin.domain.audio_track.model.AddedAudioTrack
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
+import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -22,9 +24,9 @@ class AudioTrackRepositoryImpl constructor(
     override suspend fun addCustomAudioTrack(
         playlistId: Int,
         audioMediaIdList: List<Int>
-    ): Result<Int> = withContext(Dispatchers.IO) {
-        runCatching {
-            audioMediaFacade.addTrack(playlistId, audioMediaIdList).audioMediaCount
+    ): Result<AddedAudioTrack> = withContext(Dispatchers.IO) {
+        suspendRunCatching {
+            AddedAudioTrack(unlinkedAudioMediaCount = audioMediaFacade.addTrack(playlistId, audioMediaIdList))
         }
     }
 
@@ -32,7 +34,7 @@ class AudioTrackRepositoryImpl constructor(
         playlistId: Int,
         audioMediaIdList: List<Int>
     ): Result<Unit> = withContext(Dispatchers.IO) {
-        runCatching<Unit> {
+        suspendRunCatching<Unit> {
             audioMediaFacade.deleteTrack(playlistId, audioMediaIdList)
         }
     }
@@ -61,14 +63,14 @@ class AudioTrackRepositoryImpl constructor(
 
     override suspend fun setFavorite(audioMediaId: Int, isFavorite: Boolean): Result<Unit> =
         withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 audioMediaFacade.setFavorite(audioMediaId, isFavorite)
             }
         }
 
     override suspend fun getPlaylistTrackCount(playlistId: Int): Result<Int> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 playlistTrackDao.getPlaylistTrackCount(playlistId)
             }
         }
@@ -77,7 +79,7 @@ class AudioTrackRepositoryImpl constructor(
 
     override suspend fun updateTrackSequence(playlistId: Int, audioMediaId: Int, oldSequence: Int, newSequence: Int): Result<Unit> {
         return withContext(Dispatchers.IO) {
-            runCatching {
+            suspendRunCatching {
                 audioMediaFacade.updateTrackSequence(playlistId, audioMediaId, oldSequence, newSequence)
             }
         }
@@ -85,6 +87,6 @@ class AudioTrackRepositoryImpl constructor(
 
     override suspend fun reorderTracks(playlistId: Int, orderedAudioMediaIds: List<Int>): Result<Unit> =
         withContext(Dispatchers.IO) {
-            runCatching { audioMediaFacade.reorderTracks(playlistId, orderedAudioMediaIds) }
+            suspendRunCatching { audioMediaFacade.reorderTracks(playlistId, orderedAudioMediaIds) }
         }
 }

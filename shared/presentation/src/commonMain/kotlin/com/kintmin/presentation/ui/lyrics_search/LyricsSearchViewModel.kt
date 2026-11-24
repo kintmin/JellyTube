@@ -34,7 +34,16 @@ class LyricsSearchViewModel constructor(
     private val initialQuery = buildSongSearchQueryUseCase(route.initialQuery)
 
     private val _uiState = MutableStateFlow(
-        LyricsSearchUiState(query = initialQuery, isLoading = false, results = emptyList())
+        LyricsSearchUiState(
+            audioMediaName = route.initialQuery,
+            playbackDurationText = route.playbackDurationSeconds
+                ?.seconds
+                ?.to_hh_colon_mm_colon_ss()
+                .orEmpty(),
+            query = initialQuery,
+            isLoading = false,
+            results = emptyList(),
+        )
     )
     val uiState: StateFlow<LyricsSearchUiState> = _uiState.asStateFlow()
 

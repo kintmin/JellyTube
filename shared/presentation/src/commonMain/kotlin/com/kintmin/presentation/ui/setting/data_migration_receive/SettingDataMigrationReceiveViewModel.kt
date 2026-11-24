@@ -2,9 +2,12 @@ package com.kintmin.presentation.ui.setting.data_migration_receive
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kintmin.domain.data_migration.model.MigrationChoice
+import com.kintmin.domain.data_migration.model.MigrationDeclinedException
 import com.kintmin.domain.data_migration.model.MigrationEndpoint
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
 import com.kintmin.domain.data_migration.model.MigrationPairRejectedException
+import com.kintmin.domain.data_migration.model.MigrationPreview
 import com.kintmin.domain.data_migration.model.MigrationProgress
 import com.kintmin.domain.data_migration.model.MigrationSenderCleanupFailedException
 import com.kintmin.domain.data_migration.model.MigrationSessionExpiredException
@@ -16,10 +19,17 @@ import com.kintmin.domain.data_migration.model.MigrationVersionMismatchException
 import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
+import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
+import com.kintmin.domain.secret_mode.model.SecretModeEndReason
+import com.kintmin.domain.secret_mode.model.SecretModeStartReason
+import com.kintmin.domain.secret_mode.usecase.FetchSecretModeMinutesFlowUseCase
+import com.kintmin.presentation.secret_mode.SecretModeRunner
+import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 import com.kintmin.presentation.port.MigrationReceiveKeepAlive
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.model.MigrationSource
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
@@ -29,9 +39,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.minutes
 
 class SettingDataMigrationReceiveViewModel constructor(
     private val migrationSourceDiscovery: MigrationSourceDiscovery,
@@ -40,6 +52,9 @@ class SettingDataMigrationReceiveViewModel constructor(
     private val clearMigrationStagingUseCase: ClearMigrationStagingUseCase,
     private val runningWorkMonitor: RunningTaskMonitor,
     private val migrationReceiveKeepAlive: MigrationReceiveKeepAlive,
+    private val fetchDownloadTargetPlaylistsFlowUseCase: FetchDownloadTargetPlaylistsFlowUseCase,
+    private val fetchSecretModeMinutesFlowUseCase: FetchSecretModeMinutesFlowUseCase,
+    private val secretModeRunner: SecretModeRunner,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingDataMigrationReceiveUiState())
@@ -57,6 +72,14 @@ class SettingDataMigrationReceiveViewModel constructor(
     /** 찾기와 고르기는 화면을 덮어쓰므로 마지막 하나만 남긴다. */
     private var discoveryJob: Job? = null
 
+    /** 확인 화면이 떠 있는 동안 받기가 여기서 멈춰 기다린다. */
+    private var pendingChoice: CompletableDeferred<MigrationChoice?>? = null
+
+    /** 비밀을 받으려고 이 화면에서 켠 것이면 떠날 때 끈다. 원래 켜져 있던 것은 건드리지 않는다. */
+    private var turnedOnSecretMode = false
+
+    private var secretModeMinutes = 0
+
     fun sendIntent(intent: SettingDataMigrationReceiveIntent) {
         when (intent) {
             SettingDataMigrationReceiveIntent.OnClickSearch -> search()
@@ -68,6 +91,30 @@ class SettingDataMigrationReceiveViewModel constructor(
             }
             SettingDataMigrationReceiveIntent.OnClickConnect -> connect()
             SettingDataMigrationReceiveIntent.OnClickRetry -> if (token != null) run() else search()
+            is SettingDataMigrationReceiveIntent.OnToggleMergePlaylist -> updateConfirming { confirming ->
+                confirming.copy(
+                    playlists = confirming.playlists.map {
+                        if (it.sourceId == intent.sourceId) it.copy(isMerging = !it.isMerging) else it
+                    },
+                )
+            }
+            is SettingDataMigrationReceiveIntent.OnClickMergeAll -> updateConfirming { confirming ->
+                confirming.copy(
+                    playlists = confirming.playlists.map {
+                        if (it.isConflicting) it.copy(isMerging = intent.isMerging) else it
+                    },
+                )
+            }
+            is SettingDataMigrationReceiveIntent.OnSelectDestinationPlaylist -> updateConfirming { confirming ->
+                confirming.copy(
+                    destinationCandidates = confirming.destinationCandidates.map {
+                        it.copy(isSelected = it.id == intent.playlistId)
+                    },
+                )
+            }
+            is SettingDataMigrationReceiveIntent.OnToggleAcceptSecret -> acceptSecret(intent.accepts)
+            SettingDataMigrationReceiveIntent.OnClickStartReceive -> startReceive()
+            SettingDataMigrationReceiveIntent.OnDeclineReceive -> decline()
             SettingDataMigrationReceiveIntent.OnConfirmExit -> exit()
         }
     }
@@ -140,14 +187,101 @@ class SettingDataMigrationReceiveViewModel constructor(
                 return@launch
             }
             migrationReceiveKeepAlive.keepAlive {
-                receiveMigrationDataUseCase(endpoint, token) { progress -> updateStage(progress.toStageItem()) }
+                receiveMigrationDataUseCase(
+                    endpoint = endpoint,
+                    token = token,
+                    onProgress = { progress -> updateStage(progress.toStageItem()) },
+                    confirm = ::askChoice,
+                )
             }
                 .onSuccess { summary -> finish(summary) }
                 .onFailure { error -> interrupt(error) }
         }
     }
 
+    /** 받는 사람의 답을 기다린다. 화면을 떠나면 이 코루틴이 취소돼 함께 끝난다. */
+    private suspend fun askChoice(preview: MigrationPreview): MigrationChoice? {
+        val targets = if (preview.needsAudioMediaDestination) {
+            fetchDownloadTargetPlaylistsFlowUseCase().first()
+        } else {
+            null
+        }
+        // 함께 받기로 할 때 켤 시간. 켠 뒤 바로 멈추므로 흐르지 않지만 이 기기 설정을 따른다.
+        if (preview.secretPlaylistCount > 0) secretModeMinutes = fetchSecretModeMinutesFlowUseCase().first()
+        val deferred = CompletableDeferred<MigrationChoice?>()
+        pendingChoice = deferred
+        updatePhase(
+            DataMigrationReceivePhase.Confirming(
+                newAudioMediaCount = preview.newAudioMediaCount,
+                playlists = preview.playlists.map { playlist ->
+                    DataMigrationConfirmPlaylistItem(
+                        sourceId = playlist.sourceId,
+                        name = playlist.name,
+                        audioMediaCount = playlist.audioMediaCount,
+                        isSecret = playlist.isSecret,
+                        isConflicting = playlist.isConflicting,
+                        // 기본은 따로 만들기다. 남의 플레이리스트가 내 것에 섞이는 쪽이 되돌리기 어렵다.
+                        isMerging = false,
+                    )
+                },
+                secretPlaylistCount = preview.secretPlaylistCount,
+                destinationCandidates = targets?.selectable.orEmpty().map {
+                    DownloadPlaylistUiState(id = it.id, name = it.name, isSelected = it.id == targets?.targetId)
+                },
+            ),
+        )
+        return deferred.await().also { pendingChoice = null }
+    }
+
+    /**
+     * 비밀을 함께 받기로 하면 받는 동안 이 기기의 비밀모드를 켠다. 받는 중에 비밀모드가 꺼지면
+     * 화면 스택이 메인까지 걷혀 받기가 끊기므로 켠 시계는 바로 멈춘다.
+     *
+     * **끌 때는 되돌리지 않는다** — 그 자리에서 끄면 같은 이유로 화면이 걷혀 받기가 통째로
+     * 취소된다. 정리는 [endOfTransfer] 와 [onCleared] 가 한다.
+     */
+    private fun acceptSecret(accepts: Boolean) {
+        updateConfirming { it.copy(acceptsSecret = accepts) }
+        if (!accepts) return
+        // 쓰던 비밀모드가 이미 켜져 있으면 그 시간을 전송이 먹지 않게 멈추기만 한다.
+        if (secretModeRunner.remaining == null) {
+            secretModeRunner.start(secretModeMinutes.minutes, SecretModeStartReason.MIGRATION_RECEIVE)
+            turnedOnSecretMode = true
+        }
+        secretModeRunner.pause()
+    }
+
+    /**
+     * 전송이 끝나면 멈춰 둔 시계를 다시 흐르게 한다. 멈춘 채로 두면 결과 화면에서 홈으로 나간
+     * 사람의 비밀모드가 만료 없이 켜져 있다 — [SecretModeRunner.endIfExpired] 도 멈춘 시계는 보지 못한다.
+     */
+    private fun endOfTransfer() {
+        secretModeRunner.resume()
+    }
+
+    private fun startReceive() {
+        val confirming = _uiState.value.phase as? DataMigrationReceivePhase.Confirming ?: return
+        updatePhase(DataMigrationReceivePhase.Running)
+        pendingChoice?.complete(
+            MigrationChoice(
+                mergingPlaylistSourceIds = confirming.mergingSourceIds,
+                audioMediaDestinationPlaylistId = confirming.destinationPlaylistId,
+                includesSecret = confirming.acceptsSecret,
+            ),
+        )
+    }
+
+    private fun decline() {
+        pendingChoice?.complete(null)
+    }
+
+    private fun updateConfirming(transform: (DataMigrationReceivePhase.Confirming) -> DataMigrationReceivePhase.Confirming) {
+        val confirming = _uiState.value.phase as? DataMigrationReceivePhase.Confirming ?: return
+        updatePhase(transform(confirming))
+    }
+
     private fun finish(summary: MigrationSummary) {
+        endOfTransfer()
         _uiState.update { state ->
             state.copy(
                 phase = DataMigrationReceivePhase.Finished(
@@ -162,6 +296,12 @@ class SettingDataMigrationReceiveViewModel constructor(
     }
 
     private fun interrupt(error: Throwable) {
+        endOfTransfer()
+        // 받지 않기로 한 것은 실패가 아니다. 받은 파일도 없으므로 코드 입력으로만 돌아간다.
+        if (error is MigrationDeclinedException) {
+            _uiState.update { it.copy(code = "", stages = emptyList(), phase = DataMigrationReceivePhase.CodeInput()) }
+            return
+        }
         if (error is MigrationSessionExpiredException) {
             token = null
             _uiState.update {
@@ -182,8 +322,15 @@ class SettingDataMigrationReceiveViewModel constructor(
     private fun exit() {
         val phase = _uiState.value.phase
         viewModelScope.launch {
-            // 받던 파일을 지우기 전에 받기를 먼저 멈춘다. 반영 중이었다면 트랜잭션째 되돌아간다.
-            runJob?.cancelAndJoin()
+            if (phase is DataMigrationReceivePhase.Confirming) {
+                // 확인 화면에서 나가는 것은 받지 않기와 같다. 취소로 끊으면 보내는 기기에 알리지
+                // 못해, 그쪽은 토큰을 쥔 채 남고 새 코드를 받기 전에는 다시 연결되지 않는다.
+                pendingChoice?.complete(null)
+                runJob?.join()
+            } else {
+                // 받던 파일을 지우기 전에 받기를 먼저 멈춘다. 반영 중이었다면 트랜잭션째 되돌아간다.
+                runJob?.cancelAndJoin()
+            }
             // 다시 시도하지 않고 나가면 받아 둔 임시 파일은 쓸 데가 없다. 끝났으면 이미 지웠다.
             if (phase !is DataMigrationReceivePhase.Finished) {
                 clearMigrationStagingUseCase()
@@ -225,6 +372,12 @@ class SettingDataMigrationReceiveViewModel constructor(
         receivedBytes = receivedBytes,
         totalBytes = totalBytes,
     )
+
+    override fun onCleared() {
+        // 화면이 사라지는 길이 어디든 — 다 받았든 중단했든 — 받으려고 켠 것이면 끄고, 아니면 멈춰 둔
+        // 시계를 되돌린다. 전송이 끝날 때 끄면 그 순간 화면이 걷혀 결과를 볼 수 없다.
+        if (turnedOnSecretMode) secretModeRunner.end(SecretModeEndReason.MIGRATION_RECEIVE_END) else secretModeRunner.resume()
+    }
 
     private fun MigrationFailureReason.toText(): String = when (this) {
         MigrationFailureReason.UNSUPPORTED_FORMAT -> "이 기기에서 재생할 수 없는 형식"

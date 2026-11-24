@@ -11,6 +11,8 @@ data class PlaylistDetailHeaderUiState(
     val isBasePlaylist: Boolean = false,
     // `isBasePlaylist` 와 같은 값이 아니다 — `PlaylistType.isAutoManaged` 를 보라.
     val canRemoveTrack: Boolean = false,
+    /** 곡을 뺄 때 어디로 가는지 달라진다 — 비밀에서 빠지면 드러나는 곳으로 간다. */
+    val isSecretPlaylist: Boolean = false,
 ) {
     companion object {
         fun getMock(id: Int = 0): PlaylistDetailHeaderUiState {

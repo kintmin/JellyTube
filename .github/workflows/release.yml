@@ -1,11 +1,21 @@
 name: Release
 
-# PR 마다 브랜치 규칙을 보고, main 으로 가는 PR 에서는 버전을 대조한다.
-# main 에 들어오면 태그를 붙이고 develop 에 반영한다.
+# PR 마다 브랜치 규칙을 보고, main 으로 가는 PR 에서는 버전과 R8 keep 규칙을 대조한다.
+# main 에 들어오면 태그를 붙이고 develop 에 반영하고, 새 버전이면 mobile(APK·IPA)과 desktop(MSI·EXE·DMG)을 각각 GitHub Release 에 올린다.
+# 릴리스의 진행과 새 버전 소식은 JELLY_TUBE_MAIL_RECIPIENTS 시크릿의 받는 사람에게 메일로 알린다.
 on:
   pull_request:
   push:
     branches: [main]
+  # 릴리스 없이 artifact 만 남긴다. scope=all 은 서명 시크릿을 릴리스 전에 확인하는 용도고,
+  # r8-only 는 R8 검사만 돌린다.
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 무엇을 돌릴지
+        type: choice
+        options: [all, r8-only]
+        default: all
 
 permissions:
   contents: write
@@ -35,6 +45,28 @@ jobs:
           if [[ "$BASE" == develop && ! "$HEAD" =~ ^(feat|fix|refactor|perf|test|build|ci|docs|revert)/ ]]; then
             echo "::error::develop 에는 feat/ fix/ refactor/ perf/ test/ build/ ci/ docs/ revert/ 브랜치만 병합한다."; exit 1
           fi
+
+  # R8 로만 드러나는 회귀는 릴리스 빌드를 해야 보인다. main 으로 가는 PR 에서만 돌려, 걸리면
+  # release 브랜치에 커밋해 고칠 수 있게 한다 — main 에 들어간 뒤면 hotfix 를 따야 한다.
+  # 수동 실행에서도 열어 둔다. 릴리스 PR 을 올리기 전에 미리 확인하는 용도다.
+  r8-keep-rules:
+    if: github.base_ref == 'main' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      # Chaquopy 가 빌드 때 pip 로 패키지를 받으려면 앱과 같은 버전의 Python 이 PATH 에 있어야 한다.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: gradle/actions/setup-gradle@v4
+      # 서명 키는 필요 없다. R8 까지만 돌리고 패키징은 하지 않는다.
+      - name: Verify R8 kept the classes the manifest names
+        run: ./gradlew :android:app:verifyReleaseKeepRules
 
   versions:
     if: github.event_name == 'push' || github.base_ref == 'main'
@@ -85,6 +117,397 @@ jobs:
               git push origin "refs/tags/$tag"
             fi
           done
+
+  mobile-release-needed:
+    if: github.event_name == 'push'
+    needs: [versions, tag]
+    runs-on: ubuntu-latest
+    outputs:
+      needed: ${{ steps.check.outputs.needed }}
+      reason: ${{ steps.check.outputs.reason }}
+    steps:
+      - id: check
+        env:
+          TAG: mobile/v${{ needs.versions.outputs.mobile }}
+          GH_TOKEN: ${{ github.token }}
+        # 태그가 이번 커밋을 가리킬 때만 만든다. 릴리스 없이 남은 옛 태그를 지금 코드로 빌드하면 태그와 내용이 어긋난다.
+        run: |
+          tagged=$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" "refs/tags/$TAG^{}" | cut -f1)
+          if [[ "$tagged" != "$GITHUB_SHA" ]]; then
+            echo "$TAG 는 이번 커밋이 아니다($tagged)"
+            echo "reason=이번 커밋의 태그가 아님" >> "$GITHUB_OUTPUT"
+          elif gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$TAG 릴리스는 이미 있다"
+            echo "reason=릴리스가 이미 있음" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  android-apk:
+    needs: mobile-release-needed
+    # 수동 실행에서는 앞 job 이 건너뛰어지므로, 건너뛴 의존을 막지 않게 !cancelled() 로 연다.
+    if: ${{ !cancelled() && ((github.event_name == 'workflow_dispatch' && inputs.scope != 'r8-only') || needs.mobile-release-needed.outputs.needed == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Record the start time
+        run: echo "JOB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      # Chaquopy 가 빌드 때 pip 로 패키지를 받으려면 앱과 같은 버전의 Python 이 PATH 에 있어야 한다.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build the signed release APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.JELLY_TUBE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.JELLY_TUBE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.JELLY_TUBE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.JELLY_TUBE_KEY_PASSWORD }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.JELLY_TUBE_SENTRY_AUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          # 키가 없어도 release 는 서명 없이 빌드되므로, 여기서 막지 않으면 설치할 수 없는 APK 가 올라간다.
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            [[ -n "${!name}" ]] || { echo "::error::JELLY_TUBE_$name 시크릿이 없다"; exit 1; }
+          done
+          keystore="$RUNNER_TEMP/release.keystore"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$keystore"
+          export ORG_GRADLE_PROJECT_JELLY_TUBE_KEYSTORE_FILE="$keystore"
+          export ORG_GRADLE_PROJECT_JELLY_TUBE_KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD"
+          export ORG_GRADLE_PROJECT_JELLY_TUBE_KEY_ALIAS="$KEY_ALIAS"
+          export ORG_GRADLE_PROJECT_JELLY_TUBE_KEY_PASSWORD="$KEY_PASSWORD"
+          # 빈 문자열도 속성으로 잡혀 mapping 업로드를 켜므로, 토큰이 있을 때만 넘긴다.
+          if [[ -n "$SENTRY_AUTH_TOKEN" ]]; then
+            export ORG_GRADLE_PROJECT_JELLY_TUBE_SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN"
+          fi
+          ./gradlew :android:app:assembleRelease
+          # 로컬 산출물 이름 끝의 빌드 시각은 릴리스 파일 이름에서 뺀다.
+          apk=$(ls android/app/build/outputs/apk/release/*.apk)
+          name=$(basename "$apk")
+          mkdir -p dist
+          cp "$apk" "dist/${name%%_release_*}_release.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-apk
+          path: dist/*.apk
+          if-no-files-found: error
+      - name: Notify
+        if: always() && github.event_name == 'push'
+        env:
+          MAIL_PASSWORD: ${{ secrets.JELLY_TUBE_MAIL_PASSWORD }}
+          MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
+        run: .github/scripts/notify-job.sh "Android APK" "${{ job.status }}"
+
+  # 서명하지 않은 IPA 다. SideStore 가 설치할 때 사용자 Apple ID 로 서명한다.
+  ios-ipa:
+    needs: mobile-release-needed
+    # 수동 실행에서는 앞 job 이 건너뛰어지므로, 건너뛴 의존을 막지 않게 !cancelled() 로 연다.
+    if: ${{ !cancelled() && ((github.event_name == 'workflow_dispatch' && inputs.scope != 'r8-only') || needs.mobile-release-needed.outputs.needed == 'true') }}
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - name: Record the start time
+        run: echo "JOB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./scripts/setup-ios-vendor.sh
+      # release 프레임워크 링크가 저장소 기본 heap(4GB)으로는 OutOfMemoryError 로 멈춘다.
+      # Gradle 은 Xcode 빌드 페이즈가 띄우므로 명령 인자 대신 사용자 설정으로 넘긴다.
+      - name: Give Kotlin/Native linking more heap
+        run: |
+          dir="${GRADLE_USER_HOME:-$HOME/.gradle}"
+          mkdir -p "$dir"
+          echo "org.gradle.jvmargs=-Xmx6g -Dfile.encoding=UTF-8" >> "$dir/gradle.properties"
+      - name: Archive without signing
+        # Python 번들의 설치 스크립트는 서명 설정과 무관하게 확장 모듈마다 codesign 을 불러, 신원이
+        # 비어 있으면 실패한다. ad-hoc(-) 으로 넘긴다 — SideStore 가 설치할 때 전부 다시 서명한다.
+        run: |
+          set -euo pipefail
+          xcodebuild archive \
+            -project ios/app/JellyTubeIos.xcodeproj -scheme JellyTubeIos -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/JellyTube.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            EXPANDED_CODE_SIGN_IDENTITY=-
+      - name: Package the IPA
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          app=JellyTube.xcarchive/Products/Applications/JellyTubeIos.app
+          version=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$app/Info.plist")
+          build=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$app/Info.plist")
+          mkdir Payload "$GITHUB_WORKSPACE/dist"
+          cp -R "$app" Payload/
+          zip -qry "$GITHUB_WORKSPACE/dist/JellyTube_${version}(${build})_release.ipa" Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-ipa
+          path: dist/*.ipa
+          if-no-files-found: error
+      - name: Notify
+        if: always() && github.event_name == 'push'
+        env:
+          MAIL_PASSWORD: ${{ secrets.JELLY_TUBE_MAIL_PASSWORD }}
+          MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
+        run: .github/scripts/notify-job.sh "iOS IPA" "${{ job.status }}"
+
+  mobile-release:
+    needs: [versions, android-apk, ios-ipa]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.versions.outputs.mobile }}
+      TAG: mobile/v${{ needs.versions.outputs.mobile }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Record the start time
+        run: echo "JOB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mobile-*
+          path: dist
+          merge-multiple: true
+      # "Latest" 는 늘 mobile 릴리스다. SideStore 소스와 README 가 releases/latest 로 그것을 찾는다.
+      - name: Create the release
+        run: |
+          set -euo pipefail
+          # 지정하지 않으면 직전 릴리스부터 모으는데, desktop 릴리스가 끼면 범위가 어긋난다.
+          previous=$(git tag -l 'mobile/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
+          gh release create "$TAG" dist/* --verify-tag --latest --title "JellyTube $VERSION" \
+            --generate-notes ${previous:+--notes-start-tag "$previous"}
+      - name: Attach the SideStore source
+        run: |
+          set -euo pipefail
+          config=buildSrc/src/main/java/com/kintmin/buildSrc/AppConfiguration.kt
+          code=$(sed -n 's/^ *const val VERSION_CODE = \([0-9]*\)$/\1/p' "$config")
+          pbxproj=ios/app/JellyTubeIos.xcodeproj/project.pbxproj
+          bundle_id=$(sed -n 's/.*PRODUCT_BUNDLE_IDENTIFIER = \(.*\);/\1/p' "$pbxproj" | grep -v 'Tests$' | sort -u)
+          min_os=$(sed -n 's/.*IPHONEOS_DEPLOYMENT_TARGET = \(.*\);/\1/p' "$pbxproj" | sort -uV | tail -n1)
+          [[ -n "$code" && -n "$bundle_id" && -n "$min_os" ]] || { echo "::error::source.json 에 넣을 값을 읽지 못했다"; exit 1; }
+          release=$(gh release view "$TAG" --json body,publishedAt,assets)
+          # 직전 mobile 릴리스의 source.json 에 쌓인 버전을 이어받는다. 없으면 이번 버전부터 시작한다.
+          previous=$(git tag -l 'mobile/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
+          old='[]'
+          if [[ -n "$previous" ]] && gh release download "$previous" --pattern source.json --output previous.json 2>/dev/null; then
+            old=$(jq -c '.apps[0].versions // []' previous.json)
+          fi
+          jq -n \
+            --argjson release "$release" --argjson old "$old" \
+            --arg repo "$GITHUB_REPOSITORY" --arg sha "$GITHUB_SHA" \
+            --arg version "$VERSION" --arg code "$code" \
+            --arg bundle_id "$bundle_id" --arg min_os "$min_os" '
+            ($release.assets[] | select(.name | endswith(".ipa"))) as $ipa | {
+              name: "JellyTube",
+              identifier: "com.kintmin.jellytube.source",
+              sourceURL: "https://github.com/\($repo)/releases/latest/download/source.json",
+              apps: [{
+                name: "JellyTube",
+                bundleIdentifier: $bundle_id,
+                developerName: "kintmin",
+                localizedDescription: "JellyTube",
+                iconURL: "https://raw.githubusercontent.com/\($repo)/\($sha)/ios/app/JellyTubeIos/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
+                versions: ([{
+                  version: $version,
+                  buildVersion: $code,
+                  date: $release.publishedAt,
+                  localizedDescription: $release.body,
+                  downloadURL: $ipa.url,
+                  size: $ipa.size,
+                  minOSVersion: $min_os
+                }] + ($old | map(select(.version != $version)))),
+                appPermissions: { entitlements: [], privacy: {} }
+              }],
+              news: []
+            }' > source.json
+          gh release upload "$TAG" source.json
+      # 사용자에게 보내는 소식이다. 릴리스가 실제로 만들어졌을 때만 보낸다.
+      - name: Announce the new version
+        env:
+          MAIL_PASSWORD: ${{ secrets.JELLY_TUBE_MAIL_PASSWORD }}
+          MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
+        run: |
+          set -euo pipefail
+          notes=$(gh release view "$TAG" --json body -q .body)
+          .github/scripts/send-mail.sh mobile "[JellyTube] 새 버전 $VERSION" "JellyTube $VERSION 이 나왔습니다.
+
+          받는 곳: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG
+          Android 는 APK 를 받아 설치하고, iOS 는 SideStore 에서 업데이트해 주세요.
+
+          바뀐 점
+          $notes
+
+          알림을 그만 받으려면 kintmin.ci@gmail.com 으로 '해지' 라고 보내 주세요."
+      - name: Notify
+        if: always() && github.event_name == 'push'
+        env:
+          MAIL_PASSWORD: ${{ secrets.JELLY_TUBE_MAIL_PASSWORD }}
+          MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
+        run: .github/scripts/notify-job.sh "mobile $VERSION 릴리스" "${{ job.status }}" "https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
+
+  desktop-release-needed:
+    if: github.event_name == 'push'
+    needs: [versions, tag]
+    runs-on: ubuntu-latest
+    outputs:
+      needed: ${{ steps.check.outputs.needed }}
+      reason: ${{ steps.check.outputs.reason }}
+    steps:
+      - id: check
+        env:
+          TAG: desktop/v${{ needs.versions.outputs.desktop }}
+          GH_TOKEN: ${{ github.token }}
+        # 태그가 이번 커밋을 가리킬 때만 만든다. 릴리스 없이 남은 옛 태그를 지금 코드로 빌드하면 태그와 내용이 어긋난다.
+        run: |
+          tagged=$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" "refs/tags/$TAG^{}" | cut -f1)
+          if [[ "$tagged" != "$GITHUB_SHA" ]]; then
+            echo "$TAG 는 이번 커밋이 아니다($tagged)"
+            echo "reason=이번 커밋의 태그가 아님" >> "$GITHUB_OUTPUT"
+          elif gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$TAG 릴리스는 이미 있다"
+            echo "reason=릴리스가 이미 있음" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # 서명하지 않은 설치 파일이다. Windows 는 SmartScreen, macOS 는 Gatekeeper 가 처음 실행을 한 번 막는다.
+  desktop-package:
+    needs: desktop-release-needed
+    # 수동 실행에서는 앞 job 이 건너뛰어지므로, 건너뛴 의존을 막지 않게 !cancelled() 로 연다.
+    if: ${{ !cancelled() && ((github.event_name == 'workflow_dispatch' && inputs.scope != 'r8-only') || needs.desktop-release-needed.outputs.needed == 'true') }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            tasks: :desktop:packageMsi :desktop:packageExe
+            formats: msi exe
+          - os: macos-26
+            tasks: :desktop:packageDmg
+            formats: dmg
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Record the start time
+        run: echo "JOB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Package
+        env:
+          TASKS: ${{ matrix.tasks }}
+          FORMATS: ${{ matrix.formats }}
+        run: |
+          set -euo pipefail
+          ./gradlew $TASKS
+          config=buildSrc/src/main/java/com/kintmin/buildSrc/AppConfiguration.kt
+          version=$(grep -oE 'DESKTOP_VERSION_NAME = "[^"]+"' "$config" | cut -d'"' -f2)
+          [[ -n "$version" ]] || { echo "::error::DESKTOP_VERSION_NAME 을 읽지 못했다"; exit 1; }
+          mkdir -p dist
+          for format in $FORMATS; do
+            file=$(ls desktop/build/compose/binaries/main/$format/*.$format)
+            cp "$file" "dist/JellyTube_FileShare_$version.$format"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ runner.os }}
+          path: dist/*
+          if-no-files-found: error
+      - name: Notify
+        if: always() && github.event_name == 'push'
+        env:
+          MAIL_PASSWORD: ${{ secrets.JELLY_TUBE_MAIL_PASSWORD }}
+          MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
+        run: .github/scripts/notify-job.sh "desktop ${{ runner.os }}" "${{ job.status }}"
+
+  desktop-release:
+    needs: [versions, desktop-package]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.versions.outputs.desktop }}
+      TAG: desktop/v${{ needs.versions.outputs.desktop }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Record the start time
+        run: echo "JOB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          path: dist
+          merge-multiple: true
+      # Latest 는 mobile 몫이다. desktop 이 가져가면 SideStore 소스 주소가 desktop 릴리스를 가리킨다.
+      - name: Create the release
+        run: |
+          set -euo pipefail
+          previous=$(git tag -l 'desktop/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
+          gh release create "$TAG" dist/* --verify-tag --latest=false --title "JellyTube File Share $VERSION" \
+            --generate-notes ${previous:+--notes-start-tag "$previous"}
+      # 사용자에게 보내는 소식이다. 릴리스가 실제로 만들어졌을 때만 보낸다.
+      - name: Announce the new version
+        env:
+          MAIL_PASSWORD: ${{ secrets.JELLY_TUBE_MAIL_PASSWORD }}
+          MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
+        run: |
+          set -euo pipefail
+          notes=$(gh release view "$TAG" --json body -q .body)
+          .github/scripts/send-mail.sh desktop "[JellyTube 파일 공유] 새 버전 $VERSION" "JellyTube 파일 공유 $VERSION 이 나왔습니다.
+
+          받는 곳: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG
+          Windows 는 MSI 나 EXE, macOS 는 DMG 를 받아 설치해 주세요.
+
+          바뀐 점
+          $notes
+
+          알림을 그만 받으려면 kintmin.ci@gmail.com 으로 '해지' 라고 보내 주세요."
+      - name: Notify
+        if: always() && github.event_name == 'push'
+        env:
+          MAIL_PASSWORD: ${{ secrets.JELLY_TUBE_MAIL_PASSWORD }}
+          MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
+        run: .github/scripts/notify-job.sh "desktop $VERSION 릴리스" "${{ job.status }}" "https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
+
+  notify-start:
+    if: github.event_name == 'push'
+    needs: [versions, mobile-release-needed, desktop-release-needed]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Notify which builds run
+        env:
+          MAIL_PASSWORD: ${{ secrets.JELLY_TUBE_MAIL_PASSWORD }}
+          MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
+          MOBILE: ${{ needs.versions.outputs.mobile }}
+          MOBILE_NEEDED: ${{ needs.mobile-release-needed.outputs.needed }}
+          MOBILE_REASON: ${{ needs.mobile-release-needed.outputs.reason }}
+          DESKTOP: ${{ needs.versions.outputs.desktop }}
+          DESKTOP_NEEDED: ${{ needs.desktop-release-needed.outputs.needed }}
+          DESKTOP_REASON: ${{ needs.desktop-release-needed.outputs.reason }}
+        run: |
+          plan() { if [[ "$1" == true ]]; then echo "빌드 ($2)"; else echo "건너뜀 ($3)"; fi; }
+          .github/scripts/send-mail.sh dev "[JellyTube] 릴리스 ${GITHUB_SHA::7}" "🚀 릴리스 시작 (main ${GITHUB_SHA::7})
+          • mobile $MOBILE → $(plan "$MOBILE_NEEDED" "APK·IPA" "$MOBILE_REASON")
+          • desktop $DESKTOP → $(plan "$DESKTOP_NEEDED" "MSI·EXE·DMG" "$DESKTOP_REASON")
+          https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
   sync-develop:
     if: github.event_name == 'push'

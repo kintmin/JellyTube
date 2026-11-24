@@ -12,6 +12,7 @@ data class LyricsSearchScreenRoute(
     val audioMediaId: Int,
     val initialQuery: String,
     val durationSeconds: Double? = null,
+    val playbackDurationSeconds: Double? = null,
 )
 
 fun NavController.navigateToLyricsSearchScreen(
@@ -19,7 +20,11 @@ fun NavController.navigateToLyricsSearchScreen(
     initialQuery: String,
     durationSeconds: Double?,
     navOptions: NavOptions,
-) = navigate(LyricsSearchScreenRoute(audioMediaId, initialQuery, durationSeconds), navOptions)
+    playbackDurationSeconds: Double? = null,
+) = navigate(
+    LyricsSearchScreenRoute(audioMediaId, initialQuery, durationSeconds, playbackDurationSeconds),
+    navOptions,
+)
 
 fun NavGraphBuilder.lyricsSearchScreen(
     navigateToBack: () -> Unit,

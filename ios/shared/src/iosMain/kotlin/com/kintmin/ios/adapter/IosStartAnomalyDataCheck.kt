@@ -40,8 +40,8 @@ internal class IosStartAnomalyDataCheck(
                     .onSuccess { anomalyCount ->
                         IosLocalNotification.show(WorkResultNotice.AnomalyCheck.Success(anomalyCount))
                     }
-                    .onFailure { throwable ->
-                        appLog.sendDebugLog(DebugLog("IosStartAnomalyDataCheck", "이상 데이터 점검 실패: $throwable"))
+                    .onFailure {
+                        appLog.sendDebugLog(DebugLog("IosStartAnomalyDataCheck", "이상 데이터 점검 실패"))
                         IosLocalNotification.show(WorkResultNotice.AnomalyCheck.Failure)
                     }
             } finally {

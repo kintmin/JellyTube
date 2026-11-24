@@ -3,6 +3,7 @@ package com.kintmin.data.file_share
 import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.model.UploadedAudioFile
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.file_share.PcUploadHandler
 import com.kintmin.domain.file_share.ReceiveKeepAlive
 import com.kintmin.fileshare.BulkArtistUpdateRequest
@@ -14,7 +15,6 @@ import com.kintmin.fileshare.UploadResponse
 import com.kintmin.fileshare.UploadStageResponse
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
-import com.kintmin.log.secret
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -56,7 +56,7 @@ internal fun Route.pcUploadEndpoints(
         appLog.sendDebugLog(
             DebugLog(
                 LOG_TAG,
-                "받기 거절: $reason name=${secret(fileName)} ext=$ext length=$contentLength received=$receivedBytes" +
+                "받기 거절: $reason ext=$ext length=$contentLength received=$receivedBytes" +
                     (error?.let { " / $it" } ?: ""),
             ),
         )
@@ -83,7 +83,7 @@ internal fun Route.pcUploadEndpoints(
                 call.respond(HttpStatusCode.BadRequest, UploadStageResponse(success = false, message = reason))
             }
 
-            val receivedBytes = runCatching {
+            val receivedBytes = suspendRunCatching {
                 SystemFileSystem.sink(tempPath).use { sink -> call.receiveChannel().readTo(sink) }
             }.getOrElse { error ->
                 reject("파일을 읽을 수 없습니다.", receivedBytes = null, error)
@@ -104,7 +104,7 @@ internal fun Route.pcUploadEndpoints(
     }
 
     post(FileShareConstants.HTTP_UPLOAD_COMMIT_PATH) {
-        val request = runCatching { call.receive<UploadCommitRequest>() }
+        val request = suspendRunCatching { call.receive<UploadCommitRequest>() }
             .getOrElse {
                 call.respond(HttpStatusCode.BadRequest, FileShareResponse(success = false, message = "요청을 읽을 수 없습니다."))
                 return@post
@@ -115,7 +115,7 @@ internal fun Route.pcUploadEndpoints(
             val staged = request.stageIds.map(stagedUploads::take)
             val found = staged.filterNotNull()
             val imported = try {
-                runCatching { handler.importUploadedAudios(found) }
+                suspendRunCatching { handler.importUploadedAudios(found) }
                     .getOrElse { error -> found.map { Result.failure(error) } }
             } finally {
                 found.forEach { deleteTempFile(it.fileFullPath) }
@@ -134,7 +134,7 @@ internal fun Route.pcUploadEndpoints(
     }
 
     post(FileShareConstants.HTTP_BULK_ARTIST_PATH) {
-        val request = runCatching { call.receive<BulkArtistUpdateRequest>() }
+        val request = suspendRunCatching { call.receive<BulkArtistUpdateRequest>() }
             .getOrElse {
                 call.respond(
                     HttpStatusCode.BadRequest,
@@ -178,7 +178,7 @@ internal fun Route.pcUploadEndpoints(
         }
 
         receiveKeepAlive.keepAlive {
-            val bytes = runCatching { call.receive<ByteArray>() }
+            val bytes = suspendRunCatching { call.receive<ByteArray>() }
                 .getOrElse {
                     call.respond(
                         HttpStatusCode.BadRequest,
@@ -203,7 +203,7 @@ internal fun Route.pcUploadEndpoints(
  * 거절 사유를 보여 주지 못한다.
  */
 suspend fun ApplicationCall.discardBody() {
-    runCatching { receiveChannel().discard() }
+    suspendRunCatching { receiveChannel().discard() }
 }
 
 private fun Result<ImportedAudioMediaResult>.toUploadResponse(): UploadResponse = fold(

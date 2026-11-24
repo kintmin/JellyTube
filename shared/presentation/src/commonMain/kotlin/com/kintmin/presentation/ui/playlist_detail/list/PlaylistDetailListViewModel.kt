@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.kintmin.domain.audio_media.usecase.DeleteAudioMediaListUseCase
 import com.kintmin.domain.audio_track.usecase.DeleteAudioTrackListUseCase
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaListFlowUseCase
 import com.kintmin.domain.audio_track.usecase.UpdateTrackSequenceUseCase
@@ -31,6 +32,7 @@ class PlaylistDetailListViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val fetchAudioMediaListFlowUseCase: FetchAudioMediaListFlowUseCase,
     private val deleteAudioTrackListUseCase: DeleteAudioTrackListUseCase,
+    private val deleteAudioMediaListUseCase: DeleteAudioMediaListUseCase,
     private val updateTrackSequenceUseCase: UpdateTrackSequenceUseCase,
     private val mediaControllerManager: PlaybackController,
     private val appLog: AppLog,
@@ -86,6 +88,9 @@ class PlaylistDetailListViewModel constructor(
                     }
                     is PlaylistDetailListIntent.OnClickRemoveFromPlaylist -> {
                         removeFromPlaylist(intent.data.id)
+                    }
+                    is PlaylistDetailListIntent.OnClickDeleteAudioMedia -> {
+                        deleteAudioMediaListUseCase(listOf(intent.data.id), listOf(intent.data.source))
                     }
                     is PlaylistDetailListIntent.OnChangeSearchText,
                     is PlaylistDetailListIntent.OnReorderAudioMedia -> Unit

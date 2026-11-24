@@ -1,4 +1,5 @@
 import com.kintmin.buildSrc.AppConfiguration
+import io.sentry.kotlin.multiplatform.gradle.AppleDependencyProvider
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -6,6 +7,13 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.atomicfu)
+    alias(libs.plugins.sentry.kmp)
+}
+
+// iosTest 실행 파일이 Sentry 프레임워크를 링크하게 한다. 프레임워크는 Xcode 빌드가 만들어 두므로 먼저 한 번 빌드해야 한다.
+sentryKmp {
+    autoInstall.apple.provider = AppleDependencyProvider.NONE
+    linker.xcodeprojPath = rootProject.file("ios/app/JellyTubeIos.xcodeproj").absolutePath
 }
 
 kotlin {

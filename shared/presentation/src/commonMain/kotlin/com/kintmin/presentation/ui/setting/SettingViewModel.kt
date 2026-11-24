@@ -7,6 +7,7 @@ import com.kintmin.domain.app_setting.usecase.FetchShouldInsertAtTopOnDownloadFl
 import com.kintmin.domain.app_setting.usecase.UpdateIsStepEnabledUseCase
 import com.kintmin.domain.app_setting.usecase.UpdatePlaylistIdOnDownloadUseCase
 import com.kintmin.domain.app_setting.usecase.UpdateShouldInsertAtTopOnDownloadUseCase
+import com.kintmin.domain.app_update.usecase.CheckAppUpdateUseCase
 import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportSharedAudioMediaUseCase
 import com.kintmin.domain.backup.model.BackupFolder
@@ -47,12 +48,14 @@ class SettingViewModel constructor(
     private val executeAnomalyDataCheck: StartAnomalyDataCheck,
     private val importSharedAudioMediaUseCase: ImportSharedAudioMediaUseCase,
     private val stepMeasurementController: StepMeasurementController,
+    private val checkAppUpdateUseCase: CheckAppUpdateUseCase,
 ) : ViewModel() {
 
     private val isPlaylistIdOnDownloadBottomSheetVisible = MutableStateFlow(false)
     private val isImportPlaylistBottomSheetVisible = MutableStateFlow(false)
     private val isImporting = MutableStateFlow(false)
     private val deviceId = MutableStateFlow<String?>(null)
+    private val isCheckingAppUpdate = MutableStateFlow(false)
     private val eventChannel = Channel<SettingEvent>(Channel.BUFFERED)
     val eventFlow: Flow<SettingEvent> = eventChannel.receiveAsFlow()
 
@@ -90,6 +93,8 @@ class SettingViewModel constructor(
         state.copy(deviceId = id)
     }.combine(fetchBackupStatusFlowUseCase()) { state, backupStatus ->
         state.copy(backupDescription = backupStatus.toDescription())
+    }.combine(isCheckingAppUpdate) { state, isChecking ->
+        state.copy(isCheckingAppUpdate = isChecking)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
@@ -200,6 +205,7 @@ class SettingViewModel constructor(
                     eventChannel.send(SettingEvent.CopyDeviceId(id))
                 }
             }
+            is SettingIntent.OnClickVersionTile -> checkAppUpdate(intent.currentVersionName)
             is SettingIntent.OnToggleIsStepEnabled -> {
                 if (intent.value) {
                     viewModelScope.launch {
@@ -285,6 +291,21 @@ class SettingViewModel constructor(
     private fun updateIsStepEnabled(value: Boolean) {
         viewModelScope.launch {
             updateIsStepEnabledUseCase(value)
+        }
+    }
+
+    private fun checkAppUpdate(currentVersionName: String) {
+        if (isCheckingAppUpdate.value) return
+        isCheckingAppUpdate.value = true
+        viewModelScope.launch {
+            val event = checkAppUpdateUseCase(currentVersionName).fold(
+                onSuccess = { release ->
+                    if (release == null) SettingEvent.ShowToast("최신 버전입니다.") else SettingEvent.ShowAppUpdateDialog(release)
+                },
+                onFailure = { SettingEvent.ShowToast("새 버전을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.") },
+            )
+            isCheckingAppUpdate.value = false
+            eventChannel.send(event)
         }
     }
 }

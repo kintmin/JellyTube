@@ -1,39 +1,27 @@
 package com.kintmin.presentation.ui.main.playlist
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.SwapVert
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
-import com.kintmin.presentation.theme.contentDisabled
-import com.kintmin.presentation.theme.contentSubtle
 import com.kintmin.presentation.ui.common.SectionHeader
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistLibraryBlockView
+import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistReorderActionView
 
 @Composable
 fun PlaylistView(
@@ -49,7 +37,8 @@ fun PlaylistView(
     PlaylistAddDialog(
         showDialog = showAddDialog,
         onDismiss = { showAddDialog = false },
-        existingNames = data.map { it.name },
+        // 상한을 넘겨 저장된 이름이 있어 양쪽을 같은 상한에 통과시킨다. 그러지 않으면 겹침 경고가 틀린 답을 낸다.
+        existingNames = data.map { PlaylistTextLimit.clampTitle(it.name) },
         makePlaylist = { title -> sendIntent(PlaylistIntent.MakeNewPlaylist(title)) },
     )
 
@@ -83,34 +72,10 @@ fun PlaylistView(
                     // 빈 상태가 제 CTA 를 갖는다. 같은 명령으로 가는 버튼을 둘 보이지 않게 한다.
                     if (userItems.isEmpty()) return@SectionHeader
                     // 바꿀 것이 없으면 빈 시트가 올라온다. 누를 수 없게 막는다.
-                    val canReorder = userItems.size > 1
-                    // 색을 한 단계 낮춰 만들기가 주, 순서가 보조로 읽히게 한다.
-                    Row(
-                        modifier = Modifier
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                enabled = canReorder,
-                                onClick = { sendIntent(PlaylistIntent.OnClickShowReorderBottomSheet) },
-                            )
-                            .heightIn(min = 48.dp)
-                            .padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val reorderColor = if (canReorder) contentSubtle else contentDisabled
-                        Icon(
-                            modifier = Modifier.size(18.dp),
-                            imageVector = Icons.Rounded.SwapVert,
-                            contentDescription = null,
-                            tint = reorderColor,
-                        )
-                        Text(
-                            modifier = Modifier.padding(start = 4.dp),
-                            text = "순서",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = reorderColor,
-                        )
-                    }
+                    PlaylistReorderActionView(
+                        enabled = userItems.size > 1,
+                        onClick = { sendIntent(PlaylistIntent.OnClickShowReorderBottomSheet) },
+                    )
                     PlaylistAddButtonView(text = "새로 만들기", onClick = { showAddDialog = true })
                 },
             )

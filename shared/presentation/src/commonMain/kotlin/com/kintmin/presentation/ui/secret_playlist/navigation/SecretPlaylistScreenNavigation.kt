@@ -19,6 +19,7 @@ fun NavGraphBuilder.secretPlaylistScreen(
     navigateToPlaylistDetail: (playlistId: Int) -> Unit,
     navigateToPlaylistEdit: (playlistId: Int) -> Unit,
     navigateToPlaylistAdd: (playlistId: Int, playlistName: String) -> Unit,
+    navigateToPlayerDetail: () -> Unit,
 ) {
     composable<SecretPlaylistScreenRoute> {
         SecretPlaylistScreen(
@@ -26,6 +27,7 @@ fun NavGraphBuilder.secretPlaylistScreen(
             navigateToPlaylistDetail = navigateToPlaylistDetail,
             navigateToPlaylistEdit = navigateToPlaylistEdit,
             navigateToPlaylistAdd = navigateToPlaylistAdd,
+            navigateToPlayerDetail = navigateToPlayerDetail,
         )
     }
 }

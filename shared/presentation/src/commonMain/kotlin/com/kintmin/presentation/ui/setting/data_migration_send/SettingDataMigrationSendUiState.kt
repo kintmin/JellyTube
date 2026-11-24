@@ -1,14 +1,29 @@
 package com.kintmin.presentation.ui.setting.data_migration_send
 
 import com.kintmin.presentation.port.model.RunningTask
+import com.kintmin.presentation.ui.setting.data_migration_share.MigrationShareKind
 
 data class SettingDataMigrationSendUiState(
+    val kind: MigrationShareKind = MigrationShareKind.SYNC,
+    val sendingCount: Int = 0,
     val step: DataMigrationSendStep = DataMigrationSendStep.Starting,
 ) {
     /** 받는 기기가 받는 중이다. 이 화면을 떠나면 받는 쪽이 실패하므로 뒤로가기를 막는다. */
     val isSending: Boolean get() = step is DataMigrationSendStep.Sending
 
     val keepsScreenOn: Boolean get() = step is DataMigrationSendStep.WaitingForPair || isSending
+
+    val title: String get() = when (kind) {
+        MigrationShareKind.SYNC -> "다른 기기와 동기화"
+        MigrationShareKind.PLAYLIST -> "플레이리스트 보내기"
+        MigrationShareKind.AUDIO_MEDIA -> "곡 보내기"
+    }
+
+    val summary: String get() = when (kind) {
+        MigrationShareKind.SYNC -> "이 기기의 곡·플레이리스트·즐겨찾기·설정·걸음 기록을 모두 보냅니다."
+        MigrationShareKind.PLAYLIST -> "고른 플레이리스트 ${sendingCount}개와 그 안의 곡을 보냅니다."
+        MigrationShareKind.AUDIO_MEDIA -> "고른 ${sendingCount}곡을 보냅니다."
+    }
 
     companion object {
         fun getMock() = SettingDataMigrationSendUiState(step = DataMigrationSendStep.WaitingForPair("482913"))

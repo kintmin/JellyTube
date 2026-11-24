@@ -5,13 +5,16 @@ import androidx.datastore.core.DataStore
 import com.kintmin.data.local_datastore.DatastoreUtil
 import com.kintmin.data.local_datastore.DatastoreUtilImpl
 import com.kintmin.data.local_db.dao_facade.AudioMediaFacade
+import com.kintmin.data.app_update.appInstallerExtension
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.network.createHttpClient
 import com.kintmin.data.network.data_source.HttpDataSource
 import com.kintmin.data.network.data_source.KaraokeDataSource
+import com.kintmin.data.network.data_source.GitHubReleaseDataSource
 import com.kintmin.data.network.data_source.LyricsDataSource
 import com.kintmin.data.network.data_source_impl.HttpDataSourceImpl
 import com.kintmin.data.network.data_source_impl.KaraokeDataSourceImpl
+import com.kintmin.data.network.data_source_impl.GitHubReleaseDataSourceImpl
 import com.kintmin.data.network.data_source_impl.LyricsDataSourceImpl
 import com.kintmin.data.repository_impl.*
 import com.kintmin.domain.app_log.repository.AppLogRepository
@@ -35,6 +38,8 @@ import com.kintmin.domain.backup.usecase.*
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
 import com.kintmin.domain.data_migration.usecase.*
 import com.kintmin.domain.karaoke.repository.KaraokeRepository
+import com.kintmin.domain.app_update.repository.AppUpdateRepository
+import com.kintmin.domain.app_update.usecase.*
 import com.kintmin.domain.karaoke.usecase.*
 import com.kintmin.domain.lyrics.repository.LyricsRepository
 import com.kintmin.domain.lyrics.repository.LyricsTranslationRepository
@@ -73,6 +78,7 @@ val dataCommonModule: Module = module {
     single<HttpDataSource> { HttpDataSourceImpl(get()) }
     single<LyricsDataSource> { LyricsDataSourceImpl(get()) }
     single<KaraokeDataSource> { KaraokeDataSourceImpl(get()) }
+    single<GitHubReleaseDataSource> { GitHubReleaseDataSourceImpl(get()) }
     single<DatastoreUtil> { DatastoreUtilImpl(get<DataStore<Preferences>>()) }
 
     single { get<JellyTubeDatabase>().audioMediaDao() }
@@ -95,6 +101,7 @@ val dataCommonModule: Module = module {
     singleOf(::LyricsRepositoryImpl) bind LyricsRepository::class
     singleOf(::LyricsTranslationRepositoryImpl) bind LyricsTranslationRepository::class
     singleOf(::KaraokeRepositoryImpl) bind KaraokeRepository::class
+    single<AppUpdateRepository> { AppUpdateRepositoryImpl(get(), get(), appInstallerExtension) }
     singleOf(::PlaylistRepositoryImpl) bind PlaylistRepository::class
     singleOf(::SecretModeRepositoryImpl) bind SecretModeRepository::class
     singleOf(::StepRepositoryImpl) bind StepRepository::class
@@ -126,6 +133,8 @@ val dataCommonModule: Module = module {
     factoryOf(::CloseMigrationSendUseCase)
     factoryOf(::FetchMigrationSendStatusUseCase)
     factoryOf(::ExportMigrationDataUseCase)
+    factoryOf(::FetchShareablePlaylistListFlowUseCase)
+    factoryOf(::FetchShareableAudioMediaListFlowUseCase)
     factoryOf(::ResolveMigrationFilePathUseCase)
     factoryOf(::PairMigrationSourceUseCase)
     factoryOf(::ImportMigrationDataUseCase)
@@ -177,6 +186,9 @@ val dataCommonModule: Module = module {
     factoryOf(::CreateLyricsVariantUseCase)
     factoryOf(::GetLyricsVariantUseCase)
     factoryOf(::SplitLyricsByNewlineUseCase)
+    factoryOf(::CheckAppUpdateUseCase)
+    factoryOf(::CheckAppUpdateOncePerDayUseCase)
+    factoryOf(::IgnoreAppUpdateUseCase)
     factoryOf(::SearchKaraokeUseCase)
     factoryOf(::ApplyKaraokeNumberToAudioMediaUseCase)
     factoryOf(::DeleteAudioMediaKaraokeNumberUseCase)
@@ -211,8 +223,10 @@ val dataCommonModule: Module = module {
     factoryOf(::FetchPlaylistsByTypeUseCase)
     factoryOf(::AddNewPlaylistUseCase)
     factoryOf(::DeletePlaylistUseCase)
+    factoryOf(::DeletePlaylistWithTracksUseCase)
     factoryOf(::FetchAllPlaylistFlowUseCase)
     factoryOf(::FetchPlaylistFlowUseCase)
+    factoryOf(::GetPlaylistUseCase)
     factoryOf(::UpdatePlaylistDescriptionUseCase)
     factoryOf(::UpdatePlaylistTitleUseCase)
     factoryOf(::UpdatePlaylistImageUseCase)

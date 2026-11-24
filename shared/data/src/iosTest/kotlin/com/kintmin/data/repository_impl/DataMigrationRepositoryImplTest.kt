@@ -149,7 +149,25 @@ class DataMigrationRepositoryImplTest {
         assertFails { FailingCopyFileSystem(fileSystem).moveFile(source, destination) }
 
         assertFalse(fileSystem.exists(destination))
+        assertFalse(fileSystem.exists("$destination.part".toPath()))
         assertTrue(fileSystem.exists(source))
+    }
+
+    @Test
+    fun `바로 옮길 수 없으면 임시 이름으로 복사한 뒤 바꿔 끼운다`() {
+        val source = root / "staging" / "staged.m4a"
+        val destination = root / "audios" / "a.m4a"
+        fileSystem.createDirectories(source.parent!!)
+        fileSystem.createDirectories(destination.parent!!)
+        fileSystem.write(source) { write(byteArrayOf(1, 2, 3, 4)) }
+        val recording = RecordingSinkFileSystem(fileSystem)
+
+        recording.moveFile(source, destination)
+
+        // 복사가 예외 없이 끊겨도 반쪽 파일이 목적지에 남지 않아야 한다 — 목적지에 직접 쓰지 않는다.
+        assertEquals(listOf("$destination.part".toPath()), recording.openedSinks)
+        assertTrue(byteArrayOf(1, 2, 3, 4).contentEquals(fileSystem.read(destination) { readByteArray() }))
+        assertFalse(fileSystem.exists(source))
     }
 
     /** 다른 볼륨이라 바로 옮기지 못하고, 복사는 한 바이트 쓰고 실패한다. */
@@ -164,6 +182,21 @@ class DataMigrationRepositoryImplTest {
                     throw IOException("저장 공간 부족")
                 }
             }
+        }
+    }
+
+    /** 볼륨이 다르면 바로 옮기지 못한다. 같은 폴더 안에서 이름을 바꿔 끼우는 것은 된다. */
+    private class RecordingSinkFileSystem(delegate: FileSystem) : ForwardingFileSystem(delegate) {
+        val openedSinks = mutableListOf<Path>()
+
+        override fun atomicMove(source: Path, target: Path) {
+            if (source.parent != target.parent) throw IOException("다른 볼륨")
+            super.atomicMove(source, target)
+        }
+
+        override fun sink(file: Path, mustCreate: Boolean): Sink {
+            openedSinks += file
+            return super.sink(file, mustCreate)
         }
     }
 
@@ -185,6 +218,8 @@ class DataMigrationRepositoryImplTest {
 
         override suspend fun finish(host: String, port: Int, token: String, newAudioMediaCount: Int, failedCount: Int) =
             Result.success(Unit)
+
+        override suspend fun decline(host: String, port: Int, token: String) = Result.success(Unit)
 
         override suspend fun downloadFile(
             host: String,

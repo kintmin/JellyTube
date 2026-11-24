@@ -43,6 +43,8 @@ struct YoutubeAudioSource: Codable {
     let duration: String
     let uploader: String
     let description: String
+    /// 로그가 `sourceUrl` 을 가릴지. 옛 기록에는 없고, 없으면 가린다.
+    let isSecret: Bool?
 }
 
 /// 진행 중인 전송. 청크가 끝나는 시점이 앱의 다음 생애일 수 있어 디스크에 적어 둔다.
@@ -449,7 +451,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
         lock.unlock()
 
         guard var transfer = stored else {
-            downloadLog("no record for \(sourceUrl)")
+            downloadLog("no record for task")
             return
         }
 
@@ -860,7 +862,7 @@ extension YoutubeDownloader: URLSessionDownloadDelegate {
 
         // 구간마다 불리므로 기록을 지운 첫 번째만 본다. 나머지는 이미 보고된 같은 실패다.
         if transfer != nil, waiter == nil, let error {
-            SwiftAppLogKt.swiftErrorLog(tag: "YoutubeDownload", message: "기다리는 쪽 없이 실패: \(sourceUrl) \(error.localizedDescription)")
+            SwiftAppLogKt.swiftErrorLog(tag: "YoutubeDownload", message: "기다리는 쪽 없이 실패: \(SwiftAppLogKt.swiftSecret(value: sourceUrl, isSecret: transfer?.source.isSecret ?? true)) \(error.localizedDescription)")
         }
         waiter?(error)
     }

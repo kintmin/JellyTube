@@ -1,6 +1,7 @@
 package com.kintmin.data.network.data_source_impl
 
 import com.kintmin.data.network.data_source.MigrationDataSource
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.fileshare.FileShareConstants
 import com.kintmin.fileshare.MigrationFinishRequest
 import com.kintmin.fileshare.MigrationManifestDto
@@ -30,7 +31,7 @@ internal class MigrationDataSourceImpl(
     private val localDeviceName: suspend () -> String,
 ) : MigrationDataSource {
 
-    override suspend fun pair(host: String, port: Int, code: String): Result<String> = runCatching {
+    override suspend fun pair(host: String, port: Int, code: String): Result<String> = suspendRunCatching {
         client.post {
             migrationUrl(host, port, FileShareConstants.MIGRATION_PAIR_PATH)
             contentType(ContentType.Application.Json)
@@ -40,7 +41,7 @@ internal class MigrationDataSourceImpl(
     }
 
     override suspend fun fetchManifest(host: String, port: Int, token: String): Result<MigrationManifestDto> =
-        runCatching {
+        suspendRunCatching {
             client.get {
                 migrationUrl(host, port, FileShareConstants.MIGRATION_MANIFEST_PATH)
                 bearerAuth(token)
@@ -56,12 +57,21 @@ internal class MigrationDataSourceImpl(
         token: String,
         newAudioMediaCount: Int,
         failedCount: Int,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = suspendRunCatching {
         client.post {
             migrationUrl(host, port, FileShareConstants.MIGRATION_FINISH_PATH)
             bearerAuth(token)
             contentType(ContentType.Application.Json)
             setBody(MigrationFinishRequest(newAudioMediaCount, failedCount))
+            expectSuccess = true
+        }
+        Unit
+    }
+
+    override suspend fun decline(host: String, port: Int, token: String): Result<Unit> = suspendRunCatching {
+        client.post {
+            migrationUrl(host, port, FileShareConstants.MIGRATION_DECLINE_PATH)
+            bearerAuth(token)
             expectSuccess = true
         }
         Unit
@@ -74,7 +84,7 @@ internal class MigrationDataSourceImpl(
         kind: String,
         name: String,
         onChunk: (ByteArray, Int) -> Unit,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = suspendRunCatching {
         client.prepareGet {
             migrationUrl(host, port, FileShareConstants.MIGRATION_FILES_PATH)
             url.appendPathSegments(kind, name)

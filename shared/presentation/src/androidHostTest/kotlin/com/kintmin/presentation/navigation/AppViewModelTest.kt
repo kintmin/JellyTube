@@ -8,6 +8,7 @@ import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackSpeedFlowUseCa
 import com.kintmin.domain.backup.usecase.BackupIfDueUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
+import com.kintmin.domain.secret_mode.model.SecretModeEndReason
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretModeEnabledFlowUseCase
@@ -48,6 +49,8 @@ class AppViewModelTest {
     private val endSecretModeUseCase = mockk<EndSecretModeUseCase>(relaxed = true)
     private val fetchPlaylistsByTypeUseCase = mockk<FetchPlaylistsByTypeUseCase> {
         every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(testPlaylist(SECRET_PLAYLIST_ID, PlaylistType.SECRET)))
+        every { this@mockk(PlaylistType.SECRET_FAVORITE) } returns
+            flowOf(listOf(testPlaylist(SECRET_FAVORITE_PLAYLIST_ID, PlaylistType.SECRET_FAVORITE)))
     }
     private val fetchSecretAudioMediaIdListFlowUseCase = mockk<FetchSecretAudioMediaIdListFlowUseCase> {
         every { this@mockk() } returns flowOf(listOf(SECRET_AUDIO_MEDIA_ID))
@@ -115,7 +118,7 @@ class AppViewModelTest {
     fun `앱이 뜰 때 비밀모드가 꺼져 있으면 남은 비밀 다운로드 대상을 정리한다`() {
         createViewModel()
 
-        coVerify { endSecretModeUseCase() }
+        coVerify { endSecretModeUseCase(SecretModeEndReason.APP_LAUNCH) }
     }
 
     @Test
@@ -124,7 +127,7 @@ class AppViewModelTest {
 
         createViewModel()
 
-        coVerify(exactly = 0) { endSecretModeUseCase() }
+        coVerify(exactly = 0) { endSecretModeUseCase(any()) }
     }
 
     @Test
@@ -233,6 +236,7 @@ class AppViewModelTest {
 
     private companion object {
         const val SECRET_PLAYLIST_ID = 5
+        const val SECRET_FAVORITE_PLAYLIST_ID = 6
         const val SECRET_AUDIO_MEDIA_ID = 9
     }
 }

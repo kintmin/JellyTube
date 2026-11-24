@@ -1,11 +1,12 @@
 package com.kintmin.domain.audio_track.repository
 
+import com.kintmin.domain.audio_track.model.AddedAudioTrack
 import com.kintmin.domain.audio_track.model.PlaylistTrackAggregate
 import kotlinx.coroutines.flow.Flow
 
 interface AudioTrackRepository {
 
-    suspend fun addCustomAudioTrack(playlistId: Int, audioMediaIdList: List<Int>): Result<Int>
+    suspend fun addCustomAudioTrack(playlistId: Int, audioMediaIdList: List<Int>): Result<AddedAudioTrack>
 
     suspend fun deleteCustomAudioTrack(playlistId: Int, audioMediaIdList: List<Int>): Result<Unit>
 

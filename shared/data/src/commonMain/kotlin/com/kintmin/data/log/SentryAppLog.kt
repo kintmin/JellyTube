@@ -1,7 +1,6 @@
 package com.kintmin.data.log
 
 import com.kintmin.domain.app_log.repository.AppLogRepository
-import com.kintmin.domain.secret_mode.repository.SecretModeRepository
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
@@ -13,7 +12,6 @@ import io.sentry.kotlin.multiplatform.protocol.User
 
 internal class SentryAppLog(
     private val appLogRepository: AppLogRepository,
-    private val secretModeRepository: SecretModeRepository,
 ) : AppLog {
 
     override fun setLogConfig(userId: String) {
@@ -24,7 +22,7 @@ internal class SentryAppLog(
     }
 
     override fun sendDebugLog(debugLog: DebugLog) {
-        val message = reveal(debugLog.message)
+        val message = debugLog.message
         val line = "${debugLog.tag}: $message"
         println(line)
         // 메시지를 템플릿으로 넘기면 그 안의 '%' 가 자리표시자로 읽힌다.
@@ -34,7 +32,7 @@ internal class SentryAppLog(
     }
 
     override fun sendErrorLog(errorLog: ErrorLog) {
-        val message = reveal(errorLog.message)
+        val message = errorLog.message
         val detail = message + (errorLog.throwable?.let { " / $it" } ?: "")
         val line = "${errorLog.tag}: $detail"
         println(line)
@@ -45,7 +43,7 @@ internal class SentryAppLog(
 
     override fun sendSentryEvent(sentryEvent: SentryEvent) {
         val name = sentryEvent.logName.name
-        val attributes = sentryEvent.attributes.mapValues { reveal(it.value) }
+        val attributes = sentryEvent.attributes
         val line = "$name {${attributes.entries.joinToString(", ") { "${it.key}=${it.value}" }}}"
         println(line)
         Sentry.logger.info(name) { attributes.forEach { (key, value) -> this[key] = value } }
@@ -53,8 +51,6 @@ internal class SentryAppLog(
             ?: Sentry.addBreadcrumb(Breadcrumb.info(line).apply { category = "event" })
         appLogRepository.appendAppLog("SENTRY_EVENT", line)
     }
-
-    private fun reveal(text: String) = revealSecrets(text, hide = secretModeRepository.isEnabledFlow.value)
 
     private fun capture(tag: String, message: String, throwable: Throwable?) {
         if (throwable != null) {

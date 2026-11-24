@@ -4,11 +4,13 @@ import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.audio_media.ParallelDownloader
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.backup.model.BackupContent
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.MigrationFiles
 import com.kintmin.domain.data_migration.MigrationPlanner
 import com.kintmin.domain.data_migration.SourceKey
 import com.kintmin.domain.data_migration.applyMigratedDownloadSettings
 import com.kintmin.domain.data_migration.logText
+import com.kintmin.domain.data_migration.secretAudioMediaIds
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
 import com.kintmin.domain.data_migration.model.MigrationFailure
 import com.kintmin.domain.data_migration.model.MigrationFailureReason
@@ -26,7 +28,6 @@ import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.cancellation.CancellationException
 
 /** 곡마다 반영하지 않고 끝에 한 번에 반영한다 — 여러 재생목록의 순서를 계획 그대로 맞추려면 그래야 한다. */
 class RestoreBackupUseCase(
@@ -39,16 +40,17 @@ class RestoreBackupUseCase(
     suspend operator fun invoke(
         backup: BackupContent,
         onProgress: (MigrationProgress) -> Unit,
-    ): Result<MigrationSummary> = runCatching {
+    ): Result<MigrationSummary> = suspendRunCatching {
         onProgress(MigrationProgress(MigrationStage.PLANNING))
         // 계획은 이 기기에 시스템 플레이리스트가 다 있어야 세울 수 있다.
         playlistRepository.ensureSystemPlaylists().getOrThrow()
         val target = dataMigrationRepository.fetchSnapshot().getOrThrow()
         val source = backup.snapshot.withoutUnrecoverableFiles()
+        val secretIds = source.secretAudioMediaIds()
         val newAudios = MigrationPlanner.plan(source, target).newAudioMedias
 
         val (redownloadable, notRestorable) = newAudios.partition { YoutubeUrl.videoIdOf(it.source) != null }
-        notRestorable.forEach { log("원본이 유튜브가 아니라 복원하지 않음: ${it.logText()}") }
+        notRestorable.forEach { log("원본이 유튜브가 아니라 복원하지 않음: ${it.logText(secretIds)}") }
         val failures = notRestorable.map { MigrationFailure(it.name, MigrationFailureReason.NOT_RESTORABLE) }.toMutableList()
 
         val staged = dataMigrationRepository.fetchStagedFiles().getOrThrow()
@@ -57,13 +59,13 @@ class RestoreBackupUseCase(
         val results = ParallelDownloader.run(
             items = redownloadable,
             onDone = { onProgress(MigrationProgress(MigrationStage.REDOWNLOAD, doneCount = it, totalCount = total)) },
-        ) { audio -> restore(audio, staged, backup.lyrics) }
+        ) { audio -> restore(audio, secretIds, staged, backup.lyrics) }
         val restored = mutableMapOf<Int, MigrationAudioMedia>()
         redownloadable.zip(results).forEach { (audio, result) ->
             result
                 .onSuccess { restored[audio.id] = it }
                 .onFailure {
-                    logError("다시 받기 실패: ${audio.logText()}", it)
+                    logError("다시 받기 실패: ${audio.logText(secretIds)}", it)
                     failures += MigrationFailure(audio.name, MigrationFailureReason.REDOWNLOAD_FAILED)
                 }
         }
@@ -85,7 +87,7 @@ class RestoreBackupUseCase(
             // 반영이 끝났다. 여기부터는 실패해도 기록만 한다.
             dataMigrationRepository.clearStaging().onFailure { logError("임시 공간 정리 실패", it) }
             backup.downloadSettings?.let { settings ->
-                runCatching { appSettingRepository.applyMigratedDownloadSettings(settings, plan, applied, target) }
+                suspendRunCatching { appSettingRepository.applyMigratedDownloadSettings(settings, plan, applied, target) }
                     .onFailure { logError("다운로드 설정 반영 실패", it) }
             }
         }
@@ -96,12 +98,12 @@ class RestoreBackupUseCase(
             failures = failures,
         ).also { log("복원 완료: ${it.logText()}") }
     }.onFailure {
-        if (it is CancellationException) throw it
         logError("복원 중단", it)
     }
 
     private suspend fun restore(
         audio: MigrationAudioMedia,
+        secretIds: Set<Int>,
         staged: Set<MigrationFile>,
         lyrics: Map<String, String>,
     ): MigrationAudioMedia {
@@ -126,17 +128,17 @@ class RestoreBackupUseCase(
         return audio.copy(
             audioFileName = audioFileName,
             rawAudioDurationSeconds = duration,
-            imageFileName = audio.imageFileName?.let { stageThumbnail(audio, it, staged) },
+            imageFileName = audio.imageFileName?.let { stageThumbnail(audio, secretIds, it, staged) },
             lyricFileName = audio.lyricFileName?.let { stageLyric(it, lyrics, staged) },
         )
     }
 
-    private suspend fun stageThumbnail(audio: MigrationAudioMedia, imageFileName: String, staged: Set<MigrationFile>): String? {
+    private suspend fun stageThumbnail(audio: MigrationAudioMedia, secretIds: Set<Int>, imageFileName: String, staged: Set<MigrationFile>): String? {
         val base = baseNameOf(imageFileName) ?: return null
         staged.firstOrNull { it.kind == MigrationFileKind.IMAGE && it.baseName == base }?.let { return it.name }
         val videoId = YoutubeUrl.videoIdOf(audio.source) ?: return null
         val savedName = audioMediaRepository.saveThumbnail(thumbnailUrlOf(videoId), base)
-            .getOrElse { error -> return skip(error, "썸네일 받기 실패: ${audio.logText()}") }
+            .getOrElse { error -> return skip(error, "썸네일 받기 실패: ${audio.logText(secretIds)}") }
         val file = MigrationFile(MigrationFileKind.IMAGE, savedName)
         val path = dataMigrationRepository.resolveFilePath(file).getOrElse { error -> return skip(error, "썸네일 경로 실패: $savedName") }
         dataMigrationRepository.stageLocalFile(path, file).getOrElse { error ->
@@ -156,7 +158,6 @@ class RestoreBackupUseCase(
     }
 
     private fun skip(error: Throwable, message: String): String? {
-        if (error is CancellationException) throw error
         logError(message, error)
         return null
     }

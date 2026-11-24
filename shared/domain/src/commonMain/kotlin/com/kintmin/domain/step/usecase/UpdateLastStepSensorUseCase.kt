@@ -17,6 +17,6 @@ class UpdateLastStepSensorUseCase constructor(
         return stepRepository.updateLastStepSensor(lastStepSensor)
             .mapCatching { dateResult.getOrThrow() }
             // 센서 값이 바뀔 때마다 불려, 실패가 이어지면 걸음마다 Issue 가 쌓인다.
-            .onFailure { appLog.sendDebugLog(DebugLog("UpdateLastStepSensorUseCase", "마지막 걸음 센서 값 저장 실패: $it")) }
+            .onFailure { appLog.sendDebugLog(DebugLog("UpdateLastStepSensorUseCase", "마지막 걸음 센서 값 저장 실패: ${it.message ?: it::class.simpleName}")) }
     }
 }

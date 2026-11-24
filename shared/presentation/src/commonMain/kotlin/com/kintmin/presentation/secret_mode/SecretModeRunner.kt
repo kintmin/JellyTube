@@ -2,9 +2,13 @@ package com.kintmin.presentation.secret_mode
 
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.FetchPlaylistsByTypeUseCase
+import com.kintmin.domain.secret_mode.model.SecretModeEndReason
+import com.kintmin.domain.secret_mode.model.SecretModeStartReason
 import com.kintmin.domain.secret_mode.usecase.EndSecretModeUseCase
 import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
 import com.kintmin.domain.secret_mode.usecase.StartSecretModeUseCase
+import com.kintmin.log.AppLog
+import com.kintmin.log.model.DebugLog
 import com.kintmin.presentation.port.PlaybackController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -15,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -29,6 +34,7 @@ class SecretModeRunner(
     private val endSecretModeUseCase: EndSecretModeUseCase,
     private val fetchPlaylistsByTypeUseCase: FetchPlaylistsByTypeUseCase,
     private val fetchSecretAudioMediaIdListFlowUseCase: FetchSecretAudioMediaIdListFlowUseCase,
+    private val appLog: AppLog,
     private val clock: Clock = Clock.System,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
 ) {
@@ -38,34 +44,72 @@ class SecretModeRunner(
     private var endsAt: Instant? = null
     private var job: Job? = null
 
+    // 멈춰 둔 남은 시간. 멈춘 동안에도 화면은 이 값을 보여 준다 — null 로 두면 꺼진 것처럼 읽힌다.
+    private var pausedRemaining: Duration? = null
+
     /** 꺼져 있으면 null. */
     val remaining: Duration?
-        get() = endsAt?.let { (it - clock.now()).coerceAtLeast(Duration.ZERO) }
+        get() = pausedRemaining ?: endsAt?.let { (it - clock.now()).coerceAtLeast(Duration.ZERO) }
 
-    fun start(total: Duration) {
+    fun start(total: Duration, reason: SecretModeStartReason) {
+        pausedRemaining = null
         job?.cancel()
         endsAt = clock.now() + total
         job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            startSecretModeUseCase()
+            startSecretModeUseCase(total, reason)
             delay(total)
-            finish()
+            finish(SecretModeEndReason.TIMER)
+        }
+    }
+
+    /**
+     * 끊기면 안 되는 일이 도는 동안 시계를 멈춘다. 비밀모드가 꺼지면 화면 스택이 메인까지 걷히므로,
+     * 그 일을 하던 화면도 함께 닫혀 버린다.
+     *
+     * **멈춘 채로 두면 비밀모드가 영영 켜져 있다.** 부르는 쪽은 성공·실패·취소 어느 쪽으로 끝나든
+     * [resume] 해야 한다.
+     */
+    fun pause() {
+        if (pausedRemaining != null) return
+        val left = remaining ?: return
+        job?.cancel()
+        job = null
+        endsAt = null
+        pausedRemaining = left
+        log("비밀모드 시계 멈춤: 남은 ${left.inWholeSeconds}초")
+    }
+
+    fun resume() {
+        val left = pausedRemaining ?: return
+        pausedRemaining = null
+        endsAt = clock.now() + left
+        log("비밀모드 시계 다시 감: 남은 ${left.inWholeSeconds}초")
+        job = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            delay(left)
+            finish(SecretModeEndReason.TIMER)
         }
     }
 
     fun endIfExpired() {
         val deadline = endsAt ?: return
-        if (clock.now() >= deadline) end()
+        if (clock.now() >= deadline) end(SecretModeEndReason.EXPIRED_ON_RETURN)
     }
 
-    fun end() {
+    fun end(reason: SecretModeEndReason) {
         job?.cancel()
         // 끄는 것을 미루지 않는다. 다음 프레임에 비밀 화면이 그려지기 전에 꺼져 있어야 한다.
-        job = scope.launch(start = CoroutineStart.UNDISPATCHED) { finish() }
+        job = scope.launch(start = CoroutineStart.UNDISPATCHED) { finish(reason) }
     }
 
-    private suspend fun finish() {
+    private suspend fun finish(reason: SecretModeEndReason) {
+        // 잠든 사이 늦게 깬 delay 는 앱이 다시 보이기 전에 TIMER 로 끝낼 수 있어 늦음을 따로 남긴다.
+        endsAt?.let { deadline ->
+            val late = clock.now() - deadline
+            if (late >= 1.seconds) log("비밀모드 종료가 예정보다 ${late.inWholeSeconds}초 늦음")
+        }
         endsAt = null
-        endSecretModeUseCase()
+        pausedRemaining = null
+        endSecretModeUseCase(reason)
         removeSecretTracksFromQueue()
     }
 
@@ -73,7 +117,7 @@ class SecretModeRunner(
     // 같이 든 곡은 거기서 보이는 곡이라 건드리지 않는다.
     private suspend fun removeSecretTracksFromQueue() {
         val playlistId = playbackController.currentPlaylistId ?: return
-        if (isPlaylistOf(PlaylistType.SECRET, playlistId)) {
+        if (isSecretPlaylist(playlistId)) {
             playbackController.clearQueue()
         } else if (isPlaylistOf(PlaylistType.TOTAL, playlistId)) {
             val secretIds = fetchSecretAudioMediaIdListFlowUseCase().first().toSet()
@@ -86,7 +130,13 @@ class SecretModeRunner(
         }
     }
 
+    // 비밀 플레이리스트와 비밀 찜 둘 다. 어느 쪽에서 틀어도 큐에 비밀 곡만 들어 있다.
+    private suspend fun isSecretPlaylist(playlistId: Int): Boolean =
+        PlaylistType.entries.filter { it.isSecret }.any { isPlaylistOf(it, playlistId) }
+
     // 목록에서 찾는다. 재생 중인 플레이리스트가 지워졌으면 단건 조회는 값을 내지 않는다.
     private suspend fun isPlaylistOf(type: PlaylistType, playlistId: Int): Boolean =
         fetchPlaylistsByTypeUseCase(type).first().any { it.id == playlistId }
+
+    private fun log(message: String) = appLog.sendDebugLog(DebugLog("SecretMode", message))
 }

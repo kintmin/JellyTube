@@ -3,11 +3,13 @@ package com.kintmin.data.python_bridge
 import com.kintmin.data.python_bridge.model.PlayableAudioDownloadDto
 import com.kintmin.data.python_bridge.model.YoutubeDownloadDto
 import com.kintmin.data.python_bridge.model.withDefaults
+import com.kintmin.domain.common.suspendRunCatching
 
 interface IosPythonExecutorBridge {
     suspend fun downloadYoutubeMedia(
         youtubeUrl: String,
         audioDownloadPath: String,
+        isSecret: Boolean,
     ): YoutubeDownloadDto
 
     /** `download_youtube_audio.py` 의 `download_playable_audio`. 앱 프로세스 안에서 받는다. */
@@ -40,21 +42,23 @@ internal class IosPythonExecutorAdapter(
     override suspend fun downloadYoutubeMedia(
         youtubeUrl: String,
         audioDownloadPath: String,
-    ): Result<YoutubeDownloadDto> = runCatching {
+        isSecret: Boolean,
+    ): Result<YoutubeDownloadDto> = suspendRunCatching {
         bridge.downloadYoutubeMedia(
             youtubeUrl = youtubeUrl,
             audioDownloadPath = audioDownloadPath,
+            isSecret = isSecret,
         ).withDefaults()
     }
 
     override suspend fun downloadPlayableAudio(
         youtubeUrl: String,
         audioDownloadPath: String,
-    ): Result<PlayableAudioDownloadDto> = runCatching {
+    ): Result<PlayableAudioDownloadDto> = suspendRunCatching {
         bridge.downloadPlayableAudio(youtubeUrl = youtubeUrl, audioDownloadPath = audioDownloadPath)
     }
 
-    override suspend fun extractYoutubePlaylist(playlistUrl: String): Result<String> = runCatching {
+    override suspend fun extractYoutubePlaylist(playlistUrl: String): Result<String> = suspendRunCatching {
         bridge.extractYoutubePlaylist(playlistUrl).first()
     }
 }

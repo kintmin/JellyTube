@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +43,7 @@ import com.kintmin.presentation.ui.common.AudioArtwork
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import com.kintmin.presentation.ui.common.SectionHeader
+import com.kintmin.presentation.ui.common.imeAwareContentWindowInsets
 import com.kintmin.presentation.ui.common.UnderlineTextField
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import org.koin.compose.viewmodel.koinViewModel
@@ -107,6 +109,7 @@ fun AudioMediaInformationEditScreen(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = imeAwareContentWindowInsets,
         topBar = {
             DetailTopAppBar(
                 title = "음원 정보 수정",
@@ -164,19 +167,6 @@ fun AudioMediaInformationEditScreen(
                         maxLength = AudioMediaTextLimit.MAX_ARTIST_LENGTH,
                         singleLine = true,
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    UnderlineTextField(
-                        label = "설명",
-                        value = audioMediaDescription,
-                        onValueChange = { newText ->
-                            audioMediaDescription = newText
-                            sendIntent(AudioMediaInformationEditIntent.OnAudioMediaDescriptionChanged(newText))
-                        },
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        placeholder = "설명 추가",
-                        maxLength = AudioMediaTextLimit.MAX_DESCRIPTION_LENGTH,
-                        singleLine = false,
-                    )
                 }
             }
             item {
@@ -210,6 +200,25 @@ fun AudioMediaInformationEditScreen(
                             )
                         }
                     },
+                )
+            }
+            item {
+                HorizontalDivider(
+                    modifier = Modifier.padding(top = 24.dp, start = 16.dp, end = 16.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+                UnderlineTextField(
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 24.dp),
+                    label = "설명",
+                    value = audioMediaDescription,
+                    onValueChange = { newText ->
+                        audioMediaDescription = newText
+                        sendIntent(AudioMediaInformationEditIntent.OnAudioMediaDescriptionChanged(newText))
+                    },
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    placeholder = "설명 추가",
+                    maxLength = AudioMediaTextLimit.MAX_DESCRIPTION_LENGTH,
+                    singleLine = false,
                 )
             }
         }

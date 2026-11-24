@@ -8,6 +8,7 @@ import com.kintmin.domain.backup.model.BackupFolderNotRegisteredException
 import com.kintmin.domain.backup.model.BackupFolderUnavailableException
 import com.kintmin.domain.backup.model.BackupOutcome
 import com.kintmin.domain.backup.repository.BackupRepository
+import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.model.MigrationDownloadSettings
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileKind
@@ -16,7 +17,6 @@ import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.flow.first
-import kotlin.coroutines.cancellation.CancellationException
 
 class BackupNowUseCase(
     private val backupRepository: BackupRepository,
@@ -25,12 +25,12 @@ class BackupNowUseCase(
     private val appSettingRepository: AppSettingRepository,
     private val appLog: AppLog,
 ) {
-    suspend operator fun invoke(nowMillis: Long): Result<BackupOutcome> = runCatching {
+    suspend operator fun invoke(nowMillis: Long): Result<BackupOutcome> = suspendRunCatching {
         if (backupRepository.getStatusFlow().first().folder == null) throw BackupFolderNotRegisteredException()
         val snapshot = dataMigrationRepository.fetchSnapshot().getOrThrow()
         if (snapshot.audioMedias.isEmpty()) {
             log("음원이 없어 백업을 쓰지 않음")
-            return@runCatching BackupOutcome.SKIPPED_EMPTY
+            return@suspendRunCatching BackupOutcome.SKIPPED_EMPTY
         }
         val lyrics = snapshot.audioMedias.mapNotNull { it.lyricFileName }.distinct().mapNotNull { name ->
             val path = dataMigrationRepository.resolveFilePath(MigrationFile(MigrationFileKind.LYRIC, name)).getOrNull()
@@ -61,7 +61,6 @@ class BackupNowUseCase(
         log("백업 완료: ${written.sizeBytes}B")
         BackupOutcome.WRITTEN
     }.onFailure {
-        if (it is CancellationException) throw it
         logError("백업 실패", it)
     }
 

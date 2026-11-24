@@ -9,6 +9,7 @@ import com.kintmin.domain.data_migration.model.MigrationExport
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileEntry
 import com.kintmin.domain.data_migration.model.MigrationFileKind
+import com.kintmin.domain.data_migration.model.MigrationScope
 import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.repository.MigrationSendServerRepository
 import com.kintmin.domain.data_migration.usecase.ExportMigrationDataUseCase
@@ -43,6 +44,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import kotlinx.coroutines.flow.flowOf
 
 class MigrationRoutesTest {
 
@@ -58,7 +60,9 @@ class MigrationRoutesTest {
     private fun migrationSendHandler(): MigrationSendHandler {
         val handler = slot<MigrationSendHandler>()
         val repository = mockk<MigrationSendServerRepository> { every { open(capture(handler)) } just Runs }
-        OpenMigrationSendUseCase(repository, cleanupUseCase, exportUseCase, resolvePathUseCase, mockk(relaxed = true))()
+        OpenMigrationSendUseCase(repository, cleanupUseCase, exportUseCase, resolvePathUseCase, mockk(relaxed = true))(
+            MigrationScope.Everything(includesSecret = false),
+        )
         return handler.captured
     }
     private var session: MigrationSession? = MigrationSession(code = CODE, generateToken = { TOKEN })
@@ -67,7 +71,7 @@ class MigrationRoutesTest {
 
     private fun serverTest(block: suspend ApplicationTestBuilder.() -> Unit) = testApplication {
         val audioPath = tempFolder.newFile("a.m4a").apply { writeBytes(byteArrayOf(1, 2, 3)) }.absolutePath
-        coEvery { exportUseCase() } returns Result.success(
+        coEvery { exportUseCase(any()) } returns Result.success(
             MigrationExport(
                 snapshot = MigrationSnapshot(emptyList(), emptyList(), emptyList(), emptyList(), emptyList()),
                 files = listOf(MigrationFileEntry(audioFile, size = 3)),
@@ -85,6 +89,8 @@ class MigrationRoutesTest {
                     validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
                     updateAudioMedia = mockk(),
                     saveAudioMediaImage = mockk(),
+                    playlistRepository = mockk { coEvery { getPlaylist(any()) } returns Result.failure(Exception()) },
+                    audioTrackRepository = mockk { every { getSecretAudioMediaIdListFlow() } returns flowOf(emptyList()) },
                     appLog = mockk(relaxed = true),
                 ).invoke {},
                 appLog = mockk(relaxed = true),
@@ -163,7 +169,7 @@ class MigrationRoutesTest {
 
         coVerifyOrder {
             cleanupUseCase()
-            exportUseCase()
+            exportUseCase(any())
         }
 
         val response = file("AUDIO", "a.m4a", TOKEN)
@@ -236,6 +242,19 @@ class MigrationRoutesTest {
         assertEquals(HttpStatusCode.Unauthorized, unauthorized.status)
         assertEquals(HttpStatusCode.OK, response.status)
         assertEquals(MigrationFinishRequest(newAudioMediaCount = 3, failedCount = 1), finished)
+    }
+
+    @Test
+    fun `받지 않기 알림은 토큰이 있어야 하고 같은 코드로 다시 페어링하게 한다`() = serverTest {
+        pair(CODE)
+
+        val unauthorized = client.post(FileShareConstants.MIGRATION_DECLINE_PATH)
+        val response = client.post(FileShareConstants.MIGRATION_DECLINE_PATH) { bearerAuth(TOKEN) }
+
+        assertEquals(HttpStatusCode.Unauthorized, unauthorized.status)
+        assertEquals(HttpStatusCode.OK, response.status)
+        assertEquals(HttpStatusCode.Unauthorized, manifest(TOKEN).status)
+        assertEquals(HttpStatusCode.OK, pair(CODE).status)
     }
 
     private companion object {

@@ -28,6 +28,16 @@ class MigrationSessionHolderTest {
     }
 
     @Test
+    fun `받는 기기가 받지 않기로 하면 같은 코드의 대기로 돌아간다`() {
+        val session = MigrationSessionHolder.open()
+        session.pair(session.code, "iPhone")
+
+        session.unpair()
+
+        assertEquals(DataMigrationSendStatus.WaitingForPair(session.code), MigrationSessionHolder.state.value)
+    }
+
+    @Test
     fun `코드를 여러 번 틀리면 잠기고 세션을 비운다`() {
         val session = MigrationSessionHolder.open()
 
