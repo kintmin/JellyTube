@@ -298,8 +298,14 @@ jobs:
           min_os=$(sed -n 's/.*IPHONEOS_DEPLOYMENT_TARGET = \(.*\);/\1/p' "$pbxproj" | sort -uV | tail -n1)
           [[ -n "$code" && -n "$bundle_id" && -n "$min_os" ]] || { echo "::error::source.json 에 넣을 값을 읽지 못했다"; exit 1; }
           release=$(gh release view "$TAG" --json body,publishedAt,assets)
+          # 직전 mobile 릴리스의 source.json 에 쌓인 버전을 이어받는다. 없으면 이번 버전부터 시작한다.
+          previous=$(git tag -l 'mobile/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
+          old='[]'
+          if [[ -n "$previous" ]] && gh release download "$previous" --pattern source.json --output previous.json 2>/dev/null; then
+            old=$(jq -c '.apps[0].versions // []' previous.json)
+          fi
           jq -n \
-            --argjson release "$release" \
+            --argjson release "$release" --argjson old "$old" \
             --arg repo "$GITHUB_REPOSITORY" --arg sha "$GITHUB_SHA" \
             --arg version "$VERSION" --arg code "$code" \
             --arg bundle_id "$bundle_id" --arg min_os "$min_os" '
@@ -313,7 +319,7 @@ jobs:
                 developerName: "kintmin",
                 localizedDescription: "JellyTube",
                 iconURL: "https://raw.githubusercontent.com/\($repo)/\($sha)/ios/app/JellyTubeIos/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png",
-                versions: [{
+                versions: ([{
                   version: $version,
                   buildVersion: $code,
                   date: $release.publishedAt,
@@ -321,7 +327,7 @@ jobs:
                   downloadURL: $ipa.url,
                   size: $ipa.size,
                   minOSVersion: $min_os
-                }],
+                }] + ($old | map(select(.version != $version)))),
                 appPermissions: { entitlements: [], privacy: {} }
               }],
               news: []
