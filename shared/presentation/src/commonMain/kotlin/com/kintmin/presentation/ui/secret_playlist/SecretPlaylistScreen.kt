@@ -32,8 +32,10 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkAccentFallback
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.SectionHeader
+import com.kintmin.presentation.ui.common.rememberArtworkAccentColor
 import com.kintmin.presentation.ui.common.wheel_picker.NumberWheelPicker
 import com.kintmin.presentation.ui.main.bottom_sheet.PlaylistReorderBottomSheet
 import com.kintmin.presentation.ui.main.playlist.PlaylistEmptyView
@@ -103,6 +105,10 @@ fun SecretPlaylistScreen(
     sendPlayerBarIntent: (PlayerBarIntent) -> Unit,
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    // 재생 위치까지 든 playerBar 를 행 람다에서 읽으면 폴링마다 보이는 행이 전부 다시 그려진다.
+    val nowPlayingPlaylistId = playerBar.playlistId
+    val isPlaybackPlaying = playerBar.isPlaying
+    val accentColor = rememberArtworkAccentColor(playerBar.imageFileFullPath) ?: artworkAccentFallback
 
     PlaylistAddDialog(
         showDialog = showAddDialog,
@@ -200,6 +206,9 @@ fun SecretPlaylistScreen(
                     PlaylistLibraryBlockView(
                         modifier = Modifier.fillMaxWidth(),
                         data = listOf(secretFavorite),
+                        nowPlayingPlaylistId = nowPlayingPlaylistId,
+                        isPlaying = isPlaybackPlaying,
+                        accentColor = accentColor,
                         sendIntent = { sendIntent(SecretPlaylistIntent.OnPlaylistIntent(it)) },
                     )
                 }
@@ -238,6 +247,9 @@ fun SecretPlaylistScreen(
                     PlaylistItemView(
                         modifier = Modifier,
                         data = uiState.playlists[index],
+                        isNowPlaying = uiState.playlists[index].id == nowPlayingPlaylistId,
+                        isPlaying = isPlaybackPlaying,
+                        accentColor = accentColor,
                         sendIntent = { sendIntent(SecretPlaylistIntent.OnPlaylistIntent(it)) },
                     )
                 }

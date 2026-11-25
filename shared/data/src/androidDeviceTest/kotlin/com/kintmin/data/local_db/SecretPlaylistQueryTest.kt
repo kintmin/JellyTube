@@ -117,6 +117,21 @@ class SecretPlaylistQueryTest {
     }
 
     @Test
+    fun 전체의_썸네일도_첫_곡이_고른_것을_따라간다() = runTest {
+        facade.ensureSystemPlaylists()
+        val visible = addAudioMedia("visible")
+
+        facade.applyCustomImage(visible, "고른것.webp")
+
+        // 이 규칙은 Kotlin 과 "전체" 를 읽는 SQL 두 자리에 있다. 어긋나면 여기서 갈린다.
+        assertEquals("고른것.webp", db.playlistDao().getPlaylistFlow(totalId()).first()!!.imageFileNameWithExt)
+
+        facade.clearCustomImage(visible)
+
+        assertEquals("visible.webp", db.playlistDao().getPlaylistFlow(totalId()).first()!!.imageFileNameWithExt)
+    }
+
+    @Test
     fun 비밀_곡을_보이게_하면_전체에_모두_나오고_다른_플레이리스트와_원본_값은_그대로다() = runTest {
         facade.ensureSystemPlaylists()
         val secret = addAudioMedia("secret", 40)

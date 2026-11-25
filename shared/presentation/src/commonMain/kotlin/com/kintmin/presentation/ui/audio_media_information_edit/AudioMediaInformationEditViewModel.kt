@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.kintmin.domain.audio_media.usecase.ResetAudioMediaImageUseCase
+import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.AddAudioMediaListToPlaylistUseCase
 import com.kintmin.domain.audio_track.usecase.DeleteAudioTrackListUseCase
@@ -12,8 +14,11 @@ import com.kintmin.domain.playlist.usecase.FetchAllPlaylistFlowUseCase
 import com.kintmin.presentation.ui.audio_media_detail.navigation.AudioMediaDetailScreenRoute
 import com.kintmin.presentation.util.Debounce
 import com.kintmin.presentation.util.Throttle
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -27,9 +32,14 @@ class AudioMediaInformationEditViewModel constructor(
     private val updateAudioMediaUseCase: UpdateAudioMediaUseCase,
     private val deleteAudioTrackListUseCase: DeleteAudioTrackListUseCase,
     private val addAudioMediaListToPlaylistUseCase: AddAudioMediaListToPlaylistUseCase,
+    private val updateAudioMediaImageUseCase: UpdateAudioMediaImageUseCase,
+    private val resetAudioMediaImageUseCase: ResetAudioMediaImageUseCase,
 ) : ViewModel() {
 
     private val audioMediaId = savedStateHandle.toRoute<AudioMediaDetailScreenRoute>().audioMediaId
+
+    private val _eventChannel = Channel<AudioMediaInformationEditEvent>(Channel.BUFFERED)
+    val eventFlow: Flow<AudioMediaInformationEditEvent> = _eventChannel.receiveAsFlow()
 
     private val nameDebounce = Debounce(200)
     private val artistDebounce = Debounce(200)
@@ -37,6 +47,7 @@ class AudioMediaInformationEditViewModel constructor(
 
     private val deleteThrottle = Throttle(500)
     private val addThrottle = Throttle(500)
+    private val imageThrottle = Throttle(500)
     private val isAddPlaylistBottomSheetVisible = MutableStateFlow(false)
 
     val uiState: StateFlow<AudioMediaInformationEditUiState> = combine(
@@ -81,6 +92,30 @@ class AudioMediaInformationEditViewModel constructor(
             AudioMediaInformationEditIntent.OnClickShowAddPlaylistBottomSheet -> isAddPlaylistBottomSheetVisible.value = true
             AudioMediaInformationEditIntent.OnDismissAddPlaylistBottomSheet -> isAddPlaylistBottomSheetVisible.value = false
             is AudioMediaInformationEditIntent.OnClickAddLinkedPlaylist -> addLinkedPlaylist(intent.playlistId)
+            is AudioMediaInformationEditIntent.OnPickAudioMediaImage -> updateAudioMediaImage(intent.imageData)
+            AudioMediaInformationEditIntent.OnClickResetAudioMediaImage -> resetAudioMediaImage()
+        }
+    }
+
+    private fun updateAudioMediaImage(imageData: ByteArray) {
+        viewModelScope.launch {
+            imageThrottle {
+                updateAudioMediaImageUseCase(id = audioMediaId, imageData = imageData).onFailure {
+                    _eventChannel.send(
+                        AudioMediaInformationEditEvent.ShowToast("사진을 불러오지 못했습니다. 다른 사진을 골라 주세요.")
+                    )
+                }
+            }
+        }
+    }
+
+    private fun resetAudioMediaImage() {
+        viewModelScope.launch {
+            imageThrottle {
+                resetAudioMediaImageUseCase(id = audioMediaId).onFailure {
+                    _eventChannel.send(AudioMediaInformationEditEvent.ShowToast("기본 썸네일로 되돌리지 못했습니다."))
+                }
+            }
         }
     }
 

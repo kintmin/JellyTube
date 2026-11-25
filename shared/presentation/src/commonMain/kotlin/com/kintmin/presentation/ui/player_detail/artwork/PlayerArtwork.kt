@@ -18,8 +18,10 @@ import coil3.compose.asPainter
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.size.Scale
-import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.theme.artworkBackdropFallback
+import com.kintmin.presentation.theme.darken
+import com.kintmin.presentation.theme.lighten
+import com.kintmin.presentation.ui.common.artworkDominantColorArgb
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import okio.Path.Companion.toPath
@@ -37,6 +39,10 @@ class PlayerArtwork(
 /** 첫 값, 그리고 같은 곡을 칸 크기만 바꿔 다시 읽은 값은 애니메이션 없이 바로 붙인다. */
 fun Transition.Segment<PlayerArtwork?>.isInstant(): Boolean =
     initialState == null || initialState?.imageFileFullPath == targetState?.imageFileFullPath
+
+/** 들고 있는 값이 지금 곡의 것인지. 읽기가 끝나기 전에는 이전 곡 그림이 들어 있다. */
+fun PlayerArtwork?.isFor(imageFileFullPath: String?): Boolean =
+    this != null && this.imageFileFullPath == imageFileFullPath
 
 /**
  * 곡이 바뀌어도 새 그림을 다 읽을 때까지 이전 값을 돌려준다. 첫 값이 오기 전에는 null 이다.
@@ -84,32 +90,11 @@ private suspend fun loadPlayerArtwork(
 }
 
 private suspend fun extractGradientFromArtwork(path: String): List<Color>? {
-    val seed = Color(extractDominantColor(path) ?: return null)
+    val seed = Color(artworkDominantColorArgb(path) ?: return null)
 
     return listOf(
         seed.lighten(0.2f),
         seed.darken(0.55f),
         seed.darken(0.82f),
-    )
-}
-
-private fun Color.lighten(factor: Float): Color {
-    val safe = factor.coerceIn(0f, 1f)
-    return Color(
-        red = red + (1f - red) * safe,
-        green = green + (1f - green) * safe,
-        blue = blue + (1f - blue) * safe,
-        alpha = 1f,
-    )
-}
-
-private fun Color.darken(factor: Float): Color {
-    val safe = factor.coerceIn(0f, 1f)
-    val mul = 1f - safe
-    return Color(
-        red = red * mul,
-        green = green * mul,
-        blue = blue * mul,
-        alpha = 1f,
     )
 }

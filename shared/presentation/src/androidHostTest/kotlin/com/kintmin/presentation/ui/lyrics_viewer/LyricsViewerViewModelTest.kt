@@ -23,9 +23,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -49,6 +53,7 @@ class LyricsViewerViewModelTest {
 
     private var playing: MediaControlData? = mediaControlData(audioMediaId.toString())
     private var isPlaying = true
+    private var position = 1_500L
 
     private var parsedLines: List<LyricsLine> = listOf(
         LyricsLine(timeMs = 1_000L, text = "첫 줄"),
@@ -58,7 +63,8 @@ class LyricsViewerViewModelTest {
     private val controller = mockk<PlaybackController>(relaxed = true) {
         every { this@mockk.isPlaying } answers { this@LyricsViewerViewModelTest.isPlaying }
         every { playingMediaItem } answers { playing }
-        every { currentPosition } returns 1_500L
+        every { currentPosition } answers { position }
+        every { playbackSpeed } returns 1f
     }
 
     private val aggregate = mockk<PlaylistTrackAggregate>(relaxed = true) {
@@ -134,6 +140,32 @@ class LyricsViewerViewModelTest {
 
         assertFalse(viewModel.uiState.value.canSeek)
         verify(exactly = 0) { controller.seek(any()) }
+    }
+
+    @Test
+    fun `다음 줄이 폴링 사이에 오면 그 시각에 활성 줄이 넘어간다`() = runTest {
+        position = 4_900L
+        val viewModel = viewModel()
+        viewModel.sendIntent(LyricsViewerIntent.OnRefreshPosition)
+        assertEquals(0, viewModel.uiState.value.activeIndex)
+
+        advanceTimeBy(100)
+        runCurrent()
+
+        assertEquals(1, viewModel.uiState.value.activeIndex)
+    }
+
+    @Test
+    fun `멈춘 동안에는 다음 줄로 넘어가지 않는다`() = runTest {
+        position = 4_900L
+        val viewModel = viewModel()
+        viewModel.sendIntent(LyricsViewerIntent.OnRefreshPosition)
+
+        isPlaying = false
+        advanceTimeBy(100)
+        runCurrent()
+
+        assertEquals(0, viewModel.uiState.value.activeIndex)
     }
 
     @Test

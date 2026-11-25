@@ -14,6 +14,9 @@ interface PlaybackController {
     fun playPrevious()
     fun playNext()
 
+    /** 반복 중이면 마지막 곡에서도 참이다. */
+    val hasNext: Boolean
+
     val playingMediaItem: MediaControlData?
     val currentPlaylistId: Int?
     val currentPosition: Long?

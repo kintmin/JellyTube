@@ -84,7 +84,8 @@ class PlaybackControllerImpl(
 
     override fun playPrevious() {
         val mediaController = getMediaController() ?: return
-        mediaController.seekToPreviousMediaItem()
+        // 앞부분을 지났으면 곡 처음으로 간다. 알림·잠금 화면의 이전 버튼과 같은 규칙이다.
+        mediaController.seekToPrevious()
         if (!mediaController.isPlaying) {
             mediaController.play()
         }
@@ -97,6 +98,9 @@ class PlaybackControllerImpl(
             mediaController.play()
         }
     }
+
+    override val hasNext: Boolean
+        get() = getMediaController()?.hasNextMediaItem() ?: false
 
     override val playingMediaItem: MediaControlData?
         get() = getMediaController()?.currentMediaItem?.toMediaControlData()
@@ -138,11 +142,12 @@ class PlaybackControllerImpl(
         startMediaId: Int?,
         mediaControlDataList: List<MediaControlData>,
     ): Result<Unit> = runCatching {
-        // 큐가 바깥에서 줄었을 수 있다(비밀모드 종료). 순서만 바뀐 큐는 그대로 이어 듣는다.
-        val isStartMissing = startMediaId != null && findMediaItem(startMediaId).isFailure
-        if (currentPlaylistIdState != playlistId || isStartMissing) {
+        if (currentPlaylistIdState != playlistId) {
             currentPlaylistIdState = playlistId
             resetMediaItemList(mediaControlDataList).getOrThrow()
+        } else if (queuedMediaIds() != mediaControlDataList.map { it.mediaId }) {
+            // 듣는 동안 목록이 바뀌었다(곡 추가·순서 변경·비밀모드 종료). 새로 깔면 듣던 곡이 끊긴다.
+            syncMediaItemList(mediaControlDataList).getOrThrow()
         }
 
         playbackPlaylist(startMediaId).getOrThrow()
@@ -262,6 +267,28 @@ class PlaybackControllerImpl(
         mediaController.setMediaItems(audioMediaList.map {
             it.toMediaItem()
         })
+    }
+
+    /** 지금 곡은 그대로 두고 앞뒤만 목록대로 바꾼다. 지금 곡이 목록에 없으면 새로 깐다. */
+    private fun syncMediaItemList(audioMediaList: List<MediaControlData>) = runCatching {
+        val mediaController = getMediaController() ?: return@runCatching
+        val keepIndex = audioMediaList.indexOfFirst { it.mediaId == mediaController.currentMediaItem?.mediaId }
+        if (keepIndex < 0) {
+            resetMediaItemList(audioMediaList).getOrThrow()
+            return@runCatching
+        }
+
+        val mediaItems = audioMediaList.map { it.toMediaItem() }
+        val currentIndex = mediaController.currentMediaItemIndex
+        mediaController.removeMediaItems(currentIndex + 1, mediaController.mediaItemCount)
+        mediaController.removeMediaItems(0, currentIndex)
+        mediaController.addMediaItems(0, mediaItems.subList(0, keepIndex))
+        mediaController.addMediaItems(mediaItems.subList(keepIndex + 1, mediaItems.size))
+    }
+
+    private fun queuedMediaIds(): List<String> {
+        val mediaController = getMediaController() ?: return emptyList()
+        return (0 until mediaController.mediaItemCount).map { mediaController.getMediaItemAt(it).mediaId }
     }
 
     private fun seekMediaItem(startMediaId: Int) = runCatching {

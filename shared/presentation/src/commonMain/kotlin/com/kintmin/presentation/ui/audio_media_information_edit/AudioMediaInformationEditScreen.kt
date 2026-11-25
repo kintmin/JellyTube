@@ -39,8 +39,10 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionRowView
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionUnlinkButton
 import com.kintmin.presentation.ui.audio_media_information_edit.dialog.RemoveLinkedPlaylistDialog
-import com.kintmin.presentation.ui.common.AudioArtwork
+import com.kintmin.presentation.platform.rememberImagePicker
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.ui.common.DetailTopAppBar
+import com.kintmin.presentation.ui.common.EditableArtwork
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
 import com.kintmin.presentation.ui.common.SectionHeader
 import com.kintmin.presentation.ui.common.imeAwareContentWindowInsets
@@ -55,9 +57,22 @@ fun AudioMediaInformationEditScreen(
     val mainViewModel = koinViewModel<AudioMediaInformationEditViewModel>()
 
     val data by mainViewModel.uiState.collectAsState()
+    val toaster = rememberToaster()
+    val imagePicker = rememberImagePicker { imageData ->
+        mainViewModel.sendIntent(AudioMediaInformationEditIntent.OnPickAudioMediaImage(imageData))
+    }
+
+    LaunchedEffect(Unit) {
+        mainViewModel.eventFlow.collect { event ->
+            when (event) {
+                is AudioMediaInformationEditEvent.ShowToast -> toaster.show(event.message)
+            }
+        }
+    }
 
     AudioMediaInformationEditScreen(
         navigateToBack = navigateToBack,
+        onClickPickImage = { imagePicker.launch() },
         data = data,
         sendIntent = mainViewModel::sendIntent,
     )
@@ -67,6 +82,7 @@ fun AudioMediaInformationEditScreen(
 @Composable
 fun AudioMediaInformationEditScreen(
     navigateToBack: () -> Unit,
+    onClickPickImage: () -> Unit,
     data: AudioMediaInformationEditUiState,
     sendIntent: (AudioMediaInformationEditIntent) -> Unit,
 ) {
@@ -123,14 +139,18 @@ fun AudioMediaInformationEditScreen(
                 .fillMaxSize(),
         ) {
             item {
-                AudioArtwork(
+                EditableArtwork(
                     imageFileFullPath = data.imageFileFullPath,
+                    isCustomImage = data.isCustomImage,
+                    onClickPickImage = onClickPickImage,
+                    onClickResetImage = {
+                        sendIntent(AudioMediaInformationEditIntent.OnClickResetAudioMediaImage)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
                         .height(220.dp)
                         .background(MaterialTheme.colorScheme.surface),
-                    placeholderIconSize = 36.dp,
                 )
             }
             item {
@@ -272,6 +292,7 @@ fun AudioMediaInformationEditScreenPreview() {
     JellyTubeTheme {
         AudioMediaInformationEditScreen(
             navigateToBack = {},
+            onClickPickImage = {},
             data = AudioMediaInformationEditUiState.getMock(),
             sendIntent = {},
         )

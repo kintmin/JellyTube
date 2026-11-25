@@ -43,11 +43,17 @@ interface AudioMediaRepository {
         name: String? = null,
         artist: String? = null,
         description: String? = null,
-        imageFileFullPath: String? = null,
         lyricFileFullPath: String? = null,
     ): Result<Unit>
 
-    suspend fun saveImage(imageData: ByteArray): Result<String>
+    /** 사용자가 고른 썸네일로 바꾼다. 정본은 남겨 되돌릴 수 있게 한다. */
+    suspend fun setCustomImage(id: Int, imageData: ByteArray): Result<Unit>
+
+    /** 고른 썸네일을 떼어 정본으로 되돌린다. */
+    suspend fun clearCustomImage(id: Int): Result<Unit>
+
+    /** 정본을 다시 정한다. 고른 썸네일이 있으면 함께 뗀다. */
+    suspend fun replaceImage(id: Int, imageData: ByteArray): Result<Unit>
 
     suspend fun updateKaraokeNumber(id: Int, tjKaraokeNumber: String): Result<Unit>
 

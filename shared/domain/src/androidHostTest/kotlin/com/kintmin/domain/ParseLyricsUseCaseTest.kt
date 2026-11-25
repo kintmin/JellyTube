@@ -2,6 +2,7 @@ package com.kintmin.domain
 
 import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
+import com.kintmin.domain.lyrics.usecase.nextLyricTimeMs
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -75,5 +76,20 @@ class ParseLyricsUseCaseTest {
     fun `비싱크 가사는 활성 인덱스가 항상 -1`() {
         val lines = useCase("가사 한 줄\n가사 두 줄")
         assertEquals(-1, activeLyricIndex(lines, 5000))
+    }
+
+    @Test
+    fun `현재 위치 뒤에 오는 첫 줄의 시각을 찾는다`() {
+        val lines = useCase("[00:01.00] a\n[00:03.00] b\n[00:05.00] c")
+
+        assertEquals(1000L, nextLyricTimeMs(lines, 500))
+        assertEquals(3000L, nextLyricTimeMs(lines, 1000))  // 경계의 줄은 이미 활성이다
+        assertNull(nextLyricTimeMs(lines, 5000))           // 마지막 줄 이후
+    }
+
+    @Test
+    fun `비싱크 가사는 다음 줄 시각이 없다`() {
+        val lines = useCase("가사 한 줄\n가사 두 줄")
+        assertNull(nextLyricTimeMs(lines, 0))
     }
 }

@@ -16,7 +16,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkAccentFallback
 import com.kintmin.presentation.ui.common.SectionHeader
+import com.kintmin.presentation.ui.common.rememberArtworkAccentColor
 import com.kintmin.presentation.ui.main.playlist.dialog.PlaylistAddDialog
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistAddButtonView
 import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistItemView
@@ -27,8 +29,13 @@ import com.kintmin.presentation.ui.main.playlist.list_item.PlaylistReorderAction
 fun PlaylistView(
     modifier: Modifier,
     data: List<PlaylistItemUiState>,
+    nowPlayingPlaylistId: Int?,
+    isPlaybackPlaying: Boolean,
+    nowPlayingImageFileFullPath: String?,
     sendIntent: (PlaylistIntent) -> Unit,
 ) {
+    // 빛은 플레이리스트 표지가 아니라 지금 곡의 앨범아트 색이다. 재생바·곡 목록과 같은 색이 된다.
+    val accentColor = rememberArtworkAccentColor(nowPlayingImageFileFullPath) ?: artworkAccentFallback
     val libraryItems = data.filter { it.isBasePlaylist }
     val userItems = data.filterNot { it.isBasePlaylist }
     // 입구가 둘(머리말·빈 상태)이라 다이얼로그는 여기 한 벌만 둔다.
@@ -60,6 +67,9 @@ fun PlaylistView(
             PlaylistLibraryBlockView(
                 modifier = Modifier.fillMaxWidth(),
                 data = libraryItems,
+                nowPlayingPlaylistId = nowPlayingPlaylistId,
+                isPlaying = isPlaybackPlaying,
+                accentColor = accentColor,
                 sendIntent = sendIntent,
             )
         }
@@ -96,6 +106,9 @@ fun PlaylistView(
                 PlaylistItemView(
                     modifier = Modifier,
                     data = userItems[index],
+                    isNowPlaying = userItems[index].id == nowPlayingPlaylistId,
+                    isPlaying = isPlaybackPlaying,
+                    accentColor = accentColor,
                     sendIntent = sendIntent,
                 )
             }
@@ -110,6 +123,9 @@ fun PlaylistPreview() {
         PlaylistView(
             modifier = Modifier.fillMaxSize(),
             PlaylistItemUiState.getMockList(),
+            nowPlayingPlaylistId = 1,
+            isPlaybackPlaying = true,
+            nowPlayingImageFileFullPath = null,
             sendIntent = {},
         )
     }

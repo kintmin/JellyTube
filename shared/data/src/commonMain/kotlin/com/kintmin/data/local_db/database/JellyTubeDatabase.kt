@@ -21,7 +21,7 @@ import com.kintmin.data.local_db.model.*
         AudioEditProjectEntity::class,
     ],
     exportSchema = true,
-    version = 7,
+    version = 8,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -33,6 +33,8 @@ import com.kintmin.data.local_db.model.*
         //  - AUDIO_MEDIA에 editedAudioFileNameWithExt, editedAudioDurationSeconds 컬럼(nullable) 추가
         //  - 편집 상태를 담는 AUDIO_EDIT_PROJECT 테이블 추가(AUDIO_MEDIA와 1:1, 삭제 시 CASCADE)
         AutoMigration(from = 6, to = 7),
+        // 7 -> 8: AUDIO_MEDIA에 customImageFileNameWithExt 컬럼(nullable) 추가
+        AutoMigration(from = 7, to = 8),
     ],
 )
 @ConstructedBy(JellyTubeDatabaseConstructor::class)

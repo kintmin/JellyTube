@@ -14,13 +14,18 @@ import com.kintmin.presentation.port.model.MediaControlData
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -29,6 +34,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
@@ -159,6 +165,34 @@ class PlayerDetailViewModelTest {
         assertEquals(null, viewModel.uiState.value.sleepTimerRemaining)
     }
 
+    // ---- 이전·다음 ----
+
+    @Test
+    fun `이전을 눌러도 구간반복을 지우지 않는다`() {
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton)
+
+        verify(exactly = 1) { manager.playPrevious() }
+        verify(exactly = 0) { manager.clearRepeatRange() }
+    }
+
+    @Test
+    fun `다음 곡이 없어지면 다음 버튼을 막고 생기면 푼다`() {
+        every { manager.hasNext } returns true
+        val viewModel = viewModel()
+        assertTrue(viewModel.uiState.value.hasNext)
+
+        every { manager.hasNext } returns false
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+        assertFalse(viewModel.uiState.value.hasNext)
+
+        every { manager.hasNext } returns true
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+        assertTrue(viewModel.uiState.value.hasNext)
+    }
+
     // ---- 가사 세 상태 ----
 
     @Test
@@ -181,6 +215,54 @@ class PlayerDetailViewModelTest {
         assertEquals(-1, viewModel.uiState.value.activeLyricIndex)
         assertEquals("", viewModel.uiState.value.currentLyricLine)
         assertEquals(2, viewModel.uiState.value.lyricLines.size)
+    }
+
+    @Test
+    fun `다음 줄이 폴링 사이에 오면 그 시각에 활성 줄이 넘어간다`() = runTest {
+        givenSyncedLyrics()
+        every { manager.currentPosition } returns 4_900L
+        every { manager.isPlaying } returns true
+        every { manager.playbackSpeed } returns 1f
+        val viewModel = viewModel()
+        assertEquals(1, viewModel.uiState.value.activeLyricIndex)
+
+        advanceTimeBy(100)
+        runCurrent()
+
+        assertEquals(2, viewModel.uiState.value.activeLyricIndex)
+    }
+
+    @Test
+    fun `멈춘 동안에는 다음 줄로 넘어가지 않는다`() = runTest {
+        givenSyncedLyrics()
+        every { manager.currentPosition } returns 4_900L
+        every { manager.isPlaying } returns true
+        every { manager.playbackSpeed } returns 1f
+        val viewModel = viewModel()
+
+        every { manager.isPlaying } returns false
+        advanceTimeBy(100)
+        runCurrent()
+
+        assertEquals(1, viewModel.uiState.value.activeLyricIndex)
+    }
+
+    @Test
+    fun `줄을 눌러 옮기면 옮기기 전에 잡힌 다음 줄로 넘어가지 않는다`() = runTest {
+        givenSyncedLyrics()
+        var position = 4_900L
+        every { manager.currentPosition } answers { position }
+        val seekTo = slot<Duration>()
+        every { manager.seek(capture(seekTo)) } answers { position = seekTo.captured.inWholeMilliseconds }
+        every { manager.isPlaying } returns true
+        every { manager.playbackSpeed } returns 1f
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine(0))
+        advanceTimeBy(100)
+        runCurrent()
+
+        assertEquals(0, viewModel.uiState.value.activeLyricIndex)
     }
 
     @Test
@@ -239,10 +321,10 @@ class PlayerDetailViewModelTest {
         val viewModel = viewModel()
 
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
-        assertTrue(viewModel.uiState.value.showsLyricsPanel)
+        assertTrue(viewModel.uiState.value.showsLyricsFace)
 
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
-        assertFalse(viewModel.uiState.value.showsLyricsPanel)
+        assertFalse(viewModel.uiState.value.showsLyricsFace)
     }
 
     @Test
@@ -250,7 +332,7 @@ class PlayerDetailViewModelTest {
         givenSyncedLyrics()
         val viewModel = viewModel()
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
-        assertTrue(viewModel.uiState.value.showsLyricsPanel)
+        assertTrue(viewModel.uiState.value.showsLyricsFace)
 
         lyricFilePath = null
         parsedLines = emptyList()
@@ -258,7 +340,7 @@ class PlayerDetailViewModelTest {
         viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
 
         assertFalse(viewModel.uiState.value.hasLyrics)
-        assertFalse(viewModel.uiState.value.showsLyricsPanel)
+        assertFalse(viewModel.uiState.value.showsLyricsFace)
         // 사용자의 뜻은 지우지 않는다 — 가사 있는 곡이 오면 패널이 다시 뜬다.
         assertTrue(viewModel.uiState.value.isLyricsPanelVisible)
     }
@@ -270,11 +352,11 @@ class PlayerDetailViewModelTest {
 
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
 
-        assertTrue(viewModel.uiState.value.showsLyricsPanel)
+        assertTrue(viewModel.uiState.value.showsLyricsFace)
     }
 
     @Test
-    fun `가사가 없으면 가사 입구가 가사 검색으로 보낸다`() = runTest {
+    fun `가사가 없으면 가사 입구가 그 자리에서 없다고 알린다`() = runTest {
         val viewModel = viewModel()
         val events = mutableListOf<PlayerDetailEvent>()
         val collector = launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -282,6 +364,32 @@ class PlayerDetailViewModelTest {
         }
 
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+
+        assertEquals(PlayerArtworkFace.LYRICS_MISSING, viewModel.uiState.value.artworkFace)
+        assertEquals(emptyList<PlayerDetailEvent>(), events)
+        collector.cancel()
+    }
+
+    @Test
+    fun `가사 없음 안내를 다시 누르면 아트워크로 돌아간다`() {
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+
+        assertEquals(PlayerArtworkFace.ARTWORK, viewModel.uiState.value.artworkFace)
+    }
+
+    @Test
+    fun `가사 찾기를 누르면 가사 검색으로 보낸다`() = runTest {
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+        val events = mutableListOf<PlayerDetailEvent>()
+        val collector = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.eventFlow.collect { events += it }
+        }
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricsSearchButton)
 
         assertEquals(
             listOf(
@@ -294,8 +402,90 @@ class PlayerDetailViewModelTest {
             ),
             events,
         )
-        assertFalse(viewModel.uiState.value.showsLyricsPanel)
+        // 찾으러 간 뜻이 남아야 저장하고 돌아왔을 때 가사 면이 바로 뜬다.
+        assertTrue(viewModel.uiState.value.isLyricsPanelVisible)
         collector.cancel()
+    }
+
+    @Test
+    fun `가사를 찾으러 간 뒤 가사가 생기면 가사 면이 뜬다`() {
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricsSearchButton)
+
+        givenSyncedLyrics()
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+
+        assertEquals(PlayerArtworkFace.LYRICS, viewModel.uiState.value.artworkFace)
+    }
+
+    @Test
+    fun `새 곡의 가사 유무를 모르는 동안에는 가사 면을 그대로 둔다`() {
+        givenSyncedLyrics()
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+        assertEquals(PlayerArtworkFace.LYRICS, viewModel.uiState.value.artworkFace)
+
+        // 저장소가 아직 새 곡의 가사 유무를 흘리지 않은 상태.
+        every { fetchAudioMediaDetail.invoke(any()) } returns emptyFlow()
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+
+        // 없다고 단정하면 여기서 아트워크로 샜다가 돌아와 앨범이 번쩍인다.
+        assertEquals(PlayerArtworkFace.LYRICS, viewModel.uiState.value.artworkFace)
+    }
+
+    @Test
+    fun `가사 유무를 모르는 동안 받은 탭은 답이 온 뒤에 맞는 면을 연다`() {
+        givenSyncedLyrics()
+        val viewModel = viewModel()
+        // 새 곡의 답을 테스트가 쥐고 있다가 나중에 흘린다. 이전 곡은 가사가 있었다.
+        val answer = MutableSharedFlow<List<PlaylistTrackAggregate>>(extraBufferCapacity = 1)
+        every { fetchAudioMediaDetail.invoke(any()) } returns answer
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+
+        // 이전 곡의 답으로 열지 않는다.
+        assertFalse(viewModel.uiState.value.showsLyricsFace)
+        assertFalse(viewModel.uiState.value.isLyricsPanelVisible)
+
+        // 이 곡에는 가사가 없다는 답이 온다.
+        lyricFilePath = null
+        parsedLines = emptyList()
+        answer.tryEmit(listOf(aggregate()))
+
+        assertEquals(PlayerArtworkFace.LYRICS_MISSING, viewModel.uiState.value.artworkFace)
+        // 가사 있는 곡까지 따라가는 선호는 켜지지 않는다.
+        assertFalse(viewModel.uiState.value.isLyricsPanelVisible)
+    }
+
+    @Test
+    fun `이전 곡 가사가 떠 있는 동안 줄을 눌러도 옮기지 않는다`() {
+        givenSyncedLyrics()
+        val viewModel = viewModel()
+        every { fetchAudioMediaDetail.invoke(any()) } returns emptyFlow()
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine(2))
+
+        verify(exactly = 0) { manager.seek(any()) }
+    }
+
+    @Test
+    fun `가사 없음 안내를 띄운 채 다음 곡으로 넘어가면 아트워크로 돌아간다`() {
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+        assertEquals(PlayerArtworkFace.LYRICS_MISSING, viewModel.uiState.value.artworkFace)
+
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+
+        assertEquals(PlayerArtworkFace.ARTWORK, viewModel.uiState.value.artworkFace)
+        assertFalse(viewModel.uiState.value.isLyricsMissingNoticeVisible)
     }
 
     @Test

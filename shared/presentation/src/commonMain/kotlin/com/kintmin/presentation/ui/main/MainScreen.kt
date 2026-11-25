@@ -391,6 +391,9 @@ fun MainScreen(
                         .fillMaxSize()
                         .padding(innerPadding),
                     data = playlist,
+                    nowPlayingPlaylistId = playerBar.playlistId,
+                    isPlaybackPlaying = playerBar.isPlaying,
+                    nowPlayingImageFileFullPath = playerBar.imageFileFullPath,
                     sendIntent = sendPlaylistIntent,
                 )
 

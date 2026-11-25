@@ -8,6 +8,8 @@ import kotlin.time.Duration.Companion.seconds
 data class AudioMediaInformationEditUiState(
     val audioMediaId: Int,
     val imageFileFullPath: String?,
+    /** 사용자가 고른 썸네일인지. 받아 온 정본으로 되돌릴 수 있는지가 여기서 갈린다. */
+    val isCustomImage: Boolean = false,
     val audioMediaName: String,
     val artist: String,
     val playTime: String,
@@ -49,7 +51,8 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaInformationEditUiState(): 
     val audioMedia = first().audioMedia
     return AudioMediaInformationEditUiState(
         audioMediaId = audioMedia.id,
-        imageFileFullPath = audioMedia.imageFileFullPath,
+        imageFileFullPath = audioMedia.displayImageFileFullPath,
+        isCustomImage = audioMedia.customImageFileFullPath != null,
         audioMediaName = audioMedia.name,
         artist = audioMedia.artist,
         playTime = (audioMedia.playbackDuration ?: 0.seconds).to_hh_colon_mm_colon_ss(),

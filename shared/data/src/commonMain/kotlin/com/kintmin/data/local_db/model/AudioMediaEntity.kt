@@ -17,6 +17,11 @@ data class AudioMediaEntity(
     val rawAudioDurationSeconds: Long? = null,
     val audioFileNameWithExt: String,
     val imageFileNameWithExt: String? = null,
+    /**
+     * 사용자가 고른 썸네일 파일명. null이면 받아 온 정본([imageFileNameWithExt])을 쓴다.
+     * 정본 파일은 바꾼 뒤에도 지우지 않아 언제든 되돌릴 수 있다.
+     */
+    val customImageFileNameWithExt: String? = null,
     val lyricFileNameWithExt: String? = null,
     val tjKaraokeNumber: String? = null,
     /**
@@ -28,3 +33,11 @@ data class AudioMediaEntity(
     val editedAudioDurationSeconds: Long? = null,
     val rawCreatedTime: Long = Clock.System.now().toEpochMilliseconds(),
 )
+
+/**
+ * 화면과 플레이리스트 커버에 쓸 썸네일 파일명. 고른 것이 있으면 그것, 없으면 정본.
+ *
+ * entity 바깥에 두는 이유는 Room 이 계산 프로퍼티를 컬럼으로 잡으려 들지 않게 하기 위해서다.
+ */
+internal val AudioMediaEntity.displayImageFileNameWithExt: String?
+    get() = customImageFileNameWithExt ?: imageFileNameWithExt

@@ -142,15 +142,25 @@ final class MediaControllerEngine {
         broadcast()
     }
 
+    var hasNext: Bool {
+        currentIndex + 1 < queue.count || (isRepeatAllEnabled && !queue.isEmpty)
+    }
+
     func next() {
-        let hasNext = currentIndex + 1 < queue.count
-        guard hasNext || (isRepeatAllEnabled && !queue.isEmpty) else { return }
+        guard hasNext else { return }
         playIfIntended(schedulePlayable(from: currentIndex + 1, startingSeconds: 0))
         broadcast()
     }
 
     func previous() {
-        let target = (currentIndex > 0 && currentTimeInItem < 3) ? currentIndex - 1 : currentIndex
+        let target: Int
+        if currentTimeInItem >= 3 {
+            target = currentIndex
+        } else if currentIndex > 0 {
+            target = currentIndex - 1
+        } else {
+            target = isRepeatAllEnabled && !queue.isEmpty ? queue.count - 1 : currentIndex
+        }
         playIfIntended(schedulePlayable(from: target, startingSeconds: 0))
         broadcast()
     }

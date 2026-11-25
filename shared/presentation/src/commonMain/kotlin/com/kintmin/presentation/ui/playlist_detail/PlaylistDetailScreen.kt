@@ -110,6 +110,7 @@ fun PlaylistDetailScreen(
     }
 
     PlaylistDetailScreen(
+        playlistId = playlistId,
         navigateToBack = navigateToBack,
         headerData = headerData,
         audioPlayDataList = listUiState.audioList,
@@ -127,6 +128,7 @@ fun PlaylistDetailScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistDetailScreen(
+    playlistId: Int,
     navigateToBack: () -> Unit,
     headerData: PlaylistDetailHeaderUiState,
     audioPlayDataList: List<PlaylistDetailListItemUiState>,
@@ -173,7 +175,7 @@ fun PlaylistDetailScreen(
     val backgroundColor = MaterialTheme.colorScheme.background.copy(alpha = progress)
     val isSearching = searchInput.isNotEmpty()
     // 재생 위치까지 든 playerBar 를 행 람다에서 읽으면 폴링마다 보이는 행이 전부 다시 그려진다.
-    val nowPlayingAudioMediaId = playerBar.id.toIntOrNull()
+    val nowPlayingAudioMediaId = playerBar.nowPlayingMediaIdIn(playlistId)
     val isPlaybackPlaying = playerBar.isPlaying
 
     Scaffold(
@@ -345,6 +347,7 @@ fun PlaylistDetailScreen(
 fun PlaylistDetailScreenPreview() {
     JellyTubeTheme {
         PlaylistDetailScreen(
+            playlistId = 1,
             navigateToBack = {},
             headerData = PlaylistDetailHeaderUiState.getMock(),
             audioPlayDataList = PlaylistDetailListItemUiState.getMockList(),
@@ -364,6 +367,7 @@ fun PlaylistDetailScreenPreview() {
 fun PlaylistDetailScreenEmptyPreview() {
     JellyTubeTheme {
         PlaylistDetailScreen(
+            playlistId = 1,
             navigateToBack = {},
             headerData = PlaylistDetailHeaderUiState.getMock(),
             audioPlayDataList = emptyList(),

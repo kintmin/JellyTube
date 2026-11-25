@@ -10,12 +10,15 @@ WHERE SP.type = 'SECRET'
 /**
  * "전체" 의 곡 수·길이·썸네일은 저장된 값이라 비밀 곡이 들어 있다. 그만큼 빼서 읽는다.
  * 편집본이 있으면 편집본 길이가 재생 길이다. 썸네일은 비밀이 아닌 첫 곡의 것이다.
+ *
+ * 곡이 보여주는 썸네일을 고르는 규칙은 Kotlin 쪽과 여기 SQL 두 자리에 있다. 어긋나면
+ * "전체" 만 다른 그림을 쓰므로 `SecretPlaylistQueryTest` 가 둘을 함께 고정한다.
  */
 internal const val VISIBLE_PLAYLIST_COLUMNS = """
 id, name, description, rawCreatedTime, isCustomImage, sequence, type,
 CASE WHEN type = 'TOTAL' AND NOT isCustomImage
     THEN (
-        SELECT AM.imageFileNameWithExt FROM PLAYLIST_TRACK PT
+        SELECT COALESCE(AM.customImageFileNameWithExt, AM.imageFileNameWithExt) FROM PLAYLIST_TRACK PT
         JOIN AUDIO_MEDIA AM ON AM.id = PT.audioMediaId
         WHERE PT.playlistId = PLAYLIST.id AND PT.audioMediaId NOT IN ($SECRET_AUDIO_MEDIA_IDS)
         ORDER BY PT.sequence LIMIT 1

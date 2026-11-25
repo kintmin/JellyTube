@@ -37,7 +37,8 @@ class PlayerBarViewModel constructor(
 
                 val playingMediaItem = mediaControllerManager.playingMediaItem
                 val isSameMedia = uiState.value.id == (playingMediaItem?.mediaId ?: "") &&
-                    uiState.value.playbackDuration == (playingMediaItem?.mediaDurationMs ?: 0L).milliseconds
+                    uiState.value.playbackDuration == (playingMediaItem?.mediaDurationMs ?: 0L).milliseconds &&
+                    uiState.value.playlistId == currentPlaylistIdOf(playingMediaItem)
                 val isChangePlaying = mediaControllerManager.isPlaying != uiState.value.isPlaying || currentDuration == null
                 if (!isSameMedia) {
                     _uiState.update { buildUiState(playingMediaItem) }
@@ -56,10 +57,14 @@ class PlayerBarViewModel constructor(
 
     private fun buildUiState(item: MediaControlData?) = PlayerBarUiState(
         id = item?.mediaId ?: "",
+        playlistId = currentPlaylistIdOf(item),
         title = item?.mediaTitle ?: "",
         currentDuration = (mediaControllerManager.currentPosition ?: 0).milliseconds,
         playbackDuration = (item?.mediaDurationMs ?: 0L).milliseconds,
         imageFileFullPath = item?.mediaArtworkFileUri,
         isPlaying = mediaControllerManager.isPlaying,
     )
+
+    // 큐의 곡을 모두 지워도 포트는 플레이리스트를 쥐고 있다. 걸린 곡이 없으면 듣는 플레이리스트도 없다.
+    private fun currentPlaylistIdOf(item: MediaControlData?) = mediaControllerManager.currentPlaylistId.takeIf { item != null }
 }
