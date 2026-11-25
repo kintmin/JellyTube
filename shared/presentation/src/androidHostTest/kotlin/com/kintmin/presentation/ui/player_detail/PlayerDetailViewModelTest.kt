@@ -274,7 +274,7 @@ class PlayerDetailViewModelTest {
     }
 
     @Test
-    fun `가사가 없으면 가사 입구가 가사 검색으로 보낸다`() = runTest {
+    fun `가사가 없으면 가사 입구가 그 자리에서 없다고 알린다`() = runTest {
         val viewModel = viewModel()
         val events = mutableListOf<PlayerDetailEvent>()
         val collector = launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -282,6 +282,32 @@ class PlayerDetailViewModelTest {
         }
 
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+
+        assertEquals(PlayerArtworkFace.LYRICS_MISSING, viewModel.uiState.value.artworkFace)
+        assertEquals(emptyList<PlayerDetailEvent>(), events)
+        collector.cancel()
+    }
+
+    @Test
+    fun `가사 없음 안내를 다시 누르면 아트워크로 돌아간다`() {
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+
+        assertEquals(PlayerArtworkFace.ARTWORK, viewModel.uiState.value.artworkFace)
+    }
+
+    @Test
+    fun `가사 찾기를 누르면 가사 검색으로 보낸다`() = runTest {
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+        val events = mutableListOf<PlayerDetailEvent>()
+        val collector = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.eventFlow.collect { events += it }
+        }
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricsSearchButton)
 
         assertEquals(
             listOf(
@@ -294,8 +320,36 @@ class PlayerDetailViewModelTest {
             ),
             events,
         )
-        assertFalse(viewModel.uiState.value.showsLyricsPanel)
+        // 찾으러 간 뜻이 남아야 저장하고 돌아왔을 때 가사 면이 바로 뜬다.
+        assertTrue(viewModel.uiState.value.isLyricsPanelVisible)
         collector.cancel()
+    }
+
+    @Test
+    fun `가사를 찾으러 간 뒤 가사가 생기면 가사 면이 뜬다`() {
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricsSearchButton)
+
+        givenSyncedLyrics()
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+
+        assertEquals(PlayerArtworkFace.LYRICS, viewModel.uiState.value.artworkFace)
+    }
+
+    @Test
+    fun `가사 없음 안내를 띄운 채 다음 곡으로 넘어가면 아트워크로 돌아간다`() {
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+        assertEquals(PlayerArtworkFace.LYRICS_MISSING, viewModel.uiState.value.artworkFace)
+
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+
+        // 이 곡에 한정된 뜻이라 곡과 함께 떨어진다. 선호는 켜진 적이 없다.
+        assertEquals(PlayerArtworkFace.ARTWORK, viewModel.uiState.value.artworkFace)
+        assertFalse(viewModel.uiState.value.isLyricsMissingNoticeVisible)
     }
 
     @Test

@@ -194,24 +194,32 @@ class PlayerDetailViewModel constructor(
             }
 
             PlayerDetailIntent.OnClickLyrics -> {
-                if (uiState.value.hasLyrics) {
-                    _uiState.update { it.copy(isLyricsPanelVisible = !it.isLyricsPanelVisible) }
-                    return
+                _uiState.update {
+                    if (it.hasLyrics) {
+                        it.copy(isLyricsPanelVisible = !it.isLyricsPanelVisible)
+                    } else {
+                        it.copy(isLyricsMissingNoticeVisible = !it.isLyricsMissingNoticeVisible)
+                    }
                 }
+            }
+
+            PlayerDetailIntent.OnClickLyricsSearchButton -> {
                 val mediaId = uiState.value.id.toIntOrNull()
                 viewModelScope.launch {
                     if (mediaId == null) {
                         eventChannel.send(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
-                    } else {
-                        eventChannel.send(
-                            PlayerDetailEvent.NavigateToLyricsSearch(
-                                audioMediaId = mediaId,
-                                query = uiState.value.title,
-                                durationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
-                                playbackDurationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
-                            )
-                        )
+                        return@launch
                     }
+                    // 찾겠다는 것은 찾으면 보겠다는 뜻이다. 저장하고 돌아왔을 때 가사 면이 바로 뜬다.
+                    _uiState.update { it.copy(isLyricsPanelVisible = true) }
+                    eventChannel.send(
+                        PlayerDetailEvent.NavigateToLyricsSearch(
+                            audioMediaId = mediaId,
+                            query = uiState.value.title,
+                            durationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
+                            playbackDurationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
+                        )
+                    )
                 }
             }
 
@@ -415,6 +423,7 @@ class PlayerDetailViewModel constructor(
                 lyricLines = if (isSameMedia) uiState.value.lyricLines else emptyList(),
                 isLyricsSynced = isSameMedia && uiState.value.isLyricsSynced,
                 isLyricsPanelVisible = uiState.value.isLyricsPanelVisible,
+                isLyricsMissingNoticeVisible = isSameMedia && uiState.value.isLyricsMissingNoticeVisible,
                 repeatRangeStartDuration = repeatRangeState.startDuration,
                 repeatRangeEndDuration = repeatRangeState.endDuration,
                 isPlaybackSpeedMenuVisible = uiState.value.isPlaybackSpeedMenuVisible,

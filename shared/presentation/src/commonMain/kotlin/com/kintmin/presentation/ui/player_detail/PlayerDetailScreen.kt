@@ -92,6 +92,7 @@ import com.kintmin.presentation.ui.player_detail.dialog.SleepTimerDialog
 import com.kintmin.presentation.ui.player_detail.dialog.toPitchSemitoneText
 import com.kintmin.presentation.ui.player_detail.dialog.toPlaybackSpeedText
 import com.kintmin.presentation.ui.player_detail.lyrics.CurrentLyricOverlayView
+import com.kintmin.presentation.ui.player_detail.lyrics.PlayerLyricsMissingView
 import com.kintmin.presentation.ui.player_detail.lyrics.PlayerLyricsPanelView
 import kotlin.math.max
 import kotlin.math.min
@@ -239,18 +240,17 @@ fun PlayerDetailScreen(
                         .fillMaxWidth()
                         .weight(1f)
                         .onSizeChanged { artworkSize = it },
-                    targetState = data.showsLyricsPanel,
-                ) { showsLyrics ->
-                    // 가사 없는 곡이면 찾으러 보낸다 — 그 안내를 화면에 상시로 띄우지 않고 눌렀을 때만 꺼낸다.
-                    // 패널에서는 싱크 가사의 줄이 탭을 먼저 받고, 줄 밖을 누르면 아트워크로 돌아간다.
+                    targetState = data.artworkFace,
+                ) { face ->
+                    // 면 밖을 누르면 늘 아트워크로 돌아간다 — 가사 줄과 가사 찾기가 탭을 먼저 받는다.
                     val artworkModifier = Modifier
                         .fillMaxSize()
                         .clip(RoundedCornerShape(2.dp))
                         .background(overlayScrimSoft)
                         .clickable { sendIntent(PlayerDetailIntent.OnClickLyrics) }
 
-                    if (showsLyrics) {
-                        Box(modifier = artworkModifier) {
+                    when (face) {
+                        PlayerArtworkFace.LYRICS -> Box(modifier = artworkModifier) {
                             PlayerLyricsPanelView(
                                 lines = data.lyricLines,
                                 activeIndex = data.activeLyricIndex,
@@ -273,8 +273,15 @@ fun PlayerDetailScreen(
                                 )
                             }
                         }
-                    } else {
-                        PlayerArtworkView(
+
+                        PlayerArtworkFace.LYRICS_MISSING -> Box(modifier = artworkModifier) {
+                            PlayerLyricsMissingView(
+                                onClickSearch = { sendIntent(PlayerDetailIntent.OnClickLyricsSearchButton) },
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+
+                        PlayerArtworkFace.ARTWORK -> PlayerArtworkView(
                             transition = artworkTransition,
                             modifier = artworkModifier,
                         ) {

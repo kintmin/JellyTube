@@ -8,6 +8,9 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.datetime.LocalDateTime
 
+/** 세 면이 한 자리를 돌려 쓴다. 전환이 모두 fade 라 Crossfade 의 키가 이 값이어야 한다. */
+enum class PlayerArtworkFace { ARTWORK, LYRICS, LYRICS_MISSING }
+
 data class PlayerDetailUiState(
     val id: String,
     val playlistId: Int?,
@@ -28,6 +31,7 @@ data class PlayerDetailUiState(
     val isLyricsSynced: Boolean = false,
     val activeLyricIndex: Int = -1,
     val isLyricsPanelVisible: Boolean = false,
+    val isLyricsMissingNoticeVisible: Boolean = false,
     val repeatRangeStartDuration: Duration? = null,
     val repeatRangeEndDuration: Duration? = null,
     val isPlaybackSpeedMenuVisible: Boolean = false,
@@ -46,10 +50,18 @@ data class PlayerDetailUiState(
     val currentLyricTranslation: String? get() = lyricLines.getOrNull(activeLyricIndex)?.translation
 
     /**
-     * 패널을 띄울지. `isLyricsPanelVisible` 은 사용자의 뜻만 담고, 그릴 수 있는지는 여기서 가른다 —
-     * 가사 없는 곡으로 넘어가면 뜻을 지우지 않고 아트워크로 돌아가고, 가사 있는 곡이 오면 되돌아온다.
+     * 아트워크 자리에 세울 면. 뜻을 담는 자리가 둘인 이유는 그 둘의 수명이 다르기 때문이다 —
+     * `isLyricsPanelVisible` 은 곡을 넘어가도 남는 선호라서 가사 없는 곡을 지나도 지우지 않고,
+     * `isLyricsMissingNoticeVisible` 은 그 곡에 한정된 뜻이라서 곡이 바뀌면 떨어진다.
      */
-    val showsLyricsPanel: Boolean get() = hasLyrics && isLyricsPanelVisible
+    val artworkFace: PlayerArtworkFace
+        get() = when {
+            hasLyrics && isLyricsPanelVisible -> PlayerArtworkFace.LYRICS
+            !hasLyrics && isLyricsMissingNoticeVisible -> PlayerArtworkFace.LYRICS_MISSING
+            else -> PlayerArtworkFace.ARTWORK
+        }
+
+    val showsLyricsPanel: Boolean get() = artworkFace != PlayerArtworkFace.ARTWORK
 
     /** 올림한다 — 1분 미만도 1 로 보여야 "거의 다 됐다" 가 0 으로 읽히지 않는다. */
     val sleepTimerRemainingMinutes: Int?
