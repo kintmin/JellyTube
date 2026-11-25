@@ -29,6 +29,7 @@ class CleanupAnomalousDataUseCase constructor(
             deleteFileSafely(media.audioFileFullPath)
             media.editedAudioFileFullPath?.let { deleteFileSafely(it) }
             media.imageFileFullPath?.let { deleteFileSafely(it) }
+            media.customImageFileFullPath?.let { deleteFileSafely(it) }
         }
 
         appLog.sendDebugLog(DebugLog("CleanupAnomalousDataUseCase", "track 연결 없는 음원 정리 완료"))
@@ -53,7 +54,9 @@ class CleanupAnomalousDataUseCase constructor(
                 add(media.audioFileFullPath)
                 // 편집본도 오디오 디렉토리에 있어 파일 목록에 잡힌다. 빠뜨리면 정리 때 삭제된다.
                 media.editedAudioFileFullPath?.let { add(it) }
+                // 정본은 썸네일을 바꿔도 되돌릴 수 있게 남겨 두는 것이라 참조가 없어 보여도 지우지 않는다.
                 media.imageFileFullPath?.let { add(it) }
+                media.customImageFileFullPath?.let { add(it) }
             }
             playlistRepository.getAllPlaylistFlow().first().forEach { playlist ->
                 playlist.imageFileFullPath?.let { add(it) }

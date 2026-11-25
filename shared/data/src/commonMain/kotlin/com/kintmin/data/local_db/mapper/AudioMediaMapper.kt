@@ -18,6 +18,9 @@ internal fun AudioMediaEntity.toDomain(fileManager: FileManager) = runCatching {
         imageFileFullPath = imageFileNameWithExt?.let {
             fileManager.getImageFileFullPath(fileNameWithExt = it).getOrThrow()
         },
+        customImageFileFullPath = customImageFileNameWithExt?.let {
+            fileManager.getImageFileFullPath(fileNameWithExt = it).getOrThrow()
+        },
         lyricFileFullPath = lyricFileNameWithExt?.let {
             fileManager.getLyricFileFullPath(fileNameWithExt = it).getOrThrow()
         },

@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.kintmin.domain.audio_media.usecase.ResetAudioMediaImageUseCase
+import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_track.usecase.AddAudioMediaListToPlaylistUseCase
 import com.kintmin.domain.audio_track.usecase.DeleteAudioTrackListUseCase
@@ -27,6 +29,8 @@ class AudioMediaInformationEditViewModel constructor(
     private val updateAudioMediaUseCase: UpdateAudioMediaUseCase,
     private val deleteAudioTrackListUseCase: DeleteAudioTrackListUseCase,
     private val addAudioMediaListToPlaylistUseCase: AddAudioMediaListToPlaylistUseCase,
+    private val updateAudioMediaImageUseCase: UpdateAudioMediaImageUseCase,
+    private val resetAudioMediaImageUseCase: ResetAudioMediaImageUseCase,
 ) : ViewModel() {
 
     private val audioMediaId = savedStateHandle.toRoute<AudioMediaDetailScreenRoute>().audioMediaId
@@ -37,6 +41,7 @@ class AudioMediaInformationEditViewModel constructor(
 
     private val deleteThrottle = Throttle(500)
     private val addThrottle = Throttle(500)
+    private val imageThrottle = Throttle(500)
     private val isAddPlaylistBottomSheetVisible = MutableStateFlow(false)
 
     val uiState: StateFlow<AudioMediaInformationEditUiState> = combine(
@@ -81,6 +86,20 @@ class AudioMediaInformationEditViewModel constructor(
             AudioMediaInformationEditIntent.OnClickShowAddPlaylistBottomSheet -> isAddPlaylistBottomSheetVisible.value = true
             AudioMediaInformationEditIntent.OnDismissAddPlaylistBottomSheet -> isAddPlaylistBottomSheetVisible.value = false
             is AudioMediaInformationEditIntent.OnClickAddLinkedPlaylist -> addLinkedPlaylist(intent.playlistId)
+            is AudioMediaInformationEditIntent.OnPickAudioMediaImage -> updateAudioMediaImage(intent.imageData)
+            AudioMediaInformationEditIntent.OnClickResetAudioMediaImage -> resetAudioMediaImage()
+        }
+    }
+
+    private fun updateAudioMediaImage(imageData: ByteArray) {
+        viewModelScope.launch {
+            imageThrottle { updateAudioMediaImageUseCase(id = audioMediaId, imageData = imageData) }
+        }
+    }
+
+    private fun resetAudioMediaImage() {
+        viewModelScope.launch {
+            imageThrottle { resetAudioMediaImageUseCase(id = audioMediaId) }
         }
     }
 

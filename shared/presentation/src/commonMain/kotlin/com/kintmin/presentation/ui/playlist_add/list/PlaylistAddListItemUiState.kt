@@ -40,6 +40,6 @@ internal fun PlaylistTrackAggregate.toPlaylistAddListItemUiState(isChecked: Bool
     artist = audioMedia.artist,
     audioDuration = audioMedia.playbackDuration,
     description = audioMedia.description,
-    imageFileFullPath = audioMedia.imageFileFullPath,
+    imageFileFullPath = audioMedia.displayImageFileFullPath,
     isChecked = isChecked,
 )

@@ -1,9 +1,8 @@
-package com.kintmin.presentation.ui.playlist_edit.header
+package com.kintmin.presentation.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,25 +27,24 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.overlayContent
 import com.kintmin.presentation.theme.overlayScrim
-import com.kintmin.presentation.ui.common.AudioArtwork
-import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
 
+/**
+ * 눌러서 사진을 고를 수 있는 아트워크. 고른 사진이 있을 때만 되돌리기가 함께 열린다.
+ * 크기·모양·바닥색은 [modifier] 가 정한다.
+ */
 @Composable
-fun PlaylistEditThumbnailView(
+fun EditableArtwork(
     imageFileFullPath: String?,
     isCustomImage: Boolean,
     onClickPickImage: () -> Unit,
     onClickResetImage: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var isMenuExpanded by remember { mutableStateOf(false) }
 
     AudioArtwork(
         imageFileFullPath = imageFileFullPath,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(220.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surface)
+        modifier = modifier
             .clickable {
                 if (isCustomImage) isMenuExpanded = true else onClickPickImage()
             }
@@ -97,13 +94,16 @@ fun PlaylistEditThumbnailView(
 
 @Preview
 @Composable
-fun PlaylistEditThumbnailViewPreview() {
+private fun EditableArtworkPreview() {
     JellyTubeTheme {
-        PlaylistEditThumbnailView(
+        EditableArtwork(
             imageFileFullPath = null,
             isCustomImage = false,
             onClickPickImage = {},
             onClickResetImage = {},
+            modifier = Modifier
+                .height(220.dp)
+                .background(MaterialTheme.colorScheme.surface),
         )
     }
 }

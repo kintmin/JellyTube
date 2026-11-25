@@ -4,7 +4,7 @@ import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.model.UploadedAudioFile
-import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
+import com.kintmin.domain.audio_media.usecase.ReplaceAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import com.kintmin.domain.audio_track.repository.AudioTrackRepository
@@ -22,7 +22,7 @@ class CreatePcUploadHandlerUseCase(
     private val importUploadedAudioMedia: ImportUploadedAudioMediaUseCase,
     private val validateUploadedAudioFileName: ValidateUploadedAudioFileNameUseCase,
     private val updateAudioMedia: UpdateAudioMediaUseCase,
-    private val saveAudioMediaImage: SaveAudioMediaImageUseCase,
+    private val replaceAudioMediaImage: ReplaceAudioMediaImageUseCase,
     private val playlistRepository: PlaylistRepository,
     private val audioTrackRepository: AudioTrackRepository,
     private val appLog: AppLog,
@@ -60,10 +60,7 @@ class CreatePcUploadHandlerUseCase(
             .onFailure { logError("아티스트 적용 실패: ${audioMediaIds.size}곡", it) }
 
         override suspend fun applyThumbnail(audioMediaIds: List<Int>, imageData: ByteArray): Result<Unit> = suspendRunCatching {
-            audioMediaIds.forEach { id ->
-                val imageFileFullPath = saveAudioMediaImage(imageData).getOrThrow()
-                updateAudioMedia(id = id, imageFileFullPath = imageFileFullPath).getOrThrow()
-            }
+            audioMediaIds.forEach { id -> replaceAudioMediaImage(id = id, imageData = imageData).getOrThrow() }
         }
             .onSuccess { log("썸네일 적용: ${audioMediaIds.size}곡") }
             .onFailure { logError("썸네일 적용 실패: ${audioMediaIds.size}곡", it) }

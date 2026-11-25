@@ -41,12 +41,11 @@ WHERE id IN (:idList)
 
     @Query(
         """
-UPDATE AUDIO_MEDIA 
-SET 
+UPDATE AUDIO_MEDIA
+SET
     name = COALESCE(:name, name),
     artist = COALESCE(:artist, artist),
     description = COALESCE(:description, description),
-    imageFileNameWithExt = COALESCE(:imageFileNameWithExt, imageFileNameWithExt),
     lyricFileNameWithExt = COALESCE(:lyricFileNameWithExt, lyricFileNameWithExt)
 WHERE id = :id
 """
@@ -56,9 +55,27 @@ WHERE id = :id
         name: String? = null,
         artist: String? = null,
         description: String? = null,
-        imageFileNameWithExt: String? = null,
         lyricFileNameWithExt: String? = null,
     )
+
+    @Query("UPDATE AUDIO_MEDIA SET customImageFileNameWithExt = :customImageFileNameWithExt WHERE id = :id")
+    suspend fun applyCustomImage(id: Int, customImageFileNameWithExt: String)
+
+    /** 고른 썸네일을 떼어 정본으로 되돌린다. */
+    @Query("UPDATE AUDIO_MEDIA SET customImageFileNameWithExt = NULL WHERE id = :id")
+    suspend fun clearCustomImage(id: Int)
+
+    /** 정본을 다시 정한다. 고른 썸네일이 가리면 바꾼 것이 보이지 않으므로 같이 뗀다. */
+    @Query(
+        """
+UPDATE AUDIO_MEDIA
+SET
+    imageFileNameWithExt = :imageFileNameWithExt,
+    customImageFileNameWithExt = NULL
+WHERE id = :id
+"""
+    )
+    suspend fun replaceImage(id: Int, imageFileNameWithExt: String)
 
     @Query("UPDATE AUDIO_MEDIA SET audioFileNameWithExt = :fileNameWithExt WHERE id = :id")
     suspend fun updateAudioFileName(id: Int, fileNameWithExt: String)

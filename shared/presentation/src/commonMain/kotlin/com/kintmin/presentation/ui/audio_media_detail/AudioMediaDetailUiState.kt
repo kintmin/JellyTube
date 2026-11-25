@@ -78,7 +78,7 @@ internal fun List<PlaylistTrackAggregate>.toAudioMediaDetailUiState(): AudioMedi
     return firstOrNull()?.audioMedia?.let { audioMedia ->
         AudioMediaDetailUiState(
             audioMediaId = audioMedia.id,
-            imageFileFullPath = audioMedia.imageFileFullPath,
+            imageFileFullPath = audioMedia.displayImageFileFullPath,
             audioMediaName = audioMedia.name,
             artist = audioMedia.artist,
             // 화면에 보여주는 길이는 편집본 기준

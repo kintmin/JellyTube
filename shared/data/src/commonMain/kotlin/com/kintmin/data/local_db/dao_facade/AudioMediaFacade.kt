@@ -13,6 +13,7 @@ import com.kintmin.data.local_db.mapper.toMigration
 import com.kintmin.data.local_db.database.JellyTubeDatabase
 import com.kintmin.data.local_db.model.AudioEditProjectEntity
 import com.kintmin.data.local_db.model.AudioMediaEntity
+import com.kintmin.data.local_db.model.displayImageFileNameWithExt
 import com.kintmin.data.local_db.model.clampText
 import com.kintmin.data.local_db.model.PlaylistEntity
 import com.kintmin.data.local_db.model.PlaylistTrackEntity
@@ -177,7 +178,6 @@ class AudioMediaFacade constructor(
         name: String?,
         artist: String?,
         description: String?,
-        imageFileNameWithExt: String?,
         lyricFileNameWithExt: String?,
     ) {
         db.useWriterConnection { transactor ->
@@ -187,14 +187,49 @@ class AudioMediaFacade constructor(
                     name = name,
                     artist = artist,
                     description = description,
-                    imageFileNameWithExt = imageFileNameWithExt,
                     lyricFileNameWithExt = lyricFileNameWithExt,
                 )
-                if (imageFileNameWithExt != null) {
-                    playlistTrackDao.getLinkedPlaylistIdList(id).forEach { playlistId ->
-                        syncPlaylistWhenUpdateTrack(playlistId)
-                    }
+            }
+        }
+    }
+
+    /** 사용자가 고른 썸네일을 입힌다. 정본은 그대로 남아 [clearCustomImage] 로 되돌릴 수 있다. */
+    suspend fun applyCustomImage(audioMediaId: Int, customImageFileNameWithExt: String): List<String> =
+        updateImageWithSyncPlaylist(audioMediaId) { before ->
+            audioMediaDao.applyCustomImage(audioMediaId, customImageFileNameWithExt)
+            listOfNotNull(before.customImageFileNameWithExt)
+        }
+
+    suspend fun clearCustomImage(audioMediaId: Int): List<String> =
+        updateImageWithSyncPlaylist(audioMediaId) { before ->
+            audioMediaDao.clearCustomImage(audioMediaId)
+            listOfNotNull(before.customImageFileNameWithExt)
+        }
+
+    /** 정본을 다시 정한다. 옛 정본과 가리고 있던 선택이 함께 떨어져 나간다. */
+    suspend fun replaceImage(audioMediaId: Int, imageFileNameWithExt: String): List<String> =
+        updateImageWithSyncPlaylist(audioMediaId) { before ->
+            audioMediaDao.replaceImage(audioMediaId, imageFileNameWithExt)
+            listOfNotNull(before.imageFileNameWithExt, before.customImageFileNameWithExt)
+        }
+
+    /**
+     * 플레이리스트 커버는 첫 곡의 썸네일에서 온다. 곡의 썸네일이 바뀌면 같은 트랜잭션에서 따라가야
+     * 커버만 옛 그림으로 남지 않는다.
+     *
+     * 돌려주는 값은 이 변경으로 아무도 참조하지 않게 된 이미지 파일명들이다.
+     */
+    private suspend fun updateImageWithSyncPlaylist(
+        audioMediaId: Int,
+        block: suspend (before: AudioMediaEntity) -> List<String>,
+    ): List<String> {
+        return db.useWriterConnection { transactor ->
+            transactor.immediateTransaction {
+                val orphanFileNames = block(audioMediaDao.getDataById(audioMediaId))
+                playlistTrackDao.getLinkedPlaylistIdList(audioMediaId).forEach { playlistId ->
+                    syncPlaylistWhenUpdateTrack(playlistId)
                 }
+                orphanFileNames
             }
         }
     }
@@ -342,7 +377,7 @@ class AudioMediaFacade constructor(
 
                 val firstTrackImage = suspendRunCatching {
                     playlistTrackDao.getFirstAudioMediaWithNoLock(playlistId)
-                }.getOrNull()?.audioMediaEntity?.imageFileNameWithExt
+                }.getOrNull()?.audioMediaEntity?.displayImageFileNameWithExt
 
                 playlistDao.updatePlaylistImage(playlistId, firstTrackImage, isCustomImage = false)
                 playlist.imageFileNameWithExt
@@ -568,7 +603,7 @@ class AudioMediaFacade constructor(
         val newAudioMediaCount = playlist.audioMediaCount + addTrackCount
         val newPlayTimeDuration = playlist.rawPlayTimeDuration + addDuration
         val newImageFileNameWithExt = playlist.isCustomImage.takeUnless { it }?.let {
-            firstAudioTrack.audioMediaEntity.imageFileNameWithExt
+            firstAudioTrack.audioMediaEntity.displayImageFileNameWithExt
         }
 
         playlistDao.updatePlaylist(
@@ -601,7 +636,7 @@ class AudioMediaFacade constructor(
         val newAudioMediaCount = playlist.audioMediaCount - deleteTrackCount
         val newPlayTimeDuration = playlist.rawPlayTimeDuration - deleteDuration
         val newImageFileNameWithExt = playlist.isCustomImage.takeUnless { it }?.let {
-            firstAudioTrack?.audioMediaEntity?.imageFileNameWithExt
+            firstAudioTrack?.audioMediaEntity?.displayImageFileNameWithExt
         }
 
         playlistDao.updatePlaylist(
@@ -630,7 +665,7 @@ class AudioMediaFacade constructor(
         if (playListEntity.isCustomImage) return
 
         val firstMedia = firstTrack.audioMediaEntity
-        playlistDao.updatePlaylist(playListEntity.id, imageFileNameWithExt = firstMedia.imageFileNameWithExt)
+        playlistDao.updatePlaylist(playListEntity.id, imageFileNameWithExt = firstMedia.displayImageFileNameWithExt)
     }
 
     private suspend fun syncUncategorizedPlaylistWhenAddTrack(audioMediaIdList: List<Int>) {
