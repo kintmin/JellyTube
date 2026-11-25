@@ -23,6 +23,9 @@ Android 와 iOS 에서 같은 화면으로 동작하고, PC 의 음악 파일은
 
 SideStore 소스: `https://github.com/kintmin/JellyTube/releases/latest/download/source.json`
 
+새 버전에서 바뀐 점은 릴리스 페이지 맨 위에 있습니다. 전체 변경 목록은 그 아래에 접혀 있습니다.
+모바일은 고정 주소로도 볼 수 있습니다: `https://github.com/kintmin/JellyTube/releases/latest/download/whatsnew-mobile.txt`
+
 앱 스토어에는 배포하지 않습니다.
 
 ## 업데이트 소식 받기

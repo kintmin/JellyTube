@@ -346,8 +346,16 @@ jobs:
           set -euo pipefail
           # 지정하지 않으면 직전 릴리스부터 모으는데, desktop 릴리스가 끼면 범위가 어긋난다.
           previous=$(git tag -l 'mobile/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
-          gh release create "$TAG" dist/* --verify-tag --latest --title "JellyTube $VERSION" \
-            --generate-notes ${previous:+--notes-start-tag "$previous"}
+          # 사용자용 발췌를 위에 두고 범위의 PR 전부는 접어 둔다. --generate-notes 는 본문을 통째로
+          # 차지해 섞을 수 없으므로 같은 목록을 API 로 받아 붙인다.
+          generated=$(gh api --method POST "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+            -f tag_name="$TAG" ${previous:+-f previous_tag_name="$previous"} -q .body)
+          {
+            printf '## 바뀐 점\n\n'
+            cat dist/whatsnew-mobile.txt
+            printf '\n<details>\n<summary>전체 변경 목록</summary>\n\n%s\n</details>\n' "$generated"
+          } > notes.md
+          gh release create "$TAG" dist/* --verify-tag --latest --title "JellyTube $VERSION" --notes-file notes.md
       - name: Attach the SideStore source
         run: |
           set -euo pipefail
@@ -528,8 +536,16 @@ jobs:
         run: |
           set -euo pipefail
           previous=$(git tag -l 'desktop/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
+          # 사용자용 발췌를 위에 두고 범위의 PR 전부는 접어 둔다. mobile 쪽과 같은 이유다.
+          generated=$(gh api --method POST "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+            -f tag_name="$TAG" ${previous:+-f previous_tag_name="$previous"} -q .body)
+          {
+            printf '## 바뀐 점\n\n'
+            cat dist/whatsnew-desktop.txt
+            printf '\n<details>\n<summary>전체 변경 목록</summary>\n\n%s\n</details>\n' "$generated"
+          } > notes.md
           gh release create "$TAG" dist/* --verify-tag --latest=false --title "JellyTube File Share $VERSION" \
-            --generate-notes ${previous:+--notes-start-tag "$previous"}
+            --notes-file notes.md
       # 사용자에게 보내는 소식이다. 릴리스가 실제로 만들어졌을 때만 보낸다.
       - name: Announce the new version
         env:
