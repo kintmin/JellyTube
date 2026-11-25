@@ -417,11 +417,14 @@ class PlayerDetailViewModel constructor(
                 playbackPitchSemitone = uiState.value.playbackPitchSemitone,
                 // 같은 곡이면 즐겨찾기 상태 유지, 곡이 바뀌면 observeFavorite의 flow가 새 값으로 갱신
                 isFavorite = if (isSameMedia) uiState.value.isFavorite else false,
-                // 같은 곡인데 플레이리스트만 바뀌면 구독은 id 로 묶여 다시 흐르지 않는다. 그때 가사
-                // 상태를 버리면 아트워크가 눌리지 않게 되므로 이어 받는다.
-                hasLyrics = if (isSameMedia) uiState.value.hasLyrics else false,
-                lyricLines = if (isSameMedia) uiState.value.lyricLines else emptyList(),
-                isLyricsSynced = isSameMedia && uiState.value.isLyricsSynced,
+                // 새 곡의 가사는 저장소가 곧 알려 준다. 그때까지 이전 가사를 들고 있는다 — 아트워크가
+                // 새 그림을 다 읽을 때까지 이전 그림을 들고 있는 것과 같다. 비워 두면 그 사이 가사 면이
+                // 빈 채로 남고, 없다고 단정하면 아트워크로 샜다가 돌아와 앨범이 번쩍인다.
+                hasLyrics = uiState.value.hasLyrics,
+                lyricLines = uiState.value.lyricLines,
+                lyricsId = uiState.value.lyricsId,
+                activeLyricIndex = uiState.value.activeLyricIndex,
+                isLyricsSynced = uiState.value.isLyricsSynced,
                 isLyricsPanelVisible = uiState.value.isLyricsPanelVisible,
                 isLyricsMissingNoticeVisible = isSameMedia && uiState.value.isLyricsMissingNoticeVisible,
                 repeatRangeStartDuration = repeatRangeState.startDuration,
@@ -482,7 +485,9 @@ class PlayerDetailViewModel constructor(
 
         if (lyricFileFullPath == null) {
             parsedLyricLines = emptyList()
-            _uiState.update { it.copy(lyricLines = emptyList(), isLyricsSynced = false, activeLyricIndex = -1) }
+            _uiState.update {
+                it.copy(lyricLines = emptyList(), lyricsId = null, isLyricsSynced = false, activeLyricIndex = -1)
+            }
             return
         }
         viewModelScope.launch {
@@ -499,6 +504,7 @@ class PlayerDetailViewModel constructor(
                             translation = translationLines?.getOrNull(index)?.text?.takeIf(String::isNotBlank),
                         )
                     },
+                    lyricsId = lyricFileFullPath,
                     isLyricsSynced = parsedLyricLines.any { line -> line.timeMs != null },
                     activeLyricIndex = -1,
                 )

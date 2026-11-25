@@ -8,8 +8,31 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.datetime.LocalDateTime
 
-/** 세 면이 한 자리를 돌려 쓴다. 전환이 모두 fade 라 Crossfade 의 키가 이 값이어야 한다. */
+/** 세 면이 한 자리를 돌려 쓴다. */
 enum class PlayerArtworkFace { ARTWORK, LYRICS, LYRICS_MISSING }
+
+/**
+ * 그 자리에 선 면과 그 면이 그릴 내용을 한 값으로 묶는다. 면을 겹쳐 지우는 동안 나가는 쪽도
+ * 다시 그려지므로, 내용을 바깥에서 읽으면 전환 도중에 바뀌어 fade 가 끊긴다.
+ */
+data class PlayerFaceUiState(
+    val face: PlayerArtworkFace,
+    val lyricsId: String?,
+    val lyricLines: List<PlayerLyricLineUiState>,
+    val isLyricsSynced: Boolean,
+    val activeLyricIndex: Int,
+) {
+    /**
+     * 겹쳐 지울 면을 가르는 기준. 가사가 갈리면 글자끼리 겹쳐 지워야 하지만, 가사 면이 아닌
+     * 동안에는 가사가 무엇으로 바뀌든 같은 면이다 — 넣으면 아트워크가 저 혼자 한 번 겹쳐 지워진다.
+     * [activeLyricIndex] 는 재생 중에 계속 움직이므로 여기 들어가지 않는다.
+     */
+    val contentKey: Any get() = if (face == PlayerArtworkFace.LYRICS) face to lyricsId else face
+
+    val currentLyricLine: String get() = lyricLines.getOrNull(activeLyricIndex)?.text.orEmpty()
+
+    val currentLyricTranslation: String? get() = lyricLines.getOrNull(activeLyricIndex)?.translation
+}
 
 data class PlayerDetailUiState(
     val id: String,
@@ -28,6 +51,8 @@ data class PlayerDetailUiState(
     val isFavorite: Boolean = false,
     val hasLyrics: Boolean = false,
     val lyricLines: List<PlayerLyricLineUiState> = emptyList(),
+    /** 들고 있는 가사가 어느 것인지. 곡이 바뀌어도 새 가사를 읽기 전까지는 이전 값이다. */
+    val lyricsId: String? = null,
     val isLyricsSynced: Boolean = false,
     val activeLyricIndex: Int = -1,
     val isLyricsPanelVisible: Boolean = false,
@@ -44,10 +69,14 @@ data class PlayerDetailUiState(
 ) {
     val timeString get() = "${currentDuration.to_hh_colon_mm_colon_ss()} / ${playbackDuration.to_hh_colon_mm_colon_ss()}"
 
-    /** 첫 타임태그 전과 비싱크 가사에서는 비어 있다. */
-    val currentLyricLine: String get() = lyricLines.getOrNull(activeLyricIndex)?.text.orEmpty()
+    /** 화면은 그림이 준비됐는지까지 보고 [PlayerFaceUiState.face] 를 늦출 수 있다. */
+    val playerFace: PlayerFaceUiState
+        get() = PlayerFaceUiState(artworkFace, lyricsId, lyricLines, isLyricsSynced, activeLyricIndex)
 
-    val currentLyricTranslation: String? get() = lyricLines.getOrNull(activeLyricIndex)?.translation
+    /** 첫 타임태그 전과 비싱크 가사에서는 비어 있다. */
+    val currentLyricLine: String get() = playerFace.currentLyricLine
+
+    val currentLyricTranslation: String? get() = playerFace.currentLyricTranslation
 
     /**
      * 아트워크 자리에 세울 면. 뜻을 담는 자리가 둘인 이유는 그 둘의 수명이 다르기 때문이다 —
@@ -95,6 +124,7 @@ data class PlayerDetailUiState(
                 PlayerLyricLineUiState(text = "다음에 올 줄입니다"),
                 PlayerLyricLineUiState(text = "그 뒤로도 가사가 이어집니다"),
             ),
+            lyricsId = "/lyrics/temp.lrc",
             isLyricsSynced = true,
             activeLyricIndex = 2,
             repeatRangeStartDuration = 60.seconds,

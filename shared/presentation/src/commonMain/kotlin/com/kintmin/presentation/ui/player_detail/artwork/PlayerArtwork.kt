@@ -38,6 +38,10 @@ class PlayerArtwork(
 fun Transition.Segment<PlayerArtwork?>.isInstant(): Boolean =
     initialState == null || initialState?.imageFileFullPath == targetState?.imageFileFullPath
 
+/** 들고 있는 값이 지금 곡의 것인지. 읽기가 끝나기 전에는 이전 곡 그림이 들어 있다. */
+fun PlayerArtwork?.isFor(imageFileFullPath: String?): Boolean =
+    this != null && this.imageFileFullPath == imageFileFullPath
+
 /**
  * 곡이 바뀌어도 새 그림을 다 읽을 때까지 이전 값을 돌려준다. 첫 값이 오기 전에는 null 이다.
  * [size] 는 그릴 칸의 크기이고, 재기 전(0)에는 읽지 않는다.

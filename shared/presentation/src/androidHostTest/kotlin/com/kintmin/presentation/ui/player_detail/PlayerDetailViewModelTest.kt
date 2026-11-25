@@ -17,6 +17,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -339,6 +340,22 @@ class PlayerDetailViewModelTest {
     }
 
     @Test
+    fun `새 곡의 가사 유무를 모르는 동안에는 가사 면을 그대로 둔다`() {
+        givenSyncedLyrics()
+        val viewModel = viewModel()
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+        assertEquals(PlayerArtworkFace.LYRICS, viewModel.uiState.value.artworkFace)
+
+        // 저장소가 아직 새 곡의 가사 유무를 흘리지 않은 상태.
+        every { fetchAudioMediaDetail.invoke(any()) } returns emptyFlow()
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+
+        // 없다고 단정하면 여기서 아트워크로 샜다가 돌아와 앨범이 번쩍인다.
+        assertEquals(PlayerArtworkFace.LYRICS, viewModel.uiState.value.artworkFace)
+    }
+
+    @Test
     fun `가사 없음 안내를 띄운 채 다음 곡으로 넘어가면 아트워크로 돌아간다`() {
         val viewModel = viewModel()
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
@@ -347,7 +364,6 @@ class PlayerDetailViewModelTest {
         playing = mediaControlData("2")
         viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
 
-        // 이 곡에 한정된 뜻이라 곡과 함께 떨어진다. 선호는 켜진 적이 없다.
         assertEquals(PlayerArtworkFace.ARTWORK, viewModel.uiState.value.artworkFace)
         assertFalse(viewModel.uiState.value.isLyricsMissingNoticeVisible)
     }
