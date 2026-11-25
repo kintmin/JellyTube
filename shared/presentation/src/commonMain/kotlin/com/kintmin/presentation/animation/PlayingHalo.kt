@@ -22,10 +22,14 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.artworkAccentFallback
 
-private val HALO_SPREAD = 8.dp
+// 카드의 안쪽 여백과 같다. 넘으면 카드의 clip 에 잘려 끝이 각지게 끊긴다.
+private val HALO_SPREAD = 12.dp
 
-// 겹친 고리의 수. 적으면 계단이 보이고, 많아도 그라데이션은 더 고와지지 않는다.
-private const val HALO_RINGS = 8
+// 고리 하나가 0.5dp 다. 굵으면 계단이 보인다.
+private const val HALO_RINGS = 24
+
+// 넓게 번지는 만큼 가장자리는 재생바 번짐보다 옅다. 진하면 번짐이 아니라 테두리로 읽힌다.
+private const val HALO_PEAK_ALPHA = 0.25f
 
 /**
  * [shape] 둘레로 번지는 재생 중 빛. 네 모서리가 같은 모양이라고 본다. [glow] 는 그리기 안에서만 읽는다.
@@ -41,9 +45,11 @@ fun Modifier.playingHalo(glow: State<Float>, color: Color, shape: CornerBasedSha
     val radius = shape.topStart.toPx(size, this)
     repeat(HALO_RINGS) { ring ->
         val inset = ringWidth * (ring + 0.5f)
-        val falloff = 1f - (ring.toFloat() / HALO_RINGS)
+        // 가장자리에서 기울기가 0 인 곡선이라 경계선이 생기지 않는다. 직선·제곱 감쇠는 가장자리에 선이 선다.
+        val t = (ring + 0.5f) / HALO_RINGS
+        val falloff = 1f - (t * t * (3f - 2f * t))
         drawRoundRect(
-            color = color.copy(alpha = GLOW_MAX_ALPHA * strength * falloff * falloff),
+            color = color.copy(alpha = HALO_PEAK_ALPHA * strength * falloff),
             topLeft = Offset(-inset, -inset),
             size = Size(size.width + inset * 2, size.height + inset * 2),
             cornerRadius = CornerRadius(radius + inset),
