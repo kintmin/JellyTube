@@ -236,6 +236,7 @@ class PlayerDetailViewModel constructor(
                 if (!uiState.value.isLyricsKnown) return
                 val timeMs = parsedLyricLines.getOrNull(intent.index)?.timeMs ?: return
                 mediaControllerManager.seek(timeMs.milliseconds)
+                refreshActiveLyricIndex()
             }
 
             PlayerDetailIntent.OnClickLyricsViewerButton -> {
@@ -329,6 +330,7 @@ class PlayerDetailViewModel constructor(
             PlayerDetailIntent.OnChangeFinishTimeSlider -> {
                 isHandlingSlider = false
                 mediaControllerManager.seek(uiState.value.currentDuration)
+                refreshActiveLyricIndex()
             }
 
             PlayerDetailIntent.OnClickSleepTimerButton -> {
