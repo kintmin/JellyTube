@@ -2,6 +2,7 @@ package com.kintmin.presentation.theme
 
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 
 // 팔레트는 이 파일 밖으로 내보내지 않는다. 화면은 아래 의미 토큰이나 MaterialTheme.colorScheme 만 쓴다.
 
@@ -120,3 +121,9 @@ val overlayScrim = dark100.copy(alpha = 0.5f)
 val overlayScrimStrong = dark100.copy(alpha = 0.72f)
 
 val artworkBackdropFallback = listOf(Color(0xFF4B453B), Color(0xFF1D1C1A), Color(0xFF0D0D0D))
+
+/**
+ * 앨범아트 대표색을 끌어올릴 때 대는 면. 썸네일 위 [overlayScrimStrong] 이 가장 밝아지는
+ * 경우(흰 앨범아트)이고 [emptyTrack] 보다 불리해서, 이 하나로 재생바와 썸네일을 함께 만족시킨다.
+ */
+val accentContrastSurface = overlayScrimStrong.compositeOver(white)

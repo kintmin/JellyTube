@@ -18,8 +18,10 @@ import coil3.compose.asPainter
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.size.Scale
-import com.kintmin.presentation.platform.extractDominantColor
 import com.kintmin.presentation.theme.artworkBackdropFallback
+import com.kintmin.presentation.theme.darken
+import com.kintmin.presentation.theme.lighten
+import com.kintmin.presentation.ui.common.artworkDominantColorArgb
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import okio.Path.Companion.toPath
@@ -84,32 +86,11 @@ private suspend fun loadPlayerArtwork(
 }
 
 private suspend fun extractGradientFromArtwork(path: String): List<Color>? {
-    val seed = Color(extractDominantColor(path) ?: return null)
+    val seed = Color(artworkDominantColorArgb(path) ?: return null)
 
     return listOf(
         seed.lighten(0.2f),
         seed.darken(0.55f),
         seed.darken(0.82f),
-    )
-}
-
-private fun Color.lighten(factor: Float): Color {
-    val safe = factor.coerceIn(0f, 1f)
-    return Color(
-        red = red + (1f - red) * safe,
-        green = green + (1f - green) * safe,
-        blue = blue + (1f - blue) * safe,
-        alpha = 1f,
-    )
-}
-
-private fun Color.darken(factor: Float): Color {
-    val safe = factor.coerceIn(0f, 1f)
-    val mul = 1f - safe
-    return Color(
-        red = red * mul,
-        green = green * mul,
-        blue = blue * mul,
-        alpha = 1f,
     )
 }

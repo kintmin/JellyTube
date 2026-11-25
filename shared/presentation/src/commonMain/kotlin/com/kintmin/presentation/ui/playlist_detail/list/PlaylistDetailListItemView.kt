@@ -44,9 +44,10 @@ import com.kintmin.presentation.animation.NowPlayingBars
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.destructiveContent
-import com.kintmin.presentation.theme.overlayScrim
+import com.kintmin.presentation.theme.overlayScrimStrong
 import com.kintmin.presentation.ui.common.AudioArtwork
 import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
+import com.kintmin.presentation.ui.common.rememberArtworkAccentColor
 import com.kintmin.presentation.ui.playlist_detail.dialog.RemoveAudioMediaFromPlaylistDialog
 
 @Composable
@@ -126,11 +127,12 @@ fun PlaylistDetailListItemView(
                 ) {
 
                     if (isNowPlaying) {
-                        // 임의의 앨범아트 위에서도 기둥이 읽히게 깔고 그린다.
+                        // 기둥 색이 바로 이 그림에서 나온 색이라, 색을 끌어올린 기준과 같은 scrim 을
+                        // 깔아야 임의의 앨범아트 위에서도 대비가 지켜진다.
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
-                                .background(overlayScrim),
+                                .background(overlayScrimStrong),
                         )
                         // 기둥은 Canvas 라 스크린리더에 아무것도 남기지 않는다.
                         NowPlayingBars(
@@ -140,6 +142,8 @@ fun PlaylistDetailListItemView(
                                     contentDescription = if (isPlaying) "재생 중" else "일시정지"
                                 },
                             isPlaying = isPlaying,
+                            color = rememberArtworkAccentColor(data.imageFileFullPath)
+                                ?: MaterialTheme.colorScheme.tertiary,
                         )
                     }
                 }
