@@ -19,13 +19,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.playlist.model.PlaylistType
+import com.kintmin.presentation.animation.NowPlayingBars
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkAccentFallback
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.contentSubtle
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
@@ -47,6 +52,9 @@ private val ROW_HEIGHT = 56.dp
 fun PlaylistLibraryBlockView(
     modifier: Modifier,
     data: List<PlaylistItemUiState>,
+    nowPlayingPlaylistId: Int?,
+    isPlaying: Boolean,
+    accentColor: Color,
     sendIntent: (PlaylistIntent) -> Unit,
 ) {
     // 틀을 두르지 않는다. 설정 화면처럼 배경 위에 행을 그대로 쌓는다.
@@ -54,6 +62,9 @@ fun PlaylistLibraryBlockView(
         data.forEach { item ->
             PlaylistLibraryRowView(
                 data = item,
+                isNowPlaying = item.id == nowPlayingPlaylistId,
+                isPlaying = isPlaying,
+                accentColor = accentColor,
                 sendIntent = sendIntent,
             )
         }
@@ -63,6 +74,9 @@ fun PlaylistLibraryBlockView(
 @Composable
 private fun PlaylistLibraryRowView(
     data: PlaylistItemUiState,
+    isNowPlaying: Boolean,
+    isPlaying: Boolean,
+    accentColor: Color,
     sendIntent: (PlaylistIntent) -> Unit,
 ) {
     Row(
@@ -74,12 +88,24 @@ private fun PlaylistLibraryRowView(
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = data.type.libraryIcon(),
-            contentDescription = null,
-            modifier = Modifier.size(22.dp),
-            tint = contentSubtle,
-        )
+        // 썸네일이 없는 행이라 아이콘 자리에 막대를 세운다. 막대는 스스로 번진다.
+        if (isNowPlaying) {
+            NowPlayingBars(
+                modifier = Modifier
+                    .size(22.dp)
+                    // 기둥은 Canvas 라 스크린리더에 아무것도 남기지 않는다.
+                    .semantics { contentDescription = if (isPlaying) "재생 중" else "일시정지" },
+                isPlaying = isPlaying,
+                color = accentColor,
+            )
+        } else {
+            Icon(
+                imageVector = data.type.libraryIcon(),
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
+                tint = contentSubtle,
+            )
+        }
         Text(
             modifier = Modifier
                 .weight(1f)
@@ -126,6 +152,9 @@ fun PlaylistLibraryBlockPreview() {
                 PlaylistItemUiState.getMock(id = 2, type = PlaylistType.FAVORITE).copy(name = "즐겨찾기", audioMediaCount = 12),
                 PlaylistItemUiState.getMock(id = 3, type = PlaylistType.UNCATEGORIZED).copy(name = "미분류", audioMediaCount = 0),
             ),
+            nowPlayingPlaylistId = 2,
+            isPlaying = true,
+            accentColor = artworkAccentFallback,
             sendIntent = {},
         )
     }

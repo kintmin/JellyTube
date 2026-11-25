@@ -1,12 +1,9 @@
 package com.kintmin.presentation.ui.main.playlist.list_item
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -29,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,9 +35,9 @@ import androidx.compose.ui.unit.sp
 import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkAccentFallback
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.destructiveContent
-import com.kintmin.presentation.ui.common.AudioArtwork
 import com.kintmin.presentation.ui.common.JellyTubeDropdownMenu
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
@@ -50,6 +48,9 @@ import com.kintmin.presentation.ui.main.playlist.dialog.SecretPlaylistDeleteDial
 fun PlaylistItemView(
     modifier: Modifier,
     data: PlaylistItemUiState,
+    isNowPlaying: Boolean,
+    isPlaying: Boolean,
+    accentColor: Color,
     sendIntent: (PlaylistIntent) -> Unit,
 ) {
     var isDropDownExpanded by remember { mutableStateOf(false) }
@@ -83,16 +84,11 @@ fun PlaylistItemView(
             .clickable { sendIntent(PlaylistIntent.OnClickPlaylistItem(data)) }
             .padding(12.dp),
     ) {
-        val artworkModifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clip(MaterialTheme.shapes.small)
-            .background(MaterialTheme.colorScheme.surface)
-
-        AudioArtwork(
+        PlaylistItemArtworkView(
             imageFileFullPath = data.imageFileFullPath,
-            modifier = artworkModifier,
-            placeholderIconSize = 36.dp,
+            isNowPlaying = isNowPlaying,
+            isPlaying = isPlaying,
+            accentColor = accentColor,
         )
         Text(
             modifier = Modifier.padding(top = 8.dp),
@@ -185,6 +181,9 @@ fun PlaylistItemPreview() {
         PlaylistItemView(
             modifier = Modifier.width(180.dp),
             PlaylistItemUiState.getMock().copy(isDownloadTarget = true),
+            isNowPlaying = true,
+            isPlaying = true,
+            accentColor = artworkAccentFallback,
             sendIntent = {},
         )
     }
@@ -199,11 +198,17 @@ fun PlaylistItemLongNamePreview() {
             PlaylistItemView(
                 modifier = Modifier.width(180.dp),
                 PlaylistItemUiState.getMock().copy(name = "가".repeat(PlaylistTextLimit.MAX_TITLE_LENGTH)),
+                isNowPlaying = false,
+                isPlaying = false,
+                accentColor = artworkAccentFallback,
                 sendIntent = {},
             )
             PlaylistItemView(
                 modifier = Modifier.width(180.dp),
                 PlaylistItemUiState.getMock().copy(name = "드라이브"),
+                isNowPlaying = false,
+                isPlaying = false,
+                accentColor = artworkAccentFallback,
                 sendIntent = {},
             )
         }
