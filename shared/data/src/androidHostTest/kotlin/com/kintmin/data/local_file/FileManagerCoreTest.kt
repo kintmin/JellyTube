@@ -72,4 +72,20 @@ class FileManagerCoreTest {
         core.deleteFileAtFullPath(audio).getOrThrow()
         assertEquals(listOf(image), core.listAudioAndImageFileFullPaths().getOrThrow())
     }
+
+    @Test
+    fun `이미지는 원본을 남기고 확장자를 유지해 복사한다`() = runTest {
+        val source = core.getImageFileFullPath("원본.webp").getOrThrow()
+        java.io.File(source).writeText("그림")
+
+        assertEquals("webp", core.copyImageFile("원본.webp", "사본").getOrThrow())
+
+        assertEquals("그림", java.io.File(core.getImageFileFullPath("사본.webp").getOrThrow()).readText())
+        assertTrue(java.io.File(source).exists())
+    }
+
+    @Test
+    fun `복사할 원본이 없으면 실패한다`() = runTest {
+        assertTrue(core.copyImageFile("없음.webp", "사본").isFailure)
+    }
 }
