@@ -78,17 +78,17 @@ jobs:
         env:
           HEAD: ${{ github.head_ref }}
         # "main 이 조상인가" 로는 가려지지 않는다 — 릴리스 반영이 main 을 develop 에 merge 하므로
-        # develop 에서 딴 브랜치도 그 검사를 통과한다. develop 에서 땄다면 main..HEAD 에 develop
-        # 전용 커밋이 섞여 develop..HEAD 보다 많아진다.
+        # develop 에서 딴 브랜치도 그 검사를 통과한다. main..HEAD 중 develop 에 있는 커밋을 센다 —
+        # develop..HEAD 와 비교하면 반영이 실패해 develop 이 main 보다 뒤처졌을 때 오판한다.
         run: |
           set -euo pipefail
           git fetch -q --no-tags origin \
             +refs/heads/main:refs/remotes/origin/main +refs/heads/develop:refs/remotes/origin/develop
           from_main=$(git rev-list --count origin/main..HEAD)
-          from_develop=$(git rev-list --count origin/develop..HEAD)
-          echo "main..HEAD=$from_main develop..HEAD=$from_develop"
-          if [[ "$from_main" != "$from_develop" ]]; then
-            echo "::error::$HEAD 는 main 에서 따야 한다. develop 에만 있던 커밋 $((from_main - from_develop)) 개가 섞여 있다."
+          own=$(git rev-list --count HEAD --not origin/main origin/develop)
+          echo "main..HEAD=$from_main 어느 쪽에도 없는 커밋=$own"
+          if [[ "$from_main" != "$own" ]]; then
+            echo "::error::$HEAD 는 main 에서 따야 한다. develop 에만 있던 커밋 $((from_main - own)) 개가 섞여 있다."
             exit 1
           fi
 
