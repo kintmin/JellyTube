@@ -197,6 +197,8 @@ Kotlin Multiplatform 앱. 하나의 공유 코어를 Android / iOS / Desktop 이
   `docs/` `revert/` 이고, 나머지는 한국어로 단어를 `-` 로 잇는다. **PR 제목도 같은 접두어로 시작한다**
   — squash 머지가 제목을 develop 의 커밋 메시지로 가져간다. 브랜치 이름은 ruleset 이 만들 때,
   PR 제목과 base 는 CI 가 PR 마다 검사한다.
+- **PR 제목은 사용자에게 그대로 보인다** — 릴리스 노트와 새 버전 메일이 PR 제목의 목록이다.
+  내부 이름을 제목에 쓰지 않는다.
 - `release/<버전>` 은 develop 에서 따고 버전 올리기와 출시 전 수정만 한다. main 에는 **merge commit**
   으로 병합한다. 급한 수정은 main 에서 `hotfix/<버전>` 을 따서 같은 방식으로 병합한다.
 - main 은 `release/*` 와 `hotfix/*` 만 받고, 그 둘은 main 에만 병합한다. PR 마다 CI 가 검사한다.
