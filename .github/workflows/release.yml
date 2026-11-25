@@ -67,6 +67,30 @@ jobs:
           if [[ ! "$TITLE" =~ ^(feat|fix|refactor|perf|test|build|ci|docs|revert|release|hotfix)/ ]]; then
             echo "::error::PR 제목도 '접두어/' 로 시작한다 — feat: 가 아니라 feat/. 지금 제목: $TITLE"; exit 1
           fi
+      # 분기점은 ruleset 이 보지 못하므로 여기서 본다. merge ref 가 아니라 head 를 본다.
+      - uses: actions/checkout@v4
+        if: startsWith(github.head_ref, 'hotfix/')
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Check the hotfix was cut from main
+        if: startsWith(github.head_ref, 'hotfix/')
+        env:
+          HEAD: ${{ github.head_ref }}
+        # "main 이 조상인가" 로는 가려지지 않는다 — 릴리스 반영이 main 을 develop 에 merge 하므로
+        # develop 에서 딴 브랜치도 그 검사를 통과한다. develop 에서 땄다면 main..HEAD 에 develop
+        # 전용 커밋이 섞여 develop..HEAD 보다 많아진다.
+        run: |
+          set -euo pipefail
+          git fetch -q --no-tags origin \
+            +refs/heads/main:refs/remotes/origin/main +refs/heads/develop:refs/remotes/origin/develop
+          from_main=$(git rev-list --count origin/main..HEAD)
+          from_develop=$(git rev-list --count origin/develop..HEAD)
+          echo "main..HEAD=$from_main develop..HEAD=$from_develop"
+          if [[ "$from_main" != "$from_develop" ]]; then
+            echo "::error::$HEAD 는 main 에서 따야 한다. develop 에만 있던 커밋 $((from_main - from_develop)) 개가 섞여 있다."
+            exit 1
+          fi
 
   # R8 로만 드러나는 회귀는 릴리스 빌드를 해야 보인다. main 으로 가는 PR 에서만 돌려, 걸리면
   # release 브랜치에 커밋해 고칠 수 있게 한다 — main 에 들어간 뒤면 hotfix 를 따야 한다.
@@ -628,3 +652,10 @@ jobs:
             echo "::error::main 과 develop 이 충돌한다. 로컬에서 develop 에 origin/main 을 merge 해 충돌을 풀고, 그 PR 을 merge commit 으로 병합한다(관리자 bypass)."
             exit 1
           fi
+      # 이 job 이 실패하면 develop 이 main 보다 뒤처진 채로 남는다. 메일이 없으면 모르고 지나간다.
+      - name: Notify
+        if: always()
+        env:
+          MAIL_PASSWORD: ${{ secrets.JELLY_TUBE_MAIL_PASSWORD }}
+          MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
+        run: .github/scripts/notify-job.sh "develop 반영" "${{ job.status }}"
