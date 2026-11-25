@@ -41,7 +41,6 @@ fun Modifier.playingHalo(glow: State<Float>, color: Color, shape: CornerBasedSha
     val radius = shape.topStart.toPx(size, this)
     repeat(HALO_RINGS) { ring ->
         val inset = ringWidth * (ring + 0.5f)
-        // 안쪽 고리일수록 진하다. 가산이라 겹친 만큼 밝아진다.
         val falloff = 1f - (ring.toFloat() / HALO_RINGS)
         drawRoundRect(
             color = color.copy(alpha = GLOW_MAX_ALPHA * strength * falloff * falloff),

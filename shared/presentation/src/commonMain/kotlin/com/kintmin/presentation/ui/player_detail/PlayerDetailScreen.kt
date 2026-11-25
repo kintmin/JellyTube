@@ -462,7 +462,6 @@ fun PlayerDetailScreen(
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    // 반복이 꺼진 마지막 곡에서는 눌러도 아무 일이 없다. 반응 없는 버튼을 두지 않는다.
                     IconButton(
                         enabled = data.hasNext,
                         onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) },

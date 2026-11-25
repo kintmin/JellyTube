@@ -26,7 +26,6 @@ import com.kintmin.presentation.theme.artworkAccentFallback
 import com.kintmin.presentation.theme.overlayScrimStrong
 import com.kintmin.presentation.ui.common.AudioArtwork
 
-/** [isNowPlaying] 면 둘레가 [accentColor] 로 빛나고 모서리에 재생 중 막대가 선다. */
 @Composable
 fun PlaylistItemArtworkView(
     imageFileFullPath: String?,

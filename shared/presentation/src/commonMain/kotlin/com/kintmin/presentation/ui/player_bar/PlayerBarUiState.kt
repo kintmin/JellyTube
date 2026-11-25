@@ -16,10 +16,7 @@ data class PlayerBarUiState(
 ) {
     val timeString get() = "${currentDuration.to_hh_colon_mm_colon_ss()} / ${playbackDuration.to_hh_colon_mm_colon_ss()}"
 
-    /**
-     * [playlistId] 에서 듣고 있는 곡. 같은 곡이라도 다른 플레이리스트에서 듣고 있으면 null 이다 —
-     * 거기서 누르면 큐가 바뀌어 처음부터 다시 시작하니, 이어 듣는 것처럼 보이면 안 된다.
-     */
+    /** 다른 플레이리스트에서 듣는 곡은 여기서 누르면 처음부터 다시 시작하니, 이어 듣는 것처럼 보이면 안 된다. */
     fun nowPlayingMediaIdIn(playlistId: Int): Int? = id.toIntOrNull().takeIf { this.playlistId == playlistId }
 
     companion object {
