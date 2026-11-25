@@ -17,6 +17,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -240,10 +241,10 @@ class PlayerDetailViewModelTest {
         val viewModel = viewModel()
 
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
-        assertTrue(viewModel.uiState.value.showsLyricsPanel)
+        assertTrue(viewModel.uiState.value.showsLyricsFace)
 
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
-        assertFalse(viewModel.uiState.value.showsLyricsPanel)
+        assertFalse(viewModel.uiState.value.showsLyricsFace)
     }
 
     @Test
@@ -251,7 +252,7 @@ class PlayerDetailViewModelTest {
         givenSyncedLyrics()
         val viewModel = viewModel()
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
-        assertTrue(viewModel.uiState.value.showsLyricsPanel)
+        assertTrue(viewModel.uiState.value.showsLyricsFace)
 
         lyricFilePath = null
         parsedLines = emptyList()
@@ -259,7 +260,7 @@ class PlayerDetailViewModelTest {
         viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
 
         assertFalse(viewModel.uiState.value.hasLyrics)
-        assertFalse(viewModel.uiState.value.showsLyricsPanel)
+        assertFalse(viewModel.uiState.value.showsLyricsFace)
         // 사용자의 뜻은 지우지 않는다 — 가사 있는 곡이 오면 패널이 다시 뜬다.
         assertTrue(viewModel.uiState.value.isLyricsPanelVisible)
     }
@@ -271,7 +272,7 @@ class PlayerDetailViewModelTest {
 
         viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
 
-        assertTrue(viewModel.uiState.value.showsLyricsPanel)
+        assertTrue(viewModel.uiState.value.showsLyricsFace)
     }
 
     @Test
@@ -353,6 +354,45 @@ class PlayerDetailViewModelTest {
 
         // 없다고 단정하면 여기서 아트워크로 샜다가 돌아와 앨범이 번쩍인다.
         assertEquals(PlayerArtworkFace.LYRICS, viewModel.uiState.value.artworkFace)
+    }
+
+    @Test
+    fun `가사 유무를 모르는 동안 받은 탭은 답이 온 뒤에 맞는 면을 연다`() {
+        givenSyncedLyrics()
+        val viewModel = viewModel()
+        // 새 곡의 답을 테스트가 쥐고 있다가 나중에 흘린다. 이전 곡은 가사가 있었다.
+        val answer = MutableSharedFlow<List<PlaylistTrackAggregate>>(extraBufferCapacity = 1)
+        every { fetchAudioMediaDetail.invoke(any()) } returns answer
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyrics)
+
+        // 이전 곡의 답으로 열지 않는다.
+        assertFalse(viewModel.uiState.value.showsLyricsFace)
+        assertFalse(viewModel.uiState.value.isLyricsPanelVisible)
+
+        // 이 곡에는 가사가 없다는 답이 온다.
+        lyricFilePath = null
+        parsedLines = emptyList()
+        answer.tryEmit(listOf(aggregate()))
+
+        assertEquals(PlayerArtworkFace.LYRICS_MISSING, viewModel.uiState.value.artworkFace)
+        // 가사 있는 곡까지 따라가는 선호는 켜지지 않는다.
+        assertFalse(viewModel.uiState.value.isLyricsPanelVisible)
+    }
+
+    @Test
+    fun `이전 곡 가사가 떠 있는 동안 줄을 눌러도 옮기지 않는다`() {
+        givenSyncedLyrics()
+        val viewModel = viewModel()
+        every { fetchAudioMediaDetail.invoke(any()) } returns emptyFlow()
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine(2))
+
+        verify(exactly = 0) { manager.seek(any()) }
     }
 
     @Test

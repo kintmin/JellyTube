@@ -55,7 +55,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -102,6 +101,7 @@ import com.kintmin.presentation.ui.player_detail.lyrics.PlayerLyricsPanelView
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -163,14 +163,15 @@ fun PlayerDetailScreen(
     // 아트워크로 돌아갈 때는 새 그림이 올 때까지 기다린다. 가사 면이 떠 있는 동안 그림은 화면에
     // 없었으므로, 바로 넘기면 아직 이전 곡 그림인 것이 먼저 떴다가 새 그림으로 또 바뀐다.
     // 붙잡는 것은 면 전체다 — 종류만 늦추고 내용을 먼저 받으면 가사가 빈 가사 면으로 한 번
-    // 사라진 뒤에 그림이 뜬다.
+    // 사라진 뒤에 그림이 뜬다. 그림이 끝내 오지 않아도 면이 묶이지 않게 기다림에 상한을 둔다.
     val targetFace = data.playerFace
     val artworkIsCurrent = artwork.isFor(data.imageFileFullPath)
     var shownFace by remember { mutableStateOf(targetFace) }
-    SideEffect {
-        if (targetFace.face != PlayerArtworkFace.ARTWORK || artworkIsCurrent) {
-            shownFace = targetFace
+    LaunchedEffect(targetFace, artworkIsCurrent) {
+        if (targetFace.face == PlayerArtworkFace.ARTWORK && !artworkIsCurrent) {
+            delay(ARTWORK_TRANSITION_MILLIS.toLong())
         }
+        shownFace = targetFace
     }
     val gradientColors = artworkBackdropFallback.indices.map { index ->
         artworkTransition.animateColor(
