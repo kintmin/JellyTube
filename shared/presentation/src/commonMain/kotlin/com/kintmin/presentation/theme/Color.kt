@@ -127,3 +127,9 @@ val artworkBackdropFallback = listOf(Color(0xFF4B453B), Color(0xFF1D1C1A), Color
  * 경우(흰 앨범아트)이고 [emptyTrack] 보다 불리해서, 이 하나로 재생바와 썸네일을 함께 만족시킨다.
  */
 val accentContrastSurface = overlayScrimStrong.compositeOver(white)
+
+/**
+ * 대표색을 아직 읽지 못했을 때의 강조색. **회색이어야 한다** — 어느 대표색으로 바뀌어도
+ * 색 변화로 읽히지 않는다. 테마 강조색을 두면 첫 재생에서 파랑이 곡 색으로 튀는 것이 보인다.
+ */
+val artworkAccentFallback = gray60

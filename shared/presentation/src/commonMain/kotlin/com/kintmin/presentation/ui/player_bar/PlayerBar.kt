@@ -36,6 +36,7 @@ import com.kintmin.presentation.animation.PlaybackPollingEffect
 import com.kintmin.presentation.animation.animatePlaybackSeconds
 import com.kintmin.presentation.animation.animatePlayingGlow
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkAccentFallback
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.emptyTrack
 import com.kintmin.presentation.ui.common.AudioArtwork
@@ -149,8 +150,7 @@ private fun PlayerBarProgress(data: PlayerBarUiState) {
     val playedRatio =
         if (playbackSeconds > 0f) (currentSeconds / playbackSeconds).coerceIn(0f, 1f) else 0f
 
-    val accent = rememberArtworkAccentColor(data.imageFileFullPath)
-        ?: MaterialTheme.colorScheme.tertiary
+    val accent = rememberArtworkAccentColor(data.imageFileFullPath) ?: artworkAccentFallback
     val glow = animatePlayingGlow(data.isPlaying)
 
     Canvas(
@@ -163,14 +163,16 @@ private fun PlayerBarProgress(data: PlayerBarUiState) {
         val playedWidth = size.width * playedRatio
         if (playedWidth <= 0f) return@Canvas
 
+        val glowStrength = glow.value
+
         // 번짐은 트랙 높이 밖(위쪽)으로 그린다 — 칸을 넓히면 Scaffold 가 그만큼 목록을 밀어낸다.
         // 그린 자리는 이 요소의 경계 밖이라 터치도 받지 않는다.
         //
         // 가장 진한 끝을 트랙 상단(y=0)에 둔다. 트랙 안까지 그리면 그 구간을 아래의 불투명한
         // 진행바가 덮어 번짐의 피크가 보이지 않는다.
-        if (glow > 0f) {
+        if (glowStrength > 0f) {
             val glowHeight = PROGRESS_GLOW_HEIGHT.toPx()
-            val trailAlpha = GLOW_MAX_ALPHA * PROGRESS_TRAIL_GLOW_RATIO * glow
+            val trailAlpha = GLOW_MAX_ALPHA * PROGRESS_TRAIL_GLOW_RATIO * glowStrength
             drawRect(
                 brush = Brush.verticalGradient(
                     colors = listOf(Color.Transparent, accent.copy(alpha = trailAlpha)),
@@ -186,12 +188,15 @@ private fun PlayerBarProgress(data: PlayerBarUiState) {
         drawRect(color = accent, size = Size(playedWidth, size.height))
 
         // 머리 번짐은 바를 그린 뒤에 얹는다. 먼저 깔면 불투명한 바가 가장 진한 중심을 덮는다.
-        if (glow > 0f) {
+        if (glowStrength > 0f) {
             val radius = PROGRESS_HEAD_GLOW_RADIUS.toPx()
             val center = Offset(playedWidth, size.height / 2f)
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(accent.copy(alpha = GLOW_MAX_ALPHA * glow), Color.Transparent),
+                    colors = listOf(
+                        accent.copy(alpha = GLOW_MAX_ALPHA * glowStrength),
+                        Color.Transparent,
+                    ),
                     center = center,
                     radius = radius,
                 ),

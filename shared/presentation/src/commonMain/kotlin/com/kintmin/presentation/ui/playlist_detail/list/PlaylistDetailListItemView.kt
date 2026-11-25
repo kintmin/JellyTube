@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kintmin.presentation.animation.NowPlayingBars
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkAccentFallback
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.theme.overlayScrimStrong
@@ -143,7 +144,7 @@ fun PlaylistDetailListItemView(
                                 },
                             isPlaying = isPlaying,
                             color = rememberArtworkAccentColor(data.imageFileFullPath)
-                                ?: MaterialTheme.colorScheme.tertiary,
+                                ?: artworkAccentFallback,
                         )
                     }
                 }

@@ -8,7 +8,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -19,6 +18,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
+import com.kintmin.presentation.theme.artworkAccentFallback
 
 private val BAR_WIDTH = 3.dp
 private val BAR_GAP = 2.dp
@@ -50,7 +50,7 @@ fun NowPlayingBars(
     if (!isPlaying) {
         // 기둥에는 애니메이션을 걸지 않는다. 걸면 보이지도 않는 변화로 프레임 클럭이 계속 깨어 있다.
         // 번짐은 빠지는 중일 수 있어 그 값만 읽는다 — 목표에 닿으면 스스로 멈춘다.
-        Canvas(modifier = modifier) { drawNowPlayingBars(PAUSED_LEVELS, color, glow) }
+        Canvas(modifier = modifier) { drawNowPlayingBars(PAUSED_LEVELS, color, glow.value) }
         return
     }
 
@@ -69,7 +69,7 @@ fun NowPlayingBars(
 
     Canvas(modifier = modifier) {
         // 프레임마다 바뀌는 값은 여기서만 읽는다. 바깥에서 읽으면 행 전체가 매 프레임 다시 그려진다.
-        drawNowPlayingBars(levels.map { it.value }, color, glow)
+        drawNowPlayingBars(levels.map { it.value }, color, glow.value)
     }
 }
 
@@ -116,7 +116,7 @@ fun NowPlayingBarsPlayingPreview() {
         NowPlayingBars(
             modifier = Modifier.size(64.dp),
             isPlaying = true,
-            color = MaterialTheme.colorScheme.tertiary,
+            color = artworkAccentFallback,
         )
     }
 }
@@ -128,7 +128,7 @@ fun NowPlayingBarsPausedPreview() {
         NowPlayingBars(
             modifier = Modifier.size(64.dp),
             isPlaying = false,
-            color = MaterialTheme.colorScheme.tertiary,
+            color = artworkAccentFallback,
         )
     }
 }

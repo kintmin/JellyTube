@@ -39,6 +39,12 @@ class ArtworkTintTest {
     }
 
     @Test
+    fun `대표색을 못 읽었을 때 쓰는 색도 바닥값을 넘는다`() {
+        val ratio = contrastRatio(artworkAccentFallback, accentContrastSurface)
+        assertTrue("$artworkAccentFallback 가 $ratio:1 로 모자랍니다", ratio >= 3f)
+    }
+
+    @Test
     fun `보정은 어느 채널도 낮추지 않는다`() {
         darkSeeds.forEach { seed ->
             val lifted = seed.liftedForAccent()
