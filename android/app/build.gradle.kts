@@ -97,7 +97,8 @@ android {
 }
 
 /**
- * 산출 APK 파일명을 "JellyTube_<versionName>(<versionCode>)_<variant>_<시각>.apk" 로 바꾼다.
+ * 산출 APK 파일명을 "JellyTube_<versionName>_<versionCode>_<variant>_<시각>.apk" 로 바꾼다.
+ * GitHub Release 가 자산 이름에서 영숫자·`.`·`-`·`_` 외의 문자를 `.` 로 바꾸므로 괄호를 쓰지 않는다.
  *
  * AGP 9 부터 variant.outputs 의 outputFileName 을 직접 고치던 internal API(VariantOutputImpl)가
  * 사라져서, 공개 API 인 Artifacts transform 으로 APK 를 복사하며 이름을 붙인다.
@@ -123,7 +124,7 @@ abstract class RenameApkTask : DefaultTask() {
         transformationRequest.get().submit(this) { builtArtifact ->
             val target = File(
                 outFolder.get().asFile,
-                "JellyTube_${AppConfiguration.VERSION_NAME}(${AppConfiguration.VERSION_CODE})_${variantName.get()}_$timeString.apk"
+                "JellyTube_${AppConfiguration.VERSION_NAME}_${AppConfiguration.VERSION_CODE}_${variantName.get()}_$timeString.apk"
             )
             File(builtArtifact.outputFile).copyTo(target, overwrite = true)
             target

@@ -23,6 +23,9 @@ Android 와 iOS 에서 같은 화면으로 동작하고, PC 의 음악 파일은
 
 SideStore 소스: `https://github.com/kintmin/JellyTube/releases/latest/download/source.json`
 
+새 버전에서 바뀐 점은 릴리스 페이지 맨 위에 있습니다. 전체 변경 목록은 그 아래에 접혀 있습니다.
+모바일은 고정 주소로도 볼 수 있습니다: `https://github.com/kintmin/JellyTube/releases/latest/download/whatsnew-mobile.txt`
+
 앱 스토어에는 배포하지 않습니다.
 
 ## 업데이트 소식 받기
@@ -42,20 +45,19 @@ SideStore 소스: `https://github.com/kintmin/JellyTube/releases/latest/download
 Kotlin Multiplatform 으로, 화면을 포함한 코드 대부분을 Android 와 iOS 가 함께 씁니다.
 화살표는 의존하는 방향입니다.
 
-```
-  android/app       ios            desktop
-       │             │                │
-       └──────┬──────┘                │
-         ┌────┴────┐                  │
-         ▼         ▼                  │
-  presentation    data ────────┐      │
-         │         │           ▼      ▼
-         └────┬────┘          file-share
-              ▼
-            domain
-              │
-              ▼
-             log
+```mermaid
+graph TD
+    android["android/app"] --> presentation
+    android --> data
+    ios --> presentation
+    ios --> data
+    desktop --> fileshare["file-share"]
+    presentation --> domain
+    data --> domain
+    data --> fileshare
+    domain --> log
+    %% 보이지 않는 선. desktop 을 android·ios 와 같은 줄에 둔다.
+    desktop ~~~ data
 ```
 
 | 모듈 | 경로 | 내용 |
@@ -82,8 +84,7 @@ iOS 는 macOS 와 Xcode 가 필요합니다.
 ./scripts/setup-ios-vendor.sh          # iOS: 클론 뒤 한 번. 그다음 Xcode 로 ios/app 을 연다
 ```
 
-- 릴리스 서명 키는 저장소에 없습니다. 없으면 release 빌드는 서명 없이 나오고, 나머지 빌드는 그대로 됩니다.
-- 브랜치는 `develop` 에서 따서 PR 을 엽니다. 브랜치 이름과 릴리스 규칙은 AGENTS.md 의 "브랜치와 릴리스" 절을 보세요.
+릴리스 서명 키는 저장소에 없습니다. 없으면 release 빌드는 서명 없이 나오고, 나머지 빌드는 그대로 됩니다.
 
 ## 라이선스
 
