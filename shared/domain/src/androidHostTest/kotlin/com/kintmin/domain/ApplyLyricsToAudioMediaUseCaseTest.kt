@@ -20,7 +20,7 @@ class ApplyLyricsToAudioMediaUseCaseTest {
         val path = "/lyrics/abc.lrc"
         coEvery { audioMediaRepository.saveLyrics(any(), any()) } returns Result.success(path)
         coEvery {
-            audioMediaRepository.updateAudioMedia(any(), any(), any(), any(), any(), any())
+            audioMediaRepository.updateAudioMedia(any(), any(), any(), any(), any())
         } returns Result.success(Unit)
 
         val result = useCase(audioMediaId = 1, plainLyrics = "plain", syncedLyrics = "[00:01.00] hi")
@@ -37,7 +37,7 @@ class ApplyLyricsToAudioMediaUseCaseTest {
         val path = "/lyrics/abc.lrc"
         coEvery { audioMediaRepository.saveLyrics(any(), any()) } returns Result.success(path)
         coEvery {
-            audioMediaRepository.updateAudioMedia(any(), any(), any(), any(), any(), any())
+            audioMediaRepository.updateAudioMedia(any(), any(), any(), any(), any())
         } returns Result.success(Unit)
 
         val result = useCase(audioMediaId = 2, plainLyrics = "첫 줄\n둘째 줄", syncedLyrics = null)
@@ -62,7 +62,7 @@ class ApplyLyricsToAudioMediaUseCaseTest {
         coEvery { audioMediaRepository.saveVariantLyrics(any(), any(), any()) } returns Result.success(Unit)
         coEvery { audioMediaRepository.deleteVariantLyrics(any(), any()) } returns Result.success(Unit)
         coEvery {
-            audioMediaRepository.updateAudioMedia(any(), any(), any(), any(), any(), any())
+            audioMediaRepository.updateAudioMedia(any(), any(), any(), any(), any())
         } returns Result.success(Unit)
 
         val result = useCase(
@@ -90,7 +90,7 @@ class ApplyLyricsToAudioMediaUseCaseTest {
         val path = "/lyrics/abc.lrc"
         coEvery { audioMediaRepository.saveLyrics(any(), any()) } returns Result.success(path)
         coEvery {
-            audioMediaRepository.updateAudioMedia(any(), any(), any(), any(), any(), any())
+            audioMediaRepository.updateAudioMedia(any(), any(), any(), any(), any())
         } returns Result.success(Unit)
 
         val result = useCase(audioMediaId = 1, plainLyrics = null, syncedLyrics = "[00:01.00] hi")

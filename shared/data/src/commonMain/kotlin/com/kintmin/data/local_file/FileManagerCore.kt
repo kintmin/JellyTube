@@ -53,6 +53,18 @@ internal class FileManagerCore(
 
     fun getBackupDirPath(): Result<String> = runCatching { directories.backup().ensured().toString() }
 
+    /** 이미지 디렉터리 안에서 복사하고, 원본에서 가져온 확장자를 돌려준다. */
+    suspend fun copyImageFile(sourceFileNameWithExt: String, targetFileName: String): Result<String> = io {
+        val source = imageDir() / sourceFileNameWithExt
+        if (!fileSystem.exists(source)) error("원본 이미지 파일을 찾을 수 없습니다.")
+
+        val ext = source.name.substringAfterLast('.', "")
+        if (ext.isBlank()) error("원본 이미지 확장자를 알 수 없습니다.")
+
+        fileSystem.copy(source, imageDir() / "$targetFileName.$ext")
+        ext
+    }
+
     suspend fun saveLyrics(text: String, fileName: String, synced: Boolean): Result<String> = io {
         val ext = if (synced) LyricsFile.SYNCED_EXT else LyricsFile.PLAIN_EXT
         fileSystem.write(lyricDir() / "$fileName.$ext") { writeUtf8(text) }

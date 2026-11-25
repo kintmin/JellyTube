@@ -88,7 +88,7 @@ class MigrationRoutesTest {
                     importUploadedAudioMedia = mockk(),
                     validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
                     updateAudioMedia = mockk(),
-                    saveAudioMediaImage = mockk(),
+                    replaceAudioMediaImage = mockk(),
                     playlistRepository = mockk { coEvery { getPlaylist(any()) } returns Result.failure(Exception()) },
                     audioTrackRepository = mockk { every { getSecretAudioMediaIdListFlow() } returns flowOf(emptyList()) },
                     appLog = mockk(relaxed = true),

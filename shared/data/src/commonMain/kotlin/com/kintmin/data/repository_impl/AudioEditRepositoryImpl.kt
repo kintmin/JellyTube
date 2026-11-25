@@ -8,6 +8,7 @@ import com.kintmin.data.local_db.mapper.toAudioEditTimelineOrNull
 import com.kintmin.data.local_db.mapper.toDomain
 import com.kintmin.data.local_db.mapper.toTimelineJson
 import com.kintmin.data.local_db.model.AudioMediaEntity
+import com.kintmin.data.local_db.model.displayImageFileNameWithExt
 import com.kintmin.data.local_db.model.clampText
 import com.kintmin.data.local_file.FileManager
 import com.kintmin.domain.audio_edit.model.AudioEditPart
@@ -183,7 +184,8 @@ internal class AudioEditRepositoryImpl constructor(
             ).getOrThrow()
 
             // 썸네일은 파일을 복사해서 물려준다. 파일명을 공유하면 한쪽을 지울 때 다른 쪽 썸네일이 사라진다.
-            val newImageFileNameWithExt = originEntity.imageFileNameWithExt?.let { originImage ->
+            // 물려주는 것은 화면에서 보던 썸네일이고, 새 음원에게는 그것이 정본이다.
+            val newImageFileNameWithExt = originEntity.displayImageFileNameWithExt?.let { originImage ->
                 fileManager.copyImageFile(
                     sourceFileNameWithExt = originImage,
                     targetFileName = newFileName,

@@ -20,7 +20,8 @@ internal fun AudioMediaEntity.toMigration() = MigrationAudioMedia(
     description = description,
     rawAudioDurationSeconds = rawAudioDurationSeconds,
     audioFileName = audioFileNameWithExt,
-    imageFileName = imageFileNameWithExt,
+    // 이전은 보이던 썸네일 하나만 옮긴다. 받는 기기에서는 그것이 정본이 되어 되돌릴 자리가 없다.
+    imageFileName = customImageFileNameWithExt ?: imageFileNameWithExt,
     lyricFileName = lyricFileNameWithExt,
     tjKaraokeNumber = tjKaraokeNumber,
     editedAudioFileName = editedAudioFileNameWithExt,

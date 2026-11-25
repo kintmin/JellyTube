@@ -213,10 +213,8 @@ internal class FileManagerImpl : FileManager {
         val imageFileNameWithExt: String? = null,
     )
 
-    override suspend fun copyImageFile(
-        sourceFileNameWithExt: String,
-        targetFileName: String,
-    ): Result<String> = unsupported()
+    override suspend fun copyImageFile(sourceFileNameWithExt: String, targetFileName: String) =
+        core.copyImageFile(sourceFileNameWithExt, targetFileName)
 
     private fun <T> unsupported(): Result<T> = Result.failure(
         UnsupportedOperationException("iOS에서는 이번 범위에서 지원하지 않는 파일 작업입니다.")
