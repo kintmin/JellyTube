@@ -333,6 +333,13 @@ jobs:
           pattern: mobile-*
           path: dist
           merge-multiple: true
+      # 릴리스 본문은 범위의 PR 전부다(개발자용). 사용자에게 보여 줄 "바뀐 점" 은 따로 추린다.
+      - name: Write what's new for users
+        run: |
+          set -euo pipefail
+          previous=$(git tag -l 'mobile/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
+          .github/scripts/whatsnew.sh mobile "${previous:+$previous..}$GITHUB_SHA" > dist/whatsnew-mobile.txt
+          cat dist/whatsnew-mobile.txt
       # "Latest" 는 늘 mobile 릴리스다. SideStore 소스와 README 가 releases/latest 로 그것을 찾는다.
       - name: Create the release
         run: |
@@ -361,6 +368,7 @@ jobs:
             --argjson release "$release" --argjson old "$old" \
             --arg repo "$GITHUB_REPOSITORY" --arg sha "$GITHUB_SHA" \
             --arg version "$VERSION" --arg code "$code" \
+            --arg notes "$(cat dist/whatsnew-mobile.txt)" \
             --arg bundle_id "$bundle_id" --arg min_os "$min_os" '
             ($release.assets[] | select(.name | endswith(".ipa"))) as $ipa | {
               name: "JellyTube",
@@ -376,7 +384,7 @@ jobs:
                   version: $version,
                   buildVersion: $code,
                   date: $release.publishedAt,
-                  localizedDescription: $release.body,
+                  localizedDescription: $notes,
                   downloadURL: $ipa.url,
                   size: $ipa.size,
                   minOSVersion: $min_os
@@ -393,7 +401,7 @@ jobs:
           MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
         run: |
           set -euo pipefail
-          notes=$(gh release view "$TAG" --json body -q .body)
+          notes=$(cat dist/whatsnew-mobile.txt)
           .github/scripts/send-mail.sh mobile "[JellyTube] 새 버전 $VERSION" "JellyTube $VERSION 이 나왔습니다.
 
           받는 곳: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG
@@ -508,6 +516,13 @@ jobs:
           pattern: desktop-*
           path: dist
           merge-multiple: true
+      # 릴리스 본문은 범위의 PR 전부다(개발자용). 사용자에게 보여 줄 "바뀐 점" 은 따로 추린다.
+      - name: Write what's new for users
+        run: |
+          set -euo pipefail
+          previous=$(git tag -l 'desktop/v*' --sort=-v:refname | grep -vxF "$TAG" | head -n1 || true)
+          .github/scripts/whatsnew.sh desktop "${previous:+$previous..}$GITHUB_SHA" > dist/whatsnew-desktop.txt
+          cat dist/whatsnew-desktop.txt
       # Latest 는 mobile 몫이다. desktop 이 가져가면 SideStore 소스 주소가 desktop 릴리스를 가리킨다.
       - name: Create the release
         run: |
@@ -522,7 +537,7 @@ jobs:
           MAIL_RECIPIENTS: ${{ secrets.JELLY_TUBE_MAIL_RECIPIENTS }}
         run: |
           set -euo pipefail
-          notes=$(gh release view "$TAG" --json body -q .body)
+          notes=$(cat dist/whatsnew-desktop.txt)
           .github/scripts/send-mail.sh desktop "[JellyTube 파일 공유] 새 버전 $VERSION" "JellyTube 파일 공유 $VERSION 이 나왔습니다.
 
           받는 곳: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG
