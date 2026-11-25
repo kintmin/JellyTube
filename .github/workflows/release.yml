@@ -78,17 +78,17 @@ jobs:
         env:
           HEAD: ${{ github.head_ref }}
         # "main 이 조상인가" 로는 가려지지 않는다 — 릴리스 반영이 main 을 develop 에 merge 하므로
-        # develop 에서 딴 브랜치도 그 검사를 통과한다. develop 에서 땄다면 main..HEAD 에 develop
-        # 전용 커밋이 섞여 develop..HEAD 보다 많아진다.
+        # develop 에서 딴 브랜치도 그 검사를 통과한다. main..HEAD 중 develop 에 있는 커밋을 센다 —
+        # develop..HEAD 와 비교하면 반영이 실패해 develop 이 main 보다 뒤처졌을 때 오판한다.
         run: |
           set -euo pipefail
           git fetch -q --no-tags origin \
             +refs/heads/main:refs/remotes/origin/main +refs/heads/develop:refs/remotes/origin/develop
           from_main=$(git rev-list --count origin/main..HEAD)
-          from_develop=$(git rev-list --count origin/develop..HEAD)
-          echo "main..HEAD=$from_main develop..HEAD=$from_develop"
-          if [[ "$from_main" != "$from_develop" ]]; then
-            echo "::error::$HEAD 는 main 에서 따야 한다. develop 에만 있던 커밋 $((from_main - from_develop)) 개가 섞여 있다."
+          own=$(git rev-list --count HEAD --not origin/main origin/develop)
+          echo "main..HEAD=$from_main 어느 쪽에도 없는 커밋=$own"
+          if [[ "$from_main" != "$own" ]]; then
+            echo "::error::$HEAD 는 main 에서 따야 한다. develop 에만 있던 커밋 $((from_main - own)) 개가 섞여 있다."
             exit 1
           fi
 
@@ -176,8 +176,10 @@ jobs:
           echo "mobile=$name" >> "$GITHUB_OUTPUT"
           echo "desktop=$desktop" >> "$GITHUB_OUTPUT"
 
+  # push 에선 branch-rule 이 skipped 라, 상태 함수 없는 if 의 암묵적 success() 가 사슬 전체를 보고
+  # 건너뛴다. 아래 job 들은 !cancelled() 로 직전 job 의 result 만 본다.
   tag:
-    if: github.event_name == 'push'
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.versions.result == 'success' }}
     needs: versions
     runs-on: ubuntu-latest
     steps:
@@ -202,7 +204,7 @@ jobs:
           done
 
   mobile-release-needed:
-    if: github.event_name == 'push'
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.versions.result == 'success' && needs.tag.result == 'success' }}
     needs: [versions, tag]
     runs-on: ubuntu-latest
     outputs:
@@ -348,6 +350,7 @@ jobs:
 
   mobile-release:
     needs: [versions, android-apk, ios-ipa]
+    if: ${{ !cancelled() && needs.versions.result == 'success' && needs.android-apk.result == 'success' && needs.ios-ipa.result == 'success' }}
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.versions.outputs.mobile }}
@@ -458,7 +461,7 @@ jobs:
         run: .github/scripts/notify-job.sh "mobile $VERSION 릴리스" "${{ job.status }}" "https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
 
   desktop-release-needed:
-    if: github.event_name == 'push'
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.versions.result == 'success' && needs.tag.result == 'success' }}
     needs: [versions, tag]
     runs-on: ubuntu-latest
     outputs:
@@ -539,6 +542,7 @@ jobs:
 
   desktop-release:
     needs: [versions, desktop-package]
+    if: ${{ !cancelled() && needs.versions.result == 'success' && needs.desktop-package.result == 'success' }}
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.versions.outputs.desktop }}
@@ -602,7 +606,7 @@ jobs:
         run: .github/scripts/notify-job.sh "desktop $VERSION 릴리스" "${{ job.status }}" "https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
 
   notify-start:
-    if: github.event_name == 'push'
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.versions.result == 'success' && needs.mobile-release-needed.result == 'success' && needs.desktop-release-needed.result == 'success' }}
     needs: [versions, mobile-release-needed, desktop-release-needed]
     runs-on: ubuntu-latest
     steps:
@@ -625,7 +629,7 @@ jobs:
           https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
   sync-develop:
-    if: github.event_name == 'push'
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.tag.result == 'success' }}
     needs: tag
     runs-on: ubuntu-latest
     steps:
