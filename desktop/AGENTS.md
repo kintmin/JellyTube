@@ -7,8 +7,9 @@
 ## 여기 두지 않는 것
 
 - 파일 공유 프로토콜 상수·DTO → `shared:file-share`
-- 비즈니스 로직 → `shared:domain`
-- 데이터 영속화 → `shared:data`
+
+의존은 `shared:file-share` 하나다. 보내는 쪽에 필요한 나머지는 이 모듈에 둔다 — 공유 모듈을 새로
+의존하기 전에 루트 `AGENTS.md` 의 의존성 방향을 본다.
 
 ---
 
