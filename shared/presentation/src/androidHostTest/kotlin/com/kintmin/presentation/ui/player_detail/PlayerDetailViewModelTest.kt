@@ -14,6 +14,7 @@ import com.kintmin.presentation.port.model.MediaControlData
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,7 +23,9 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -31,6 +34,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
@@ -211,6 +215,54 @@ class PlayerDetailViewModelTest {
         assertEquals(-1, viewModel.uiState.value.activeLyricIndex)
         assertEquals("", viewModel.uiState.value.currentLyricLine)
         assertEquals(2, viewModel.uiState.value.lyricLines.size)
+    }
+
+    @Test
+    fun `다음 줄이 폴링 사이에 오면 그 시각에 활성 줄이 넘어간다`() = runTest {
+        givenSyncedLyrics()
+        every { manager.currentPosition } returns 4_900L
+        every { manager.isPlaying } returns true
+        every { manager.playbackSpeed } returns 1f
+        val viewModel = viewModel()
+        assertEquals(1, viewModel.uiState.value.activeLyricIndex)
+
+        advanceTimeBy(100)
+        runCurrent()
+
+        assertEquals(2, viewModel.uiState.value.activeLyricIndex)
+    }
+
+    @Test
+    fun `멈춘 동안에는 다음 줄로 넘어가지 않는다`() = runTest {
+        givenSyncedLyrics()
+        every { manager.currentPosition } returns 4_900L
+        every { manager.isPlaying } returns true
+        every { manager.playbackSpeed } returns 1f
+        val viewModel = viewModel()
+
+        every { manager.isPlaying } returns false
+        advanceTimeBy(100)
+        runCurrent()
+
+        assertEquals(1, viewModel.uiState.value.activeLyricIndex)
+    }
+
+    @Test
+    fun `줄을 눌러 옮기면 옮기기 전에 잡힌 다음 줄로 넘어가지 않는다`() = runTest {
+        givenSyncedLyrics()
+        var position = 4_900L
+        every { manager.currentPosition } answers { position }
+        val seekTo = slot<Duration>()
+        every { manager.seek(capture(seekTo)) } answers { position = seekTo.captured.inWholeMilliseconds }
+        every { manager.isPlaying } returns true
+        every { manager.playbackSpeed } returns 1f
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickLyricLine(0))
+        advanceTimeBy(100)
+        runCurrent()
+
+        assertEquals(0, viewModel.uiState.value.activeLyricIndex)
     }
 
     @Test

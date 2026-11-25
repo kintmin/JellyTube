@@ -15,6 +15,7 @@ import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.presentation.port.StartLyricsVariantCreation
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.ui.lyrics_viewer.navigation.LyricsViewerScreenRoute
+import com.kintmin.presentation.util.NextLyricLineTimer
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +43,8 @@ class LyricsViewerViewModel constructor(
 
     private var parsedLines: List<LyricsLine> = emptyList()
     private var lyricFileFullPath: String? = null
+
+    private val nextLyricLineTimer = NextLyricLineTimer(viewModelScope)
 
     private val eventChannel = Channel<LyricsViewerEvent>(Channel.BUFFERED)
     val eventFlow: Flow<LyricsViewerEvent> = eventChannel.receiveAsFlow()
@@ -177,6 +180,7 @@ class LyricsViewerViewModel constructor(
             mediaControllerManager.playingMediaItem?.mediaId == audioMediaId.toString()
 
     private fun refreshPosition() {
+        nextLyricLineTimer.cancel()
         if (parsedLines.isEmpty()) return
 
         if (!isThisMediaPlaying()) {
@@ -187,10 +191,17 @@ class LyricsViewerViewModel constructor(
         }
 
         val positionMs = mediaControllerManager.currentPosition ?: return
+        applyPosition(positionMs)
+    }
+
+    private fun applyPosition(positionMs: Long) {
         val index = activeLyricIndex(parsedLines, positionMs)
         val canSeek = _uiState.value.isSynced
         if (index != _uiState.value.activeIndex || canSeek != _uiState.value.canSeek) {
             _uiState.update { it.copy(activeIndex = index, canSeek = canSeek) }
+        }
+        nextLyricLineTimer.schedule(parsedLines, positionMs, mediaControllerManager.playbackSpeed) { reachedMs ->
+            if (isThisMediaPlaying()) applyPosition(reachedMs)
         }
     }
 }

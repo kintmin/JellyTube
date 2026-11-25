@@ -25,6 +25,7 @@ import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.GetPlaylistUseCase
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.sleep_timer.SleepTimerRunner
+import com.kintmin.presentation.util.NextLyricLineTimer
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -100,6 +101,8 @@ class PlayerDetailViewModel constructor(
 
     // 마지막으로 가사를 로드한 파일 경로. 곡이 바뀔 때만 재로드하기 위한 캐시 키.
     private var loadedLyricPath: String? = null
+
+    private val nextLyricLineTimer = NextLyricLineTimer(viewModelScope)
 
     init {
         refreshPlaylistName(mediaControllerManager.currentPlaylistId)
@@ -234,6 +237,7 @@ class PlayerDetailViewModel constructor(
                 if (!uiState.value.isLyricsKnown) return
                 val timeMs = parsedLyricLines.getOrNull(intent.index)?.timeMs ?: return
                 mediaControllerManager.seek(timeMs.milliseconds)
+                refreshActiveLyricIndex()
             }
 
             PlayerDetailIntent.OnClickLyricsViewerButton -> {
@@ -327,6 +331,7 @@ class PlayerDetailViewModel constructor(
             PlayerDetailIntent.OnChangeFinishTimeSlider -> {
                 isHandlingSlider = false
                 mediaControllerManager.seek(uiState.value.currentDuration)
+                refreshActiveLyricIndex()
             }
 
             PlayerDetailIntent.OnClickSleepTimerButton -> {
@@ -537,16 +542,21 @@ class PlayerDetailViewModel constructor(
     }
 
     private fun refreshActiveLyricIndex() {
+        nextLyricLineTimer.cancel()
         // 이전 곡 가사가 떠 있는 동안은 새 곡의 위치로 활성 줄을 다시 잡지 않는다 — 엉뚱한 줄이 뛴다.
         if (!uiState.value.isLyricsKnown) return
-        val index = if (parsedLyricLines.isEmpty()) {
-            -1
-        } else {
-            val positionMs = mediaControllerManager.currentPosition ?: return
-            activeLyricIndex(parsedLyricLines, positionMs)
-        }
+        val positionMs = mediaControllerManager.currentPosition ?: return
+        applyActiveLyricIndex(positionMs)
+    }
+
+    private fun applyActiveLyricIndex(positionMs: Long) {
+        val index = activeLyricIndex(parsedLyricLines, positionMs)
         if (index != _uiState.value.activeLyricIndex) {
             _uiState.update { it.copy(activeLyricIndex = index) }
+        }
+        if (!mediaControllerManager.isPlaying) return
+        nextLyricLineTimer.schedule(parsedLyricLines, positionMs, mediaControllerManager.playbackSpeed) { reachedMs ->
+            if (mediaControllerManager.isPlaying) applyActiveLyricIndex(reachedMs)
         }
     }
 

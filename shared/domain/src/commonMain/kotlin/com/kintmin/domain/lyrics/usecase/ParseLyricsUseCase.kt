@@ -58,3 +58,7 @@ fun activeLyricIndex(lines: List<LyricsLine>, positionMs: Long): Int {
     }
     return active
 }
+
+/** positionMs 뒤에 처음 오는 줄의 시각. 없으면 null. (lines 는 timeMs 오름차순 정렬 가정) */
+fun nextLyricTimeMs(lines: List<LyricsLine>, positionMs: Long): Long? =
+    lines.firstNotNullOfOrNull { line -> line.timeMs?.takeIf { it > positionMs } }
