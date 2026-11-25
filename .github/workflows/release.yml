@@ -48,19 +48,16 @@ jobs:
         run: |
           set -euo pipefail
           echo "$HEAD → $BASE"
-          # 기본 브랜치가 develop 이라 release/* 의 base 가 develop 으로 잡히기 쉽다. 여기서 고친다.
+          # 기본 브랜치가 develop 이라 release/*·hotfix/* 의 base 도 develop 으로 잡히기 쉽다. 여기서 고친다.
           # GITHUB_TOKEN 으로 바꾼 base 는 pull_request 를 다시 쏘지 않으므로, 뒤 job 도 이 출력으로 켠다.
-          if [[ "$HEAD" =~ ^release/ && "$BASE" != main ]]; then
+          if [[ "$HEAD" =~ ^(release|hotfix)/ && "$BASE" != main ]]; then
             gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --base main
-            echo "::notice::base 를 $BASE 에서 main 으로 바꿨다."
+            echo "::notice::$HEAD 는 main 에만 병합한다. base 를 $BASE 에서 main 으로 바꿨다."
             BASE=main
           fi
           echo "base=$BASE" >> "$GITHUB_OUTPUT"
           if [[ "$BASE" == main && ! "$HEAD" =~ ^(release|hotfix)/ ]]; then
             echo "::error::main 에는 release/* 와 hotfix/* 만 병합한다."; exit 1
-          fi
-          if [[ "$HEAD" =~ ^(release|hotfix)/ && "$BASE" != main ]]; then
-            echo "::error::$HEAD 는 main 에만 병합한다."; exit 1
           fi
           if [[ "$BASE" == develop && ! "$HEAD" =~ ^(feat|fix|refactor|perf|test|build|ci|docs|revert)/ ]]; then
             echo "::error::develop 에는 feat/ fix/ refactor/ perf/ test/ build/ ci/ docs/ revert/ 브랜치만 병합한다."; exit 1
