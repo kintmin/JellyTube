@@ -40,6 +40,7 @@ import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionRowVi
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionUnlinkButton
 import com.kintmin.presentation.ui.audio_media_information_edit.dialog.RemoveLinkedPlaylistDialog
 import com.kintmin.presentation.platform.rememberImagePicker
+import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.EditableArtwork
 import com.kintmin.presentation.ui.common.JellyTubeBottomSheet
@@ -56,8 +57,17 @@ fun AudioMediaInformationEditScreen(
     val mainViewModel = koinViewModel<AudioMediaInformationEditViewModel>()
 
     val data by mainViewModel.uiState.collectAsState()
+    val toaster = rememberToaster()
     val imagePicker = rememberImagePicker { imageData ->
         mainViewModel.sendIntent(AudioMediaInformationEditIntent.OnPickAudioMediaImage(imageData))
+    }
+
+    LaunchedEffect(Unit) {
+        mainViewModel.eventFlow.collect { event ->
+            when (event) {
+                is AudioMediaInformationEditEvent.ShowToast -> toaster.show(event.message)
+            }
+        }
     }
 
     AudioMediaInformationEditScreen(

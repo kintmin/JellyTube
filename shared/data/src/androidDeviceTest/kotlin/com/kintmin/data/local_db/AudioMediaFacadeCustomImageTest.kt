@@ -48,7 +48,10 @@ class AudioMediaFacadeCustomImageTest {
         db.close()
     }
 
-    private suspend fun addAudioMedia(name: String): Int = facade.addNewAudioMedia(
+    private suspend fun addAudioMedia(
+        name: String,
+        imageFileNameWithExt: String? = "$name.webp",
+    ): Int = facade.addNewAudioMedia(
         newAudioMedia = AudioMediaEntity(
             source = "https://example.com/$name",
             name = name,
@@ -56,7 +59,7 @@ class AudioMediaFacadeCustomImageTest {
             description = "",
             rawAudioDurationSeconds = 100,
             audioFileNameWithExt = "$name.m4a",
-            imageFileNameWithExt = "$name.webp",
+            imageFileNameWithExt = imageFileNameWithExt,
         ),
         requestedPlaylistId = null,
         shouldInsertAtTopOnDownload = false,
@@ -110,6 +113,20 @@ class AudioMediaFacadeCustomImageTest {
             assertEquals("PC가보낸것.webp", after.imageFileNameWithExt)
             assertNull(after.customImageFileNameWithExt)
         }
+    }
+
+    @Test
+    fun 썸네일_없이_들어온_곡의_선택을_떼면_커버도_비운다() = runTest {
+        val id = addAudioMedia("업로드", imageFileNameWithExt = null)
+        val playlistId = playlistWithFirstTrack(id)
+
+        facade.applyCustomImage(id, "고른것.webp")
+        assertEquals("고른것.webp", db.playlistDao().getPlaylistById(playlistId).imageFileNameWithExt)
+
+        facade.clearCustomImage(id)
+
+        // 비우지 않으면 커버가 곧 지워질 파일을 가리킨 채로 남는다.
+        assertNull(db.playlistDao().getPlaylistById(playlistId).imageFileNameWithExt)
     }
 
     @Test

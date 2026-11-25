@@ -664,8 +664,14 @@ class AudioMediaFacade constructor(
         val playListEntity = firstTrack.playlistEntity
         if (playListEntity.isCustomImage) return
 
-        val firstMedia = firstTrack.audioMediaEntity
-        playlistDao.updatePlaylist(playListEntity.id, imageFileNameWithExt = firstMedia.displayImageFileNameWithExt)
+        // 썸네일 없이 들어온 곡에서 고른 것을 떼면 커버도 비어야 한다. updatePlaylist 는 COALESCE 라
+        // null 을 넘겨도 옛 파일명이 남고, 그 파일은 곧 지워져 커버가 없는 파일을 가리키게 된다.
+        val newImageFileNameWithExt = firstTrack.audioMediaEntity.displayImageFileNameWithExt
+        if (newImageFileNameWithExt == null) {
+            playlistDao.deletePlaylistImage(playListEntity.id)
+        } else {
+            playlistDao.updatePlaylist(playListEntity.id, imageFileNameWithExt = newImageFileNameWithExt)
+        }
     }
 
     private suspend fun syncUncategorizedPlaylistWhenAddTrack(audioMediaIdList: List<Int>) {
