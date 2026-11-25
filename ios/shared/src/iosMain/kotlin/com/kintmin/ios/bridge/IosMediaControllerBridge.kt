@@ -18,6 +18,9 @@ interface IosMediaControllerBridge {
     fun resume()
     fun playPrevious()
     fun playNext()
+
+    /** 반복 중이면 마지막 곡에서도 참이다. */
+    fun hasNext(): Boolean
     fun seek(positionMillis: Long)
 
     fun isPlaying(): Boolean

@@ -80,6 +80,7 @@ class IosPlaybackControllerTest {
         override fun resume() = Unit
         override fun playPrevious() = Unit
         override fun playNext() = Unit
+        override fun hasNext() = false
         override fun isPlaying() = false
         override fun durationMillis() = 10_000L
         override fun setShuffleMode(isShuffle: Boolean) = Unit

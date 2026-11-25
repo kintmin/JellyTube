@@ -462,12 +462,15 @@ fun PlayerDetailScreen(
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) }) {
+                    IconButton(
+                        enabled = data.hasNext,
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) },
+                    ) {
                         Icon(
                             modifier = Modifier.size(48.dp),
                             imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
                             contentDescription = "다음 음원",
-                            tint = overlayContent,
+                            tint = if (data.hasNext) overlayContent else overlayContentMuted,
                         )
                     }
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {

@@ -83,6 +83,7 @@ class PlayerDetailViewModel constructor(
                 isPlaying = mediaControllerManager.isPlaying,
                 isShuffling = false,
                 isRepeating = false,
+                hasNext = mediaControllerManager.hasNext,
                 playbackSpeed = mediaControllerManager.playbackSpeed,
                 playbackPitchSemitone = mediaControllerManager.playbackPitchSemitone,
                 repeatRangeStartDuration = mediaControllerManager.repeatRangeState.startDuration,
@@ -150,9 +151,9 @@ class PlayerDetailViewModel constructor(
             }
 
             PlayerDetailIntent.OnClickPreviousMediaButton -> {
-                mediaControllerManager.clearRepeatRange()
-                refreshRepeatRangeState()
+                // 곡 처음으로만 돌아갈 수 있어 구간을 직접 지우지 않는다. 곡이 바뀌면 구간이 스스로 풀린다.
                 mediaControllerManager.playPrevious()
+                refreshRepeatRangeState()
                 refreshMediaData()
             }
 
@@ -398,6 +399,7 @@ class PlayerDetailViewModel constructor(
                 it.copy(
                     currentDuration = currentDuration,
                     isPlaying = mediaControllerManager.isPlaying,
+                    hasNext = mediaControllerManager.hasNext,
                     repeatRangeStartDuration = repeatRangeState.startDuration,
                     repeatRangeEndDuration = repeatRangeState.endDuration,
                     sleepTimerRemaining = sleepTimerRunner.remaining,
@@ -420,6 +422,7 @@ class PlayerDetailViewModel constructor(
                 isPlaying = mediaControllerManager.isPlaying,
                 isShuffling = uiState.value.isShuffling,
                 isRepeating = uiState.value.isRepeating,
+                hasNext = mediaControllerManager.hasNext,
                 playbackSpeed = uiState.value.playbackSpeed,
                 playbackPitchSemitone = uiState.value.playbackPitchSemitone,
                 // 같은 곡이면 즐겨찾기 상태 유지, 곡이 바뀌면 observeFavorite의 flow가 새 값으로 갱신

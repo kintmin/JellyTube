@@ -40,6 +40,8 @@ final class MediaControllerBridgeImpl: IosMediaControllerBridge {
 
     func playNext() { onMain { $0.next() } }
 
+    func hasNext() -> Bool { onMain { $0.hasNext } }
+
     func seek(positionMillis: Int64) {
         onMain { $0.seek(seconds: Double(positionMillis) / 1000.0) }
     }

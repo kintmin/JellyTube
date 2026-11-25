@@ -38,6 +38,9 @@ internal class IosPlaybackController(
 
     override fun playNext() = bridge.playNext()
 
+    override val hasNext: Boolean
+        get() = bridge.hasNext()
+
     override val playingMediaItem: MediaControlData?
         get() = bridge.playingItem()?.toMediaControlData()
 
