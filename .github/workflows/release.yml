@@ -29,7 +29,8 @@ concurrency:
 
 jobs:
   branch-rule:
-    if: github.event_name == 'pull_request'
+    # edited 는 닫힌 PR 에도 온다. 머지된 PR 의 제목을 고쳤다고 다시 검사하지 않는다.
+    if: github.event_name == 'pull_request' && github.event.pull_request.state == 'open'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -91,12 +92,18 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             echo "needed=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          passed=$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA/check-runs?check_name=r8-keep-rules&per_page=100" \
-            -q '[.check_runs[] | select(.conclusion == "success")] | length')
-          if [[ "$passed" != 0 ]]; then
-            echo "$SHA 는 이미 통과했다"
-          else
+          # 통과를 확인했을 때만 끈다. 조회가 실패했는데 건너뛰면 건너뛴 job 이 필수 체크에서
+          # 성공으로 세어져 R8 없이 머지된다. filter=all 은 같은 run 을 다시 돌린 이력까지 본다.
+          needed=true
+          if passed=$(gh api \
+            "repos/$GITHUB_REPOSITORY/commits/$SHA/check-runs?check_name=r8-keep-rules&filter=all&per_page=100" \
+            -q '[.check_runs[] | select(.conclusion == "success")] | length'); then
+            [[ "$passed" =~ ^[0-9]+$ && "$passed" -gt 0 ]] && needed=false
+          fi
+          if [[ "$needed" == true ]]; then
             echo "needed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "$SHA 는 이미 통과했다"
           fi
 
   r8-keep-rules:

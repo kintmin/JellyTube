@@ -51,7 +51,7 @@ paths=$(echo $paths | tr ':' '/')
 lines=$(git log --no-merges --format='%s' "$range" -- $paths |
   grep -E '^(feat|fix|hotfix)/' |
   sed -E 's@^(feat|fix)/@@; s@^hotfix/[0-9][0-9.]* *@@; s@ *-? *\(?#[0-9]+\)?$@@' |
-  sed 's/^/- /' || true)
+  sed -E '/^[[:space:]]*$/d; s@^@- @' || true)
 
 # 내부 정리만 들어간 릴리스가 있다. 그때도 "바뀐 점" 은 비어 있지 않아야 한다.
 if [[ -z $lines ]]; then
