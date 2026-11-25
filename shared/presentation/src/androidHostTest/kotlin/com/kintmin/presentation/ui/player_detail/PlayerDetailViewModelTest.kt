@@ -22,7 +22,9 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -183,6 +185,36 @@ class PlayerDetailViewModelTest {
         assertEquals(-1, viewModel.uiState.value.activeLyricIndex)
         assertEquals("", viewModel.uiState.value.currentLyricLine)
         assertEquals(2, viewModel.uiState.value.lyricLines.size)
+    }
+
+    @Test
+    fun `다음 줄이 폴링 사이에 오면 그 시각에 활성 줄이 넘어간다`() = runTest {
+        givenSyncedLyrics()
+        every { manager.currentPosition } returns 4_900L
+        every { manager.isPlaying } returns true
+        every { manager.playbackSpeed } returns 1f
+        val viewModel = viewModel()
+        assertEquals(1, viewModel.uiState.value.activeLyricIndex)
+
+        advanceTimeBy(100)
+        runCurrent()
+
+        assertEquals(2, viewModel.uiState.value.activeLyricIndex)
+    }
+
+    @Test
+    fun `멈춘 동안에는 다음 줄로 넘어가지 않는다`() = runTest {
+        givenSyncedLyrics()
+        every { manager.currentPosition } returns 4_900L
+        every { manager.isPlaying } returns true
+        every { manager.playbackSpeed } returns 1f
+        val viewModel = viewModel()
+
+        every { manager.isPlaying } returns false
+        advanceTimeBy(100)
+        runCurrent()
+
+        assertEquals(1, viewModel.uiState.value.activeLyricIndex)
     }
 
     @Test
