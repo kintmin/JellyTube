@@ -56,6 +56,8 @@ graph TD
     data --> domain
     data --> fileshare
     domain --> log
+    %% 보이지 않는 선. desktop 을 android·ios 와 같은 줄에 둔다.
+    desktop ~~~ data
 ```
 
 | 모듈 | 경로 | 내용 |
