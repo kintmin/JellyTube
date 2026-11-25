@@ -6,7 +6,7 @@ import com.kintmin.domain.audio_media.model.AlreadyDownloadedMedia
 import com.kintmin.domain.audio_media.usecase.ImportUploadedAudioMediaUseCase
 import com.kintmin.domain.audio_media.model.ImportedAudioMediaResult
 import com.kintmin.domain.audio_media.model.UploadedAudioFile
-import com.kintmin.domain.audio_media.usecase.SaveAudioMediaImageUseCase
+import com.kintmin.domain.audio_media.usecase.ReplaceAudioMediaImageUseCase
 import com.kintmin.domain.audio_media.usecase.UpdateAudioMediaUseCase
 import com.kintmin.domain.audio_media.usecase.ValidateUploadedAudioFileNameUseCase
 import com.kintmin.domain.file_share.usecase.CreatePcUploadHandlerUseCase
@@ -56,7 +56,7 @@ class FileShareServerModuleTest {
 
     private val importUseCase = mockk<ImportUploadedAudioMediaUseCase>()
     private val updateUseCase = mockk<UpdateAudioMediaUseCase>()
-    private val saveImageUseCase = mockk<SaveAudioMediaImageUseCase>()
+    private val replaceImageUseCase = mockk<ReplaceAudioMediaImageUseCase>()
     private val imported = mutableListOf<ImportedAudioMediaResult>()
     private val routeAppLog = mockk<AppLog>(relaxed = true)
 
@@ -73,7 +73,7 @@ class FileShareServerModuleTest {
             importUploadedAudioMedia = importUseCase,
             validateUploadedAudioFileName = ValidateUploadedAudioFileNameUseCase(),
             updateAudioMedia = updateUseCase,
-            saveAudioMediaImage = saveImageUseCase,
+            replaceAudioMediaImage = replaceImageUseCase,
             playlistRepository = mockk { coEvery { getPlaylist(any()) } returns Result.failure(Exception()) },
             audioTrackRepository = mockk { every { getSecretAudioMediaIdListFlow() } returns flowOf(emptyList()) },
             appLog = mockk(relaxed = true),
@@ -252,9 +252,8 @@ class FileShareServerModuleTest {
     }
 
     @Test
-    fun `썸네일 일괄 변경은 id 마다 이미지를 저장해 연결한다`() = serverTest {
-        coEvery { saveImageUseCase(any()) } returns Result.success("/img/a.jpg")
-        coEvery { updateUseCase(id = any(), imageFileFullPath = any()) } returns Result.success(Unit)
+    fun `썸네일 일괄 변경은 id 마다 정본을 다시 정한다`() = serverTest {
+        coEvery { replaceImageUseCase(id = any(), imageData = any()) } returns Result.success(Unit)
 
         val response = client.post(FileShareConstants.HTTP_BULK_THUMBNAIL_PATH) {
             header(FileShareConstants.HEADER_AUDIO_MEDIA_IDS, "4, 5")
@@ -262,9 +261,8 @@ class FileShareServerModuleTest {
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
-        coVerify(exactly = 2) { saveImageUseCase(any()) }
-        coVerify { updateUseCase(id = 4, imageFileFullPath = "/img/a.jpg") }
-        coVerify { updateUseCase(id = 5, imageFileFullPath = "/img/a.jpg") }
+        coVerify { replaceImageUseCase(id = 4, imageData = any()) }
+        coVerify { replaceImageUseCase(id = 5, imageData = any()) }
     }
 
     @Test
@@ -298,7 +296,7 @@ class FileShareServerModuleTest {
         }
         coVerify(exactly = 0) { importUseCase(any()) }
         coVerify(exactly = 0) { updateUseCase(id = any(), artist = any()) }
-        coVerify(exactly = 0) { saveImageUseCase(any()) }
+        coVerify(exactly = 0) { replaceImageUseCase(id = any(), imageData = any()) }
     }
 
     @Test

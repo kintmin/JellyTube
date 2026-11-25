@@ -176,12 +176,37 @@ internal class AudioMediaRepositoryImpl constructor(
         }
     }
 
-    override suspend fun saveImage(imageData: ByteArray): Result<String> {
+    override suspend fun setCustomImage(id: Int, imageData: ByteArray): Result<Unit> =
+        saveImageAndSwap(imageData) { fileNameWithExt -> audioMediaFacade.applyCustomImage(id, fileNameWithExt) }
+
+    override suspend fun replaceImage(id: Int, imageData: ByteArray): Result<Unit> =
+        saveImageAndSwap(imageData) { fileNameWithExt -> audioMediaFacade.replaceImage(id, fileNameWithExt) }
+
+    override suspend fun clearCustomImage(id: Int): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            suspendRunCatching {
+                audioMediaFacade.clearCustomImage(id).forEach { deleteImageFile(it) }
+            }
+        }
+    }
+
+    /**
+     * 파일을 먼저 저장하고 DB 를 바꾼다. DB 가 실패하면 방금 저장한 파일은 아무도 참조하지 않으므로
+     * 그 자리에서 지운다. [swap] 이 돌려주는 옛 파일명들은 바뀐 뒤 참조가 끊긴 것이다.
+     */
+    private suspend fun saveImageAndSwap(
+        imageData: ByteArray,
+        swap: suspend (fileNameWithExt: String) -> List<String>,
+    ): Result<Unit> {
         return withContext(Dispatchers.IO) {
             suspendRunCatching {
                 val fileName = Uuid.random().toString()
                 val ext = fileManager.saveImageWithCompression(imageData, fileName).getOrThrow()
-                fileManager.getImageFileFullPath(fileNameWithExt = "$fileName.$ext").getOrThrow()
+                val fileNameWithExt = "$fileName.$ext"
+                suspendRunCatching { swap(fileNameWithExt) }
+                    .onFailure { deleteImageFile(fileNameWithExt) }
+                    .getOrThrow()
+                    .forEach { deleteImageFile(it) }
             }
         }
     }
@@ -291,37 +316,27 @@ internal class AudioMediaRepositoryImpl constructor(
         name: String?,
         artist: String?,
         description: String?,
-        imageFileFullPath: String?,
         lyricFileFullPath: String?,
     ): Result<Unit> {
         return withContext(Dispatchers.IO) {
             suspendRunCatching {
-                val newImageFileNameWithExt = imageFileFullPath?.let {
-                    fileManager.getFileNameWithExt(it).getOrThrow()
-                }
                 val newLyricFileNameWithExt = lyricFileFullPath?.let {
                     fileManager.getFileNameWithExt(it).getOrThrow()
                 }
-                // 이미지/가사를 교체하는 경우, 교체 후 orphan이 될 옛 파일명을 미리 확보한다.
-                val oldEntity = if (newImageFileNameWithExt != null || newLyricFileNameWithExt != null) {
-                    audioMediaDao.getDataById(id)
-                } else null
-                val oldImageFileNameWithExt = newImageFileNameWithExt?.let { oldEntity?.imageFileNameWithExt }
-                val oldLyricFileNameWithExt = newLyricFileNameWithExt?.let { oldEntity?.lyricFileNameWithExt }
+                // 가사를 교체하는 경우, 교체 후 orphan이 될 옛 파일명을 미리 확보한다.
+                val oldLyricFileNameWithExt = newLyricFileNameWithExt?.let {
+                    audioMediaDao.getDataById(id).lyricFileNameWithExt
+                }
 
                 audioMediaFacade.updateAudioMedia(
                     id = id,
                     name = name,
                     artist = artist,
                     description = description,
-                    imageFileNameWithExt = newImageFileNameWithExt,
                     lyricFileNameWithExt = newLyricFileNameWithExt,
                 )
 
                 // 새 파일로 바뀐 경우에만 옛 파일을 정리한다. 파일 삭제 실패는 무시한다.
-                if (oldImageFileNameWithExt != null && oldImageFileNameWithExt != newImageFileNameWithExt) {
-                    deleteImageFile(oldImageFileNameWithExt)
-                }
                 if (oldLyricFileNameWithExt != null && oldLyricFileNameWithExt != newLyricFileNameWithExt) {
                     deleteLyricFile(oldLyricFileNameWithExt)
                 }
@@ -430,6 +445,11 @@ internal class AudioMediaRepositoryImpl constructor(
                     }
                 }
                 data.imageFileNameWithExt?.let {
+                    launch {
+                        deleteImageFile(it)
+                    }
+                }
+                data.customImageFileNameWithExt?.let {
                     launch {
                         deleteImageFile(it)
                     }

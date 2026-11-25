@@ -9,5 +9,5 @@ fun AudioMedia.toMediaControlData() = MediaControlData(
     mediaDescription = description,
     mediaArtist = artist,
     mediaDurationMs = playbackDuration?.inWholeMilliseconds ?: 0L,
-    mediaArtworkFileUri = imageFileFullPath,
+    mediaArtworkFileUri = displayImageFileFullPath,
 )

@@ -35,6 +35,6 @@ internal fun AudioMedia.toSettingDataMigrationShareAudioListItemUiState(isChecke
         mediaName = name,
         artist = artist,
         audioDuration = playbackDuration,
-        imageFileFullPath = imageFileFullPath,
+        imageFileFullPath = displayImageFileFullPath,
         isChecked = isChecked,
     )

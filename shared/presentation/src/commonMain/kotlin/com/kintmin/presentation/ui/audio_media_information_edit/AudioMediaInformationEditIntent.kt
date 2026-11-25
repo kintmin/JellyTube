@@ -8,4 +8,7 @@ sealed interface AudioMediaInformationEditIntent {
     data object OnClickShowAddPlaylistBottomSheet : AudioMediaInformationEditIntent
     data object OnDismissAddPlaylistBottomSheet : AudioMediaInformationEditIntent
     data class OnClickAddLinkedPlaylist(val playlistId: Int): AudioMediaInformationEditIntent
+    // ByteArray 는 내용으로 비교되지 않으므로 data class 로 두지 않는다.
+    class OnPickAudioMediaImage(val imageData: ByteArray): AudioMediaInformationEditIntent
+    data object OnClickResetAudioMediaImage : AudioMediaInformationEditIntent
 }

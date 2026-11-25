@@ -1,5 +1,6 @@
 package com.kintmin.presentation.ui.playlist_edit.header
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,10 +17,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.playlist.PlaylistTextLimit
+import com.kintmin.presentation.ui.common.EditableArtwork
 import com.kintmin.presentation.ui.common.UnderlineTextField
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.playlist_edit.list.PlaylistEditListIntent
@@ -48,11 +51,16 @@ fun PlaylistEditHeaderView(
                 .wrapContentHeight()
                 .padding(16.dp)
         ) {
-            PlaylistEditThumbnailView(
+            EditableArtwork(
                 imageFileFullPath = data.imageFileFullPath,
                 isCustomImage = data.isCustomImage,
                 onClickPickImage = onClickPickImage,
                 onClickResetImage = { sendIntent(PlaylistEditListIntent.OnClickResetPlaylistImage) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surface),
             )
             Spacer(modifier = Modifier.height(16.dp))
             UnderlineTextField(

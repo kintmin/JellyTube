@@ -47,6 +47,6 @@ internal fun PlaylistTrackAggregate.toPlaylistDetailListItemUiState() = Playlist
     description = audioMedia.description,
     source = audioMedia.source,
     audioFileFullPath = audioMedia.playbackFileFullPath,
-    imageFileFullPath = audioMedia.imageFileFullPath,
+    imageFileFullPath = audioMedia.displayImageFileFullPath,
     sequence = audioTrack.trackSequence,
 )
