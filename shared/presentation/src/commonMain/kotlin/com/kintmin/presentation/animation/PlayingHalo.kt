@@ -45,7 +45,7 @@ fun Modifier.playingHalo(glow: State<Float>, color: Color, shape: CornerBasedSha
     val radius = shape.topStart.toPx(size, this)
     repeat(HALO_RINGS) { ring ->
         val inset = ringWidth * (ring + 0.5f)
-        // 가장자리에서 기울기가 0 인 곡선이라 경계선이 생기지 않는다. 직선·제곱 감쇠는 가장자리에 선이 선다.
+        // 가장자리에서 기울기가 0 인 곡선이라 경계선이 생기지 않는다.
         val t = (ring + 0.5f) / HALO_RINGS
         val falloff = 1f - (t * t * (3f - 2f * t))
         drawRoundRect(
