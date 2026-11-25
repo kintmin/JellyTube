@@ -194,6 +194,11 @@ Kotlin Multiplatform 앱. 하나의 공유 코어를 Android / iOS / Desktop 이
 - **macOS**: `./gradlew`. 프레임워크를 링크한 뒤 `xcodebuild` 로 앱을 빌드한다.
   **클론 직후에는 `scripts/setup-ios-vendor.sh` 를 한 번 돌려야 한다** — `ios/app/Vendor/` 가
   gitignore 대상이라 비어 있다.
+- **기기 테스트(`connectedAndroidDeviceTest`)의 통과 여부는 Gradle 의 판정이 아니라 결과 XML 로
+  본다.** 무선 디버깅(`adb connect`)으로 붙은 기기에서는 Gradle 이 "There were failing tests" 로
+  떨어지면서도 `<모듈>/build/outputs/androidTest-results/connected/**/*.xml` 에는
+  `<failure`·`<error` 가 하나도 없는 일이 있다. 그러면 **통과다.** 실패 근거가 산출물에 없는 것을
+  두고 원인을 쫓으면 같은 재실행을 반복하게 되고, 재실행은 그 XML 을 지워 증거까지 없앤다.
 
 ## 11. 브랜치와 릴리스
 
