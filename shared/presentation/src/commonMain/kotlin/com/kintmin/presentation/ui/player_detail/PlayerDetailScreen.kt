@@ -462,12 +462,16 @@ fun PlayerDetailScreen(
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) }) {
+                    // 반복이 꺼진 마지막 곡에서는 눌러도 아무 일이 없다. 반응 없는 버튼을 두지 않는다.
+                    IconButton(
+                        enabled = data.hasNext,
+                        onClick = { sendIntent(PlayerDetailIntent.OnClickNextMediaButton) },
+                    ) {
                         Icon(
                             modifier = Modifier.size(48.dp),
                             imageVector = Icons.AutoMirrored.Rounded.NavigateNext,
                             contentDescription = "다음 음원",
-                            tint = overlayContent,
+                            tint = if (data.hasNext) overlayContent else overlayContentMuted,
                         )
                     }
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {

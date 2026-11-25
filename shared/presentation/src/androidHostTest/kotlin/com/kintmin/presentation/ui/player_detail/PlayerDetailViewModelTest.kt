@@ -173,6 +173,22 @@ class PlayerDetailViewModelTest {
         verify(exactly = 0) { manager.clearRepeatRange() }
     }
 
+    @Test
+    fun `다음 곡이 없어지면 다음 버튼을 막고 생기면 푼다`() {
+        every { manager.hasNext } returns true
+        val viewModel = viewModel()
+        assertTrue(viewModel.uiState.value.hasNext)
+
+        every { manager.hasNext } returns false
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+        assertFalse(viewModel.uiState.value.hasNext)
+
+        every { manager.hasNext } returns true
+        playing = mediaControlData("2")
+        viewModel.sendIntent(PlayerDetailIntent.OnRefreshMediaData)
+        assertTrue(viewModel.uiState.value.hasNext)
+    }
+
     // ---- 가사 세 상태 ----
 
     @Test

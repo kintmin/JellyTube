@@ -99,6 +99,9 @@ class PlaybackControllerImpl(
         }
     }
 
+    override val hasNext: Boolean
+        get() = getMediaController()?.hasNextMediaItem() ?: false
+
     override val playingMediaItem: MediaControlData?
         get() = getMediaController()?.currentMediaItem?.toMediaControlData()
     override val currentPlaylistId: Int?

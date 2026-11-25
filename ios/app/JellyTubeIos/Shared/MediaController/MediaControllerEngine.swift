@@ -142,9 +142,12 @@ final class MediaControllerEngine {
         broadcast()
     }
 
+    var hasNext: Bool {
+        currentIndex + 1 < queue.count || (isRepeatAllEnabled && !queue.isEmpty)
+    }
+
     func next() {
-        let hasNext = currentIndex + 1 < queue.count
-        guard hasNext || (isRepeatAllEnabled && !queue.isEmpty) else { return }
+        guard hasNext else { return }
         playIfIntended(schedulePlayable(from: currentIndex + 1, startingSeconds: 0))
         broadcast()
     }
