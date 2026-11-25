@@ -194,28 +194,43 @@ class PlayerDetailViewModel constructor(
             }
 
             PlayerDetailIntent.OnClickLyrics -> {
-                if (uiState.value.hasLyrics) {
-                    _uiState.update { it.copy(isLyricsPanelVisible = !it.isLyricsPanelVisible) }
-                    return
-                }
-                val mediaId = uiState.value.id.toIntOrNull()
-                viewModelScope.launch {
-                    if (mediaId == null) {
-                        eventChannel.send(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
-                    } else {
-                        eventChannel.send(
-                            PlayerDetailEvent.NavigateToLyricsSearch(
-                                audioMediaId = mediaId,
-                                query = uiState.value.title,
-                                durationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
-                                playbackDurationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
-                            )
-                        )
+                _uiState.update {
+                    when {
+                        // 닫는 뜻은 가사 유무와 무관하게 분명하다.
+                        it.showsLyricsFace ->
+                            it.copy(isLyricsPanelVisible = false, isLyricsMissingNoticeVisible = false)
+                        // 이 곡에 가사가 있는지 아직 모른다. 이전 곡의 답으로 열면 틀린 면이 뜨고,
+                        // 그때 켜진 선호가 이후 곡까지 따라간다. 알게 되면 그때 연다.
+                        !it.isLyricsKnown -> it.copy(isLyricsFaceRequested = true)
+                        it.hasLyrics -> it.copy(isLyricsPanelVisible = true)
+                        else -> it.copy(isLyricsMissingNoticeVisible = true)
                     }
                 }
             }
 
+            PlayerDetailIntent.OnClickLyricsSearchButton -> {
+                val mediaId = uiState.value.id.toIntOrNull()
+                viewModelScope.launch {
+                    if (mediaId == null) {
+                        eventChannel.send(PlayerDetailEvent.ShowToast("현재 음원 정보를 불러올 수 없습니다."))
+                        return@launch
+                    }
+                    // 찾겠다는 것은 찾으면 보겠다는 뜻이다. 저장하고 돌아왔을 때 가사 면이 바로 뜬다.
+                    _uiState.update { it.copy(isLyricsPanelVisible = true) }
+                    eventChannel.send(
+                        PlayerDetailEvent.NavigateToLyricsSearch(
+                            audioMediaId = mediaId,
+                            query = uiState.value.title,
+                            durationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
+                            playbackDurationSeconds = uiState.value.playbackDuration.inWholeSeconds.toDouble(),
+                        )
+                    )
+                }
+            }
+
             is PlayerDetailIntent.OnClickLyricLine -> {
+                // 새 가사를 읽기 전까지는 이전 곡 가사가 떠 있다. 그 줄의 타임코드로 새 곡을 옮기지 않는다.
+                if (!uiState.value.isLyricsKnown) return
                 val timeMs = parsedLyricLines.getOrNull(intent.index)?.timeMs ?: return
                 mediaControllerManager.seek(timeMs.milliseconds)
             }
@@ -409,12 +424,18 @@ class PlayerDetailViewModel constructor(
                 playbackPitchSemitone = uiState.value.playbackPitchSemitone,
                 // 같은 곡이면 즐겨찾기 상태 유지, 곡이 바뀌면 observeFavorite의 flow가 새 값으로 갱신
                 isFavorite = if (isSameMedia) uiState.value.isFavorite else false,
-                // 같은 곡인데 플레이리스트만 바뀌면 구독은 id 로 묶여 다시 흐르지 않는다. 그때 가사
-                // 상태를 버리면 아트워크가 눌리지 않게 되므로 이어 받는다.
-                hasLyrics = if (isSameMedia) uiState.value.hasLyrics else false,
-                lyricLines = if (isSameMedia) uiState.value.lyricLines else emptyList(),
-                isLyricsSynced = isSameMedia && uiState.value.isLyricsSynced,
+                // 새 곡의 가사는 저장소가 곧 알려 준다. 그때까지 이전 가사를 들고 있는다 — 아트워크가
+                // 새 그림을 다 읽을 때까지 이전 그림을 들고 있는 것과 같다. 비워 두면 그 사이 가사 면이
+                // 빈 채로 남고, 없다고 단정하면 아트워크로 샜다가 돌아와 앨범이 번쩍인다.
+                hasLyrics = uiState.value.hasLyrics,
+                lyricLines = uiState.value.lyricLines,
+                lyricsId = uiState.value.lyricsId,
+                lyricsMediaId = uiState.value.lyricsMediaId,
+                activeLyricIndex = uiState.value.activeLyricIndex,
+                isLyricsSynced = uiState.value.isLyricsSynced,
                 isLyricsPanelVisible = uiState.value.isLyricsPanelVisible,
+                isLyricsMissingNoticeVisible = isSameMedia && uiState.value.isLyricsMissingNoticeVisible,
+                isLyricsFaceRequested = isSameMedia && uiState.value.isLyricsFaceRequested,
                 repeatRangeStartDuration = repeatRangeState.startDuration,
                 repeatRangeEndDuration = repeatRangeState.endDuration,
                 isPlaybackSpeedMenuVisible = uiState.value.isPlaybackSpeedMenuVisible,
@@ -456,24 +477,37 @@ class PlayerDetailViewModel constructor(
                     _uiState.update {
                         it.copy(
                             isFavorite = isFavorite,
-                            hasLyrics = lyricFileFullPath != null,
                             // 재생기 값은 곡을 걸 때 찍힌 스냅샷이라 저장소 값으로 덮는다.
                             title = audioMedia?.name ?: it.title,
                             artist = audioMedia?.artist ?: it.artist,
                         )
                     }
+                    // hasLyrics 는 가사 내용과 함께 나가야 한다. 먼저 켜면 가사 면이 빈 채로 섰다가
+                    // 줄이 도착할 때 한 번 더 겹쳐 지워진다.
                     loadLyricsIfNeeded(lyricFileFullPath)
                 }
         }
     }
 
     private fun loadLyricsIfNeeded(lyricFileFullPath: String?) {
-        if (lyricFileFullPath == loadedLyricPath) return
+        val mediaId = uiState.value.id
+        if (lyricFileFullPath == loadedLyricPath) {
+            // 읽을 것은 없어도 이 답이 어느 곡의 것인지는 새로 적는다.
+            _uiState.update { it.resolveLyrics(mediaId, hasLyrics = lyricFileFullPath != null) }
+            return
+        }
         loadedLyricPath = lyricFileFullPath
 
         if (lyricFileFullPath == null) {
             parsedLyricLines = emptyList()
-            _uiState.update { it.copy(lyricLines = emptyList(), isLyricsSynced = false, activeLyricIndex = -1) }
+            _uiState.update {
+                it.resolveLyrics(mediaId, hasLyrics = false).copy(
+                    lyricLines = emptyList(),
+                    lyricsId = null,
+                    isLyricsSynced = false,
+                    activeLyricIndex = -1,
+                )
+            }
             return
         }
         viewModelScope.launch {
@@ -482,7 +516,7 @@ class PlayerDetailViewModel constructor(
             val translationLines = getLyricsVariantUseCase(lyricFileFullPath, LyricsVariant.TRANSLATION).getOrNull()
             val transliterationLines = getLyricsVariantUseCase(lyricFileFullPath, LyricsVariant.TRANSLITERATION).getOrNull()
             _uiState.update {
-                it.copy(
+                it.resolveLyrics(mediaId, hasLyrics = true).copy(
                     lyricLines = parsedLyricLines.mapIndexed { index, line ->
                         PlayerLyricLineUiState(
                             text = line.text,
@@ -490,6 +524,7 @@ class PlayerDetailViewModel constructor(
                             translation = translationLines?.getOrNull(index)?.text?.takeIf(String::isNotBlank),
                         )
                     },
+                    lyricsId = lyricFileFullPath,
                     isLyricsSynced = parsedLyricLines.any { line -> line.timeMs != null },
                     activeLyricIndex = -1,
                 )
@@ -499,6 +534,8 @@ class PlayerDetailViewModel constructor(
     }
 
     private fun refreshActiveLyricIndex() {
+        // 이전 곡 가사가 떠 있는 동안은 새 곡의 위치로 활성 줄을 다시 잡지 않는다 — 엉뚱한 줄이 뛴다.
+        if (!uiState.value.isLyricsKnown) return
         val index = if (parsedLyricLines.isEmpty()) {
             -1
         } else {

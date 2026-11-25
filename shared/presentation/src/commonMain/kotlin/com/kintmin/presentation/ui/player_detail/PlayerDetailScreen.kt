@@ -1,10 +1,13 @@
 package com.kintmin.presentation.ui.player_detail
 
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
@@ -79,6 +82,7 @@ import com.kintmin.presentation.theme.overlayScrimSoft
 import com.kintmin.presentation.ui.common.PlaybackToggleButton
 import com.kintmin.presentation.ui.player_detail.artwork.ARTWORK_TRANSITION_MILLIS
 import com.kintmin.presentation.ui.player_detail.artwork.PlayerArtworkView
+import com.kintmin.presentation.ui.player_detail.artwork.isFor
 import com.kintmin.presentation.ui.player_detail.artwork.isInstant
 import com.kintmin.presentation.ui.player_detail.artwork.rememberPlayerArtwork
 import com.kintmin.presentation.ui.player_detail.control.PLAYBACK_VALUE_WIDTH
@@ -92,10 +96,12 @@ import com.kintmin.presentation.ui.player_detail.dialog.SleepTimerDialog
 import com.kintmin.presentation.ui.player_detail.dialog.toPitchSemitoneText
 import com.kintmin.presentation.ui.player_detail.dialog.toPlaybackSpeedText
 import com.kintmin.presentation.ui.player_detail.lyrics.CurrentLyricOverlayView
+import com.kintmin.presentation.ui.player_detail.lyrics.PlayerLyricsMissingView
 import com.kintmin.presentation.ui.player_detail.lyrics.PlayerLyricsPanelView
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -151,7 +157,22 @@ fun PlayerDetailScreen(
     val playbackSeconds = max(1L, data.playbackDuration.inWholeSeconds)
     val currentSeconds = min(data.currentDuration.inWholeSeconds, playbackSeconds)
     var artworkSize by remember { mutableStateOf(IntSize.Zero) }
-    val artworkTransition = updateTransition(rememberPlayerArtwork(data.imageFileFullPath, artworkSize))
+    val artwork = rememberPlayerArtwork(data.imageFileFullPath, artworkSize)
+    val artworkTransition = updateTransition(artwork)
+
+    // 아트워크로 돌아갈 때는 새 그림이 올 때까지 기다린다. 가사 면이 떠 있는 동안 그림은 화면에
+    // 없었으므로, 바로 넘기면 아직 이전 곡 그림인 것이 먼저 떴다가 새 그림으로 또 바뀐다.
+    // 붙잡는 것은 면 전체다 — 종류만 늦추고 내용을 먼저 받으면 가사가 빈 가사 면으로 한 번
+    // 사라진 뒤에 그림이 뜬다. 그림이 끝내 오지 않아도 면이 묶이지 않게 기다림에 상한을 둔다.
+    val targetFace = data.playerFace
+    val artworkIsCurrent = artwork.isFor(data.imageFileFullPath)
+    var shownFace by remember { mutableStateOf(targetFace) }
+    LaunchedEffect(targetFace, artworkIsCurrent) {
+        if (targetFace.face == PlayerArtworkFace.ARTWORK && !artworkIsCurrent) {
+            delay(ARTWORK_TRANSITION_MILLIS.toLong())
+        }
+        shownFace = targetFace
+    }
     val gradientColors = artworkBackdropFallback.indices.map { index ->
         artworkTransition.animateColor(
             transitionSpec = { if (isInstant()) snap() else tween(ARTWORK_TRANSITION_MILLIS) },
@@ -234,27 +255,31 @@ fun PlayerDetailScreen(
 
                 // 가사 패널이 아트워크와 같은 자리·같은 크기를 쓴다. weight 를 바깥이 들고 있어야
                 // 전환할 때 아래 요소들이 밀리지 않는다.
-                Crossfade(
+                AnimatedContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
                         .onSizeChanged { artworkSize = it },
-                    targetState = data.showsLyricsPanel,
-                ) { showsLyrics ->
-                    // 가사 없는 곡이면 찾으러 보낸다 — 그 안내를 화면에 상시로 띄우지 않고 눌렀을 때만 꺼낸다.
-                    // 패널에서는 싱크 가사의 줄이 탭을 먼저 받고, 줄 밖을 누르면 아트워크로 돌아간다.
+                    targetState = shownFace,
+                    contentKey = { it.contentKey },
+                    transitionSpec = {
+                        fadeIn(tween(ARTWORK_TRANSITION_MILLIS)) togetherWith
+                            fadeOut(tween(ARTWORK_TRANSITION_MILLIS))
+                    },
+                ) { slot ->
+                    // 면 밖을 누르면 늘 아트워크로 돌아간다 — 가사 줄과 가사 찾기가 탭을 먼저 받는다.
                     val artworkModifier = Modifier
                         .fillMaxSize()
                         .clip(RoundedCornerShape(2.dp))
                         .background(overlayScrimSoft)
                         .clickable { sendIntent(PlayerDetailIntent.OnClickLyrics) }
 
-                    if (showsLyrics) {
-                        Box(modifier = artworkModifier) {
+                    when (slot.face) {
+                        PlayerArtworkFace.LYRICS -> Box(modifier = artworkModifier) {
                             PlayerLyricsPanelView(
-                                lines = data.lyricLines,
-                                activeIndex = data.activeLyricIndex,
-                                onClickLine = if (data.isLyricsSynced) {
+                                lines = slot.lyricLines,
+                                activeIndex = slot.activeLyricIndex,
+                                onClickLine = if (slot.isLyricsSynced) {
                                     { index -> sendIntent(PlayerDetailIntent.OnClickLyricLine(index)) }
                                 } else {
                                     null
@@ -273,14 +298,21 @@ fun PlayerDetailScreen(
                                 )
                             }
                         }
-                    } else {
-                        PlayerArtworkView(
+
+                        PlayerArtworkFace.LYRICS_MISSING -> Box(modifier = artworkModifier) {
+                            PlayerLyricsMissingView(
+                                onClickSearch = { sendIntent(PlayerDetailIntent.OnClickLyricsSearchButton) },
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+
+                        PlayerArtworkFace.ARTWORK -> PlayerArtworkView(
                             transition = artworkTransition,
                             modifier = artworkModifier,
                         ) {
                             CurrentLyricOverlayView(
-                                line = data.currentLyricLine,
-                                translation = data.currentLyricTranslation,
+                                line = slot.currentLyricLine,
+                                translation = slot.currentLyricTranslation,
                                 modifier = Modifier.align(Alignment.BottomCenter),
                             )
                         }
@@ -338,11 +370,13 @@ fun PlayerDetailScreen(
                     }
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         IconButton(onClick = { sendIntent(PlayerDetailIntent.OnClickLyrics) }) {
+                            // 화면에 선 면을 따른다 — 그림을 기다리는 동안은 아직 가사 면이다.
+                            val showsLyrics = shownFace.face != PlayerArtworkFace.ARTWORK
                             Icon(
                                 modifier = Modifier.size(24.dp),
                                 imageVector = Icons.Rounded.Lyrics,
-                                contentDescription = if (data.showsLyricsPanel) "가사 닫기" else "가사 보기",
-                                tint = if (data.showsLyricsPanel) overlayContent else overlayContentMuted,
+                                contentDescription = if (showsLyrics) "가사 닫기" else "가사 보기",
+                                tint = if (showsLyrics) overlayContent else overlayContentMuted,
                             )
                         }
                     }
