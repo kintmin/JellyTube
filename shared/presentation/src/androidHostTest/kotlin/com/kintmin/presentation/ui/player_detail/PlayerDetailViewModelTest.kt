@@ -161,6 +161,18 @@ class PlayerDetailViewModelTest {
         assertEquals(null, viewModel.uiState.value.sleepTimerRemaining)
     }
 
+    // ---- 이전·다음 ----
+
+    @Test
+    fun `이전을 눌러도 구간반복을 지우지 않는다`() {
+        val viewModel = viewModel()
+
+        viewModel.sendIntent(PlayerDetailIntent.OnClickPreviousMediaButton)
+
+        verify(exactly = 1) { manager.playPrevious() }
+        verify(exactly = 0) { manager.clearRepeatRange() }
+    }
+
     // ---- 가사 세 상태 ----
 
     @Test

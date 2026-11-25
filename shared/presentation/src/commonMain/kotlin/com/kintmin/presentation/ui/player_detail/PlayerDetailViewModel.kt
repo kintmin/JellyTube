@@ -150,9 +150,9 @@ class PlayerDetailViewModel constructor(
             }
 
             PlayerDetailIntent.OnClickPreviousMediaButton -> {
-                mediaControllerManager.clearRepeatRange()
-                refreshRepeatRangeState()
+                // 곡 처음으로만 돌아갈 수 있어 구간을 직접 지우지 않는다. 곡이 바뀌면 구간이 스스로 풀린다.
                 mediaControllerManager.playPrevious()
+                refreshRepeatRangeState()
                 refreshMediaData()
             }
 

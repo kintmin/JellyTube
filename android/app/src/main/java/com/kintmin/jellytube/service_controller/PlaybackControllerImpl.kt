@@ -84,7 +84,8 @@ class PlaybackControllerImpl(
 
     override fun playPrevious() {
         val mediaController = getMediaController() ?: return
-        mediaController.seekToPreviousMediaItem()
+        // 앞부분을 지났으면 곡 처음으로 간다. 알림·잠금 화면의 이전 버튼과 같은 규칙이다.
+        mediaController.seekToPrevious()
         if (!mediaController.isPlaying) {
             mediaController.play()
         }
