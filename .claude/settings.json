@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/docs-index.py 2>/dev/null || true",
+            "command": "(python3 .claude/hooks/docs-index.py || python .claude/hooks/docs-index.py) 2>/dev/null || true",
             "statusMessage": "기능 문서 목록을 읽는 중"
           }
         ]
