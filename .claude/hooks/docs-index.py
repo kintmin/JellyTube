@@ -28,12 +28,15 @@ def doc_names(directory: str) -> list[str]:
 def main() -> None:
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     docs = os.path.join(root, "docs")
+    crosscutting = [name for name in doc_names(docs) if name != "AGENTS"]
     features = doc_names(os.path.join(docs, "features"))
     experiments = doc_names(os.path.join(docs, "experiments"))
     if not features and not experiments:
         return
 
     lines = [GUIDE, ""]
+    if crosscutting:
+        lines.append("`docs/` — 기능을 가로지르는 것: " + ", ".join(crosscutting))
     if features:
         lines.append("`docs/features/` — 지금 있는 기능: " + ", ".join(features))
     if experiments:
