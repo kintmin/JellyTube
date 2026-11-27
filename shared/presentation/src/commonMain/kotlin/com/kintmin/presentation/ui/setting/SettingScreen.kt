@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MobileScreenShare
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material3.CircularProgressIndicator
@@ -248,9 +249,10 @@ fun SettingScreen(
                     onClick = { sendIntent(SettingIntent.OnClickPlaylistIdOnDownloadTile) },
                 )
                 // 알림을 묻는 것은 처음 한 번뿐이라, 그 뒤로 켜고 끄는 길은 여기가 유일하다.
+                // 꺼진 것은 사용자의 선택일 수 있어 경고색을 쓰지 않는다 — 훑을 때는 아이콘이 가른다.
                 SettingItemView(
                     title = "받기 완료 알림",
-                    icon = Icons.Rounded.Notifications,
+                    icon = if (isNotificationGranted) Icons.Rounded.Notifications else Icons.Rounded.NotificationsOff,
                     description = if (isNotificationGranted) {
                         "받기가 끝나면 알려 드립니다"
                     } else {
