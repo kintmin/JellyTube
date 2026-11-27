@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.player_detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
@@ -14,7 +15,6 @@ import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseC
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackSpeedUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdateSleepTimerAnnouncementMediaIdUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdateSleepTimerMinutesUseCase
-import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.audio_track.usecase.ToggleFavoriteUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
