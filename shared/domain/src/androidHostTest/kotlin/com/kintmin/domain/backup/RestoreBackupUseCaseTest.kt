@@ -38,6 +38,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -179,6 +180,15 @@ class RestoreBackupUseCaseTest {
         useCase(FakeRepository(emptyTarget))(backup(audios = emptyList())) {}
 
         coVerify(exactly = 0) { backupRepository.adoptInstallId(any()) }
+    }
+
+    @Test
+    fun `설치 값을 적지 못해도 이미 반영된 복원을 중단으로 되돌리지 않는다`() = runTest {
+        every { backupRepository.getStatusFlow() } returns flow { throw IllegalStateException("설정을 읽지 못함") }
+
+        val result = useCase(FakeRepository(emptyTarget))(backup(audios = emptyList(), installId = "이전-설치")) {}
+
+        assertTrue(result.isSuccess)
     }
 
     @Test
