@@ -6,7 +6,8 @@ import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
-import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
+import com.kintmin.domain.lyrics.model.PlaybackLyrics
+import com.kintmin.domain.lyrics.usecase.GetPlaybackLyricsUseCase
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.sleep_timer.SleepTimerRunner
@@ -79,6 +80,7 @@ class PlayerDetailViewModelTest {
     ) = mockk<PlaylistTrackAggregate>(relaxed = true) {
         every { playlist.type } returns PlaylistType.USER
         every { audioMedia.lyricFileFullPath } returns lyricFilePath
+        every { audioMedia.playbackLyricFileFullPath } returns lyricFilePath
         every { audioMedia.name } returns name
         every { audioMedia.artist } returns artist
     }
@@ -87,8 +89,8 @@ class PlayerDetailViewModelTest {
         every { this@mockk.invoke(any()) } answers { flowOf(listOf(aggregate())) }
     }
 
-    private val getParsedLyrics = mockk<GetParsedLyricsUseCase> {
-        coEvery { this@mockk.invoke(any()) } answers { parsedLines }
+    private val getPlaybackLyrics = mockk<GetPlaybackLyricsUseCase> {
+        coEvery { this@mockk.invoke(any()) } answers { lyricFilePath?.let { PlaybackLyrics(it, parsedLines) } }
     }
 
     /** 음차·번역 파일을 파싱한 결과. 없는 variant 는 파일이 없는 것이다. */
@@ -547,7 +549,7 @@ class PlayerDetailViewModelTest {
         getPlaylistUseCase = mockk { coEvery { this@mockk(any()) } returns Result.failure(IllegalStateException()) },
         fetchAudioMediaDetailFlowUseCase = fetchAudioMediaDetail,
         toggleFavoriteUseCase = mockk(relaxed = true),
-        getParsedLyricsUseCase = getParsedLyrics,
+        getPlaybackLyricsUseCase = getPlaybackLyrics,
         getLyricsVariantUseCase = getLyricsVariant,
     )
 }

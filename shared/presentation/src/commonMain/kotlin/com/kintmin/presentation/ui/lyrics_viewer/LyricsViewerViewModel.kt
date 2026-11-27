@@ -10,7 +10,7 @@ import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.DeleteAudioMediaLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.DetectLyricsLanguageUseCase
 import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
-import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.GetPlaybackLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.presentation.port.StartLyricsVariantCreation
 import com.kintmin.presentation.port.PlaybackController
@@ -31,7 +31,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class LyricsViewerViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
-    private val getParsedLyricsUseCase: GetParsedLyricsUseCase,
+    private val getPlaybackLyricsUseCase: GetPlaybackLyricsUseCase,
     private val deleteAudioMediaLyricsUseCase: DeleteAudioMediaLyricsUseCase,
     private val detectLyricsLanguageUseCase: DetectLyricsLanguageUseCase,
     private val getLyricsVariantUseCase: GetLyricsVariantUseCase,
@@ -67,9 +67,10 @@ class LyricsViewerViewModel constructor(
                 .distinctUntilChanged()
                 .collect { audioMedia ->
                     val title = audioMedia?.name.orEmpty()
-                    val path = audioMedia?.lyricFileFullPath
-                    lyricFileFullPath = path
-                    if (path == null) {
+                    // 변형을 새로 만드는 것은 원본 가사에 대고 하는 일이다. 편집본 쪽은 거기서 다시 파생된다.
+                    lyricFileFullPath = audioMedia?.lyricFileFullPath
+                    val playbackLyrics = audioMedia?.let { getPlaybackLyricsUseCase(it) }
+                    if (playbackLyrics == null) {
                         parsedLines = emptyList()
                         _uiState.update {
                             it.copy(
@@ -85,13 +86,15 @@ class LyricsViewerViewModel constructor(
                             )
                         }
                     } else {
-                        parsedLines = getParsedLyricsUseCase(path)
+                        parsedLines = playbackLyrics.lines
 
                         val language = detectLyricsLanguageUseCase(parsedLines)
 
-                        val translationLines = getLyricsVariantUseCase(path, LyricsVariant.TRANSLATION)
+                        // 변형은 보여 주는 가사와 줄 번호로 짝지으므로 같은 파일에서 파생된 것을 읽는다.
+                        val variantBasePath = playbackLyrics.lyricFileFullPath
+                        val translationLines = getLyricsVariantUseCase(variantBasePath, LyricsVariant.TRANSLATION)
                             .getOrNull()?.map { line -> line.text }
-                        val transliterationLines = getLyricsVariantUseCase(path, LyricsVariant.TRANSLITERATION)
+                        val transliterationLines = getLyricsVariantUseCase(variantBasePath, LyricsVariant.TRANSLITERATION)
                             .getOrNull()?.map { line -> line.text }
 
                         _uiState.update {

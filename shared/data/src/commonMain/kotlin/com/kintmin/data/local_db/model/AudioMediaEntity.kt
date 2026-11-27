@@ -23,6 +23,11 @@ data class AudioMediaEntity(
      */
     val customImageFileNameWithExt: String? = null,
     val lyricFileNameWithExt: String? = null,
+    /**
+     * 편집본 시간축에 맞춰 다시 만든 가사 파일명. 원본 가사([lyricFileNameWithExt])에서 파생되며
+     * 편집본이 있을 때만 채워진다. 원본 가사나 편집 배치가 바뀌면 다시 만든다.
+     */
+    val editedLyricFileNameWithExt: String? = null,
     val tjKaraokeNumber: String? = null,
     /**
      * 편집본 파일명. null이면 편집본이 없다는 뜻이고 원본([audioFileNameWithExt])을 그대로 쓴다.

@@ -55,11 +55,11 @@ class DownloadLyricsForAudioMediaUseCase(
         val language = detectLyricsLanguage(parseLyrics(sourceLyrics))
 
         if (!language.hasKorean) {
-            createLyricsVariant(lyricFileFullPath, LyricsVariant.TRANSLATION)
+            createLyricsVariant(audioMediaId, lyricFileFullPath, LyricsVariant.TRANSLATION)
                 .onFailure { log("번역 만들기 실패: id=$audioMediaId ${it.message ?: it::class.simpleName}") }
         }
         if (language.hasJapanese) {
-            createLyricsVariant(lyricFileFullPath, LyricsVariant.TRANSLITERATION)
+            createLyricsVariant(audioMediaId, lyricFileFullPath, LyricsVariant.TRANSLITERATION)
                 .onFailure { log("음차 만들기 실패: id=$audioMediaId ${it.message ?: it::class.simpleName}") }
         }
     }.onFailure {

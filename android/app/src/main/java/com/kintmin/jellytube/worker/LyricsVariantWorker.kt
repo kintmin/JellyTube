@@ -34,7 +34,7 @@ class LyricsVariantWorker(
         val variant = suspendRunCatching { LyricsVariant.valueOf(variantName) }.getOrNull()
             ?: return Result.failure()
 
-        return createLyricsVariantUseCase(lyricFileFullPath, variant).fold(
+        return createLyricsVariantUseCase(audioMediaId, lyricFileFullPath, variant).fold(
             onSuccess = {
                 pushNotificationManager.sendNotification(
                     LyricsVariantResultNotification(

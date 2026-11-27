@@ -32,6 +32,7 @@ interface AudioMediaRepository {
         shouldInsertAtTopOnDownload: Boolean,
     ): Result<AddedAudioMedia>
     suspend fun getAudioMediaBySource(source: String): Result<AudioMedia>
+    suspend fun getAudioMedia(id: Int): Result<AudioMedia>
 
     /** 같은 출처를 받는 중이면 false. 받는 일은 화면·작업 하나보다 오래 살아서 앱에 하나인 여기서 센다. */
     fun reserveDownload(source: String): Boolean
@@ -62,6 +63,12 @@ interface AudioMediaRepository {
     suspend fun saveLyrics(text: String, synced: Boolean): Result<String>
     suspend fun getLyrics(lyricFileFullPath: String): Result<String>
     suspend fun deleteLyrics(id: Int): Result<Unit>
+
+    /** 편집본 시간축 가사를 연결한다. 가리키지 않게 된 옛 편집본 가사 파일은 변형까지 정리한다. */
+    suspend fun applyEditedLyrics(id: Int, lyricFileFullPath: String): Result<Unit>
+
+    /** 편집본 시간축 가사를 떼고 그 파일을 변형까지 지운다. 원본 가사는 건드리지 않는다. */
+    suspend fun clearEditedLyrics(id: Int): Result<Unit>
 
     /** 원본 가사 경로에서 파생한 변형(번역/음차) 파일을 저장한다. */
     suspend fun saveVariantLyrics(baseLyricFileFullPath: String, variant: LyricsVariant, text: String): Result<Unit>

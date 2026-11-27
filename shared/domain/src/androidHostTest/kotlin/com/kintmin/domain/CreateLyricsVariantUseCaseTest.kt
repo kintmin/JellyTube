@@ -5,6 +5,7 @@ import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.repository.LyricsTranslationRepository
 import com.kintmin.domain.lyrics.usecase.CreateLyricsVariantUseCase
 import com.kintmin.domain.lyrics.usecase.ParseLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.RefreshEditedAudioLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SerializeLyricsUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -17,6 +18,11 @@ import org.junit.Test
 
 class CreateLyricsVariantUseCaseTest {
 
+    private companion object {
+
+        const val AUDIO_MEDIA_ID = 1
+    }
+
     private val audioMediaRepository = mockk<AudioMediaRepository>()
     private val translationRepository = mockk<LyricsTranslationRepository>()
     private val useCase = CreateLyricsVariantUseCase(
@@ -24,6 +30,7 @@ class CreateLyricsVariantUseCaseTest {
         lyricsTranslationRepository = translationRepository,
         parseLyricsUseCase = ParseLyricsUseCase(),
         serializeLyricsUseCase = SerializeLyricsUseCase(),
+        refreshEditedAudioLyricsUseCase = mockk(relaxed = true),
     )
 
     @Test
@@ -39,7 +46,7 @@ class CreateLyricsVariantUseCaseTest {
             audioMediaRepository.saveVariantLyrics(path, LyricsVariant.TRANSLATION, capture(savedText))
         } returns Result.success(Unit)
 
-        val result = useCase(path, LyricsVariant.TRANSLATION)
+        val result = useCase(AUDIO_MEDIA_ID, path, LyricsVariant.TRANSLATION)
 
         assertTrue(result.isSuccess)
         assertEquals("[00:01.00]안녕\n[00:03.00]세계", savedText.captured)
@@ -56,7 +63,7 @@ class CreateLyricsVariantUseCaseTest {
             audioMediaRepository.saveVariantLyrics(path, LyricsVariant.TRANSLITERATION, any())
         } returns Result.success(Unit)
 
-        val result = useCase(path, LyricsVariant.TRANSLITERATION)
+        val result = useCase(AUDIO_MEDIA_ID, path, LyricsVariant.TRANSLITERATION)
 
         assertTrue(result.isSuccess)
         coVerify(exactly = 1) { translationRepository.transliterate("君") }
@@ -67,7 +74,7 @@ class CreateLyricsVariantUseCaseTest {
         val path = "/lyrics/empty.lrc"
         coEvery { audioMediaRepository.getLyrics(path) } returns Result.success("")
 
-        val result = useCase(path, LyricsVariant.TRANSLATION)
+        val result = useCase(AUDIO_MEDIA_ID, path, LyricsVariant.TRANSLATION)
 
         assertTrue(result.isFailure)
     }

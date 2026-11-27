@@ -168,6 +168,14 @@ internal class AudioMediaRepositoryImpl constructor(
         }
     }
 
+    override suspend fun getAudioMedia(id: Int): Result<AudioMedia> {
+        return withContext(Dispatchers.IO) {
+            suspendRunCatching {
+                audioMediaDao.getDataById(id).toDomain(fileManager).getOrThrow()
+            }
+        }
+    }
+
     override fun getAudioMediaListFlow(): Flow<List<AudioMedia>> {
         return audioMediaDao.getAudioMediaListFlow().map { audioMediaList ->
             audioMediaList.map {
@@ -288,8 +296,10 @@ internal class AudioMediaRepositoryImpl constructor(
         }
     }
 
-    private fun splitLyricFileName(baseLyricFileFullPath: String): Pair<String, String> {
-        val nameWithExt = fileManager.getFileNameWithExt(baseLyricFileFullPath).getOrThrow()
+    private fun splitLyricFileName(baseLyricFileFullPath: String): Pair<String, String> =
+        splitLyricFileNameWithExt(fileManager.getFileNameWithExt(baseLyricFileFullPath).getOrThrow())
+
+    private fun splitLyricFileNameWithExt(nameWithExt: String): Pair<String, String> {
         val dotIndex = nameWithExt.lastIndexOf('.')
         if (dotIndex == -1) throw Exception("가사 파일명에서 확장자를 찾을 수 없습니다.")
         return nameWithExt.substring(0, dotIndex) to nameWithExt.substring(dotIndex + 1)
@@ -308,6 +318,40 @@ internal class AudioMediaRepositoryImpl constructor(
                 oldLyricFileNameWithExt?.let { deleteLyricFile(it) }
                 Unit
             }
+        }
+    }
+
+    override suspend fun applyEditedLyrics(id: Int, lyricFileFullPath: String): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            suspendRunCatching {
+                val newFileNameWithExt = fileManager.getFileNameWithExt(lyricFileFullPath).getOrThrow()
+                val oldFileNameWithExt = audioMediaDao.getDataById(id).editedLyricFileNameWithExt
+                audioMediaDao.applyEditedLyricFile(id, newFileNameWithExt)
+                // DB가 진원지다. 커밋된 뒤에 아무도 가리키지 않게 된 옛 파일을 치운다.
+                if (oldFileNameWithExt != null && oldFileNameWithExt != newFileNameWithExt) {
+                    deleteLyricWithVariants(oldFileNameWithExt)
+                }
+            }
+        }
+    }
+
+    override suspend fun clearEditedLyrics(id: Int): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            suspendRunCatching {
+                val oldFileNameWithExt = audioMediaDao.getDataById(id).editedLyricFileNameWithExt
+                    ?: return@suspendRunCatching
+                audioMediaDao.clearEditedLyricFile(id)
+                deleteLyricWithVariants(oldFileNameWithExt)
+            }
+        }
+    }
+
+    /** 가사 파일과 그 이름에서 파생된 변형 파일을 함께 지운다. 삭제 실패는 무시한다. */
+    private suspend fun deleteLyricWithVariants(fileNameWithExt: String) {
+        val (baseName, extName) = splitLyricFileNameWithExt(fileNameWithExt)
+        deleteLyricFile(fileNameWithExt)
+        LyricsVariant.entries.forEach { variant ->
+            deleteLyricFile("$baseName.${variant.infix()}.$extName")
         }
     }
 

@@ -19,6 +19,8 @@ data class AudioMedia(
     /** 사용자가 고른 썸네일 경로. null이면 정본을 쓴다. */
     val customImageFileFullPath: String? = null,
     val lyricFileFullPath: String? = null,
+    /** 편집본 시간축에 맞춘 가사 경로. 원본 가사에서 파생되며 편집본이 있을 때만 채워진다. */
+    val editedLyricFileFullPath: String? = null,
     val tjKaraokeNumber: String? = null,
     /** 편집본 경로. null이면 편집본이 없다. */
     val editedAudioFileFullPath: String? = null,
@@ -32,6 +34,10 @@ data class AudioMedia(
 
     /** 화면에 그릴 썸네일 경로. 고른 것이 있으면 그것, 없으면 정본. */
     val displayImageFileFullPath: String? get() = customImageFileFullPath ?: imageFileFullPath
+
+    /** 재생에 맞춰 보여 줄 가사 경로. 편집본이 있으면 편집본 가사, 없으면 원본. */
+    val playbackLyricFileFullPath: String?
+        get() = if (editedAudioFileFullPath != null) editedLyricFileFullPath ?: lyricFileFullPath else lyricFileFullPath
 
     /** 재생·화면 표시에 쓸 길이. 편집본이 있으면 편집본, 없으면 원본. */
     val playbackDuration: Duration? get() = editedAudioDuration ?: audioDuration

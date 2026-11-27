@@ -203,7 +203,7 @@ internal class AudioEditRepositoryImpl constructor(
                 rawAudioDurationSeconds = durationMs / 1000,
                 audioFileNameWithExt = newFileNameWithExt,
                 imageFileNameWithExt = newImageFileNameWithExt,
-                // 가사는 길이가 달라져 맞지 않으므로 가져오지 않는다
+                // 가사는 조각 배치에 맞춰 옮겨야 맞으므로 행을 만든 뒤에 호출자가 붙인다
                 lyricFileNameWithExt = null,
                 tjKaraokeNumber = originEntity.tjKaraokeNumber,
             ).clampText()

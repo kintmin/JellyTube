@@ -9,14 +9,18 @@ import com.kintmin.domain.lyrics.repository.LyricsTranslationRepository
  * 원본 가사로부터 번역/음차 변형 파일을 생성해 저장한다.
  * 원본을 파싱해 텍스트만 엔진에 넘기고, 결과를 원본 타임스탬프와 정렬해 다시 직렬화한다.
  * 원본이 싱크(LRC)면 타임스탬프를 유지해 LRC 로, 비싱크면 일반 텍스트로 저장한다.
+ *
+ * 편집본이 있는 곡이면 편집본 시간축 가사도 다시 만들어 새 변형을 물려준다.
  */
 class CreateLyricsVariantUseCase(
     private val audioMediaRepository: AudioMediaRepository,
     private val lyricsTranslationRepository: LyricsTranslationRepository,
     private val parseLyricsUseCase: ParseLyricsUseCase,
     private val serializeLyricsUseCase: SerializeLyricsUseCase,
+    private val refreshEditedAudioLyricsUseCase: RefreshEditedAudioLyricsUseCase,
 ) {
     suspend operator fun invoke(
+        audioMediaId: Int,
         lyricFileFullPath: String,
         variant: LyricsVariant,
     ): Result<Unit> = suspendRunCatching {
@@ -47,5 +51,6 @@ class CreateLyricsVariantUseCase(
         }
 
         audioMediaRepository.saveVariantLyrics(lyricFileFullPath, variant, outputText).getOrThrow()
+        refreshEditedAudioLyricsUseCase(audioMediaId)
     }
 }

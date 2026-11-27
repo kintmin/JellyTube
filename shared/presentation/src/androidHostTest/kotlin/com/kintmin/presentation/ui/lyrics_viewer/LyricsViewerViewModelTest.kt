@@ -7,7 +7,8 @@ import com.kintmin.domain.lyrics.model.LyricsLine
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.DetectLyricsLanguageUseCase
 import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
-import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
+import com.kintmin.domain.lyrics.model.PlaybackLyrics
+import com.kintmin.domain.lyrics.usecase.GetPlaybackLyricsUseCase
 import com.kintmin.presentation.port.PlaybackController
 import com.kintmin.presentation.port.StartLyricsVariantCreation
 import com.kintmin.presentation.port.model.MediaControlData
@@ -79,8 +80,8 @@ class LyricsViewerViewModelTest {
         fetchAudioMediaDetailFlowUseCase = mockk<FetchAudioMediaDetailFlowUseCase> {
             every { this@mockk.invoke(any()) } returns flowOf(listOf(aggregate))
         },
-        getParsedLyricsUseCase = mockk<GetParsedLyricsUseCase> {
-            coEvery { this@mockk.invoke(any()) } answers { parsedLines }
+        getPlaybackLyricsUseCase = mockk<GetPlaybackLyricsUseCase> {
+            coEvery { this@mockk.invoke(any()) } answers { PlaybackLyrics("/lyrics/7.lrc", parsedLines) }
         },
         deleteAudioMediaLyricsUseCase = mockk(relaxed = true),
         detectLyricsLanguageUseCase = mockk<DetectLyricsLanguageUseCase>(relaxed = true),

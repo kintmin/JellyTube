@@ -14,12 +14,13 @@ import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackRepeatingUseC
 import com.kintmin.domain.audio_play_setting.usecase.UpdatePlaybackSpeedUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdateSleepTimerAnnouncementMediaIdUseCase
 import com.kintmin.domain.audio_play_setting.usecase.UpdateSleepTimerMinutesUseCase
+import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_track.usecase.FetchAudioMediaDetailFlowUseCase
 import com.kintmin.domain.audio_track.usecase.ToggleFavoriteUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
-import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.GetPlaybackLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.GetPlaylistUseCase
@@ -63,7 +64,7 @@ class PlayerDetailViewModel constructor(
     private val getPlaylistUseCase: GetPlaylistUseCase,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val getParsedLyricsUseCase: GetParsedLyricsUseCase,
+    private val getPlaybackLyricsUseCase: GetPlaybackLyricsUseCase,
     private val getLyricsVariantUseCase: GetLyricsVariantUseCase,
 ) : ViewModel() {
 
@@ -481,7 +482,6 @@ class PlayerDetailViewModel constructor(
                         it.playlist.type == PlaylistType.FAVORITE || it.playlist.type == PlaylistType.SECRET_FAVORITE
                     } ?: false
                     val audioMedia = aggregates?.firstOrNull()?.audioMedia
-                    val lyricFileFullPath = audioMedia?.lyricFileFullPath
                     _uiState.update {
                         it.copy(
                             isFavorite = isFavorite,
@@ -492,13 +492,14 @@ class PlayerDetailViewModel constructor(
                     }
                     // hasLyrics 는 가사 내용과 함께 나가야 한다. 먼저 켜면 가사 면이 빈 채로 섰다가
                     // 줄이 도착할 때 한 번 더 겹쳐 지워진다.
-                    loadLyricsIfNeeded(lyricFileFullPath)
+                    loadLyricsIfNeeded(audioMedia)
                 }
         }
     }
 
-    private fun loadLyricsIfNeeded(lyricFileFullPath: String?) {
+    private fun loadLyricsIfNeeded(audioMedia: AudioMedia?) {
         val mediaId = uiState.value.id
+        val lyricFileFullPath = audioMedia?.playbackLyricFileFullPath
         if (lyricFileFullPath == loadedLyricPath) {
             // 읽을 것은 없어도 이 답이 어느 곡의 것인지는 새로 적는다.
             _uiState.update { it.resolveLyrics(mediaId, hasLyrics = lyricFileFullPath != null) }
@@ -506,7 +507,7 @@ class PlayerDetailViewModel constructor(
         }
         loadedLyricPath = lyricFileFullPath
 
-        if (lyricFileFullPath == null) {
+        if (audioMedia == null || lyricFileFullPath == null) {
             parsedLyricLines = emptyList()
             _uiState.update {
                 it.resolveLyrics(mediaId, hasLyrics = false).copy(
@@ -519,7 +520,7 @@ class PlayerDetailViewModel constructor(
             return
         }
         viewModelScope.launch {
-            parsedLyricLines = getParsedLyricsUseCase(lyricFileFullPath)
+            parsedLyricLines = getPlaybackLyricsUseCase(audioMedia)?.lines.orEmpty()
             // 음차·번역 파일은 원본과 같은 타임코드로 만들어져 줄 번호가 맞는다
             val translationLines = getLyricsVariantUseCase(lyricFileFullPath, LyricsVariant.TRANSLATION).getOrNull()
             val transliterationLines = getLyricsVariantUseCase(lyricFileFullPath, LyricsVariant.TRANSLITERATION).getOrNull()

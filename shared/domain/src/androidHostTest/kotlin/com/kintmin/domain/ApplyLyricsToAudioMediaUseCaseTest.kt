@@ -3,6 +3,7 @@ package com.kintmin.domain
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.ApplyLyricsToAudioMediaUseCase
+import com.kintmin.domain.lyrics.usecase.RefreshEditedAudioLyricsUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -13,7 +14,12 @@ import org.junit.Test
 class ApplyLyricsToAudioMediaUseCaseTest {
 
     private val audioMediaRepository = mockk<AudioMediaRepository>()
-    private val useCase = ApplyLyricsToAudioMediaUseCase(audioMediaRepository, mockk(relaxed = true))
+    private val refreshEditedAudioLyrics = mockk<RefreshEditedAudioLyricsUseCase>(relaxed = true)
+    private val useCase = ApplyLyricsToAudioMediaUseCase(
+        audioMediaRepository,
+        refreshEditedAudioLyrics,
+        mockk(relaxed = true),
+    )
 
     @Test
     fun `synced 가사가 있으면 syncedLyrics를 싱크로 저장하고 컬럼을 갱신한다`() = runTest {
@@ -30,6 +36,8 @@ class ApplyLyricsToAudioMediaUseCaseTest {
         coVerify(exactly = 1) {
             audioMediaRepository.updateAudioMedia(id = 1, lyricFileFullPath = path)
         }
+        // 원본이 바뀌었으므로 편집본 가사도 다시 만들어야 한다
+        coVerify(exactly = 1) { refreshEditedAudioLyrics(1) }
     }
 
     @Test

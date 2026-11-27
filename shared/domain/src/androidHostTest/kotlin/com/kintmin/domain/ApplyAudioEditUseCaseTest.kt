@@ -6,6 +6,7 @@ import com.kintmin.domain.audio_edit.usecase.ApplyAudioEditUseCase
 import com.kintmin.domain.audio_edit.model.EmptyAudioEditSegment
 import com.kintmin.domain.audio_edit.usecase.RevertAudioEditUseCase
 import com.kintmin.domain.audio_media.model.AudioMedia
+import com.kintmin.domain.lyrics.usecase.RefreshEditedAudioLyricsUseCase
 import com.kintmin.log.AppLog
 import io.mockk.Runs
 import io.mockk.clearMocks
@@ -26,6 +27,7 @@ import kotlin.time.Duration.Companion.seconds
 class ApplyAudioEditUseCaseTest {
 
     private val audioEditRepository: AudioEditRepository = mockk()
+    private val refreshEditedAudioLyrics: RefreshEditedAudioLyricsUseCase = mockk(relaxed = true)
     private val appLog: AppLog = mockk(relaxed = true)
 
     private lateinit var applyAudioEditUseCase: ApplyAudioEditUseCase
@@ -57,10 +59,12 @@ class ApplyAudioEditUseCaseTest {
         every { audioEditRepository.releaseSaving(any()) } just Runs
         applyAudioEditUseCase = ApplyAudioEditUseCase(
             audioEditRepository = audioEditRepository,
+            refreshEditedAudioLyricsUseCase = refreshEditedAudioLyrics,
             appLog = appLog,
         )
         revertAudioEditUseCase = RevertAudioEditUseCase(
             audioEditRepository = audioEditRepository,
+            refreshEditedAudioLyricsUseCase = refreshEditedAudioLyrics,
             appLog = appLog,
         )
     }
@@ -111,6 +115,30 @@ class ApplyAudioEditUseCaseTest {
         assert(result.getOrThrow().playbackDuration == 120.seconds)
         assert(result.getOrThrow().audioDuration == 300.seconds)
         coVerify(exactly = 1) { audioEditRepository.applyEditedAudio(AUDIO_MEDIA_ID, timeline) }
+    }
+
+    @Test
+    fun `편집본을 적용하면 편집본 가사를 다시 만든다`() = runTest {
+        val timeline = AudioEditTimeline.initial(ORIGIN_DURATION_MS).split(60_000).delete(0)
+        coEvery {
+            audioEditRepository.applyEditedAudio(AUDIO_MEDIA_ID, timeline)
+        } returns Result.success(editedAudioMedia)
+
+        applyAudioEditUseCase(audioMediaId = AUDIO_MEDIA_ID, timeline = timeline)
+
+        coVerify(exactly = 1) { refreshEditedAudioLyrics(AUDIO_MEDIA_ID) }
+    }
+
+    @Test
+    fun `적용에 실패하면 편집본 가사를 건드리지 않는다`() = runTest {
+        val timeline = AudioEditTimeline.initial(ORIGIN_DURATION_MS).split(1_000)
+        coEvery {
+            audioEditRepository.applyEditedAudio(AUDIO_MEDIA_ID, timeline)
+        } returns Result.failure(Exception("렌더 실패"))
+
+        applyAudioEditUseCase(audioMediaId = AUDIO_MEDIA_ID, timeline = timeline)
+
+        coVerify(inverse = true) { refreshEditedAudioLyrics(any()) }
     }
 
     @Test
@@ -169,5 +197,7 @@ class ApplyAudioEditUseCaseTest {
         assert(result.isSuccess)
         assert(result.getOrThrow().playbackFileFullPath == "/audio/origin.m4a")
         assert(result.getOrThrow().playbackDuration == 300.seconds)
+        // 편집 배치가 사라졌으므로 편집본 가사도 떨어져 나가야 한다
+        coVerify(exactly = 1) { refreshEditedAudioLyrics(AUDIO_MEDIA_ID) }
     }
 }

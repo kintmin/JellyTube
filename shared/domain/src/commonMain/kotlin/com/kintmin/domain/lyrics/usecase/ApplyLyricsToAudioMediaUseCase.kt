@@ -16,10 +16,13 @@ import com.kintmin.domain.lyrics.model.LyricsVariant
  * 번역/음차 변형 가사가 함께 넘어오면 새 원본 파일명에서 파생한 별도 파일로 각각 저장한다.
  * 원본 파일명이 바뀌면 옛 변형 파일은 orphan 이 되므로 정리한다.
  *
+ * 편집본이 있는 곡이면 편집본 시간축 가사도 새 원본에서 다시 만든다.
+ *
  * 저장된 원본 가사 파일 경로(lyricFileFullPath)를 반환한다. (변형 가사 생성 등 후속 처리에 사용)
  */
 class ApplyLyricsToAudioMediaUseCase(
     private val audioMediaRepository: AudioMediaRepository,
+    private val refreshEditedAudioLyricsUseCase: RefreshEditedAudioLyricsUseCase,
     private val appLog: AppLog,
 ) {
     suspend operator fun invoke(
@@ -55,6 +58,8 @@ class ApplyLyricsToAudioMediaUseCase(
             audioMediaRepository.deleteVariantLyrics(old, LyricsVariant.TRANSLATION)
             audioMediaRepository.deleteVariantLyrics(old, LyricsVariant.TRANSLITERATION)
         }
+
+        refreshEditedAudioLyricsUseCase(audioMediaId)
 
         lyricFileFullPath
     }

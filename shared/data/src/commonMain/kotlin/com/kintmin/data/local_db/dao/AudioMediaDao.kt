@@ -86,6 +86,12 @@ WHERE id = :id
     @Query("UPDATE AUDIO_MEDIA SET lyricFileNameWithExt = NULL WHERE id = :id")
     suspend fun clearLyricFile(id: Int)
 
+    @Query("UPDATE AUDIO_MEDIA SET editedLyricFileNameWithExt = :editedLyricFileNameWithExt WHERE id = :id")
+    suspend fun applyEditedLyricFile(id: Int, editedLyricFileNameWithExt: String)
+
+    @Query("UPDATE AUDIO_MEDIA SET editedLyricFileNameWithExt = NULL WHERE id = :id")
+    suspend fun clearEditedLyricFile(id: Int)
+
     /** 편집본을 연결한다. 두 컬럼은 항상 같이 채운다. */
     @Query(
         """
