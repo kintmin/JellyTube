@@ -4,7 +4,6 @@ import com.kintmin.domain.backup.model.BackupFolder
 import com.kintmin.domain.backup.model.BackupOutcome
 import com.kintmin.domain.backup.model.BackupStatus
 import com.kintmin.domain.backup.usecase.FetchBackupStatusFlowUseCase
-import com.kintmin.domain.backup.usecase.HasLocalBackupUseCase
 import com.kintmin.domain.backup.usecase.RegisterBackupFolderUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -31,7 +30,6 @@ class SettingViewModelBackupTileTest {
     private val folder = BackupFolder("content://tree/1", "Download")
     private val status = mockk<FetchBackupStatusFlowUseCase>()
     private val register = mockk<RegisterBackupFolderUseCase>()
-    private val hasLocalBackup = mockk<HasLocalBackupUseCase> { coEvery { this@mockk() } returns false }
 
     @Before
     fun setUp() {
@@ -50,7 +48,6 @@ class SettingViewModelBackupTileTest {
         fetchUserIdUseCase = mockk { coEvery { this@mockk() } returns Result.success("id") },
         fetchBackupStatusFlowUseCase = status,
         registerBackupFolderUseCase = register,
-        hasLocalBackupUseCase = hasLocalBackup,
         updateShouldInsertAtTopOnDownloadUseCase = mockk(relaxed = true),
         updatePlaylistIdOnDownloadUseCase = mockk(relaxed = true),
         updateIsStepEnabledUseCase = mockk(relaxed = true),
@@ -68,17 +65,6 @@ class SettingViewModelBackupTileTest {
         viewModel.sendIntent(SettingIntent.OnClickBackupRestoreTile)
 
         assertEquals(SettingEvent.LaunchBackupFolderPicker, viewModel.eventFlow.first())
-    }
-
-    @Test
-    fun `재설치로 폴더 설정만 사라지고 남은 백업이 있으면 선택기 없이 백업 화면으로 간다`() = runTest {
-        every { status() } returns flowOf(BackupStatus(null, null, null, null))
-        coEvery { hasLocalBackup() } returns true
-        val viewModel = viewModel()
-
-        viewModel.sendIntent(SettingIntent.OnClickBackupRestoreTile)
-
-        assertEquals(SettingEvent.NavigateToBackupRestoreScreen, viewModel.eventFlow.first())
     }
 
     @Test

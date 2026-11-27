@@ -9,7 +9,6 @@ import com.kintmin.domain.backup.usecase.BackupNowUseCase
 import com.kintmin.domain.backup.usecase.FetchBackupStatusFlowUseCase
 import com.kintmin.domain.backup.usecase.FindBackupToRestoreUseCase
 import com.kintmin.domain.backup.usecase.PreviewRestoreUseCase
-import com.kintmin.domain.backup.usecase.ReadBackupFileUseCase
 import com.kintmin.domain.backup.usecase.RegisterBackupFolderUseCase
 import com.kintmin.domain.backup.usecase.RestoreBackupUseCase
 import com.kintmin.domain.data_migration.model.MigrationFailure
@@ -61,9 +60,6 @@ class SettingBackupRestoreViewModelTest {
     private val find = mockk<FindBackupToRestoreUseCase> {
         coEvery { this@mockk() } returns Result.success(backup)
     }
-    private val readFile = mockk<ReadBackupFileUseCase> {
-        coEvery { this@mockk("file") } returns Result.success(backup)
-    }
     private val previewRestore = mockk<PreviewRestoreUseCase> {
         coEvery { this@mockk(backup) } returns Result.success(preview)
     }
@@ -96,7 +92,6 @@ class SettingBackupRestoreViewModelTest {
         backupNowUseCase = backupNow,
         registerBackupFolderUseCase = mockk<RegisterBackupFolderUseCase>(),
         findBackupToRestoreUseCase = find,
-        readBackupFileUseCase = readFile,
         previewRestoreUseCase = previewRestore,
         restoreBackupUseCase = restore,
         fetchConnectionStatusUseCase = connection,
@@ -110,7 +105,6 @@ class SettingBackupRestoreViewModelTest {
 
         val phase = viewModel.uiState.value.restore as RestorePhase.Preview
         assertEquals(RestorePreviewItem(createdAt = 0L.toDateTimeText(), 10, 1, 8, 1, 32), phase.preview)
-        assertFalse(phase.isPickedFile)
         coVerify(exactly = 0) { restore(any(), any()) }
     }
 
@@ -123,23 +117,9 @@ class SettingBackupRestoreViewModelTest {
     }
 
     @Test
-    fun `직접 찾은 파일의 미리보기만 그만둘 수 있고 그만두면 다시 찾는다`() {
-        coEvery { find() } returns Result.success(null)
+    fun `폴더의 백업을 읽지 못하면 없다고 두지 않고 이유를 보인다`() {
+        coEvery { find() } returns Result.failure(BackupFileInvalidException())
         val viewModel = viewModel()
-
-        viewModel.sendIntent(SettingBackupRestoreIntent.OnBackupFilePicked("file"))
-        assertTrue((viewModel.uiState.value.restore as RestorePhase.Preview).isPickedFile)
-
-        viewModel.sendIntent(SettingBackupRestoreIntent.OnClickCancelPreview)
-        assertEquals(RestorePhase.NotFound, viewModel.uiState.value.restore)
-    }
-
-    @Test
-    fun `직접 찾은 파일을 읽지 못하면 이유를 보인다`() {
-        coEvery { readFile("file") } returns Result.failure(BackupFileInvalidException())
-        val viewModel = viewModel()
-
-        viewModel.sendIntent(SettingBackupRestoreIntent.OnBackupFilePicked("file"))
 
         assertTrue(viewModel.uiState.value.restore is RestorePhase.ReadFailed)
     }
@@ -303,14 +283,6 @@ class SettingBackupRestoreViewModelTest {
         viewModel.sendIntent(SettingBackupRestoreIntent.OnClickStartRestore)
 
         coVerify(exactly = 1) { backupNow(any()) }
-    }
-
-    @Test
-    fun `이 설치가 백업한 적 없이 남은 백업을 찾으면 자동 백업을 쉰다고 알린다`() {
-        assertTrue(viewModel().uiState.value.isAutoBackupPaused)
-
-        status = BackupStatus(null, lastSuccessMillis = 1_000, lastFailureMillis = null, lastFailureReason = null)
-        assertFalse(viewModel().uiState.value.isAutoBackupPaused)
     }
 
     @Test

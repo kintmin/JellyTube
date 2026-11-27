@@ -16,4 +16,8 @@ fun BackupStatus.toDescription(): String {
     }
 }
 
+/** 설정 화면 타일에서 들어가 보지 않아도 알아야 하는 상태. 문구와 색이 같이 움직이게 여기 둔다. */
+val BackupStatus.isWarning: Boolean
+    get() = folder == null || isFailing
+
 fun Long.toDateTimeText(): String = toLocalDateTime().toKoreanDateTimeStringWithoutSecond()

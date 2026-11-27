@@ -28,6 +28,7 @@ internal object BackupCodec {
             snapshot = content.snapshot.toDto(),
             downloadSettings = content.downloadSettings?.let { MigrationDownloadSettingsDto(it.shouldInsertAtTop, it.playlistId) },
             lyrics = content.lyrics,
+            installId = content.installId,
         )
         val compressed = Buffer()
         (compressed as Sink).gzip().buffer().use { it.writeUtf8(json.encodeToString(BackupDto.serializer(), dto)) }
@@ -55,6 +56,7 @@ internal object BackupCodec {
             downloadSettings = dto.downloadSettings?.let { MigrationDownloadSettings(it.shouldInsertAtTop, it.playlistId) },
             lyrics = dto.lyrics,
             createdAtMillis = dto.createdAtMillis,
+            installId = dto.installId,
         )
     }
 }

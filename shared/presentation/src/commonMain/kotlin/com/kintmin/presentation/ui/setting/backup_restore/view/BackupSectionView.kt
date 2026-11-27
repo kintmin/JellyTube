@@ -43,11 +43,7 @@ fun BackupSectionView(
                 color = if (uiState.isBackupFailing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = if (uiState.isAutoBackupPaused) {
-                    "복원할 백업이 있어 자동 백업을 쉬고 있습니다. 복원하면 다시 시작합니다."
-                } else {
-                    "하루 한 번 곡 목록·재생목록·가사·걸음수를 저장합니다. 음원 파일은 싣지 않습니다."
-                },
+                text = "하루 한 번 곡 목록·재생목록·가사·걸음수를 저장합니다. 음원 파일은 싣지 않습니다.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -66,10 +62,8 @@ fun BackupSectionView(
                         Text("지금 백업")
                     }
                 }
-                if (!uiState.isFolderFixed) {
-                    OutlinedButton(onClick = onClickPickFolder, enabled = !isBusy, colors = JellyTubeButtonColors.secondary()) {
-                        Text(if (uiState.folderLabel == null) "폴더 고르기" else "폴더 바꾸기")
-                    }
+                OutlinedButton(onClick = onClickPickFolder, enabled = !isBusy, colors = JellyTubeButtonColors.secondary()) {
+                    Text(if (uiState.folderLabel == null) "폴더 고르기" else "폴더 바꾸기")
                 }
             }
         }
@@ -94,7 +88,6 @@ private fun BackupSectionViewPickedFolderPreview() {
             BackupSectionView(
                 uiState = SettingBackupRestoreUiState.getMock().copy(
                     folderLabel = "iCloud Drive/JellyTube",
-                    isFolderFixed = false,
                     backupDescription = "백업 폴더에 접근할 수 없습니다. 폴더를 다시 지정하세요",
                     isBackupFailing = true,
                 ),

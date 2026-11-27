@@ -1,6 +1,5 @@
 package com.kintmin.presentation.platform
 
-import android.content.Context
 import android.content.Intent
 import android.provider.DocumentsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -9,30 +8,31 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-
-/** 백업은 공용 다운로드 폴더에 정해져 있어 고를 폴더가 없다. */
-@Composable
-actual fun rememberBackupFolderPicker(onPicked: (folderId: String, label: String) -> Unit): FilePickerLauncher =
-    remember { FilePickerLauncher {} }
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
-actual fun rememberBackupFilePicker(onPicked: (fileId: String) -> Unit): FilePickerLauncher {
+actual fun rememberBackupFolderPicker(onPicked: (folderId: String, label: String) -> Unit): FilePickerLauncher {
+    val context = LocalContext.current
     val currentOnPicked by rememberUpdatedState(onPicked)
-    val launcher = rememberLauncherForActivityResult(OpenInBackupFolder()) { uri ->
-        uri?.let { currentOnPicked(it.toString()) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { treeUri ->
+        val uri = treeUri ?: return@rememberLauncherForActivityResult
+        // 영구 권한을 받아 두지 않으면 다음 실행에서 이 폴더를 열 수 없다.
+        context.contentResolver.takePersistableUriPermission(
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+        )
+        currentOnPicked(uri.toString(), treeFolderLabelOf(DocumentsContract.getTreeDocumentId(uri)))
     }
-    // 제공자마다 .gz 의 MIME 이 달라 거르지 않는다.
-    return remember(launcher) { FilePickerLauncher { launcher.launch(arrayOf("*/*")) } }
+    return remember(launcher) {
+        // 선택기를 백업을 두기 좋은 자리에서 연다. 사용자가 다른 폴더를 골라도 된다.
+        val initialFolder = DocumentsContract.buildDocumentUri(EXTERNAL_STORAGE_PROVIDER, INITIAL_FOLDER_DOCUMENT_ID)
+        FilePickerLauncher { launcher.launch(initialFolder) }
+    }
 }
 
-/** 선택기를 백업 파일이 있는 폴더에서 연다. 그 폴더가 없으면 선택기가 기본 위치에서 연다. */
-private class OpenInBackupFolder : ActivityResultContracts.OpenDocument() {
+/** `primary:Download/JellyTube` 처럼 저장소 이름이 콜론 앞에 붙어 온다. 사용자에게는 뒤쪽만 보인다. */
+internal fun treeFolderLabelOf(treeDocumentId: String): String =
+    treeDocumentId.substringAfter(':').ifEmpty { treeDocumentId }
 
-    override fun createIntent(context: Context, input: Array<String>): Intent =
-        super.createIntent(context, input).apply {
-            putExtra(
-                DocumentsContract.EXTRA_INITIAL_URI,
-                DocumentsContract.buildDocumentUri("com.android.externalstorage.documents", "primary:Download/JellyTube"),
-            )
-        }
-}
+private const val EXTERNAL_STORAGE_PROVIDER = "com.android.externalstorage.documents"
+private const val INITIAL_FOLDER_DOCUMENT_ID = "primary:Download/JellyTube"

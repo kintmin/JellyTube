@@ -1,6 +1,5 @@
 package com.kintmin.domain.backup
 
-import com.kintmin.domain.backup.model.BackupContent
 import com.kintmin.domain.backup.model.BackupFailureReason
 import com.kintmin.domain.backup.model.BackupFolder
 import com.kintmin.domain.backup.model.BackupOutcome
@@ -11,14 +10,12 @@ import com.kintmin.domain.backup.usecase.BackupNowUseCase
 import com.kintmin.domain.backup.usecase.RegisterBackupFolderUseCase
 import com.kintmin.domain.data_migration.model.MigrationFile
 import com.kintmin.domain.data_migration.model.MigrationFileKind
-import com.kintmin.domain.data_migration.model.MigrationSnapshot
 import com.kintmin.domain.data_migration.repository.DataMigrationRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import com.kintmin.log.AppLog
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.TimeZone
@@ -29,15 +26,12 @@ import org.junit.Test
 
 class BackupIfDueUseCaseTest {
 
-    private val folder = BackupFolder("downloads", "Download/JellyTube")
+    private val folder = BackupFolder("content://tree/download", "Download/JellyTube")
     private val now = Instant.parse("2026-11-21T12:00:00Z").toEpochMilliseconds()
     private val yesterday = Instant.parse("2026-11-20T12:00:00Z").toEpochMilliseconds()
     private val earlierToday = Instant.parse("2026-11-21T01:00:00Z").toEpochMilliseconds()
-    private val backup = BackupContent(MigrationSnapshot(emptyList(), emptyList(), emptyList(), emptyList(), emptyList()), null, emptyMap(), 0)
 
     private val backupRepository = mockk<BackupRepository> {
-        coEvery { hasLocalCopy() } returns false
-        coEvery { readFolderCopy() } returns Result.success(null)
         coEvery { registerFolder(any()) } returns Result.success(Unit)
     }
     private val dataMigrationRepository = mockk<DataMigrationRepository> {
@@ -78,13 +72,11 @@ class BackupIfDueUseCaseTest {
     }
 
     @Test
-    fun `폴더 백업을 읽지 못하면 복원을 기다리는 것으로 보고 쓰지 않는다`() = runTest {
+    fun `폴더에 남은 백업이 있어도 쓴다 — 파일이 설치마다 갈라져 덮을 일이 없다`() = runTest {
         status()
-        coEvery { backupRepository.readFolderCopy() } returns Result.failure(Exception("provider unavailable"))
 
-        assertNull(run())
-        coVerify(exactly = 0) { backupNow(any()) }
-        verify { appLog.sendErrorLog(match { it.message.startsWith("폴더 백업 읽기 실패") }) }
+        assertEquals(BackupOutcome.WRITTEN, run())
+        coVerify(exactly = 0) { backupRepository.readFolderCopy() }
     }
 
     @Test
@@ -94,31 +86,6 @@ class BackupIfDueUseCaseTest {
 
         assertNull(run())
         coVerify(exactly = 0) { backupNow(any()) }
-    }
-
-    @Test
-    fun `재설치로 앱 안 사본만 되살아났으면 복원을 기다리며 쓰지 않는다`() = runTest {
-        status()
-        coEvery { backupRepository.hasLocalCopy() } returns true
-
-        assertNull(run())
-        coVerify(exactly = 0) { backupNow(any()) }
-    }
-
-    @Test
-    fun `폴더에만 남은 백업이 있어도 쓰지 않는다`() = runTest {
-        status()
-        coEvery { backupRepository.readFolderCopy() } returns Result.success(backup)
-
-        assertNull(run())
-    }
-
-    @Test
-    fun `한 번이라도 백업한 설치는 남은 백업이 있어도 날마다 쓴다`() = runTest {
-        status(lastSuccess = yesterday)
-        coEvery { backupRepository.hasLocalCopy() } returns true
-
-        assertEquals(BackupOutcome.WRITTEN, run())
     }
 
     @Test
@@ -140,34 +107,10 @@ class BackupIfDueUseCaseTest {
     }
 
     @Test
-    fun `재설치 뒤 고른 폴더의 백업을 읽지 못하면 덮지 않는다`() = runTest {
+    fun `폴더를 고르면 그 자리에 바로 쓴다`() = runTest {
         status()
-        coEvery { backupRepository.readFolderCopy() } returns Result.failure(Exception("provider unavailable"))
 
         val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow, appLog)(folder, now).getOrThrow()
-
-        assertEquals(BackupOutcome.KEPT_UNREADABLE, outcome)
-        coVerify(exactly = 0) { backupNow(any()) }
-        verify { appLog.sendErrorLog(match { it.message.startsWith("고른 폴더의 백업 읽기 실패") }) }
-    }
-
-    @Test
-    fun `재설치 뒤 백업이 든 폴더를 다시 고르면 그 백업을 덮지 않는다`() = runTest {
-        status()
-        coEvery { backupRepository.readFolderCopy() } returns Result.success(backup)
-
-        val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow, mockk(relaxed = true))(folder, now).getOrThrow()
-
-        assertEquals(BackupOutcome.KEPT_EXISTING, outcome)
-        coVerify(exactly = 0) { backupNow(any()) }
-    }
-
-    @Test
-    fun `백업하던 설치가 폴더를 바꾸면 새 폴더에 바로 쓴다`() = runTest {
-        status(lastSuccess = yesterday)
-        coEvery { backupRepository.readFolderCopy() } returns Result.success(backup)
-
-        val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow, mockk(relaxed = true))(folder, now).getOrThrow()
 
         assertEquals(BackupOutcome.WRITTEN, outcome)
     }

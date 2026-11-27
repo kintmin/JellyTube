@@ -17,6 +17,7 @@ import okio.buffer
 import okio.gzip
 import okio.use
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -44,11 +45,25 @@ class BackupCodecTest {
         downloadSettings = MigrationDownloadSettings(shouldInsertAtTop = true, playlistId = 10),
         lyrics = mapOf("1.lrc" to "[00:01.00]가사"),
         createdAtMillis = 123,
+        installId = "9f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
     )
+
+    // 인코딩과 디코딩이 백업 전체를 한 번에 ByteArray 로 들고 있다. 그 한 덩어리가 터지지 않을 상한이다.
+    private val encodeLimitBytes = 24L * 1024 * 1024
 
     @Test
     fun `쓴 그대로 읽힌다`() {
         assertEquals(content, BackupCodec.decode(BackupCodec.encode(content)))
+    }
+
+    @Test
+    fun `설치 값이 없는 옛 백업도 읽힌다`() {
+        val old = gzip(
+            """{"backupVersion":${BackupCodec.FORMAT_VERSION},"createdAtMillis":5,
+            "snapshot":{"audioMedias":[],"playlists":[],"tracks":[],"editProjects":[],"steps":[]}}""",
+        )
+
+        assertNull(BackupCodec.decode(old).installId)
     }
 
     @Test
@@ -73,7 +88,7 @@ class BackupCodecTest {
     }
 
     @Test
-    fun `5천 곡과 10년치 걸음수도 자동 백업 한도 안에 든다`() {
+    fun `5천 곡과 10년치 걸음수도 한 번에 인코딩된다`() {
         val random = Random(7)
         // 한글 음절을 무작위로 엮은 낱말 2천 개. 실제 글보다 덜 반복돼 크기를 넉넉히 잡는다.
         val words = List(2_000) { String(CharArray(2 + random.nextInt(3)) { '가' + random.nextInt(11_172) }) } +
@@ -100,9 +115,9 @@ class BackupCodecTest {
         )
 
         val size = BackupCodec.encode(large).size
-        println("백업 크기: ${size / 1024} KB (한도 ${BackupFiles.LOCAL_COPY_MAX_BYTES / 1024} KB)")
+        println("백업 크기: ${size / 1024} KB (상한 ${encodeLimitBytes / 1024} KB)")
 
-        assertTrue("백업 ${size}B", size < BackupFiles.LOCAL_COPY_MAX_BYTES)
+        assertTrue("백업 ${size}B", size < encodeLimitBytes)
     }
 
     private fun gzip(text: String): ByteArray {

@@ -26,6 +26,7 @@ private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
 /** Koin 초기화 직후 한 번 부른다. */
 fun startApp() {
+    excludeAppDataFromIcloudBackup(KoinPlatform.getKoin().get())
     appScope.launch { KoinPlatform.getKoin().get<RegisterUserUseCase>()() }
     appViewModel.sendIntent(AppIntent.InitializeMediaController)
     restoreStepMeasurementIfEnabled()

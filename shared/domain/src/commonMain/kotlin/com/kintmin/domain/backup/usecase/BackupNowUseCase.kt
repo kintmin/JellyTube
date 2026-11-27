@@ -47,7 +47,7 @@ class BackupNowUseCase(
             lyrics = lyrics,
             createdAtMillis = nowMillis,
         )
-        val written = backupRepository.write(content).getOrElse { error ->
+        val writtenBytes = backupRepository.write(content).getOrElse { error ->
             val reason = if (error is BackupFolderUnavailableException) {
                 BackupFailureReason.FOLDER_UNAVAILABLE
             } else {
@@ -56,9 +56,8 @@ class BackupNowUseCase(
             backupRepository.recordFailure(nowMillis, reason)
             throw error
         }
-        if (written.localCopySkipped) log("백업이 ${written.sizeBytes}B 라 클라우드 자동 백업용 사본은 쓰지 않음")
         backupRepository.recordSuccess(nowMillis).getOrThrow()
-        log("백업 완료: ${written.sizeBytes}B")
+        log("백업 완료: ${writtenBytes}B")
         BackupOutcome.WRITTEN
     }.onFailure {
         logError("백업 실패", it)

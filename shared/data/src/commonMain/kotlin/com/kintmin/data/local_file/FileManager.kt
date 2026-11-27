@@ -16,7 +16,7 @@ interface FileManager {
     /** 데이터 이전으로 받는 파일을 반영 전까지 두는 곳. 음원 디렉터리와 같은 볼륨이어야 옮기기가 원자적이다. */
     fun getMigrationStagingDirPath(): Result<String>
 
-    fun getBackupDirPath(): Result<String>
+    fun getInstallIdDirPath(): Result<String>
 
     suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<String>
 

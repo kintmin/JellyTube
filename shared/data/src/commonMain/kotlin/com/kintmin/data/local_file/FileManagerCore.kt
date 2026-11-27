@@ -18,7 +18,7 @@ internal interface AppDirectories {
     fun lyric(): Path
     fun log(): Path
     fun migrationStaging(): Path
-    fun backup(): Path
+    fun installId(): Path
 
     companion object {
         const val LYRIC_DIR_NAME = "lyrics"
@@ -51,7 +51,7 @@ internal class FileManagerCore(
 
     fun getMigrationStagingDirPath(): Result<String> = runCatching { directories.migrationStaging().ensured().toString() }
 
-    fun getBackupDirPath(): Result<String> = runCatching { directories.backup().ensured().toString() }
+    fun getInstallIdDirPath(): Result<String> = runCatching { directories.installId().ensured().toString() }
 
     /** 이미지 디렉터리 안에서 복사하고, 원본에서 가져온 확장자를 돌려준다. */
     suspend fun copyImageFile(sourceFileNameWithExt: String, targetFileName: String): Result<String> = io {

@@ -1,6 +1,7 @@
 package com.kintmin.data.repository_impl
 
 import com.kintmin.data.backup.BackupCodec
+import com.kintmin.data.backup.BackupFileName
 import com.kintmin.data.backup.BackupFiles
 import com.kintmin.data.backup.BackupFolderAccess
 import com.kintmin.data.local_datastore.DatastoreUtil
@@ -11,7 +12,6 @@ import com.kintmin.domain.backup.model.BackupFailureReason
 import com.kintmin.domain.backup.model.BackupFolder
 import com.kintmin.domain.backup.model.BackupFolderNotRegisteredException
 import com.kintmin.domain.backup.model.BackupStatus
-import com.kintmin.domain.backup.model.BackupWriteResult
 import com.kintmin.domain.backup.repository.BackupRepository
 import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
@@ -22,10 +22,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 class BackupRepositoryImpl(
     private val datastoreUtil: DatastoreUtil,
     private val fileManager: FileManager,
@@ -34,7 +38,7 @@ class BackupRepositoryImpl(
 
     private val fileSystem = FileSystem.SYSTEM
 
-    // 앱이 내려갈 때와 하루 예약 작업이 겹치면 같은 임시 파일에 함께 쓴다.
+    // 앱이 내려갈 때와 하루 예약 작업이 겹치면 같은 파일에 함께 쓴다.
     private val writeLock = Mutex()
 
     override fun getStatusFlow(): Flow<BackupStatus> = combine(
@@ -45,11 +49,10 @@ class BackupRepositoryImpl(
         datastoreUtil.getData(PreferencesKey.BackupLastFailureReason),
     ) { folderId, folderLabel, lastSuccess, lastFailure, failureReason ->
         BackupStatus(
-            folder = backupFolderAccess.fixedFolder ?: folderId?.let { BackupFolder(it, folderLabel.orEmpty()) },
+            folder = folderId?.let { BackupFolder(it, folderLabel.orEmpty()) },
             lastSuccessMillis = lastSuccess,
             lastFailureMillis = lastFailure,
             lastFailureReason = failureReason?.let { name -> BackupFailureReason.entries.firstOrNull { it.name == name } },
-            isFolderFixed = backupFolderAccess.fixedFolder != null,
         )
     }
 
@@ -58,47 +61,58 @@ class BackupRepositoryImpl(
         datastoreUtil.updateData(PreferencesKey.BackupFolderLabel, folder.label).getOrThrow()
     }
 
-    override suspend fun write(content: BackupContent): Result<BackupWriteResult> = writeLock.withLock {
+    override suspend fun write(content: BackupContent): Result<Long> = writeLock.withLock {
         suspendRunCatching {
             val folderId = folderId() ?: throw BackupFolderNotRegisteredException()
-            val bytes = withContext(Dispatchers.Default) { BackupCodec.encode(content) }
-            val localCopySkipped = bytes.size > BackupFiles.LOCAL_COPY_MAX_BYTES
-            withContext(Dispatchers.IO) {
-                if (localCopySkipped) {
-                    // 한도를 넘는 사본이 남아 있으면 그것 때문에 클라우드 백업이 통째로 빠진다.
-                    fileSystem.delete(localCopyPath(), mustExist = false)
-                } else {
-                    writeLocalCopy(bytes)
-                }
-            }
-            backupFolderAccess.write(folderId, BackupFiles.FILE_NAME, bytes)?.let { refreshed ->
+            val installId = getInstallId().getOrThrow()
+            val fileName = BackupFileName.build(content.createdAtMillis, TimeZone.currentSystemDefault(), installId)
+            val bytes = withContext(Dispatchers.Default) { BackupCodec.encode(content.copy(installId = installId)) }
+            backupFolderAccess.write(folderId, fileName, bytes)?.let { refreshed ->
                 datastoreUtil.updateData(PreferencesKey.BackupFolderId, refreshed).getOrThrow()
             }
-            BackupWriteResult(sizeBytes = bytes.size.toLong(), localCopySkipped = localCopySkipped)
+            // 다 쓴 뒤에 치운다. 쓰다 끊기면 어제 것이 남아야 한다.
+            deleteOwnCopiesExcept(folderId, installId, keep = fileName)
+            bytes.size.toLong()
         }
-    }
-
-    override suspend fun read(fileId: String): Result<BackupContent> = suspendRunCatching {
-        val bytes = backupFolderAccess.readPicked(fileId)
-        withContext(Dispatchers.Default) { BackupCodec.decode(bytes) }
-    }
-
-    override suspend fun readLocalCopy(): Result<BackupContent?> = suspendRunCatching {
-        val path = localCopyPath()
-        val bytes = withContext(Dispatchers.IO) {
-            if (fileSystem.exists(path)) fileSystem.read(path) { readByteArray() } else null
-        } ?: return@suspendRunCatching null
-        withContext(Dispatchers.Default) { BackupCodec.decode(bytes) }
     }
 
     override suspend fun readFolderCopy(): Result<BackupContent?> = suspendRunCatching {
         val folderId = folderId() ?: return@suspendRunCatching null
-        val bytes = backupFolderAccess.read(folderId, BackupFiles.FILE_NAME) ?: return@suspendRunCatching null
-        withContext(Dispatchers.Default) { BackupCodec.decode(bytes) }
+        val candidates = BackupFileName.candidatesNewestFirst(backupFolderAccess.list(folderId))
+        var firstFailure: Throwable? = null
+        for (fileName in candidates) {
+            val bytes = backupFolderAccess.read(folderId, fileName) ?: continue
+            val decoded = suspendRunCatching { withContext(Dispatchers.Default) { BackupCodec.decode(bytes) } }
+            decoded.getOrNull()?.let { return@suspendRunCatching it }
+            if (firstFailure == null) firstFailure = decoded.exceptionOrNull()
+        }
+        firstFailure?.let { throw it }
+        null
     }
 
-    override suspend fun hasLocalCopy(): Boolean = withContext(Dispatchers.IO) {
-        suspendRunCatching { fileSystem.exists(localCopyPath()) }.getOrDefault(false)
+    /** 같은 설치가 전에 쓴 것만 지운다. 옛 고정 이름은 누가 썼는지 알 수 없어 두고 본다. */
+    private suspend fun deleteOwnCopiesExcept(folderId: String, installId: String, keep: String) {
+        backupFolderAccess.list(folderId)
+            .filter { it != keep && BackupFileName.parse(it)?.installId == installId }
+            .forEach { backupFolderAccess.delete(folderId, it) }
+    }
+
+    override suspend fun getInstallId(): Result<String> = suspendRunCatching {
+        withContext(Dispatchers.IO) {
+            val path = installIdPath()
+            val saved = if (fileSystem.exists(path)) fileSystem.read(path) { readUtf8() }.trim() else ""
+            saved.ifEmpty {
+                val created = Uuid.random().toString()
+                fileSystem.write(path) { writeUtf8(created) }
+                created
+            }
+        }
+    }
+
+    override suspend fun adoptInstallId(installId: String): Result<Unit> = suspendRunCatching {
+        withContext(Dispatchers.IO) {
+            fileSystem.write(installIdPath()) { writeUtf8(installId) }
+        }
     }
 
     override suspend fun recordSuccess(atMillis: Long): Result<Unit> =
@@ -109,15 +123,8 @@ class BackupRepositoryImpl(
         datastoreUtil.updateData(PreferencesKey.BackupLastFailureMillis, atMillis).getOrThrow()
     }
 
-    private fun writeLocalCopy(bytes: ByteArray) {
-        val path = localCopyPath()
-        val part = "$path.part".toPath()
-        fileSystem.write(part) { write(bytes) }
-        fileSystem.atomicMove(part, path)
-    }
+    private suspend fun folderId(): String? = datastoreUtil.getData(PreferencesKey.BackupFolderId).first()
 
-    private suspend fun folderId(): String? =
-        backupFolderAccess.fixedFolder?.id ?: datastoreUtil.getData(PreferencesKey.BackupFolderId).first()
-
-    private fun localCopyPath(): Path = fileManager.getBackupDirPath().getOrThrow().toPath() / BackupFiles.FILE_NAME
+    private fun installIdPath(): Path =
+        fileManager.getInstallIdDirPath().getOrThrow().toPath() / BackupFiles.INSTALL_ID_FILE_NAME
 }

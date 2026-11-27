@@ -4,6 +4,8 @@ import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.audio_media.model.DownloadedAudioFile
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.backup.model.BackupContent
+import com.kintmin.domain.backup.model.BackupStatus
+import com.kintmin.domain.backup.repository.BackupRepository
 import com.kintmin.domain.backup.usecase.RestoreBackupUseCase
 import com.kintmin.domain.data_migration.model.MigrationApplyResult
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
@@ -32,9 +34,11 @@ import com.kintmin.log.AppLog
 import com.kintmin.log.HIDDEN_TEXT
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -60,6 +64,10 @@ class RestoreBackupUseCaseTest {
         coEvery { deleteFileAtFullPath(any()) } returns Result.success(Unit)
     }
     private val appLog = mockk<AppLog>(relaxed = true)
+    private val backupRepository = mockk<BackupRepository> {
+        every { getStatusFlow() } returns flowOf(BackupStatus(null, null, null, null))
+        coEvery { adoptInstallId(any()) } returns Result.success(Unit)
+    }
     private val targetSystem = listOf(
         MigrationPlaylist(1, "전체", "", null, 0, PlaylistType.TOTAL, 0),
         MigrationPlaylist(2, "미분류", "", null, 0, PlaylistType.UNCATEGORIZED, 0),
@@ -86,7 +94,8 @@ class RestoreBackupUseCaseTest {
         tracks: List<MigrationTrack> = emptyList(),
         steps: List<MigrationStep> = emptyList(),
         lyrics: Map<String, String> = emptyMap(),
-    ) = BackupContent(MigrationSnapshot(audios, playlists, tracks, emptyList(), steps), null, lyrics, 0)
+        installId: String? = null,
+    ) = BackupContent(MigrationSnapshot(audios, playlists, tracks, emptyList(), steps), null, lyrics, 0, installId)
 
     private class FakeRepository(
         private val target: MigrationSnapshot,
@@ -147,7 +156,30 @@ class RestoreBackupUseCaseTest {
     }
 
     private fun useCase(repository: DataMigrationRepository) =
-        RestoreBackupUseCase(repository, playlistRepository, appSettingRepository, audioMediaRepository, appLog)
+        RestoreBackupUseCase(repository, playlistRepository, appSettingRepository, audioMediaRepository, backupRepository, appLog)
+
+    @Test
+    fun `아직 백업한 적 없는 설치는 되돌린 백업의 설치 값을 이어받는다`() = runTest {
+        useCase(FakeRepository(emptyTarget))(backup(audios = emptyList(), installId = "이전-설치")) {}
+
+        coVerify { backupRepository.adoptInstallId("이전-설치") }
+    }
+
+    @Test
+    fun `이미 백업하던 설치는 자기 계보를 지킨다`() = runTest {
+        every { backupRepository.getStatusFlow() } returns flowOf(BackupStatus(null, 1_000, null, null))
+
+        useCase(FakeRepository(emptyTarget))(backup(audios = emptyList(), installId = "이전-설치")) {}
+
+        coVerify(exactly = 0) { backupRepository.adoptInstallId(any()) }
+    }
+
+    @Test
+    fun `설치 값이 없는 옛 백업은 이을 것이 없다`() = runTest {
+        useCase(FakeRepository(emptyTarget))(backup(audios = emptyList())) {}
+
+        coVerify(exactly = 0) { backupRepository.adoptInstallId(any()) }
+    }
 
     @Test
     fun `비밀모드 없이 복원해도 비밀 곡의 이름과 주소는 로그에서 가리고 나머지는 남긴다`() = runTest {

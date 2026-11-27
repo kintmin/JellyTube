@@ -55,7 +55,6 @@ class SettingViewModelVersionTileTest {
             every { this@mockk() } returns flowOf(BackupStatus(null, null, null, null))
         },
         registerBackupFolderUseCase = mockk(relaxed = true),
-        hasLocalBackupUseCase = mockk(relaxed = true),
         updateShouldInsertAtTopOnDownloadUseCase = mockk(relaxed = true),
         updatePlaylistIdOnDownloadUseCase = mockk(relaxed = true),
         updateIsStepEnabledUseCase = mockk(relaxed = true),

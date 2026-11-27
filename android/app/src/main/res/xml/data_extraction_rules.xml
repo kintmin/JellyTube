@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12 이상. 클라우드 백업은 backup_rules.xml 과 같은 이유로 백업 사본 하나만 싣는다.
-     기기 간 직접 이전(device-transfer)은 용량 한도가 없어 정하지 않고 기본(전부)을 둔다. -->
+<!-- Android 12 이상. 클라우드 백업에는 아무것도 싣지 않고, 기기 간 이전은 백업 파일 이름에 쓰는
+     설치 식별만 뺀다 — 옮긴 기기가 옛 기기의 백업을 덮지 않아야 한다. 이유는 docs/DECISIONS.md.
+     이전 규칙에 include 를 쓰면 적지 않은 것이 전부 빠지므로 exclude 만 쓴다. -->
 <data-extraction-rules>
     <cloud-backup>
-        <include domain="file" path="backup/" />
+        <exclude domain="root" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="device_root" path="." />
+        <exclude domain="device_file" path="." />
+        <exclude domain="device_database" path="." />
+        <exclude domain="device_sharedpref" path="." />
     </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="install_id/" />
+    </device-transfer>
 </data-extraction-rules>

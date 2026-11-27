@@ -20,11 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import com.kintmin.presentation.platform.AppPermission
 import com.kintmin.presentation.platform.KeepScreenOnEffect
-import com.kintmin.presentation.platform.rememberBackupFilePicker
 import com.kintmin.presentation.platform.rememberBackupFolderPicker
-import com.kintmin.presentation.platform.rememberPermissionController
 import com.kintmin.presentation.platform.rememberToaster
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.ConfirmStyle
@@ -45,26 +42,12 @@ fun SettingBackupRestoreScreen(
     val folderPicker = rememberBackupFolderPicker { folderId, label ->
         viewModel.sendIntent(SettingBackupRestoreIntent.OnBackupFolderPicked(folderId, label))
     }
-    val filePicker = rememberBackupFilePicker { fileId ->
-        viewModel.sendIntent(SettingBackupRestoreIntent.OnBackupFilePicked(fileId))
-    }
-    val permissionController = rememberPermissionController()
 
-    LaunchedEffect(Unit) {
-        if (!permissionController.isGranted(AppPermission.BackupStorage)) {
-            permissionController.request(listOf(AppPermission.BackupStorage)) { result ->
-                if (result[AppPermission.BackupStorage] == true) {
-                    viewModel.sendIntent(SettingBackupRestoreIntent.OnBackupStorageGranted)
-                }
-            }
-        }
-    }
     LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
                 SettingBackupRestoreEvent.NavigateToBack -> navigateToBack()
                 SettingBackupRestoreEvent.LaunchBackupFolderPicker -> folderPicker.launch()
-                SettingBackupRestoreEvent.LaunchBackupFilePicker -> filePicker.launch()
                 is SettingBackupRestoreEvent.ShowToast -> toaster.show(event.message)
             }
         }
@@ -105,16 +88,6 @@ fun SettingBackupRestoreScreen(
             onConfirm = { sendIntent(SettingBackupRestoreIntent.OnConfirmExit) },
         )
     }
-    var isOverwriteDialogVisible by remember { mutableStateOf(false) }
-    JellyTubeConfirmDialog(
-        showDialog = isOverwriteDialogVisible,
-        title = "남은 백업을 덮어쓸까요?",
-        message = "아직 복원하지 않은 백업이 있습니다. 지금 백업하면 이 기기의 현재 상태로 바뀌어, 그 백업으로는 더 복원할 수 없습니다.",
-        confirmText = "덮어쓰기",
-        confirmStyle = ConfirmStyle.Destructive,
-        onDismiss = { isOverwriteDialogVisible = false },
-        onConfirm = { sendIntent(SettingBackupRestoreIntent.OnClickBackupNow) },
-    )
     (uiState.restore as? RestorePhase.Preview)?.let { preview ->
         JellyTubeConfirmDialog(
             showDialog = preview.askCellular,
@@ -148,18 +121,13 @@ fun SettingBackupRestoreScreen(
             }
             BackupSectionView(
                 uiState = uiState,
-                onClickBackupNow = {
-                    if (uiState.isAutoBackupPaused) isOverwriteDialogVisible = true
-                    else sendIntent(SettingBackupRestoreIntent.OnClickBackupNow)
-                },
+                onClickBackupNow = { sendIntent(SettingBackupRestoreIntent.OnClickBackupNow) },
                 onClickPickFolder = { sendIntent(SettingBackupRestoreIntent.OnClickPickFolder) },
             )
             RestoreSectionView(
                 uiState = uiState,
-                onClickFindBackupFile = { sendIntent(SettingBackupRestoreIntent.OnClickFindBackupFile) },
                 onClickPickFolder = { sendIntent(SettingBackupRestoreIntent.OnClickPickFolder) },
                 onClickStart = { sendIntent(SettingBackupRestoreIntent.OnClickStartRestore) },
-                onClickCancelPreview = { sendIntent(SettingBackupRestoreIntent.OnClickCancelPreview) },
                 onClickStop = { sendIntent(SettingBackupRestoreIntent.OnClickStop) },
                 onClickRetry = { sendIntent(SettingBackupRestoreIntent.OnClickRetry) },
                 onClickCloseResult = { sendIntent(SettingBackupRestoreIntent.OnClickCloseResult) },
