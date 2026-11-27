@@ -86,6 +86,20 @@ class BackupFileNameTest {
     }
 
     @Test
+    fun `같은 날짜면 설치 값으로 순서를 고정한다`() {
+        val names = listOf(
+            "JellyTube_20261127_$installId.json.gz",
+            "JellyTube_20261127_$otherInstallId.json.gz",
+        )
+
+        // 플랫폼이 어느 순서로 돌려주든 같은 답이어야 한다.
+        assertEquals(
+            BackupFileName.candidatesNewestFirst(names),
+            BackupFileName.candidatesNewestFirst(names.reversed()),
+        )
+    }
+
+    @Test
     fun `백업이 아닌 파일만 있으면 후보가 없다`() {
         assertEquals(emptyList<String>(), BackupFileName.candidatesNewestFirst(listOf("노래.mp3", "표지.png")))
     }

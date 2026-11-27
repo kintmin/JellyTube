@@ -7,7 +7,8 @@ package com.kintmin.data.backup
 interface BackupFolderAccess {
 
     /**
-     * [folderId] 의 [fileName] 을 [bytes] 로 통째로 바꾼다. 쓰다 실패하면 전 파일이 남는다.
+     * [folderId] 의 [fileName] 을 [bytes] 로 쓴다. **같은 이름이 이미 있으면 덮어쓰므로 쓰다
+     * 끊기면 그 파일이 잘린 채 남는다** — 이름이 다르면 새로 만들어 전 파일은 그대로다.
      * 다시 열 값이 바뀌었으면 새 값을, 아니면 null 을 돌려준다.
      * 폴더에 쓸 수 없으면 `BackupFolderUnavailableException` 을 던진다.
      */

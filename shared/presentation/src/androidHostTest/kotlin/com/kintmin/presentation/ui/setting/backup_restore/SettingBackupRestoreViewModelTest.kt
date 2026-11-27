@@ -276,13 +276,13 @@ class SettingBackupRestoreViewModelTest {
     }
 
     @Test
-    fun `복원이 끝나면 쉬던 자동 백업을 다시 시작하도록 한 번 쓴다`() {
+    fun `복원이 끝나도 바로 백업하지 않는다 — 되돌린 백업을 지우지 않기 위해서다`() {
         coEvery { restore(backup, any()) } returns Result.success(MigrationSummary(8, 0, 8, emptyList()))
         val viewModel = viewModel()
 
         viewModel.sendIntent(SettingBackupRestoreIntent.OnClickStartRestore)
 
-        coVerify(exactly = 1) { backupNow(any()) }
+        coVerify(exactly = 0) { backupNow(any()) }
     }
 
     @Test

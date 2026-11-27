@@ -264,6 +264,10 @@ class SettingViewModel constructor(
             val result = registerBackupFolderUseCase(folder, Clock.System.now().toEpochMilliseconds())
             val message = when {
                 result.getOrNull() == BackupOutcome.WRITTEN -> "백업했습니다. 이제 하루 한 번 이 폴더에 백업합니다."
+                result.getOrNull() == BackupOutcome.KEPT_EXISTING ->
+                    "이 폴더에서 되돌릴 백업을 찾았습니다. 복원하거나 직접 백업할 수 있습니다."
+                result.getOrNull() == BackupOutcome.KEPT_UNREADABLE ->
+                    "이 폴더의 백업을 읽지 못했습니다. 되돌릴 것일 수 있어 덮어쓰지 않았습니다."
                 result.isSuccess -> "백업 폴더를 지정했습니다. 음원이 생기면 백업합니다."
                 else -> "백업 폴더를 지정했지만 백업하지 못했습니다."
             }

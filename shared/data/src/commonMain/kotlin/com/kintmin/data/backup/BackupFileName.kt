@@ -42,8 +42,10 @@ internal object BackupFileName {
 
     /** 되돌릴 후보를 최근 것부터. 날짜를 모르는 옛 이름은 뒤에 둔다. */
     fun candidatesNewestFirst(fileNames: List<String>): List<String> {
-        val dated = fileNames.mapNotNull { name -> parse(name)?.let { name to it.date } }
-            .sortedByDescending { (_, date) -> date }
+        // 날짜가 하루 단위라 같은 날 두 설치가 쓰면 겹친다. 설치 값으로 갈라 순서를 고정한다 —
+        // 아니면 어느 것을 되돌릴지가 플랫폼이 돌려준 목록 순서에 달린다.
+        val dated = fileNames.mapNotNull { name -> parse(name)?.let { name to it } }
+            .sortedWith(compareByDescending<Pair<String, Parsed>> { it.second.date }.thenBy { it.second.installId })
         val legacy = fileNames.mapNotNull { name -> legacyOrderOf(name)?.let { name to it } }
             .sortedByDescending { (_, order) -> order }
         return (dated.map { (name, _) -> name }) + legacy.map { (name, _) -> name }

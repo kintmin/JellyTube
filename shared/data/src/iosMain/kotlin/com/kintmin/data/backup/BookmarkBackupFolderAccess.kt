@@ -63,7 +63,7 @@ internal class BookmarkBackupFolderAccess : BackupFolderAccess {
                 val error = alloc<ObjCObjectVar<NSError?>>()
                 val names = NSFileManager.defaultManager.contentsOfDirectoryAtPath(path, error.ptr)
                     ?: throw BackupFolderUnavailableException()
-                names.mapNotNull { it as? String }
+                names.mapNotNull { (it as? String)?.let(::resolvedIcloudName) }
             }
         }
     }
@@ -135,3 +135,17 @@ internal class BookmarkBackupFolderAccess : BackupFolderAccess {
 
     private fun NSError.isNoSuchFile() = domain == NSCocoaErrorDomain && (code == NSFileNoSuchFileError || code == NSFileReadNoSuchFileError)
 }
+
+/**
+ * 아직 내려받지 않은 iCloud 항목은 목록에 `.<원래 이름>.icloud` 로 나온다. 원래 이름으로 되돌려야
+ * 백업으로 읽히고, 그 이름으로 조율해 읽을 때 비로소 내려받는다.
+ */
+internal fun resolvedIcloudName(fileName: String): String =
+    if (fileName.length > ICLOUD_PLACEHOLDER_AFFIX && fileName.startsWith('.') && fileName.endsWith(ICLOUD_SUFFIX)) {
+        fileName.drop(1).dropLast(ICLOUD_SUFFIX.length)
+    } else {
+        fileName
+    }
+
+private const val ICLOUD_SUFFIX = ".icloud"
+private const val ICLOUD_PLACEHOLDER_AFFIX = ICLOUD_SUFFIX.length + 1

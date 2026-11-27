@@ -12,6 +12,7 @@ import com.kintmin.domain.backup.model.BackupFailureReason
 import com.kintmin.domain.backup.model.BackupFolder
 import com.kintmin.domain.backup.model.BackupFolderNotRegisteredException
 import com.kintmin.domain.backup.model.BackupStatus
+import com.kintmin.domain.backup.model.BackupVersionUnsupportedException
 import com.kintmin.domain.backup.repository.BackupRepository
 import com.kintmin.domain.common.suspendRunCatching
 import kotlinx.coroutines.Dispatchers
@@ -71,7 +72,8 @@ class BackupRepositoryImpl(
                 datastoreUtil.updateData(PreferencesKey.BackupFolderId, refreshed).getOrThrow()
             }
             // 다 쓴 뒤에 치운다. 쓰다 끊기면 어제 것이 남아야 한다.
-            deleteOwnCopiesExcept(folderId, installId, keep = fileName)
+            // 치우기는 쓰기의 성패를 바꾸지 않는다 — 백업은 이미 폴더에 들어갔다.
+            suspendRunCatching { deleteOwnCopiesExcept(folderId, installId, keep = fileName) }
             bytes.size.toLong()
         }
     }
@@ -84,7 +86,10 @@ class BackupRepositoryImpl(
             val bytes = backupFolderAccess.read(folderId, fileName) ?: continue
             val decoded = suspendRunCatching { withContext(Dispatchers.Default) { BackupCodec.decode(bytes) } }
             decoded.getOrNull()?.let { return@suspendRunCatching it }
-            if (firstFailure == null) firstFailure = decoded.exceptionOrNull()
+            val error = decoded.exceptionOrNull()
+            // 더 새 버전은 손상이 아니다. 옛 백업으로 내려가면 업데이트하라고 알릴 길이 없다.
+            if (error is BackupVersionUnsupportedException) throw error
+            if (firstFailure == null) firstFailure = error
         }
         firstFailure?.let { throw it }
         null

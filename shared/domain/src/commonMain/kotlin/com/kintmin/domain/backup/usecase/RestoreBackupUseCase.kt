@@ -111,8 +111,11 @@ class RestoreBackupUseCase(
      */
     private suspend fun adoptInstallIdIfFirstBackup(installId: String?) {
         if (installId == null) return
-        if (backupRepository.getStatusFlow().first().lastSuccessMillis != null) return
-        backupRepository.adoptInstallId(installId).onFailure { logError("설치 값 이어받기 실패", it) }
+        // 반영은 이미 끝났다. 여기서 터져도 복원을 중단으로 되돌리지 않는다.
+        suspendRunCatching {
+            if (backupRepository.getStatusFlow().first().lastSuccessMillis != null) return@suspendRunCatching
+            backupRepository.adoptInstallId(installId).getOrThrow()
+        }.onFailure { logError("설치 값 이어받기 실패", it) }
     }
 
     private suspend fun restore(

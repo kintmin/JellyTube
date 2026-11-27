@@ -216,8 +216,6 @@ class SettingBackupRestoreViewModel(
                 },
             )
         }
-        // 복원으로 이 기기가 백업을 따라잡았다. 쉬던 자동 백업을 다시 시작하도록 바로 한 번 쓴다.
-        viewModelScope.launch { backupNowUseCase(nowMillis()) }
     }
 
     private fun interrupt(cause: String?) {
@@ -298,6 +296,8 @@ class SettingBackupRestoreViewModel(
             when (outcome) {
                 BackupOutcome.WRITTEN -> "백업했습니다."
                 BackupOutcome.SKIPPED_EMPTY -> "음원이 없어 백업하지 않았습니다. 남아 있던 백업은 그대로 둡니다."
+                BackupOutcome.KEPT_EXISTING -> "이 폴더에서 되돌릴 백업을 찾았습니다. 덮어쓰지 않았습니다."
+                BackupOutcome.KEPT_UNREADABLE -> "이 폴더의 백업을 읽지 못했습니다. 되돌릴 것일 수 있어 덮어쓰지 않았습니다."
             }
         },
         onFailure = {

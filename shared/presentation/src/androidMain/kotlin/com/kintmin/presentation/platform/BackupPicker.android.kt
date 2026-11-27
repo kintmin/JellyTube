@@ -16,11 +16,15 @@ actual fun rememberBackupFolderPicker(onPicked: (folderId: String, label: String
     val currentOnPicked by rememberUpdatedState(onPicked)
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { treeUri ->
         val uri = treeUri ?: return@rememberLauncherForActivityResult
-        // 영구 권한을 받아 두지 않으면 다음 실행에서 이 폴더를 열 수 없다.
-        context.contentResolver.takePersistableUriPermission(
-            uri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-        )
+        // 영구 권한을 받아 두지 않으면 다음 실행에서 이 폴더를 열 수 없다. 제공자가 주지 못하거나
+        // 기기의 영구 권한 수가 찼으면 던지는데, 그때 등록하면 다음에 열지 못하는 폴더가 남는다.
+        val persisted = runCatching {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        }.isSuccess
+        if (!persisted) return@rememberLauncherForActivityResult
         currentOnPicked(uri.toString(), treeFolderLabelOf(DocumentsContract.getTreeDocumentId(uri)))
     }
     return remember(launcher) {
