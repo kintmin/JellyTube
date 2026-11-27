@@ -40,19 +40,11 @@ data class AudioMedia(
     val fitsRingtoneLength: Boolean get() = playbackDuration?.let { it < RINGTONE_MAX_DURATION } ?: true
 
     /** 길이를 모르면(null) 막는다 — 끝을 모르면 끝날 때까지 기다릴 수 없다. */
-    val fitsSleepTimerAnnouncement: Boolean
-        get() = playbackDuration?.let { it <= SLEEP_TIMER_ANNOUNCEMENT_MAX_DURATION } ?: false
+    val fitsSleepTimerAnnouncement: Boolean get() = playbackDuration != null
 
     companion object {
 
         /** iOS 가 벨소리로 받는 길이의 상한. 이 값 **미만**만 등록된다. */
         val RINGTONE_MAX_DURATION: Duration = 30.seconds
-
-        /**
-         * 잠들기 전에 짧게 듣는다는 쓰임에서 온 상한. 이 값 **이하**를 고를 수 있다.
-         *
-         * [RINGTONE_MAX_DURATION] 과 값이 같을 뿐 근거가 달라 한쪽이 바뀌어도 다른 쪽은 그대로다.
-         */
-        val SLEEP_TIMER_ANNOUNCEMENT_MAX_DURATION: Duration = 30.seconds
     }
 }

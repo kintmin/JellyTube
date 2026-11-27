@@ -35,10 +35,10 @@ class RepeatRangeTest {
     }
 
     @Test
-    fun `시작점 1 초 안에서 다시 누르면 구간이 풀린다`() {
+    fun `시작점 500 밀리초 안에서 다시 누르면 구간이 풀린다`() {
         repeatRange.update("1", 3_000.milliseconds)
 
-        repeatRange.update("1", 3_999.milliseconds)
+        repeatRange.update("1", 3_499.milliseconds)
 
         assertNull(repeatRange.stateFor("1").startDuration)
     }
@@ -54,12 +54,12 @@ class RepeatRangeTest {
     }
 
     @Test
-    fun `시작점에서 1 초 넘게 떨어지면 끝점으로 잡는다`() {
+    fun `시작점에서 500 밀리초 넘게 떨어지면 끝점으로 잡는다`() {
         repeatRange.update("1", 3_000.milliseconds)
 
-        repeatRange.update("1", 4_000.milliseconds)
+        repeatRange.update("1", 3_500.milliseconds)
 
-        assertEquals(4_000.milliseconds, repeatRange.stateFor("1").endDuration)
+        assertEquals(3_500.milliseconds, repeatRange.stateFor("1").endDuration)
     }
 
     @Test

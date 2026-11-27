@@ -6,7 +6,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class AudioMediaSleepTimerAnnouncementLengthTest {
@@ -29,27 +28,19 @@ class AudioMediaSleepTimerAnnouncementLengthTest {
     )
 
     @Test
-    fun `30초 이하면 마무리 음원으로 고를 수 있다`() {
-        assertTrue(audioMedia(30.seconds).fitsSleepTimerAnnouncement)
+    fun `길이를 알면 마무리 음원으로 고를 수 있다`() {
+        assertTrue(audioMedia(10.seconds).fitsSleepTimerAnnouncement)
     }
 
     @Test
-    fun `30초를 넘으면 고를 수 없다`() {
-        assertFalse(audioMedia(30.seconds + 1.milliseconds).fitsSleepTimerAnnouncement)
+    fun `길이에 상한이 없어 긴 음원도 고를 수 있다`() {
+        assertTrue(audioMedia(5.seconds * 60).fitsSleepTimerAnnouncement)
     }
 
     @Test
-    fun `원본이 길어도 편집본이 짧으면 편집본 기준으로 고를 수 있다`() {
+    fun `원본 길이를 몰라도 편집본 길이를 알면 고를 수 있다`() {
         assertTrue(
-            audioMedia(audioDuration = 3.seconds * 60, editedAudioDuration = 10.seconds)
-                .fitsSleepTimerAnnouncement
-        )
-    }
-
-    @Test
-    fun `원본이 짧아도 편집본이 길면 편집본 기준으로 고를 수 없다`() {
-        assertFalse(
-            audioMedia(audioDuration = 10.seconds, editedAudioDuration = 45.seconds)
+            audioMedia(audioDuration = null, editedAudioDuration = 10.seconds)
                 .fitsSleepTimerAnnouncement
         )
     }
