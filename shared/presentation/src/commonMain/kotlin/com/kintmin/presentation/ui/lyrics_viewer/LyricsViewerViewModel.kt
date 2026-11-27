@@ -10,7 +10,7 @@ import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.DeleteAudioMediaLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.DetectLyricsLanguageUseCase
 import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
-import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.GetPlaybackLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.presentation.port.StartLyricsVariantCreation
 import com.kintmin.presentation.port.PlaybackController
@@ -31,7 +31,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class LyricsViewerViewModel constructor(
     savedStateHandle: SavedStateHandle,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
-    private val getParsedLyricsUseCase: GetParsedLyricsUseCase,
+    private val getPlaybackLyricsUseCase: GetPlaybackLyricsUseCase,
     private val deleteAudioMediaLyricsUseCase: DeleteAudioMediaLyricsUseCase,
     private val detectLyricsLanguageUseCase: DetectLyricsLanguageUseCase,
     private val getLyricsVariantUseCase: GetLyricsVariantUseCase,
@@ -69,7 +69,7 @@ class LyricsViewerViewModel constructor(
                     val title = audioMedia?.name.orEmpty()
                     val path = audioMedia?.lyricFileFullPath
                     lyricFileFullPath = path
-                    if (path == null) {
+                    if (audioMedia == null || path == null) {
                         parsedLines = emptyList()
                         _uiState.update {
                             it.copy(
@@ -85,7 +85,7 @@ class LyricsViewerViewModel constructor(
                             )
                         }
                     } else {
-                        parsedLines = getParsedLyricsUseCase(path)
+                        parsedLines = getPlaybackLyricsUseCase(audioMedia)
 
                         val language = detectLyricsLanguageUseCase(parsedLines)
 
