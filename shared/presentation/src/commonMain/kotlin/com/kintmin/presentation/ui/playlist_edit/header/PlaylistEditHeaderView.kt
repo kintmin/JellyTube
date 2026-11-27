@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kintmin.domain.extension.flattenNewlines
 import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.presentation.ui.common.EditableArtwork
 import com.kintmin.presentation.ui.common.UnderlineTextField
@@ -67,7 +68,7 @@ fun PlaylistEditHeaderView(
                 label = "제목",
                 value = titleText,
                 onValueChange = { input ->
-                    val newText = PlaylistTextLimit.flattenTitle(input)
+                    val newText = input.flattenNewlines()
                     titleText = newText
                     hasEditedTitle = true
                     if (newText.isNotEmpty()) {
@@ -77,7 +78,6 @@ fun PlaylistEditHeaderView(
                 textStyle = MaterialTheme.typography.titleMedium,
                 placeholder = "제목 입력",
                 maxLength = PlaylistTextLimit.MAX_TITLE_LENGTH,
-                // 긴 제목을 다 보이게 줄은 넘기되, 엔터는 개행이 아니라 완료다.
                 singleLine = false,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 errorMessage = if (isTitleError) "제목을 입력해 주세요. 비워 두면 이전 제목이 남습니다." else null,

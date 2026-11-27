@@ -1,6 +1,7 @@
 package com.kintmin.domain.playlist
 
 import com.kintmin.domain.extension.clampLength
+import com.kintmin.domain.extension.flattenNewlines
 
 object PlaylistTextLimit {
     const val MAX_TITLE_LENGTH = 40
@@ -11,12 +12,7 @@ object PlaylistTextLimit {
      * 제목을 두 줄로 그리는 화면에서 개행 하나가 한 줄을 먹는다.
      */
     fun clampTitle(title: String): String =
-        flattenTitle(title).trim().clampLength(MAX_TITLE_LENGTH).trim()
-
-    /** 입력 중에 쓴다. 여백을 지우면 단어 사이 공백을 칠 수 없다. */
-    fun flattenTitle(title: String): String = title.replace(NEWLINE, " ")
+        title.flattenNewlines().trim().clampLength(MAX_TITLE_LENGTH).trim()
 
     fun clampDescription(description: String): String = description.clampLength(MAX_DESCRIPTION_LENGTH)
-
-    private val NEWLINE = Regex("[\\r\\n\\u0085\\u2028\\u2029]")
 }

@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_media.AudioMediaTextLimit
+import com.kintmin.domain.extension.flattenNewlines
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionRowView
 import com.kintmin.presentation.ui.audio_media_detail.view.AudioMediaActionUnlinkButton
@@ -159,8 +160,7 @@ fun AudioMediaInformationEditScreen(
                         label = "제목",
                         value = audioMediaName,
                         onValueChange = { input ->
-                            // 긴 제목을 접어 보이려고 여러 줄 칸을 쓴다. 줄바꿈 문자는 붙여넣기로도 들이지 않는다.
-                            val newText = input.replace(Regex("[\r\n]+"), " ")
+                            val newText = input.flattenNewlines()
                             audioMediaName = newText
                             hasEditedName = true
                             if (newText.isNotEmpty()) {
@@ -178,14 +178,16 @@ fun AudioMediaInformationEditScreen(
                     UnderlineTextField(
                         label = "아티스트",
                         value = artist,
-                        onValueChange = { newText ->
+                        onValueChange = { input ->
+                            val newText = input.flattenNewlines()
                             artist = newText
                             sendIntent(AudioMediaInformationEditIntent.OnAudioMediaArtistChanged(newText))
                         },
                         textStyle = MaterialTheme.typography.bodyMedium,
                         placeholder = "아티스트 추가",
                         maxLength = AudioMediaTextLimit.MAX_ARTIST_LENGTH,
-                        singleLine = true,
+                        singleLine = false,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     )
                 }
             }
