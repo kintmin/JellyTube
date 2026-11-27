@@ -8,6 +8,7 @@ import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.domain.karaoke.model.KaraokeSong
 import com.kintmin.domain.karaoke.usecase.ApplyKaraokeNumberToAudioMediaUseCase
 import com.kintmin.domain.karaoke.usecase.SearchKaraokeUseCase
+import com.kintmin.presentation.secret_mode.ExternalSearchConsent
 import com.kintmin.presentation.ui.karaoke_search.navigation.KaraokeSearchScreenRoute
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -24,6 +25,7 @@ class KaraokeSearchViewModel constructor(
     private val searchKaraokeUseCase: SearchKaraokeUseCase,
     buildSongSearchQueryUseCase: BuildSongSearchQueryUseCase,
     private val applyKaraokeNumberToAudioMediaUseCase: ApplyKaraokeNumberToAudioMediaUseCase,
+    private val externalSearchConsent: ExternalSearchConsent,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<KaraokeSearchScreenRoute>()
@@ -32,7 +34,8 @@ class KaraokeSearchViewModel constructor(
     private val initialQuery = buildSongSearchQueryUseCase(route.initialQuery)
 
     private val _uiState = MutableStateFlow(
-        KaraokeSearchUiState(query = initialQuery, isLoading = false, results = emptyList())
+        // 비밀 곡인지 알아내기 전까지는 "결과 없음" 을 그리지 않는다.
+        KaraokeSearchUiState(query = initialQuery, isLoading = true, results = emptyList())
     )
     val uiState: StateFlow<KaraokeSearchUiState> = _uiState.asStateFlow()
 
@@ -42,7 +45,10 @@ class KaraokeSearchViewModel constructor(
     private var searchJob: Job? = null
 
     init {
-        startSearch(initialQuery)
+        viewModelScope.launch {
+            externalSearchConsent.prepare(audioMediaId)
+            startSearch(initialQuery)
+        }
     }
 
     fun sendIntent(intent: KaraokeSearchIntent) {
@@ -58,10 +64,27 @@ class KaraokeSearchViewModel constructor(
                     applyKaraokeNumberToAudioMediaUseCase(audioMediaId, intent.item.number)
                     eventChannel.send(KaraokeSearchEvent.NavigateBack)
                 }
+
+            KaraokeSearchIntent.OnConfirmExternalSearch -> {
+                val query = externalSearchConsent.grant() ?: _uiState.value.query
+                _uiState.update { it.copy(isConfirmingExternalSearch = false) }
+                startSearch(query)
+            }
+
+            // 이 화면에는 검색 말고 할 일이 없어 고르지 않으면 돌아간다.
+            KaraokeSearchIntent.OnDismissExternalSearch ->
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isConfirmingExternalSearch = false) }
+                    eventChannel.send(KaraokeSearchEvent.NavigateBack)
+                }
         }
     }
 
     private fun startSearch(query: String) {
+        if (externalSearchConsent.shouldAsk(query)) {
+            _uiState.update { it.copy(isLoading = false, isConfirmingExternalSearch = true) }
+            return
+        }
         searchJob?.cancel()
         searchJob = viewModelScope.launch { performSearch(query) }
     }

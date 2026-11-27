@@ -17,7 +17,7 @@ class FetchAudioMediaDetailFlowUseCase constructor(
     private val fetchSecretModeEnabledFlowUseCase: FetchSecretModeEnabledFlowUseCase,
 ) {
     operator fun invoke(audioMediaId: Int): Flow<List<PlaylistTrackAggregate>> {
-        // 모든 음원이 "전체" 에 들어 있어 비밀 플레이리스트를 빼도 목록이 비지 않는다.
+        // 곡은 늘 "전체" 나 "비밀 전체" 중 하나에 들어 있어 비밀 플레이리스트를 빼도 목록이 비지 않는다.
         return combine(linkedAggregatesFlow(audioMediaId), fetchSecretModeEnabledFlowUseCase()) { aggregates, isSecretModeEnabled ->
             aggregates.filter { it.playlist.type.isVisible(isSecretModeEnabled) }
         }

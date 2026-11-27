@@ -12,6 +12,6 @@ internal fun createAndroidJellyTubeDatabase(context: Context): JellyTubeDatabase
     )
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
-        .addMigrations(MIGRATION_3_4)
+        .addMigrations(MIGRATION_3_4, MIGRATION_8_9)
         .build()
 }

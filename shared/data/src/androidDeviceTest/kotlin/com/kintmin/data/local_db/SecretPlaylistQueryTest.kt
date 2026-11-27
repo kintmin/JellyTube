@@ -66,12 +66,14 @@ class SecretPlaylistQueryTest {
 
     private suspend fun totalId(): Int = db.playlistDao().getPlaylistIdByType(PlaylistType.TOTAL.name)!!
 
+    private suspend fun secretTotalId(): Int = db.playlistDao().getPlaylistIdByType(PlaylistType.SECRET_TOTAL.name)!!
+
     private suspend fun favoriteId(): Int = db.playlistDao().getPlaylistIdByType(PlaylistType.FAVORITE.name)!!
 
     private suspend fun secretFavoriteId(): Int? = db.playlistDao().getPlaylistIdByType(PlaylistType.SECRET_FAVORITE.name)
 
-    private suspend fun trackIds(playlistId: Int, showSecretInTotal: Boolean = false): List<Int> =
-        db.playlistTrackDao().getPlaylistTrackFullListFlow(playlistId, showSecretInTotal)
+    private suspend fun trackIds(playlistId: Int): List<Int> =
+        db.playlistTrackDao().getPlaylistTrackFullListFlow(playlistId)
             .first().map { it.audioMediaEntity.id }
 
     @Test
@@ -85,7 +87,7 @@ class SecretPlaylistQueryTest {
     }
 
     @Test
-    fun 전체의_곡_목록과_곡_수_길이에서_비밀_곡을_뺀다() = runTest {
+    fun 비밀에_담으면_전체에서_빠져_비밀_전체로_옮겨진다() = runTest {
         facade.ensureSystemPlaylists()
         val visible = addAudioMedia("visible", 100)
         val secret = addAudioMedia("secret", 40)
@@ -93,22 +95,54 @@ class SecretPlaylistQueryTest {
         facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(secret))
 
         assertEquals(listOf(visible), trackIds(totalId()))
+        assertEquals(listOf(secret), trackIds(secretTotalId()))
+        assertEquals(listOf(secret), db.playlistTrackDao().getSecretAudioMediaIdListFlow().first())
 
-        val total = db.playlistDao().getPlaylistFlow(totalId()).first()!!
+        // 격리가 저장에서 지켜지므로 읽는 쪽이 보정하지 않아도 저장된 값이 이미 맞다.
+        val total = db.playlistDao().getPlaylistById(totalId())
         assertEquals(1, total.audioMediaCount)
         assertEquals(100L, total.rawPlayTimeDuration)
-        assertEquals(total, db.playlistDao().getPlaylistListFlow().first().first { it.id == totalId() })
+        assertEquals(total, db.playlistDao().getPlaylistFlow(totalId()).first())
+
+        val secretTotal = db.playlistDao().getPlaylistById(secretTotalId())
+        assertEquals(1, secretTotal.audioMediaCount)
+        assertEquals(40L, secretTotal.rawPlayTimeDuration)
     }
 
     @Test
-    fun 전체의_썸네일은_비밀이_아닌_첫_곡의_것이고_모두_비밀이면_없다() = runTest {
+    fun 비밀_플레이리스트로_받은_곡은_전체가_아니라_비밀_전체에_담긴다() = runTest {
+        facade.ensureSystemPlaylists()
+        val secretPlaylistId = facade.addPlaylist(title = "비밀", type = PlaylistType.SECRET)
+
+        val secret = facade.addNewAudioMedia(
+            newAudioMedia = AudioMediaEntity(
+                source = "https://example.com/secret",
+                name = "secret",
+                artist = "아티스트",
+                description = "",
+                rawAudioDurationSeconds = 40,
+                audioFileNameWithExt = "secret.m4a",
+                imageFileNameWithExt = "secret.webp",
+            ),
+            requestedPlaylistId = secretPlaylistId,
+            shouldInsertAtTopOnDownload = false,
+        ).audioMediaId
+
+        assertEquals(emptyList<Int>(), trackIds(totalId()))
+        assertEquals(listOf(secret), trackIds(secretTotalId()))
+        assertEquals(listOf(secret), trackIds(secretPlaylistId))
+    }
+
+    @Test
+    fun 전체의_썸네일은_담긴_첫_곡의_것이고_비어_있으면_없다() = runTest {
         facade.ensureSystemPlaylists()
         val secret = addAudioMedia("secret")
         val secretPlaylistId = facade.addPlaylist(title = "비밀", type = PlaylistType.SECRET)
         facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(secret))
 
-        assertEquals("secret.webp", db.playlistDao().getPlaylistById(totalId()).imageFileNameWithExt)
+        // 비밀 곡이 옮겨 가 "전체" 가 비었으므로 커버도 남지 않는다.
         assertEquals(null, db.playlistDao().getPlaylistFlow(totalId()).first()!!.imageFileNameWithExt)
+        assertEquals("secret.webp", db.playlistDao().getPlaylistFlow(secretTotalId()).first()!!.imageFileNameWithExt)
 
         addAudioMedia("visible")
 
@@ -123,28 +157,11 @@ class SecretPlaylistQueryTest {
 
         facade.applyCustomImage(visible, "고른것.webp")
 
-        // 이 규칙은 Kotlin 과 "전체" 를 읽는 SQL 두 자리에 있다. 어긋나면 여기서 갈린다.
         assertEquals("고른것.webp", db.playlistDao().getPlaylistFlow(totalId()).first()!!.imageFileNameWithExt)
 
         facade.clearCustomImage(visible)
 
         assertEquals("visible.webp", db.playlistDao().getPlaylistFlow(totalId()).first()!!.imageFileNameWithExt)
-    }
-
-    @Test
-    fun 비밀_곡을_보이게_하면_전체에_모두_나오고_다른_플레이리스트와_원본_값은_그대로다() = runTest {
-        facade.ensureSystemPlaylists()
-        val secret = addAudioMedia("secret", 40)
-        val secretPlaylistId = facade.addPlaylist(title = "비밀", type = PlaylistType.SECRET)
-        facade.addTrack(playlistId = secretPlaylistId, audioMediaIdList = listOf(secret))
-
-        assertEquals(listOf(secret), trackIds(totalId(), showSecretInTotal = true))
-
-        assertEquals(listOf(secret), trackIds(secretPlaylistId))
-        assertEquals(1, db.playlistDao().getPlaylistFlow(secretPlaylistId).first()!!.audioMediaCount)
-
-        assertEquals(1, db.playlistDao().getPlaylistById(totalId()).audioMediaCount)
-        assertEquals(listOf(secret), db.playlistTrackDao().getSecretAudioMediaIdListFlow().first())
     }
 
     @Test
@@ -164,6 +181,7 @@ class SecretPlaylistQueryTest {
         assertEquals(emptyList<Int>(), trackIds(favoriteId()))
         assertEquals(0, db.playlistDao().getPlaylistFlow(favoriteId()).first()!!.audioMediaCount)
         assertEquals(emptyList<Int>(), trackIds(totalId()))
+        assertEquals(listOf(song), trackIds(secretTotalId()))
         assertEquals(listOf(song), trackIds(secretPlaylistId))
     }
 
@@ -213,6 +231,9 @@ class SecretPlaylistQueryTest {
         assertEquals(1, db.playlistDao().getPlaylistFlow(secretFavoriteId()!!).first()!!.audioMediaCount)
         // 비밀에서 나온 곡은 일반 즐겨찾기로 옮겨 가지 않는다. 다시 찜하면 그때 들어간다.
         assertEquals(emptyList<Int>(), trackIds(favoriteId()))
+        // 돌아오지 않으면 그 곡은 어디에도 보이지 않는다.
+        assertEquals(listOf(leaves), trackIds(totalId()))
+        assertEquals(listOf(stays), trackIds(secretTotalId()))
     }
 
     @Test
@@ -227,5 +248,6 @@ class SecretPlaylistQueryTest {
 
         assertEquals(emptyList<Int>(), trackIds(secretFavoriteId()!!))
         assertEquals(listOf(song), trackIds(totalId()))
+        assertEquals(emptyList<Int>(), trackIds(secretTotalId()))
     }
 }

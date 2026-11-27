@@ -85,13 +85,17 @@ class SecretPlaylistViewModel(
         )
     }
 
-    // 비밀 곡을 한 번도 찜하지 않았으면 플레이리스트가 아직 없다. 그때는 입구를 두지 않는다.
-    private val secretFavoriteFlow = fetchPlaylistsByTypeUseCase(PlaylistType.SECRET_FAVORITE)
-        .map { favorites -> favorites.firstOrNull()?.toUiModel() }
+    // 비밀 곡을 한 번도 찜하지 않았으면 찜 플레이리스트가 아직 없다. 그때는 입구를 두지 않는다.
+    private val libraryFlow = combine(
+        fetchPlaylistsByTypeUseCase(PlaylistType.SECRET_TOTAL),
+        fetchPlaylistsByTypeUseCase(PlaylistType.SECRET_FAVORITE),
+    ) { totals, favorites ->
+        listOfNotNull(totals.firstOrNull()?.toUiModel(), favorites.firstOrNull()?.toUiModel())
+    }
 
     val uiState: StateFlow<SecretPlaylistUiState> =
-        combine(baseUiStateFlow, remainingFlow, secretFavoriteFlow) { base, remaining, secretFavorite ->
-            base.copy(remaining = remaining, secretFavorite = secretFavorite)
+        combine(baseUiStateFlow, remainingFlow, libraryFlow) { base, remaining, library ->
+            base.copy(remaining = remaining, library = library)
         }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SecretPlaylistUiState())
 

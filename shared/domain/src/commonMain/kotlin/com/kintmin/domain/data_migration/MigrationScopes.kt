@@ -57,7 +57,7 @@ object MigrationScopes {
         PlaylistType.TOTAL, PlaylistType.UNCATEGORIZED, PlaylistType.FAVORITE ->
             copy(type = PlaylistType.USER, name = sharedNameOf(type, name))
         // 비밀 곡이 비밀모드 밖으로 나가지 않게 종류는 비밀로 남는다.
-        PlaylistType.SECRET_FAVORITE ->
+        PlaylistType.SECRET_FAVORITE, PlaylistType.SECRET_TOTAL ->
             copy(type = PlaylistType.SECRET, name = sharedNameOf(type, name))
     }
 }

@@ -201,11 +201,11 @@ fun SecretPlaylistScreen(
                 return@LazyVerticalGrid
             }
 
-            uiState.secretFavorite?.let { secretFavorite ->
-                item(key = "secret-favorite", span = { GridItemSpan(maxLineSpan) }) {
+            if (uiState.library.isNotEmpty()) {
+                item(key = "secret-library", span = { GridItemSpan(maxLineSpan) }) {
                     PlaylistLibraryBlockView(
                         modifier = Modifier.fillMaxWidth(),
-                        data = listOf(secretFavorite),
+                        data = uiState.library,
                         nowPlayingPlaylistId = nowPlayingPlaylistId,
                         isPlaying = isPlaybackPlaying,
                         accentColor = accentColor,
@@ -283,6 +283,7 @@ fun SecretPlaylistScreenOnPreview() {
                 minutes = 30,
                 remaining = 12.minutes,
                 playlists = listOf(PlaylistItemUiState.getMock(id = 10).copy(name = "나만 듣는 곡")),
+                library = listOf(PlaylistItemUiState.getMock(id = 11).copy(name = "비밀 전체")),
             ),
             playerBar = PlayerBarUiState.getMock(),
             navigateToBack = {},

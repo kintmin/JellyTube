@@ -22,19 +22,31 @@ class FetchAudioMediaListToAddTrackFlowUseCase constructor(
     operator fun invoke(playlistId: Int): Flow<List<PlaylistTrackAggregate>> {
         return combine(
             fetchPlaylistsByTypeUseCase(PlaylistType.TOTAL),
+            fetchPlaylistsByTypeUseCase(PlaylistType.SECRET_TOTAL),
             fetchPlaylistsByTypeUseCase(PlaylistType.SECRET),
-        ) { totalPlaylists, secretPlaylists ->
-            // 비밀 플레이리스트에 담을 때만 비밀 곡도 후보다.
-            totalPlaylists.firstOrNull()?.id to secretPlaylists.any { it.id == playlistId }
+        ) { totalPlaylists, secretTotalPlaylists, secretPlaylists ->
+            // 비밀 플레이리스트에 담을 때만 이미 비밀인 곡도 후보다. 일반 곡은 양쪽 모두에서 후보다.
+            val isSecretTarget = secretPlaylists.any { it.id == playlistId }
+            totalPlaylists.firstOrNull()?.id to secretTotalPlaylists.firstOrNull()?.id?.takeIf { isSecretTarget }
         }
             .distinctUntilChanged()
-            .flatMapLatest { (totalId, isSecretTarget) ->
+            .flatMapLatest { (totalId, secretTotalId) ->
                 if (totalId == null) return@flatMapLatest flowOf(emptyList())
+                val candidates = if (secretTotalId == null) {
+                    audioTrackRepository.getPlaylistTrackAggregateListFlow(totalId)
+                } else {
+                    combine(
+                        audioTrackRepository.getPlaylistTrackAggregateListFlow(totalId),
+                        audioTrackRepository.getPlaylistTrackAggregateListFlow(secretTotalId),
+                    ) { open, secret -> open + secret }
+                }
                 combine(
-                    audioTrackRepository.getPlaylistTrackAggregateListFlow(totalId, showSecretInTotal = isSecretTarget),
+                    candidates,
                     audioTrackRepository.getPlaylistTrackAggregateListFlow(playlistId),
-                ) { totalList, currentList ->
-                    totalList.filter { total -> currentList.firstOrNull { it.audioMedia.id == total.audioMedia.id } == null }
+                ) { candidateList, currentList ->
+                    candidateList.filter { candidate ->
+                        currentList.firstOrNull { it.audioMedia.id == candidate.audioMedia.id } == null
+                    }
                 }
             }
             .flowOn(Dispatchers.IO)

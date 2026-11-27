@@ -51,6 +51,8 @@ class AppViewModelTest {
         every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(testPlaylist(SECRET_PLAYLIST_ID, PlaylistType.SECRET)))
         every { this@mockk(PlaylistType.SECRET_FAVORITE) } returns
             flowOf(listOf(testPlaylist(SECRET_FAVORITE_PLAYLIST_ID, PlaylistType.SECRET_FAVORITE)))
+        every { this@mockk(PlaylistType.SECRET_TOTAL) } returns
+            flowOf(listOf(testPlaylist(SECRET_TOTAL_PLAYLIST_ID, PlaylistType.SECRET_TOTAL)))
     }
     private val fetchSecretAudioMediaIdListFlowUseCase = mockk<FetchSecretAudioMediaIdListFlowUseCase> {
         every { this@mockk() } returns flowOf(listOf(SECRET_AUDIO_MEDIA_ID))
@@ -237,6 +239,7 @@ class AppViewModelTest {
     private companion object {
         const val SECRET_PLAYLIST_ID = 5
         const val SECRET_FAVORITE_PLAYLIST_ID = 6
+        const val SECRET_TOTAL_PLAYLIST_ID = 7
         const val SECRET_AUDIO_MEDIA_ID = 9
     }
 }

@@ -16,17 +16,8 @@ interface PlaylistTrackDao {
     suspend fun insertPlaylistTrackList(entities: List<PlaylistTrackEntity>)
 
     @Transaction
-    @Query(
-        """
-SELECT * FROM PLAYLIST_TRACK
-WHERE playlistId = :playlistId
-    AND (:showSecretInTotal
-        OR playlistId NOT IN (SELECT id FROM PLAYLIST WHERE type = 'TOTAL')
-        OR audioMediaId NOT IN ($SECRET_AUDIO_MEDIA_IDS))
-ORDER BY sequence
-"""
-    )
-    fun getPlaylistTrackFullListFlow(playlistId: Int, showSecretInTotal: Boolean): Flow<List<PlaylistTrackFullDto>>
+    @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId ORDER BY sequence")
+    fun getPlaylistTrackFullListFlow(playlistId: Int): Flow<List<PlaylistTrackFullDto>>
 
     @Transaction
     @Query("SELECT * FROM PLAYLIST_TRACK WHERE playlistId = :playlistId AND audioMediaId = :audioMediaId")
@@ -44,7 +35,8 @@ ORDER BY sequence
     @Query("SELECT playlistId FROM PLAYLIST_TRACK WHERE audioMediaId = :audioMediaId")
     suspend fun getLinkedPlaylistIdList(audioMediaId: Int): List<Int>
 
-    @Query("SELECT DISTINCT audioMediaId FROM ($SECRET_AUDIO_MEDIA_IDS)")
+    // 비밀 곡의 정의는 "비밀 전체" 에 담긴 것이다 — 일반 곡이 "전체" 에 담긴 것과 같은 자리다.
+    @Query("SELECT audioMediaId FROM PLAYLIST_TRACK WHERE playlistId IN (SELECT id FROM PLAYLIST WHERE type = 'SECRET_TOTAL')")
     fun getSecretAudioMediaIdListFlow(): Flow<List<Int>>
 
     @Query("SELECT * FROM PLAYLIST_TRACK")

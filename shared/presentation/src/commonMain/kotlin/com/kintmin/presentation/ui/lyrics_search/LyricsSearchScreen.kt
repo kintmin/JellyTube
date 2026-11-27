@@ -35,6 +35,7 @@ import com.kintmin.presentation.ui.common.BottomActionBar
 import com.kintmin.presentation.ui.common.BottomActionButton
 import com.kintmin.presentation.ui.common.EmptyStateView
 import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
+import com.kintmin.presentation.ui.common.JellyTubeConfirmDialog
 import com.kintmin.presentation.ui.common.SearchField
 import com.kintmin.presentation.ui.common.floatingField
 import com.kintmin.presentation.ui.lyrics_search.list_item.LyricsSearchItemView
@@ -191,6 +192,17 @@ fun LyricsSearchScreen(
             )
         }
     }
+
+    JellyTubeConfirmDialog(
+        showDialog = data.isConfirmingExternalSearch,
+        title = "비밀 곡의 가사를 찾을까요?",
+        message = "가사를 찾으려면 이 곡의 제목이 가사 서비스로 전달됩니다. " +
+            "찾지 않으면 가사를 직접 넣을 수 있습니다.",
+        confirmText = "검색",
+        onConfirm = { sendIntent(LyricsSearchIntent.OnConfirmExternalSearch) },
+        onDismiss = { sendIntent(LyricsSearchIntent.OnDismissExternalSearch) },
+        dismissText = "찾지 않기",
+    )
 }
 
 @Preview

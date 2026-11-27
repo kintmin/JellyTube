@@ -28,6 +28,7 @@ import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DetailTopAppBar
 import com.kintmin.presentation.ui.common.EmptyStateView
 import com.kintmin.presentation.ui.common.FloatingSearchFieldHeight
+import com.kintmin.presentation.ui.common.JellyTubeConfirmDialog
 import com.kintmin.presentation.ui.common.SearchField
 import com.kintmin.presentation.ui.common.floatingField
 import com.kintmin.presentation.ui.karaoke_search.list_item.KaraokeSearchItemView
@@ -137,6 +138,16 @@ fun KaraokeSearchScreen(
             )
         }
     }
+
+    JellyTubeConfirmDialog(
+        showDialog = data.isConfirmingExternalSearch,
+        title = "비밀 곡의 노래방 번호를 찾을까요?",
+        message = "번호를 찾으려면 이 곡의 제목이 노래방 번호 검색 서비스로 전달됩니다.",
+        confirmText = "검색",
+        onConfirm = { sendIntent(KaraokeSearchIntent.OnConfirmExternalSearch) },
+        onDismiss = { sendIntent(KaraokeSearchIntent.OnDismissExternalSearch) },
+        dismissText = "찾지 않기",
+    )
 }
 
 @Preview

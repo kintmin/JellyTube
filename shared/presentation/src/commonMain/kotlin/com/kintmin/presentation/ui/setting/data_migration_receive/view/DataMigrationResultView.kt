@@ -58,6 +58,13 @@ fun DataMigrationResultView(
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
+                    if (phase.secretPlaylistCount > 0) {
+                        Text(
+                            text = "비밀 플레이리스트 ${phase.secretPlaylistCount}개가 함께 들어왔습니다. " +
+                                "설정 > 비밀모드를 켜면 볼 수 있습니다.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
                     if (phase.failures.isNotEmpty()) {
                         // 기본 구분선 색은 색이 깔린 카드 위에서 떠 보여 카드 글자색을 옅게 쓴다.
                         HorizontalDivider(color = LocalContentColor.current.copy(alpha = 0.3f))
@@ -110,7 +117,7 @@ private fun DataMigrationResultViewFailuresPreview() {
 private fun DataMigrationResultViewSuccessPreview() {
     JellyTubeTheme {
         DataMigrationResultView(
-            phase = DataMigrationReceivePhase.Finished(30, 2, 0, emptyList()),
+            phase = DataMigrationReceivePhase.Finished(30, 2, 0, emptyList(), secretPlaylistCount = 1),
             onClickRetry = {},
             onClickExit = {},
         )

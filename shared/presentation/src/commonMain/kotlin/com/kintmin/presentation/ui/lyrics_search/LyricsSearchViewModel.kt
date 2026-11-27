@@ -9,6 +9,7 @@ import com.kintmin.domain.lyrics.model.LyricsSearchResult
 import com.kintmin.domain.lyrics.usecase.SearchLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SortLyricsSearchResultsUseCase
 import com.kintmin.presentation.extension.to_hh_colon_mm_colon_ss
+import com.kintmin.presentation.secret_mode.ExternalSearchConsent
 import com.kintmin.presentation.ui.lyrics_search.navigation.LyricsSearchScreenRoute
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
@@ -26,6 +27,7 @@ class LyricsSearchViewModel constructor(
     private val searchLyricsUseCase: SearchLyricsUseCase,
     private val buildSongSearchQueryUseCase: BuildSongSearchQueryUseCase,
     private val sortLyricsSearchResultsUseCase: SortLyricsSearchResultsUseCase,
+    private val externalSearchConsent: ExternalSearchConsent,
 ) : ViewModel() {
 
     private val route = savedStateHandle.toRoute<LyricsSearchScreenRoute>()
@@ -41,7 +43,8 @@ class LyricsSearchViewModel constructor(
                 ?.to_hh_colon_mm_colon_ss()
                 .orEmpty(),
             query = initialQuery,
-            isLoading = false,
+            // 비밀 곡인지 알아내기 전까지는 "결과 없음" 을 그리지 않는다.
+            isLoading = true,
             results = emptyList(),
         )
     )
@@ -53,7 +56,10 @@ class LyricsSearchViewModel constructor(
     private var searchJob: Job? = null
 
     init {
-        startSearch(initialQuery)
+        viewModelScope.launch {
+            externalSearchConsent.prepare(audioMediaId)
+            startSearch(initialQuery)
+        }
     }
 
     fun sendIntent(intent: LyricsSearchIntent) {
@@ -81,10 +87,24 @@ class LyricsSearchViewModel constructor(
                 viewModelScope.launch {
                     eventChannel.send(LyricsSearchEvent.NavigateToLyricsEdit(audioMediaId))
                 }
+
+            LyricsSearchIntent.OnConfirmExternalSearch -> {
+                val query = externalSearchConsent.grant() ?: _uiState.value.query
+                _uiState.update { it.copy(isConfirmingExternalSearch = false) }
+                startSearch(query)
+            }
+
+            // 가사를 직접 넣는 길은 남아 있어 화면을 닫지 않는다.
+            LyricsSearchIntent.OnDismissExternalSearch ->
+                _uiState.update { it.copy(isConfirmingExternalSearch = false) }
         }
     }
 
     private fun startSearch(query: String) {
+        if (externalSearchConsent.shouldAsk(query)) {
+            _uiState.update { it.copy(isLoading = false, isConfirmingExternalSearch = true) }
+            return
+        }
         searchJob?.cancel()
         searchJob = viewModelScope.launch { performSearch(query) }
     }

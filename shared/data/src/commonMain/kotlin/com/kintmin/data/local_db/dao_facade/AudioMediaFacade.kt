@@ -114,8 +114,12 @@ class AudioMediaFacade constructor(
                 }
                 // 이전·복원은 addTrack 을 거치지 않으므로 비밀 곡의 격리를 여기서 지킨다. 드러난
                 // 플레이리스트에는 비밀 필터가 없어, 거기 남으면 비밀모드가 꺼져 있어도 보인다.
-                val secretAudioMediaIds = addedAudioMediaIds.filter { isSecretAudioMedia(it) }
-                if (secretAudioMediaIds.isNotEmpty()) unlinkFromOpenPlaylists(secretAudioMediaIds)
+                // 아직 "비밀 전체" 로 옮기기 전이라 담긴 플레이리스트로 가린다.
+                val secretAudioMediaIds = addedAudioMediaIds.filter { isInAnySecretPlaylist(it) }
+                if (secretAudioMediaIds.isNotEmpty()) {
+                    moveBetweenTotals(secretAudioMediaIds, toSecret = true)
+                    unlinkFromOpenPlaylists(secretAudioMediaIds)
+                }
 
                 plan.editProjects.forEach { project ->
                     audioEditProjectDao.upsert(
@@ -140,9 +144,15 @@ class AudioMediaFacade constructor(
     ): AddNewAudioMediaResult {
         return db.useWriterConnection { transactor ->
             transactor.immediateTransaction {
-                val totalId = requireSystemPlaylistId(PlaylistType.TOTAL)
                 // 요청 대상이 실제 존재하면 그대로, 아니면 미분류로. 시스템 플레이리스트는 이 트랜잭션에서 보장 생성된다.
                 val resolvedPlaylistId = resolveDownloadTargetId(requestedPlaylistId)
+                // 비밀 플레이리스트로 받는 곡은 드러난 "전체" 가 아니라 "비밀 전체" 에 담긴다.
+                val totalType = if (playlistTypeOf(resolvedPlaylistId) == PlaylistType.SECRET) {
+                    PlaylistType.SECRET_TOTAL
+                } else {
+                    PlaylistType.TOTAL
+                }
+                val totalId = requireSystemPlaylistId(totalType)
                 val insertedAudioMediaId = audioMediaDao.insertAudioMedia(newAudioMedia).toInt()
                 val totalPlaylist = addTrackWithSyncPlaylist(
                     playlistId = totalId,
@@ -363,6 +373,7 @@ class AudioMediaFacade constructor(
                 playlistTrackDao.deletePlaylistTrackByPlaylistId(playlistId)
                 syncUncategorizedPlaylistWhenDeleteTrack(linkedAudioMediaIdList)
                 playlistDao.deleteById(playlistId)
+                restoreToTotalWhenNoLongerSecret(linkedAudioMediaIdList)
                 unlinkSecretFavoriteWhenNoLongerSecret(linkedAudioMediaIdList)
             }
         }
@@ -397,6 +408,7 @@ class AudioMediaFacade constructor(
                 addTrackWithSyncPlaylist(playlistId, audioMediaIdList, shouldInsertAtTop = false)
                 syncUncategorizedPlaylistWhenAddTrack(audioMediaIdList)
                 if (playlistTypeOf(playlistId) == PlaylistType.SECRET) {
+                    moveBetweenTotals(audioMediaIdList, toSecret = true)
                     unlinkFromOpenPlaylists(audioMediaIdList)
                 } else {
                     0
@@ -434,9 +446,32 @@ class AudioMediaFacade constructor(
             transactor.immediateTransaction {
                 deleteTrackWithSyncPlaylist(playlistId, audioMediaIdList)
                 syncUncategorizedPlaylistWhenDeleteTrack(audioMediaIdList)
+                restoreToTotalWhenNoLongerSecret(audioMediaIdList)
                 unlinkSecretFavoriteWhenNoLongerSecret(audioMediaIdList)
             }
         }
+    }
+
+    /**
+     * 비밀 곡은 "전체" 가 아니라 "비밀 전체" 에 담긴다. 비밀이 되고 풀릴 때 둘 사이를 옮긴다 —
+     * **담을 때 옮기므로 읽는 자리마다 비밀 곡을 걸러내지 않는다.**
+     *
+     * 이미 옮겨져 있는 곡은 건드리지 않는다. 집계는 넘긴 개수만큼 가감하므로 두 번 넣으면 어긋난다.
+     */
+    private suspend fun moveBetweenTotals(audioMediaIdList: List<Int>, toSecret: Boolean) {
+        val fromId = requireSystemPlaylistId(if (toSecret) PlaylistType.TOTAL else PlaylistType.SECRET_TOTAL)
+        val toId = requireSystemPlaylistId(if (toSecret) PlaylistType.SECRET_TOTAL else PlaylistType.TOTAL)
+        val linkedByAudioMedia = audioMediaIdList.associateWith { playlistTrackDao.getLinkedPlaylistIdList(it) }
+        val toRemove = audioMediaIdList.filter { fromId in linkedByAudioMedia.getValue(it) }
+        val toAdd = audioMediaIdList.filter { toId !in linkedByAudioMedia.getValue(it) }
+        if (toRemove.isNotEmpty()) deleteTrackWithSyncPlaylist(fromId, toRemove)
+        if (toAdd.isNotEmpty()) addTrackWithSyncPlaylist(toId, toAdd, shouldInsertAtTop = false)
+    }
+
+    /** 비밀 플레이리스트에서 빠져 더 이상 비밀이 아닌 곡은 "전체" 로 돌아온다. 돌아오지 않으면 어디에도 보이지 않는다. */
+    private suspend fun restoreToTotalWhenNoLongerSecret(audioMediaIdList: List<Int>) {
+        val restored = audioMediaIdList.filter { isSecretAudioMedia(it) && !isInAnySecretPlaylist(it) }
+        if (restored.isNotEmpty()) moveBetweenTotals(restored, toSecret = false)
     }
 
     /** 비밀 플레이리스트에서 빠져 더 이상 비밀이 아닌 곡은 비밀 찜에도 남을 수 없다. */
@@ -444,11 +479,20 @@ class AudioMediaFacade constructor(
         val secretFavoriteId = playlistDao.getPlaylistIdByType(PlaylistType.SECRET_FAVORITE.name) ?: return
         val linked = playlistTrackDao.getLinkedAudioMediaIdList(secretFavoriteId).toSet()
         // 실제로 담긴 것만 넘긴다 — 집계는 넘긴 개수만큼 빼므로 없는 곡을 섞으면 어긋난다.
-        val toUnlink = audioMediaIdList.filter { it in linked && !isSecretAudioMedia(it) }
+        val toUnlink = audioMediaIdList.filter { it in linked && !isInAnySecretPlaylist(it) }
         if (toUnlink.isNotEmpty()) deleteTrackWithSyncPlaylist(secretFavoriteId, toUnlink)
     }
 
+    /** 비밀 곡인가. 일반 곡이 "전체" 에 담긴 것과 같이, 비밀 곡은 "비밀 전체" 에 담긴 것이다. */
     private suspend fun isSecretAudioMedia(audioMediaId: Int): Boolean =
+        playlistTrackDao.getLinkedPlaylistIdList(audioMediaId)
+            .any { playlistTypeOf(it) == PlaylistType.SECRET_TOTAL }
+
+    /**
+     * 비밀로 남을 이유가 아직 있는가. **비밀 곡인지와 다른 질문이다** — 마지막 비밀 플레이리스트에서
+     * 빠지는 순간을 잡아야 하고, 그 순간에도 곡은 아직 "비밀 전체" 에 담겨 있다.
+     */
+    private suspend fun isInAnySecretPlaylist(audioMediaId: Int): Boolean =
         playlistTrackDao.getLinkedPlaylistIdList(audioMediaId)
             .any { playlistTypeOf(it) == PlaylistType.SECRET }
 

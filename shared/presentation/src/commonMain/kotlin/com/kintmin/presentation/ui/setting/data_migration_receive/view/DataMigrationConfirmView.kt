@@ -65,14 +65,14 @@ fun DataMigrationConfirmView(
             SettingNoticeCardView(
                 icon = Icons.Rounded.Lock,
                 title = "비밀 플레이리스트 ${phase.secretPlaylistCount}개가 함께 왔습니다",
-                text = "보내는 기기에서 비밀모드를 켜고 보냈습니다. 함께 받으면 이 기기도 받는 동안 비밀모드가 " +
-                    "켜지고, 받기를 마치고 이 화면을 나가면 꺼집니다. 받지 않으면 비밀 플레이리스트는 " +
+                text = "보내는 기기에서 비밀모드를 켜고 보냈습니다. 함께 받으면 비밀 플레이리스트로 " +
+                    "들어오고, 설정 > 비밀모드를 켤 때만 보입니다. 받지 않으면 비밀 플레이리스트는 " +
                     "빼고 나머지만 들어옵니다.",
             )
             SettingItemView(
                 title = "비밀 플레이리스트도 함께 받기",
                 description = if (phase.acceptsSecret) {
-                    "받는 동안 이 기기의 비밀모드가 켜집니다"
+                    "비밀 플레이리스트로 들어옵니다"
                 } else {
                     "받지 않고 나머지만 받습니다"
                 },

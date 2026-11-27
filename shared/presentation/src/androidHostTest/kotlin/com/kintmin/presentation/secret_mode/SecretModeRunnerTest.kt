@@ -42,6 +42,8 @@ class SecretModeRunnerTest {
         every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(testPlaylist(5, PlaylistType.SECRET)))
         every { this@mockk(PlaylistType.SECRET_FAVORITE) } returns
             flowOf(listOf(testPlaylist(6, PlaylistType.SECRET_FAVORITE)))
+        every { this@mockk(PlaylistType.SECRET_TOTAL) } returns
+            flowOf(listOf(testPlaylist(7, PlaylistType.SECRET_TOTAL)))
     }
     private val fetchSecretAudioMediaIdListFlowUseCase: FetchSecretAudioMediaIdListFlowUseCase = mockk {
         every { this@mockk() } returns flowOf(listOf(10, 11))

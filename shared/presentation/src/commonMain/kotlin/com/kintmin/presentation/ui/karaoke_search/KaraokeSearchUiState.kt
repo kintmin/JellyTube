@@ -4,6 +4,7 @@ data class KaraokeSearchUiState(
     val query: String,
     val isLoading: Boolean,
     val results: List<KaraokeSearchItem>,
+    val isConfirmingExternalSearch: Boolean = false,
 ) {
     val isEmptyResult: Boolean get() = !isLoading && results.isEmpty()
 

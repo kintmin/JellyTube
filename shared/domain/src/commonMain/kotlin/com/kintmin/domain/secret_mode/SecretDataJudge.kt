@@ -19,7 +19,7 @@ suspend fun PlaylistRepository.isSecretTarget(playlistId: Int?, appLog: AppLog):
         .getOrDefault(true)
 }
 
-/** 곡 id 가 비밀 플레이리스트에 담겼는지 판정한다. 목록을 읽지 못하면 모두 비밀로 본다. */
+/** 곡 id 가 비밀 곡인지 판정한다. 목록을 읽지 못하면 모두 비밀로 본다. */
 suspend fun AudioTrackRepository.secretAudioMediaJudge(appLog: AppLog): (Int) -> Boolean {
     val secretIds = suspendRunCatching { getSecretAudioMediaIdListFlow().first().toSet() }
         .onFailure { appLog.sendErrorLog(ErrorLog(LOG_TAG, "비밀 곡 목록 읽기 실패라 모두 비밀로 봄", it)) }

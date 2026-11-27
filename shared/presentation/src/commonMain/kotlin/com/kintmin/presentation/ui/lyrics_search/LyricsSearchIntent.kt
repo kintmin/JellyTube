@@ -5,4 +5,6 @@ sealed interface LyricsSearchIntent {
     data object OnClickSearch : LyricsSearchIntent
     data class OnClickResult(val item: LyricsSearchUiState.LyricsSearchItem) : LyricsSearchIntent
     data object OnClickAddLyricsManually : LyricsSearchIntent
+    data object OnConfirmExternalSearch : LyricsSearchIntent
+    data object OnDismissExternalSearch : LyricsSearchIntent
 }

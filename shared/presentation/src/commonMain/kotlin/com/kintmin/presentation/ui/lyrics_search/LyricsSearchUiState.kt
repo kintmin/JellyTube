@@ -6,6 +6,7 @@ data class LyricsSearchUiState(
     val query: String,
     val isLoading: Boolean,
     val results: List<LyricsSearchItem>,
+    val isConfirmingExternalSearch: Boolean = false,
 ) {
     val isEmptyResult: Boolean get() = !isLoading && results.isEmpty()
 
