@@ -91,6 +91,8 @@ class LyricsSearchViewModelTest {
         val viewModel = viewModel()
 
         assertTrue(viewModel.uiState.value.isConfirmingExternalSearch)
+        // 검색을 건 적이 없으므로 "결과 없음" 을 뒤에 깔지 않는다.
+        assertFalse(viewModel.uiState.value.isEmptyResult)
         coVerify(exactly = 0) { searchLyrics(any()) }
     }
 
