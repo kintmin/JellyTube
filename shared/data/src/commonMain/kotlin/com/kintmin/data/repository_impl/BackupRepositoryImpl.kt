@@ -72,7 +72,6 @@ class BackupRepositoryImpl(
                 datastoreUtil.updateData(PreferencesKey.BackupFolderId, refreshed).getOrThrow()
             }
             // 다 쓴 뒤에 치운다. 쓰다 끊기면 어제 것이 남아야 한다.
-            // 치우기는 쓰기의 성패를 바꾸지 않는다 — 백업은 이미 폴더에 들어갔다.
             suspendRunCatching { deleteOwnCopiesExcept(folderId, installId, keep = fileName) }
             bytes.size.toLong()
         }
@@ -87,7 +86,6 @@ class BackupRepositoryImpl(
             val decoded = suspendRunCatching { withContext(Dispatchers.Default) { BackupCodec.decode(bytes) } }
             decoded.getOrNull()?.let { return@suspendRunCatching it }
             val error = decoded.exceptionOrNull()
-            // 더 새 버전은 손상이 아니다. 옛 백업으로 내려가면 업데이트하라고 알릴 길이 없다.
             if (error is BackupVersionUnsupportedException) throw error
             if (firstFailure == null) firstFailure = error
         }
@@ -95,7 +93,6 @@ class BackupRepositoryImpl(
         null
     }
 
-    /** 같은 설치가 전에 쓴 것만 지운다. 옛 고정 이름은 누가 썼는지 알 수 없어 두고 본다. */
     private suspend fun deleteOwnCopiesExcept(folderId: String, installId: String, keep: String) {
         backupFolderAccess.list(folderId)
             .filter { it != keep && BackupFileName.parse(it)?.installId == installId }

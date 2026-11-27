@@ -129,7 +129,6 @@ class BackupIfDueUseCaseTest {
 
         val outcome = RegisterBackupFolderUseCase(backupRepository, backupNow, appLog)(folder, now).getOrThrow()
 
-        // 오늘 날짜로 쓰면 날짜를 모르는 옛 백업이 후보에서 밀려 되돌릴 길이 막힌다.
         assertEquals(BackupOutcome.KEPT_EXISTING, outcome)
         coVerify(exactly = 0) { backupNow(any()) }
     }

@@ -105,13 +105,9 @@ class RestoreBackupUseCase(
         logError("복원 중단", it)
     }
 
-    /**
-     * 되돌린 백업의 파일 계보를 잇는다. **이미 백업하던 기기는 자기 계보를 지킨다** — 아니면 공유
-     * 폴더를 쓰는 두 기기가 한 파일을 두고 번갈아 덮는다. 값이 없는 옛 백업은 이을 것이 없다.
-     */
+    /** 이미 백업하던 기기까지 물려받으면 공유 폴더를 쓰는 두 기기가 한 파일을 두고 번갈아 덮는다. */
     private suspend fun adoptInstallIdIfFirstBackup(installId: String?) {
         if (installId == null) return
-        // 반영은 이미 끝났다. 여기서 터져도 복원을 중단으로 되돌리지 않는다.
         suspendRunCatching {
             if (backupRepository.getStatusFlow().first().lastSuccessMillis != null) return@suspendRunCatching
             backupRepository.adoptInstallId(installId).getOrThrow()
