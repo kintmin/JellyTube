@@ -85,6 +85,7 @@ class KaraokeSearchViewModel constructor(
             _uiState.update { it.copy(isLoading = false, isConfirmingExternalSearch = true) }
             return
         }
+        _uiState.update { it.copy(isConfirmingExternalSearch = false) }
         searchJob?.cancel()
         searchJob = viewModelScope.launch { performSearch(query) }
     }
@@ -97,7 +98,7 @@ class KaraokeSearchViewModel constructor(
         _uiState.update { it.copy(isLoading = true) }
         val results = searchKaraokeUseCase(query).getOrNull().orEmpty()
             .mapIndexed { index, song -> song.toItem(index) }
-        _uiState.update { it.copy(isLoading = false, results = results) }
+        _uiState.update { it.copy(isLoading = false, results = results, hasSearched = true) }
     }
 }
 

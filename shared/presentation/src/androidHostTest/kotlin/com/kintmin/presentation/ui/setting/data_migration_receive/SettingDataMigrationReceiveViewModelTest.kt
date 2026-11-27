@@ -23,6 +23,7 @@ import com.kintmin.domain.playlist.model.DownloadTargetPlaylists
 import com.kintmin.domain.playlist.model.Playlist
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
 import com.kintmin.presentation.port.MigrationReceiveKeepAlive
+import com.kintmin.presentation.secret_mode.SecretModeRunner
 import com.kintmin.presentation.port.MigrationSourceDiscovery
 import com.kintmin.presentation.port.RunningTaskMonitor
 import com.kintmin.presentation.port.model.MigrationSource
@@ -32,6 +33,8 @@ import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -89,6 +92,8 @@ class SettingDataMigrationReceiveViewModelTest {
         every { this@mockk() } returns flowOf(DownloadTargetPlaylists(targetId = null, selectable = emptyList()))
     }
 
+    private val secretModeRunner = mockk<SecretModeRunner>(relaxUnitFun = true)
+
     private fun viewModel() = SettingDataMigrationReceiveViewModel(
         discovery,
         pair,
@@ -97,6 +102,7 @@ class SettingDataMigrationReceiveViewModelTest {
         monitor,
         PassThroughKeepAlive,
         downloadTargets,
+        secretModeRunner,
     )
 
     private fun SettingDataMigrationReceiveViewModel.connect(code: String = "123456") {
@@ -186,6 +192,33 @@ class SettingDataMigrationReceiveViewModelTest {
         assertEquals(true, choice()?.includesSecret)
         val phase = viewModel.uiState.value.phase as DataMigrationReceivePhase.Finished
         assertEquals(1, phase.secretPlaylistCount)
+        verify(exactly = 0) { secretModeRunner.start(any(), any()) }
+    }
+
+    @Test
+    fun `쓰던 비밀모드가 켜져 있으면 받는 동안 시계를 멈추고 끝나면 다시 감는다`() {
+        // 받는 중에 비밀모드가 꺼지면 화면 스택이 메인까지 걷혀 받기가 통째로 끊긴다.
+        coEvery { import(endpoint, "token", any(), any()) } returns Result.success(summary())
+        val viewModel = viewModel()
+
+        viewModel.connect()
+
+        assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Finished)
+        verifyOrder {
+            secretModeRunner.pause()
+            secretModeRunner.resume()
+        }
+    }
+
+    @Test
+    fun `받기가 멈춰도 멈춰 둔 시계를 다시 감는다`() {
+        coEvery { import(endpoint, "token", any(), any()) } returns Result.failure(IllegalStateException("끊김"))
+        val viewModel = viewModel()
+
+        viewModel.connect()
+
+        assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Interrupted)
+        verify { secretModeRunner.resume() }
     }
 
     @Test

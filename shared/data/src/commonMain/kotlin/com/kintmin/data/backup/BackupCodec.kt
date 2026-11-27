@@ -17,7 +17,7 @@ import okio.use
 
 internal object BackupCodec {
 
-    const val FORMAT_VERSION = 1
+    const val FORMAT_VERSION = 2
 
     private val json = Json { ignoreUnknownKeys = true }
 

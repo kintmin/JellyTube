@@ -113,20 +113,20 @@ class SecretModeRunner(
         removeSecretTracksFromQueue()
     }
 
-    // "전체" 큐에는 비밀모드 중에 비밀 플레이리스트로 옮긴 곡이 남아 있을 수 있다. 다른 플레이리스트에
-    // 같이 든 곡은 거기서 보이는 곡이라 건드리지 않는다.
+    /**
+     * 재생 큐는 틀었던 순간의 사본이라, 그 뒤에 비밀로 옮긴 곡이 담긴 자리와 무관하게 남아 있다.
+     * **어느 플레이리스트를 틀고 있든 훑는다** — 드러난 플레이리스트에서 끊긴 곡도 큐에는 남는다.
+     */
     private suspend fun removeSecretTracksFromQueue() {
         val playlistId = playbackController.currentPlaylistId ?: return
-        if (isSecretPlaylist(playlistId)) {
+        if (isSecretPlaylist(playlistId)) return playbackController.clearQueue()
+
+        val secretIds = fetchSecretAudioMediaIdListFlowUseCase().first().toSet()
+        // 듣던 곡을 빼면 빠진 자리를 다음 곡(비밀일 수 있다)이 이어받아 재생된다.
+        if (playbackController.playingMediaItem?.mediaId?.toIntOrNull() in secretIds) {
             playbackController.clearQueue()
-        } else if (isPlaylistOf(PlaylistType.TOTAL, playlistId)) {
-            val secretIds = fetchSecretAudioMediaIdListFlowUseCase().first().toSet()
-            // 듣던 곡을 빼면 빠진 자리를 다음 곡(비밀일 수 있다)이 이어받아 재생된다.
-            if (playbackController.playingMediaItem?.mediaId?.toIntOrNull() in secretIds) {
-                playbackController.clearQueue()
-            } else {
-                secretIds.forEach { playbackController.tryDeleteMediaItem(playlistId, it) }
-            }
+        } else {
+            secretIds.forEach { playbackController.tryDeleteMediaItem(playlistId, it) }
         }
     }
 

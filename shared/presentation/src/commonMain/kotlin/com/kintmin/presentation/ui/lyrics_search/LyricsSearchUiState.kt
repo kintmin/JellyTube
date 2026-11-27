@@ -7,9 +7,10 @@ data class LyricsSearchUiState(
     val isLoading: Boolean,
     val results: List<LyricsSearchItem>,
     val isConfirmingExternalSearch: Boolean = false,
+    /** 검색을 한 번이라도 걸었는가. 걸지 않았는데 "결과 없음" 을 보이면 찾아보고 빈 것처럼 읽힌다. */
+    val hasSearched: Boolean = false,
 ) {
-    // 아직 묻는 중이면 검색을 건 적이 없다. "결과 없음" 을 뒤에 깔면 찾아보고 빈 것처럼 읽힌다.
-    val isEmptyResult: Boolean get() = !isLoading && !isConfirmingExternalSearch && results.isEmpty()
+    val isEmptyResult: Boolean get() = hasSearched && !isLoading && results.isEmpty()
 
     data class LyricsSearchItem(
         val id: Int,

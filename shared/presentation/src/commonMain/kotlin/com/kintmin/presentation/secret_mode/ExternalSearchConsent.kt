@@ -1,7 +1,6 @@
 package com.kintmin.presentation.secret_mode
 
-import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
-import kotlinx.coroutines.flow.first
+import com.kintmin.domain.secret_mode.usecase.IsSecretAudioMediaUseCase
 
 /**
  * 비밀 곡의 제목을 밖으로 내보내기 전에 한 번 묻는다. **한 화면만 막으면 다른 화면으로 같은
@@ -10,19 +9,20 @@ import kotlinx.coroutines.flow.first
  * **화면마다 하나씩 갖는다** — 고른 것은 그 화면에 머무는 동안만 유효하다.
  */
 class ExternalSearchConsent(
-    private val fetchSecretAudioMediaIdListFlowUseCase: FetchSecretAudioMediaIdListFlowUseCase,
+    private val isSecretAudioMediaUseCase: IsSecretAudioMediaUseCase,
 ) {
-    private var isRequired = false
+    // 아직 모르는 상태(null)를 "물을 필요 없음" 과 가른다. 모르는 채로 내보내면 막은 의미가 없다.
+    private var isRequired: Boolean? = null
     private var queryAwaitingConsent: String? = null
 
-    /** 물을지 정하기 전에는 검색을 시작할 수 없다. 화면이 뜰 때 한 번 부른다. */
+    /** 물을지 정한다. 화면이 뜰 때 한 번 부른다. */
     suspend fun prepare(audioMediaId: Int) {
-        isRequired = audioMediaId in fetchSecretAudioMediaIdListFlowUseCase().first()
+        isRequired = isSecretAudioMediaUseCase(audioMediaId)
     }
 
     /** true 면 [query] 를 쥐고 기다린다. 부르는 쪽은 묻는 화면을 띄운다. */
     fun shouldAsk(query: String): Boolean {
-        if (!isRequired) return false
+        if (isRequired == false) return false
         queryAwaitingConsent = query
         return true
     }

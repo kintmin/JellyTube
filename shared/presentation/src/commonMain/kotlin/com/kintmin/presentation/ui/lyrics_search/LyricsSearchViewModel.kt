@@ -105,6 +105,7 @@ class LyricsSearchViewModel constructor(
             _uiState.update { it.copy(isLoading = false, isConfirmingExternalSearch = true) }
             return
         }
+        _uiState.update { it.copy(isConfirmingExternalSearch = false) }
         searchJob?.cancel()
         searchJob = viewModelScope.launch { performSearch(query) }
     }
@@ -118,7 +119,7 @@ class LyricsSearchViewModel constructor(
         val results = searchLyricsUseCase(query).getOrNull().orEmpty()
             .let { sortLyricsSearchResultsUseCase(it, query, route.durationSeconds) }
             .map { it.toItem() }
-        _uiState.update { it.copy(isLoading = false, results = results) }
+        _uiState.update { it.copy(isLoading = false, results = results, hasSearched = true) }
     }
 }
 

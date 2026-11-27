@@ -5,7 +5,7 @@ import androidx.navigation.toRoute
 import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
 import com.kintmin.domain.lyrics.usecase.SearchLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SortLyricsSearchResultsUseCase
-import com.kintmin.domain.secret_mode.usecase.FetchSecretAudioMediaIdListFlowUseCase
+import com.kintmin.domain.secret_mode.usecase.IsSecretAudioMediaUseCase
 import com.kintmin.presentation.secret_mode.ExternalSearchConsent
 import com.kintmin.presentation.ui.lyrics_search.navigation.LyricsSearchScreenRoute
 import io.mockk.coEvery
@@ -40,8 +40,8 @@ class LyricsSearchViewModelTest {
     private val sortResults = mockk<SortLyricsSearchResultsUseCase> {
         every { this@mockk.invoke(any(), any(), any()) } returns emptyList()
     }
-    private val fetchSecretIds = mockk<FetchSecretAudioMediaIdListFlowUseCase> {
-        every { this@mockk.invoke() } returns flowOf(emptyList())
+    private val isSecret = mockk<IsSecretAudioMediaUseCase> {
+        coEvery { this@mockk.invoke(any()) } returns false
     }
 
     private fun viewModel() = LyricsSearchViewModel(
@@ -49,7 +49,7 @@ class LyricsSearchViewModelTest {
         searchLyricsUseCase = searchLyrics,
         buildSongSearchQueryUseCase = buildQuery,
         sortLyricsSearchResultsUseCase = sortResults,
-        externalSearchConsent = ExternalSearchConsent(fetchSecretIds),
+        externalSearchConsent = ExternalSearchConsent(isSecret),
     )
 
     @Before
@@ -86,7 +86,7 @@ class LyricsSearchViewModelTest {
 
     @Test
     fun `비밀 곡이면 묻기 전에 검색하지 않는다`() {
-        every { fetchSecretIds.invoke() } returns flowOf(listOf(7))
+        coEvery { isSecret(7) } returns true
 
         val viewModel = viewModel()
 
@@ -98,7 +98,7 @@ class LyricsSearchViewModelTest {
 
     @Test
     fun `비밀 곡이어도 검색을 고르면 그때 검색한다`() {
-        every { fetchSecretIds.invoke() } returns flowOf(listOf(7))
+        coEvery { isSecret(7) } returns true
         val viewModel = viewModel()
 
         viewModel.sendIntent(LyricsSearchIntent.OnConfirmExternalSearch)
@@ -109,7 +109,7 @@ class LyricsSearchViewModelTest {
 
     @Test
     fun `한 번 고르면 다시 검색할 때는 묻지 않는다`() {
-        every { fetchSecretIds.invoke() } returns flowOf(listOf(7))
+        coEvery { isSecret(7) } returns true
         val viewModel = viewModel()
         viewModel.sendIntent(LyricsSearchIntent.OnConfirmExternalSearch)
 
@@ -121,15 +121,25 @@ class LyricsSearchViewModelTest {
 
     @Test
     fun `찾지 않기를 고르면 화면은 남고 다시 검색할 때 또 묻는다`() {
-        every { fetchSecretIds.invoke() } returns flowOf(listOf(7))
+        coEvery { isSecret(7) } returns true
         val viewModel = viewModel()
 
         viewModel.sendIntent(LyricsSearchIntent.OnDismissExternalSearch)
         assertFalse(viewModel.uiState.value.isConfirmingExternalSearch)
+        // 찾지 않기로 한 것이지 찾아보고 없는 것이 아니다.
+        assertFalse(viewModel.uiState.value.isEmptyResult)
 
         viewModel.sendIntent(LyricsSearchIntent.OnClickSearch)
 
         assertTrue(viewModel.uiState.value.isConfirmingExternalSearch)
         coVerify(exactly = 0) { searchLyrics(any()) }
+    }
+
+    @Test
+    fun `검색을 걸고 나서 결과가 없으면 그때 비었다고 알린다`() {
+        val viewModel = viewModel()
+
+        assertTrue(viewModel.uiState.value.isEmptyResult)
+        coVerify(exactly = 1) { searchLyrics("정리된 검색어") }
     }
 }

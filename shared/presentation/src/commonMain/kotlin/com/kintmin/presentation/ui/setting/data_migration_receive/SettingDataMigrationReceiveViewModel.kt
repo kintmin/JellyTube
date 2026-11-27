@@ -20,6 +20,7 @@ import com.kintmin.domain.data_migration.usecase.ClearMigrationStagingUseCase
 import com.kintmin.domain.data_migration.usecase.PairMigrationSourceUseCase
 import com.kintmin.domain.data_migration.usecase.ReceiveMigrationDataUseCase
 import com.kintmin.domain.playlist.usecase.FetchDownloadTargetPlaylistsFlowUseCase
+import com.kintmin.presentation.secret_mode.SecretModeRunner
 import com.kintmin.presentation.ui.common.DownloadPlaylistUiState
 import com.kintmin.presentation.port.MigrationReceiveKeepAlive
 import com.kintmin.presentation.port.MigrationSourceDiscovery
@@ -48,6 +49,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     private val runningWorkMonitor: RunningTaskMonitor,
     private val migrationReceiveKeepAlive: MigrationReceiveKeepAlive,
     private val fetchDownloadTargetPlaylistsFlowUseCase: FetchDownloadTargetPlaylistsFlowUseCase,
+    private val secretModeRunner: SecretModeRunner,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingDataMigrationReceiveUiState())
@@ -163,6 +165,20 @@ class SettingDataMigrationReceiveViewModel constructor(
         }
     }
 
+    /**
+     * 받는 쪽은 비밀을 받으려고 비밀모드를 켜지 않는다. 다만 **쓰던 비밀모드가 이미 켜져 있으면**
+     * 받는 동안 시계를 멈춘다 — 전송 중에 꺼지면 화면 스택이 메인까지 걷혀 받기가 통째로 끊긴다.
+     *
+     * 멈춘 채로 두면 영영 켜져 있으므로 끝나는 길이 어디든 [resumeSecretMode] 가 다시 감는다.
+     */
+    private fun pauseSecretMode() {
+        secretModeRunner.pause()
+    }
+
+    private fun resumeSecretMode() {
+        secretModeRunner.resume()
+    }
+
     private fun run() {
         val endpoint = endpoint ?: return search()
         val token = token ?: return search()
@@ -172,6 +188,7 @@ class SettingDataMigrationReceiveViewModel constructor(
                 stages = DataMigrationStageKind.entries.map { kind -> DataMigrationStageItem(kind, DataMigrationStageStatus.PENDING) },
             )
         }
+        pauseSecretMode()
         runJob = viewModelScope.launch {
             // 찾은 뒤 다시 시도하기 전까지 PC 수신 등이 새로 켜졌을 수 있다. 받는 중에는 DB 를 바꾸면 안 된다.
             val runningTasks = runningWorkMonitor.runningTasks()
@@ -247,6 +264,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     }
 
     private fun finish(summary: MigrationSummary) {
+        resumeSecretMode()
         _uiState.update { state ->
             state.copy(
                 phase = DataMigrationReceivePhase.Finished(
@@ -262,6 +280,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     }
 
     private fun interrupt(error: Throwable) {
+        resumeSecretMode()
         // 받지 않기로 한 것은 실패가 아니다. 받은 파일도 없으므로 코드 입력으로만 돌아간다.
         if (error is MigrationDeclinedException) {
             _uiState.update { it.copy(code = "", stages = emptyList(), phase = DataMigrationReceivePhase.CodeInput()) }
@@ -337,6 +356,12 @@ class SettingDataMigrationReceiveViewModel constructor(
         receivedBytes = receivedBytes,
         totalBytes = totalBytes,
     )
+
+    override fun onCleared() {
+        // 받는 중에 화면을 떠나도 멈춰 둔 시계는 되돌아가야 한다. 전송이 끝날 때 끄는 것이 아니라
+        // 다시 감는 것뿐이라 결과 화면은 그대로 남는다.
+        resumeSecretMode()
+    }
 
     private fun MigrationFailureReason.toText(): String = when (this) {
         MigrationFailureReason.UNSUPPORTED_FORMAT -> "이 기기에서 재생할 수 없는 형식"
