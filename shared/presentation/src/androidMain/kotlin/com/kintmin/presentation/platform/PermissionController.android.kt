@@ -30,11 +30,6 @@ private fun AppPermission.androidPermissionOrNull(): String? = when (this) {
     AppPermission.ActivityRecognition ->
         Manifest.permission.ACTIVITY_RECOGNITION
             .takeIf { Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q }
-
-    // 29 부터는 MediaStore 로 권한 없이 다운로드 폴더에 쓴다.
-    AppPermission.BackupStorage ->
-        Manifest.permission.WRITE_EXTERNAL_STORAGE
-            .takeIf { Build.VERSION.SDK_INT <= Build.VERSION_CODES.P }
 }
 
 private class AndroidPermissionController(

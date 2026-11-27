@@ -12,6 +12,7 @@ internal data class BackupDto(
     val snapshot: MigrationSnapshotDto,
     val downloadSettings: MigrationDownloadSettingsDto? = null,
     val lyrics: Map<String, String> = emptyMap(),
+    val installId: String? = null,
 )
 
 @Serializable

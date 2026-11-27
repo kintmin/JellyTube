@@ -6,14 +6,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.kintmin.presentation.theme.JellyTubeButtonColors
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.setting.backup_restore.RestorePreviewItem
 
@@ -21,8 +19,6 @@ import com.kintmin.presentation.ui.setting.backup_restore.RestorePreviewItem
 fun RestorePreviewView(
     preview: RestorePreviewItem,
     onClickStart: () -> Unit,
-    /** null 이면 그만둘 것이 없어 취소 버튼을 두지 않는다. */
-    onClickCancel: (() -> Unit)?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(text = "${preview.createdAt} 백업", style = MaterialTheme.typography.bodyLarge)
@@ -51,10 +47,7 @@ fun RestorePreviewView(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            onClickCancel?.let { OutlinedButton(onClick = it, colors = JellyTubeButtonColors.secondary()) { Text("취소") } }
-            Button(onClick = onClickStart) { Text("복원하기") }
-        }
+        Button(onClick = onClickStart) { Text("복원하기") }
     }
 }
 
@@ -74,7 +67,6 @@ private fun RestorePreviewViewPreview() {
             RestorePreviewView(
                 preview = RestorePreviewItem("2026년 11월 20일 21시 4분", 452, 12, 431, 9, 1_650),
                 onClickStart = {},
-                onClickCancel = {},
             )
         }
     }

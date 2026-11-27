@@ -115,7 +115,7 @@ private class IosPermissionController : PermissionController {
 
     override fun isGranted(permission: AppPermission): Boolean = when (permission) {
         // 샌드박스 밖 파일은 문서 선택기로 고른 것만 읽어서 받을 권한이 없다.
-        AppPermission.MediaStorage, AppPermission.BackupStorage -> true
+        AppPermission.MediaStorage -> true
         AppPermission.Notification -> NotificationAuthorization.isAuthorized
         AppPermission.ActivityRecognition -> MotionAuthorization.isAuthorized
     }
@@ -137,7 +137,7 @@ private class IosPermissionController : PermissionController {
 
         notGranted.forEach { permission ->
             when (permission) {
-                AppPermission.MediaStorage, AppPermission.BackupStorage -> complete(permission, true)
+                AppPermission.MediaStorage -> complete(permission, true)
                 AppPermission.Notification -> NotificationAuthorization.request {
                     complete(permission, it)
                 }

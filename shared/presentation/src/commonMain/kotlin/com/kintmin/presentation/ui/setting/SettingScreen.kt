@@ -312,6 +312,7 @@ fun SettingScreen(
                     title = "백업 및 복원",
                     icon = Icons.Rounded.Backup,
                     description = uiState.backupDescription,
+                    isDescriptionWarning = uiState.isBackupWarning,
                     onClick = { sendIntent(SettingIntent.OnClickBackupRestoreTile) },
                     trailing = { SettingNavigateIcon(contentDescription = "백업 및 복원 화면으로 이동") },
                 )

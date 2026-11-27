@@ -31,11 +31,6 @@ actual fun rememberBackupFolderPicker(onPicked: (folderId: String, label: String
     }
 }
 
-/** 폴더를 다시 고르면 그 안의 백업을 읽을 수 있어 파일을 따로 고르지 않는다. */
-@Composable
-actual fun rememberBackupFilePicker(onPicked: (fileId: String) -> Unit): FilePickerLauncher =
-    remember { FilePickerLauncher {} }
-
 @Composable
 private fun rememberFolderPicker(onPicked: (NSURL) -> Unit): FilePickerLauncher {
     val currentOnPicked by rememberUpdatedState(onPicked)

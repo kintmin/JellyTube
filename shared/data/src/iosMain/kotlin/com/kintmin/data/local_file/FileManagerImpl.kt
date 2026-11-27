@@ -70,7 +70,7 @@ internal class FileManagerImpl : FileManager {
 
     override fun getMigrationStagingDirPath() = core.getMigrationStagingDirPath()
 
-    override fun getBackupDirPath() = core.getBackupDirPath()
+    override fun getInstallIdDirPath() = core.getInstallIdDirPath()
 
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String): Result<String> = suspendRunCatching {
         withContext(Dispatchers.IO) {
@@ -228,7 +228,7 @@ private object IosAppDirectories : AppDirectories {
     override fun lyric() = documents() / AppDirectories.LYRIC_DIR_NAME
     override fun log() = documents() / AppDirectories.LOG_DIR_NAME
     override fun migrationStaging() = documents() / AppDirectories.MIGRATION_STAGING_DIR_NAME
-    override fun backup() = documents() / BackupFiles.LOCAL_DIR_NAME
+    override fun installId() = documents() / BackupFiles.INSTALL_ID_DIR_NAME
 
     private fun documents(): Path {
         val url: NSURL = NSFileManager.defaultManager.URLForDirectory(

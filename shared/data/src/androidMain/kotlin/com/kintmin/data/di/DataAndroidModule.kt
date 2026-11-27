@@ -3,7 +3,7 @@ package com.kintmin.data.di
 import com.kintmin.data.audio_edit.AudioEditor
 import com.kintmin.data.audio_edit.AudioEditorImpl
 import com.kintmin.data.backup.BackupFolderAccess
-import com.kintmin.data.backup.DownloadsBackupFolderAccess
+import com.kintmin.data.backup.TreeBackupFolderAccess
 import com.kintmin.data.data_migration.localDeviceName
 import com.kintmin.data.data_migration.toMigrationInstanceName
 import com.kintmin.data.device_status.DeviceStatus
@@ -37,7 +37,7 @@ val dataAndroidModule: Module = module {
     single<JellyTubeDatabase> { createAndroidJellyTubeDatabase(androidContext()) }
     single<DeviceStatus> { DeviceStatusImpl(androidContext()) }
     single<FileManager> { FileManagerImpl(androidContext()) }
-    single<BackupFolderAccess> { DownloadsBackupFolderAccess(androidContext()) }
+    single<BackupFolderAccess> { TreeBackupFolderAccess(androidContext()) }
     single { LyricsTranslator(MlKitLyricsTranslationEngine()) }
     single<AudioEditor> { AudioEditorImpl(androidContext()) }
     single<MigrationDataSource> {

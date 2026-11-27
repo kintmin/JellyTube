@@ -12,9 +12,6 @@ enum class AppPermission {
 
     /** 걸음수 측정을 위한 신체 활동 인식. */
     ActivityRecognition,
-
-    /** 앱을 지워도 남는 공용 다운로드 폴더에 백업 쓰기·읽기. */
-    BackupStorage,
 }
 
 interface PermissionController {

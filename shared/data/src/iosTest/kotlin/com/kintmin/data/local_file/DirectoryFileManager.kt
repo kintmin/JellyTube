@@ -14,7 +14,7 @@ internal class DirectoryFileManager(private val root: Path) : FileManager {
     override fun getImageFileFullPath(fileNameWithExt: String) = runCatching { (dir("images") / fileNameWithExt).toString() }
     override fun getLyricFileFullPath(fileNameWithExt: String) = runCatching { (dir("lyrics") / fileNameWithExt).toString() }
     override fun getMigrationStagingDirPath() = runCatching { dir("staging").toString() }
-    override fun getBackupDirPath() = runCatching { dir("backup").toString() }
+    override fun getInstallIdDirPath() = runCatching { dir("install_id").toString() }
 
     override fun getFileNameWithExt(fileFullPath: String): Result<String> = TODO()
     override fun getAudioDownloadBasePath(fileName: String): Result<String> = TODO()

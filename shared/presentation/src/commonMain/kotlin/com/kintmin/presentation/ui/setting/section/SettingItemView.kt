@@ -24,11 +24,13 @@ import androidx.compose.ui.unit.dp
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.contentMuted
 import com.kintmin.presentation.theme.contentSubtle
+import com.kintmin.presentation.theme.destructiveContent
 
 /**
  * 설정 화면의 한 항목. [onClick]이 null이면 정보 표시용으로 클릭되지 않는다.
  * [description]은 제목 아래 보조 문구(현재 값 또는 설명)로 표시하고,
  * [trailing]에는 Switch·진행 표시·이동 화살표 등을 넣는다.
+ * [isDescriptionWarning]은 들어가 보지 않아도 알아야 하는 상태에만 쓴다.
  */
 @Composable
 fun SettingItemView(
@@ -37,6 +39,7 @@ fun SettingItemView(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     description: String? = null,
+    isDescriptionWarning: Boolean = false,
     enabled: Boolean = true,
     trailing: (@Composable () -> Unit)? = null,
 ) {
@@ -72,7 +75,7 @@ fun SettingItemView(
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = contentMuted,
+                    color = if (isDescriptionWarning) destructiveContent else contentMuted,
                 )
             }
         }
@@ -99,6 +102,21 @@ fun SettingItemViewPreview() {
             icon = Icons.Rounded.Info,
             description = "1.2.2",
             onClick = null,
+        )
+    }
+}
+
+@Preview
+@Composable
+fun SettingItemViewWarningPreview() {
+    JellyTubeTheme {
+        SettingItemView(
+            title = "백업 및 복원",
+            icon = Icons.Rounded.Info,
+            description = "백업 폴더를 지정하세요",
+            isDescriptionWarning = true,
+            onClick = {},
+            trailing = { SettingNavigateIcon(contentDescription = null) },
         )
     }
 }

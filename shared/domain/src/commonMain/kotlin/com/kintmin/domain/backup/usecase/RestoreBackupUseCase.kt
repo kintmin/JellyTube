@@ -4,6 +4,7 @@ import com.kintmin.domain.app_setting.repository.AppSettingRepository
 import com.kintmin.domain.audio_media.ParallelDownloader
 import com.kintmin.domain.audio_media.repository.AudioMediaRepository
 import com.kintmin.domain.backup.model.BackupContent
+import com.kintmin.domain.backup.repository.BackupRepository
 import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.data_migration.MigrationFiles
 import com.kintmin.domain.data_migration.MigrationPlanner
@@ -27,6 +28,7 @@ import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.log.model.ErrorLog
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 /** 곡마다 반영하지 않고 끝에 한 번에 반영한다 — 여러 재생목록의 순서를 계획 그대로 맞추려면 그래야 한다. */
@@ -35,6 +37,7 @@ class RestoreBackupUseCase(
     private val playlistRepository: PlaylistRepository,
     private val appSettingRepository: AppSettingRepository,
     private val audioMediaRepository: AudioMediaRepository,
+    private val backupRepository: BackupRepository,
     private val appLog: AppLog,
 ) {
     suspend operator fun invoke(
@@ -90,6 +93,7 @@ class RestoreBackupUseCase(
                 suspendRunCatching { appSettingRepository.applyMigratedDownloadSettings(settings, plan, applied, target) }
                     .onFailure { logError("다운로드 설정 반영 실패", it) }
             }
+            adoptInstallIdIfFirstBackup(backup.installId)
         }
         MigrationSummary(
             newAudioMediaCount = plan.newAudioMedias.size,
@@ -99,6 +103,15 @@ class RestoreBackupUseCase(
         ).also { log("복원 완료: ${it.logText()}") }
     }.onFailure {
         logError("복원 중단", it)
+    }
+
+    /** 이미 백업하던 기기까지 물려받으면 공유 폴더를 쓰는 두 기기가 한 파일을 두고 번갈아 덮는다. */
+    private suspend fun adoptInstallIdIfFirstBackup(installId: String?) {
+        if (installId == null) return
+        suspendRunCatching {
+            if (backupRepository.getStatusFlow().first().lastSuccessMillis != null) return@suspendRunCatching
+            backupRepository.adoptInstallId(installId).getOrThrow()
+        }.onFailure { logError("설치 값 이어받기 실패", it) }
     }
 
     private suspend fun restore(

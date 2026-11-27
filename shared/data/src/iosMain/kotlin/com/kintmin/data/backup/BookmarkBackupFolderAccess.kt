@@ -2,7 +2,6 @@ package com.kintmin.data.backup
 
 import com.kintmin.data.local_file.toByteArray
 import com.kintmin.data.local_file.toNSData
-import com.kintmin.domain.backup.model.BackupFolder
 import com.kintmin.domain.backup.model.BackupFolderUnavailableException
 import kotlinx.cinterop.BooleanVar
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -14,14 +13,13 @@ import kotlinx.cinterop.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
-import okio.FileSystem
-import okio.Path.Companion.toPath
 import platform.Foundation.NSCocoaErrorDomain
 import platform.Foundation.NSData
 import platform.Foundation.NSDataWritingAtomic
 import platform.Foundation.NSError
 import platform.Foundation.NSFileCoordinator
 import platform.Foundation.NSFileCoordinatorWritingForReplacing
+import platform.Foundation.NSFileManager
 import platform.Foundation.NSFileNoSuchFileError
 import platform.Foundation.NSFileReadNoSuchFileError
 import platform.Foundation.NSURL
@@ -31,13 +29,11 @@ import platform.Foundation.dataWithContentsOfURL
 import platform.Foundation.writeToURL
 
 /**
- * 앱을 지워도 남는 공용 폴더가 없어 사용자가 고른 폴더를 쓴다. [BackupFolder.id] 는 그 폴더의
+ * 사용자가 고른 폴더를 쓴다. [BackupFolderAccess] 의 `folderId` 는 그 폴더의
  * security-scoped bookmark(base64)다. 재설치하면 bookmark 도 사라지므로 폴더를 다시 골라야 읽을 수 있다.
  */
 @OptIn(ExperimentalForeignApi::class)
 internal class BookmarkBackupFolderAccess : BackupFolderAccess {
-
-    override val fixedFolder: BackupFolder? = null
 
     override suspend fun write(folderId: String, fileName: String, bytes: ByteArray): String? = withContext(Dispatchers.IO) {
         withFolder(folderId) { folder, isStale ->
@@ -60,8 +56,25 @@ internal class BookmarkBackupFolderAccess : BackupFolderAccess {
         }
     }
 
-    override suspend fun readPicked(fileId: String): ByteArray = withContext(Dispatchers.IO) {
-        FileSystem.SYSTEM.read(fileId.toPath()) { readByteArray() }
+    override suspend fun list(folderId: String): List<String> = withContext(Dispatchers.IO) {
+        withFolder(folderId) { folder, _ ->
+            val path = folder.path ?: throw BackupFolderUnavailableException()
+            memScoped {
+                val error = alloc<ObjCObjectVar<NSError?>>()
+                val names = NSFileManager.defaultManager.contentsOfDirectoryAtPath(path, error.ptr)
+                    ?: throw BackupFolderUnavailableException()
+                names.mapNotNull { (it as? String)?.let(::resolvedIcloudName) }
+            }
+        }
+    }
+
+    override suspend fun delete(folderId: String, fileName: String) {
+        withContext(Dispatchers.IO) {
+            withFolder(folderId) { folder, _ ->
+                folder.URLByAppendingPathComponent(fileName)
+                    ?.let { NSFileManager.defaultManager.removeItemAtURL(it, null) }
+            }
+        }
     }
 
     private inline fun <T> withFolder(folderId: String, block: (folder: NSURL, isStale: Boolean) -> T): T = memScoped {
@@ -122,3 +135,17 @@ internal class BookmarkBackupFolderAccess : BackupFolderAccess {
 
     private fun NSError.isNoSuchFile() = domain == NSCocoaErrorDomain && (code == NSFileNoSuchFileError || code == NSFileReadNoSuchFileError)
 }
+
+/**
+ * 아직 내려받지 않은 iCloud 항목은 목록에 `.<원래 이름>.icloud` 로 나온다. 원래 이름으로 되돌려야
+ * 백업으로 읽히고, 그 이름으로 조율해 읽을 때 비로소 내려받는다.
+ */
+internal fun resolvedIcloudName(fileName: String): String =
+    if (fileName.length > ICLOUD_PLACEHOLDER_AFFIX && fileName.startsWith('.') && fileName.endsWith(ICLOUD_SUFFIX)) {
+        fileName.drop(1).dropLast(ICLOUD_SUFFIX.length)
+    } else {
+        fileName
+    }
+
+private const val ICLOUD_SUFFIX = ".icloud"
+private const val ICLOUD_PLACEHOLDER_AFFIX = ICLOUD_SUFFIX.length + 1

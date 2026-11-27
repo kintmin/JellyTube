@@ -8,12 +8,9 @@ import com.kintmin.presentation.ui.setting.data_migration_receive.DataMigrationS
 
 data class SettingBackupRestoreUiState(
     val folderLabel: String? = null,
-    val isFolderFixed: Boolean = false,
     val backupDescription: String = "",
     val isBackupFailing: Boolean = false,
     val isBackingUp: Boolean = false,
-    /** 이 설치가 백업한 적 없이 복원할 백업이 남아 있어, 그 백업을 덮지 않으려고 자동 백업을 쉬고 있다. */
-    val isAutoBackupPaused: Boolean = false,
     val restore: RestorePhase = RestorePhase.Finding,
     val stages: List<DataMigrationStageItem> = emptyList(),
 ) {
@@ -39,7 +36,6 @@ data class SettingBackupRestoreUiState(
 
         fun getMock() = SettingBackupRestoreUiState(
             folderLabel = "Download/JellyTube",
-            isFolderFixed = true,
             backupDescription = "마지막 백업 2026년 11월 20일 21시 4분",
             restore = RestorePhase.Preview(RestorePreviewItem("2026년 11월 20일 21시 4분", 452, 12, 431, 9, 1_650)),
         )
@@ -58,19 +54,14 @@ data class SettingBackupRestoreUiState(
 sealed interface RestorePhase {
     data object Finding : RestorePhase
     data object NotFound : RestorePhase
-    data object Reading : RestorePhase
     data class ReadFailed(val message: String) : RestorePhase
 
     /** 복원 전에 끝나 있어야 하는 작업이 남아 있다. */
     data class Blocked(val runningTasks: Map<RunningTask, Int>) : RestorePhase
 
-    /**
-     * 무엇을 받을지 보여 주고 복원을 기다린다. [isPickedFile] 이면 사용자가 직접 찾은 파일이라 그만둘 수 있다.
-     * [askCellular] 면 Wi-Fi 가 아니라 계속할지 묻는다.
-     */
+    /** 무엇을 받을지 보여 주고 복원을 기다린다. [askCellular] 면 Wi-Fi 가 아니라 계속할지 묻는다. */
     data class Preview(
         val preview: RestorePreviewItem,
-        val isPickedFile: Boolean = false,
         val askCellular: Boolean = false,
     ) : RestorePhase
     data object Running : RestorePhase

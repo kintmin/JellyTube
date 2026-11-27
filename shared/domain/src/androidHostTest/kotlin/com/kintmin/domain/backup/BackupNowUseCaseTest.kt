@@ -9,7 +9,6 @@ import com.kintmin.domain.backup.model.BackupFolderNotRegisteredException
 import com.kintmin.domain.backup.model.BackupFolderUnavailableException
 import com.kintmin.domain.backup.model.BackupOutcome
 import com.kintmin.domain.backup.model.BackupStatus
-import com.kintmin.domain.backup.model.BackupWriteResult
 import com.kintmin.domain.backup.repository.BackupRepository
 import com.kintmin.domain.backup.usecase.BackupNowUseCase
 import com.kintmin.domain.data_migration.model.MigrationAudioMedia
@@ -26,6 +25,7 @@ import io.mockk.slot
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -35,7 +35,7 @@ class BackupNowUseCaseTest {
     private val written = slot<BackupContent>()
     private val backupRepository = mockk<BackupRepository> {
         every { getStatusFlow() } returns flowOf(BackupStatus(folder, null, null, null))
-        coEvery { write(capture(written)) } returns Result.success(BackupWriteResult(100, localCopySkipped = false))
+        coEvery { write(capture(written)) } returns Result.success(100)
         coEvery { recordSuccess(any()) } returns Result.success(Unit)
         coEvery { recordFailure(any(), any()) } returns Result.success(Unit)
     }
@@ -80,6 +80,7 @@ class BackupNowUseCaseTest {
         assertEquals(mapOf("l1.lrc" to "가사"), written.captured.lyrics)
         assertEquals(MigrationDownloadSettings(shouldInsertAtTop = true, playlistId = 5), written.captured.downloadSettings)
         assertEquals(1_000L, written.captured.createdAtMillis)
+        assertNull(written.captured.installId)
         coVerify { backupRepository.recordSuccess(1_000) }
     }
 

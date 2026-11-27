@@ -23,31 +23,26 @@ class FindBackupToRestoreUseCaseTest {
 
     private val appLog = mockk<AppLog>(relaxed = true)
 
-    private fun useCase(local: Result<BackupContent?>, folder: Result<BackupContent?>) = FindBackupToRestoreUseCase(
-        mockk<BackupRepository> {
-            coEvery { readLocalCopy() } returns local
-            coEvery { readFolderCopy() } returns folder
-        },
+    private fun useCase(folder: Result<BackupContent?>) = FindBackupToRestoreUseCase(
+        mockk<BackupRepository> { coEvery { readFolderCopy() } returns folder },
         appLog,
     )
 
     @Test
-    fun `둘 다 있으면 더 최근 백업을 고른다`() = runTest {
-        assertEquals(2L, useCase(Result.success(backup(1)), Result.success(backup(2)))().getOrThrow()?.createdAtMillis)
-        assertEquals(3L, useCase(Result.success(backup(3)), Result.success(backup(2)))().getOrThrow()?.createdAtMillis)
+    fun `폴더에서 고른 백업을 그대로 돌려준다`() = runTest {
+        assertEquals(5L, useCase(Result.success(backup(5)))().getOrThrow()?.createdAtMillis)
     }
 
     @Test
-    fun `한쪽을 읽지 못해도 다른 쪽이 있으면 그것을 쓴다`() = runTest {
-        val found = useCase(Result.failure(BackupFileInvalidException()), Result.success(backup(5)))().getOrThrow()
-
-        assertEquals(5L, found?.createdAtMillis)
-        verify { appLog.sendErrorLog(match { it.message == "앱 안 백업 사본 읽기 실패" && it.throwable is BackupFileInvalidException }) }
+    fun `폴더에 백업이 없으면 null 이다`() = runTest {
+        assertNull(useCase(Result.success(null))().getOrThrow())
     }
 
     @Test
-    fun `둘 다 없으면 null 이고 둘 다 못 읽으면 실패다`() = runTest {
-        assertNull(useCase(Result.success(null), Result.success(null))().getOrThrow())
-        assertTrue(useCase(Result.failure(BackupFileInvalidException()), Result.success(null))().isFailure)
+    fun `읽지 못한 것을 없는 것으로 삼키지 않고 올린다`() = runTest {
+        val result = useCase(Result.failure(BackupFileInvalidException()))()
+
+        assertTrue(result.isFailure)
+        verify { appLog.sendErrorLog(match { it.message == "폴더 백업 읽기 실패" && it.throwable is BackupFileInvalidException }) }
     }
 }

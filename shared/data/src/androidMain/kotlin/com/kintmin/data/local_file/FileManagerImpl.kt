@@ -68,7 +68,7 @@ internal class FileManagerImpl(
     // 음원 디렉터리와 볼륨이 달라 옮기기는 복사로 떨어진다.
     override fun getMigrationStagingDirPath() = core.getMigrationStagingDirPath()
 
-    override fun getBackupDirPath() = core.getBackupDirPath()
+    override fun getInstallIdDirPath() = core.getInstallIdDirPath()
 
     override suspend fun saveImageWithCompression(imageData: ByteArray, fileName: String) =
         suspendRunCatching {
@@ -541,7 +541,7 @@ private class AndroidAppDirectories(private val context: Context) : AppDirectori
     override fun lyric() = context.filesDir.resolve(AppDirectories.LYRIC_DIR_NAME).toOkioPath()
     override fun log() = context.filesDir.resolve(AppDirectories.LOG_DIR_NAME).toOkioPath()
     override fun migrationStaging() = context.getExternalFilesDir(null).required() / AppDirectories.MIGRATION_STAGING_DIR_NAME
-    override fun backup() = context.filesDir.resolve(BackupFiles.LOCAL_DIR_NAME).toOkioPath()
+    override fun installId() = context.filesDir.resolve(BackupFiles.INSTALL_ID_DIR_NAME).toOkioPath()
 
     // 외부 저장소를 쓸 수 없으면 null 이다.
     private fun File?.required(): Path = (this ?: throw Exception("디렉토리를 찾을 수 없습니다.")).toOkioPath()
