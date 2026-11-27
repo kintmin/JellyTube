@@ -94,8 +94,11 @@ fun SettingScreen(
     val backupFolderPicker = rememberBackupFolderPicker { folderId, label ->
         viewModel.sendIntent(SettingIntent.OnBackupFolderPicked(folderId, label))
     }
+    // 첫 프레임부터 지금 상태로 그린다. 꺼진 것으로 두고 시작하면 켜 둔 사용자에게 틀린 안내가 스친다.
+    var isNotificationGranted by remember {
+        mutableStateOf(permissionController.isGranted(AppPermission.Notification))
+    }
     // 설정에서 알림을 켜고 돌아오면 바로 반영돼야 한다.
-    var isNotificationGranted by remember { mutableStateOf(false) }
     LifecycleResumeEffect(Unit) {
         isNotificationGranted = permissionController.isGranted(AppPermission.Notification)
         onPauseOrDispose { }
