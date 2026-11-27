@@ -141,6 +141,9 @@ fun MainNavHost(
             navigateToPlaylistDownload = { url ->
                 navController.navigateToPlaylistDownloadScreen(url, navOptions)
             },
+            navigateToBackupRestore = {
+                navController.navigateToSettingBackupRestoreScreen(navOptions)
+            },
         )
         playlistDownloadScreen(
             navigateToBack = { navController.popBackStack() },

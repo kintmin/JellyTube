@@ -2,9 +2,11 @@ package com.kintmin.presentation.ui.main
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.toRoute
+import com.kintmin.domain.app_setting.usecase.HomeNoticeShown
 import com.kintmin.domain.app_update.model.AppRelease
 import com.kintmin.domain.app_update.usecase.CheckAppUpdateOncePerDayUseCase
 import com.kintmin.domain.app_update.usecase.IgnoreAppUpdateUseCase
+import com.kintmin.domain.backup.model.BackupStatus
 import com.kintmin.presentation.ui.main.navigation.MainScreenRoute
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -14,6 +16,7 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -51,6 +54,10 @@ class MainViewModelAppUpdateTest {
             coEvery { this@mockk(any(), any(), any()) } returns result
         },
         ignoreAppUpdateUseCase = ignore,
+        fetchHomeNoticeShownUseCase = mockk { every { this@mockk() } returns flowOf(HomeNoticeShown(notification = true, backup = true)) },
+        markNotificationNoticeShownUseCase = mockk(relaxed = true),
+        markBackupNoticeShownUseCase = mockk(relaxed = true),
+        fetchBackupStatusFlowUseCase = mockk { every { this@mockk() } returns flowOf(BackupStatus(null, null, null, null)) },
     )
 
     @Test
