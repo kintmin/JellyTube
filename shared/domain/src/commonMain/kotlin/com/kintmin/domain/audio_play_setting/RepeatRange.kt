@@ -2,7 +2,7 @@ package com.kintmin.domain.audio_play_setting
 
 import com.kintmin.domain.audio_play_setting.model.RepeatRangeState
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * A-B 구간반복 상태.
@@ -68,6 +68,6 @@ class RepeatRange {
          * 시작점에서 이만큼 안에 다시 누르면 같은 자리로 본다. 재생 중에는 누를 때마다 위치가
          * 조금씩 흘러서, 정확히 같은 값이 되는 때는 멈춰 있을 때뿐이다.
          */
-        private val CANCEL_WINDOW = 1.seconds
+        private val CANCEL_WINDOW = 500.milliseconds
     }
 }

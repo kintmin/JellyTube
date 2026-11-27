@@ -48,7 +48,7 @@ fun SleepTimerAnnouncementDialog(
     JellyTubeDialog(showDialog = showDialog, onDismiss = onDismiss) {
         PlaybackDialogColumn(title = "마무리 음원") {
             Text(
-                text = "30초 이내이고 길이를 아는 음원만 고를 수 있습니다",
+                text = "길이를 아는 음원만 고를 수 있습니다",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 6.dp),
@@ -78,7 +78,7 @@ fun SleepTimerAnnouncementDialog(
                 if (selectableMediaList.isEmpty()) {
                     item {
                         Text(
-                            text = "고를 수 있는 음원이 없습니다. 음원 편집으로 30초 이내의 음원을 만들어 주세요.",
+                            text = "고를 수 있는 음원이 없습니다. 길이를 아는 음원을 먼저 추가해 주세요.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp,
                             modifier = Modifier.padding(vertical = 16.dp),

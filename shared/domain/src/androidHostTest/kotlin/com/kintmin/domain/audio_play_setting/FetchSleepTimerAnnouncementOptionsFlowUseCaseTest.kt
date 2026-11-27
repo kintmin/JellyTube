@@ -31,13 +31,13 @@ class FetchSleepTimerAnnouncementOptionsFlowUseCaseTest {
     private val unknownLengthMedia = audioMedia(id = 3, audioDuration = null)
 
     @Test
-    fun `짧은 음원만 고를 수 있게 남는다`() {
+    fun `길이를 아는 음원만 고를 수 있게 남는다`() {
         val options = useCase.resolve(
             savedId = null,
             mediaList = listOf(shortMedia, longMedia, unknownLengthMedia),
         )
 
-        assertEquals(listOf(shortMedia), options.selectable)
+        assertEquals(listOf(shortMedia, longMedia), options.selectable)
     }
 
     @Test
@@ -62,10 +62,10 @@ class FetchSleepTimerAnnouncementOptionsFlowUseCaseTest {
     }
 
     @Test
-    fun `고른 음원이 길어지면 선택이 없어진다`() {
-        val lengthened = audioMedia(id = 1, audioDuration = 45.seconds)
+    fun `고른 음원의 길이를 알 수 없게 되면 선택이 없어진다`() {
+        val lengthLost = audioMedia(id = 1, audioDuration = null)
 
-        val options = useCase.resolve(savedId = 1, mediaList = listOf(lengthened))
+        val options = useCase.resolve(savedId = 1, mediaList = listOf(lengthLost))
 
         assertNull(options.selected)
     }
