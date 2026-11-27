@@ -180,6 +180,7 @@ val dataCommonModule: Module = module {
     factoryOf(::DeleteAudioMediaLyricsUseCase)
     factoryOf(::ParseLyricsUseCase)
     factoryOf(::GetParsedLyricsUseCase)
+    factoryOf(::GetPlaybackLyricsUseCase)
     factoryOf(::SaveEditedLyricsUseCase)
     factoryOf(::SerializeLyricsUseCase)
     factoryOf(::DetectLyricsLanguageUseCase)

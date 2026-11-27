@@ -2,6 +2,7 @@ package com.kintmin.presentation.ui.player_detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kintmin.domain.audio_media.model.AudioMedia
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackRepeatingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchIsPlaybackShufflingFlowUseCase
 import com.kintmin.domain.audio_play_setting.usecase.FetchPlaybackPitchSemitoneFlowUseCase
@@ -19,7 +20,7 @@ import com.kintmin.domain.audio_track.usecase.ToggleFavoriteUseCase
 import com.kintmin.domain.lyrics.model.LyricsLine
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.GetLyricsVariantUseCase
-import com.kintmin.domain.lyrics.usecase.GetParsedLyricsUseCase
+import com.kintmin.domain.lyrics.usecase.GetPlaybackLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.activeLyricIndex
 import com.kintmin.domain.playlist.model.PlaylistType
 import com.kintmin.domain.playlist.usecase.GetPlaylistUseCase
@@ -63,7 +64,7 @@ class PlayerDetailViewModel constructor(
     private val getPlaylistUseCase: GetPlaylistUseCase,
     private val fetchAudioMediaDetailFlowUseCase: FetchAudioMediaDetailFlowUseCase,
     private val toggleFavoriteUseCase: ToggleFavoriteUseCase,
-    private val getParsedLyricsUseCase: GetParsedLyricsUseCase,
+    private val getPlaybackLyricsUseCase: GetPlaybackLyricsUseCase,
     private val getLyricsVariantUseCase: GetLyricsVariantUseCase,
 ) : ViewModel() {
 
@@ -101,6 +102,7 @@ class PlayerDetailViewModel constructor(
 
     // 마지막으로 가사를 로드한 파일 경로. 곡이 바뀔 때만 재로드하기 위한 캐시 키.
     private var loadedLyricPath: String? = null
+    private var loadedLyricsEdited = false
 
     private val nextLyricLineTimer = NextLyricLineTimer(viewModelScope)
 
@@ -481,7 +483,6 @@ class PlayerDetailViewModel constructor(
                         it.playlist.type == PlaylistType.FAVORITE || it.playlist.type == PlaylistType.SECRET_FAVORITE
                     } ?: false
                     val audioMedia = aggregates?.firstOrNull()?.audioMedia
-                    val lyricFileFullPath = audioMedia?.lyricFileFullPath
                     _uiState.update {
                         it.copy(
                             isFavorite = isFavorite,
@@ -492,21 +493,25 @@ class PlayerDetailViewModel constructor(
                     }
                     // hasLyrics 는 가사 내용과 함께 나가야 한다. 먼저 켜면 가사 면이 빈 채로 섰다가
                     // 줄이 도착할 때 한 번 더 겹쳐 지워진다.
-                    loadLyricsIfNeeded(lyricFileFullPath)
+                    loadLyricsIfNeeded(audioMedia)
                 }
         }
     }
 
-    private fun loadLyricsIfNeeded(lyricFileFullPath: String?) {
+    private fun loadLyricsIfNeeded(audioMedia: AudioMedia?) {
         val mediaId = uiState.value.id
-        if (lyricFileFullPath == loadedLyricPath) {
+        val lyricFileFullPath = audioMedia?.lyricFileFullPath
+        // 편집본이 생기거나 풀리면 같은 파일이라도 흐르는지가 달라져 다시 읽어야 한다.
+        val isEdited = audioMedia?.editedAudioFileFullPath != null
+        if (lyricFileFullPath == loadedLyricPath && isEdited == loadedLyricsEdited) {
             // 읽을 것은 없어도 이 답이 어느 곡의 것인지는 새로 적는다.
             _uiState.update { it.resolveLyrics(mediaId, hasLyrics = lyricFileFullPath != null) }
             return
         }
         loadedLyricPath = lyricFileFullPath
+        loadedLyricsEdited = isEdited
 
-        if (lyricFileFullPath == null) {
+        if (audioMedia == null || lyricFileFullPath == null) {
             parsedLyricLines = emptyList()
             _uiState.update {
                 it.resolveLyrics(mediaId, hasLyrics = false).copy(
@@ -519,7 +524,7 @@ class PlayerDetailViewModel constructor(
             return
         }
         viewModelScope.launch {
-            parsedLyricLines = getParsedLyricsUseCase(lyricFileFullPath)
+            parsedLyricLines = getPlaybackLyricsUseCase(audioMedia)
             // 음차·번역 파일은 원본과 같은 타임코드로 만들어져 줄 번호가 맞는다
             val translationLines = getLyricsVariantUseCase(lyricFileFullPath, LyricsVariant.TRANSLATION).getOrNull()
             val transliterationLines = getLyricsVariantUseCase(lyricFileFullPath, LyricsVariant.TRANSLITERATION).getOrNull()
