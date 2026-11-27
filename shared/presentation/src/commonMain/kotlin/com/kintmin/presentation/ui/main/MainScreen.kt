@@ -203,7 +203,7 @@ fun MainScreen(
     playlist: List<PlaylistItemUiState>,
     playerBar: PlayerBarUiState,
     currentUrl: String,
-    isBackupNoticeVisible: Boolean = false,
+    isBackupNoticeVisible: Boolean,
     navigateToBackupRestore: () -> Unit,
     navigateToSetting: () -> Unit,
     navigateToSecretPlaylist: () -> Unit,
@@ -418,7 +418,9 @@ fun MainScreen(
                         )
                     }
                     PlaylistView(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                         data = playlist,
                         nowPlayingPlaylistId = playerBar.playlistId,
                         isPlaybackPlaying = playerBar.isPlaying,
@@ -451,6 +453,7 @@ fun MainScreenSearchTabPreview() {
             playlist = PlaylistItemUiState.getMockList(),
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
+            isBackupNoticeVisible = false,
             navigateToBackupRestore = {},
             navigateToSetting = {},
             navigateToSecretPlaylist = {},
@@ -474,6 +477,31 @@ fun MainScreenPlayTabPreview() {
             playlist = PlaylistItemUiState.getMockList(),
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
+            isBackupNoticeVisible = false,
+            navigateToBackupRestore = {},
+            navigateToSetting = {},
+            navigateToSecretPlaylist = {},
+            navigateToPlayerDetail = {},
+            navigateToPlaylistDownload = {},
+            sendMainIntent = {},
+            sendYoutubeDownloadIntent = {},
+            sendPlaylistIntent = {},
+            sendPlayerBarIntent = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+fun MainScreenPlayTabBackupNoticePreview() {
+    JellyTubeTheme {
+        MainScreen(
+            isDebugTabVisible = true,
+            selectedTab = MainTabItem.Playlist,
+            playlist = PlaylistItemUiState.getMockList(),
+            playerBar = PlayerBarUiState.getMock(),
+            currentUrl = "",
+            isBackupNoticeVisible = true,
             navigateToBackupRestore = {},
             navigateToSetting = {},
             navigateToSecretPlaylist = {},

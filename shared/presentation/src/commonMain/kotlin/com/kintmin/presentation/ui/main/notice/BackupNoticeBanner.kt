@@ -46,7 +46,8 @@ fun BackupNoticeBanner(
         Row(
             modifier = Modifier
                 .clickable(onClickLabel = "백업 및 복원 화면으로 이동", role = Role.Button, onClick = onClick)
-                .padding(start = 16.dp, top = 12.dp, bottom = 12.dp),
+                // 끝 여백이 4dp 인 것은 닫기 버튼이 48dp 터치 영역으로 12dp 를 이미 만들기 때문이다.
+                .padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(imageVector = Icons.Rounded.Backup, contentDescription = null, modifier = Modifier.size(24.dp))
