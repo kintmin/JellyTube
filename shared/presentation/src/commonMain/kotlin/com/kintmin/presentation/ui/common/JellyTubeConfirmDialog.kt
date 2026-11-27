@@ -5,10 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -133,6 +130,7 @@ fun ColumnScope.DialogChoiceButtonRow(
 }
 
 /** 확인 버튼을 누르면 [onConfirm] 뒤에 [onDismiss] 까지 부른다. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ColumnScope.DialogButtonRow(
     dismissText: String,
@@ -142,23 +140,23 @@ fun ColumnScope.DialogButtonRow(
     confirmStyle: ConfirmStyle = ConfirmStyle.Primary,
     confirmEnabled: Boolean = true,
 ) {
-    Row(
+    FlowRow(
         modifier = Modifier
             .align(Alignment.End)
             .padding(top = dialogActionsSpacing),
+        horizontalArrangement = Arrangement.spacedBy(
+            space = if (confirmStyle == ConfirmStyle.Primary) dialogButtonSpacing else dialogDestructiveButtonSpacing,
+            alignment = Alignment.End,
+        ),
+        verticalArrangement = Arrangement.spacedBy(dialogButtonSpacing),
     ) {
         OutlinedButton(
             contentPadding = dialogDismissButtonPadding,
             colors = JellyTubeButtonColors.secondary(),
             onClick = onDismiss,
         ) {
-            Text(text = dismissText)
+            Text(text = dismissText, maxLines = 1)
         }
-        Spacer(
-            modifier = Modifier.width(
-                if (confirmStyle == ConfirmStyle.Primary) dialogButtonSpacing else dialogDestructiveButtonSpacing,
-            ),
-        )
         val onClickConfirm = {
             onConfirm()
             onDismiss()
@@ -168,21 +166,21 @@ fun ColumnScope.DialogButtonRow(
                 contentPadding = dialogConfirmButtonPadding,
                 enabled = confirmEnabled,
                 onClick = onClickConfirm,
-            ) { Text(text = confirmText) }
+            ) { Text(text = confirmText, maxLines = 1) }
 
             ConfirmStyle.Destructive -> Button(
                 contentPadding = dialogConfirmButtonPadding,
                 colors = JellyTubeButtonColors.destructive(),
                 enabled = confirmEnabled,
                 onClick = onClickConfirm,
-            ) { Text(text = confirmText) }
+            ) { Text(text = confirmText, maxLines = 1) }
 
             ConfirmStyle.Removal -> OutlinedButton(
                 contentPadding = dialogConfirmButtonPadding,
                 colors = JellyTubeButtonColors.removal(),
                 enabled = confirmEnabled,
                 onClick = onClickConfirm,
-            ) { Text(text = confirmText) }
+            ) { Text(text = confirmText, maxLines = 1) }
         }
     }
 }
