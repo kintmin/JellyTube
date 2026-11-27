@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -23,9 +24,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kintmin.domain.audio_media.AudioMediaTextLimit
+import com.kintmin.domain.extension.flattenNewlines
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.theme.destructiveContent
 import com.kintmin.presentation.ui.common.DialogButtonRow
@@ -92,12 +95,13 @@ fun AudioEditSaveDialog(
                     modifier = Modifier.padding(top = 16.dp),
                     label = "새 음원 제목",
                     value = newMediaName,
-                    onValueChange = { newMediaName = it },
+                    onValueChange = { newMediaName = it.flattenNewlines() },
                     textStyle = MaterialTheme.typography.titleMedium,
                     placeholder = "제목 입력",
-                    singleLine = true,
+                    singleLine = false,
                     maxLength = AudioMediaTextLimit.MAX_NAME_LENGTH,
                     errorMessage = if (newMediaName.isBlank()) "제목을 입력해 주세요" else null,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 )
             }
 

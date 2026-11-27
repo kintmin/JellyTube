@@ -14,6 +14,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
+import com.kintmin.domain.extension.flattenNewlines
 import com.kintmin.domain.playlist.PlaylistTextLimit
 import com.kintmin.presentation.theme.JellyTubeTheme
 import com.kintmin.presentation.ui.common.DialogButtonRow
@@ -54,11 +55,10 @@ fun PlaylistAddDialog(
                 value = newPlaylistTitle,
                 onValueChange = { newText ->
                     hasEdited = true
-                    newPlaylistTitle = PlaylistTextLimit.flattenTitle(newText)
+                    newPlaylistTitle = newText.flattenNewlines()
                 },
                 textStyle = MaterialTheme.typography.titleMedium,
                 placeholder = "제목 입력",
-                // 긴 제목을 다 보이게 줄은 넘기되, 엔터는 개행이 아니라 완료다.
                 singleLine = false,
                 maxLength = PlaylistTextLimit.MAX_TITLE_LENGTH,
                 errorMessage = errorMessage.takeIf { hasEdited },
