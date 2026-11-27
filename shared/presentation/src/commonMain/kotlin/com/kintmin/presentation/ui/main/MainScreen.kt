@@ -66,6 +66,8 @@ import com.kintmin.presentation.ui.custom_ui.data_table.PaymentColumn
 import com.kintmin.presentation.ui.custom_ui.data_table.TempData
 import com.kintmin.presentation.ui.main.bottom_sheet.PlaylistReorderBottomSheet
 import com.kintmin.presentation.ui.main.floating_action.MainFloatingActionButton
+import com.kintmin.presentation.ui.main.notice.BackupNoticeBanner
+import com.kintmin.presentation.ui.main.notice.NotificationNoticeDialog
 import com.kintmin.presentation.ui.main.playlist.PlaylistEvent
 import com.kintmin.presentation.ui.main.playlist.PlaylistIntent
 import com.kintmin.presentation.ui.main.playlist.PlaylistItemUiState
@@ -96,6 +98,7 @@ fun MainScreen(
     navigateToSecretPlaylist: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
     navigateToPlaylistDownload: (url: String) -> Unit,
+    navigateToBackupRestore: () -> Unit,
 ) {
     val toaster = rememberToaster()
     val mainViewModel = koinViewModel<MainViewModel>()
@@ -116,9 +119,11 @@ fun MainScreen(
 
     val permissionController = rememberPermissionController()
     LaunchedEffect(Unit) {
+        // 저장 권한은 묻는 것 말고 설명할 것이 없어 바로 띄운다. 알림은 먼저 말을 건다.
         // 어떤 권한이 OS 버전별로 실제 필요한지는 구현이 판단한다.
-        permissionController.request(
-            listOf(AppPermission.MediaStorage, AppPermission.Notification),
+        permissionController.request(listOf(AppPermission.MediaStorage))
+        mainViewModel.sendIntent(
+            MainIntent.CheckNotificationNotice(permissionController.isGranted(AppPermission.Notification)),
         )
     }
 
@@ -148,6 +153,8 @@ fun MainScreen(
         playlist = playlistUiState.playlists,
         playerBar = currentMediaItem,
         currentUrl = youtubeDownloadUiState.currentUrl,
+        isBackupNoticeVisible = mainUiState.isBackupNoticeVisible,
+        navigateToBackupRestore = navigateToBackupRestore,
         navigateToSetting = navigateToSetting,
         navigateToSecretPlaylist = navigateToSecretPlaylist,
         navigateToPlayerDetail = navigateToPlayerDetail,
@@ -170,12 +177,21 @@ fun MainScreen(
         )
     }
 
-    AppUpdateDialog(
-        versionName = mainUiState.availableUpdate?.versionName,
-        onDownload = { mainUiState.availableUpdate?.let { uriHandler.openUri(appUpdateInstaller.installUri(it.downloadUrl)) } },
-        onDismiss = { mainViewModel.sendIntent(MainIntent.DismissAppUpdate) },
-        onIgnore = { mainViewModel.sendIntent(MainIntent.IgnoreAppUpdate) },
-    )
+    // 첫 화면에 모달이 겹치지 않게 한 번에 하나만 그린다. 새 버전은 닫은 뒤에 이어서 뜬다.
+    if (mainUiState.isNotificationNoticeVisible) {
+        NotificationNoticeDialog(
+            showDialog = true,
+            onAllow = { permissionController.request(listOf(AppPermission.Notification)) },
+            onDismiss = { mainViewModel.sendIntent(MainIntent.CloseNotificationNotice) },
+        )
+    } else {
+        AppUpdateDialog(
+            versionName = mainUiState.availableUpdate?.versionName,
+            onDownload = { mainUiState.availableUpdate?.let { uriHandler.openUri(appUpdateInstaller.installUri(it.downloadUrl)) } },
+            onDismiss = { mainViewModel.sendIntent(MainIntent.DismissAppUpdate) },
+            onIgnore = { mainViewModel.sendIntent(MainIntent.IgnoreAppUpdate) },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -187,6 +203,8 @@ fun MainScreen(
     playlist: List<PlaylistItemUiState>,
     playerBar: PlayerBarUiState,
     currentUrl: String,
+    isBackupNoticeVisible: Boolean = false,
+    navigateToBackupRestore: () -> Unit,
     navigateToSetting: () -> Unit,
     navigateToSecretPlaylist: () -> Unit,
     navigateToPlayerDetail: () -> Unit,
@@ -386,16 +404,28 @@ fun MainScreen(
                     }
                 }
 
-                MainTabItem.Playlist -> PlaylistView(
+                // 백업 안내는 보관함을 보는 자리에 둔다 — 지킬 것이 거기 있다.
+                MainTabItem.Playlist -> Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding),
-                    data = playlist,
-                    nowPlayingPlaylistId = playerBar.playlistId,
-                    isPlaybackPlaying = playerBar.isPlaying,
-                    nowPlayingImageFileFullPath = playerBar.imageFileFullPath,
-                    sendIntent = sendPlaylistIntent,
-                )
+                ) {
+                    if (isBackupNoticeVisible) {
+                        BackupNoticeBanner(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            onClick = navigateToBackupRestore,
+                            onDismiss = { sendMainIntent(MainIntent.DismissBackupNotice) },
+                        )
+                    }
+                    PlaylistView(
+                        modifier = Modifier.weight(1f),
+                        data = playlist,
+                        nowPlayingPlaylistId = playerBar.playlistId,
+                        isPlaybackPlaying = playerBar.isPlaying,
+                        nowPlayingImageFileFullPath = playerBar.imageFileFullPath,
+                        sendIntent = sendPlaylistIntent,
+                    )
+                }
 
                 MainTabItem.Debug -> DataTableView(
                     modifier = Modifier
@@ -421,6 +451,7 @@ fun MainScreenSearchTabPreview() {
             playlist = PlaylistItemUiState.getMockList(),
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
+            navigateToBackupRestore = {},
             navigateToSetting = {},
             navigateToSecretPlaylist = {},
             navigateToPlayerDetail = {},
@@ -443,6 +474,7 @@ fun MainScreenPlayTabPreview() {
             playlist = PlaylistItemUiState.getMockList(),
             playerBar = PlayerBarUiState.getMock(),
             currentUrl = "",
+            navigateToBackupRestore = {},
             navigateToSetting = {},
             navigateToSecretPlaylist = {},
             navigateToPlayerDetail = {},

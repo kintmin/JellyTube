@@ -10,4 +10,10 @@ interface AppSettingRepository {
     suspend fun updateShouldInsertAtTopOnDownload(value: Boolean): Result<Unit>
     suspend fun updatePlaylistIdOnDownload(playlistId: Int): Result<Unit>
     suspend fun updateIsStepEnabled(value: Boolean): Result<Unit>
+
+    /** 첫 화면 안내는 평생 한 번만 띄운다. 보여 준 뒤로는 설정에서만 다룬다. */
+    fun getHasShownNotificationNoticeFlow(): Flow<Boolean>
+    suspend fun markNotificationNoticeShown(): Result<Unit>
+    fun getHasShownBackupNoticeFlow(): Flow<Boolean>
+    suspend fun markBackupNoticeShown(): Result<Unit>
 }

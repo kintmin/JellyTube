@@ -37,4 +37,20 @@ class AppSettingRepositoryImpl constructor(
     override suspend fun updateIsStepEnabled(value: Boolean): Result<Unit> {
         return datastoreUtil.updateData(PreferencesKey.IsStepEnabled, value)
     }
+
+    override fun getHasShownNotificationNoticeFlow(): Flow<Boolean> {
+        return datastoreUtil.getData(PreferencesKey.HasShownNotificationNotice).map { it ?: false }
+    }
+
+    override suspend fun markNotificationNoticeShown(): Result<Unit> {
+        return datastoreUtil.updateData(PreferencesKey.HasShownNotificationNotice, true)
+    }
+
+    override fun getHasShownBackupNoticeFlow(): Flow<Boolean> {
+        return datastoreUtil.getData(PreferencesKey.HasShownBackupNotice).map { it ?: false }
+    }
+
+    override suspend fun markBackupNoticeShown(): Result<Unit> {
+        return datastoreUtil.updateData(PreferencesKey.HasShownBackupNotice, true)
+    }
 }

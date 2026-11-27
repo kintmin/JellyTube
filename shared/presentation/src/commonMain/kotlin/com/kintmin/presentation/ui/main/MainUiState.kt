@@ -5,4 +5,6 @@ import com.kintmin.domain.app_update.model.AppRelease
 data class MainUiState(
     val tabItem: MainTabItem,
     val availableUpdate: AppRelease? = null,
+    val isNotificationNoticeVisible: Boolean = false,
+    val isBackupNoticeVisible: Boolean = false,
 )

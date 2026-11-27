@@ -90,6 +90,15 @@ sealed interface PreferencesKey<T> {
         override val key = stringPreferencesKey("backupLastFailureReason")
     }
 
+    /** 첫 화면 안내는 평생 한 번만 띄운다. 보여 준 뒤로는 설정에서만 다룬다. */
+    data object HasShownNotificationNotice : PreferencesKey<Boolean> {
+        override val key = booleanPreferencesKey("hasShownNotificationNotice")
+    }
+
+    data object HasShownBackupNotice : PreferencesKey<Boolean> {
+        override val key = booleanPreferencesKey("hasShownBackupNotice")
+    }
+
     data object AppUpdateLastCheckMillis : PreferencesKey<Long> {
         override val key = longPreferencesKey("appUpdateLastCheckMillis")
     }

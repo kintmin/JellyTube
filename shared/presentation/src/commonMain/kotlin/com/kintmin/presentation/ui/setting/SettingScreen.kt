@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MobileScreenShare
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -90,6 +92,12 @@ fun SettingScreen(
     }
     val backupFolderPicker = rememberBackupFolderPicker { folderId, label ->
         viewModel.sendIntent(SettingIntent.OnBackupFolderPicked(folderId, label))
+    }
+    // 설정에서 알림을 켜고 돌아오면 바로 반영돼야 한다.
+    var isNotificationGranted by remember { mutableStateOf(false) }
+    LifecycleResumeEffect(Unit) {
+        isNotificationGranted = permissionController.isGranted(AppPermission.Notification)
+        onPauseOrDispose { }
     }
 
     LaunchedEffect(Unit) {
@@ -156,7 +164,13 @@ fun SettingScreen(
     SettingScreen(
         uiState = uiState,
         appVersion = appVersion,
+        isNotificationGranted = isNotificationGranted,
         navigateToBack = navigateToBack,
+        onClickNotificationTile = {
+            if (!systemSettingsOpener.open(SystemSettingsTarget.AppPermissions)) {
+                toaster.show("설정을 열 수 없습니다. 직접 설정 앱에서 허용해주세요.")
+            }
+        },
         sendIntent = viewModel::sendIntent,
     )
 }
@@ -169,7 +183,9 @@ fun SettingScreen(
 fun SettingScreen(
     uiState: SettingUiState,
     appVersion: String,
+    isNotificationGranted: Boolean,
     navigateToBack: () -> Unit,
+    onClickNotificationTile: () -> Unit,
     sendIntent: (SettingIntent) -> Unit,
 ) {
     if (uiState.isPlaylistIdOnDownloadBottomSheetVisible) {
@@ -230,6 +246,18 @@ fun SettingScreen(
                     icon = Icons.Rounded.LibraryMusic,
                     description = uiState.playlistIdOnDownloadName,
                     onClick = { sendIntent(SettingIntent.OnClickPlaylistIdOnDownloadTile) },
+                )
+                // 알림을 묻는 것은 처음 한 번뿐이라, 그 뒤로 켜고 끄는 길은 여기가 유일하다.
+                SettingItemView(
+                    title = "받기 완료 알림",
+                    icon = Icons.Rounded.Notifications,
+                    description = if (isNotificationGranted) {
+                        "받기가 끝나면 알려 드립니다"
+                    } else {
+                        "꺼져 있습니다. 눌러서 켤 수 있습니다"
+                    },
+                    onClick = onClickNotificationTile,
+                    trailing = { SettingNavigateIcon(contentDescription = "알림 설정 열기") },
                 )
             }
 
@@ -363,7 +391,9 @@ fun SettingScreenPreview() {
         SettingScreen(
             uiState = SettingUiState(),
             appVersion = "1.2.2",
+            isNotificationGranted = true,
             navigateToBack = {},
+            onClickNotificationTile = {},
             sendIntent = {},
         )
     }
