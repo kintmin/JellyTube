@@ -35,7 +35,7 @@ import com.kintmin.data.local_db.model.*
         AutoMigration(from = 6, to = 7),
         // 7 -> 8: AUDIO_MEDIA에 customImageFileNameWithExt 컬럼(nullable) 추가
         AutoMigration(from = 7, to = 8),
-        // 8 -> 9 는 MIGRATION_8_9 참고. 스키마는 그대로고 비밀 곡을 "비밀 전체" 로 옮긴다
+        // 8 -> 9 는 MIGRATION_8_9 참고
     ],
 )
 @ConstructedBy(JellyTubeDatabaseConstructor::class)

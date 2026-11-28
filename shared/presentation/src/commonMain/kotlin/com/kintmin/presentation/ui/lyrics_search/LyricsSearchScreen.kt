@@ -167,6 +167,19 @@ fun LyricsSearchScreen(
                         }
                     }
 
+                    data.isNotSearched -> {
+                        item(key = "not-searched") {
+                            EmptyStateView(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 48.dp),
+                                icon = Icons.Rounded.SearchOff,
+                                title = "검색하지 않았습니다",
+                                description = "검색을 누르면 다시 묻고, 가사는 직접 넣을 수도 있습니다",
+                            )
+                        }
+                    }
+
                     else -> {
                         items(
                             items = data.results,

@@ -93,6 +93,7 @@ class LyricsSearchViewModelTest {
         assertTrue(viewModel.uiState.value.isConfirmingExternalSearch)
         // 검색을 건 적이 없으므로 "결과 없음" 을 뒤에 깔지 않는다.
         assertFalse(viewModel.uiState.value.isEmptyResult)
+        assertFalse(viewModel.uiState.value.isNotSearched)
         coVerify(exactly = 0) { searchLyrics(any()) }
     }
 
@@ -120,6 +121,19 @@ class LyricsSearchViewModelTest {
     }
 
     @Test
+    fun `고른 것은 그 검색어에만 유효해서 검색어를 바꾸면 다시 묻는다`() {
+        coEvery { isSecret(7) } returns true
+        val viewModel = viewModel()
+        viewModel.sendIntent(LyricsSearchIntent.OnConfirmExternalSearch)
+
+        viewModel.sendIntent(LyricsSearchIntent.OnChangeQuery("다른 검색어"))
+        viewModel.sendIntent(LyricsSearchIntent.OnClickSearch)
+
+        assertTrue(viewModel.uiState.value.isConfirmingExternalSearch)
+        coVerify(exactly = 0) { searchLyrics("다른 검색어") }
+    }
+
+    @Test
     fun `찾지 않기를 고르면 화면은 남고 다시 검색할 때 또 묻는다`() {
         coEvery { isSecret(7) } returns true
         val viewModel = viewModel()
@@ -128,6 +142,7 @@ class LyricsSearchViewModelTest {
         assertFalse(viewModel.uiState.value.isConfirmingExternalSearch)
         // 찾지 않기로 한 것이지 찾아보고 없는 것이 아니다.
         assertFalse(viewModel.uiState.value.isEmptyResult)
+        assertTrue(viewModel.uiState.value.isNotSearched)
 
         viewModel.sendIntent(LyricsSearchIntent.OnClickSearch)
 

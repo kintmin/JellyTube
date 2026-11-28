@@ -12,6 +12,9 @@ data class LyricsSearchUiState(
 ) {
     val isEmptyResult: Boolean get() = hasSearched && !isLoading && results.isEmpty()
 
+    /** 묻는 창에서 찾지 않기를 골라 검색이 한 번도 돌지 않은 상태. */
+    val isNotSearched: Boolean get() = !hasSearched && !isLoading && !isConfirmingExternalSearch
+
     data class LyricsSearchItem(
         val id: Int,
         val trackName: String,

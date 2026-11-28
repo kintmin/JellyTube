@@ -168,6 +168,7 @@ class SettingDataMigrationReceiveViewModel constructor(
     /**
      * 받는 쪽은 비밀을 받으려고 비밀모드를 켜지 않는다. 다만 **쓰던 비밀모드가 이미 켜져 있으면**
      * 받는 동안 시계를 멈춘다 — 전송 중에 꺼지면 화면 스택이 메인까지 걷혀 받기가 통째로 끊긴다.
+     * 확인 화면에서 고르는 동안에는 흐른다. 받기를 시작할 때 멈춘다.
      *
      * 멈춘 채로 두면 영영 켜져 있으므로 끝나는 길이 어디든 [resumeSecretMode] 가 다시 감는다.
      */
@@ -188,7 +189,6 @@ class SettingDataMigrationReceiveViewModel constructor(
                 stages = DataMigrationStageKind.entries.map { kind -> DataMigrationStageItem(kind, DataMigrationStageStatus.PENDING) },
             )
         }
-        pauseSecretMode()
         runJob = viewModelScope.launch {
             // 찾은 뒤 다시 시도하기 전까지 PC 수신 등이 새로 켜졌을 수 있다. 받는 중에는 DB 를 바꾸면 안 된다.
             val runningTasks = runningWorkMonitor.runningTasks()
@@ -245,6 +245,7 @@ class SettingDataMigrationReceiveViewModel constructor(
         val confirming = _uiState.value.phase as? DataMigrationReceivePhase.Confirming ?: return
         acceptedSecretPlaylistCount = if (confirming.acceptsSecret) confirming.secretPlaylistCount else 0
         updatePhase(DataMigrationReceivePhase.Running)
+        pauseSecretMode()
         pendingChoice?.complete(
             MigrationChoice(
                 mergingPlaylistSourceIds = confirming.mergingSourceIds,

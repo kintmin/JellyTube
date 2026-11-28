@@ -196,18 +196,28 @@ class SettingDataMigrationReceiveViewModelTest {
     }
 
     @Test
-    fun `쓰던 비밀모드가 켜져 있으면 받는 동안 시계를 멈추고 끝나면 다시 감는다`() {
+    fun `쓰던 비밀모드가 켜져 있으면 받기를 시작할 때 시계를 멈추고 끝나면 다시 감는다`() {
         // 받는 중에 비밀모드가 꺼지면 화면 스택이 메인까지 걷혀 받기가 통째로 끊긴다.
-        coEvery { import(endpoint, "token", any(), any()) } returns Result.success(summary())
-        val viewModel = viewModel()
+        val (viewModel, _) = confirmSecretTransfer()
+        // 확인 화면에서 고르는 동안에는 시계가 흐른다.
+        verify(exactly = 0) { secretModeRunner.pause() }
 
-        viewModel.connect()
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnClickStartReceive)
 
         assertTrue(viewModel.uiState.value.phase is DataMigrationReceivePhase.Finished)
         verifyOrder {
             secretModeRunner.pause()
             secretModeRunner.resume()
         }
+    }
+
+    @Test
+    fun `확인 화면에서 받지 않기를 골라도 시계는 멈춘 적이 없다`() {
+        val (viewModel, _) = confirmSecretTransfer()
+
+        viewModel.sendIntent(SettingDataMigrationReceiveIntent.OnDeclineReceive)
+
+        verify(exactly = 0) { secretModeRunner.pause() }
     }
 
     @Test

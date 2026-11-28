@@ -453,10 +453,8 @@ class AudioMediaFacade constructor(
     }
 
     /**
-     * 비밀 곡은 "전체" 가 아니라 "비밀 전체" 에 담긴다. 비밀이 되고 풀릴 때 둘 사이를 옮긴다 —
-     * **담을 때 옮기므로 읽는 자리마다 비밀 곡을 걸러내지 않는다.**
-     *
-     * 이미 옮겨져 있는 곡은 건드리지 않는다. 집계는 넘긴 개수만큼 가감하므로 두 번 넣으면 어긋난다.
+     * 비밀 곡은 "전체" 가 아니라 "비밀 전체" 에 담긴다. 이미 옮겨진 곡은 건드리지 않는다 —
+     * 집계는 넘긴 개수만큼 가감하므로 두 번 넣으면 어긋난다.
      */
     private suspend fun moveBetweenTotals(audioMediaIdList: List<Int>, toSecret: Boolean) {
         val fromId = requireSystemPlaylistId(if (toSecret) PlaylistType.TOTAL else PlaylistType.SECRET_TOTAL)

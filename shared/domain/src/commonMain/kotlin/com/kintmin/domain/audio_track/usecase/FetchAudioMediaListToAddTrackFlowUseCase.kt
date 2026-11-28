@@ -38,7 +38,7 @@ class FetchAudioMediaListToAddTrackFlowUseCase constructor(
                     combine(
                         audioTrackRepository.getPlaylistTrackAggregateListFlow(totalId),
                         audioTrackRepository.getPlaylistTrackAggregateListFlow(secretTotalId),
-                    ) { open, secret -> open + secret }
+                    ) { open, secret -> (open + secret).sortedBy { it.audioTrack.trackAddedTime } }
                 }
                 combine(
                     candidates,
