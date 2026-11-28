@@ -47,8 +47,8 @@ class AudioTrackRepositoryImpl constructor(
             .map { it.toDomain(fileManager).getOrThrow() }
     }
 
-    override fun getPlaylistTrackAggregateListFlow(playlistId: Int, showSecretInTotal: Boolean): Flow<List<PlaylistTrackAggregate>> {
-        return playlistTrackDao.getPlaylistTrackFullListFlow(playlistId, showSecretInTotal).map { list ->
+    override fun getPlaylistTrackAggregateListFlow(playlistId: Int): Flow<List<PlaylistTrackAggregate>> {
+        return playlistTrackDao.getPlaylistTrackFullListFlow(playlistId).map { list ->
             list.map {
                 it.toDomain(fileManager).getOrThrow()
             }

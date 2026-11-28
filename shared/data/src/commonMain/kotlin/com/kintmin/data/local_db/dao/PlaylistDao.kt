@@ -24,14 +24,13 @@ interface PlaylistDao {
     suspend fun getMaxSequence(): Int
 
     // 정렬하지 않았다면 sequence가 0이기 때문에 id 조건 필요
-    // 화면용 Flow 는 비밀 곡을 뺀 "전체" 를 읽는다. suspend 조회는 원본이다.
-    @Query("SELECT $VISIBLE_PLAYLIST_COLUMNS FROM PLAYLIST ORDER BY sequence, id")
+    @Query("SELECT * FROM PLAYLIST ORDER BY sequence, id")
     fun getPlaylistListFlow(): Flow<List<PlaylistEntity>>
 
     @Query("SELECT * FROM PLAYLIST ORDER BY sequence, id")
     suspend fun getAll(): List<PlaylistEntity>
 
-    @Query("SELECT $VISIBLE_PLAYLIST_COLUMNS FROM PLAYLIST WHERE id = :id")
+    @Query("SELECT * FROM PLAYLIST WHERE id = :id")
     fun getPlaylistFlow(id: Int): Flow<PlaylistEntity?>
 
     @Query("""

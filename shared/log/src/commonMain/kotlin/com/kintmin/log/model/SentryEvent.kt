@@ -49,14 +49,15 @@ sealed class SentryEvent(val logName: SentryLogName, vararg val params: Pair<Sen
 
     data class AddAudioMedia(
         val source: String,
-        val audioMediaCount: Int,
+        /** 담긴 자리의 곡 수. 비밀 곡이면 그 수가 곧 숨긴 곡의 수라 가려서 넣는다. */
+        val audioMediaCount: String,
         val audioMediaId: Int? = null,
         val audioMediaName: String? = null,
         val playlistId: Int? = null,
     ) : SentryEvent(
         SentryLogName.AddAudioMedia,
         SentryParamName.Source to source,
-        SentryParamName.AudioMediaCount to audioMediaCount.toString(),
+        SentryParamName.AudioMediaCount to audioMediaCount,
         SentryParamName.AudioMediaId to audioMediaId?.toString(),
         SentryParamName.AudioMediaName to audioMediaName,
         SentryParamName.PlaylistId to playlistId?.toString(),

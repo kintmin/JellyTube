@@ -4,8 +4,11 @@ data class KaraokeSearchUiState(
     val query: String,
     val isLoading: Boolean,
     val results: List<KaraokeSearchItem>,
+    val isConfirmingExternalSearch: Boolean = false,
+    /** 검색을 한 번이라도 걸었는가. 걸지 않았는데 "결과 없음" 을 보이면 찾아보고 빈 것처럼 읽힌다. */
+    val hasSearched: Boolean = false,
 ) {
-    val isEmptyResult: Boolean get() = !isLoading && results.isEmpty()
+    val isEmptyResult: Boolean get() = hasSearched && !isLoading && results.isEmpty()
 
     data class KaraokeSearchItem(
         val id: Int,

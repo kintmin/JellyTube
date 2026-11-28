@@ -16,7 +16,7 @@ internal fun createIosJellyTubeDatabase(): JellyTubeDatabase {
     )
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
-        .addMigrations(MIGRATION_3_4)
+        .addMigrations(MIGRATION_3_4, MIGRATION_8_9)
         .build()
 }
 

@@ -1,5 +1,6 @@
 package com.kintmin.domain
 
+import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.lyrics.model.LyricsSearchResult
 import com.kintmin.domain.lyrics.model.LyricsVariant
 import com.kintmin.domain.lyrics.usecase.ApplyLyricsToAudioMediaUseCase
@@ -13,7 +14,10 @@ import com.kintmin.domain.lyrics.usecase.SearchLyricsUseCase
 import com.kintmin.domain.lyrics.usecase.SortLyricsSearchResultsUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -23,12 +27,16 @@ class DownloadLyricsForAudioMediaUseCaseTest {
     private val searchLyrics = mockk<SearchLyricsUseCase>()
     private val applyLyrics = mockk<ApplyLyricsToAudioMediaUseCase>()
     private val createVariant = mockk<CreateLyricsVariantUseCase>()
+    private val audioTrackRepository = mockk<AudioTrackRepository> {
+        every { getSecretAudioMediaIdListFlow() } returns flowOf(emptyList())
+    }
 
     private val lyricPath = "/lyrics/x.lrc"
 
     private val matchTrackName = MatchLyricsTrackNameUseCase(BuildSongSearchQueryUseCase())
 
     private val useCase = DownloadLyricsForAudioMediaUseCase(
+        audioTrackRepository = audioTrackRepository,
         buildSongSearchQuery = BuildSongSearchQueryUseCase(),
         searchLyrics = searchLyrics,
         sortLyricsSearchResults = SortLyricsSearchResultsUseCase(matchTrackName),
@@ -244,5 +252,25 @@ class DownloadLyricsForAudioMediaUseCaseTest {
 
         assertTrue(r.isSuccess)
         coVerify(exactly = 0) { applyLyrics(any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `비밀 곡이면 검색하지 않는다`() = runTest {
+        every { audioTrackRepository.getSecretAudioMediaIdListFlow() } returns flowOf(listOf(1))
+
+        val r = useCase(audioMediaId = 1, title = "곡", targetDurationSeconds = 200.0)
+
+        assertTrue(r.isSuccess)
+        coVerify(exactly = 0) { searchLyrics(any()) }
+    }
+
+    @Test
+    fun `비밀 곡 목록을 읽지 못하면 검색하지 않는다`() = runTest {
+        every { audioTrackRepository.getSecretAudioMediaIdListFlow() } returns flow { throw IllegalStateException() }
+
+        val r = useCase(audioMediaId = 1, title = "곡", targetDurationSeconds = 200.0)
+
+        assertTrue(r.isSuccess)
+        coVerify(exactly = 0) { searchLyrics(any()) }
     }
 }

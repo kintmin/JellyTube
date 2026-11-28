@@ -21,7 +21,7 @@ import com.kintmin.data.local_db.model.*
         AudioEditProjectEntity::class,
     ],
     exportSchema = true,
-    version = 8,
+    version = 9,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -35,6 +35,7 @@ import com.kintmin.data.local_db.model.*
         AutoMigration(from = 6, to = 7),
         // 7 -> 8: AUDIO_MEDIA에 customImageFileNameWithExt 컬럼(nullable) 추가
         AutoMigration(from = 7, to = 8),
+        // 8 -> 9 는 MIGRATION_8_9 참고
     ],
 )
 @ConstructedBy(JellyTubeDatabaseConstructor::class)

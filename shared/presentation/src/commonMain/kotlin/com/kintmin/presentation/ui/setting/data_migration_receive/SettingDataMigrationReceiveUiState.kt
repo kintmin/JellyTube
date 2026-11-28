@@ -83,6 +83,8 @@ sealed interface DataMigrationReceivePhase {
         val newPlaylistCount: Int,
         val redownloadedCount: Int,
         val failures: List<DataMigrationFailureItem>,
+        /** 함께 받은 비밀 플레이리스트 수. 받은 뒤에는 비밀모드를 켜야 보이므로 그것을 알린다. */
+        val secretPlaylistCount: Int = 0,
     ) : DataMigrationReceivePhase
 }
 

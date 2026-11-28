@@ -127,7 +127,7 @@ class DownloadAudioMediaUseCase constructor(
         appLog.sendSentryEvent(
             SentryEvent.AddAudioMedia(
                 source = secret(downloadUrl, isSecret),
-                audioMediaCount = added.totalPlaylistMediaCount,
+                audioMediaCount = secret(added.totalPlaylistMediaCount, isSecret),
                 audioMediaId = added.audioMedia.id,
                 audioMediaName = secret(added.audioMedia.name, isSecret),
                 playlistId = added.resolvedPlaylistIdOnDownload,

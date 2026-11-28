@@ -175,6 +175,21 @@ class MigrationPlannerTest {
     }
 
     @Test
+    fun `보내는 쪽의 비밀 전체는 새로 만들지 않고 받는 쪽의 비밀 전체에 합친다`() {
+        val source = snapshot(
+            audios = listOf(audio(101, "https://youtu.be/a")),
+            playlists = sourceSystem + playlist(16, PlaylistType.SECRET_TOTAL) + playlist(14, PlaylistType.SECRET, name = "밤"),
+            tracks = listOf(track(16, 101, 1), track(14, 101, 1)),
+        )
+        val target = snapshot(playlists = targetSystem + playlist(5, PlaylistType.SECRET_TOTAL))
+
+        val plan = MigrationPlanner.plan(source, target)
+
+        assertEquals(listOf(14), plan.newPlaylists.map { it.id })
+        assertTrue(MigrationTrackAddition(Existing(5), listOf(Incoming(101))) in plan.trackAdditions)
+    }
+
+    @Test
     fun `보내는 쪽에 이름이 같은 플레이리스트가 여럿이면 하나로 만들어 합친다`() {
         val source = snapshot(
             audios = listOf(audio(101, "https://youtu.be/a"), audio(102, "https://youtu.be/b")),

@@ -30,7 +30,7 @@ object FileShareConstants {
     /** 데이터 이전 받지 않기 알림 HTTP POST endpoint. 보내는 기기는 같은 코드로 다시 페어링을 기다린다 */
     const val MIGRATION_DECLINE_PATH = "/migration/decline"
     /** 이전 프로토콜 버전. 양쪽이 다르면 받는 쪽이 이전을 거부한다 */
-    const val MIGRATION_FORMAT_VERSION = 3
+    const val MIGRATION_FORMAT_VERSION = 4
     /**
      * 데이터 이전 세션이 열려 있는 동안만 광고하는 mDNS 서비스 타입. [NSD_SERVICE_TYPE] 과 나눠야
      * PC 업로드(Desktop)가 이전 중인 기기를 찾지 못한다

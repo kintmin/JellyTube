@@ -1,6 +1,7 @@
 package com.kintmin.presentation.di
 
 import com.kintmin.presentation.navigation.AppViewModel
+import com.kintmin.presentation.secret_mode.ExternalSearchConsent
 import com.kintmin.presentation.secret_mode.SecretModeRunner
 import com.kintmin.presentation.ui.secret_playlist.SecretPlaylistViewModel
 import com.kintmin.presentation.sleep_timer.SleepTimerRunner
@@ -41,6 +42,8 @@ import org.koin.dsl.module
 val presentationModule: Module = module {
     single { SleepTimerRunner(get(), get(), get()) }
     single { SecretModeRunner(get(), get(), get(), get(), get(), get()) }
+    // 화면마다 하나씩 — 고른 것은 그 화면에 머무는 동안만 유효하다.
+    factory { ExternalSearchConsent(get()) }
 
     viewModelOf(::AppViewModel)
     viewModelOf(::StepViewModel)

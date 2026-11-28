@@ -42,6 +42,8 @@ class SecretModeRunnerTest {
         every { this@mockk(PlaylistType.SECRET) } returns flowOf(listOf(testPlaylist(5, PlaylistType.SECRET)))
         every { this@mockk(PlaylistType.SECRET_FAVORITE) } returns
             flowOf(listOf(testPlaylist(6, PlaylistType.SECRET_FAVORITE)))
+        every { this@mockk(PlaylistType.SECRET_TOTAL) } returns
+            flowOf(listOf(testPlaylist(7, PlaylistType.SECRET_TOTAL)))
     }
     private val fetchSecretAudioMediaIdListFlowUseCase: FetchSecretAudioMediaIdListFlowUseCase = mockk {
         every { this@mockk() } returns flowOf(listOf(10, 11))
@@ -119,14 +121,17 @@ class SecretModeRunnerTest {
     }
 
     @Test
-    fun `일반 플레이리스트를 재생 중이면 큐를 건드리지 않는다`() = runTest {
+    fun `일반 플레이리스트를 재생 중이어도 큐에 남은 비밀 곡은 빼낸다`() = runTest {
+        // 비밀에 담을 때 그 플레이리스트에서는 끊기지만, 틀어 둔 큐는 사본이라 곡이 남는다.
         every { playbackController.currentPlaylistId } returns 4
 
         runner().end(SecretModeEndReason.USER)
         runCurrent()
 
         coVerify { endSecretModeUseCase(SecretModeEndReason.USER) }
-        verify(exactly = 0) { playbackController.tryDeleteMediaItem(any(), any()) }
+        verify { playbackController.tryDeleteMediaItem(4, 10) }
+        verify { playbackController.tryDeleteMediaItem(4, 11) }
+        verify(exactly = 0) { playbackController.clearQueue() }
     }
 
     @Test

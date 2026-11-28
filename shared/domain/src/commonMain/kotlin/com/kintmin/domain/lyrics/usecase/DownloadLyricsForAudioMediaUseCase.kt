@@ -1,7 +1,9 @@
 package com.kintmin.domain.lyrics.usecase
 
+import com.kintmin.domain.audio_track.repository.AudioTrackRepository
 import com.kintmin.domain.common.suspendRunCatching
 import com.kintmin.domain.common_usecase.BuildSongSearchQueryUseCase
+import com.kintmin.domain.secret_mode.secretAudioMediaJudge
 import com.kintmin.log.AppLog
 import com.kintmin.log.model.DebugLog
 import com.kintmin.domain.lyrics.model.LyricsVariant
@@ -15,8 +17,11 @@ import kotlin.math.abs
  * 2. 정렬 순으로, 길이 오차 1초 이내이고 곡명이 제목에 들어 있는 첫 건을 고른다. 없으면 조용히 종료한다.
  * 3. 고른 가사를 음원에 적용한다.
  * 4. 적용된 가사에 한글이 없으면 번역 파일을, 일본어면 음차 파일을 바로 생성한다.
+ *
+ * **비밀 곡은 1번에 들어가지도 않는다.** 받는 경로가 플랫폼마다 따로 있어 여기서 한 번만 막는다.
  */
 class DownloadLyricsForAudioMediaUseCase(
+    private val audioTrackRepository: AudioTrackRepository,
     private val buildSongSearchQuery: BuildSongSearchQueryUseCase,
     private val searchLyrics: SearchLyricsUseCase,
     private val sortLyricsSearchResults: SortLyricsSearchResultsUseCase,
@@ -32,6 +37,10 @@ class DownloadLyricsForAudioMediaUseCase(
         title: String,
         targetDurationSeconds: Double?,
     ): Result<Unit> = suspendRunCatching {
+        // 검색어가 곡 제목이라, 묻는 것 자체가 숨긴 것을 기기 밖으로 내보내는 일이 된다.
+        if (audioTrackRepository.secretAudioMediaJudge(appLog)(audioMediaId)) {
+            return@suspendRunCatching log("비밀 곡이라 가사를 찾지 않음: id=$audioMediaId")
+        }
         val query = buildSongSearchQuery(title)
         val results = searchLyrics(query).getOrNull().orEmpty()
 
